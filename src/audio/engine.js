@@ -1,4 +1,10 @@
 import { S, prof } from "../state.js";
+import { audioSessionType } from "../platform/native.js";
+import { logDebug } from "../hooks.js";
+import { logErr } from "../hooks.js";
+import { setInfo } from "../hooks.js";
+import { met } from "./metronome.js";
+import { sfPreloadForSong } from "./voices.js";
 
 export function trackAudible(ti) { // what you HEAR: mute and solo (they never hide notes — DAW habit, 2026-09-29)
   const anySolo = S.trackState.some(s => s.solo);
@@ -217,3 +223,85 @@ export function drumHit(ti, p, when, vel, durSec) {
   src.stop(when + len + 0.05);
 }
 drumHit = prof("drumHit", drumHit); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+export function ensureAudio() { // one context for the app's lifetime — iOS Safari
+  // glitches the first render quantum of a fresh context. But a context iOS
+  // has killed (state "closed") can never come back: rebuild + re-warm.
+  if (S.audio && S.audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
+    if (!gestureActive()) return;
+    S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
+  }
+  if (S.audio) return;
+  // WebKit picks the page's audio session itself: plain Web Audio gets an
+  // "ambient" one, which iOS silences the moment the app leaves the screen
+  // (the shell's AVAudioSession .playback and its audio background mode were
+  // not enough — Josh, 2026-09-28, Chrono Trigger stopped on leaving).
+  // "playback" is a music player's session: it keeps going off-screen.
+  // …but only while Night Roll actually PLAYS (Josh, 2026-09-30: switching
+  // in from YouTube stopped it at once — "playback" doesn't mix, and the
+  // context is made on the first tap anywhere). Idle and note previews:
+  // "ambient", which mixes; play() / the metronome ask for "playback".
+  audioSessionType("ambient");
+  S.audio = new (window.AudioContext || window.webkitAudioContext)();
+  S.audio.onstatechange = () => { logDebug("audio state: " + (S.audio && S.audio.state) + (document.hidden ? " (app hidden)" : "")); if (S.audio && S.audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
+  S.master = S.audio.createGain();
+  S.master.gain.value = MASTER_VOL * S.masterVol;
+  S.master.connect(S.audio.destination);
+  S.trackGains = []; S.trackPanners = [];
+  warmContext();
+}
+export function rebuildAudio(why) {
+  try { if (S.audio) S.audio.close().catch(() => {}); } catch (err) { /* already closed */ }
+  S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
+  ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
+  logDebug("audio engine rebuilt (" + why + "; gesture " + (gestureActive() ? "active" : "lapsed") + ")");
+}
+export async function resumeAudio() {
+  if (!S.audio) return;
+  const tapped = gestureActive(); // read NOW: transient activation lapses during the awaits below
+  await S.audio.resume().catch(() => {});
+  if (await clockAlive()) return;
+  await S.audio.resume().catch(() => {});
+  if (await clockAlive()) return;
+  if (!tapped) { logDebug("audio clock not moving, no tap to wake it (" + clockProbeText() + ")"); return; } // never rebuild here: see above
+  rebuildAudio("clock not moving inside a tap: " + clockProbeText());
+  await S.audio.resume().catch(() => {});
+  if (!(await clockAlive())) { // a real silence: rebuilt inside a tap and still dead — this one he can act on
+    setInfo("audio asleep — tap ▶ again");
+    logErr("audio asleep: rebuilt the engine inside your tap and its clock still doesn't move (" + clockProbeText() + ") — tap ▶ again; if it stays silent, relaunch the app");
+  }
+}
+
+export function initEngine1() {
+  if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("touchstart", () => {}, {passive: true});
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden || !S.audio || S.audio.state === "closed" || S.wakeInFlight) return; // a closed one waits for the tap
+    if (S.playing && S.audio.state === "running") return;
+    // idle: back to the mixing session BEFORE the wake. A tap, ▶ or the click
+    // left "playback" behind if the app was hidden when it ended (every revert
+    // skips a hidden page), and resuming the context under "playback" stopped
+    // YouTube the moment Josh switched back in (2026-10-02)
+    if (!S.playing && !S.albumRun && !met.on) audioSessionType("ambient");
+    S.wakeInFlight = true;
+    try { await resumeAudio(); } finally { S.wakeInFlight = false; }
+  });
+}
+
+// The iOS silent-switch bypass is GONE (Josh, 2026-08-25). It looped a 2.0s
+// silent <audio> forever to hold the tab in the "media playback" category the
+// hardware mute switch does not silence. On WebKit every loop wrap is a seek,
+// and his recordings put a stall burst on exactly that 2.0s beat — clean for
+// 70s, then every other second after one note move, worsening until reload.
+// It was added 2026-08-22 for a friend's "it won't play"; the perf collapse
+// dates from 08-24. A comfort feature is not worth a third of the frame
+// budget. If the mute switch bites someone again: say so in the UI, or hold
+// the classification with a MUCH longer buffer so seeks are rare — do not
+// re-introduce a 2-second loop.
+export function initEngine2() {
+  document.addEventListener("pointerdown", function warm() {
+    document.removeEventListener("pointerdown", warm);
+    ensureAudio();
+    resumeAudio();
+    if (S.sfPreloadPending) sfPreloadForSong(); // the boot-time preload deferred to this gesture
+  }, {capture: true});
+}

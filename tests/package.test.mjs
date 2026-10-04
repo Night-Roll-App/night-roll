@@ -8,7 +8,7 @@ import {readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSyn
 import {mkdtempSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
-import {createApp} from "./harness.mjs";
+import {createApp, appSource} from "./harness.mjs";
 
 const root = path.dirname(new URL("./", import.meta.url).pathname.replace(/\/$/, ""));
 const tool = path.join(root, "tools", "package.mjs");
@@ -29,7 +29,8 @@ test("package: builds the app edition into a temp dir with only starter albums a
   assert.equal(a.length, b.length);
   assert.equal(a.filter((l, i) => l !== b[i]).length, 1, "exactly one line differs");
   for (const f of ["sw.js", "app.webmanifest", "404.html", "LICENSE", "vendor/vexflow.js", "icons/icon-512.png", "albums/manifest.json", "BUILD.json",
-                   "src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/package.json"]) assert.ok(existsSync(path.join(out, f)), f);
+                   "src/edition.js", "src/devtools.js", "src/main.js", "src/wire.js", "src/session/boot.js", "src/package.json"]) assert.ok(existsSync(path.join(out, f)), f);
+  assert.ok(!existsSync(path.join(out, "src/app.js")), "src/app.js is gone (docs/split-phase2-plan.md step 13)");
   const files = walk(out).map(f => path.relative(out, f));
   assert.ok(!files.some(f => /final-fantasy|mega-man|tmnt|compositions/.test(f)), "no game albums or compositions in the output");
   const manifest = JSON.parse(readFileSync(path.join(out, "albums", "manifest.json"), "utf8"));
@@ -40,10 +41,11 @@ test("package: builds the app edition into a temp dir with only starter albums a
     assert.ok(existsSync(path.join(out, f)), f + " should ship");
   // every module the page's CHIPS table names ships — the worker imports them by name at run time (2026-09-28:
   // sounding/note-preview were missing and every console render on the iPad fell back to the synth). The CHIPS
-  // table is JS, so it lives in src/app.js now (docs/split-plan.md §4 step 0b moved it out of index.html).
-  const appJs = readFileSync(path.join(root, "src", "app.js"), "utf8");
+  // table is JS, so it lives in src/ now (docs/split-plan.md §4 step 0b moved it out of index.html;
+  // docs/split-phase2-plan.md step 2 moved it again, src/app.js -> src/audio/chip.js) — appSource()
+  // (tests/harness.mjs §3.3) is the whole src/ tree concatenated, not just app.js, for exactly this reason.
   const named = new Set();
-  for (const m of appJs.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g)) for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) named.add("tools/" + q[1] + ".mjs");
+  for (const m of appSource(root).matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g)) for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) named.add("tools/" + q[1] + ".mjs");
   assert.ok(named.has("tools/sounding.mjs") && named.has("tools/note-preview.mjs") && named.size > 20, "the CHIPS lists were read");
   for (const f of named) if (existsSync(path.join(root, f))) assert.ok(existsSync(path.join(out, f)), f + " is named in CHIPS and should ship");
   assert.ok(!files.some(f => /^tools\/(package|dump_notes|claude-bridge|at|span)\.mjs$|^tools\/nsf\/(dump|dump-all|make-test-nsf)\.mjs$/.test(f)), "no node-only tools in the output");
@@ -56,7 +58,7 @@ test("package: the packaged output boots (docs/split-plan.md §4 step 0b — thi
   assert.equal(r.status, 0, r.stderr + r.stdout);
   const app = await createApp({root: out});
   assert.equal(app.run("EDITION"), "app", "the packaged build really is the app edition");
-  assert.equal(app.run("typeof loadSong"), "function", "app.js's own code evaluated");
+  assert.equal(app.run("typeof loadSong"), "function", "the app's own module graph evaluated");
   rmSync(out, {recursive: true, force: true});
 });
 

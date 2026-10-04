@@ -37,3 +37,22 @@ export function setAppMode(mode) {
 // reaches any of this — appMode() gates the one entry point below, same
 // discipline as estimateKey's own call sites (spy-tested).
 export function analysisAvailable() { return appMode() === "normal"; }
+
+// Night Roll — FF1 OST analysis player. READ NIGHT-ROLL.md FIRST:
+// feature inventory, the .rollnotes format spec, this file's section map,
+// and the project conventions (keys are Josh's discoveries — never pre-fill).
+export function initMode1() {
+  "use strict";
+  S.APP_MODE = (() => {
+    try {
+      const v = localStorage.getItem("ff1roll-mode");
+      if (v === "learning" || v === "normal") return v; // never overwritten once set
+      const mode = hasExistingNightRollPrefs() ? "learning" : "normal";
+      localStorage.setItem("ff1roll-mode", mode);
+      return mode;
+    } catch (e) { return "learning"; } // storage denied: default to the law
+  })();
+   if (typeof document !== "undefined" && document.body) {
+    document.body.dataset.mode = S.APP_MODE;
+  }
+}

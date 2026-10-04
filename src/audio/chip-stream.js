@@ -5,6 +5,14 @@ import { trackGain } from "./engine.js";
 import { tickToSec } from "../midi/parse.js";
 import { chipBuffers } from "./chip.js";
 import { playSec } from "./transport.js";
+import { chipWorkerAvailable } from "./chip.js";
+import { CHIPS } from "./chip.js";
+import { chipPreviewPending } from "./chip.js";
+import { chipSource } from "./chip.js";
+import { chipRenderBudget } from "./chip.js";
+import { logDebug } from "../hooks.js";
+import { songTitleOf } from "../hooks.js";
+import { chipRender } from "./chip.js";
 
 // -------------------------------------------- chip stream mode (step 3) ---
 // docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
@@ -337,4 +345,105 @@ export function chipStreamStart(fromSec) {
   st.gen++;
   if (S.chipWorker) S.chipWorker.postMessage({seek: {id: st.key, gen: st.gen, idx: chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate)}});
   chipStreamPump(S.audio.currentTime);
+}
+
+// rate cancels: chunkFrames/rate == CHIP_STREAM_CHUNK_SEC
+
+// {id, kind, files, shared, own, v, bytes, libs, secs, rate} -> a Promise of
+// {tracks, seconds, sampleRate, frames, leadSec} (ready) or {error}. Mirrors
+// chipRenderInWorker's own lifecycle (one worker at a time in `chipWorker`,
+// terminated on a song change, previews answered the same way afterward) —
+// the difference is the message shape posted ({stream} instead of the whole
+// payload) and that this worker KEEPS running after "ready": {chunk}/
+// {silent} replies to later {want}/{idle} calls land on the SAME onmessage,
+// installed once, for the rest of this song's stream session.
+export function chipStreamOpenWorker(kind, src, secs, rate, forKey, budget) {
+  return new Promise(resolve => {
+    if (S.chipWorker) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; }
+    let w, workerUrl;
+    try { workerUrl = new URL("tools/chip-worker.mjs?v=" + Date.now(), S.APP_BASE).href; w = new Worker(workerUrl, {type: "module"}); }
+    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker (" + workerUrl + "): " + err.message + " — stream mode unavailable this render"); return resolve({error: String(err && err.message || err)}); }
+    S.chipWorker = w;
+    const c = CHIPS[kind];
+    let settled = false;
+    const watch = setInterval(() => { if (S.songKey !== forKey) finish({error: "stale render: " + forKey.split("/").pop()}); }, 250); // a song change ends this attempt at once, same as chipRenderInWorker
+    const finish = out => {
+      if (settled) return; settled = true;
+      clearInterval(watch);
+      if (!out || out.error) { if (S.chipWorker === w) S.chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ } }
+      else w.__key = forKey; // kept alive afterward for previews, same as a finished whole render
+      resolve(out);
+    };
+    w.onmessage = e => { // installed once; handles the open reply AND every later {chunk}/{silent}/{preview} for this session's whole life
+      const m = e.data || {};
+      if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
+      if (m.ready) { finish(m.ready); return; }
+      if (m.stream && m.stream.error) { finish({error: m.stream.error}); return; }
+      if (m.chunk) { chipStreamOnChunk(m.chunk); return; }
+      if (m.silent) { chipStreamOnSilent(m.silent); return; }
+    };
+    w.onerror = err => finish({error: String(err && err.message || "worker error")});
+    const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
+    const libs = {}, transfer = [bytes.buffer];
+    for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); }
+    w.postMessage({stream: {id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, secs, rate,
+      chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP, budget}}, transfer);
+  });
+}
+
+// Entry point for chip.renderPromise (replaces a bare chipRender() call):
+// stream mode first when the switch is on, the existing whole-render path
+// otherwise OR as the fallback from any stream failure — exactly the
+// behavior before this step when the switch is off. chipStreamOpen resolves
+// once {ready} has arrived AND the first window (the chunks covering the
+// play-from position, +1) is cached, so playGate/album-play's wait on
+// chip.renderPromise sees the same "worth waiting for" contract either path.
+// `auto` (step 5): asks the worker for the hypothetical whole-render plan
+// (a `budget` on the {stream} request) and, once {ready} answers, keeps this
+// session only when that plan would downgrade or refuse — otherwise it
+// terminates the worker it just opened and returns false, same shape as any
+// other "fall back to chipRender()" exit (chipRenderAuto, below). Always one
+// logDebug line either way, naming the song and the reason.
+export async function chipStreamOpen(auto) {
+  const forKey = S.songKey;
+  const src = await chipSource();
+  if (!src) return false;
+  const kind = src.chip || "nsf";
+  const secs = Math.ceil(src.secs + 1);
+  const rate = CHIPS[kind].renderRate || (S.audio ? S.audio.sampleRate : 44100);
+  const budget = auto ? chipRenderBudget() : undefined; // only "auto" needs the hypothetical whole-render plan back
+  const w = await chipStreamOpenWorker(kind, src, secs, rate, forKey, budget);
+  if (S.songKey !== forKey) return false; // stale: a later song is open now
+  if (!w || w.error) { logDebug("chip stream: " + (w && w.error || "no worker") + " — falling back to the whole render"); return false; }
+  if (auto) {
+    const willStream = chipAutoShouldStream(w.plan, rate);
+    logDebug(songTitleOf(forKey) + ": " + (willStream ? "streaming" : "whole") + " — " + chipAutoReason(w.plan, rate));
+    if (!willStream) { // this song wouldn't downgrade/refuse under the whole path: leave it alone, same as "off"
+      if (S.chipWorker) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; }
+      return false;
+    }
+  }
+  chip.stream = {
+    key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
+    tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
+    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Set(), waiters: new Map(),
+    bytes: 0, peakBytes: 0, live: false, srcs: [],
+  };
+  chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;
+  const fromSec = (typeof S.song !== "undefined" && S.song && typeof S.playCursor !== "undefined" && S.playCursor > 0) ? tickToSec(S.song, S.playCursor) : 0;
+  const idx0 = chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate);
+  chipStreamRequestRange(idx0, idx0 + 1);
+  await chipStreamWaitFor(idx0);
+  if (S.songKey !== forKey || !chip.stream || chip.stream.key !== forKey) return false; // superseded while waiting
+  if (S.chipWorker) S.chipWorker.postMessage({idle: {id: forKey}}); // one state-only sweep so an all-silent track re-enables synth promptly, not only after it happens to fall inside a rendered window
+  console.log("[chip] stream ready: " + forKey + " — playing the console's own sound (stream mode)");
+  return true;
+}
+export async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
+  const mode = chipStreamMode();
+  if (mode === "on" || mode === "auto") {
+    const ok = await chipStreamOpen(mode === "auto");
+    if (ok) return true;
+  }
+  return chipRender();
 }

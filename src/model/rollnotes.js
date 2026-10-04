@@ -3,6 +3,12 @@ import { S } from "../state.js";
 import { keyNameToSf } from "../theory/key.js";
 import { beatTicks } from "./grid.js";
 import { beatsPerBarDisp } from "./grid.js";
+import { snapBeat } from "./grid.js";
+import { tombKeyFor } from "./edits.js";
+import { noteIdentity } from "./edits.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { readData } from "../platform/folder.js";
+import { setAnchorBQ } from "../hooks.js";
 
 // ---------------------------------------------------------------- rollnotes
 export function barTicks() { return beatsPerBarEff() * S.song.ppq; }
@@ -277,4 +283,291 @@ export function trackDirText(d) {
   return "track: " + d.name + (d.voice && d.voice !== "auto" ? " voice=" + d.voice : "") + (d.color ? " color=" + d.color : "") +
     (d.vol !== undefined && isFinite(d.vol) ? " vol=" + d.vol : "") + (d.pan !== undefined && isFinite(d.pan) ? " pan=" + d.pan : "") +
     (d.mute ? " mute=1" : "") + (d.solo ? " solo=1" : "") + (d.hide ? " hide=1" : "");
+}
+
+export function isDirective(n) { // anything that isn't a plain text note
+  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined ||
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio):/i.test(n.text));
+}
+// {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
+export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
+
+export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
+  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
+  n.b2 = Math.floor(t / bt) + 1;
+  n.q2 = snapBeat((t % bt) / qt + 1);
+}
+// Editing an annotation used to leave the old one sitting beside the new one:
+// airship ended up with two keys at 1.1, two chord bands on 15.1–15.4, and the
+// same tritone note at two anchors — invisible in the roll, because duplicate
+// bands draw on top of each other (Josh, 2026-08-26: "something feels wrong
+// with the annotation sometimes"). Call this before pushing a new annotation.
+// Josh's rules, per type:
+//   chord — one band per exact span. A new band REPLACES whatever was on that
+//           span, whatever its label; that is what re-labelling a bar means.
+//   note  — several notes at one anchor are legitimate and stay. Only a
+//           byte-identical text at the same anchor is a duplicate.
+//   key   — handled by dropLocalKeyAt (anchor-level).
+// Sections are deliberately left alone: nesting is by containment and he has
+// not asked for a rule there.
+export function dropSupersededBy(fresh) {
+  const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
+  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
+                                         (n.q2 || null) === (fresh.q2 || null);
+  if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
+  else if (!isDirective(fresh)) {
+    const t = (fresh.text || "").trim();
+    S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));
+  }
+}
+
+// HIS declared meter for a song that may not be the one open right now
+// (Publish all's other-song draft, the ✦ AI read_song tool) — NEVER the
+// file's own label (docs/declared-vs-learner-spec.md C8: that leaked into
+// notes.txt's header even in Learning). Preference: the "ff1roll-ts-<key>"
+// stash setSong() writes at load (see there), else a stored "timesig:"
+// annotation for that key; neither exists = undeclared, same as a fresh song.
+export function declaredTsForKey(key) {
+  if (!key) return null;
+  const stash = localStorage.getItem("ff1roll-ts-" + key);
+  if (stash) { const m = /^(\d+)\/(\d+)$/.exec(stash); if (m) return [+m[1], +m[2]]; }
+  let local = null;
+  try { local = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "null"); } catch (err) { local = null; }
+  if (Array.isArray(local)) {
+    const tsNote = local.find(n => /^timesig:\s*\d+\s*\/\s*\d+/.test(n.text || ""));
+    if (tsNote) { const m = /^timesig:\s*(\d+)\s*\/\s*(\d+)/.exec(tsNote.text); if (m) return [+m[1], +m[2]]; }
+  }
+  return null;
+}
+export function notesTxtFor(doc, key) { // defaults to the open song; Publish all passes another song's draft // the web-session dump: claude.ai reads text, not .mid binaries
+  doc = doc || S.song; key = key || S.songKey;
+  const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
+  // the meter HE declared, never doc.timesig (the file's own raw label) —
+  // the live variable for the song that's actually open, else the best
+  // record this device has for a different one (see declaredTsForKey)
+  const declared = (S.song && key === S.songKey) ? S.declaredTs : declaredTsForKey(key);
+  const ts = declared || [4, 4];
+  const tsLabel = declared ? declared[0] + "/" + declared[1] : "4/4? (not declared)";
+  const bt = ts[0] * 4 / ts[1] * doc.ppq;
+  let end = 0;
+  doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
+  const nBars = Math.ceil(end / bt - 0.05);
+  const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
+  const L = [];
+  L.push("# " + (key || "song").split("/").pop() + " — " + tsLabel + ", " +
+         Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars");
+  L.push("# Format: bar N: beat pitch duration-in-quarter-notes");
+  // gate-vs-notated: the 08-25 web session read 0.33 gates as triplets and
+  // asserted it to Josh twice. Onset spacing is the evidence for rhythm.
+  L.push("# duration is GATE TIME (how long the chip held the note), NOT a notated value.");
+  L.push("# RHYTHM comes from ONSET SPACING (the beat column), never from duration:");
+  L.push("# staccato eighths gate at ~0.33 and are still eighths, not triplets.");
+  L.push("# Pitches use sharp spelling; the true key is Josh's to discover — this file states no key.");
+  doc.tracks.forEach((tr, ti) => {
+    L.push("");
+    L.push("## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : ""));
+    for (let b = 0; b < nBars; b++) {
+      const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt);
+      if (!ns.length) continue;
+      L.push("bar " + (b + 1) + ": " + ns.map(n =>
+        fmt((n.t - b * bt) / doc.ppq + 1) + " " + pn(n.p) + " " + fmt(n.d / doc.ppq)).join(", "));
+    }
+  });
+  return L.join("\n") + "\n";
+}
+
+// (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
+// committed "key F" produced both). Two defects were in the old predicate:
+//   n.added        — only this session's annotations carry it (it isn't
+//                    serialized), so the dedupe was structurally unable to
+//                    replace a key that had ever been synced. That is the
+//                    exact case he hit.
+//   n.keydir       — the tonic-only form stores keypartial and leaves keydir
+//                    unset, so an "F?" marker survived a real key being set.
+//                    Everywhere else in this file tests both forms.
+// ANCHOR-level, not bar-level (Josh's ruling, 2026-08-26): a key at 3.1 and a
+// key at 3.3 are two different keys and both stand — a modulation gets its
+// true beat. Only an exact anchor collision is a replacement. The keyset
+// button always sets q1:1, so it still replaces the bar's downbeat key.
+export function dropLocalKeyAt(bar, q = 1) {
+  S.rollnotes = S.rollnotes.filter(n =>
+    !((n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q));
+}
+
+// subtract tombstoned deletions (docs/provenance-plan.md P2: factored out of
+// loadNotes so publishSong can build the same merge for a song that is not
+// open — Bugs found: Publish all re-published a deleted synced note because
+// it never subtracted tombstones for a not-open song)
+export function subtractTombstones(notes, key) {
+  try {
+    const tombs = new Set(JSON.parse(localStorage.getItem(tombKeyFor(key)) || "[]"));
+    if (tombs.size) {
+      const out = notes.filter(n => !tombs.has(noteIdentity(n)));
+      // .filter returns a plain new array — carry the custom properties
+      // parseRollnotesJSON hangs off the array (version/origin/readOnly/
+      // lockReason) along with it, so a not-open annotationsFor(key) (P4,
+      // docs/annotations-v2.md) still sees the file's own origin header
+      // after tombstones are subtracted, not just when nothing was dropped.
+      out.version = notes.version; out.origin = notes.origin;
+      out.readOnly = notes.readOnly; out.lockReason = notes.lockReason;
+      return out;
+    }
+  } catch (err) {}
+  return notes;
+}
+// this device's local (never-synced) additions, merged onto `notes` in place
+// (and returned) — factored out of loadNotes' local-notes loop, same re-
+// derivation (track:/audio:/tempo:/timesig: directives, key: flag) so an
+// unsynced audio: note isn't silently missing its clip when built for a
+// song that isn't open
+export function mergeLocalAdditions(notes, key) {
+  let local = [];
+  try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
+  catch (err) { /* corrupted local notes */ }
+  for (const n of local) {
+    if (notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) continue;
+    const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
+    if (km && n.keydir === undefined) {
+      const sf = keyNameToSf(km[1].trim());
+      if (sf !== null) n.keydir = sf;
+    }
+    const derived = deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true};
+    notes.push(derived);
+  }
+  return notes;
+}
+// repo file + this device's local additions, minus tombstones — the same
+// merge loadNotes does for the open song, for any key (docs/provenance-
+// plan.md P2: publishSong builds every pending song's annotations this way,
+// open or not). No CDN-bridge/stamp-adoption here (those only matter for
+// the song actually being opened right now); a caller that needs those uses
+// loadNotes instead.
+export async function annotationsFor(key) {
+  const base = key.replace(/\.midi?$/i, "");
+  let notes = [];
+  try {
+    let res = await readData("analysis", base + ".rollnotes.json", true);
+    if (!res.ok) res = await readData("analysis", base + ".rollnotes", true); // legacy
+    if (res.ok) notes = parseRollnotes(await res.text());
+  } catch (err) { /* no sidecar yet */ }
+  // version guard (docs/annotations-v2.md P3): this is the ONE place every
+  // publish/move reads a not-necessarily-open song's existing annotations
+  // before writing — refusing here, before any merge or write, is what
+  // "refuses to publish/overwrite" means for a file a newer Night Roll wrote
+  if (notes.readOnly) throw new Error(notes.lockReason || ROLLNOTES_LOCK_MSG);
+  notes = subtractTombstones(notes, key);
+  notes = mergeLocalAdditions(notes, key);
+  notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
+  return notes; // NOT resolved: resolveNote reads the OPEN song's meter (barTicks/beatTicks), which may not be key's own — a caller that needs .start (bakeTempos) resolves against key's own ppq/timesig itself (resolveNoteWith)
+}
+// resolveNote, but against an explicit ppq/timesig instead of the globally
+// open song's — for filling in a NOT-open song's own .start/.end (bakeTempos
+// needs it to place tempo: directives; annotationsFor itself never resolves,
+// since serialization doesn't need ticks at all).
+export function resolveNoteWith(n, ppq, ts) {
+  const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1];
+  n.start = (n.b1 - 1) * bt + (n.q1 - 1) * qt;
+  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
+  return n;
+}
+
+// Pure: base tempo events (un-baked — the file's own, before any tempo:
+// annotation) + resolved notes (only n.tempodir/n.start are read) + ppq ->
+// a new tempo map with sec offsets filled in. Lifted out of finalizeNotes
+// (docs/provenance-plan.md P2) so playback (finalizeNotes, below) and
+// publish (publishSong) bake the SAME way from the SAME base every time —
+// recomputed from scratch on every call, never accumulated, so removing a
+// tempo: annotation removes its baked event instead of leaving it behind
+// (the "ratchet" bug).
+export function bakeTempos(base, notes, ppq) {
+  const dirs = notes.filter(n => n.tempodir !== undefined).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, usq: t.usq}));
+  if (!evs.length) evs.push({tick: 0, usq: Math.round(6e7 / dirs[0].tempodir)});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), usq: Math.round(6e7 / d.tempodir)});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  const sorted = [...byTick.values()].sort((a, b) => a.tick - b.tick);
+  let sec = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0) sec += (sorted[i].tick - sorted[i - 1].tick) / ppq * sorted[i - 1].usq / 1e6;
+    sorted[i].sec = sec;
+  }
+  return sorted;
+}
+// Pure, same shape as bakeTempos (docs/provenance-plan.md Q9 — a declared
+// meter bakes wherever tempo bakes): base timesig events (the file's own,
+// un-declared) + resolved notes (only n.tsdir/n.start are read) -> a new
+// [{tick, num, den}] list, baked fresh from the same base every publish,
+// never accumulated. Today there's only ever ONE timesig: annotation (the
+// editor keeps "one meter per song" — declaring a new one replaces it,
+// re-barring), so in practice this returns either the base unchanged (no
+// declaration: "written back verbatim", Q6) or one event at the
+// declaration's own tick — written as a list, not a single pair, so a
+// future multi-meter song and an import's own pre-declaration history
+// (base) both round-trip correctly.
+export function bakeMeter(base, notes) {
+  const dirs = notes.filter(n => n.tsdir).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, num: t.num, den: t.den}));
+  if (!evs.length) evs.push({tick: 0, num: dirs[0].tsdir[0], den: dirs[0].tsdir[1]});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), num: d.tsdir[0], den: d.tsdir[1]});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  return [...byTick.values()].sort((a, b) => a.tick - b.tick);
+}
+
+export function annoRestore(str) {
+  const arr = JSON.parse(str);
+  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
+  S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
+}
+// two-tap confirmation for meter changes that move annotations
+// re-express every annotation's anchors under a new meter so they stay glued
+// to the MUSIC (bar.beat is a coordinate system; changing the meter re-bars)
+// shift every non-chop annotation in DISPLAYED space (start-chop add/remove)
+export function shiftAnchors(deltaTicks) {
+  const bt = barTicks(), unit = beatTicks();
+  for (const n of S.rollnotes) {
+    if (n.chopdir) continue;
+    const conv = (b, q) => {
+      const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
+      return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
+    };
+    [n.b1, n.q1] = conv(n.b1, n.q1);
+    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
+    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
+    if (lm) {
+      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
+      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+    }
+  }
+}
+export function convertAnchors(oldTs, newTs) {
+  const oldUnit = S.song.ppq * 4 / oldTs[1], newUnit = S.song.ppq * 4 / newTs[1];
+  const oldBt = oldTs[0] * oldUnit, newBt = newTs[0] * newUnit;
+  const conv = (b, q) => {
+    const tick = (b - 1) * oldBt + (q - 1) * oldUnit;
+    return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
+  };
+  for (const n of S.rollnotes) {
+    [n.b1, n.q1] = conv(n.b1, n.q1);
+    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
+    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
+    if (lm) {
+      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
+      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+    }
+  }
+}
+
+export function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
+  // end via setEndBQ (inclusive last beat): deriving it from the last tick
+  // rounded every band up a beat, so bar-long chords overlapped (Josh, 2026-09-12)
+  const fresh = {text: sym, chord: true, added: true};
+  setAnchorBQ(fresh, tick);
+  setEndBQ(fresh, tick + durTicks);
+  dropSupersededBy(fresh); // one band per span, same as the dialog path
+  S.rollnotes.push(resolveNote(fresh));
 }

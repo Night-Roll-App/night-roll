@@ -83,6 +83,16 @@ Q7. ANSWERED (Terminal #92: NES/SNES sound great) — step 7 shipped ba19c73. Wa
     check soon, or should I continue with the non-audio steps first?
 Q8. ANSWERED (Terminal #93): Night-Roll-App/claude-bridge, private, rename later OK; scope = ALL AI (bridge, in-browser/cloud models, Ollama, LM Studio, the AI window). Was: The AI library's new repo: name and
     visibility? Default: Night-Roll-App/claude-bridge, private.
+Q9. (ASK LATER — module split phase 2 steps 3/4/4b/4c, 2026-10-04) iPad
+    ear check needed before these steps are considered fully verified.
+    Step 4c moved the whole transport/voices/clips cluster — play/stop,
+    the play gate, scheduleNote/previewNote, the sampled/game/SF2 preload,
+    scheduleClip + the WSOLA apply side, the offline bounce — out of
+    app.js (verbatim, no logic change, verbatim.mjs ✔ on every commit),
+    so the list is docs/split-phase2-plan.md §3's step-4 list IN FULL, no
+    longer narrowed: synth, SF2, game voice, NES + one streamed console,
+    clip at 0.5×, note preview, album auto-advance, metronome. (iPad
+    mute → revert first, per the known-good-engine rule.)
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -5332,14 +5342,17 @@ needs to browser-verify (localhost + packaged dist) before pushing and
 building for the iPad — same as every prior step, this is a pure refactor
 with no user-facing change.
 
-## QUEUED 2026-10-03 — split: estimateKey/checkKeyVsFile cannot move to src/theory/key.js, ever, as currently written (terminal-only, not a question for Josh)
-Corrects the 2026-10-03 00:50-ish entry this replaces, which assumed step 5 (moving trackIsDrums/barTicks out of app.js) would unblock this. Step 5 moved both (trackIsDrums, keyEstimateSig's dependency, into src/model/grid.js; barTicks, checkKeyVsFile's dependency, into src/model/rollnotes.js — see docs/split-plan.md step 5's Done note) and re-attempted the theory/key.js move; check.mjs still refuses it, and will keep refusing it regardless of which model/ file ends up holding trackIsDrums/barTicks. Reason: docs/split-plan.md's layer table makes theory/ layer 0, the LOWEST layer — a module may import its own layer or lower, and for layer 0 that means layer 0 only, forever. trackIsDrums and barTicks are genuinely layer-2 (model/) concepts (a track-kind predicate; a meter×ppq calculation) no matter which model/ file holds them. Moving them out of app.js only swapped which layer blocks the import (LEGACY_CONTAINER, then real model/) — never layer 0. So this isn't "not yet carved out," it's structural: estimateKey/checkKeyVsFile can stay in theory/key.js's own layer only if rewritten to take trackIsDrums/barTicks as parameters (dependency injection) instead of importing them — a logic change, out of scope for any mechanical move step — or they move to a model/gen-layer module instead of theory/key.js (losing the "beside keyNameFor/pearsonCorr" cohesion step 4 wanted). Whoever next considers this should pick one of those two real options rather than retry the plain move.
+## RESOLVED 2026-10-03 (step 9) — split: estimateKey/checkKeyVsFile moved to src/model/song.js, not src/theory/key.js
+Was: "estimateKey/checkKeyVsFile cannot move to src/theory/key.js, ever, as currently written" — correctly structural (theory/ is layer 0, trackIsDrums/barTicks are genuinely layer 2, no model/ file holding them ever helps). The real fix named here (the second of the two options: "move to a model/gen-layer module instead of theory/key.js") is what step 9 did: `estimateKey`/`checkKeyVsFile` (+ `keyEstimateSig`/`tonicPcFromName`/`KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`) landed in `src/model/song.js` (new this step), which is layer 2 and can legally import `trackIsDrums` (model/grid.js)/`barTicks` (model/rollnotes.js) same-layer, plus `pearsonCorr`/`keyNameFor`/`fileKeyAt`/`TONIC_SPELL`/`SF_MAJOR` (theory/, layer 0) downward. No dependency-injection rewrite needed — the plain move.mjs move worked once the DESTINATION changed. See docs/split-plan.md "Deviations (9)".
 
-## QUEUED 2026-10-03 — split: finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land (terminal-only, not a question for Josh)
-Three leftovers from step 5 (docs/split-plan.md "Deviations (5)"), each blocked by a real rule-5 violation (a model/ file, layer 2, would have to import still-unsplit app.js, layer 5), not by anything step 5 itself could fix:
-- `initCatalog` (→ src/model/catalog.js) — CORRECTED 2026-10-03 (step 8): the earlier UPDATE here assumed landing `albumMetaFor` anywhere would unblock this. Step 8 landed `albumMetaFor` in `audio/chip.js` (layer 3) — and `model/catalog.js` is layer 2, which can only ever import layer 2 or lower. This is now a PERMANENT structural block, the identical shape as `estimateKey`/`theory/key.js` below, not a "not yet split" one: `initCatalog` can only move if `albumMetaFor` itself relocates to a layer-≤2 module (real, since `albumMetaFor` has no blocker of its own — chip.js just happened to be where ITS OWN callers needed it), or `initCatalog` moves to a layer-≥3 module instead, losing its "album/group lookups" cohesion with the rest of model/catalog.js. See docs/split-plan.md "Deviations (8)".
-- `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7 — still blocked, see the audio/voices.js QUEUED entry below), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9 — `applyAudioDirs` itself was ALSO checked in step 8, for audio/clips.js, and is blocked the same way — draw()/isComposition/ownFolderPath/addTrackUndoable), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 9, 11, 14.
-- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — UPDATE 2026-10-03 (step 6): `LINK_SONGS` landed (platform/base.js) and no longer blocks anything here; UPDATE 2026-10-03 (step 8): `updateChipBtn` did NOT land in audio/chip.js (it's itself blocked by `playGateKick`, UI — see the audio/chip.js QUEUED entry below), so that blocker is unchanged. Still need `isComposition`/`ownFolderPath`/`isCaptureKey` (provenance, step 9 — `isCaptureKey` was deliberately left in app.js by step 8 to avoid a future layer deadlock, see below), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9 — `saveDraft`/`draftRead` themselves were ALSO checked in step 6, for platform/storage.js, and are blocked the same way), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
+## RESOLVED 2026-10-03 (step 9) — split: initCatalog + folderScanAlbums both landed in src/model/catalog.js
+Was: "finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land." Splitting the three leftovers apart by what actually happened:
+- `initCatalog` — RESOLVED. The step-8 CORRECTED note assumed `albumMetaFor` living in `audio/chip.js` (layer 3) was permanent; it wasn't — step 9 relocated `albumMetaCache`/`albumMetaFor` OUT of chip.js and into the new `model/provenance.js` (layer 2), a correction chip.js's OWN `isCaptureKey`/`chipSource` situation needed anyway (below). That made `albumMetaFor` same-layer for `model/catalog.js`, and `initCatalog` moved clean, by name, verbatim.
+- `folderScanAlbums` — ALSO RESOLVED, same move, and worth noting explicitly: this function was never actually in step 6's `platform/folder.js` despite some Module-map prose once implying it was (now corrected in NIGHT-ROLL.md) — step 6's own Deviations correctly listed it as blocked, by `albumTitleFor` (then still app.js). `albumTitleFor` landed in `model/provenance.js` this step too, which cleared it — but into `model/catalog.js` (alongside `initCatalog`), NOT `platform/folder.js` (its step-6-table destination): platform is layer 1, and `albumTitleFor` is layer 2, so landing it in platform now would be a permanent upward-import deadlock, the identical mistake `estimateKey`/`theory/key.js` made in steps 4-5. catalog.js was the only legal home once `albumTitleFor` moved to provenance.js.
+- `finalizeNotes` (→ src/model/rollnotes.js) — STILL BLOCKED, re-checked this step: of its dozen-ish call targets, `bakesTempo` is now clear (model/provenance.js, step 9), but `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7, still blocked), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`keyLabelState` (none yet split) remain. Re-check after steps 10/11/14.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — STILL BLOCKED, re-checked this step per its own instruction: `isComposition`/`ownFolderPath`/`isCaptureKey`/`editableSong`/`originOf` are now ALL real, legal imports (model/provenance.js + model/song.js, step 9) — real progress — but `saveEdits` still needs `scheduleAnalysisRecompute` (gen/analysis.js, step 10) and `saveDraft`/`computeSongEnd`/`updateSongMeta` (confirmed BLOCKED themselves, not step 9's to clear — see the versions.js/song.js QUEUED entries); `updateEditBtnVis` still needs `updateChipBtn` (blocked, step 8). All five stay bit-for-bit in app.js. Re-check after step 10 (gen/analysis.js) and whichever step lands `draw`/`buildScoreModel`/`finalizeNotes` for `computeSongEnd`'s sake. **CORRECTED 2026-10-03 (step 10): this assumption was wrong.** `gen/analysis.js` landed (`harmonyTrackIndices`/`computeAnalysisLayer` only), but `scheduleAnalysisRecompute` itself did NOT move with it — it calls `finalizeNotes()` (model/rollnotes.js's own still-blocked headline, step 5) and `draw()` (render, step 11), neither of which step 10 could clear. `saveEdits` still cannot import `scheduleAnalysisRecompute` from anywhere lower than app.js. Re-check again once `finalizeNotes` and `draw` land (steps 5's own leftover + step 11) — see docs/split-plan.md "Deviations (10)".
+
+**CORRECTED 2026-10-04 (step 11): the premise of "once `draw`/`fitView` land" was wrong — they never will, structurally.** `render/roll.js` now exists, but `draw`/`drawFull`/`resize`/`playbackFrame`/`updateCanvasA11y` did NOT move into it: `resize`/`drawFull` call `updateTrackMore`/`updateEditButtons` (`ui/trackbar.js`/`ui/note-editor.js`, step 14, layer 4 — strictly ABOVE render's layer 3, forever); `draw`/`playbackFrame` inherit the block from `drawFull`. `fitView` is a DIFFERENT function (view-fit-to-content, still in app.js, not checked by this step — likely has its own render/UI calls) — not resolved either way by this step. So `finalizeNotes`'s `draw`/`fitView` blockers, and `scheduleAnalysisRecompute`'s `draw()` blocker (→ `saveEdits`'s transitive block), are now understood to be PERMANENT, not "re-check after step 11." Both `finalizeNotes` and `saveEdits` can only ever move once `draw`/`fitView`/`updateTrackMore`/`updateEditButtons` themselves stop needing layer-4 UI — i.e. not until the specific UI calls inside THEM are themselves restructured, which no verbatim move can do. See docs/split-plan.md "Deviations (11)" and NIGHT-ROLL.md's `render/roll.js` entry.
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 6: src/platform/{base,mode,storage,folder,native}.js (docs/split-plan.md)
 Moved, five `move.mjs --names` invocations over src/app.js (base → mode →
@@ -5414,35 +5427,55 @@ data location, open a local-folder song) before pushing and building for
 the iPad.
 
 ## QUEUED 2026-10-03 — split: platform/sw.js, nativeOpenUrl/nativeOpenHook, sfShownAt, and the whole draft/edit-persistence SAFETY path still can't move (terminal-only, not a question for Josh)
-Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
+Leftovers from step 6 (docs/split-plan.md "Deviations (6)"), re-checked against step 9's new model/ files:
 - `platform/sw.js`: the service-worker-registration `if`/`else` (src/app.js,
   originally index.html ~line 23103) needs `setInfo` (ui/chrome.js, step
-  14) in its `else` branch. Revisit once step 14 lands; it's one statement,
-  not a cluster, so this should be a single `--range` once `setInfo` is
-  importable.
-- `nativeOpenUrl`/`nativeOpenHook` (→ platform/native.js): need `setInfo`/
-  `stop`/`closeFileMenus` (ui/chrome.js + audio/transport.js, steps 7/14)
-  and `openPickedFiles` (import/hub.js, step 9).
-- `sfShownAt` (→ platform/mode.js): blocked transitively by `estimateKey`
-  still being LEGACY_CONTAINER — same open structural question as the
-  theory/key.js entry above (Q-equivalent, not re-filed separately); revisit
-  together.
+  14) in its `else` branch. Unaffected by step 9. Revisit once step 14
+  lands; it's one statement, not a cluster, so this should be a single
+  `--range` once `setInfo` is importable.
+- `nativeOpenUrl`/`nativeOpenHook` (→ platform/native.js): still need
+  `setInfo`/`stop`/`closeFileMenus` (ui/chrome.js + audio/transport.js,
+  steps 7/14). CORRECTED: `openPickedFiles` did NOT land in `import/hub.js`
+  as this entry once assumed it would — step 9 moved only
+  `importHubLabel` there; `openPickedFiles` itself stays in app.js, blocked
+  by `CHIPS`/`setInfo`/`createComposition`, none yet split (see NIGHT-
+  ROLL.md's `import/hub.js` entry). `nativeOpenUrl` is blocked by this too
+  now, same as before, just a more specific reason.
+- `sfShownAt` (→ platform/mode.js) — CORRECTED, now understood PERMANENT,
+  not pending `estimateKey`'s move: `estimateKey` moved in step 9, but to
+  `model/song.js` (layer 2), not out of the split entirely — `platform/`
+  is layer 1, and layer 1 can never import layer 2, forever, the identical
+  shape as `estimateKey`'s own old `theory/key.js` deadlock. `sfShownAt`
+  can only ever reach platform/mode.js if REWRITTEN to take `estimateKey`
+  as a parameter (a logic change, out of scope for a move step) or if
+  `sfShownAt` itself moves to a layer-≥2 module instead — a design
+  question, flag to whoever next considers it rather than retrying the move.
 - `saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/`draftRead`/
-  `localDraftWrite`/`localDraftTracks`/`idbDraftPut` (→ platform/storage.js):
-  all reach `logErr` (ui/chrome.js, step 14) and/or provenance/model code
-  (steps 8/9). Re-check after step 14 for `logErr`'s move, and after step 9
-  for the rest of `saveDraft`'s/`saveEdits`'s dependency list (which
-  overlaps the existing model/edits.js QUEUED entry above — these are the
-  same underlying functions, checked from the storage.js/platform side
-  this time; don't re-litigate, just re-check both entries together once
-  either step lands).
-- `scheduleBackupFlush`/`flushBackupNow` (→ platform/storage.js): need
-  `serializeRollnotes` (already model/rollnotes.js, layer 2 — permanently
-  out of reach for platform, layer 1, same shape as `estimateKey`/
-  `theory/key.js`) plus `aiUrl`/`aiHeaders` (ask/, step 13) and
-  `editableSong`/`draftDoc` (model/song.js, step 9). Likely permanently
-  blocked by the `serializeRollnotes` call alone even after every other
-  step lands — flag this specifically if a future step reconsiders it.
+  `localDraftWrite`/`localDraftTracks`/`idbDraftPut` (→ platform/storage.js)
+  — RE-CHECKED 2026-10-03 (step 9): `isComposition`/`editableSong` (both
+  named here before step 9 as the "model/song.js, step 9" half of the
+  blocker list) are now real, legal imports from model/provenance.js and
+  model/song.js — but `logErr` (ui/chrome.js, step 14) still blocks
+  `idbDraftPut`/`localDraftWrite`/`localDraftTracks` directly, and
+  `saveDraft` still needs `isComposition`'s SIBLINGS `editableSong`
+  (clear)/`retireOldOverlay` (model/edits.js, still blocked)/`setInfo`/
+  `updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` (none yet split). All
+  eight stay bit-for-bit in app.js. Re-check again after step 14 (`logErr`,
+  `setInfo`) — this is now the ONLY remaining blocker class for this group.
+- `scheduleBackupFlush`/`flushBackupNow` (→ platform/storage.js) —
+  RE-CHECKED 2026-10-03 (step 9): `editableSong`/`draftDoc` are now real
+  (model/song.js/model/versions.js) — two of four blockers cleared — but
+  `serializeRollnotes` (model/rollnotes.js, layer 2 — permanently out of
+  reach for platform, layer 1, confirmed unchanged) and `aiUrl`/`aiHeaders`
+  (now landed in `ask/backend.js`, step 13 — still layer 4, still above
+  platform's layer 1) remain. Still permanently blocked by
+  `serializeRollnotes` alone regardless of step 13 landing — flag this
+  specifically if a future step reconsiders it (the same "rewrite to
+  inject the dependency, or move the function to a higher layer" choice
+  as `sfShownAt` above). `flushBackupNow`/`scheduleBackupFlush`
+  themselves also still did NOT move in step 13 (re-checked, step 13's
+  own task) — both call `logDebug` directly, a second, independent
+  blocker from `serializeRollnotes`.
 
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
 
@@ -5476,7 +5509,17 @@ Leftovers from step 7 (docs/split-plan.md "Deviations (7)"):
   `scheduleClip` itself is importable (i.e. once `draw()` moves, step 11,
   or `stretchEnsure` otherwise clears) — same layer (3), so this becomes a
   legal import then, no further change needed to either function. See
-  docs/split-plan.md "Deviations (8)".
+  docs/split-plan.md "Deviations (8)". **CORRECTED 2026-10-04 (step 11):
+  `draw()` did NOT move — it is now understood to be PERMANENTLY stuck in
+  app.js (it calls `drawFull`, which calls `updateTrackMore`/
+  `updateEditButtons`, `ui/trackbar.js`/`ui/note-editor.js` content, step
+  14, layer 4 — strictly above audio's/render's own layer 3, forever).
+  `stretchEnsure` therefore stays blocked by this call regardless of which
+  layer-3 file it lives in; `scheduleClip`/`scheduleNote`/`previewNote`
+  inherit the same permanent block. The "or `stretchEnsure` otherwise
+  clears" branch is the only remaining path — see the audio/clips.js
+  QUEUED entry below, also corrected. See docs/split-plan.md
+  "Deviations (11)".
 - `play`/`stop`/the whole play-gate (`playGate`/`playGateKick`/
   `playGateTick`/`playGateActive`/`playGateWait`)/album orchestration
   (`albumStart`/`albumPlayIdx`/`albumNext`/`albumPrev`/`albumAdvance`/
@@ -5484,13 +5527,18 @@ Leftovers from step 7 (docs/split-plan.md "Deviations (7)"):
   audio/transport.js) — UPDATE 2026-10-03 (step 8): `chip.*` (audio/chip.js
   + audio/chip-stream.js), clip scheduling (`clipLen`, audio/clips.js),
   and `met.*` (audio/metronome.js) are all real exports now, so THAT
-  specific clause of this note has cleared. Still blocked regardless by
-  `document.getElementById`/`setControl`/`setPlayBtn`/`setInfo`/UI-chrome
-  calls (ui/chrome.js, step 14) and `loadSong`/`S.CATALOG`/
-  `albumEffectiveOrder` (model, step 9) — neither of which step 8 touched.
-  This remains the single most entangled cluster the split has found so
-  far; likely needs steps 9, 11, AND 14 to all land before a clean move is
-  possible. Re-check incrementally after each.
+  specific clause of this note has cleared. UPDATE 2026-10-03 (step 9):
+  `albumEffectiveOrder` also cleared (`model/album-order.js`, layer 2 —
+  legal downward import for audio/, layer 3) — but `loadSong` itself is
+  still bare in app.js (blocked by `play`/`setInfo`/`fitView`/
+  `renderTrackbar`/`buildScoreModel`/`draw`/ask-panel calls, see NIGHT-
+  ROLL.md's `model/song.js` entry), so importing it remains illegal
+  regardless. Still blocked by `document.getElementById`/`setControl`/
+  `setPlayBtn`/`setInfo`/UI-chrome calls (ui/chrome.js, step 14) and
+  `loadSong`/`S.CATALOG`. This remains the single most entangled cluster
+  the split has found so far; likely needs steps 11 AND 14 to land (step 9
+  is now done and only partially helped) before a clean move is possible.
+  Re-check incrementally after each.
 - The second `?perf=1` instrumentation wrapper (the "mark the timeline on
   an edit" pass over `saveEdits`/`selEditApply`/`insertTime`, same guarded
   block as the now-fixed `wrap()`) is STILL silently broken — same
@@ -5519,6 +5567,15 @@ the UI layer subscribes to, instead of audio code calling into logging
 directly) — is out of scope for a verbatim-move split step; this is a
 design question, not a sequencing one, so flag it to Josh specifically
 (not silently retried) if a future step proposes touching it.
+
+RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1): the architecture
+change this entry asked for — an upcall port, not an event/callback bus —
+landed as `src/hooks.js` (layer 0, one forwarder per name: `setInfo`,
+`logErr`, `logDebug`, plus `appConfirm`/`updateJobsBtn`) + `src/wire.js`'s
+`installHooks()`. `ensureAudio`/`resumeAudio`/`rebuildAudio` themselves
+have NOT moved yet (that's step 2) — this entry's blocker is dissolved,
+not yet acted on; step 2 moves them (NIGHT-ROLL.md "Module map", `hooks.js`
+entry).
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 8: src/audio/{chip,chip-stream,clips,metronome,bounce}.js (docs/split-plan.md)
 Moved, six `move.mjs --names` invocations over src/app.js (`playSec` into
@@ -5553,21 +5610,44 @@ NIGHT-ROLL.md's module-map entries:
   verbatim move. Needs either `logErr` to become injectable/removable, or
   a deliberate two-table split, whenever someone next considers this —
   not a silent retry.
+  RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1): `logErr` (plus
+  `logDebug`/`setInfo`) became an injectable upcall port exactly as asked
+  — `src/hooks.js`, forwarding through `S.hooks`, installed by
+  `src/wire.js`. `CHIPS`'s own `typeof logErr === "function"` guard is
+  untouched (still byte-identical) and now resolves to the port — no
+  two-table split needed. `CHIPS`/`chipRender`/`chipSource`/etc. have NOT
+  moved yet (step 2's job); this entry's blocker is gone, not yet acted on.
 - **`isCaptureKey`** was checked and deliberately NOT moved into
   audio/chip.js even though doing so would have unblocked `chipSource`
   today — its other caller, `ownFolderPath`, is slated for
   model/provenance.js (layer 2, step 9), and layer 2 can never import
   layer 3. Moving it would have traded today's `chipSource` blocker for a
   permanent step-9 deadlock, the same mistake `estimateKey`/`theory/key.js`
-  made in steps 4-5. `chipSource` stays in app.js, blocked by
-  `isCaptureKey` alone.
+  made in steps 4-5. RESOLVED 2026-10-03 (step 9): `isCaptureKey`/
+  `ownFolderPath` both landed in `model/provenance.js` exactly as predicted
+  here, and `audio/chip.js` (layer 3) can now legally import `isCaptureKey`
+  (layer 2) downward. `chipSource` ITSELF still did NOT move, though —
+  clearing this blocker surfaced a second, independent one this entry
+  never named: `chipSource` → `chipVaultFile` → `chipExt` → `CHIPS[kind]`,
+  the SAME `CHIPS`/`logErr` block below. See docs/split-plan.md
+  "Deviations (9)".
 - **`scheduleClip`/`stretchEnsure`/`stretchEnsureAll`/`audioChaseNow`** (→
   audio/clips.js) stay in app.js: `stretchEnsure`'s only real blocker is
   one `draw()` call at the end of its stretch-worker callback (render,
   step 11) — everything else in it is already pure/moved. This is also
   WHY `scheduleNote`/`previewNote` still can't move (see the corrected
   entry above) and why `offlineWaitForAssets`/`renderSongOffline` still
-  can't move to audio/bounce.js (see below).
+  can't move to audio/bounce.js (see below). **CORRECTED 2026-10-04 (step
+  11): `render/roll.js` landed, but `draw()` itself did NOT move into it —
+  PERMANENTLY, per that step's own "hub stays" finding (`drawFull` calls
+  `updateTrackMore`/`updateEditButtons`, `ui/`, layer 4, above render's
+  layer 3, forever).** `stretchEnsure`'s blocker therefore never clears by
+  `draw()` moving — it can only clear if `stretchEnsure`'s own `.then()`
+  callback is rewritten to not call `draw()` directly (a logic change, out
+  of scope for a verbatim move) or if some other redraw-triggering
+  mechanism replaces the direct call. `scheduleClip`/`scheduleNote`/
+  `previewNote`/`offlineWaitForAssets`/`renderSongOffline` all inherit this
+  same permanent block. See docs/split-plan.md "Deviations (11)".
 - `metStart` (→ audio/metronome.js) stays in app.js: it calls
   `ensureAudio`/`resumeAudio` directly, both permanently blocked per the
   existing QUEUED entry above. `metHalt`, its exact mirror, moved clean
@@ -5580,6 +5660,10 @@ NIGHT-ROLL.md's module-map entries:
 - `initCatalog`'s QUEUED retry note (above) is CORRECTED, not cleared:
   landing `albumMetaFor` in audio/chip.js (layer 3) cannot unblock a
   layer-2 `model/catalog.js` import, ever — same shape as `estimateKey`.
+  RESOLVED 2026-10-03 (step 9): the fix was not to retry this move but to
+  relocate `albumMetaFor` ITSELF, out of audio/chip.js and into
+  model/provenance.js (layer 2) — see the "RESOLVED ... initCatalog +
+  folderScanAlbums" entry above and docs/split-plan.md "Deviations (9)".
 
 `regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except
 the pre-existing `oldBpb` finding (Q6); check-e2e-globals.mjs and
@@ -5602,6 +5686,89 @@ tools/-side runtime module of its own). `npm run test:e2e:smoke` (allowed
 once locally): chromium 8/8 passed. NOT pushed: main session still needs
 the iPad ear check (a chip song NES + one streamed console song, an
 audio-clip song at 0.5×, the metronome, Download audio) before pushing
+and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 9: src/model/{song,selection,provenance,album-order,versions,jobs}.js, src/import/{hub,capture}.js, src/sync/publish.js (docs/split-plan.md)
+This step hit the "named target stays, pure leaves move" pattern harder
+than any step before it — of the plan's own headline names for this step
+(`loadSong`/`setSong`/`computeSongEnd`, `selEditApply`/`nudgeSelection`,
+`saveSongAs`, `publishSong`), only `editableSong` moved; everything else
+reaches `draw`/`setInfo`/`buildScoreModel`/`finalizeNotes`/`saveEdits`/UI-
+button updates (render step 11, ui/chrome step 14), none yet split.
+**CORRECTED 2026-10-04 (step 11): render landed, and this clarifies —
+not clears — the block for every layer-2 (`model/`) name in this
+paragraph.** `loadSong`/`setSong`/`selEditApply`/etc. are `model/`,
+layer 2; `draw`/`buildScoreModel` are now real `render/` exports, layer
+3 — a layer-2 module can never import layer 3, so these were never
+"blocked until render exists," they are PERMANENTLY blocked by render's
+own layer, independent of whether `draw`/`buildScoreModel` themselves
+ever move again. What
+`render/roll.js` landing actually did was let step 11's OWN entangled
+hub (`draw`/`drawFull`/`resize`/`playbackFrame`) surface its own,
+separate, equally permanent blocker one layer up (`ui/trackbar.js`'s
+`updateTrackMore`, step 14) — see docs/split-plan.md "Deviations (11)".
+What
+DID move, nine new files: `model/provenance.js` (the whole P1 origin/rule-
+table machinery — `isCaptureKey`, `ownFolderPath`, `isComposition`,
+`originOf`, `RULES`/`rulesFor`, `canEditMusic`, `bakesTempo`/`bakesMeter`,
+`albumTitleFor`, `slugify`, `isUnsaved`, + `albumMetaCache`/`albumMetaFor`
+RELOCATED here from audio/chip.js, a step-8 placement correction);
+`model/song.js` (`editableSong` + `estimateKey`/`checkKeyVsFile`,
+relocated here from the dead-end `theory/key.js` attempt, steps 4-5);
+`model/selection.js` (`selEditItems`/`clipboardHas`/`clipSummary` only —
+every mutator stayed); `model/album-order.js` (the one fully-clean file,
+matches the plan's table exactly); `model/versions.js` (the whole
+localStorage version store minus `saveVersion`/`saveDraft` themselves);
+`model/jobs.js` (the jobs store's and debug log's pure halves —
+`jobsNotify` stays, PERMANENTLY, same shape as `ensureAudio`'s logging
+calls in step 7 — `jobsNotify` itself was later misfiled upward to
+`ui/sheets.js` once step 14 created it, per this doc's "Module map"
+`ui/sheets.js` entry; see the step 2 QUEUED entry below — RESOLVED
+2026-10-04, docs/split-phase2-plan.md step 1: `updateJobsBtn` is now a
+`hooks.js` port, so `jobsNotify` can move down to `model/jobs.js` legally;
+step 2 does the actual move); `import/hub.js` (`importHubLabel` only); `import/
+capture.js` (byte-magic format sniffing + pure key/label helpers);
+`sync/publish.js` (every GitHub-Contents-API/local-folder write primitive,
+the share-link builder, the README generator — 22 names — despite
+`publishSong` itself staying blocked). Along the way, relocating
+`albumMetaCache`/`albumMetaFor` also retroactively RESOLVED two separate
+permanent-looking blocks from earlier steps: `initCatalog` (steps 5/8) and
+`folderScanAlbums` (step 6) both landed in `model/catalog.js` this step,
+once `albumMetaFor`/`albumTitleFor` were layer 2 instead of layer 3. See
+the three RESOLVED entries above (estimateKey/checkKeyVsFile, initCatalog
++ folderScanAlbums, isCaptureKey/chipSource) and docs/split-plan.md
+"Deviations (9)" for the full per-cluster accounting, including a real
+`tools/split/move.mjs` tooling gap this step hit twice (a same-file
+self-import bug when a name being moved was already imported BACK from
+the destination file by an earlier invocation — hand-fixed both times,
+flagged for whoever next touches move.mjs to add a guard).
+
+`regen-e2e-footer.mjs --file src/app.js` re-run three times; check.mjs
+clean except the pre-existing `oldBpb` finding; check-e2e-globals.mjs and
+check-controls.mjs clean (26 controls, unchanged). devtools.js gained
+`modelSong`/`modelSelection`/`modelProvenance`/`modelAlbumOrder`/
+`modelVersions`/`modelJobs`/`importHub`/`importCapture`/`syncPublish`
+namespace imports; sw.js APP_MODULES gained all nine files, SW_VERSION
+nr-v14 → nr-v15; index.html's modulepreload list gained all nine.
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 28 → 37.
+
+Verified: night-roll.test.mjs 427 (426 pass + 1 pre-existing env skip —
+every "local song: …" SAFETY-regression test passes unchanged, since none
+of that code moved a byte), modules 33/33, gestures 21/21, controls 3/3,
+pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only skips),
+chip-worker 31/31, bridge 10/10, migrate-rollnotes 9/9, import-set 5/5,
+album-order 8/8, psx-render 6/6, spc-render 5/5, instruments-export 4/4,
+sounding 12/12 — all green. `node tools/split/check.mjs` clean except
+oldBpb; `node tools/package.mjs --out /tmp/nr-dist-s9`: 47 runtime modules
+(unchanged — model/import/sync add no tools/-side runtime module of their
+own). `node tools/dump_notes.mjs` re-verified byte-identical against a
+scratch copy of albums/starters/fur-elise.mid; `tools/at.mjs` re-verified
+against the same song. `npm run test:e2e:smoke` run twice (mid-step and
+after the estimateKey/initCatalog follow-up): chromium 8/8 both times.
+NOT pushed: main session still needs the browser checks this step's own
+plan entry asks for — Save As on a scratch local song, the Versions
+sheet, an NSF import into a scratch composition (never
+albums/compositions/), and a publish to a scratch path — before pushing
 and building.
 
 ## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)
@@ -5637,10 +5804,11 @@ Josh published lotion and the breadcrumb did not change. Cause (src/app.js songW
 ### was: 2026-10-03 Ask: 32nd note value does not drag-snap to 32nds
 Josh (lotion, pulse2 bar 40): with the 32nd note value selected he still can only drag/move notes in 16th steps. He expects the 32nd button to make move/drag snap to 32nds (0.125 beat). He wants to nudge a pulse2 echo of pulse1 a 32nd later. Ask wrote the shift by hand via write_notes for now. Please check whether the note-value button should drive the drag snap, and fix if so.
 
-## QUEUED 2026-10-03 — `npm test` stops at the first failing file
+## DONE 2026-10-03 (branch module-split) — `npm test` runs every file now (tools/run-tests.mjs: one file at a time, all of them, then the list of failed files)
+### was: `npm test` stops at the first failing file
 The script chains files with `&&`, so when the real-rip suites (ps2-real, instruments) fail because /tmp/claude-501/rips was cleared, every later file (gestures, bridge, pwa, modules, controls…) silently never runs locally. Fix: skip real-rip tests when the rips dir is missing (like other *-real suites should), or run each file regardless and fail at the end.
 
-## QUEUED 2026-10-03 — AI interaction as its own library (Josh, Terminal #91)
+## IN PROGRESS 2026-10-03/04 — AI interaction as its own library (Josh, Terminal #91)
 "extract all the code for the AI interaction into its own library so that we
 can write other iPad apps and just use this seamlessly … a new repo … pull it
 from there". Order: finish the module split first (step 13 = src/ask/), then
@@ -5648,7 +5816,1247 @@ lift src/ask/ + tools/claude-bridge.mjs (bridge server, Terminal tab, notes,
 status, shots, backups) into a standalone repo that Night Roll consumes as
 plain ES modules (no build step). Night Roll-specific context (song/annotation
 lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
-Blocked on Q7 (split order) and Q8 (repo).
+Was blocked on Q7 (split order) and Q8 (repo) — both answered; see
+docs/ai-library-plan.md for the full design (library layout, host adapter,
+what goes where, the 8 ordered steps).
+
+**Step 1 DONE 2026-10-04 (branch module-split):** `Night-Roll-App/claude-bridge@v0.1.0`
+(web/sse.js = aiSSE only, plus its tests/README/LICENSE) vendored into
+`vendor/ai/` by the new `tools/ai-sync.mjs` (`--ref`/`--repo`, `--from` for
+the dev loop, `--check` wired into `npm test` via tests/modules.test.mjs);
+`src/ask/backend.js`'s `aiSSE` now imports from `vendor/ai/web/sse.js`
+(re-exported — every existing importer, and the vm harness's bare-name
+`aiSSE`, unaffected); `sw.js` (`AI_LIB`/`AI_MODULES`/`CACHE`), index.html's
+modulepreload, `tools/package.mjs` (reachability guard + never-ships-
+vendor/ai/bridge/**), and `tools/split/check.mjs` (rules 1-3/6/7 now also
+run over `vendor/ai/web`) all wired per the plan's §1. NIGHT-ROLL.md gained
+an "AI library (vendor/ai)" section. Steps 2-7 (bridge server, backends,
+store/ctx-cache/bridge-client/attach, the client loop, the window, the
+library's own markup) remain queued — see docs/ai-library-plan.md §4.
+NOT pushed from this worktree: browser-verify (offline + the iPad package)
+is step 1's own stated verify line, still owed before this merges/ships.
+
+**Step 2 DONE 2026-10-04 (branch module-split, worktree agent-a20925efe82cb8d31):**
+the Mac bridge server itself moved to `Night-Roll-App/claude-bridge@v0.2.0`
+(library commit 900292b) as `bridge/server.mjs` — `startBridge(opts,
+profile)` + `main(argv, profile)`, today's logic carried over verbatim
+except every Night Roll-specific value (system prompts incl. the
+Learning-mode convention, the `.night-roll-bridge` state-dir name, the
+`/shapes` mount, the startup banner) threaded through a `profile` object;
+`--repo` is now required, with no default of the library's own.
+`tests/bridge.test.mjs` moved to the library against a neutral test
+profile; its `tests/lint.test.mjs` (app-vocabulary ban) now also covers
+`bridge/`. `bridge/launchd/` is a generic `--entry`/`--label` installer.
+Night Roll: `node tools/ai-sync.mjs --ref v0.2.0` vendored
+`vendor/ai/bridge/` (package.mjs's never-ships-bridge guard, from step 1,
+reverified clean); `tools/ai-profile.mjs` holds every moved string,
+verbatim; `tools/claude-bridge.mjs` is now a 4-line shim
+(`main(process.argv, profile)`) — its path, every flag, `npm run bridge`,
+and the launchd plist all keep working unchanged; `tools/launchd/install.sh`
+likewise shims to the library's installer (log file now
+`~/Library/Logs/com.nightroll.bridge.log`, named after the launchd label
+rather than hand-picked — the only externally-visible behavior change).
+Night Roll's own `tests/bridge.test.mjs` is now the shim test (`/health`,
+`/v1/models`, `--repo`'s default, `/shapes`, the Learning-mode text in the
+system prompt) — `tests/ai.test.mjs` unchanged throughout. `npm test`
+green (only the pre-existing ps2-real/instruments local-rip gaps fail);
+`npm run test:e2e:smoke` green; `node tools/split/check.mjs` clean except
+the known pre-existing `oldBpb`. NOT pushed from this worktree, and NOT
+merged into the running bridge (launchd `com.nightroll.bridge` on the main
+checkout, branch `main`, untouched) — the terminal session applies this
+after Josh's merge: `node tools/ai-sync.mjs --ref v0.2.0` (already run
+here; re-run after merge if needed) then `launchctl kickstart -k
+gui/$UID/com.nightroll.bridge`. Steps 3-7 (backends, store/ctx-cache/
+bridge-client/attach, the client loop, the window, the library's own
+markup) remain queued — docs/ai-library-plan.md §4.
+
+## OVERNIGHT PLAN 2026-10-03 (Josh, Terminal #97/#99/#100) — all on branch module-split, Josh tests in the morning
+1. Split steps 9–15 (builders, one step at a time, merged here).
+2. AI library: new private repo Night-Roll-App/claude-bridge (name/visibility Josh's, Q8) holding ALL AI support (bridge server, in-browser/cloud models, Ollama, LM Studio, the AI window); Night Roll imports it (plain ES modules, no build step).
+3. AI integration tests (tests/ai.test.mjs): fake bridge/Ollama/LM Studio servers, assert the real request AND the reply landing in the app — being written now.
+4. ✅ npm test runs every file (tools/run-tests.mjs).
+5. "✦ Annotate this song for me" (QUEUED IDEA 2026-09-27): built after the library. Normal mode ONLY (Learning mode never gets AI-written analysis — CLAUDE.md), on-demand per tap, annotations tagged AI-written, clearable in one go.
+Morning: one iPad build of the branch + one checklist; merge to main only after Josh says so.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 10: src/gen/{drummer,bassist,analysis}.js (docs/split-plan.md)
+Sparsest "headline moved" ratio of any step so far: of the plan's own named
+targets (`drGenerate`, `bsInferTimeline`/`bsGenerate`, "Analyze layer compute
+and adopt"), only `bsInferTimeline` moved, and even that needed two unlisted,
+zero-blocker relocations first (the real content of this step): `tonicPcOfName`/
+`modeOfName` → `theory/key.js` (pure key-name parsers, inverse of `keyNameFor`),
+`keyNameAt`/`sfDeclaredAt`/`sfDeclaredAtRaw`/`sfShownAt`/`sfAt` → `model/song.js`
+(the declared/shown key+scale-factor family, next to `estimateKey`). Both were
+genuinely blocker-free (unlike every "permanent" UI/render blocker steps 6-9
+found) — nobody had moved them yet, so this step did. `gen/drummer.js` ←
+`drumRng`/`DR_TOMS`/`fnv1a32`/`DR_FILLS`/`sectionLane`/`drBoundaries`/
+`drNormParts`/`drBassTrack`/`drBackbeats`/`fmtBarBeat` (pure fill/skeleton
+math only — `drGenerate`/`drKitCountT` stay, blocked by `setInfo`/`saveEdits`/
+`computeSongEnd`/`draw`/`drPartsGet`). `gen/bassist.js` ← `bsChordTone`/
+`bsInferTimeline`/`bsChordTimeline`/`chordAt`/`nextChange` (`bsGenerate`/
+`applyTake` stay, blocked by `setInfo`/`saveEdits`/`computeSongEnd`/`draw`).
+`gen/analysis.js` ← `harmonyTrackIndices`/`computeAnalysisLayer`
+(`scheduleAnalysisRecompute`/`drawAnalysisLayer`/`adoptChordBand`/
+`adoptAllChords`/`adoptKeyRegion`/`openAnalyzeSheet` stay — `drawAnalysisLayer`
+specifically because it's render/canvas code, not compute, despite sharing
+the banner). Corrects the step-9-era QUEUED note that assumed landing this
+file would unblock `model/edits.js`'s `saveEdits` via `scheduleAnalysisRecompute`
+— it doesn't; see the corrected note above.
+
+Two real `move.mjs` findings this step: the known same-file self-import bug
+(now THREE occurrences across two steps — see the dedicated entry below) and
+a NEW failure mode, a two-statement line join (`computeSongEnd = prof(...)`
+joined onto `function annoSnapshot() {`, with the former's trailing comment
+silently clobbered) — the exact same shape as step 9's own fix commit
+(4316dc7a, "Split the line the step-9 move joined"), now a confirmed repeat,
+not a one-off. Both hand-fixed (import-line deletion; line split with the
+comment restored verbatim). `regen-e2e-footer.mjs` re-run once; check.mjs
+clean except oldBpb; check-e2e-globals.mjs/check-controls.mjs clean (26
+controls, unchanged). devtools.js gained `genDrummer`/`genBassist`/
+`genAnalysis`; sw.js APP_MODULES gained all three, SW_VERSION nr-v15 → nr-v16;
+index.html's modulepreload list gained all three. tests/modules.test.mjs's
+fileCount bumped 37 → 40.
+
+Verified: night-roll.test.mjs 428 (427 pass + 1 pre-existing env skip — the
+six existing "P6 Analyze layer" tests, including the Learning-mode spy test
+and the notes.txt/askContext byte-identity test, already satisfied this
+step's "Analyze is Normal-mode only, nothing leaks into Learning" verify
+line, so no test was added), modules 33/33, gestures 21/21, controls 3/3,
+pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only skips), chip-worker
+31/31, bridge 10/10, migrate-rollnotes 9/9, import-set 5/5, album-order 8/8,
+psx-render 6/6, spc-render 5/5, instruments-export 4/4, sounding 12/12 — all
+green. `node tools/split/check.mjs` clean except oldBpb; `node
+tools/package.mjs --out /tmp/nr-dist-s10`: 47 runtime modules (unchanged).
+`node tools/dump_notes.mjs` re-verified byte-identical against scratch copies
+of all four albums/starters/ songs (never albums/compositions/); `tools/at.mjs`
+re-verified against fur-elise.mid. `npm run test:e2e:smoke` run once: chromium
+8/8. NOT pushed: this is a pure refactor with no user-facing change, but the
+main session should still browser-verify (open a song, generate a drum/bass
+take, toggle Analyze in Normal mode) before pushing and building, per the
+plan's own checklist.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 11: src/render/{roll,tracks,score,instrument,cof,compare}.js (docs/split-plan.md)
+This step found the single sharpest "hub stays" case the whole split has
+hit: `resize`/`draw`/`drawFull`/`playbackFrame`/`updateCanvasA11y` — the
+plan's own named headlines for render — did NOT move, and PERMANENTLY
+(`resize`/`drawFull` call `updateTrackMore`/`updateEditButtons`,
+`ui/trackbar.js`/`ui/note-editor.js`, step 14, layer 4, strictly above
+render's own layer 3, forever; `updateCanvasA11y` independently calls
+`songTitleOf` → `impDisplayTitle`, `import/capture.js`, layer 4). This
+task's own instructions anticipated exactly this ("`draw()` is the hub…
+leave it in app.js and say so").
+
+Six `move.mjs --names` invocations over src/app.js, in dependency order
+(roll.js first — every other render file needs its `css`/`ctx`/
+`trackColor`/`curTick`/etc. — then tracks/score/instrument/cof/compare):
+`render/roll.js` (60 names — the kit-lane row math, the farthest-point
+auto-track-color algorithm, the view/range-selection persistence trio,
+`drawRuler`/`drawLasso`/the playhead-strip family, the lasso-annotation
+predicates, `drawAnalysisLayer`, `fallActive`); `render/tracks.js` (13
+names — Tracks view's own geometry + `drawTracks`, fully clean, matching
+the plan's table exactly); `render/score.js` (18 names — `buildScoreModel`/
+`drawScore`/`renderMeasure`/`scoreTickToX`/etc.; note entry/erase/tap
+stayed, blocked by `saveEdits`/`draw`/`renderTrackbar`); `render/
+instrument.js` (21 names — `drawInst`/`drawPiano`/`drawGuitar`/`drawFall`
++ their geometry; hit-test/recording/MIDI stayed, input/record territory
+step 12); `render/cof.js` (8 names — the wheel's drawing only; its drag
+interaction stayed, step 12); `render/compare.js` (3 names — `drawCompare`/
+`cmpDiff`/`cmpTrackKey`; the compare-mode UI/fetch/swap functions stayed,
+blocked by `setInfo`/`readData`/`draw()`).
+
+A same-layer forward-reference cycle between `roll.js` and `score.js` (and
+a smaller one with `tracks.js`) — the step-5 `rollnotes.js`/`grid.js`
+shape repeated at layer 3 — needed the same fix: move roll.js first, then
+hand-correct its two temporary `"../app.js"` imports (`scoreTickToX`,
+`drawAudioStrip`) to `"./score.js"`/`"./tracks.js"` once those files
+existed; confirmed clean by `check.mjs` rule 5 immediately after. See the
+two move.mjs-bug entries below for the `?perf=1` profiler-wrap casualties
+this step's ten moved profiled functions produced (a new variant, not
+either previously-documented slip).
+
+`regen-e2e-footer.mjs --file src/app.js` re-run once (cleared 98 stale
+rule-2 violations in one pass); `check.mjs` clean except the pre-existing
+`oldBpb` finding; `check-e2e-globals.mjs`/`check-controls.mjs` clean (26
+controls, unchanged). `devtools.js` gained `renderRoll`/`renderTracks`/
+`renderScore`/`renderInstrument`/`renderCof`/`renderCompare` namespace
+imports. `sw.js` `APP_MODULES` gained all six files, `SW_VERSION` bumped
+`nr-v16` → `nr-v17`; `index.html`'s modulepreload list gained all six.
+`tests/modules.test.mjs`'s `checkSrc` fileCount assertion bumped 40 → 46.
+`node tools/package.mjs --out /tmp/nr-dist-s11`: 47 runtime modules
+(unchanged — no `tools/`-side runtime module corresponds to `render/`).
+`node tools/dump_notes.mjs` re-verified byte-identical against scratch
+copies of all four `albums/starters/` songs (never `albums/compositions/`);
+`tools/at.mjs` re-verified against `fur-elise.mid`. Tests, under
+`perl -e 'alarm 1200; exec @ARGV' npm test`: night-roll 428 (427 pass + 1
+pre-existing vault-only skip — every "local song: …" SAFETY-regression
+test and every P6 Analyze-layer test passes unchanged), modules 33/33
+(fileCount bumped 40 → 46), controls 3/3, pwa 3/3, package 3/3, nsf 20/23
+(3 pre-existing vault-only skips, same gap as every prior step); the only
+two failing test FILES were `ps2-real` and `instruments`, both pre-existing
+local-rip-fixture gaps unrelated to this step (no moved name is referenced
+by `tools/ps2/*.mjs` or either test file). `npm run test:e2e:smoke`:
+chromium 8/8. **`node tools/split/verbatim.mjs HEAD` does NOT print a
+clean ✔ — one known, hand-verified exception**: `AUDIO_STRIP_H` (one
+`lost`/two `extra`) because its original app.js line combined it with the
+unrelated boot-time `S.RULER_W = RULER_W_ROLL;` statement on one physical
+source line; moving the constant away necessarily splits that line across
+two files, which a line-granular text differ can never represent as a
+non-loss no matter how it's phrased (tried: init-wrapping the assignment,
+combining both on one line in the destination — illegal, rule 3 —
+duplicating the value under a second name — illegal, rule 6). Verified by
+hand, token for token, that nothing was lost: both halves reappear exactly
+once, in app.js and `render/roll.js` respectively. See docs/split-plan.md
+"Deviations (11)" for the full reasoning — flagged there as a fourth,
+distinct `move.mjs`/`verbatim.mjs` tooling-limitation class, the one with
+no available hand-fix. The main session should decide whether this
+exception is acceptable as documented or whether to revert just this one
+constant's move (which would also require reverting `drawAudioStrip`/
+`drawRuler`'s placement, undoing real architecture, not just cosmetics).
+NOT pushed: the main session should browser-screenshot roll,
+tracks, score, instrument, circle of fifths and compare at desktop and
+phone width, compared to before the step, per the plan's own verify line,
+before pushing and building. See docs/split-plan.md "Deviations (11)" and
+NIGHT-ROLL.md's six new `render/*` entries.
+
+## RESOLVED 2026-10-04 (split phase 2 step 0, tooling) — tools/split/move.mjs: a same-file self-import guard is overdue (three occurrences across two steps)
+`move.mjs` resolves a moved node's free identifier against the `--from`
+file's OWN existing imports before checking whether the name is already a
+LOCAL declaration in `--to`, so when `--from` already imports a name FROM
+the very file now receiving new code, the mover emits a bogus
+self-referencing import line inside `--to` (a parse error, caught
+immediately by check.mjs, never silent). Step 9 hit this twice
+(`albumMetaCache`/`albumMetaFor` into `model/provenance.js`;
+`titleCaseSlug`/`folderScanAlbums` into `model/catalog.js`). Step 10 hit it
+twice more (`MODE_OFFSET` inside `theory/key.js`, moving `modeOfName`;
+`estimateKey` inside `model/song.js`, moving `sfShownAt`). All four were
+one-line hand-fixes (delete the bogus import). Fix: before emitting a
+back-import for a free identifier, check whether the resolved specifier
+equals `--to` itself (or, more generally, whether the name is already a
+local declaration in `--to`) and skip emitting it in that case.
+
+**Fixed**: `planMove` now checks `toDeclaredNames` (every name already
+declared in `--to`) BEFORE falling through to `--from`'s own imports, and
+separately drops any import whose resolved specifier would equal `--to`
+itself, as a defensive backstop. Reproduced the exact `MODE_OFFSET`
+self-import from steps 8-10 as a unit test first (confirmed it failed on
+the old code), then fixed it. Test: "move.mjs (a): never emits an import of
+a file into itself" (tests/modules.test.mjs).
+
+## RESOLVED 2026-10-04 (split phase 2 step 0, tooling) — tools/split/move.mjs: a second line-joining bug (two statements landing on one line after a deletion)
+Step 9's fix commit (4316dc7a, "Split the line the step-9 move joined")
+fixed one instance (`saveDraft = prof(...)` joined onto
+`function saveVersion(quiet) {`) by hand, without a tooling fix. Step 10 hit
+the identical shape again (`computeSongEnd = prof(...)` joined onto
+`function annoSnapshot() {`, with the first statement's own trailing comment
+silently replaced by the second statement's leading comment) — two
+occurrences now, confirmed repeatable, not a one-off either. Fix: when
+`move.mjs` deletes a contiguous run of top-level nodes, always leave (or
+insert) a newline between whatever statement remains immediately before the
+deleted run and whatever statement remains immediately after it, so two
+surviving statements are never left sharing one line. Until fixed, every
+future move must keep checking `git diff` for this pattern by hand (this
+task's own instruction already does).
+
+**UPDATE 2026-10-04 (step 11): a closely related but distinct variant,
+hit ten times in one step** — every `?perf=1`-profiled function this step
+moved (`drawRangeTints`, `drawLasso`, `drawRuler`, `drawTracks`,
+`buildScoreModel`, `drawScore`, `drawInst`, `drawPiano`, `drawGuitar`,
+`drawFall`) left its own `X = prof("X", X); // comment` statement behind
+in app.js (it has no declared name, so `--names` never selects it) —
+illegal the moment `X` became an import (`check.mjs` rule 2). In most
+cases `scope.mjs`'s `leadingComments` (the backward comment-walk that
+decides a selected node's "leading comment" span) swallowed the
+statement's own TRAILING comment into the NEXT selected node's leading
+comment — it only checks for whitespace between a comment and the next
+node's start, not for a non-comment statement sitting in between — so the
+comment silently relocated into the WRONG file while the `X = prof(...)`
+code itself vanished from both files with no diagnostic. Two of the ten
+(`drawRuler`'s, `drawPiano`'s) left no trace anywhere, comment included —
+both sat squeezed between two selected cuts with no surviving node on
+either side for the comment to attach to. All ten were hand-reconstructed
+in the new files, verified against `grep -c "= prof(" src/*.js
+src/render/*.js` (26 before this step, 26 after, same count, none
+duplicated) rather than against the diff, which shows nothing for a
+statement no tool ever "moved." A full tooling fix needs both bugs
+together: the line-joining fix above, PLUS teaching `leadingComments` (or
+`move.mjs`'s selection/cut logic) that a trailing same-line comment belongs
+to the statement that precedes it, not to whatever node happens to come
+next whitespace-only. Three documented bug classes now (self-import,
+line-joining, trailing-comment-misattachment) — worth a combined
+`move.mjs`/`scope.mjs` fix pass before step 12 if tooling work is ever
+budgeted for.
+
+**UPDATE 2026-10-04 (step 12): a fourth variant, found on an attempted
+move that was then reverted — a synthesized `init<Module><N>()` call
+left in `--from` has no import.** Attempted on the circle-of-fifths
+wheel's drag interaction (`cofAngle`/`cofRelease` + its four top-level
+`cofCanvas.addEventListener(...)` calls, wrapped as `initGestures1()`/
+`initGestures2()`). When the selected range is a pure non-declaration
+top-level statement (no accompanying named declaration in the same
+`--names`/`--range` call), `move.mjs` wraps it in `export function
+init<Module><N>()` in `--to` and leaves `init<Module><N>();` at the
+original spot in `--from` — but the back-import logic only scans
+`movedDeclNames` (the declared names of moved DECLARATION nodes) for
+names the remaining body still references; a synthesized init name was
+never a declared name in the original source, so it's invisible to that
+scan and `--from` never gets `import { init<Module><N> } from
+"<--to>";`. Silent until `check.mjs` rule 1 flags it ("free identifier is
+not a local, an import, or in browser-globals.txt") — caught immediately
+(three instances: `initGestures1/2/3`, the third from a separate,
+also-reverted keyboard-delegate move), fixed by hand (one import line per
+call) as a first attempt. No prior step had hit this because every
+earlier non-declaration-statement move happened to leave its init call
+either unreferenced elsewhere or co-located with a moved declaration
+that itself triggered the normal import path (e.g. step 9's
+`initCatalog`, a real pre-existing name, not a synthesized wrapper). Fix:
+`move.mjs` should add `init<Module><N>` to `backReferenced` the moment it
+decides to wrap a group, independent of whether that name is a "moved
+declared name." A related, separate symptom from the same attempted
+move: `regen-e2e-footer.mjs`, run once right after the step's two plain
+name-based moves (before the cof-wheel attempt existed), generated a
+stale `set` accessor for `cofRelease` in its `__nrExpose$` footer, correct
+for the file as it then stood but wrong the moment `cofRelease` became an
+import — `check.mjs` rule 2 caught it; the fix is procedural (run the
+footer generator once, last, after every move.mjs call for the step, not
+mid-step), not a tooling change. Both hand-fixes got the attempted move
+to pass `check.mjs` cleanly — but a THIRD, unrelated gap then surfaced in
+`verbatim.mjs` itself (see the step-12 entry below), with no comparable
+hand-fix, and that one is why the cof-wheel move (and a second,
+independently-blocker-free keyboard delegate) was reverted rather than
+shipped. Five documented bug classes now across `move.mjs`/
+`verbatim.mjs` (self-import, line-joining, trailing-comment-
+misattachment, missing-init-import, verbatim's-no-tolerance-for-init-
+wrapping) — the same combined tooling-fix pass this note has been
+accumulating against, now overdue.
+
+**All five, plus the step-14 footer-ordering slip and the step-14
+stale-specifier/lost-export gap below, fixed 2026-10-04 (split phase 2
+step 0, tooling)**:
+- Line-joining + trailing-comment-misattachment: root cause was
+  `scope.mjs`'s `leadingComments`, which treated a comment with only
+  whitespace before the NEXT node as that node's leading comment even when
+  the comment sat on the SAME LINE as unrelated preceding code (a trailing
+  comment, not a leading one). Fixed there (one extra line-start check) —
+  fixes both the join and the misattachment at the root, for every tool
+  that calls it, not just move.mjs's own cut logic.
+- Missing-init-import: `move.mjs` now adds the synthesized `init<Module><N>`
+  (or `--init <InitName>`, new — see below) name to `--from`'s import list
+  unconditionally the moment it decides to wrap a group, not by scanning for
+  it among ordinary declared-name back-references.
+- `--init <InitName>`: added, so a single synthesized init wrapper can take
+  an explicit name instead of the auto-numbered `init<Module><N>` sequence.
+- `verbatim.mjs`'s no-tolerance-for-init-wrapping: fixed — it now
+  recognizes the `export function <InitName>() {` header and the bare
+  `<InitName>();` stub unconditionally (unambiguous by shape), and budgets
+  exactly as many tolerated bare `}` lines as there are net new/removed
+  headers (never more, so an unrelated unmatched brace is still caught).
+  `--hook X,Y` mode added too (docs/split-phase2-plan.md §1 M4.3, ahead of
+  step 1 actually needing it).
+- Step-14's footer-ordering slip (a reverse `--to src/app.js` move landing
+  after the generated e2e footer, which `regen-e2e-footer.mjs` then deleted
+  along with the stale footer): `move.mjs`'s `assembleTo()` now splits the
+  footer off, inserts new content before it, and reattaches it at the true
+  end — every time, not just when a human remembers to check.
+- Step-14's stale-specifier/lost-export gap (an import whose specifier
+  resolves at a legal layer but the target no longer exports that name):
+  promoted into `check.mjs` as rule 9, exactly as that step's own note
+  proposed. Checked against the real repo: zero findings (the repo is
+  currently clean of this).
+- Self-import guard: see the entry immediately above this one.
+All reproduced as failing unit tests against the OLD code first, then
+fixed, then re-verified clean against the real commits that originally hit
+them (`node tools/split/verbatim.mjs 868beff8`/`b92ec10d` still print ✔).
+See docs/split-phase2-plan.md step 0's own closing note and
+tests/modules.test.mjs's `move.mjs`/`verbatim.` test blocks.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 12: src/input/{gestures,record}.js (docs/split-plan.md)
+Shipped: the table's own two named leaf functions (`evtPos`/
+`posToTickPitch`) plus five more pure hit-test/coordinate helpers found by
+reading the surrounding code (`cursorHandleHit`, `cursorHit`, `tickAtX`,
+`rulerSnapX`, `armNoteEdit`) — seven names into `input/gestures.js` — and
+four pure record/MIDI-status helpers (`recOpenEnded`, `recSnap`,
+`recSnapOn`, `midiStatusLine`) into `input/record.js`. Everything else
+named in the plan's table description ("pointer/pinch/hold-to-grab,
+lasso" for gestures; "MIDI-in/keyboard record, punch-in, take handling"
+for record) is a single interlocking cluster — the canvas `pointerdown`/
+`pointermove`/`pointerup` drag/pinch/hold-to-grab state machine, `tap`/
+`finalizeLasso`/`toggleSel`/`scoreLassoTap`/`scrubTo`/`seekOrMoveCursor`/
+`placePencilNote`/`endPointer`/`clearMultiSel`, the ● record button
+handler, `recNoteOn`/`recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/
+`initCoreMidi`, `instTap`'s pointer wiring, and every keyboard-shortcut
+`document.addEventListener("keydown", …)` block — and every one of them
+calls `setInfo()` and/or `draw()`/`drawFull()` directly or transitively
+(through `refreshSelInfo`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/
+`hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/
+`setEndBQ`/`setInstInfo`/`keyNameShownAt`/`instPlay`/`pushUndo`/
+`saveEdits`/`updateSubtitle`), all still bare app.js names (`setInfo`/
+`renderTrackbar`/`openVoiceMenu`/etc. are `ui/*`, step 14; `draw` is
+render's own PERMANENT block per step 11's Deviations). Per this task's
+own instruction ("app.js-only names are a problem only if they'd need
+app.js imports: check.mjs decides"), every one of these stays bit-for-bit
+in app.js — checked individually, not assumed as a block (the same
+discipline step 6's Deviations insisted on): each was read in full and
+its specific blocker named, not inferred from its neighbors.
+
+**Attempted, then reverted: the circle-of-fifths wheel's drag interaction
+(`cofAngle`/`cofRelease`) and a VoiceOver Enter/Space→`.click()` keyboard
+delegate for `role="button"` elements.** Both are genuinely blocker-free
+— `cofRelease` calls only `wrapSf`/`drawCof` (`render/cof.js`, already
+below `input/`'s layer) and `S`; the keyboard delegate touches only
+`document`/`t.click()` — and both moved cleanly through `check.mjs` after
+the hand-fixes in the move.mjs-bug entry above. But `node tools/split/
+verbatim.mjs HEAD` then reported several `extra` lines with no `lost`
+counterpart: the `export function init<Module><N>() {` header, its
+closing `}`, and the bare `init<Module><N>();` call that §2.2's own
+wrapping mechanism requires for ANY top-level-statement move are new
+structural text `verbatim.mjs` has no tolerance for (its tolerance list
+is only import lines, `export` keywords, the generated e2e footer, the
+devtools namespace list, and comment placement) — nothing was actually
+lost, but this task's instruction is to amend until `verbatim.mjs HEAD`
+prints a clean ✔, and the one exception shape it names (a single original
+line combining two unrelated statements, step 11's `AUDIO_STRIP_H`)
+doesn't cover this either. No prior step had hit it because no prior
+step's move ever isolated a pure top-level side-effect statement by
+itself (every earlier one was co-selected with a named declaration).
+Rather than ship an undocumented new verbatim-exception class, both moves
+were backed out and left in app.js. Real, on-topic, zero-blocker finds
+for whichever step next budgets a `move.mjs`/`verbatim.mjs` tooling pass
+(teach `verbatim.mjs` to tolerate the §2.2 init-wrap boilerplate the same
+way it already tolerates generated imports/footers) — not acted on this
+step.
+
+`regen-e2e-footer.mjs --file src/app.js` re-run after the final file
+state (the two shipped moves only); re-running after every move.mjs
+invocation in a step, not just once at the end, is the safer habit the
+next step should default to, given the stale-footer symptom above.
+`check.mjs` clean except the pre-existing `oldBpb` finding;
+`check-e2e-globals.mjs`/`check-controls.mjs` clean (26 controls,
+unchanged). `devtools.js` gained `inputGestures`/`inputRecord` namespace
+imports. `sw.js` `APP_MODULES` gained both files, `SW_VERSION` bumped
+`nr-v17` → `nr-v18`; `index.html`'s modulepreload list gained both,
+ordered after `render/compare.js` and before `app.js` (layer 4, below
+app.js's layer 5). `tests/modules.test.mjs`'s `checkSrc` fileCount
+assertion bumped 46 → 48. `node tools/package.mjs --out
+/tmp/nr-dist-s12c`: 47 runtime modules (unchanged — no `tools/`-side
+runtime module corresponds to `input/`). `node tools/split/verbatim.mjs
+HEAD` prints a clean ✔. The sorted `^\w+ = prof\("\w+"` set across src/ is
+unchanged (29 entries). Tests, under `perl -e 'alarm
+1200; exec @ARGV' npm test`: the only two failing test FILES were
+`ps2-real` and `instruments`, both pre-existing local-rip-fixture gaps
+unrelated to this step; `gestures.test.mjs` 21/21, `modules.test.mjs`
+33/33 (fileCount bumped), `controls.test.mjs` 3/3. `npm run
+test:e2e:smoke`: chromium 8/8. None of this step's eleven moved names
+were ever profiled. See docs/split-plan.md "Deviations (12)" and
+NIGHT-ROLL.md's two new `input/*` entries.
+NOT pushed: the main session should browser-check, on the iPad and
+desktop, drawing a note, hold-to-grab, pinch-zoom, a ruler drag, and
+strip tap/drag, before pushing and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 13: src/ask/{backend,tools,context,bridge,shots,sheet}.js (docs/split-plan.md)
+Shipped: 172 of the ~192 ask/ai-prefixed names (plus `parsePitch`/
+`b64Bytes`/`notesTxtForDoc`/`TERM_MODELS`) moved verbatim across six new
+files — `ask/backend.js` (20: `aiUrl`/providers/WebLLM, all library-bound
+per docs/ai-library-plan.md §3), `ask/context.js` (42: the system prompt,
+every context-line builder, the sent/epoch cache, plus a relocated
+`songTitleOf`/`songWhereLabel` — see below), `ask/tools.js` (19: the
+`ASK_TOOLS` schema + pure annotation/write-notes/bars field helpers),
+`ask/bridge.js` (55: seen-cursors, chat store/log, session/job
+bookkeeping, inbox/status polling), `ask/sheet.js` (20: the chat sheet's
+DOM + draft persistence), `ask/shots.js` (16: the screenshot list). Full
+per-file name lists and the "did NOT move, and why" accounting are in
+NIGHT-ROLL.md's Module map, not restated here. **None of the six files'
+own headline orchestrators moved** — `askContext`, `askRunTool` and
+every write-tool body, `askRun`/`askSend`/`askResume`, `openAsk`/
+`askBtnTap`, every `deploy*` function except the three logging-free ones
+— all still bare in app.js, blocked by `setInfo`/`draw`/`logDebug`/
+`appConfirm`/`updateSongBtn`/`finalizeNotes`/`saveEdits`/`saveDraft`/
+`publishSong`/`insertTime`/`deleteTime`/`applyTake`/`closeDropUp`/
+`micStop`/`keyLabelState` — all `ui/*` (step 14) or permanently blocked
+(`draw`, step 11's finding) or shared code with no home of its own yet.
+
+**`songTitleOf`/`songWhereLabel` relocated into `ask/context.js`,
+unlisted by the plan's table, after `model/song.js` (the thematically
+obvious home, where `estimateKey` already lives) turned out to be
+flatly illegal**: `songTitleOf` calls `impDisplayTitle`
+(`import/capture.js`, layer 4), and `model/song.js` is layer 2 — layer 2
+can never import layer 4, confirmed by `check.mjs` the moment it was
+tried (`rule 5: model/song.js (layer 2) imports "../import/capture.js"
+(layer 4)`). Reverted, re-run with `--to src/ask/context.js` (layer 4,
+same layer as `import/capture.js`) instead — zero rule-5 findings. The
+~30 non-ask callers left in app.js now import it back downward, legal
+regardless of host file. See docs/split-plan.md "Deviations (13)" for
+the full reasoning, including why `keyLabelState`/`closeDropUp`/
+`micStop` (the other three app.js-shared blockers this step hit) were
+NOT given the same treatment — each still has a genuine non-ask caller
+with no `ui/*` home of its own yet, so relocating them would be the
+"speculative widening" step 0a's Deviations warned against; `songTitleOf`
+only got the exception because `model/` was ruled out BY THE LAYER TABLE
+ITSELF, not by taste.
+
+One `move.mjs` same-file self-import slip hit (the known class from steps
+8-10): moving `askReadBars` into `tools.js` resolved its `songTitleOf`
+reference via app.js's own already-rewritten import (pointing at
+`ask/context.js`) instead of recognizing it as a local declaration of
+that same destination file — produced a self-import inside
+`ask/context.js`, caught immediately by `check.mjs`'s parse error, fixed
+by deleting the one bogus line.
+
+`regen-e2e-footer.mjs --file src/app.js` run once, after all seven
+`move.mjs` invocations and both hand-fix passes (the self-import above,
+plus the same-layer `bridge.js`/`sheet.js` cycle's one stale `../app.js`
+specifier) — not mid-step, per step 12's own procedural finding.
+`check.mjs`/`check-controls.mjs`/`check-e2e-globals.mjs` all clean except
+the pre-existing `oldBpb` finding. `node tools/split/verbatim.mjs HEAD`
+prints a clean ✔. `tests/ai.test.mjs` (7/7) and `tests/bridge.test.mjs`
+(10/10) — this step's own oracles — both green, standalone and inside
+`npm test` (427/427 on night-roll, the only other failures being the
+pre-existing `ps2-real`/`instruments` local-rip gap). `npm run
+test:e2e:smoke`: chromium 8/8.
+
+NOT pushed: the main session should browser-check, on the iPad, sending
+one Ask message, attaching a screenshot, and confirming the "Now:"
+status line still updates — the plan's own verify line for this step —
+before pushing and building. docs/ai-library-plan.md §3 gained a short
+note on exactly which of its library-bound functions actually landed in
+`ask/backend.js` vs stayed in app.js (`aiHostOk`), since extraction
+(the plan's step 1) is the next task to pick this up.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 14: src/ui/{chrome,trackbar,mixer,voice-menu,notes,note-editor,sheets,wm}.js (docs/split-plan.md) — CORRECTS the step-11 "draw() is PERMANENT" finding and several "ui/*, step 14" placeholders above
+app.js 17216 → 14744 lines. Full per-file name lists and the "did NOT
+move, and why" accounting are in NIGHT-ROLL.md's Module map (each of the
+eight files got its own entry plus a `finalizeNotes` correction entry);
+not restated in full here.
+
+**Headline finding, re-answering this task's own question ("decide
+whether `draw`/`resize`/`drawFull`/`playbackFrame`/`updateCanvasA11y`
+belong in a layer-4/5 home now that `ui/` exists"): they do, and step
+11's "PERMANENT" framing above (and NIGHT-ROLL.md's `render/roll.js`
+entry) is corrected, not merely cleared.** The permanence was real
+against `render/roll.js` (layer 3 — `updateTrackMore`/`updateEditButtons`
+are layer 4, upward, forever) but was never checked against `ui/chrome.js`
+(layer 4, the SAME layer — cycles inside layers 3–5 are legal, §2.3) until
+this step, because `ui/chrome.js` didn't exist yet. Grepped every
+already-moved file across every layer for a call to any of the five:
+zero hits below layer 4. `move.mjs --from src/app.js --to
+src/ui/chrome.js --names resize,draw,playbackFrame,updateCanvasA11y,
+drawFull` went through clean. This in turn unblocked `setInfo`/`logErr`/
+`logDebug`/`updateSongBtn`/`updateSyncBtn`/`updateJobsBtn`/`appConfirm`/
+`micStop`/`keyLabelState`/`closeDropUp`/`clampView`/`pushUndo`
+(→ `model/edits.js`)/`addTrackUndoable`(→ `model/edits.js`)/`saveDraft`/
+`computeSongEnd`/`refreshSelInfo`/`renderOctBtn`/`reflectSelVel` —
+everything the "ui/*, step 14" placeholders above this entry were
+waiting on. **`renderTrackbar`/`trackToggle` (→ `ui/trackbar.js`) and the
+whole `renderMixer`/`mixerStripEl`/`mixerStripDragize`/`openMixer`/
+`closeMixer`/`toggleMixer` cluster (→ `ui/mixer.js`) were ALSO tried one
+hop further, passed a `move.mjs --dry-run` AND `check.mjs` clean — and
+were reverted anyway, once `npm test`'s real module linking (which
+`check.mjs` cannot do — see below) showed both still need `saveTrackDir`.
+This is the step's SECOND real false step, not its first win.**
+
+**What this does NOT clear, checked directly rather than assumed:**
+- `saveTrackDir` (→ `finalizeNotes`) still blocks `ui/trackbar.js`'s
+  `renderTrackbar` and `ui/mixer.js`'s whole cluster — both tried, both
+  reverted, both stay bare in app.js. `openVoiceMenu` (→ `buildVoiceMenu`
+  → `ensureAudio`/`resumeAudio`/`openMaster`) still blocks
+  `ui/trackbar.js` too, same reason.
+- **A new, `check.mjs`-shaped blind spot, not a `move.mjs` bug: `check.mjs`
+  verifies a name resolves to SOME import at a legal layer, never that the
+  import's SPECIFIER still exports that name.** `saveDraft` round-tripped
+  through `model/versions.js` before landing in `ui/chrome.js`; three
+  OTHER files' `import { saveDraft } from "../model/versions.js"` lines
+  (ui/sheets.js, ui/mixer.js, app.js itself) were never updated to the new
+  specifier, and `check.mjs` reported nothing — `model/versions.js` is a
+  real, legal, layer-≤4 source to import FROM, it just doesn't export that
+  name any more. Only `npm test` caught it (`SyntaxError: The requested
+  module '../model/versions.js' does not provide an export named
+  'saveDraft'`). A standalone script (not promoted into tools/split/, out
+  of this task's scope) that walks every import and confirms the target
+  file exports the name found exactly these three and nothing else — worth
+  a `check.mjs` rule 9 for whoever next touches the checker.
+- **A related, one-step-deeper variant of that same gap: rejoining two
+  statements onto one physical line (the standard fix for a `verbatim.mjs`
+  joined-line finding) can silently drop a relocated name's OWN `export`
+  keyword, when the line's only `export` belonged to the OTHER statement.**
+  `pubCheck`/`pubCompareDraft` shared one app.js line (nothing in app.js
+  is individually `export`ed, so only the LEADING "export" convention
+  move.mjs adds applied — to `pubCheck`, not to `pubCompareDraft`, which
+  followed it on the same line). Rejoining them in `ui/sheets.js` to
+  satisfy `verbatim.mjs` left `pubCompareDraft` un-exported; `check.mjs`
+  has no rule that would catch this (it never requires a name to be
+  exported), and `verbatim.mjs`'s own normalized-text comparison doesn't
+  either. Caught by `npm test` (`ai.test.mjs`, a `SyntaxError` three tests
+  in: "does not provide an export named 'pubCompareDraft'"). Fixed by
+  splitting them back onto two independently-`export`ed lines — which in
+  turn makes this, and `idbDraftPut`/`commitImports` (an unrelated pair,
+  same app.js-joined-line shape, where `idbDraftPut` moved to
+  `ui/sheets.js` and `commitImports` stayed in app.js, with no way to
+  rejoin them across files), two ACCEPTED, hand-verified
+  `verbatim.mjs` exceptions in the final commit — the same class step
+  11's `AUDIO_STRIP_H` already established, just two more instances of
+  it. `node tools/split/verbatim.mjs HEAD` on the shipped commit reports
+  exactly these two `lost`/`extra` pairs and nothing else.
+- `openVoiceMenu`/`buildVoiceMenu`/`buildGameVoicePicker`/
+  `buildSf2VoicePicker`/`saveVoices`/`renderSf2Nav`/`sf2AuditionPreset`/
+  `renderGameInstNav`/`instAudition` — `ui/voice-menu.js`'s whole named
+  content except the six pure label leaves — stay in app.js, permanently:
+  `sf2AuditionPreset`/`instAudition` call `ensureAudio`/`resumeAudio`/
+  `openMaster`/`instPlayer` directly (audition-on-open), the identical
+  `audio/engine.js` permanent wall as `play` (next bullet) and as this
+  thread's own line 5527 entry above already found for `ensureAudio`
+  itself.
+- **`play`/`stop`/the whole play-gate/album cluster (line 5499 above):
+  now CONFIRMED permanent, not merely "needs steps 11 AND 14."** Both
+  landed; `play` is still blocked, independently, by `ensureAudio`/
+  `resumeAudio`/`openMaster`/`scheduleNote` — `ui/chrome.js` existing
+  changes nothing for it. `updateChipBtn`/`playGateKick`/`playGateTick`/
+  `playGateActive`/`chipRenderAuto`/`CHIPS`/`chipExt`/`chipVaultFile`/
+  `chipSource`/`psfInflater`/`sonySeqCapture` were all tried in
+  `ui/chrome.js` too (genuinely clean of `draw`/`setInfo`) and reverted
+  for the same `ensureAudio` reason, one hop removed.
+- **`finalizeNotes` (model/rollnotes.js's own central resolver) — tried,
+  found blocked a SECOND, independent way, and reverted; this is the
+  step's one real false step, not a near-miss.** A first scan said it was
+  clean once `renderTrackbar`/`computeSongEnd` resolved; the real move
+  surfaced that it ALSO calls `sfPreloadForSong`/`gamePreloadForSong`/
+  `updateEditBtnVis` directly, and those reach `playGateKick`/
+  `updateChipBtn` — the same chip-transport wall as `play`, above.
+  `finalizeNotes` genuinely needs a layer-4 home (its `renderTrackbar()`
+  call is real) but no existing `ui/*` file fits "the model's rollnotes
+  resolver," and the chip-audio reach-through means even a correctly-filed
+  layer-4 home wouldn't clear it. Its ~30 callers (annotation edits, chord/
+  progression insert, clip paste/delete, Save As, fork, Ask's write tools,
+  the Analyze adopt family) all stay in app.js unaffected. This also closes
+  off, by inheritance, `saveTrackDir`/`renameTrack` (both call
+  `finalizeNotes`) and — one further hop — `drGenerate`/`bsGenerate`/
+  `applyTake`/`saveEdits`/`openDrummer`/`openBassist`/`drBuildControls`/
+  `drRefresh`/`bsBuildControls`/`bsRefresh` (`saveEdits` → `
+  scheduleAnalysisRecompute` → `finalizeNotes`) — all six drummer/bassist
+  sheet functions were tried in `ui/sheets.js`, found blocked this way,
+  and reverted together. Their own pure leaves (`drKitCountT`/`bsRange`/
+  `drRange`/`segSet`/`drPartsGet`/`drPartsSet`/`drPartsSync`/
+  `computeSongEnd`/`dpTick`/`undoTrackAdd`) did not call any of the ten
+  and stayed in `ui/sheets.js`.
+- `ui/wm.js`: every pure window-layout-math leaf moved; `wmLayoutAll` and
+  everything that calls it (`wmCloseWindow`/`wmDockSide`/
+  `wmSetSideModeFor`/`wmDockBottomWindow`/`wmFloat`/`wmSideDividerize`/
+  `wmLayoutTabs`/`wmLayoutSide`/`wmOpenMenu`/`makeWindow`) stayed —
+  `wmLayoutAll` calls `resize()` (now `ui/chrome.js`, same layer, legal)
+  but is threaded through so many call sites that this builder left the
+  cluster together rather than chase it; genuinely worth a focused re-try
+  (NOT closed off the way `ensureAudio`/`finalizeNotes` are), flagged here
+  rather than NIGHT-ROLL.md since it's a real TODO, not a settled finding.
+
+**Three queued items above are now corrected by this step's actual
+landing, not by the placeholder assumption each made:**
+- Line 5405's entry (`platform/sw.js`'s service-worker `else` branch,
+  `nativeOpenUrl`/`nativeOpenHook`): `setInfo` is now a real `ui/chrome.js`
+  export. `platform/sw.js`'s one `setInfo` statement is a legal downward
+  import away from moving (untouched this step — platform/ isn't ui/*'s
+  row to claim). `nativeOpenUrl`/`nativeOpenHook` remain blocked
+  regardless: `stop()` (permanent, play-gate wall) and `openPickedFiles`
+  (blocked by `CHIPS`/`createComposition`, neither this step's business)
+  are independent, unresolved reasons.
+- Line 5429's entry (`saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/
+  `draftRead`/`localDraftWrite`/`localDraftTracks`/`idbDraftPut` →
+  "platform/storage.js... re-check again after step 14"): CORRECTED — none
+  of these landed in platform/storage.js. `saveDraft`/`draftRead`/
+  `localDraftTracks` landed in `ui/chrome.js`; `draftWrite`/
+  `localDraftWrite`/`idbDraftPut` landed in `ui/sheets.js` (its
+  `bsBuildControls`/`drBuildControls` siblings needed them, same shape as
+  step 13's `songTitleOf`: the thematically obvious lower layer was never
+  reachable — `setInfo`/`logErr` are layer 4 — so these went to the
+  layer-4 file that actually needed them). `saveEdits`/`loadEdits` did NOT
+  move: `saveEdits` is blocked by `finalizeNotes` (above), `loadEdits` was
+  not re-checked this step (not named by anything that moved).
+- Line 5840's entry (step 11's render-hub "PERMANENT" framing): corrected
+  in full above and in NIGHT-ROLL.md's `render/roll.js` entry — read
+  "PERMANENT" there as "permanent against `render/roll.js` specifically,"
+  not absolutely.
+
+**Tooling: a new, fifth `move.mjs`/`verbatim.mjs`-adjacent slip class,
+distinct from the four steps 9–12 found (self-import, line-joining,
+trailing-comment-misattachment, same-line multi-statement splits) —
+a reverse move's new content silently vanishes if `regen-e2e-footer.mjs`
+runs before the footer is repositioned.** `assembleTo()` always appends
+new chunks after the EXISTING body; for `--to src/app.js` specifically,
+app.js's body ends with the generated `// ---- e2e accessor mirror ----`
+block, so the reverted function lands AFTER it. `regen-e2e-footer.mjs`'s
+`stripFooter()` does `body.indexOf(FOOTER_MARKER)` and slices to EOF —
+deleting the just-reverted content along with the stale footer, silently
+(the file still parses; nothing errors until a later edit references the
+now-missing name). Hit on every one of this step's several `--to
+src/app.js` reverts; caught the first time by `grep`ing a known body
+string against both files and finding it in neither. Worked around by
+hand each time (cut the marker-through-`__nrExpose$` block to the true
+EOF, reinsert there, strip the stale `export` keyword the reverse move
+added, THEN regenerate) — flagged for a real `move.mjs`/
+`regen-e2e-footer.mjs` fix (either tool could detect and correct the
+ordering itself) rather than a per-callsite habit.
+
+`node tools/split/verbatim.mjs HEAD` (several commits — one per file is
+not quite right this step, since multiple files needed a second,
+corrective pass after the first landing turned out partly wrong): clean
+✔ on every commit after the fixups above. Sorted
+`^\w+ = prof\("\w+"` set checked across the FULL src/ tree (not just
+app.js, since several already-profiled names moved or round-tripped
+through other files this step) — unchanged, 30 entries. `check.mjs`:
+clean except `oldBpb` and the three real, permanent `../app.js` imports
+named above (`ui/mixer.js`'s and `ui/trackbar.js`'s `saveTrackDir`,
+`ui/trackbar.js`'s `openVoiceMenu`). `check-controls.mjs`/
+`check-e2e-globals.mjs` clean, no allowlist growth. index.html's
+modulepreload list, `sw.js`'s `APP_MODULES` (`nr-v19` → `nr-v20`), and
+`devtools.js`'s namespace-import list all gained the 8 files;
+`tests/modules.test.mjs`'s `checkSrc` fileCount bumped 54 → 62. `node
+tools/package.mjs --out /tmp/nr-dist-s14`: 47 runtime modules
+(unchanged). `main.js` was NOT attempted — app.js still has ~400
+top-level names left (annotation/tombstone management, the whole
+audio-chip-transport stack, the ask-chat run loop, provenance/publish
+orchestration, every top-level wiring block by rule) — "app.js empties
+into main.js" does not happen at step 14; app.js remains the legacy
+container into step 15.
+
+NOT pushed: the main session should browser-check every menu and sheet
+that actually moved (track chips' M/S/H and +track/+audio/+drums, the
+Mixer sheet's fader/pan/drag-reorder, the Notes list and Check-vs-file
+UI, the note editor's chord widget and mic dictation toggle, the Jobs/
+Settings/Share/Analyze sheets), wm docking (mostly a regression check —
+the action functions didn't move), and phone width (a smoke check — this
+step touched no layout CSS), before pushing and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 1: src/hooks.js + src/wire.js, upcall ports (docs/split-phase2-plan.md)
+
+Done. `src/hooks.js` (layer 0): one-line forwarders — `setInfo`, `logErr`,
+`logDebug`, `appConfirm`, `updateJobsBtn` — each reading `S.hooks.<name>`
+and throwing `hook <name> not installed` if called before boot wires it.
+`src/wire.js` (layer 5): `installHooks()`, the ONLY place a port's bare
+name binds to its real body; `installHooks();` is `app.js`'s FIRST
+top-level statement (right after its import block). `src/state.js` gained
+`hooks: {}`. In `src/ui/chrome.js`, the five real bodies were renamed
+`setInfoImpl`/`logErrImpl`/`logDebugImpl`/`appConfirmImpl`/
+`updateJobsBtnImpl`, and the file imports the bare names back from
+`../hooks.js` for its own internal call sites (unchanged text) — rule 10
+(tools/split/check.mjs) exempts a port's own home file and app.js/main.js
+from its "impl strictly above every caller" layer check, same reasoning
+as rule 4/5's existing LEGACY_CONTAINER treatment. `src/app.js` switched
+its five imports of these names to `./hooks.js`. `src/ui/sheets.js`/
+`src/ui/note-editor.js` (same layer as `ui/chrome.js`, no port needed)
+instead import `XImpl as X` directly from `./chrome.js` — a port only
+legalizes a genuinely LOWER layer's upcall; same-layer imports were
+already legal (§2.3) and the rule 10b/10c fixture test (tests/
+modules.test.mjs) confirms a same-layer PORT caller is still flagged, by
+design — only the import SPECIFIER changed for these two files, never the
+call sites. `src/ui/controls.js` moved to layer 0 in `tools/split/
+check.mjs`'s LAYERS table (it imports only `ui/icons.js`; no file move).
+
+Two real `tools/split/check.mjs` rule-10 gaps found and fixed, both
+documented in the rule's own comment: (a) `ruleHooksPorts` didn't exempt
+the impl's own home file or app.js/main.js from its layer check, so the
+very pattern the plan's own M1 code sketch asks for (chrome.js importing
+its own port) and app.js's existing imports both failed; (b)
+`ruleNoTopLevelPortCalls` has no app.js/main.js exemption (rule 4 does),
+so dozens of app.js's listener/IIFE blocks — which only CALL a port
+inside a deferred callback, never at module-evaluation time — were
+flagged; both now skip app.js/main.js, matching rule 4's existing
+reasoning exactly.
+
+Three permanent blockers docs/split-plan.md's Deviations (7)/(8) found —
+`ensureAudio`/`resumeAudio`/`rebuildAudio` (audio/engine.js),
+`CHIPS`/`chipRender`/`chipSource`/etc. (audio/chip.js), `jobsNotify`
+(model/jobs.js) — are dissolved by this step's ports (see this file's
+three RESOLVED notes above, and NIGHT-ROLL.md's `hooks.js` module-map
+entry); none of those names have moved yet — that's step 2.
+
+Tests added (tests/modules.test.mjs): a port throws before
+`installHooks()` runs (loaded in an isolated vm context, never through
+`createApp()`); every port is installed, as a function, once the real
+app boots; reassigning the bare port name (`run("setInfo = …")`)
+intercepts every importer of the port — including the real `app.js`
+caller — bypassing `ui/chrome.js`'s `setInfoImpl` entirely. Plus the
+rule-10a/10b/10c/10d synthetic fixture tests (already part of step 0's
+commit) kept passing.
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing local-rip-fixture gap). `node tools/split/check.mjs`:
+clean except `oldBpb`. `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. `node tools/split/verbatim.mjs --hook setInfo,logErr,logDebug,
+appConfirm,updateJobsBtn HEAD`: ✔. Sorted `^\w+ = prof\("\w+"` label set
+unchanged (29 entries — none of these five names are profiled).
+`npm run test:e2e:smoke`: 8/8. `index.html`'s modulepreload, `sw.js`'s
+APP_MODULES (`nr-v20` → `nr-v21`), and `devtools.js`'s namespace-import
+list all gained `hooks.js`/`wire.js`; `tests/modules.test.mjs`'s
+`checkSrc` fileCount bumped 62 → 64 (66 with vendor/ai/web). `src/app.js`:
+15054 → 15056 lines (2 new: the `installHooks` import + call).
+
+Browser-check by the main session: none required for this step alone —
+nothing user-facing moved; the real ear/eye check is step 2's (chip count
++ debug log, an NSF/SPC chip render, metronome).
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 2: audio engine + chip render + idbDraftPut + jobsNotify move down (docs/split-phase2-plan.md)
+
+Done. `blockers.mjs <names> --to <file>` run before every cluster (per
+this step's own instruction), real repo, not a fixture.
+
+Moved clean, by `move.mjs --names` (one invocation per cluster):
+`ensureAudio`/`resumeAudio`/`rebuildAudio` → `audio/engine.js` (now the
+`logDebug`/`logErr`/`setInfo` port exists); `metStart` →
+`audio/metronome.js` (needed `ensureAudio`/`resumeAudio` moved first);
+`CHIPS`/`sonySeqCapture`/`psfInflater`/`PSX_SOUNDING_ON`/`chipExt`/
+`chipEstimateTracks`/`chipCleanupAfterFailure`/`chipSource`/
+`chipVaultFile`/`chipModules` → `audio/chip.js` (the `logErr` port
+dissolves docs/split-plan.md's Deviations (8) `CHIPS` blocker — see
+below for a `check.mjs` gap this specific move surfaced);
+`chipStreamOpenWorker` → `audio/chip-stream.js` (needed the chip.js
+cluster moved first, for `CHIPS`); `scheduleGameNote`/`gameVoiceWarn`/
+`gameVoiceWarned`/`gameNoteBucket`/`gameNoteCache`/
+`resolveVoiceInstrument`/`gameLibSync`/`sf2Sync` → `audio/voices.js`
+(`gameVoiceWarned`, unlisted by the task, pulled along — `gameVoiceWarn`
+needs it, same "load-bearing helper" pattern steps 4-6 established);
+`idbDraftPut` → `platform/storage.js` and `jobsNotify` → `model/jobs.js`
+— both FROM `ui/sheets.js`, not `app.js` (phase 1 misfiled them there;
+NIGHT-ROLL.md's own `platform/storage.js`/`model/jobs.js` entries already
+said so). `blockers.mjs`'s CLI hardcodes `--from src/app.js`, so these
+two needed a different check: `move.mjs --dry-run` first, by hand —
+both picked up `ui/sheets.js`'s own same-layer import alias
+(`logErrImpl as logErr` / `updateJobsBtnImpl as updateJobsBtn`, both
+`from "./chrome.js"`, step 1's own "same-layer callers don't need the
+port" choice) and copied that relationship verbatim, landing an ILLEGAL
+upward import into a layer-1/layer-2 file (`../ui/chrome.js`, layer 4).
+Both hand-fixed to import from `../hooks.js` instead (the port, legal
+from any layer) — move.mjs has no way to know a copied import relationship
+needs re-deriving against the NEW file's own layer, since nothing about
+that is wrong in general (it's only wrong because `--from`'s import was
+itself a same-layer shortcut, not the port). Also by hand: `app.js`'s own
+stale `import { idbDraftPut } from "./ui/sheets.js"` / `import {
+jobsNotify } from "./ui/sheets.js"` (sheets.js doesn't export either name
+any more, just re-imports it for its own internal use) — `check.mjs` rule
+9 would have caught a wrong-but-still-exported specifier, but these two
+were imports of a name that's ENTIRELY GONE from that file, which is rule
+1 territory (an unresolved import) — caught by `check.mjs` immediately,
+not silently.
+
+**Two real `check.mjs` gaps found and fixed, both load-bearing for this
+step specifically (neither was hit by any phase-1 step, since nothing
+moved OUT of app.js's blanket rule-4/rule-10d exemption into a real module
+with this shape before):**
+- `isPureLiteralish` didn't recurse into object/array literals — `CHIPS`,
+  a plain `{nsf: {...}, gbs: {...}, ...}` table of closures, moving out of
+  app.js for the first time tripped rule 10d (a top-level initializer
+  "calling" the `logErr` port) even though `CHIPS.usf.capture`'s own
+  `logErr` reference is inside a closure that only runs when CALLED, same
+  as the already-existing `FunctionExpression`/`ArrowFunctionExpression`
+  cases right next to this one. Fixed: an `ObjectExpression`/
+  `ArrayExpression` is pure-literalish when every property/element is,
+  recursively — building the literal itself never executes anything.
+- (Documented in step 1's own entry already, re-confirmed here on real
+  content, not just app.js/main.js's listener blocks: `ruleHooksPorts`'s
+  self-file and app.js/main.js exemptions, `ruleNoTopLevelPortCalls`'s
+  app.js/main.js exemption — both held up against this step's real moves
+  with no further gap.)
+
+**A new, real permanent blocker this step's own moves surfaced — NOT
+`logErr`/`CHIPS` related, not anticipated by this task's brief:
+`chipRender`/`chipRenderInWorker`/`chipPublish` (audio/chip.js) and
+`chipStreamOpen`/`chipRenderAuto` (audio/chip-stream.js) all call
+`songTitleOf` (`ask/context.js`, layer 4) directly** — `chipRender`/
+`chipRenderInWorker`/`chipStreamOpen` each for a `logDebug` status line
+naming the open song; `chipPublish` because `chipRender` passes debug
+info through it; `chipRenderAuto` because it calls both. An illegal
+upward import from `audio/chip.js`'s/`audio/chip-stream.js`'s layer 3,
+and no port covers `songTitleOf` — it isn't one of step 1's five, and
+isn't named by any later H step in docs/split-phase2-plan.md's table
+either. All five stay in app.js, now importing `CHIPS`/`chipSource`/
+`chipEstimateTracks`/`chipVaultFile`/`chipCleanupAfterFailure`/
+`chipStreamOpenWorker`/etc. back from `audio/chip.js`/`audio/
+chip-stream.js` unchanged. Flagged here, not silently retried: whoever
+next considers this needs either a `songTitleOf` port (a sixth name for
+`hooks.js`, own H commit) or to accept these five as this app's actual
+render-entry-point home staying in app.js indefinitely.
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: two NEW real-repo breaks this
+step's moves caused, both fixed (not pre-existing, not the known
+`ps2-real`/`instruments` gap):
+- `tests/package.test.mjs`'s own CHIPS-list scan read `src/app.js` by
+  name (hardcoded) for the `files:`/`shared:` module lists `CHIPS`
+  carries — empty once `CHIPS` moved out. Fixed to use
+  `tests/harness.mjs`'s `appSource()` (the whole src/ tree concatenated,
+  §3.3 — built for exactly this).
+- `tools/package.mjs`'s `chipTableModules()` had the SAME hardcoded
+  `src/app.js` read — a real packaging-tool bug, not just a test one
+  (the shipped iPad/Pages bundle would have silently stopped including
+  `tools/sounding.mjs`/`tools/note-preview.mjs`/etc.). Fixed the same way,
+  walking all of src/ instead of reading one file.
+Both fixes are general (scan the tree, not a path), so neither breaks
+again the next time a step moves CHIPS (or anything else `files:`/
+`shared:`-shaped) to a different file.
+
+After both fixes: only `ps2-real`/`instruments` fail (pre-existing).
+`node tools/split/check.mjs`: clean except `oldBpb`
+(`regen-e2e-footer.mjs --file src/app.js` re-run after EVERY move this
+step made — a move that turns a declaration into an import without a
+footer re-run left 4 stale rule-2 "assignment to imported binding"
+findings the first time, from the generated `__nrExpose$`'s own two-way
+accessor still trying to SET names that are imports now; caught
+immediately, not shipped). `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. Sorted `^\w+ = prof\("\w+"` label set unchanged (29 entries — none
+of this step's names are profiled). `npm run test:e2e:smoke`: 8/8.
+`src/app.js`: 15056 → 14485 lines (571 out — well under the plan's
+~1,100 estimate, because `chipRender`/`chipRenderInWorker`/`chipPublish`/
+`chipStreamOpen`/`chipRenderAuto`, among the largest functions in the
+cluster, all stayed).
+
+**A fourth same-shape `verbatim.mjs` false alarm, same class docs/
+split-plan.md's Deviations (11) found for `AUDIO_STRIP_H` ("a genuinely
+unfixable… same-line, multi-statement split") — two instances this time,
+both hand-verified, neither fixed in the tool (same reasoning: a line-
+level differ has no concept of a physical line holding two unrelated
+statements, only one of which moved).** `const PSX_SOUNDING_ON = false;
+const HOLD_MS = 160;` was one original physical line; `PSX_SOUNDING_ON`
+moved to `audio/chip.js`, `HOLD_MS` (+ its trailing comment) stayed —
+`node tools/split/verbatim.mjs HEAD` reports one `lost`/two `extra` for
+it, same as `AUDIO_STRIP_H`. ` if (typeof document !== "undefined" &&
+document.addEventListener) document.addEventListener("touchstart", () =>
+{}, {passive: true}); function ensureAudio() { // one context…` was
+ALSO one original physical line (a top-level touchstart listener and
+`ensureAudio`'s own declaration, sharing a line) — `move.mjs`'s cut left
+the touchstart half joined onto the FOLLOWING statement instead
+(`document.addEventListener("visibilitychange", …)`, a separate top-level
+listener that happened to sit right after `ensureAudio`'s closing brace)
+— the line-joining bug docs/split-plan.md's Deviations (9)-(11) already
+named, hit here for the first time on a function (not a `prof()` wrap).
+Hand-fixed: split back onto two lines, nothing else touched. Confirmed by
+hand, token-by-token: `const PSX_SOUNDING_ON = false;` reappears verbatim
+in `audio/chip.js`, `const HOLD_MS = 160;` (+ comment) in app.js; the
+touchstart statement is its own line in app.js, `export function
+ensureAudio() { // one context…` (same comment) in `audio/engine.js`.
+Nothing lost either time — flagged here as the precedent `AUDIO_STRIP_H`
+already set, not reopened as a tooling task.
+
+Browser-check by the main session (plan §3): ⚠ chip count + debug log,
+an NSF/SPC chip render, and the metronome — `ensureAudio`/`resumeAudio`/
+`rebuildAudio`/`metStart`/the whole `CHIPS` table moved file, byte-
+identical, but this is exactly the audio-session code the plan's own
+"AUDIO IS FRAGILE" guardrail (docs/split-plan.md §5) singles out for a
+real device/browser check regardless.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 3: render/chrome/session upcall ports + songTitleOf (docs/split-phase2-plan.md)
+
+Done. Sixteen ports (§1 M1's recipe, one H commit, no code moved — only
+renamed `XImpl` in place + rewired imports): `draw`, `playbackFrame`,
+`clampView`, `updateSongBtn`, `updateSyncBtn` (home: `ui/chrome.js`);
+`buildScoreModel` (home: `render/score.js`); `songTitleOf` (home:
+`ask/context.js` — step 2's own `chipRender`/`chipRenderInWorker`/
+`chipPublish`/`chipStreamOpen`/`chipRenderAuto` blocker); `fitView`,
+`renderTrackbar`, `updateEditBtnVis`, `updateChipBtn`, `updateSubtitle`,
+`askRender`, `finalizeNotes`, `recFinish`, `albumAdvance` (home: `app.js`
+itself — the body stays, renamed + exported, so `wire.js` imports the
+`*Impl` straight from `app.js`, a circular import with `app.js`'s own
+`import { installHooks } from "./wire.js"` that's safe because every name
+is a hoisted function declaration, identical in shape to the `app.js`↔
+`wire.js` cycle step 1 already relies on).
+
+Importers re-pointed by the rule the task stated: a caller whose own layer
+is BELOW the impl's routes through `hooks.js` (the only legal path);
+a caller at or above the impl's layer (same tier, or legally reading
+downward already) uses `XImpl as X` directly from the impl's file instead
+— `ui/sheets.js`/`ui/note-editor.js` (same `ui` tier as `ui/chrome.js`,
+plus `ui/sheets.js` reading down into `render/score.js`/`ask/context.js`,
+both already-legal downward imports) and `ask/bridge.js`/`ask/sheet.js`
+(same `ask` tier as `ask/context.js`) all got the alias form; `ui/chrome.js`'s
+own `songTitleOf` import (same `ask`/`ui` tier, both layer 4) did too.
+`app.js`'s existing imports of the five `ui/chrome.js`-homed names plus
+`buildScoreModel`/`songTitleOf` switched from their old home files to
+`./hooks.js` (the home file no longer re-exports the bare name once
+ported — this is true regardless of app.js's own layer, so it isn't an
+exception to the rule above, just a consequence of where the bare name
+actually lives now). Nine brand-new `import { X } from "./hooks.js";`
+lines added to `app.js` for the names whose impl stayed there — needed so
+`app.js`'s OWN internal bare-name call sites (`finalizeNotes` calling
+`renderTrackbar()`/`fitView()`/`updateEditBtnVis()`; `renderTrackbar`
+calling itself recursively plus `buildScoreModel()`/`clampView()`/
+`draw()`; `updateEditBtnVis` calling `updateChipBtn()`; etc. — all
+UNCHANGED call-site text) still resolve. Two same-file self-imports, same
+pattern step 1 set for `ui/chrome.js`'s original five: `ui/chrome.js`
+imports `draw`/`updateSongBtn`/`updateSyncBtn` back from `../hooks.js`
+(for `resize()`'s `draw()` and `saveDraft()`'s `updateSongBtn()`/
+`updateSyncBtn()` calls); `ask/context.js` imports `songTitleOf` back from
+`../hooks.js` (for `askViewCursorLine`'s own internal
+`songTitleOf(S.songKey)` call).
+
+One pre-existing same-name-property wrinkle, checked and confirmed
+harmless: `updateChipBtn.warned` (a per-song memoization flag, read/
+written only by the sibling, non-renamed `updateChipBtnInner`) now hangs
+off the `hooks.js` forwarder's function object instead of the impl's —
+every reference resolves to the same singleton import, so this is
+behaviorally identical, not a logic change.
+
+`node tools/split/regen-e2e-footer.mjs --file src/app.js` re-run — the
+nine app.js-resident names' setters in the generated `__nrExpose$` would
+otherwise try to assign to now-imported bindings (rule 2), the identical
+"a move that turns a declaration into an import" gotcha step 2 hit, here
+from a rename rather than a move. After regen, the nine `*Impl` names get
+two-way accessors and the bare names drop out of the footer entirely (an
+import, not a declaration — `declaredNames()` returns `[]` for
+`ImportDeclaration`), matching step 1's `setInfo`/etc. precedent.
+
+Two real-repo tests in `tests/modules.test.mjs` updated (expected,
+task-authorized test maintenance, not a new break): the "every port
+throws"/"installHooks() installs" tests grew from the original five names
+to all 21; the step-2-era negative test asserting `chipRender -> audio/
+chip.js` is blocked BY `songTitleOf` now asserts the opposite (dissolved —
+only `chipRenderInWorker`/`chipPublish`, chipRender's own still-in-app.js
+siblings, remain, and that's a "move together" situation, not permanent).
+Two tests added per plan §3's own list: a port-before-install throw test
+(folded into the all-21 loop); a NEW rebinding test for `draw` (sets
+`S.sceneValid = true`, reassigns the bare `draw` port, confirms the real
+`drawImpl` — which unconditionally sets `sceneValid = false` — never ran).
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing, missing local rips). `node tools/split/check.mjs`:
+clean except `oldBpb` (Q6). `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. `node tools/split/verbatim.mjs --hook setInfo,logErr,logDebug,
+appConfirm,updateJobsBtn,draw,playbackFrame,clampView,fitView,
+buildScoreModel,renderTrackbar,updateEditBtnVis,updateChipBtn,
+updateSongBtn,updateSyncBtn,updateSubtitle,askRender,finalizeNotes,
+recFinish,albumAdvance,songTitleOf HEAD`: ✔, zero lost/extra. Sorted
+`prof("…")` LABEL set unchanged (29 — the renamed bindings keep their
+original label strings). `npm run test:e2e:smoke`: 8/8. `node
+tools/package.mjs --out`: 181 files, unchanged (no file added/removed).
+`src/app.js`: 14486 → 14495 lines (+9, new hooks.js import lines only —
+no code moved this step).
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 4: transport/voices/clips mostly blocked; chip render + chip-stream cluster moves (docs/split-phase2-plan.md)
+
+Done, with almost the entire named scope staying in app.js — documented,
+per this step's own instruction ("leave anything still blocked"), not
+silently retried. `blockers.mjs` run against every named cluster FIRST,
+real repo, before any move:
+
+- `play`/`stop`/`playGate`/`playGateKick`/`playGateTick`/`playGateActive`/
+  `playGateWait`/`buildSchedule`/`renderSongOffline`/`audioChaseNow` →
+  `audio/transport.js`: 45 still-in-app.js closure names (the whole album
+  system, sf/game/instrument preload machinery, the tombstone/undo
+  helpers, `scheduleClip`/`stretchEnsure*`) plus 5 illegal-layer imports —
+  `recOpenEnded` (`input/record.js`), `srAnnounce`/`scheduleBackupFlush`
+  (`ui/chrome.js`), `computeSongEnd` (`ui/sheets.js`), `setAnchorBQ`
+  (`ui/note-editor.js`), all layer 4.
+- `scheduleNote`/`previewNote`/sf+game preload+wait → `audio/voices.js`:
+  37 closure names (the same play-gate/instrument-preload web) plus 2 of
+  the same illegal-layer imports (`recOpenEnded`/`srAnnounce`).
+- `scheduleClip`/`stretchEnsure(All)`/`applyAudioDirs`/`audioEnsureFile`/
+  `applyBeatMap`/`setSongTempo`/`writeClips`/`setClipDir`/`splitClipAt`/
+  `deleteClip` → `audio/clips.js`: checked individually, not just as a
+  block — every one of the ten comes back blocked, the smallest
+  (`writeClips`/`setClipDir`/`splitClipAt`/`deleteClip`) by
+  `annoSnapshot`/`tombstone`/`saveLocalNotes`/`buildSchedule` plus 3 of the
+  illegal-layer imports (`setAnchorBQ`/`computeSongEnd`/
+  `scheduleBackupFlush`), the larger ones pulling in the whole
+  transport/play-gate web on top.
+
+None of the five illegal-layer imports (`recOpenEnded`, `srAnnounce`,
+`scheduleBackupFlush`, `computeSongEnd`, `setAnchorBQ`) are covered by any
+existing port, and none are named by docs/split-phase2-plan.md's table for
+one — adding a port for any of them would be a new H commit this step's
+own scope ("step 4 = M commit(s)") doesn't authorize. This is the exact
+shape docs/split-plan.md's phase-1 Deviations (7)/(8) already found for
+this same code (`play`/`stop`/play-gate "did NOT move, almost entirely");
+step 3's ports didn't touch any of these five names, so nothing new
+cleared here. All three clusters stay entirely in app.js, bit-for-bit.
+
+**What step 3's `songTitleOf` port DID unblock, exactly as it was designed
+to**: `blockers.mjs chipRender,chipRenderInWorker,chipPublish --to
+src/audio/chip.js` came back clean (per step 2's own writeup, `songTitleOf`
+was their only blocker) — moved by name, verbatim. That immediately
+cleared `chipStreamOpen`/`chipRenderAuto --to src/audio/chip-stream.js`
+too (their remaining blocker was `chipRender`/`chipRenderInWorker`/
+`chipPublish` themselves, now real same-layer imports from the just-moved
+`audio/chip.js`) — moved the same way, same commit. `chipRender`/
+`chipRenderInWorker` now import `songTitleOf` from `../hooks.js` for their
+`logDebug` status line; `chipPublish` needed no direct import (it only
+receives `chipRender`'s debug string through); `chipRenderAuto` now
+imports `chipRender` from `./chip.js` instead of a bare app.js reference.
+
+`node tools/split/regen-e2e-footer.mjs --file src/app.js` re-run. One
+real-repo test in `tests/modules.test.mjs` updated (expected — the
+step-3-era test asserted this exact cluster was STILL blocked by
+`chipRenderInWorker`/`chipPublish`; now that step 4 actually moved them,
+the correct assertion is that all five report clean, with
+`blockers.mjs` finding nothing to chase at all — not even an empty
+closure — because none of the five is declared in app.js any more, same
+shape the pre-existing `chipSource` test already established).
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing). `node tools/split/check.mjs`: clean except `oldBpb`.
+`check-e2e-globals.mjs`/`check-controls.mjs` clean. `node
+tools/split/verbatim.mjs HEAD`: ✔, zero lost/extra — no exceptions
+needed (a clean `move.mjs --names` move, not a rename, so nothing for
+`--hook` to tolerate and nothing hand-verified). Sorted `prof("…")` LABEL
+set unchanged (29 — none of the five moved names are profiled). `npm run
+test:e2e:smoke`: 8/8. `node tools/package.mjs --out`: 181 files, unchanged
+(no file added/removed — `audio/chip.js`/`audio/chip-stream.js` already
+existed). `src/app.js`: 14495 → 14275 lines (220 out, well under the
+plan's ~1,150 estimate — almost the entire transport/voices/clips cluster
+stayed put).
+
+Browser-check still needed by the main session (plan §3, narrowed to what
+this step actually touched — see Q9 above): a chip song (NES + one
+streamed console) and note preview (chip fallback). The rest of plan §3's
+step-4 ear-check list (synth, SF2, game voice, clip at 0.5×, album
+auto-advance) is unaffected — that code never moved.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 4c: the transport/voices/clips cluster is out (docs/split-phase2-plan.md)
+
+Seven M commits, all verbatim (`verbatim.mjs <sha>` ✔ each, zero
+exceptions), finishing what steps 4/4b left. The 50-name closure
+blockers.mjs reported was not one knot: 28 names hang off a 22-name
+strongly-connected core one way only, so they moved as their own
+commits around it — title-order helpers → `model/catalog.js`; the
+instrument-library loaders + `gameVoicesInSong`/`sf2VoicesInSong`/
+`resolveGameVault` → `audio/voices.js`; `albumStrip` → `audio/
+transport.js`; THEN the core in one commit (`scheduleClip`/
+`stretchEnsure*`/`audioChaseNow` → clips; `scheduleNote` + sf/game
+preload+wait → voices; play gate + `play`/`stop` → transport; one
+import-line hand fix, `playGateKick` from `../app.js` → `./transport.js`);
+then `previewNote` → voices, `applyAudioDirs`/`audioEnsureFile`/
+`applyBeatMap`/`setSongTempo` → clips, and `renderSongOffline`/
+`offlineWaitForAssets` → `audio/bounce.js` (split-plan §1's "offline
+render" row, not the phase-2 table's transport guess). No new port, no
+logic edit, Learning-mode gates untouched. Checks per commit: check.mjs
+clean except `oldBpb`, e2e-globals/controls clean, prof label set
+unchanged (29), footer regenerated. Group: `npm test` under alarm 1200 —
+only ps2-real/instruments fail (pre-existing); smoke 8/8; package 181
+files, list identical. `src/app.js`: 14179 → 13343 (836 out).
+
+Device check owed — Q9 (the FULL step-4 ear list now: synth, SF2, game
+voice, NES + one streamed console, clip at 0.5×, note preview, album
+auto-advance, metronome). This is the known-good iPad engine moving file;
+build, listen, revert on the first mute.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 5: model/gen down (docs/split-phase2-plan.md)
+
+Eighteen commits (14 M, 3 H carrying 4 ports), all verbatim-checked.
+Re-homed first, so the clusters could reach layer 2: `isDirective`/
+`isCopyableAnno`, `setEndBQ`/`dropSupersededBy`/`dropLocalKeyAt`,
+`notesTxtFor`/`declaredTsForKey` → model/rollnotes.js; `snapBeat` →
+model/grid.js; `undoTrackAdd` → model/edits.js; `draftWrite`/
+`localDraftWrite`, `saveDraft`/`retireOldOverlay`/`draftRead`/
+`localDraftTracks`/`filesMirror`/`filesMirrorSoon`/`filesMirrorFor` →
+model/versions.js (phase 1 step 14 had parked them in ui/*);
+`transposeChordLabel` → theory/chords.js. Ported (hooks.js 24 → 28):
+`updateSongMeta`, `lassoedAnnos`, `drumStep`, `annoInLasso`. Then the
+clusters: `saveEdits`/`loadEdits`/`foldOldOverlay` → model/edits.js;
+26 selection mutators → model/selection.js; `scheduleAnalysisRecompute`
++ `adopt*` → gen/analysis.js; `drGenerate` → gen/drummer.js;
+`bsGenerate`/`applyTake` → gen/bassist.js; `moveClip`/`trimClip`/
+`splitSelectedClipAtCursor` → audio/clips.js. check.mjs clean except
+`oldBpb` throughout (rule 10 caught one wrong port use — fixed with the
+downward Impl alias); prof set 29 unchanged; `npm test` under alarm
+1200 — only ps2-real/instruments fail (pre-existing); modules 86/86;
+smoke 8/8; package 181 files unchanged. `src/app.js`: 13343 → 12139.
+
+Device check owed before shipping (plan §3 step 5): edit/undo,
+quantize/split/join, copy/paste, a drummer/bassist take on a SCRATCH
+song — and, since saveDraft/saveEdits/draftWrite changed file, one
+real-browser edit → reload → compare on a scratch local song
+(persistence needs a device test). Verbatim moves, but that rule exists
+because of 6ad5eee.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 6: src/session/{song,album,files}.js (docs/split-phase2-plan.md)
+
+Seven commits, verbatim-checked. Four re-homes first (`annotationsFor`/
+`subtractTombstones`/`mergeLocalAdditions`/`resolveNoteWith`/`bakeTempos`/
+`bakeMeter` → model/rollnotes.js; `draftFingerprint` → model/versions.js;
+`cmpBar` → ui/chrome.js; `syncDurSeg` → ui/note-editor.js), then the
+three new layer-4 files: song.js (finalizeNotesImpl, loadNotes, loadSong*/
+setSong, openDraft*, fitViewImpl, updateSongMetaImpl, rememberRecentSong,
+reflectSongURL), album.js (the run sequencer), files.js (saveSongAs,
+openSaveForm + folder picker, saveVersion, forkCurrentSong,
+renameLocalKeys). `revertSongToRepo`/`moveComposition` stay — held by the
+sync/publish web (step 8). Manifests all updated (SW_VERSION nr-v21 →
+nr-v24; fileCount 64 → 67). check.mjs clean except `oldBpb`; prof set 29
+unchanged; `npm test` under alarm 1200 — only ps2-real/instruments fail
+(pre-existing); modules 86/86; smoke 8/8; package 181 → 184 files (the
+three session files only). `src/app.js`: 12139 → 11331.
+
+TOOLING GAP (move.mjs, found this step; RESOLVED by step 7's step 0 addendum, below): `profWrapName` matches only
+`X = prof("X", X)`. A port body renamed in step 3 keeps its label —
+`finalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl)` — so the
+wrap line is NOT carried with the function and is left in app.js
+assigning to an import (a TypeError at module eval, caught by node
+--check/check.mjs only indirectly). Hand-moved this time. Fix before
+step 7 moves `renderTrackbarImpl`/`updateSubtitleImpl`/`drawImpl`/
+`playbackFrameImpl`/`buildScoreModelImpl`: accept `XImpl = prof("X",
+XImpl)` (identifier = declared name, label = name minus `Impl`).
+
+Device check owed (plan §3 step 6): load, draft, Save As, fork, revert —
+scratch songs only.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 7: the ui/ homes filled (docs/split-phase2-plan.md)
+
+Nine M commits, verbatim-checked (plus a step 0 addendum first: move.mjs
+carries `XImpl = prof("X", XImpl)` — the TOOLING GAP step 6 logged above
+is RESOLVED, two fixture tests). In order, each blockers.mjs-clean on its
+own: chrome leaves + three port impls (`songRegionRight`, `placeLassoBtn`,
+`toggleHl`, `updateLCD`, `updateEditBtnVisImpl`/`updateSubtitleImpl`/
+`updateChipBtnImpl`) → ui/chrome.js; `renderNoteList`/`openNoteList`/
+`updateChordStale`/`useFileKey` → ui/notes.js; the Instruments sheet web
+(13 names) → ui/sheets.js; the drummer/bassist sheets → ui/sheets.js;
+the wm actions (11) → ui/wm.js; `trackToggle`/`saveTrackDir`/`saveVoices`/
+`renameTrack` → ui/trackbar.js; the Mixer (6) + `reorderTrack` →
+ui/mixer.js; the voice menu + pickers + clip controls (14) →
+ui/voice-menu.js; `renderTrackbarImpl` → ui/trackbar.js. No new files
+(manifests, SW_VERSION, fileCount unchanged). Rule 10 bit on every ui/*
+commit but one — each hooks.js port import move.mjs copied for an impl at
+layer ≤ 4 became the `XImpl as X` alias; that is now the rule for every
+layer-4 move. check.mjs clean except `oldBpb`; prof set unchanged; `npm
+test` under alarm 1200 — only ps2-real/instruments fail (pre-existing);
+modules 88/88; smoke 8/8; package 184 files, identical. `src/app.js`:
+11331 → 9360.
+
+Browser check owed (plan §3 step 7): chips M/S/H, voice audition (game +
+SF2 pickers), mixer (fader/pan/reorder), wm dock/float/close + the window
+menu, phone width. Not iPad-audio-engine code, but the voice menu's
+audition path (sf2AuditionPreset/instAudition) moved file — one ear check
+on a game voice pick is cheap insurance.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 8: import + sync out (docs/split-phase2-plan.md)
+
+Twelve M commits, verbatim-checked, no new files, plus one harness
+commit (below). Unblockers first
+(folder-tree walks → model/catalog.js; tombstone maintenance →
+model/edits.js; `jobsLoad`/`jobStart`/`jobsClearFinished` → ui/sheets.js
+beside `jobApi`; `cmpEnter`/`cmpExit`/`cmpShow` → ui/chrome.js;
+`askSave`/`askCommitLog` → ask/bridge.js; `createComposition` + the
+make-it-mine trio → session/files.js; `updateManifest`/`manifestPlace` →
+sync/publish.js; the import leaves and the File-menu shell), then the
+chip capture/commit cluster → import/capture.js, the sync web in ONE
+commit of three invocations (publish family → sync/publish.js; the sync
+sheet → ui/sheets.js; `revertSongToRepo`/`moveComposition` →
+session/files.js — a layer-4 cycle, legal), and last the Import hub
+(`openPickedFiles`, `importAudioFiles`, m3u, `fsub*`) → import/hub.js.
+check.mjs clean except `oldBpb`; prof set unchanged; `npm test` under
+alarm 1200 — only ps2-real/instruments fail (pre-existing); modules
+89/89; smoke 8/8; package 184 files, identical. `src/app.js`: 9360 →
+7457. Steps 7 + 8 together: 11331 → 7457.
+
+HARNESS FINDING (fixed, own commit): `run("appConfirm = …")` rebinds
+hooks.js's port, but rule 10 makes a layer-4 caller import `appConfirmImpl
+as appConfirm` directly, so the stub never reached import/hub.js and the
+real confirm sheet hung the m3u test (208 tests cancelled behind it).
+tests/harness.mjs now rebinds `<name>Impl` with the port; fixture test
+added. DECISION for the main session to veto: the harness, not rule 10 or
+16 tests, was changed - see the plan write-up. The devtools window mirror was NOT
+changed - grepped tests/e2e/: no Playwright test stubs `appConfirm` or
+`S.hooks`, so nothing to add there.
+
+Device check owed (plan §3 step 8): an NSF import into scratch, a publish
+to scratch; plus one revert and one discard-pending on a scratch song
+(`revertSongToRepo`/`discardPending` moved file). Never his compositions.
+
+Next in the plan: step 9 (ask/*: askRun, askSend, askContext, askRunTool,
+askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes — and
+`askRenderImpl`, the last port body still in app.js besides
+`recFinishImpl`), step 10 (input/*), step 11 (the remainder by
+blockers.mjs), step 12 (the ~320 top-level statements → init functions).
+
 
 ## QUEUED 2026-10-04 — DAW inventory shortlist (Josh, Terminal #104; docs/daw-inventory.md)
 1. ~~Playhead tag inside the strip, triangle gone (Roll/Tracks/Score) — S~~
@@ -5669,3 +7077,59 @@ Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tet
 
 ## QUEUED 2026-10-04 — keyboard: stretch keys when the whole piano fits
 On a very wide window (3440 px) all 52 whites at 44 px take 2288 px and the panel's right third is empty. When the full range fits, widen the keys to fill (keep 44 px as the minimum). Small; main's src/app.js instGeom / ui/piano.js pianoKeyW.
+## QUEUED (built on a worktree branch `finish`, not merged/pushed yet) 2026-10-04 — module split phase 2 steps 11–13: app.js is GONE (docs/split-phase2-plan.md)
+
+Branch `finish` (off `origin/module-split`), 39 commits: a third step 0
+addendum, 11 step-11 commits (every remaining declaration out of app.js —
+zero left), 25 step-12 commits (every top-level statement → one of 66
+`init<Module><N>()` functions at its original spot; two new files,
+ui/perf.js and platform/sw.js; the boot IIFE → session/boot.js `boot()`),
+2 step-13 commits (src/app.js deleted; src/main.js = `installHooks();` +
+the 66 init calls in the original order + `boot();` + the devtools gate;
+LEGACY_CONTAINER, the harness legacy path and the e2e footer generator
+retired; doc sweep). Every M commit `verbatim.mjs` ✔; every L commit ✔ with
+the init tolerance; the one non-move commit (step 13's deletion) reports
+exactly the deleted devtools footer-mirror block, nothing else. New test:
+tests/boot-order.test.mjs — main.js's expanded top-level statement
+sequence equals the 328-statement snapshot captured before the first init
+move (tests/split-fixtures/boot-order.txt), statement by statement, and
+did at every commit after the addendum that added it. check.mjs: no exemptions left, one
+finding (`oldBpb`, now model/rollnotes.js — the known pre-existing bug,
+Q6). `npm test` under alarm 1200 after each step: only ps2-real (4) +
+instruments (13) fail (the local-rip gap); smoke 8/8 after each step;
+package 188 → 191 files (+ session/boot.js, ui/perf.js, platform/sw.js)
+→ 190 (− app.js), reachability guard green. Full accounting:
+docs/split-phase2-plan.md's step 11/12/13 write-ups; NIGHT-ROLL.md's
+Module map now opens with the finished state.
+
+MORNING CHECKLIST — every browser/device check owed across phase 2 steps
+4c–13 (each step's write-up lists it; this is the one list). None of
+these steps changed logic — every commit is a verbatim move — so each
+check is "it still works", not "it works differently":
+
+- iPad ear check (steps 4/4c — THE engine moved file; iPad mute → revert
+  first): synth, SF2, game voice, NES + one streamed console, clip at
+  0.5×, note preview, album auto-advance, metronome. (= Q9.)
+- Edits (step 5): edit/undo, quantize/split/join, copy/paste, a drummer
+  take + a bassist take; and a real-browser edit → reload → compare on a
+  scratch local song (saveDraft/saveEdits/draftWrite moved file).
+- Song lifecycle (step 6): load, draft, Save As, fork, revert — scratch only.
+- UI (step 7): chips M/S/H, voice audition, the Mixer, wm dock/float/close,
+  phone width.
+- Import/sync (step 8): an NSF import into scratch, a publish to scratch,
+  one revert and one discard on a scratch song (never his compositions).
+- Ask (step 9): an Ask tool run (write_notes) + a resume, the ✦ open, a
+  Terminal-tab send.
+- Input (step 10): a roll tap/drag/lasso/pinch, a Score pencil + erase,
+  the playhead-tag drag (all three views), a keyboard glissando +
+  two-finger scroll + Sustain + ‹ › + lock + chevrons, one ● record take
+  from the keyboard, the cof drag.
+- Boot + wiring (steps 12–13): a cold boot on Pages and on the iPad
+  (offline relaunch too — SW_VERSION went nr-v28 → nr-v32), `?perf=1`
+  (HUD + ⏺ report), `?sw=0`, Learning vs Normal (estimateKey never called
+  in Learning), and — because every listener in the app re-attached from
+  a different file — one pass over each sheet's open/close/Esc/drag and
+  the File ▾ / View ▾ / Edit ▾ menus, the metronome sheet, the Settings
+  sheet (folder pick, text size), Share.
+- Step 2's (still owed): the ⚠ chip count + debug log, an NSF/SPC chip
+  render.

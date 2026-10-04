@@ -1,4 +1,5 @@
 import { S } from "../state.js";
+import { LETTER_PC } from "./chords.js";
 
 export const TONIC_SPELL = [["C"], ["C#", "Db"], ["D"], ["D#", "Eb"], ["E"], ["F"],
                      ["F#", "Gb"], ["G"], ["G#", "Ab"], ["A"], ["A#", "Bb"], ["B"]];
@@ -84,4 +85,14 @@ export function keyNameToSf(name) {
   while (sf > 7) sf -= 12;  // fold only extreme enharmonics (SF_MAJOR runs -7..7)
   while (sf < -7) sf += 12;
   return sf;
+}
+
+export function tonicPcOfName(name) { // "G#m" / "D dorian" / "Bb" -> pc
+  const m = (name || "").match(/^([A-G])([#b]?)/);
+  return m ? (LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12 : null;
+}
+export function modeOfName(name) {
+  const mm = (name || "").match(/\s([a-z]+)$/i);
+  if (mm && mm[1].toLowerCase() in MODE_OFFSET) return mm[1].toLowerCase();
+  return /m$/.test(name) && name.length > 1 ? "minor" : "major";
 }

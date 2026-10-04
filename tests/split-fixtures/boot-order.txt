@@ -1,0 +1,328 @@
+installHooks();
+try {
+try {
+"use strict";
+S.APP_MODE = (() => {
+if (typeof document !== "undefined" && document.body) {
+if (PERF_FLAGS.get("dpr")) {
+S.RULER_W = RULER_W_ROLL;
+S.STRIP_Y = BASE_RULER_H;
+S.RULER_H = S.STRIP_Y + STRIP_H;
+(function migrateAlbumPaths() {
+document.getElementById("lcdtemposeg").addEventListener("click", () => {
+document.getElementById("lcdmeter").addEventListener("click", e => {
+document.getElementById("lcdkey").addEventListener("click", e => {
+document.getElementById("trackmore").addEventListener("click", () => {
+if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
+{
+renderOctBtn();
+document.getElementById("octbtn").addEventListener("click", () => {
+document.getElementById("insgo").addEventListener("click", () => {
+document.getElementById("insclose").addEventListener("click", () =>
+document.getElementById("delgo").addEventListener("click", () => {
+document.getElementById("delclose").addEventListener("click", () =>
+if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
+window.addEventListener("error", e => {
+window.addEventListener("unhandledrejection", e =>
+document.getElementById("errbtn").addEventListener("click", () => {
+document.getElementById("errcopy").addEventListener("click", async () => {
+document.getElementById("errclear").addEventListener("click", () => {
+document.getElementById("noteinfo").addEventListener("click", async () => {
+document.getElementById("infosheetcopy").addEventListener("click", ev => {
+for (const ev of ["gesturestart", "gesturechange", "gestureend"]) {
+document.addEventListener("touchmove", e => {
+document.addEventListener("touchend", e => {
+canvas.addEventListener("pointerdown", e => {
+canvas.addEventListener("pointermove", e => {
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", () => { S.drag = null; S.pinch = null; draw(); });
+canvas.addEventListener("wheel", e => {
+if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("touchstart", () => {}, {passive: true});
+document.addEventListener("visibilitychange", async () => {
+if (typeof location !== "undefined" && document.body && new URLSearchParams(location.search).get("perf")) (() => {
+document.addEventListener("pointerdown", function warm() {
+document.addEventListener("pointerdown", e => {
+document.addEventListener("pointerdown", e => {
+play.gen = 0;
+document.getElementById("albumprev").addEventListener("click", albumPrev);
+document.getElementById("albumnext").addEventListener("click", albumNext);
+document.getElementById("albumleave").addEventListener("click", albumLeave);
+if (S.viewMode === "tracks") S.RULER_W = TRACKS_GUTTER;
+document.getElementById("playbtn").addEventListener("click", () => {
+document.getElementById("rwbtn").addEventListener("click", () => {
+speedsl.addEventListener("input", () => { speedlbl.textContent = speedsl.value + "%"; });
+speedsl.addEventListener("change", () => applySpeed(+speedsl.value));
+speedreset.addEventListener("click", () => {
+{
+applySpeed = pct => { _applySpeedInner(pct); speedbtn.textContent = pct + "%"; };
+S.masterVol = +(localStorage.getItem("ff1roll-mastervol") || 1);
+volsl.value = String(Math.round(S.masterVol * 100));
+vollbl.textContent = Math.round(S.masterVol * 100) + "%";
+setVolBtn(Math.round(S.masterVol * 100));
+volsl.addEventListener("input", () => {
+{
+keysel.addEventListener("change", refreshKeyPreview);
+keymodeSel.addEventListener("change", refreshKeyPreview);
+keysetBtn.addEventListener("click", () => {
+document.getElementById("keysetest").addEventListener("click", () => {
+met.on = false;
+{
+document.getElementById("metbtn").addEventListener("click", () => met.on ? metHalt() : metStart());
+document.getElementById("metcfg").addEventListener("click", () => {
+document.getElementById("metclose").addEventListener("click", () =>
+document.getElementById("metgo").addEventListener("click", () => met.on ? metHalt() : metStart());
+document.getElementById("metbpm").addEventListener("input", e => {
+document.getElementById("metnum").addEventListener("change", e => {
+document.getElementById("metden").addEventListener("change", e => {
+document.getElementById("metsub").addEventListener("change", e => {
+document.getElementById("metfollow").addEventListener("change", e => {
+document.getElementById("metnudgeL").addEventListener("click", () => {
+document.getElementById("metnudgeR").addEventListener("click", () => {
+document.getElementById("metcountin").addEventListener("change", e => {
+document.getElementById("mettap").addEventListener("click", () => {
+{
+{
+document.getElementById("cofbtn").addEventListener("click", () => {
+document.getElementById("cofcw").addEventListener("click", () => { S.cofRot = wrapSf(S.cofRot - 1); drawCof(); });
+document.getElementById("cofccw").addEventListener("click", () => { S.cofRot = wrapSf(S.cofRot + 1); drawCof(); });
+cofCanvas.addEventListener("pointerdown", e => {
+cofCanvas.addEventListener("pointermove", e => {
+cofCanvas.addEventListener("pointerup", cofRelease);
+cofCanvas.addEventListener("pointercancel", () => { S.cofPtr = null; S.cofDragRot = null; drawCof(); });
+document.getElementById("listbtn").addEventListener("click", e => {
+document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
+document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
+document.getElementById("notelistSync").addEventListener("click", () => {
+document.getElementById("notelistAdd").addEventListener("click", () => {
+document.getElementById("helptabs").addEventListener("click", e => {
+document.getElementById("filehelp").addEventListener("click", () => {
+document.getElementById("fileabout").addEventListener("click", () => {
+findsel.addEventListener("focus", refreshFindSel);
+findsel.addEventListener("change", () => {
+lassobtn.addEventListener("click", () => {
+document.getElementById("chcopy").addEventListener("click", async e => {
+document.getElementById("chordbtn").addEventListener("click", () => {
+if (typeof document !== "undefined" && document.body) {
+fitReadline();
+{
+viewbtn.addEventListener("click", e => openDropUp(e.currentTarget, viewSwitchMenu));
+document.getElementById("vsRoll").addEventListener("click", () => { closeDropUp(); setViewMode("roll"); });
+document.getElementById("vsTracks").addEventListener("click", () => { closeDropUp(); setViewMode("tracks"); });
+document.getElementById("vsScore").addEventListener("click", () => { closeDropUp(); setViewMode("score"); });
+document.getElementById("accseg").addEventListener("click", e => {
+document.getElementById("cfgnsfcreate").addEventListener("click", async e => {
+document.getElementById("fileinput").addEventListener("change", async e => {
+document.getElementById("fileimporthub").addEventListener("click", () => {
+for (const [id, kind] of [["ihMidi", "midi"], ["ihNes", "nes"], ["ihGb", "gb"], ["ihSnes", "snes"],
+document.getElementById("importhub").addEventListener("dragover", e => {
+document.getElementById("importhub").addEventListener("dragleave", e => {
+document.getElementById("importhub").addEventListener("drop", async e => {
+document.getElementById("midcancel").addEventListener("click", () => {
+document.getElementById("audioinput").addEventListener("change", async e => {
+document.getElementById("midlocal").addEventListener("click", () => {
+document.getElementById("midcreate").addEventListener("click", () => {
+document.getElementById("modeseg").addEventListener("click", e => {
+document.getElementById("durseg").addEventListener("click", e => {
+document.getElementById("clearbtn").addEventListener("click", () => {
+window.addEventListener("resize", resize);
+new ResizeObserver(resize).observe(wrap);
+document.addEventListener("pointerdown", function midiWarm() {
+document.getElementById("recbtn").addEventListener("click", async () => {
+instCanvas.addEventListener("pointerdown", instPointerDown);
+instCanvas.addEventListener("pointermove", instPointerMove);
+instCanvas.addEventListener("pointerup", e => instPointerUp(e, false));
+instCanvas.addEventListener("pointercancel", e => instPointerUp(e, true));
+new ResizeObserver(instResize).observe(instWrap);
+document.getElementById("instplay").addEventListener("click", () => instSetMode("play"));
+document.getElementById("instscroll").addEventListener("click", () => instSetMode("scroll"));
+document.getElementById("instoctdn").addEventListener("click", () => instOctave(-1));
+document.getElementById("instoctup").addEventListener("click", () => instOctave(1));
+document.getElementById("instlock").addEventListener("click", () => instSetLock(!S.instLock));
+document.getElementById("instsustain").addEventListener("click", () => instSetSustain(!S.instSustain));
+instbtn.addEventListener("click", () => {
+document.getElementById("websess").addEventListener("click", async e => {
+subbtn.classList.toggle("active", S.subOn);
+subbtn.setAttribute("aria-pressed", String(S.subOn));
+instFallBtn.addEventListener("click", () => {
+for (const tab of ["piano", "guitar"]) {
+S.instTab = localStorage.getItem("ff1roll-inst-tab") || "piano";
+S.instOpen = localStorage.getItem("ff1roll-inst-open") === "1";
+S.instMode = localStorage.getItem("ff1roll-inst-mode") === "scroll" ? "scroll" : "play";
+S.instLock = localStorage.getItem("ff1roll-inst-lock") === "1";
+S.instSustain = localStorage.getItem("ff1roll-inst-sustain") === "1";
+S.instScroll = (() => { const v = parseFloat(localStorage.getItem("ff1roll-inst-scroll-piano")); return Number.isFinite(v) ? v : null; })();
+S.fallOn = false;
+applyInst();
+document.getElementById("ntype").addEventListener("change", applyEditorType);
+(function buildChordWidget() {
+nmic.addEventListener("click", () =>
+document.getElementById("notebtn").addEventListener("click", () => {
+document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
+document.getElementById("ntext").addEventListener("keydown", e => {
+document.getElementById("nsave").addEventListener("click", () => {
+document.getElementById("ndelete").addEventListener("click", () => {
+if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
+for (const id of ["gridab", "gridaq"]) document.getElementById(id).addEventListener("input", () => {
+document.getElementById("gridoff").addEventListener("click", () => { S.gridDiv = null; syncDurSeg(); draw(); openGridSheet(); });
+document.getElementById("gridclose").addEventListener("click", () => {
+document.addEventListener("keydown", e => {
+document.addEventListener("keydown", e => {
+document.addEventListener("keydown", e => {
+document.getElementById("viewsheetbtn").addEventListener("click", e => {
+{
+document.getElementById("analyzeadopt").addEventListener("click", () => {
+document.getElementById("analyzeadoptall").addEventListener("click", () => {
+document.getElementById("analyzeclose").addEventListener("click", () => document.getElementById("analyzesheet").classList.remove("on"));
+document.addEventListener("pointerdown", e => {
+document.getElementById("editsheetbtn").addEventListener("click", e => {
+{
+document.getElementById("filesheetbtn").addEventListener("click", e => {
+document.addEventListener("pointerdown", e => {
+document.getElementById("fmdest").addEventListener("change", () => {
+document.getElementById("fmgo").addEventListener("click", e => {
+document.addEventListener("pointerdown", e => {
+JOB_KINDS.publish = {
+document.getElementById("fileinst").addEventListener("click", () => {
+document.getElementById("fileopen").addEventListener("click", e => {
+document.getElementById("fileopenrecent").addEventListener("click", () => {
+document.getElementById("filenew").addEventListener("click", () => {
+document.getElementById("fncreate").addEventListener("click", () => {
+document.getElementById("fsname").addEventListener("keydown", e => {
+document.getElementById("fsnewfolder").addEventListener("keydown", e => {
+document.getElementById("fsfolder").addEventListener("change", () => {
+document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) openSaveForm("fork"); });
+document.getElementById("fsgo").addEventListener("click", async () => {
+document.getElementById("filerename").addEventListener("click", () => {
+document.getElementById("frname").addEventListener("keydown", e => {
+document.getElementById("frgo").addEventListener("click", async e => {
+document.getElementById("editherebtn").addEventListener("click", () => editHereNow());
+document.getElementById("makeitminebtn").addEventListener("click", () => openSaveForm("editcopy"));
+document.getElementById("filesavelocal").addEventListener("click", () => { if (S.song && isUnsaved(S.songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
+document.getElementById("filerevert").addEventListener("click", () => {
+document.getElementById("filedlaudio").addEventListener("click", async () => {
+document.getElementById("filedlmid").addEventListener("click", () => {
+JOB_KINDS.capture = {
+document.getElementById("impall").addEventListener("click", e => {
+document.getElementById("impclose").addEventListener("click", () =>
+document.getElementById("impcommit").addEventListener("click", e => {
+document.getElementById("fileimpcommit").addEventListener("click", e => {
+document.getElementById("filesave").addEventListener("click", () => {
+{
+document.getElementById("copybtn").addEventListener("click", () => {
+document.getElementById("dpdiv").addEventListener("change", dpRender);
+document.getElementById("drumfillbtn").addEventListener("click", () => {
+document.getElementById("dpfill").addEventListener("click", () => {
+document.getElementById("bassistbtn").addEventListener("click", openBassist);
+document.getElementById("bsgen").addEventListener("click", () => {
+for (const id of ["bsfrom", "bsto"]) document.getElementById(id).addEventListener("input", bsRefresh);
+for (const id of ["bsfromq", "bsfroms", "bstoq", "bstos", "bstarget", "bsfollow"]) document.getElementById(id).addEventListener("change", bsRefresh);
+document.getElementById("drgen").addEventListener("click", () => {
+for (const id of ["drfrom", "drto"]) document.getElementById(id).addEventListener("input", drRefresh);
+for (const id of ["drfromq", "drfroms", "drtoq", "drtos", "drfollow"]) document.getElementById(id).addEventListener("change", drRefresh);
+document.getElementById("drummerbtn").addEventListener("click", openDrummer);
+document.getElementById("movebtn").addEventListener("click", () => {
+document.getElementById("mvfrom").addEventListener("click", e => {
+document.getElementById("mvtracks").addEventListener("click", e => {
+document.getElementById("mvdedupe").addEventListener("click", () => {
+document.getElementById("pttracks").addEventListener("click", e => {
+document.getElementById("ptgo").addEventListener("click", () => {
+document.getElementById("pastebtn").addEventListener("click", () => {
+document.getElementById("octupbtn").addEventListener("click", () => {
+document.getElementById("octdownbtn").addEventListener("click", () => {
+{
+document.getElementById("trbtn").addEventListener("click", () => {
+document.getElementById("divbtn").addEventListener("click", () => {
+document.getElementById("quantbtn").addEventListener("click", () => {
+document.getElementById("cutbtn").addEventListener("click", () => {
+document.getElementById("splitbtn").addEventListener("click", () => {
+document.getElementById("joinbtn").addEventListener("click", () => {
+document.getElementById("delbtn").addEventListener("click", () => {
+document.getElementById("undobtn").addEventListener("click", editUndoPop);
+document.getElementById("redobtn").addEventListener("click", editRedoPop);
+document.addEventListener("keydown", e => {
+{
+if (document.getElementById("cmpswap")) {
+document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
+document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
+document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
+document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
+try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
+document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
+document.getElementById("deploynow").addEventListener("click", deployInstallNow);
+document.getElementById("askcompact").addEventListener("click", async () => {
+if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
+document.getElementById("askattach").addEventListener("click", () => {
+document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true});
+document.getElementById("askshot").addEventListener("click", askShotTake);
+document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
+document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());
+document.getElementById("askpickfile").addEventListener("change", e => {
+if (typeof document !== "undefined" && document.addEventListener) {
+for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
+askInboxStart();
+(function sheetDrag() {
+S.wm = wmLoad();
+for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[side].ids.includes("moresheet")) S.wm = wmRemoveSideTab(S.wm, side, "moresheet");
+if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
+wmSave(S.wm);
+try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }
+if (typeof document !== "undefined" && document.body) {
+makeWindow("asksheet", {dockable: true});
+makeWindow("notelistsheet", {dockable: true});
+makeWindow("instsheet", {dockable: true});
+makeWindow("jobssheet", {dockable: true});
+makeWindow("pubjobsheet", {dockable: true});
+makeWindow("mixersheet", {dockable: true});
+makeWindow("infosheet", {dockable: false});
+makeWindow("importhub", {dockable: false});
+makeWindow("versionssheet", {dockable: false});
+wmSideDividerize("wmdivider-left-full", "left");
+wmSideDividerize("wmdivider-left-inner", "left");
+wmSideDividerize("wmdivider-right-full", "right");
+wmSideDividerize("wmdivider-right-inner", "right");
+(function wmBottomHeightDividerize() {
+(function wmBottomSplitDividerize() {
+window.addEventListener("resize", wmLayoutAll);
+document.getElementById("askbtn").addEventListener("click", askBtnTap);
+for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
+document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
+document.getElementById("askreplybtn").addEventListener("click", openAsk);
+document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
+document.getElementById("askclear").addEventListener("click", async () => {
+document.getElementById("asksend").addEventListener("click", askSend);
+document.getElementById("askstop").addEventListener("click", () => { if (S.askBusy) S.askBusy.abort(); });
+askinput.addEventListener("input", askGrow);
+askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); });
+document.getElementById("askmic").addEventListener("click", () => {
+askinput.addEventListener("keydown", e => {
+document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
+for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));
+document.getElementById("settingssheet").addEventListener("change", e => { if (e.target && e.target.id) settingsPersist(e.target.id); });
+document.getElementById("ghcheck").addEventListener("click", ghCheck);
+document.getElementById("filesettings").addEventListener("click", () => {
+document.getElementById("folderpick").addEventListener("click", () => { chooseFolder(); });
+document.getElementById("folderforget").addEventListener("click", () => { forgetFolder(); });
+document.getElementById("folderonly").addEventListener("change", e => {
+document.getElementById("filefolder").addEventListener("click", () => { closeFileMenus(); chooseFolder(); });
+if (typeof document.querySelectorAll === "function") {
+document.getElementById("sharelink").addEventListener("click", async () => {
+document.getElementById("fileshare").addEventListener("click", () => { closeFileMenus(); openShareSheet(); });
+document.getElementById("shClose").addEventListener("click", () => document.getElementById("sharesheet").classList.remove("on"));
+document.getElementById("shUrl").addEventListener("focus", e => e.target.select());
+document.getElementById("shCopy").addEventListener("click", async e => {
+document.getElementById("shSend").addEventListener("click", async () => {
+document.getElementById("copyfile").addEventListener("click", async () => {
+document.getElementById("dlfile").addEventListener("click", () => {
+document.getElementById("ghsave").addEventListener("click", async e => {
+JOB_KINDS.publishall = {
+document.getElementById("ghsaveall").addEventListener("click", () => {
+if (typeof document !== "undefined" && document.body && document.body.dataset) document.body.dataset.edition = EDITION;
+applyViewMode();
+resize();
+updateSyncBtn();
+if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof location !== "undefined" && S.APP_BASE) {
+try {
+(async function boot() {
+if (typeof window !== "undefined" && window.__NR_EXPOSE) exposeGlobals();

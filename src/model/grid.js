@@ -94,3 +94,5 @@ export function trackIsDrums(ti) {
     tr.drums = /drum|percussion|kit|noise/i.test(tr.name) || tr.notes.some(x => x.ch === 9);
   return tr.drums;
 }
+
+export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }

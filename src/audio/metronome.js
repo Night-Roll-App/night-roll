@@ -4,6 +4,8 @@ import { playSec } from "./transport.js";
 import { secToTick } from "../midi/parse.js";
 import { tickToSec } from "../midi/parse.js";
 import { audioSessionType } from "../platform/native.js";
+import { ensureAudio } from "./engine.js";
+import { resumeAudio } from "./engine.js";
 
 // ---------------------------------------------------------------- metronome (⏱)
 // Standalone and feature-rich: any meter, per-beat accent editing (tap a cell:
@@ -156,4 +158,18 @@ export function applyMetMode() {
   }
   S.metLastWhen = -1;
   metSave();
+}
+
+export async function metStart() {
+  ensureAudio();
+  audioSessionType("playback");
+  await resumeAudio();
+  ensureMetGain();
+  met.on = true;
+  S.metIdx = 0;
+  S.metNext = S.audio.currentTime + 0.08;
+  S.metTimer = setInterval(metPump, 30);
+  metPump();
+  document.getElementById("metgo").textContent = "■ Stop";
+  document.getElementById("metbtn").classList.add("active"); // ⏱ shows it's running even with the panel closed
 }

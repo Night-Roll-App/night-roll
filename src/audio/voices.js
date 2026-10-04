@@ -2,6 +2,28 @@ import { S } from "../state.js";
 import { trackGain } from "./engine.js";
 import { pluckBuffer } from "./engine.js";
 import { makeOsc } from "./engine.js";
+import { setInfo } from "../hooks.js";
+import { albumMetaFor } from "../model/provenance.js";
+import { titleCompare } from "../model/catalog.js";
+import { vaultFetch } from "./chip.js";
+import { idbSf2Get } from "../platform/storage.js";
+import { idbSf2Put } from "../platform/storage.js";
+import { playGateKick } from "./transport.js";
+import { logErr } from "../hooks.js";
+import { scheduleClip } from "./clips.js";
+import { chipActive } from "./chip.js";
+import { chip } from "./chip.js";
+import { chipHas } from "./chip.js";
+import { trackIsDrums } from "../model/grid.js";
+import { drumHit } from "./engine.js";
+import { prof } from "../state.js";
+import { ensureAudio } from "./engine.js";
+import { audioSessionType } from "../platform/native.js";
+import { met } from "./metronome.js";
+import { resumeAudio } from "./engine.js";
+import { openMaster } from "./engine.js";
+import { chipPreviewBuffer } from "./chip.js";
+import { chipNoteSlice } from "./chip-stream.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -309,4 +331,364 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   o.onended = () => { try { g.disconnect(); } catch (err) {} };
   o.start(when);
   o.stop(end + 0.05);
+}
+
+export const gameLibSync = new Map(); // vault folder -> {lib, samples: {hash: {rate, loop, pcm}}}, filled by gamePreloadForSong
+export const sf2Sync = new Map(); // slug -> parsed font ({name, presets, samples}, tools/instruments/sf2.mjs), filled by gamePreloadForSong
+// "voice|pitch|velBucket|durBucket" -> {ctx, buf: AudioBuffer} — the RENDERED
+// buffer itself, same shape/eviction as chipPreviewCache: a repeated note is
+// an instant replay, no re-render AND no re-copy; ctx guards a stale buffer
+// across an ensureAudio() context rebuild (a fresh context can't play an old
+// context's buffer)
+export const gameNoteCache = new Map();
+export function gameNoteBucket(vel, durSec) { // render at the bucket's own values so a cache hit is an exact repeat, not noise
+  return {velB: Math.max(1, Math.min(127, Math.round(vel / 8) * 8)),
+          durB: Math.max(50, Math.round((durSec * 1000) / 50) * 50)};
+}
+export const gameVoiceWarned = new Set(); // one ⚠ per (voice, reason) per session — a fixed connection warns again next Play
+export function gameVoiceWarn(voice, why) {
+  const key = voice + "|" + why;
+  if (gameVoiceWarned.has(key)) return;
+  gameVoiceWarned.add(key);
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    setInfo("⚠ soundfont " + (info ? info.slug + " " + info.bank + ":" + info.program : voice) + " " + why + " — using the synth voice");
+    return;
+  }
+  const info = parseGameVoice(voice);
+  setInfo("⚠ game instrument " + (info ? info.vault + " · " + info.instId : voice) + " " + why + " — using the synth voice");
+}
+// {inst, samples} | {reason}: a "game:" voice's instrument (from gameLibSync) or an
+// "sf2:" voice's preset (from sf2Sync, which already doubles as a play.mjs inst —
+// tools/instruments/sf2.mjs) — the ONE thing scheduleGameNote actually needs, so it
+// stays the one caching/scheduling function for both kinds of borrowed instrument
+// (NIGHT-ROLL.md "Game instrument libraries" step 4: "reuse scheduleGameNote... by
+// giving it a resolver for sf2: ids").
+export function resolveVoiceInstrument(voice) {
+  if (typeof voice === "string" && voice.startsWith("game:")) {
+    const info = parseGameVoice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const entry = gameLibSync.get(info.vault);
+    if (!entry) return {reason: "couldn't load its library"};
+    const inst = entry.lib.instruments.find(i => i.id === info.instId);
+    if (!inst) return {reason: "instrument not found"};
+    return {inst, samples: entry.samples};
+  }
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const font = sf2Sync.get(info.slug);
+    if (!font) return {reason: "couldn't load its soundfont"};
+    const inst = font.presets.find(p => p.bank === info.bank && p.program === info.program);
+    if (!inst) return {reason: "preset not found"};
+    return {inst, samples: font.samples};
+  }
+  return {reason: "has a bad voice id"};
+}
+export function scheduleGameNote(ti, n, when, durSec, voice) {
+  const {inst, samples, reason} = resolveVoiceInstrument(voice);
+  const P = S.instPlaySync;
+  if (!inst || !samples || !P) {
+    gameVoiceWarn(voice, reason || "is still loading");
+    playSynthVoice(ti, n, when, durSec, voiceType(ti)); // the track's own default — never silence
+    return;
+  }
+  const {velB, durB} = gameNoteBucket(n.v, durSec);
+  const key = voice + "|" + n.p + "|" + velB + "|" + durB;
+  const hit = gameNoteCache.get(key);
+  let buf = hit && hit.ctx === S.audio ? hit.buf : null;
+  if (!buf) {
+    const pcm = P.playNote(inst, samples, {key: n.p, vel: velB, hold: durB / 1000, sampleRate: S.audio.sampleRate, tail: 3});
+    if (!pcm.length) { gameVoiceWarn(voice, "has no sample for that note"); playSynthVoice(ti, n, when, durSec, voiceType(ti)); return; }
+    buf = S.audio.createBuffer(1, pcm.length, S.audio.sampleRate);
+    buf.copyToChannel(pcm, 0);
+    if (gameNoteCache.size > 300) gameNoteCache.clear();
+    gameNoteCache.set(key, {ctx: S.audio, buf});
+  }
+  const src = S.audio.createBufferSource();
+  src.buffer = buf;
+  src.connect(trackGain(ti)); // pan lives on trackGain's own panner, same as every voice — never on the instrument's own pan/region.pan
+  src.onended = () => { try { src.disconnect(); } catch (err) {} };
+  src.start(when);
+  src.stop(when + buf.length / S.audio.sampleRate + 0.05);
+}
+
+// A game: voice written before the archive-by-console reorganization
+// (2026-09-29) has a vault with no console folder ("final-fantasy-7",
+// "ff1.nsf") — game files then lived at the archive root. Every album's
+// nsf.vault is now "<console>/<old vault>" (e.g. "ps1/final-fantasy-7/",
+// "nes/ff1.nsf"), so the OLD idVault 404s against instLibrary. Never rewrite
+// the annotation (Josh's picks are his) — resolve it to its album's CURRENT
+// vault at read time instead: idVault itself when it already matches an
+// album directly (already current, or simply unknown to instAlbums at all),
+// else the vault of the instAlbums() entry whose vault, with its console
+// prefix stripped, equals idVault (trailing "/" for a folder vault, the
+// whole filename for a single-file one). Every caller that loads/labels/
+// compares a game voice goes through this first.
+export async function resolveGameVault(idVault) {
+  const games = await instAlbums();
+  if (games.some(g => g.vault.replace(/\/$/, "") === idVault)) return idVault;
+  const hit = games.find(g => {
+    const slash = g.vault.indexOf("/");
+    return slash >= 0 && g.vault.slice(slash + 1).replace(/\/$/, "") === idVault;
+  });
+  return hit ? hit.vault.replace(/\/$/, "") : idVault;
+}
+// tools/instruments/play.mjs, once resolved — scheduleNote needs it synchronously
+export async function instPlayerReady() { return (S.instPlaySync = S.instPlaySync || await instPlayer()); }
+export function gameVoicesInSong() { // [{vault, instId, voice}] this song's tracks actually use, de-duped by voice id
+  const out = [], seen = new Set();
+  if (S.song) S.song.tracks.forEach(tr => {
+    const info = parseGameVoice(tr.voice);
+    if (info && !seen.has(tr.voice)) { seen.add(tr.voice); out.push({vault: info.vault, instId: info.instId, voice: tr.voice}); }
+  });
+  return out;
+}
+export function sf2VoicesInSong() { // [{slug, bank, program, voice}] this song's tracks actually use, de-duped by voice id
+  const out = [], seen = new Set();
+  if (S.song) S.song.tracks.forEach(tr => {
+    const info = parseSf2Voice(tr.voice);
+    if (info && !seen.has(tr.voice)) { seen.add(tr.voice); out.push({slug: info.slug, bank: info.bank, program: info.program, voice: tr.voice}); }
+  });
+  return out;
+}
+// ---------------------------------------------------- game instruments
+// The instruments pulled from each published PS1/N64 game (tools/instruments/
+// extract.mjs) live in the game files & instruments repo at <vault>instruments/:
+// instruments.json + one WAV per sample. This sheet lists the games that have
+// one, then a game's instruments by their measured name; a tap plays the
+// instrument (root, fifth, octave around the keys its songs used; a kit plays
+// its first slots) through tools/instruments/play.mjs — the same player the
+// verification held against each driver. Step 2 of Josh's "use instruments
+// from any game" (2026-09-28); assigning one to a track is step 3.
+export const instLibs = new Map(), instWavs = new Map();
+// the vm tests inject the module; the page imports it
+export function instPlayer() { return S.instPlayModule || (S.instPlayModule = import(new URL("tools/instruments/play.mjs", S.APP_BASE).href)); }
+export function instDecodeWav(u8) { // 16-bit PCM WAV → Float32Array (mono, first channel); loop points come from instruments.json
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let p = 12, ch = 1, bits = 16;
+  while (p + 8 <= u8.length) {
+    const id = String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]), len = dv.getUint32(p + 4, true);
+    if (id === "fmt ") { ch = dv.getUint16(p + 10, true); bits = dv.getUint16(p + 22, true); }
+    if (id === "data") {
+      if (bits !== 16) throw new Error("instrument sample is " + bits + "-bit; 16 expected");
+      const n = Math.floor(len / 2 / ch), out = new Float32Array(n);
+      for (let i = 0; i < n; i++) out[i] = dv.getInt16(p + 8 + i * 2 * ch, true) / 32768;
+      return out;
+    }
+    p += 8 + len + (len & 1);
+  }
+  throw new Error("instrument sample has no data chunk");
+}
+export async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CATALOG's own album order)}] of published albums whose game files carry an instrument library
+  const out = [];
+  for (const [title, songs] of Object.entries(S.CATALOG)) {
+    if (!songs.length) continue;
+    const meta = await albumMetaFor(songs[0][1]).catch(() => null);
+    const n = meta && meta.nsf;
+    if (n && typeof n.vault === "string" && INST_CHIPS.has(n.chip || "nsf")) out.push({title: meta.title || title, vault: n.vault, songs, sys: String(songs[0][1]).split("/")[1]});
+  }
+  return out.sort((a, b) => titleCompare(a.title, b.title));
+}
+// the album kinds tools/instruments/extract.mjs builds libraries for (an NES
+// album.json names no chip: plain NSF is the default kind)
+export const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "psf2", "usf"]);
+// where an album's library sits in the archive — tools/instruments/model.mjs
+// instrumentsFolder, the rule the extractor publishes by: a folder vault holds
+// it inside ("goldeneye-007/instruments/"); a single-file vault beside the file
+// under its whole name ("tetris.nsf.instruments/"), since tetris.nsf and
+// tetris.gbs would collide without the extension
+export function instFolder(vault) { return vault.endsWith("/") ? vault + "instruments/" : vault + ".instruments/"; }
+export async function instLibrary(vault) {
+  if (!instLibs.has(vault)) instLibs.set(vault, vaultFetch(instFolder(vault) + "instruments.json").then(b => JSON.parse(new TextDecoder().decode(b))));
+  return instLibs.get(vault);
+}
+export async function instSamples(vault, lib, hashes) { // {hash: {rate, loop, pcm}} for the samples a play needs, fetched once each
+  const out = {};
+  for (const h of hashes) {
+    const k = vault + h;
+    if (!instWavs.has(k)) instWavs.set(k, vaultFetch(instFolder(vault) + lib.samples[h].file).then(instDecodeWav));
+    out[h] = {rate: lib.samples[h].rate, loop: lib.samples[h].loop || null, pcm: await instWavs.get(k)};
+  }
+  return out;
+}
+export function sf2Module() { return S.sf2PlayModule || (S.sf2PlayModule = import(new URL("tools/instruments/sf2.mjs", S.APP_BASE).href)); }
+export const sf2Fonts = new Map(); // slug -> Promise<parsed font> (tools/instruments/sf2.mjs's parseSf2 result), fetched/parsed once
+// bytes: this device's IndexedDB first (an import, or a song that already loaded this
+// font once), else the game files & instruments repo's soundfonts/<slug>.sf2 (cached
+// to IndexedDB on success, same "works offline after the first load" contract as chip
+// audio's vault fetch)
+export async function sf2Bytes(slug) {
+  const local = await idbSf2Get(slug);
+  if (local) return local;
+  const bytes = await vaultFetch("soundfonts/" + slug + ".sf2");
+  idbSf2Put(slug, bytes).catch(() => {});
+  return bytes;
+}
+export function sf2Font(slug) {
+  if (!sf2Fonts.has(slug)) sf2Fonts.set(slug, sf2Bytes(slug).then(async b => (await sf2Module()).parseSf2(b)));
+  return sf2Fonts.get(slug);
+}
+
+// kept for the first-touch hook; the preload no longer waits for it
+export function sfPreloadForSong() { // warm every pitch a sampled track actually plays
+  if (!S.song) return;
+  S.sfPreloadPending = false;
+  S.song.tracks.forEach((tr, ti) => {
+    const file = sfFileFor(trackVoice(ti));
+    if (!file) return;
+    const ps = new Set();
+    for (const n of tr.notes) if (!n.gone) ps.add(n.p);
+    ps.add(69); // the preview pitch
+    ps.forEach(p => sfDecode(file, p));
+  });
+  playGateKick();
+}
+export async function sfWaitForSong(capMs) { // resolve when this song's sampled pitches are decoded, or at the cap
+  if (!S.song) return;
+  sfPreloadForSong(); // make sure every request exists
+  const waits = [];
+  let name = null;
+  S.song.tracks.forEach((tr, ti) => {
+    const v = trackVoice(ti), file = sfFileFor(v);
+    if (!file) return;
+    const bank = sfBank[file];
+    for (const n of tr.notes) {
+      if (n.gone || bank.buffers[n.p] || !bank.pending[n.p]) continue;
+      waits.push(bank.pending[n.p]);
+      if (!name) name = (VOICES.find(([id]) => id === v) || [, v])[1];
+    }
+  });
+  if (!waits.length) return;
+  setInfo("loading " + name + "…");
+  await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
+}
+export const gamePreloadTokens = new Map(); // voice -> the in-flight/settled preload promise, for gameWaitForSong to await
+export function gamePreloadForSong() { // warm every game/sf2 voice's library or font this song's tracks actually use
+  if (!S.song) return;
+  gameVoicesInSong().forEach(({vault, instId, voice}) => {
+    if (gamePreloadTokens.has(voice)) return; // already loading/loaded this session
+    gamePreloadTokens.set(voice, (async () => {
+      const realVault = await resolveGameVault(vault); // an old, pre-reorg vault resolves to its album's current one — gameLibSync stays keyed by the ORIGINAL vault below, so every reader (resolveVoiceInstrument) keeps finding it under the id it parsed
+      const lib = await instLibrary(gameVoiceVault(realVault));
+      const inst = lib.instruments.find(i => i.id === instId);
+      gameLibSync.set(vault, {lib, samples: (gameLibSync.get(vault) || {}).samples || {}});
+      if (!inst) return; // scheduleGameNote falls back and warns — see above
+      const P = await instPlayerReady();
+      const pitches = new Set([60]); // a sane default even if a track has no notes yet
+      S.song.tracks.forEach(tr => { if (tr.voice === voice) for (const nn of tr.notes) if (!nn.gone) pitches.add(nn.p); });
+      const hashes = new Set();
+      pitches.forEach(p => { const r = P.regionFor(inst, p, 100); if (r) hashes.add(r.sample); });
+      const samples = await instSamples(gameVoiceVault(realVault), lib, [...hashes]);
+      const entry = gameLibSync.get(vault);
+      Object.assign(entry.samples, samples);
+    })().catch(err => logErr("⚠ game instrument " + voice + " didn't load: " + err.message)));
+  });
+  // a soundfont is one self-contained file (unlike a game library's instruments.json
+  // + many separate WAVs): sf2Font already fetches-and-parses-once (every sample it
+  // could need, decoded), so there is no per-pitch lazy step here — just load it and
+  // remember it under its slug (+ warm instPlaySync, same as the game loop above —
+  // scheduleGameNote needs it regardless of which kind of voice got it going)
+  sf2VoicesInSong().forEach(({slug, voice}) => {
+    if (gamePreloadTokens.has(voice)) return;
+    gamePreloadTokens.set(voice, Promise.all([sf2Font(slug), instPlayerReady()]).then(([font]) => { sf2Sync.set(slug, font); })
+      .catch(err => logErr("⚠ soundfont " + voice + " didn't load: " + err.message)));
+  });
+  playGateKick(); // the tokens exist now: ▶ waits for them
+}
+export async function gameWaitForSong(capMs) { // resolve when this song's game/sf2 voices are ready, or at the cap
+  if (!S.song) return;
+  gamePreloadForSong(); // make sure every request exists
+  const voices = [...gameVoicesInSong(), ...sf2VoicesInSong()];
+  const waits = voices.map(({voice}) => gamePreloadTokens.get(voice)).filter(Boolean);
+  if (!waits.length) return;
+  setInfo("loading " + voices.length + " instrument voice" + (voices.length === 1 ? "" : "s") + "…");
+  await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
+}
+export function scheduleNote(ti, n, when, durSec) {
+  // transport-stopped guard: a pump/chase callback already in flight when Stop
+  // hit could still land here, wiring fresh gains to the master — those notes
+  // sat frozen in a suspended context and fired later when a pencil preview
+  // reopened it (Josh: "it just started playing, the cursor's not even moving")
+  if (!S.playing && !n._preview) return;
+  // never start an envelope in the past — WebAudio would skip the attack
+  // ramp and slam the oscillator on at full amplitude (audible click)
+  const when0 = when;
+  when = Math.max(when, S.audio.currentTime + 0.003);
+  // an audio clip: the bump above must ADVANCE into the file, not delay it
+  // (for a note 3ms late is nothing; for a take it is drift every pass)
+  if (n._clip) { scheduleClip(ti, n._clip, when, durSec - (when - when0)); return; }
+  // chip audio: the buffer IS this track's sound (auto voice only) — no oscillator doubles.
+  // A PREVIEW is exempt (Josh, 2026-08-29: tapping a note in an FF1 or Mega Man
+  // song made no sound). Nothing is sounding underneath a tap, so there is
+  // nothing to double; and the chip buffer is a whole-track render, so there
+  // is no way to sound one note from it. The preview uses the synth voice.
+  // …and only while chip sources are actually sounding: a render that lands
+  // MID-playback (the ▶ wait gave up, or the song was already rolling) set
+  // chip.key, which muted the synth here while chipStart never ran — cursor
+  // moving, nothing heard, on the SNES song and on the NES song after it
+  // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
+  if (!n._preview && chipActive() && (chip.stream ? chip.stream.live : chip.srcs.length) && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name) &&
+      (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto")) return;
+  // a game instrument OR a loaded soundfont's preset (assigned from the voice &
+  // color menu's Game instruments/Soundfonts families) renders through
+  // tools/instruments/play.mjs instead — its own function, since it neither drums
+  // nor uses the oscillator/sample path below (see "game instrument voices" above scheduleNote)
+  const gvoice = S.song.tracks[ti] && S.song.tracks[ti].voice;
+  if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
+  if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v, durSec); return; }
+  let v = trackVoice(ti);
+  // per-note chip timbre: NSF captures carry each pulse note's duty (the
+  // chip's instrument choice — 12.5% thin, 25% classic, 50% hollow; 75%
+  // mirrors 25%). Honored on auto voice; an explicit voice pick overrides.
+  if (n.duty !== undefined && (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto"))
+    v = ["square12", "square25", "square", "square25"][n.duty];
+  playSynthVoice(ti, n, when, durSec, v);
+}
+scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+export async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
+  ensureAudio();
+  // a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
+  // on — the idle "ambient" session silenced taps, Josh 2026-10-02), back to "ambient" 2 s after
+  // the last tap unless something else is playing by then
+  audioSessionType("playback");
+  clearTimeout(previewNote.ambientTimer);
+  previewNote.ambientTimer = setTimeout(() => { if (!S.playing && !S.albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, 2000);
+  await resumeAudio(); // clock is frozen until the context actually runs
+  openMaster(); // master may be faded out from the last stop
+  const tr = S.song && S.song.tracks[ti];
+  if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
+    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, S.song.ppq);
+    if (buf) { const s = S.audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(S.audio.currentTime + 0.01); return; }
+    // register chips (nsf/gbs/spc): chipPreviewBuffer above always comes back
+    // null — no per-note renderer, a register log has no note to re-render
+    // (tools/chip-worker.mjs's own comment). But each track IS one hardware
+    // voice, monophonic, so the song's own rendered track buffer already
+    // holds exactly this note's sound — slice it instead of the generic
+    // synth (Josh, FF4 SNES "Cry in Sorrow (part 1)", 2026-09-30: "tapping a
+    // note plays the generic synth, not the game sound").
+    const slice = chipNoteSlice(tr, pitch, tick);
+    if (slice) {
+      const src = S.audio.createBufferSource();
+      src.buffer = slice.buf;
+      const g = S.audio.createGain(); // ~5ms fade in/out: a slice starts/ends mid-waveform, not at a zero-crossing
+      const when = S.audio.currentTime + 0.01;
+      const fade = Math.min(0.005, slice.dur / 2);
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(1, when + fade);
+      g.gain.setValueAtTime(1, Math.max(when + fade, when + slice.dur - fade));
+      g.gain.linearRampToValueAtTime(0, when + slice.dur);
+      src.connect(g);
+      // same path chipStart uses from here down: [chip.pan panner, if this
+      // track was downmixed to mono] -> trackGain(ti), so volume/pan/mute match playback
+      let node = g;
+      if (chip.pan && chip.pan[tr.name] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[tr.name]; g.connect(p); node = p; }
+      node.connect(trackGain(ti));
+      src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
+      src.start(when, slice.offset, slice.dur); // a lone extra source — never touches chip.srcs, so a tap mid-playback can't fight the playing sources
+      return;
+    }
+  }
+  scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, S.audio.currentTime + 0.01, 0.3);
 }

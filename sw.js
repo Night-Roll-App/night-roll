@@ -9,6 +9,12 @@
 //                                      index.html — so a path-form song link
 //                                      opens offline too
 //   vendor/vexflow.js, manifest, icons  cache-first, precached at install
+//   vendor/ai/web/*.js                  cache-first, precached at install —
+//                                      pinned by tools/ai-sync.mjs (AI_LIB),
+//                                      unlike src/ below: a vendored library
+//                                      file never changes without a new sync,
+//                                      which bumps AI_LIB and so the cache
+//                                      name, so cache-first can't go stale
 //   vendor/soundfonts/*                 cache-first, cached ON FIRST USE
 //                                      (83 MB — never precached; iOS quota)
 //   albums/** and albums/manifest.json  network-first with cache fallback,
@@ -23,16 +29,28 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v15"; // bumped: the on-screen keyboard (2026-10-04) adds src/ui/piano.js to APP_MODULES
-const CACHE = "night-roll-" + SW_VERSION;
+const SW_VERSION = "nr-v32"; // bumped: docs/split-phase2-plan.md step 13 deletes src/app.js — main.js is the ordered init list now
+const AI_LIB = "17844fe"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
+const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's
 // mirrored-module imports, and the real src/ file listing must all describe
 // the same set (tests/modules.test.mjs enforces it); a module missing here
 // means a 404 offline instead of a silent fallback.
-const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/ui/piano.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js", "src/model/catalog.js", "src/model/grid.js", "src/model/edits.js", "src/model/rollnotes.js", "src/platform/base.js", "src/platform/mode.js", "src/platform/storage.js", "src/platform/folder.js", "src/platform/native.js", "src/audio/engine.js", "src/audio/voices.js", "src/audio/transport.js", "src/audio/chip.js", "src/audio/chip-stream.js", "src/audio/clips.js", "src/audio/metronome.js", "src/audio/bounce.js"];
+const APP_MODULES = ["src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/ui/piano.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js", "src/model/catalog.js", "src/model/grid.js", "src/model/edits.js", "src/model/rollnotes.js", "src/platform/base.js", "src/platform/mode.js", "src/platform/storage.js", "src/platform/folder.js", "src/platform/native.js", "src/audio/engine.js", "src/audio/voices.js", "src/audio/transport.js", "src/audio/chip.js", "src/audio/chip-stream.js", "src/audio/clips.js", "src/audio/metronome.js", "src/audio/bounce.js", "src/model/song.js", "src/model/selection.js", "src/model/provenance.js", "src/model/album-order.js", "src/model/versions.js", "src/model/jobs.js", "src/import/hub.js", "src/import/capture.js", "src/sync/publish.js", "src/gen/drummer.js", "src/gen/bassist.js", "src/gen/analysis.js", "src/render/roll.js", "src/render/tracks.js", "src/render/score.js", "src/render/instrument.js", "src/render/cof.js", "src/render/compare.js", "src/input/gestures.js", "src/input/record.js", "src/input/keyboard.js", "src/ask/backend.js", "src/ask/tools.js", "src/ask/context.js", "src/ask/bridge.js", "src/ask/shots.js", "src/ask/sheet.js", "src/ask/client.js", "src/ask/host.js", "src/ui/chrome.js", "src/ui/trackbar.js", "src/ui/mixer.js", "src/ui/voice-menu.js", "src/ui/notes.js", "src/ui/note-editor.js", "src/ui/sheets.js", "src/ui/wm.js", "src/hooks.js", "src/wire.js", "src/session/song.js", "src/session/album.js", "src/session/files.js", "src/session/boot.js", "src/ui/perf.js", "src/platform/sw.js"];
+// AI_MODULES: vendor/ai/web/*.js (docs/ai-library-plan.md §1) — every file
+// tools/ai-sync.mjs vendored under vendor/ai/web/, kept equal to
+// vendor/ai/files.json's web/ entries AND index.html's modulepreload ∩
+// vendor/ai (tests/modules.test.mjs's extended rule 8). Precached (unlike
+// src/, which is network-first) because it's pinned, not live-edited.
+const AI_MODULES = ["vendor/ai/web/index.js", "vendor/ai/web/sse.js"];
+// AI_MODULES' entries are repeated here as literal strings rather than
+// spread in, the same way APP_MODULES' entries above are: tests/pwa.test.mjs
+// JSON.parses this array's own source text verbatim, which a spread
+// (`...AI_MODULES`) isn't.
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
-                  "src/app.js", "src/edition.js", "src/devtools.js", "src/main.js",
+                  "src/edition.js", "src/devtools.js", "src/main.js",
+                  "vendor/ai/web/index.js", "vendor/ai/web/sse.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 const NAV_TIMEOUT_MS = 4000;
 
@@ -144,7 +162,10 @@ self.addEventListener("fetch", e => {
     return;
   }
   if (rel.startsWith("vendor/soundfonts/")) { e.respondWith(cacheFirst(req, stripBust(req.url))); return; }
-  if (rel === "vendor/vexflow.js" || rel === "app.webmanifest" || rel.startsWith("icons/")) { e.respondWith(cacheFirst(req, rel)); return; }
+  // vendor/ai/web/: cache-first, like vendor/vexflow.js — safe because AI_LIB
+  // is part of CACHE's name, so a library sync always lands in a fresh cache
+  // instead of serving a stale vendored file under the old one.
+  if (rel.startsWith("vendor/ai/web/") || rel === "vendor/vexflow.js" || rel === "app.webmanifest" || rel.startsWith("icons/")) { e.respondWith(cacheFirst(req, rel)); return; }
   // src/ (docs/split-plan.md §4 step 0b): network-first like the page itself,
   // not cache-first like the other precached assets — Pages' max-age=600 on
   // index.html would otherwise let a browser serve a NEW index.html (which

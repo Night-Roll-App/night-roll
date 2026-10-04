@@ -15,7 +15,9 @@
 // own (final-fantasy, mega-man, tmnt, nintendo, capcom, konami, square) except
 // index.html's own prose about the site; nothing from albums/compositions/,
 // journals or analysis docs; index.html identical to the repo's apart from
-// the EDITION line; the manifest lists only what is in the output.
+// the EDITION line; the manifest lists only what is in the output; every
+// vendor/ai/web/*.js file shipped is reachable (docs/ai-library-plan.md §1);
+// vendor/ai/bridge/** (the library's Node-only Mac server) never ships.
 // The same shape is the Capacitor webDir later.
 
 import {readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, statSync, copyFileSync} from "node:fs";
@@ -49,11 +51,16 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
 // them. Read from index.html itself: sounding/note-preview were missing from
 // the hand list above and every console render on the iPad fell to synth.
 // (docs/split-plan.md §4 step 0b: the CHIPS table is JS, so it moved with
-// everything else into src/app.js — index.html no longer has it.)
+// everything else into src/app.js — index.html no longer has it; docs/
+// split-phase2-plan.md step 2 moved it again, src/app.js -> src/audio/
+// chip.js — scan the whole src/ tree, not one file, so CHIPS can keep
+// moving without this list silently going stale.)
 function chipTableModules() {
-  const html = readFileSync(path.join(ROOT, "src", "app.js"), "utf8");
+  const root = path.join(ROOT, "src");
+  let text = "";
+  (function walk(dir) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f); else if (e.endsWith(".js")) text += "\n" + readFileSync(f, "utf8"); } })(root);
   const out = new Set();
-  for (const m of html.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
+  for (const m of text.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
     for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) out.add(q[1] + ".mjs");
   return [...out];
 }
@@ -82,18 +89,23 @@ const RUNTIME = runtimeModules();
 // copy step below copies the whole tree regardless, so today the two always
 // agree; this guard is what keeps them agreeing as later steps add and wire
 // up dozens of modules).
+// reachableAbs also follows an import OUT of src/ (docs/ai-library-plan.md
+// §1: src/ask/backend.js's `from "../../vendor/ai/web/sse.js"`) to its real
+// absolute path, so the vendor/ai/web reachability guard below can reuse
+// this same trace instead of re-walking imports a second way.
 function srcModules() {
   const root = path.join(ROOT, "src");
-  if (!existsSync(root)) return { all: [], reachable: [], unresolved: [] };
+  if (!existsSync(root)) return { all: [], reachable: [], reachableAbs: new Set(), unresolved: [] };
   const all = [];
   (function walk(dir) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f); else if (e.endsWith(".js")) all.push(path.relative(root, f).split(path.sep).join("/")); } })(root);
   const unresolved = [];
-  const seen = new Set(), todo = ["main.js"];
+  const seen = new Set(), reachableAbs = new Set(), todo = ["main.js"];
   while (todo.length) {
     const m = todo.pop();
     if (seen.has(m)) continue;
     seen.add(m);
     const abs = path.join(root, m);
+    reachableAbs.add(abs);
     if (!existsSync(abs)) { unresolved.push(m); continue; }
     const text = readFileSync(abs, "utf8");
     for (const im of text.matchAll(/(?:from\s*|import\s*\(\s*)"(\.\.?\/[^"]+)"/g)) {
@@ -101,13 +113,25 @@ function srcModules() {
       todo.push(t);
     }
   }
-  return { all, reachable: [...seen], unresolved };
+  return { all, reachable: [...seen], reachableAbs, unresolved };
 }
 const SRC = srcModules();
 
 const rel = p => path.relative(OUT, p).split(path.sep).join("/");
 function walk(dir, out = []) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f, out); else out.push(f); } return out; }
-function copyDir(src, dst) { mkdirSync(dst, {recursive: true}); for (const e of readdirSync(src)) { const a = path.join(src, e), b = path.join(dst, e); if (statSync(a).isDirectory()) copyDir(a, b); else copyFileSync(a, b); } }
+// `skip`: absolute paths to leave out entirely (vendor/ai/bridge/** below —
+// never copied, not just scrubbed after the fact).
+function copyDir(src, dst, skip = []) { mkdirSync(dst, {recursive: true}); for (const e of readdirSync(src)) { const a = path.join(src, e), b = path.join(dst, e); if (skip.includes(a)) continue; if (statSync(a).isDirectory()) copyDir(a, b, skip); else copyFileSync(a, b); } }
+
+// vendor/ai/web/ reachability (docs/ai-library-plan.md §4 step 1): every
+// file tools/ai-sync.mjs vendored under web/ must either be reached by a
+// real src/ import — SRC.reachableAbs above already follows one straight
+// out of src/ — or be the library's own public entry point, web/index.js:
+// its job IS being imported from OUTSIDE this repo (a second iPad app), so
+// nothing inside Night Roll importing it yet is not a bug.
+const AI_WEB_DIR = path.join(ROOT, "vendor", "ai", "web");
+const AI_WEB_INDEX = path.join(AI_WEB_DIR, "index.js");
+const AI_WEB = existsSync(AI_WEB_DIR) ? walk(AI_WEB_DIR).filter(f => f.endsWith(".js")) : [];
 
 const problems = [];
 const fail = m => problems.push(m);
@@ -136,7 +160,7 @@ if (!CHECK_ONLY) {
   rmSync(OUT, {recursive: true, force: true});
   mkdirSync(OUT, {recursive: true});
   for (const f of TOP_FILES) if (existsSync(path.join(ROOT, f))) copyFileSync(path.join(ROOT, f), path.join(OUT, f));
-  for (const d of TOP_DIRS) if (existsSync(path.join(ROOT, d))) copyDir(path.join(ROOT, d), path.join(OUT, d));
+  for (const d of TOP_DIRS) if (existsSync(path.join(ROOT, d))) copyDir(path.join(ROOT, d), path.join(OUT, d), d === "vendor" ? [path.join(ROOT, "vendor", "ai", "bridge")] : []);
   writeFileSync(path.join(OUT, "src", "edition.js"), appEdition); // the one src/ file that isn't a byte-for-byte copy
   for (const m of RUNTIME) { const dst = path.join(OUT, "tools", m); mkdirSync(path.dirname(dst), {recursive: true}); copyFileSync(path.join(ROOT, "tools", m), dst); }
   mkdirSync(path.join(OUT, "albums"), {recursive: true});
@@ -152,6 +176,7 @@ for (const f of files) {
   const r = rel(f);
   if (r.startsWith("albums/") && r !== "albums/manifest.json" && !ALLOWED_ALBUM_DIRS.some(d => r.startsWith(d + "/"))) fail("album not allowed in the product: " + r);
   if (r.startsWith("tools/") ? !RUNTIME.includes(r.slice(6)) : /^(journals|handoffs|tests)\//.test(r) || /\.(ask|rollnotes)\.md$/.test(r)) fail("not a product file: " + r);
+  if (r.startsWith("vendor/ai/bridge/")) fail("vendor/ai/bridge/** (Node-only) must never ship: " + r); // defense in depth — copyDir already skips it
   if (FORBIDDEN.test(r)) fail("forbidden name in path: " + r);
   // src/**/*.js is exempt from the text scan, like index.html (docs/
   // split-plan.md §4 step 0b): it's the whole app's prose-heavy source
@@ -165,6 +190,7 @@ for (const f of files) {
 }
 for (const m of SRC.unresolved) fail("src/" + m + " is imported but does not exist");
 for (const m of SRC.all) if (!SRC.reachable.includes(m)) fail("src/" + m + " exists but is not reachable from src/main.js");
+for (const abs of AI_WEB) if (abs !== AI_WEB_INDEX && !SRC.reachableAbs.has(abs)) fail("vendor/ai/web/" + path.relative(AI_WEB_DIR, abs).split(path.sep).join("/") + " is vendored but not reachable from src/main.js (nor the library's own index.js)");
 if (!CHECK_ONLY) for (const m of SRC.all) if (!existsSync(path.join(OUT, "src", m))) fail("src/" + m + " is not in the output");
 if (!CHECK_ONLY) {
   const listed = new Set(shipManifest.flatMap(a => a.songs.map(s => s.path)));

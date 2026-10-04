@@ -3,37 +3,24 @@
 // scope of the old classic <script>; a module's top-level bindings are NOT
 // window properties, so without this an e2e spec written against the old
 // app would throw ReferenceError on every one of those. exposeGlobals()
-// defines a window accessor for every export of every real module (as new
-// modules are carved out of app.js in later steps, add their "import * as"
-// line here too — tests/modules.test.mjs's rule-8 check enforces this list
-// stays complete).
+// defines a window accessor for every export of every module (a new module
+// needs its "import * as" line here too — tests/modules.test.mjs's rule-8
+// check enforces this list stays complete).
 //
-// Plain named exports (edition.js, and any real module carved out of app.js
-// in later steps) are GET only (§3.4): an ES module's exported `let` binding
-// is a live READ reference to importers, but importers cannot assign it —
-// only the declaring module can.
+// Named exports are GET only (§3.4): an ES module's exported binding is a
+// live READ reference to importers, but importers cannot assign it — only
+// the declaring module can. tools/split/check-e2e-globals.mjs proves no
+// spec needs more.
 //
 // `S` (step 1's promote-state.mjs, src/state.js) is two-way: every field gets
 // BOTH get and set, mirroring tests/harness.mjs's scopeProxy (§3.2) — real
-// e2e specs assign bare names too (`song = …`, `mode = …`), and since step 1
-// those names are `S` fields, not app.js top-level bindings any more.
-//
-// app.js is STILL the legacy container (docs/split-plan.md §4 step 0b
-// deviation): whatever top-level names it has left — mostly functions, plus
-// a few consts — aren't `export`ed, so the plain loop below would see
-// nothing for it. cutover.mjs (0b) / tools/split/regen-e2e-footer.mjs
-// (step 1 on, re-run after any change to app.js's top-level names) append a
-// generated `export const __nrExpose$ = {get, set}` to app.js (same mechanism
-// tests/harness.mjs's own per-module footer already uses), which this file
-// mirrors onto window with BOTH get and set — a function reassigned by an
-// e2e spec (`loadSong = …`) needs that same two-way access app.js's own
-// `let`s used to get. Deleted in step 15 along with app.js itself.
+// e2e specs assign bare names too (`playCursor = …`, `rollnotes = …`), and
+// since step 1 those names are `S` fields.
 //
 // Never touches production unless window.__NR_EXPOSE is set
 // (tests/e2e/helpers.mjs sets it before navigation) — left off by default
 // so an un-imported name fails loudly instead of silently resolving through
 // window.
-import * as app from "./app.js";
 import * as edition from "./edition.js";
 import * as icons from "./ui/icons.js";
 import * as controls from "./ui/controls.js";
@@ -59,29 +46,80 @@ import * as audioChipStream from "./audio/chip-stream.js";
 import * as audioClips from "./audio/clips.js";
 import * as audioMetronome from "./audio/metronome.js";
 import * as audioBounce from "./audio/bounce.js";
+import * as modelSong from "./model/song.js";
+import * as modelSelection from "./model/selection.js";
+import * as modelProvenance from "./model/provenance.js";
+import * as modelAlbumOrder from "./model/album-order.js";
+import * as modelVersions from "./model/versions.js";
+import * as modelJobs from "./model/jobs.js";
+import * as importHub from "./import/hub.js";
+import * as importCapture from "./import/capture.js";
+import * as syncPublish from "./sync/publish.js";
+import * as genDrummer from "./gen/drummer.js";
+import * as genBassist from "./gen/bassist.js";
+import * as genAnalysis from "./gen/analysis.js";
+import * as renderRoll from "./render/roll.js";
+import * as renderTracks from "./render/tracks.js";
+import * as renderScore from "./render/score.js";
+import * as renderInstrument from "./render/instrument.js";
+import * as renderCof from "./render/cof.js";
+import * as renderCompare from "./render/compare.js";
+import * as inputGestures from "./input/gestures.js";
+import * as inputRecord from "./input/record.js";
+import * as inputKeyboard from "./input/keyboard.js";
+import * as askBackend from "./ask/backend.js";
+import * as askTools from "./ask/tools.js";
+import * as askContext from "./ask/context.js";
+import * as askBridge from "./ask/bridge.js";
+import * as askShots from "./ask/shots.js";
+import * as askSheet from "./ask/sheet.js";
+import * as askClient from "./ask/client.js";
+import * as askHost from "./ask/host.js";
+import * as uiChrome from "./ui/chrome.js";
+import * as uiTrackbar from "./ui/trackbar.js";
+import * as uiMixer from "./ui/mixer.js";
+import * as uiVoiceMenu from "./ui/voice-menu.js";
+import * as uiNotes from "./ui/notes.js";
+import * as uiNoteEditor from "./ui/note-editor.js";
+import * as uiSheets from "./ui/sheets.js";
+import * as uiWm from "./ui/wm.js";
+import * as sessionSong from "./session/song.js";
+import * as sessionAlbum from "./session/album.js";
+import * as sessionFiles from "./session/files.js";
+import * as sessionBoot from "./session/boot.js";
+import * as uiPerf from "./ui/perf.js";
+import * as platformSw from "./platform/sw.js";
+import * as hooks from "./hooks.js";
+import * as wire from "./wire.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
   // built inside the function, not as a top-level initializer (check.mjs
-  // rule 4): app.js is layer 5, same as this file, and nothing here is
-  // actually evaluation-order-sensitive — but keeping the object literal
-  // out of top-level init code is the same discipline §2.2 asks of every
-  // other module, free to apply here too.
-  const MODULES = { app, edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey,
+  // rule 4): nothing here is evaluation-order-sensitive, but keeping the
+  // object literal out of top-level init code is the same discipline §2.2
+  // asks of every other module, free to apply here too.
+  const MODULES = { edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
-                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce };
+                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce,
+                     modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
+                     importHub, importCapture, syncPublish,
+                     genDrummer, genBassist, genAnalysis,
+                     renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
+                     inputGestures, inputRecord, inputKeyboard,
+                     askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
+                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
+                     sessionSong, sessionAlbum, sessionFiles, sessionBoot, uiPerf, platformSw,
+                     hooks, wire };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
-      if (name === "__nrExpose$") continue; // the accessor object itself, not a global
       if (name in window) continue; // never shadow a real browser global
       Object.defineProperty(window, name, { configurable: true, enumerable: true, get: () => ns[name] });
     }
   }
-  // S's fields (src/state.js) — two-way, same as app.js's generated mirror
-  // below, so `song = …`/`mode = …` in a page.evaluate() keep working after
-  // step 1 moved those names off app.js and onto S.
+  // S's fields (src/state.js) — two-way, so `song = …`/`mode = …` in a
+  // page.evaluate() keep working after step 1 moved those names onto S.
   for (const name of Object.keys(S)) {
     if (name in window) continue; // never shadow a real browser global
     Object.defineProperty(window, name, {
@@ -89,16 +127,5 @@ export function exposeGlobals() {
       get: () => S[name],
       set: (v) => { S[name] = v; },
     });
-  }
-  // app.js's generated accessor mirror (see the file-header comment above) —
-  // read AND write every one of its remaining top-level bindings.
-  if (app.__nrExpose$) {
-    for (const name of Object.keys(app.__nrExpose$.get)) {
-      if (name in window) continue; // never shadow a real browser global
-      const setter = app.__nrExpose$.set[name];
-      const desc = { configurable: true, enumerable: true, get: app.__nrExpose$.get[name] };
-      if (setter) desc.set = setter;
-      Object.defineProperty(window, name, desc);
-    }
   }
 }
