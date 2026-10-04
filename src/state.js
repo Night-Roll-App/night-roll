@@ -242,6 +242,7 @@ export const S = {
   editRedo: [],
   editBtnCache: "",
   askBusy: null,
+  aiHost: null, // the AI library's host adapter, built once by askHost() (src/ask/host.js)
   askModelCache: null,
   askSpanFrozen: null,
   aiWebllm: null,

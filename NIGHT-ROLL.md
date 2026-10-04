@@ -2070,6 +2070,28 @@ resolved, unique top-level names, SERIALIZED self-containment) also run
 over `vendor/ai/web/` — rules 4/5 (the layer table) don't apply: the library
 isn't part of Night Roll's own layer system.
 
+**The host adapter — `askHost()` in `src/ask/host.js` (AI library steps 3–6,
+2026-10-04).** Every library function takes the app's `host` object as its
+first argument (the library holds no global of its own, no "mode", no
+storage key, no wording); `askHost()` builds Night Roll's once (cached on
+`S.aiHost`) and is the ONE place the library learns anything about this app.
+`src/ask/*.js` keep every bare name the tests and the e2e mirror use —
+`aiUrl`, `aiHeaders`, `aiProvider`, `aiRemote`, `aiBrowser`, `aiTest`,
+`aiHostOk`, … — as one-line delegates (`aiUrl = () => aiBaseUrl(askHost())`),
+and the host's own `url()`/`headers()`/… arrows read those delegates' live
+import bindings, so a test's `run("aiUrl = () => …")` is seen by every
+library call too. Library top-level names are `ai*` but never the same ones
+as a delegate (check.mjs rule 6 scans `vendor/ai/web` with `src/`); a library
+name Night Roll needs under its own name unchanged is forwarded
+(`export { AI_BROWSER_MODELS, aiWebllmLoad, aiEngineFor }`), never
+redeclared. Step 3 (library `v0.3.0`, `web/backends.js`): the remote
+(OpenAI-SSE, tool rounds, the bridge's job/session headers) and in-browser
+(WebLLM) backends, `aiProbe` (the Test button's mechanics — it answers a
+KIND, `backend.js`'s `aiTestWords` turns it into this app's sentence) and
+per-host consent (`aiHostConsent`, the list under `ff1roll-ai-hosts`; the
+sheet's wording is `askHost().confirmHost`). tests/ai.test.mjs is the oracle
+for every step and is unchanged throughout.
+
 ## Code map (index.html, section comments mark these)
 
 catalog → CATALOG built from albums/manifest.json at boot (run

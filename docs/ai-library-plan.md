@@ -226,8 +226,21 @@ mechanical commit).
    `node tools/ai-sync.mjs --ref vX` then `launchctl kickstart -k
    gui/$UID/com.nightroll.bridge` — the terminal session's job, after
    Josh's merge, never a build/worktree session's.
-3. Backends via `host.settings`/`host.confirm`; tests/ai.test.mjs unchanged
-   is the oracle; library gets client.test with ported fake servers.
+3. **DONE 2026-10-04 (claude-bridge `v0.3.0`).** `web/backends.js`:
+   `aiRemoteBackend`/`aiBrowserBackend`/`aiPickBackend` (the OpenAI-SSE and
+   WebLLM paths, verbatim mechanics), `aiProbe` (the Test button's probe —
+   answers a kind, never a sentence), `aiHostConsent`/`aiHostAllowed` (the
+   consent list under `host.keys.hosts`, the sheet's words from
+   `host.confirmHost`). Every library function takes `host` first (no
+   library global, no "mode"); `src/ask/host.js`'s `askHost()` builds Night
+   Roll's once (`S.aiHost`): `settings()` over `cfg()`, `apiKey()`,
+   `url()`/`headers()` pointing back at the app's own `aiUrl`/`aiHeaders`
+   delegates (so a test's by-name stub reaches every library fetch),
+   `sessionName`, `onSessionEpoch`, `confirmHost`. `src/ask/backend.js` keeps
+   every bare name as a one-line delegate (`aiTestWords` holds the Test
+   wording). Library `tests/backends.test.mjs` ports tests/ai.test.mjs's fake
+   servers (model listing, streaming, tool rounds with `-r1`, errors, the
+   probe's kinds, consent); tests/ai.test.mjs itself unchanged, green.
 4. Store, ctx-cache, bridge-client, attach — with a fixture test that today's
    `ff1roll-*` keys load identically.
 5. The client loop through `host.systemPrompt/context/tools/runTool`; all
