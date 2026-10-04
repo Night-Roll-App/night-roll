@@ -7002,3 +7002,43 @@ SF2 pickers), mixer (fader/pan/reorder), wm dock/float/close + the window
 menu, phone width. Not iPad-audio-engine code, but the voice menu's
 audition path (sf2AuditionPreset/instAudition) moved file — one ear check
 on a game voice pick is cheap insurance.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 8: import + sync out (docs/split-phase2-plan.md)
+
+Twelve M commits, verbatim-checked, no new files, plus one harness
+commit (below). Unblockers first
+(folder-tree walks → model/catalog.js; tombstone maintenance →
+model/edits.js; `jobsLoad`/`jobStart`/`jobsClearFinished` → ui/sheets.js
+beside `jobApi`; `cmpEnter`/`cmpExit`/`cmpShow` → ui/chrome.js;
+`askSave`/`askCommitLog` → ask/bridge.js; `createComposition` + the
+make-it-mine trio → session/files.js; `updateManifest`/`manifestPlace` →
+sync/publish.js; the import leaves and the File-menu shell), then the
+chip capture/commit cluster → import/capture.js, the sync web in ONE
+commit of three invocations (publish family → sync/publish.js; the sync
+sheet → ui/sheets.js; `revertSongToRepo`/`moveComposition` →
+session/files.js — a layer-4 cycle, legal), and last the Import hub
+(`openPickedFiles`, `importAudioFiles`, m3u, `fsub*`) → import/hub.js.
+check.mjs clean except `oldBpb`; prof set unchanged; `npm test` under
+alarm 1200 — only ps2-real/instruments fail (pre-existing); modules
+89/89; smoke 8/8; package 184 files, identical. `src/app.js`: 9360 →
+7457. Steps 7 + 8 together: 11331 → 7457.
+
+HARNESS FINDING (fixed, own commit): `run("appConfirm = …")` rebinds
+hooks.js's port, but rule 10 makes a layer-4 caller import `appConfirmImpl
+as appConfirm` directly, so the stub never reached import/hub.js and the
+real confirm sheet hung the m3u test (208 tests cancelled behind it).
+tests/harness.mjs now rebinds `<name>Impl` with the port; fixture test
+added. DECISION for the main session to veto: the harness, not rule 10 or
+16 tests, was changed - see the plan write-up. The devtools window mirror was NOT
+changed - grepped tests/e2e/: no Playwright test stubs `appConfirm` or
+`S.hooks`, so nothing to add there.
+
+Device check owed (plan §3 step 8): an NSF import into scratch, a publish
+to scratch; plus one revert and one discard-pending on a scratch song
+(`revertSongToRepo`/`discardPending` moved file). Never his compositions.
+
+Next in the plan: step 9 (ask/*: askRun, askSend, askContext, askRunTool,
+askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes — and
+`askRenderImpl`, the last port body still in app.js besides
+`recFinishImpl`), step 10 (input/*), step 11 (the remainder by
+blockers.mjs), step 12 (the ~320 top-level statements → init functions).

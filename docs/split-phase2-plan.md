@@ -116,7 +116,7 @@ illegal-layer imports.
 | 5 | M | **Done (worktree agent, 2026-10-04; 18 commits — 14 M + 3 H carrying 4 ports; see write-up; retireOldOverlay landed in model/versions beside saveDraft, its only caller).** saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 (actual: 1,204, 13343→12139) |
 | 6 | M | **Done (worktree agent, 2026-10-04; 7 commits; see write-up — revertSongToRepo/moveComposition wait for step 8's sync web; bakeMeter/bakeTempos landed in model/rollnotes, not session).** session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 (actual: 808, 12139→11331) |
 | 7 | M | **Done (worktree agent, 2026-10-04; 9 commits + a step 0 addendum; see write-up — the Instruments sheet web landed in ui/sheets.js, reorderTrack in ui/mixer.js).** voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 (actual: 1,971, 11331→9360) |
-| 8 | M | commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 |
+| 8 | M | **Done (worktree agent, 2026-10-04; 12 M commits + 1 harness commit; see write-up — jobStart landed in ui/sheets.js beside jobApi, askSave/askCommitLog pulled forward into ask/bridge.js).** commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 (actual: 1,903, 9360→7457) |
 | 9 | M | askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 |
 | 10 | M | tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 |
 | 11 | M | remainder bucketed by blockers.mjs (settings/folder UI, chord/progression insert, compare, versions sheet…) | ~1,500 |
@@ -780,6 +780,105 @@ local-rip gap), 878 pass; modules 88/88; `test:e2e:smoke` 8/8;
 moved: `askRenderImpl` (not in this row — step 9's ask/* cluster) and
 `recFinishImpl` (step 10, input/). **Browser check owed** (plan §3 step
 7): chips M/S/H, voice audition, mixer, wm dock/float/close, phone width.
+**Step 8 — Done** (2026-10-04, worktree agent, same pass as step 7).
+Twelve M commits + one harness commit (the finding below), no new files. `blockers.mjs` first on the row's two
+clusters: the import side was held by 33 app.js names, the sync side by
+11, and both by each other in one direction only — `publishJobStart`
+(sync) commits pending imports through `commitImports` (import), so import
+goes first; and `renderSyncPending` (the sync sheet) wires `revertSongToRepo`
+/`discardPending`/`cmpEnter` rows while `revertSongToRepo`, `discardPending`,
+`publishOpenComposition`, `publishAllJobStart` and `fingerprintOldDrafts`
+each re-render the open sheet — one SCC across sync/publish.js,
+ui/sheets.js and session/files.js. Unblockers in dependency order, each
+clean on its own, then the clusters:
+
+1. **M** `folderTree`/`nodeAt`/`nodeCount`/`parentFolder`/`subfolderKeys`/
+   `publishedLabel` → model/catalog.js (pure catalog walks; platform reads
+   only). `songStatus`/`fileStatus` stayed for chrome.js — `dirtySongs` is
+   layer 4.
+2. **M** `retireEdited`/`pruneTombstones`/`clearTombstones`/
+   `clearTombstonesFor` → model/edits.js (no new import at all).
+3. **M** `jobsLoad`/`jobStart`/`jobsClearFinished` → **ui/sheets.js, not
+   model/jobs.js**: `jobApi` (the per-job driver table) lives beside the
+   jobs sheet at layer 4, and `jobStart` resumes stored jobs through it.
+4. **M** `cmpEnter`/`cmpExit`/`cmpShow` → ui/chrome.js (beside step 6's
+   `cmpBar`).
+5. **M** `askSave`/`askCommitLog` → ask/bridge.js — two step-9 names pulled
+   forward (`publishSong` appends the unsaved chat through `askCommitLog`);
+   they belong with `askStore`/`askLogKey`, not ask/tools.js.
+6. **M** `createComposition`/`editHereNow`/`forkClashTitle`/`makeItMine` →
+   session/files.js (the rest of step 6's fork family).
+7. **M** `updateManifest`/`manifestPlace` → sync/publish.js (both halves
+   need them).
+8. **M** the import leaves → import/capture.js: `slugFile`/`monoWavBytes`/
+   `AUDIO_SIZE_GATE`/`SF2_SIZE_WARN`/`SF2_SIZE_REFUSE`/`importSf2File`/
+   `chipTrackOrder`/`chipKindOf`/`chipVaultMeta`/`nsfModules`/
+   `computeImportAlbumJson`/`impStatus`/`impRename`/`renameImportDraft`.
+9. **M** the File-menu shell → ui/chrome.js: `songsheet`/`filesheet`/
+   `filesub` (DOM handles), `closeFileMenus`/`openDropUp`, `fileStatus`,
+   `songStatus`, `draftRow`.
+10. **M** the capture/commit cluster → import/capture.js:
+   `captureChipTrack`/`impCapture`/`captureJobStart`/`openChipImport`/
+   `openNsfImport`/`batchCommit`/`commitImports`.
+11. **M, the SCC, one commit, three `move.mjs` invocations** (the 4c
+   precedent): sync/publish.js ← `publishSong`/`copyAudioClips`/
+   `markPublished`/`markCurrentSongSynced`/`publishOpenComposition`/
+   `publishUnsavedSong`/`publishAllJobStart`/`publishJobStart`/
+   `fingerprintOldDrafts`/`discardPending`/`renameRepoTitle`/
+   `renameRepoTitles`; ui/sheets.js ← `openSyncSheet`/`renderSyncPending`
+   (the row's "sheets → ui/sheets"); session/files.js ←
+   `revertSongToRepo`/`moveComposition` (step 6's two leftovers). Invoked
+   in that order, so exactly two specifiers needed the §0 hand fix
+   (publish.js's `renderSyncPending` → `../ui/sheets.js`, sheets.js's
+   `revertSongToRepo` → `../session/files.js`). `sweepStrandedClones` was
+   already in model/selection.js since step 5.
+12. **M** the Import hub → import/hub.js: `openPickedFiles`/
+   `importAudioFiles`/`localMidiOpen`/`nativeOpenUrl`/`nativeOpenHook`/
+   `createGameFilesRepo`, the m3u four (`decodeM3u`/`parseM3u`/
+   `applyM3uNames`/`applyM3uToAlbum`), and the `fsub*` submenu builders
+   (`fsubItem`/`fsubHeader`/`fsubAlbums`/`fsubFolder`/`fsubSongs`/
+   `fsubLocalFolder`/`fsubImportAlbum` — the Open and Import submenus share
+   them, and the row files them under import/*).
+
+Per commit: `verbatim.mjs <sha>` ✔ ×12, zero exceptions; regen-e2e-footer
+after every move; check.mjs clean except `oldBpb`; e2e-globals/controls
+clean; prof label set unchanged. Rule 10 at layer 4 fired on seven of the
+twelve (import/, sync/, ask/ and session/ are all layer 4) — every copied
+`../hooks.js` port import whose impl is at layer ≤ 4 rewritten to the
+`XImpl as X` alias, 29 lines in all. Group: `perl -e 'alarm 1200; exec
+@ARGV' npm test` — only `ps2-real`/`instruments` fail (pre-existing);
+modules 89/89; `test:e2e:smoke` 8/8; `package.mjs`: 184 files, list
+identical to step 7's. `src/app.js`: 9360 → 7457 (1,903 out, ~the row's
+~1,350 plus the unblockers). Learning-mode gates untouched. **Device
+check owed** (plan §3 step 8): an NSF import into scratch, a publish to
+scratch — and, because `revertSongToRepo`/`discardPending`/
+`moveComposition` moved file, one revert and one discard on a scratch
+song (never his compositions).
+
+**Step 8 finding — test rebinding vs rule 10 (fixed in the harness, own
+commit).** The first full `npm test` after the twelve moves hung in the
+m3u playlist test and node's `--test-force-exit` cancelled the 208 tests
+behind it ("Promise resolution is still pending"). Cause: the test stubs
+`appConfirm = async () => true` through `run()`, which rebinds the
+DECLARING module's binding — hooks.js's port — and `applyM3uToAlbum` now
+lives in import/hub.js, a layer-4 caller that rule 10 obliges to import
+`appConfirmImpl as appConfirm` from ui/chrome.js directly; the stub never
+reached it and the real confirm sheet awaited a tap forever. Sixteen
+tests stub `appConfirm` this way (two `setInfo`, two `draw`), and every
+future layer-4 move repeats the shape, so neither rule 10 (the plan's
+design) nor the tests were the thing to change: `tests/harness.mjs`'s
+`scopeProxy.set` now also rebinds `<name>Impl` whenever the assigned name
+is one of hooks.js's own declarations — exactly §1 M1's stated property
+("every test's `run("setInfo = …")` rebinds the port and all importers see
+it"), restored for alias importers. The reverse needed nothing (wire.js
+forwards through the live import binding, so `XImpl = f` already reaches
+port callers). Fixture test in tests/modules.test.mjs (88 → 89); the
+night-roll suite alone 427/427 afterwards; then the whole group re-run.
+Not touched: the browser-side devtools mirror (hooks.js is GET-only there;
+S.hooks is the only writable path) — grepped tests/e2e/: no Playwright
+test stubs `appConfirm` or `S.hooks`, so nothing to add; if one ever
+does on an import/sync flow, the same two-binding rule belongs in
+devtools.js.
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
 blockers.mjs, then add one port (own H commit) or leave the name for step 11

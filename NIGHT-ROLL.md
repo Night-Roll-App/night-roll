@@ -1690,6 +1690,42 @@ stale and should move up here instead.
   Still in app.js from these areas: the top-level wiring (`S.wm`
   migration, `makeWindow(...)` registrations, the listener blocks) for
   step 12, and `askRenderImpl` (step 9).
+- **Phase 2 step 8 (2026-10-04) — import and sync out.** `import/capture.js`
+  now holds the chip capture and import commit: `openChipImport`/
+  `openNsfImport` (the Import hub's chip entry), `impCapture` +
+  `captureChipTrack`, `captureJobStart`, `batchCommit`/`commitImports`,
+  `computeImportAlbumJson`, the SF2 import (`importSf2File`,
+  `SF2_SIZE_WARN`/`SF2_SIZE_REFUSE`), the audio-size gate and mono WAV
+  encoder (`AUDIO_SIZE_GATE`/`monoWavBytes`), `slugFile`, the chip-rip
+  helpers (`chipTrackOrder`/`chipKindOf`/`chipVaultMeta`/`nsfModules`) and
+  the import-draft status/rename pair (`impStatus`/`impRename`/
+  `renameImportDraft`). `import/hub.js` holds the hub itself:
+  `openPickedFiles` (every picked, dropped or shared file routes by type
+  from here), `importAudioFiles`, `localMidiOpen`, `nativeOpenUrl`/
+  `nativeOpenHook`, `createGameFilesRepo`, the .m3u four (`decodeM3u`/
+  `parseM3u`/`applyM3uNames`/`applyM3uToAlbum`) and the File-menu submenu
+  builders `fsubItem`/`fsubHeader`/`fsubAlbums`/`fsubFolder`/`fsubSongs`/
+  `fsubLocalFolder`/`fsubImportAlbum`. `sync/publish.js` holds the ONE
+  publish function and its family: `publishSong`, `copyAudioClips`,
+  `markPublished`/`markCurrentSongSynced`, `publishOpenComposition`/
+  `publishUnsavedSong`/`publishAllJobStart`/`publishJobStart`,
+  `fingerprintOldDrafts`, `discardPending`, `renameRepoTitle(s)`,
+  `updateManifest`/`manifestPlace`. The sync sheet (`openSyncSheet`/
+  `renderSyncPending`) and the jobs store (`jobsLoad`/`jobStart`/
+  `jobsClearFinished` — beside `jobApi`, which is why they are not in
+  model/jobs.js) are in `ui/sheets.js`; `revertSongToRepo`/
+  `moveComposition`/`createComposition`/`editHereNow`/`forkClashTitle`/
+  `makeItMine` in `session/files.js`; the File-menu shell (`songsheet`/
+  `filesheet`/`filesub`, `closeFileMenus`/`openDropUp`, `fileStatus`,
+  `songStatus`, `draftRow`) and compare mode (`cmpEnter`/`cmpExit`/
+  `cmpShow`) in `ui/chrome.js`; the folder-tree walks (`folderTree`/
+  `nodeAt`/`nodeCount`/`parentFolder`/`subfolderKeys`) and `publishedLabel`
+  in `model/catalog.js`; the tombstone maintenance side (`retireEdited`/
+  `pruneTombstones`/`clearTombstones`/`clearTombstonesFor`) in
+  `model/edits.js`; `askSave`/`askCommitLog` (Publish's chat leg) in
+  `ask/bridge.js`. sync/publish.js ↔ ui/sheets.js ↔ session/files.js is a
+  legal layer-4 cycle (the sheet wires revert/discard rows; both re-render
+  the sheet) — every crossing name is a hoisted function.
 - **`finalizeNotes` — model/rollnotes.js's own central resolver, and the
   thing `saveTrackDir`/`openVoiceMenu`'s `buildVoiceMenu`-adjacent chain and
   the drummer/bassist generators all ultimately reach — was checked here
