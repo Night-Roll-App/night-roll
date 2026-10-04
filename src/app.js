@@ -1274,6 +1274,22 @@ import { captureChipTrack } from "./import/capture.js";
 import { openNsfImport } from "./import/capture.js";
 import { impCapture } from "./import/capture.js";
 import { batchCommit } from "./import/capture.js";
+import { renameRepoTitles } from "./sync/publish.js";
+import { fingerprintOldDrafts } from "./sync/publish.js";
+import { publishJobStart } from "./sync/publish.js";
+import { publishUnsavedSong } from "./sync/publish.js";
+import { renameRepoTitle } from "./sync/publish.js";
+import { publishSong } from "./sync/publish.js";
+import { copyAudioClips } from "./sync/publish.js";
+import { publishOpenComposition } from "./sync/publish.js";
+import { publishAllJobStart } from "./sync/publish.js";
+import { discardPending } from "./sync/publish.js";
+import { markPublished } from "./sync/publish.js";
+import { markCurrentSongSynced } from "./sync/publish.js";
+import { renderSyncPending } from "./ui/sheets.js";
+import { openSyncSheet } from "./ui/sheets.js";
+import { moveComposition } from "./session/files.js";
+import { revertSongToRepo } from "./session/files.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -5430,27 +5446,6 @@ function fsubFolder(section, folder) { // one level: subfolders, then this folde
 }
 function fsubSongs(group) { fsubFolder("published", folderOf(S.CATALOG[group][0][1])); } // an album is its folder
 function fsubLocalFolder(folder) { return fsubFolder("local", folder); }
-// A running "Commit album" outlives the menu: the File menu is rebuilt on
-// every open, so its progress must live outside the button (Josh,
-// 2026-09-27, minutes into the Chrono Trigger commit: "I didn't know if I
-// could click away"). The footer strip carries the same line everywhere.
-// A publish of captures is a job too: one per folder at a time, its note is
-// commitImports' status line, ↻ re-runs it for the drafts still there
-// (commitImports deletes drafts only after success, so a retry is safe).
-function publishJobStart(slug, keys, statusFn) {
-  keys = keys || importDraftKeys();
-  if (!keys.length) { statusFn && statusFn("No captures to publish."); return null; }
-  const live = jobsFind("publish", slug, true) || (slug ? null : jobsFind("publish", null, true));
-  if (live) { statusFn && statusFn("a publish is running: " + live.title + " — tap ⏳"); return null; }
-  const title = slug ? titleCaseSlug(slug) : keys.length + " tracks";
-  return jobStart("publish", title, [{label: keys.length + " track" + (keys.length === 1 ? "" : "s")}], async api => {
-    api.update(0, {st: "running"});
-    await commitImports(s => { api.note(s); statusFn && statusFn(s); }, keys);
-    const left = keys.filter(k => localStorage.getItem(draftStoreKey(k)) !== null && importDraftKeys().includes(k));
-    api.update(0, {st: left.length ? "failed" : "done", msg: left.length ? left.length + " not published" : ""});
-    if (left.length) throw new Error(left.length + " of " + keys.length + " not published");
-  }, {slug, keys});
-}
 JOB_KINDS.publish = {
   label: j => "Publish · " + j.title,
   open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
@@ -5639,85 +5634,12 @@ document.getElementById("frgo").addEventListener("click", async e => {
   } catch (err) { fileStatus("Rename failed: " + err.message); }
   finally { btn.disabled = false; }
 });
-async function renameRepoTitle(key, title, h) { return renameRepoTitles({[key]: title}, h); }
-async function renameRepoTitles(titles, h) { // {key: title} for songs of ONE album: album.json songs overrides + manifest entries, one write each
-  const keys = Object.keys(titles);
-  if (!keys.length) return;
-  const key = keys[0];
-  const parts = key.split("/");
-  const file = parts.pop();
-  if (parts[parts.length - 1] === "songs") parts.pop(); // FF1-style albums keep songs/ nested
-  const path = parts.join("/") + "/album.json";
-  const base = file.replace(/\.midi?$/i, "");
-  let meta = {title: titleCaseSlug(parts[parts.length - 1]), songs: {}}, sha = null;
-  if (folderActive()) { // folder: the album.json there (or the site's, copied in) gets the override
-    const r = await readData("songs", path, true);
-    if (r.ok) { try { meta = await r.json(); } catch (err) { /* rewrite */ } }
-    if (Array.isArray(meta.songs)) meta.songs = {};
-    for (const k of keys) meta.songs[k.split("/").pop().replace(/\.midi?$/i, "")] = titles[k];
-    await folderWrite(path, JSON.stringify(meta, null, 1) + "\n");
-    return;
-  }
-  const g = await fetch(repoApi("songs") + path + "?ref=main", {headers: h, cache: "no-store"});
-  if (g.ok) { // preserve every existing field (FF1's album.json carries notes/order)
-    const j = await g.json();
-    sha = j.sha;
-    try { meta = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, ""))))); } catch (err) { /* rewrite */ }
-  }
-  if (Array.isArray(meta.songs)) meta.songs = {}; // ancient shape guard
-  meta.songs = {...(meta.songs || {})};
-  for (const k of keys) meta.songs[k.split("/").pop().replace(/\.midi?$/i, "")] = titles[k];
-  const body = {message: keys.length === 1 ? "Rename " + base + " to \"" + titles[key] + "\" from Night Roll" : "Name " + keys.length + " songs of " + (meta.title || base) + " from Night Roll", branch: "main",
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 1) + "\n")))};
-  if (sha) body.sha = sha;
-  const r = await fetch(repoApi("songs") + path, {method: "PUT", headers: h, body: JSON.stringify(body)});
-  if (!r.ok) throw apiError("songs", r, "album.json");
-  await updateManifest(h, albums => {
-    let changed = false;
-    for (const a of albums) {
-      let hit = false;
-      for (const k of keys) { const s = a.songs.find(x => x.path === k); if (s) { s.title = titles[k]; hit = true; } }
-      if (hit) { a.songs.sort((x, y) => x.title.localeCompare(y.title)); changed = true; }
-    }
-    return changed;
-  });
-}
 document.getElementById("editherebtn").addEventListener("click", () => editHereNow());
 // ✎ Edit (Josh's ruling, renamed from "✎ Make it mine"): opens the "Edit a
 // copy" sheet instead of forking straight away — same destination, one more
 // tap to see/change the name and folder first.
 document.getElementById("makeitminebtn").addEventListener("click", () => openSaveForm("editcopy"));
 document.getElementById("filesavelocal").addEventListener("click", () => { if (S.song && isUnsaved(S.songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
-async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not.
-  // Reverts EVERYTHING unpublished for this song, chat included (Josh,
-  // 2026-09-30, ruling on the "N chat messages + Revert does nothing" bug) —
-  // the confirm/button name what's dropped so a chat-only revert isn't silent.
-  const chatKey = "ff1roll-ask-" + key;
-  const chatN = askUnsavedCount(chatKey);
-  const chatPhrase = chatN ? chatN + " chat message" + (chatN === 1 ? "" : "s") : "";
-  let notes = [];
-  try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* corrupt: treat as none */ }
-  const hasEdits = !!draftDirtyState(key) || notes.length > 0;
-  const drops = hasEdits && chatPhrase ? "your edits and " + chatPhrase
-              : hasEdits ? "your edits"
-              : chatPhrase ? chatPhrase
-              : "";
-  const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
-    "Discards this device's unpublished changes to this song" + (hasEdits ? " — music, unsynced annotations, deletions" : "") +
-    (chatPhrase ? (hasEdits ? ", and " + chatPhrase : " — " + chatPhrase) : "") + ". " +
-    "The published copy becomes what you see. Your current state is kept as a version first — File → Versions… brings it back.",
-    "Revert" + (drops ? " — drops " + drops : ""), "Cancel");
-  if (!ok) return;
-  dropLocalSong(key);
-  askRevertToSaved(chatKey);
-  pubCheck.delete(key);
-  if (key === S.songKey) { S.editUndo = []; S.editRedo = []; S.songKey = null; await loadSong(key); }
-  updateSyncBtn();
-  updateSongBtn();
-  if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
-  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender(); // chat sheet open on this song: reflect the drop live
-  setInfo("reverted " + songTitleOf(key) + (chatPhrase ? " and dropped " + chatPhrase : "") + " — this device now has the published copy");
-}
 document.getElementById("filerevert").addEventListener("click", () => {
   if (!S.songKey) { setInfo("open a song first"); return; }
   if (S.songKey.startsWith("local/")) { setInfo("local imports have no repo copy to go back to"); return; }
@@ -5838,91 +5760,6 @@ document.getElementById("impcommit").addEventListener("click", e => {
     btn.textContent = publishLabel("import (" + n + ")");
   });
 });
-// ---- ONE publish function per song (Josh's ruling, 2026-09-30,
-// docs/provenance-plan.md P2: "Publish all must behave exactly like
-// publishing the open song — one publish function per song"). Both the
-// Publish button (ghsave, below) and Publish all (publishAllJobStart) call
-// this, for every song, open or not — it is the only place that writes a
-// .mid or a .rollnotes.json for Publish. doc = the open song, after
-// saveDraft flushes it to its draft (so both paths read the SAME shape back
-// out of storage below) — or a not-open song's existing draft — or null for
-// an analyzed song with no music draft to publish (annotations only; its
-// .mid is never touched here, per Josh's ruling in the plan: captures and
-// starters write their .mid once, at capture commit, never again).
-async function publishSong(key, h, report) {
-  report = report || (() => {});
-  const isOpen = key === S.songKey && !!S.song;
-  if (isOpen) {
-    if (S.cmp && S.cmp.showing === "repo") throw new Error("You are hearing the published copy — switch back to your version first (the compare bar).");
-    sweepStrandedClones(); // never publish invisible stacks
-    saveDraft(false); // the open song's edits land in its draft, same as any other song's, before it's read back below
-  }
-  const hisMusic = isOpen ? isComposition() : isCompositionKey(key); // never local/ — it has no repo path to publish a .mid to (bakesTempo, playback-only, is the wider one)
-  const notes = await annotationsFor(key); // repo file + local additions, tombstones subtracted (Bugs found: a tombstoned note republished)
-  let stored = null;
-  try { stored = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { stored = null; }
-
-  let doc = null;
-  if (hisMusic && stored) {
-    const d = await draftRead(key); // whole draft, notes included (tracksRef drafts read through to IndexedDB)
-    if (d && d.tracks) {
-      const ts = d.timesig || [4, 4];
-      const resolved = notes.map(n => resolveNoteWith({...n}, d.ppq, ts)); // d's OWN meter — never the globally open song's
-      doc = {ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}),
-             tempos: bakeTempos(d.tempos, resolved, d.ppq), // d.tempos is the un-baked base (draftDoc's convention) — baked fresh every publish, never accumulated, so removing a tempo: note removes its baked event
-             // Q9 (docs/provenance-plan.md): a declared meter bakes wherever
-             // tempo bakes. Base = d's OWN [num,den] as a one-event list (the
-             // file's own label, or his declared default on a fresh
-             // composition — "one meter per song" today, so that's always
-             // the whole un-baked base); bakeMeter returns it UNCHANGED when
-             // there's no timesig: note (Q6: an import's own label written
-             // back verbatim), or the declared meter's event otherwise —
-             // baked fresh every publish, never accumulated, same as tempo.
-             ...(bakesMeter(key) ? {timesigs: bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], resolved)} : {}),
-             tracks: d.tracks.map(tr => ({name: tr.name,
-               ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
-               ...(tr.offset ? {offset: tr.offset} : {}),
-               ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
-               notes: tr.notes.map(n => ({...n}))}))};
-    }
-  }
-
-  let wroteMid = false, midSig = null;
-  const stamp = Date.now();
-  if (doc) {
-    midSig = musicSig(doc); // now includes the baked tempo map: a tempo-only change republishes (Bugs found)
-    if (!stored.midSig || stored.midSig !== midSig) { // never published, or music/baked-tempo changed since
-      report("writing the .mid…");
-      const r1 = await putMidAt(key, h, writeMidi(doc));
-      if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
-      wroteMid = true;
-    }
-  }
-
-  const beats = isOpen ? beatsPerBarDisp() : ((declaredTsForKey(key) || [4])[0]);
-  const base = key.replace(/\.midi?$/i, ""), title = base.split("/").pop();
-  // P4 (docs/annotations-v2.md): the v2 header's origin — whatever's already
-  // on disk for this song (never re-derived once set), else what this
-  // device stashed at creation (fork/move/composition never yet published)
-  const content = serializeNotesList(notes, beats, title, stamp, originFor(key, notes));
-  report("publishing annotations…");
-  const r2 = await putRollnotes(base + ".rollnotes.json", content, h);
-  if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
-
-  if (hisMusic && doc) {
-    const r3 = await putSongsText(base + ".notes.txt", notesTxtFor(doc, key), h);
-    if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
-  }
-
-  await askCommitLog(h, isOpen ? undefined : key, hisMusic); // the ✦ AI chat since the last save, appended to <song>.ask.md
-
-  if (hisMusic) await uploadAudioClipsFor(key, notes, h, report); // recordings ride along, next to the .mid; "local" ones never (Bugs found: Publish all skipped this for a not-open song)
-  if (wroteMid) await updateManifest(h, albums => manifestPlace(albums, null, key));
-  if (hisMusic && doc) { if (isOpen) await filesMirror(); else await filesMirrorFor(key, doc, content).catch(() => {}); } // the iPad app: the Files copy follows every Publish, not just the open song's (Bugs found)
-
-  markPublished(key, stamp, content, {midSig: doc ? midSig : undefined});
-  return {wroteMid};
-}
 document.getElementById("filesave").addEventListener("click", () => {
   // one door for both modes (Josh, 2026-08-18): Save opens the sync sheet, which
   // shows pending annotations; its commit button pushes what the mode owns —
@@ -5931,127 +5768,6 @@ document.getElementById("filesave").addEventListener("click", () => {
   closeFileMenus();
   openSyncSheet();
 });
-// clips are addressed only by filename — audioDirFor(key) derives WHERE they
-// live from the song's own key, so a moved song's clips must physically move
-// with it or every audio: reference resolves against an empty new directory
-// (Bugs found 2026-09-30, moveComposition — the clip stayed at the old dir).
-// Runs after publishSong, which may already have uploaded a locally-held clip
-// straight to the new path (from this device's IndexedDB, via renameLocal's
-// idbAudioMove) — skip those, never double-upload. Must throw on any failure
-// BEFORE the caller's delete loop runs: the old clips are never removed out
-// from under a song that still needs them (same "old song stays whole" rule
-// as the publishSong failure path above).
-async function copyAudioClips(oldKey, newKey, h, report) {
-  const files = await audioDirFiles(oldKey, h);
-  for (const file of files) {
-    try {
-      const there = await readData("songs", audioDirFor(newKey) + "/" + file, true);
-      if (there.ok) continue; // publishSong's uploadAudioClipsFor already put this one at the new path
-    } catch (err) { /* not there yet — copy it below */ }
-    const src = await readData("songs", audioDirFor(oldKey) + "/" + file, true);
-    if (!src.ok) throw new Error(file + ": couldn't read the clip to copy it");
-    const bytes = new Uint8Array(await src.arrayBuffer());
-    report((folderActive() ? "writing " : "uploading ") + file + " (" + (bytes.length / 1e6).toFixed(1) + " MB)…");
-    const r = await putMidAt(audioDirFor(newKey) + "/" + file, h, bytes); // same PUT shape: any bytes
-    if (!r.ok) throw new Error(file + " HTTP " + r.status);
-  }
-  return files; // every clip that was at the old dir — the caller's delete loop removes them all next
-}
-async function moveComposition(destDir) {
-  const oldKey = S.songKey;
-  const newKey = destDir + oldKey.split("/").pop();
-  if (newKey === oldKey) { fileStatus("Already there."); return; }
-  // version guard (docs/annotations-v2.md P3): a Move republishes the
-  // annotations at the new path (annotationsFor would refuse this itself,
-  // below — checked here too, early, so the failure shows a clear message
-  // instead of a silently-rejected promise)
-  if (S.rollnotesReadOnly) { fileStatus(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; }
-  // Leaving nightroll/ loses the by-directory editability, so the song
-  // carries its provenance with it (the draft rename below is device-local).
-  // P4 (docs/annotations-v2.md, Q8): movedFrom goes in the v2 header now,
-  // not a "moved from <path>" note — kind is kept as-is (a moved copy is
-  // still a copy, a moved composition still a composition); only the FIRST
-  // move out of nightroll/ is recorded, same as the note it replaces never
-  // got overwritten by a later move either.
-  if (oldKey.startsWith(NR_DIR) && !(S.rollnotesOrigin && S.rollnotesOrigin.movedFrom)) {
-    S.rollnotesOrigin = {...(S.rollnotesOrigin || {kind: originOf(oldKey)}), movedFrom: oldKey, at: new Date().toISOString()};
-    setOrigin(oldKey, S.rollnotesOrigin); // rides to newKey with every other per-song local key (renameLocalKeys, below)
-  }
-  const token = writeToken();
-  const renameLocal = () => renameLocalKeys(oldKey, newKey); // every per-song key rides along
-  if (!catalogHas(oldKey)) { // never published: the move is this device's alone; Publish will use the new path
-    renameLocal();
-    fileStatus("Moved to " + folderTitle(folderOf(newKey)) + ".");
-    return;
-  }
-  if (!token) { // no token: draft-only move on this device
-    renameLocal();
-    fileStatus("Moved locally (draft only — no token stored; add one in File → Settings to enable repo moves).");
-    return;
-  }
-  fileStatus("Moving to " + destDir + "…");
-  try {
-    const h = ghHeaders(token);
-    // publishSong reads annotations from DISK at the given key (plus this
-    // device's still-local additions) — the same merge for every song, open
-    // or not. The old path's disk file is about to disappear from under it,
-    // so snapshot its current, already-tombstone-filtered note set now,
-    // while it's still readable at oldKey — otherwise a move would silently
-    // drop every already-published annotation that wasn't still locally
-    // pending (Bugs found in this refactor: annotationsFor(newKey) finds
-    // nothing on disk at a path nothing has ever been published to yet).
-    const priorNotes = await annotationsFor(oldKey);
-    const origLocalNotes = localStorage.getItem("ff1roll-notes-" + oldKey); // restored verbatim if the publish below fails
-    // every per-song key (draft, local notes, tombstones, midSig) rides to
-    // newKey FIRST, so publishSong below is publishing the open song at its
-    // new path — one publish function, no hand-written writes here (Josh's
-    // ruling: a moved song is byte-identical to publishing it at the new path)
-    renameLocal();
-    // seed newKey's local-additions bucket with the COMPLETE snapshot above
-    // (overwriting whatever renameLocal() just carried over, which was only
-    // ever the still-unsynced subset) — mergeLocalAdditions re-derives each
-    // one the same way a genuine unsynced note would be, so annotationsFor
-    // (newKey) inside publishSong reproduces the full set.
-    const seed = priorNotes.map(n => ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
-      section: n.section || undefined, chord: n.chord || undefined, cnote: n.cnote || undefined, keydir: n.keydir}));
-    if (seed.length) localStorage.setItem("ff1roll-notes-" + newKey, JSON.stringify(seed));
-    else localStorage.removeItem("ff1roll-notes-" + newKey);
-    try {
-      const d = JSON.parse(localStorage.getItem(draftStoreKey(newKey)) || "null");
-      // the rename carried the OLD path's midSig along; left alone,
-      // publishSong would see "already matches" and skip writing the .mid
-      // at newKey, leaving the move mid-less. Clearing it makes publishSong
-      // treat the .mid as never-written here.
-      if (d && d.midSig !== undefined) { delete d.midSig; localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
-    } catch (err) { /* no draft to clear */ }
-    let clipFiles = [];
-    try {
-      await publishSong(newKey, h, m => fileStatus(m));
-      clipFiles = await copyAudioClips(oldKey, newKey, h, m => fileStatus(m)); // clips ride along — still before any old file is deleted
-    } catch (err) {
-      renameLocalKeys(newKey, oldKey); // failed before any delete — the old files (and clips) are intact; undo the rename so the device still points at a path that has them
-      // renameLocalKeys just carried the FULL snapshot back under "ff1roll-notes-" + oldKey (it followed the "ff1roll-notes-" prefix); oldKey's own disk file already had the ones that weren't local-only, so put back exactly what was there before this attempt, not the superset
-      if (origLocalNotes === null) localStorage.removeItem("ff1roll-notes-" + oldKey); else localStorage.setItem("ff1roll-notes-" + oldKey, origLocalNotes);
-      throw err;
-    }
-    // a delete that silently fails is how a Move becomes two copies of a song
-    const left = [];
-    for (const p of [oldKey,
-                     oldKey.replace(/\.mid$/, ".rollnotes.json"),
-                     oldKey.replace(/\.mid$/, ".notes.txt"),
-                     oldKey.replace(/\.mid$/, ".rollnotes"), // last one: legacy, if any
-                     ...clipFiles.map(f => audioDirFor(oldKey) + "/" + f)]) {
-      if (!await deleteRepoFile(p, h)) left.push(p.split("/").pop());
-    }
-    await updateManifest(h, albums => manifestPlace(albums, oldKey, newKey));
-    await initCatalog().catch(() => {});
-    updateSongBtn();
-    fileStatus(left.length
-      ? "Moved → " + newKey + " — but the old copy could NOT be removed (" +
-        left.join(", ") + "). Both paths now exist; clean up in the repo."
-      : "Moved ✓ → " + newKey);
-  } catch (err) { fileStatus("Move failed: " + err.message); }
-}
 { // velocity slider: pencil loudness always; with a selection it LIVE-adjusts
   // those notes while dragging and commits ONE undo step on release
   const slider = document.getElementById("velslider"), val = document.getElementById("velval");
@@ -7677,22 +7393,7 @@ async function forgetFolder() {
   await idbFsPut(null);
   await folderAfterChange("folder forgotten — saves go to GitHub again");
 }
-         function discardPending(key, idx) { // drop one never-synced note from the stash
-  let notes = [];
-  try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
-  catch (err) {}
-  const [gone] = notes.splice(idx, 1);
-  if (notes.length) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(notes));
-  else localStorage.removeItem("ff1roll-notes-" + key);
-  if (gone && key === S.songKey) { // it may be live in the open song — drop there too
-    const k = S.rollnotes.findIndex(n => n.added && n.b1 === gone.b1 &&
-      n.q1 === gone.q1 && n.text === gone.text);
-    if (k >= 0) { S.rollnotes.splice(k, 1); finalizeNotes(); draw(); }
-  }
-  updateSyncBtn();
-  renderSyncPending();
-}
-document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
+         document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
 for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));
 function applyTextSize(v) { try { document.documentElement.style.setProperty("--userscale", v); } catch (err) {} }
 function settingsPersist(id) {
@@ -7891,88 +7592,6 @@ document.getElementById("dlfile").addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
-// The post-publish state update, for the open song and any other, alike
-// (docs/provenance-plan.md P2 — Bugs found: Publish all never did any of
-// this for a song that wasn't open, so its tombstones never cleared and its
-// draft never learned it had been published). opts.keepDraft: annotations
-// went up without the .mid (an analyzed song). opts.midSig: publishSong's
-// baked signature of what it just wrote (or would have written) — stored
-// separately from the legacy (un-baked) pubSig below, which several OTHER
-// comparisons (draftDoc, pubCompareDraft, draftFingerprint) already agree on.
-function markPublished(key, stamp, content, opts) {
-  opts = opts || {};
-  clearTombstonesFor(key); // the pushed file IS the post-deletion state
-  if (key === S.songKey && S.song) {
-    S.rollnotes.forEach(n => n.added = false); // now canonical in the repo
-    saveLocalNotes();
-    // Pages deploys lag the commit by ~1 min; a reload in that window fetches
-    // the PRE-sync file and the notes look gone. Keep the EXACT pushed content
-    // as a bridge — loadNotes prefers it while fresh and the CDN disagrees.
-    recordLastSync(key, content || serializeRollnotes());
-    if (stamp) {
-      S.song.savedStamp = stamp; // cross-device freshness beacon
-      if (isComposition() && !opts.keepDraft) saveDraft(true); // draft now clean, based on this save
-    }
-    if (opts.midSig !== undefined) { // patch in the baked signature saveDraft(true) doesn't know about
-      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-      if (d) { d.midSig = opts.midSig; try { draftWrite(key, d); } catch (err) {} }
-    }
-    S.lastSubtitle = undefined;
-    updateSubtitle();
-    draw();
-  } else {
-    recordLastSync(key, content || "");
-    localStorage.removeItem("ff1roll-notes-" + key); // this device's local additions are now canonical in the repo file
-    let d = null;
-    try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-    if (d) {
-      d.dirty = false;
-      if (stamp) d.savedStamp = stamp;
-      d.pubSig = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: d.tempos}); // legacy, un-baked convention (see musicSig) — matters the next time this song is opened (openDraftDoc reads it)
-      if (opts.midSig !== undefined) d.midSig = opts.midSig;
-      try { draftWrite(key, d); } catch (err) { /* full: the next edit writes it */ }
-    }
-  }
-}
-function markCurrentSongSynced(content, stamp, opts) { markPublished(S.songKey, stamp, content, opts); } // The ONE "ship everything" publish for the OPEN song, once it has a real
-// folder path and hisMusic is true (isComposition()): ghsave's writing-mode
-// branch below, and Publish-on-an-unsaved-song's continuation (fsgo, mode
-// "publish", above) after saveSongAs has given it one. Returns the final
-// status line; throws on failure (the .mid/annotations write itself) — the
-// README/catalog refresh after are best-effort and never fail the publish.
-async function publishOpenComposition(h, report) {
-  await publishSong(S.songKey, h, report);
-  let readmeNote = "";
-  try { await writeSongsReadme(h); } catch (err) { readmeNote = " (the repo's song list didn't update: " + err.message + ")"; } // the song is published either way
-  await initCatalog().catch(() => {});
-  updateSongBtn();
-  renderSyncPending();
-  return folderActive() ? "Published ✓ to " + fsRoot.name + " — song and annotations together."
-                        : "Published ✓ — song and annotations together (Pages takes ~1 min)." + readmeNote;
-}
-// Publish on a song with no folder yet (lotion, 2026-10-03: Josh published
-// "lotion" and only its annotations went anywhere — publishSong's hisMusic
-// check is false for local/, which has no repo path to write a .mid to).
-// Names it FIRST, via the SAME saveSongAs Save Version's first save already
-// uses (renameLocalKeys carries the draft/notes/versions/origin — the one
-// tested rename path, not a new one), THEN ships via publishOpenComposition
-// — one publish function either way. A failure after the rename still
-// leaves the song safely under its new name; Publish can just be tapped
-// again. Called from fsgo's "publish"-mode branch (openSaveForm/below), and
-// directly testable the same way saveSongAs already is.
-async function publishUnsavedSong(folder, name) {
-  if (!(await saveSongAs(folder, name))) return false; // saveSongAs already explained why (e.g. a declined name clash) — nothing else happened, same as Save Version's own silent no-op here
-  const token = writeToken(); // re-checked: openSyncSheet's gate already confirmed one before this sheet ever opened
-  if (!token) { fileStatus("No GitHub token stored yet — add one in File → Settings. (Saved as " + songTitleOf(S.songKey) + " — Publish again once connected.)"); return false; }
-  fileStatus("Publishing " + S.songKey + " (.mid + annotations)…");
-  try {
-    fileStatus(await publishOpenComposition(ghHeaders(token), m => fileStatus(m)));
-    return true;
-  } catch (err) {
-    fileStatus("Publish failed: " + err.message + " (the song is saved under " + S.songKey + " — Publish again to retry)");
-    return false;
-  }
-}
 document.getElementById("ghsave").addEventListener("click", async e => {
   const btn = e.currentTarget;
   const status = document.getElementById("syncstatus");
@@ -8010,49 +7629,6 @@ document.getElementById("ghsave").addEventListener("click", async e => {
   } catch (err) { status.textContent = "Publish failed: " + err.message; }
   finally { btn.disabled = false; }
 });
-// sync every song with unsynced local notes, not just the loaded one — a key
-// sweep touches many songs in one sitting and shouldn't strand work per-song.
-// Publish all as a job (Josh's ask 4, 2026-09-29): one item per pending song
-// (the general chat rides along as its own item, same as before) — the exact
-// same per-song flow, just wrapped so it reports progress and can be
-// cancelled between songs; the publish dialog is the same one folder
-// publishes use. One Publish-all job at a time.
-function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish — the same flow for just those songs
-  const pending = onlyKeys ? pendingSongs().filter(k => onlyKeys.includes(k)) : pendingSongs();
-  if (!pending.length) { statusFn && statusFn("Nothing pending on this device."); return null; }
-  if (jobsFind("publishall", null, true)) { statusFn && statusFn("A publish is already running — tap ⏳"); return null; }
-  const items = pending.map(key => ({label: key === "general" ? "General chat" : songTitleOf(key), key}));
-  const jobTitle = onlyKeys && pending.length === 1 ? "Publish " + items[0].label : "Publish all";
-  return jobStart("publishall", jobTitle, items, async api => {
-    const token = writeToken();
-    if (!token) throw new Error("No GitHub token stored yet — add one in File → Settings.");
-    const h = ghHeaders(token);
-    let failed = 0, anyPublished = false;
-    for (let i = 0; i < pending.length; i++) {
-      if (api.aborted) { for (let j = i; j < pending.length; j++) api.update(j, {st: "cancelled"}); api.cancel(); return; }
-      const key = pending[i], short = items[i].label;
-      api.update(i, {st: "running", pct: 0});
-      api.note("Publishing " + short + "…");
-      try {
-        if (key === "general") await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); // the general chat rides Publish all too — no song, so the one publish function doesn't apply
-        else { await publishSong(key, h, m => api.note(short + ": " + m)); anyPublished = true; }
-        api.update(i, {st: "done", pct: 1});
-      } catch (err) {
-        failed++;
-        api.update(i, {st: "failed", msg: err.message});
-      }
-    }
-    if (anyPublished) try { await writeSongsReadme(h); } catch (err) { /* never fatal for the publish itself — the README is best-effort */ } // once per job, not once per song (Bugs found, docs/provenance-plan.md)
-    await initCatalog().catch(() => {});
-    updateSyncBtn();
-    updateSongBtn();
-    renderSyncPending();
-    const msg = failed ? failed + " of " + pending.length + " failed to publish" : "Published " + pending.length + " ✓";
-    api.note(msg);
-    statusFn && statusFn(msg);
-    if (failed) throw new Error(msg);
-  });
-}
 JOB_KINDS.publishall = {
   label: j => j.title,
   open: j => openPubJobSheet(j),
@@ -8150,30 +7726,6 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
   first.finally(nativeOpenHook); // a file handed to the iPad app at launch opens over the first song, not under it
 })();
 
-async function fingerprintOldDrafts() {
-  if (S.pubCheckRunning || LINK_SONGS) return;
-  S.pubCheckRunning = true;
-  let changed = false;
-  const sheetOn = () => document.getElementById("syncsheet").classList.contains("on");
-  if (sheetOn() && S.song) renderSyncPending(); // shows the "checking…" line
-  try {
-    for (const key of draftKeys()) {
-      if (!syncable(key)) continue;
-      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-      if (!d || !d.dirty) { pubCheck.delete(key); continue; }
-      if (!d.tracks) { pubCheck.set(key, "not checked: its notes live in this device's database (an import)"); continue; }
-      const r = await pubCompareDraft(key, d);
-      changed = true;
-      if (r.same) {
-        pubCheck.delete(key);
-        if (key === S.songKey && S.song) { S.song.pubSig = d.pubSig; S.song.savedStamp = d.savedStamp || S.song.savedStamp; updateSongBtn(); }
-      } else pubCheck.set(key, r.text);
-      logDebug("publish check " + key.split("/").pop() + ": " + (r.same ? "matches the published copy — off the list" : r.text));
-    }
-  } finally { S.pubCheckRunning = false; }
-  updateSyncBtn();
-  if (sheetOn() && S.song) renderSyncPending(); // the list as checked (and the "checking…" line gone)
-}
 export function askRenderImpl() {
   askDraftLoad();
   asklog.innerHTML = "";
@@ -8297,152 +7849,6 @@ async function askResume() {
   }
   if (again) askResumeSoon(3000);
 }
-function openSyncSheet() { // callable even with no song loaded (bad-config recovery)
-  S.syncReturnToList = false; // notelistSync sets it true right after this runs
-  if (S.song) renderSyncPending();
-  fingerprintOldDrafts().catch(() => {});
-  const comp = !!S.song && isComposition();
-  document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
-  document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
-  // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
-  // their own) and speaks only for progress, results, or a missing prerequisite
-  document.getElementById("syncstatus").textContent = !S.song
-    ? "No song loaded — if the catalog failed, check File → Settings, then reload."
-    : !S.songKey
-    ? "Local file — Copy/Download only (no repo path to commit to)."
-    : LINK_SONGS
-    ? "You're viewing " + linkRepoLabel(LINK_SONGS) + "'s songs from a link — read-only here. Share link copies this song's link."
-    : !writeToken()
-    ? "Connect GitHub first: File → Settings… → GITHUB (your repo, then a token) — Publish sends songs there."
-    : isUnsaved(S.songKey) // lotion, 2026-10-03: say so before he taps — Publish used to look like it shipped the song and only sent the annotations
-    ? "This song has no folder yet — Publish will ask for a name and folder first."
-    : "";
-  document.getElementById("ghsave").disabled = !!LINK_SONGS;
-  if (LINK_SONGS) document.getElementById("ghsaveall").style.display = "none";
-  syncsheet.classList.add("on");
-}
-function renderSyncPending() {
-  updateSyncBtn(); // the count follows the list it is drawn from (Josh: "it doesn't update that number")
-  const box = document.getElementById("syncpending");
-  box.textContent = "";
-  const line = (parent, text, cls) => {
-    const row = document.createElement("div");
-    row.className = "pline" + (cls ? " " + cls : "");
-    const span = document.createElement("span");
-    span.textContent = text;
-    row.appendChild(span);
-    parent.appendChild(row);
-    return row;
-  };
-  // the list shrinks when the check below finishes: say so, or it reads as a
-  // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
-  if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
-  for (const key of pendingSongs()) {
-    const block = document.createElement("div");
-    if (key === "general") { // the general chat ships by itself: one tap, no song involved
-      block.className = "psong";
-      const title = document.createElement("div");
-      title.className = "ptitle";
-      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
-      const b = document.createElement("button");
-      b.textContent = "Publish chat";
-      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
-      b.addEventListener("click", async () => {
-        const status = document.getElementById("syncstatus");
-        const token = folderActive() ? "folder" : takeToken(status);
-        if (!token) return;
-        b.disabled = true; status.textContent = "Publishing the general chat…";
-        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
-        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
-        b.disabled = false; updateSyncBtn(); renderSyncPending();
-      });
-      title.append(tspan, b);
-      block.appendChild(title);
-      const n = askUnsavedCount(ASK_GENERAL_KEY);
-      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
-      box.appendChild(block);
-      continue;
-    }
-    block.className = "psong" + (key === S.songKey ? " open" : "");
-    const title = document.createElement("div");
-    title.className = "ptitle";
-    const tspan = document.createElement("span");
-    tspan.textContent = songTitleOf(key) + (key === S.songKey ? " · open" : "");
-    title.appendChild(tspan);
-    // every row: Open / Publish / Revert (Josh, 2026-09-29) — the same three
-    // on every song, not Open only when a draft happened to exist
-    if (key !== S.songKey) {
-      const o = document.createElement("button");
-      o.textContent = "Open";
-      o.title = "Open this song here";
-      o.addEventListener("click", () => {
-        (localStorage.getItem(draftStoreKey(key)) !== null ? openDraft(key) : loadSong(key)).then(openSyncSheet);
-      });
-      title.appendChild(o);
-    }
-    const pb = document.createElement("button");
-    pb.textContent = "Publish";
-    pb.title = "Publish this song only (a job — ⏳ shows it)";
-    pb.addEventListener("click", () => {
-      const status = document.getElementById("syncstatus");
-      if (!takeToken(status)) return; // same gate as Publish all
-      const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
-      if (!job) return;
-      document.getElementById("syncsheet").classList.remove("on");
-      openPubJobSheet(job);
-    });
-    title.appendChild(pb);
-    if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
-      const rb = document.createElement("button");
-      rb.textContent = "Revert";
-      rb.title = "Drop this device's changes to this song; the published copy becomes what you see";
-      rb.addEventListener("click", () => revertSongToRepo(key));
-      title.appendChild(rb);
-    }
-    block.appendChild(title);
-    const music = draftDirtyState(key);
-    if (music) {
-      const row = line(block, "♪ music " + (music === "never" ? "never published" : "edited since publish") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
-      if (key === S.songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
-        const b = document.createElement("button");
-        b.textContent = "Compare";
-        b.title = "Outline every note that differs from the published copy on the roll";
-        b.style.marginLeft = "auto";
-        b.addEventListener("click", () => { syncsheet.classList.remove("on"); cmpEnter(); });
-        row.appendChild(b);
-      }
-    }
-    let notes = [];
-    try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
-    if (notes.length) {
-      line(block, "✎ " + notes.length + " annotation" + (notes.length === 1 ? "" : "s") + " unsynced");
-      notes.forEach((n, i) => {
-        const at = "[" + n.b1 + "." + n.q1 + (n.b2 ? " - " + n.b2 + "." + (n.q2 || "") : "") + "]";
-        const text = n.text.length > 60 ? n.text.slice(0, 57) + "…" : n.text;
-        // loop:/key: texts already carry their prefix; only label the others
-        const row = line(block, at + " " + (n.section ? "section: " : "") + text, "note");
-        const x = document.createElement("button");
-        x.textContent = "✕";
-        x.title = "Discard this note (this device only — it was never synced)";
-        x.addEventListener("click", () => discardPending(key, i));
-        row.prepend(x);
-      });
-    }
-    const chat = askUnsavedCount("ff1roll-ask-" + key);
-    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved");
-    box.appendChild(block);
-  }
-  if (!box.childElementCount) {
-    const e = document.createElement("div");
-    e.className = "pempty";
-    e.textContent = "Nothing pending on this device.";
-    box.appendChild(e);
-  }
-  const all = document.getElementById("ghsaveall");
-  const n = pendingSongs().length;
-  all.textContent = "Publish all (" + n + ")";
-  all.style.display = n > 1 ? "" : "none";
-}
 
 
 // ---- e2e accessor mirror (docs/split-plan.md §4 step 0b deviation) -------
@@ -8468,4 +7874,4 @@ function renderSyncPending() {
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "revertSongToRepo": () => revertSongToRepo, "recordRealtimeAudio": () => recordRealtimeAudio, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "discardPending": () => discardPending, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart, "fingerprintOldDrafts": () => fingerprintOldDrafts, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume, "openSyncSheet": () => openSyncSheet, "renderSyncPending": () => renderSyncPending}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "discardPending": (v) => (discardPending = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v), "openSyncSheet": (v) => (openSyncSheet = v), "renderSyncPending": (v) => (renderSyncPending = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "fsubLocalFolder": () => fsubLocalFolder, "fsubImportAlbum": () => fsubImportAlbum, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v)}};

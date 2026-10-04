@@ -127,6 +127,14 @@ import { instLibrary } from "../audio/voices.js";
 import { songRow } from "./chrome.js";
 import { bsGenerate } from "../gen/bassist.js";
 import { drGenerate } from "../gen/drummer.js";
+import { fingerprintOldDrafts } from "../sync/publish.js";
+import { askCommitLog } from "../ask/bridge.js";
+import { openDraft } from "../session/song.js";
+import { loadSong } from "../session/song.js";
+import { publishAllJobStart } from "../sync/publish.js";
+import { revertSongToRepo } from "../session/files.js";
+import { cmpEnter } from "./chrome.js";
+import { discardPending } from "../sync/publish.js";
 
 export function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = S.jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
 export function renderJobs() {
@@ -929,3 +937,150 @@ export function jobStart(kind, title, items, runner, extra) { // runner(api) is 
   return job;
 }
 export function jobsClearFinished() { S.jobs = S.jobs.filter(j => j.state === "running" || j.state === "queued"); jobsSave(true); jobsNotify(); }
+
+export function openSyncSheet() { // callable even with no song loaded (bad-config recovery)
+  S.syncReturnToList = false; // notelistSync sets it true right after this runs
+  if (S.song) renderSyncPending();
+  fingerprintOldDrafts().catch(() => {});
+  const comp = !!S.song && isComposition();
+  document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
+  document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
+  // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
+  // their own) and speaks only for progress, results, or a missing prerequisite
+  document.getElementById("syncstatus").textContent = !S.song
+    ? "No song loaded — if the catalog failed, check File → Settings, then reload."
+    : !S.songKey
+    ? "Local file — Copy/Download only (no repo path to commit to)."
+    : LINK_SONGS
+    ? "You're viewing " + linkRepoLabel(LINK_SONGS) + "'s songs from a link — read-only here. Share link copies this song's link."
+    : !writeToken()
+    ? "Connect GitHub first: File → Settings… → GITHUB (your repo, then a token) — Publish sends songs there."
+    : isUnsaved(S.songKey) // lotion, 2026-10-03: say so before he taps — Publish used to look like it shipped the song and only sent the annotations
+    ? "This song has no folder yet — Publish will ask for a name and folder first."
+    : "";
+  document.getElementById("ghsave").disabled = !!LINK_SONGS;
+  if (LINK_SONGS) document.getElementById("ghsaveall").style.display = "none";
+  syncsheet.classList.add("on");
+}
+export function renderSyncPending() {
+  updateSyncBtn(); // the count follows the list it is drawn from (Josh: "it doesn't update that number")
+  const box = document.getElementById("syncpending");
+  box.textContent = "";
+  const line = (parent, text, cls) => {
+    const row = document.createElement("div");
+    row.className = "pline" + (cls ? " " + cls : "");
+    const span = document.createElement("span");
+    span.textContent = text;
+    row.appendChild(span);
+    parent.appendChild(row);
+    return row;
+  };
+  // the list shrinks when the check below finishes: say so, or it reads as a
+  // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
+  if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
+  for (const key of pendingSongs()) {
+    const block = document.createElement("div");
+    if (key === "general") { // the general chat ships by itself: one tap, no song involved
+      block.className = "psong";
+      const title = document.createElement("div");
+      title.className = "ptitle";
+      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
+      const b = document.createElement("button");
+      b.textContent = "Publish chat";
+      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
+      b.addEventListener("click", async () => {
+        const status = document.getElementById("syncstatus");
+        const token = folderActive() ? "folder" : takeToken(status);
+        if (!token) return;
+        b.disabled = true; status.textContent = "Publishing the general chat…";
+        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
+        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
+        b.disabled = false; updateSyncBtn(); renderSyncPending();
+      });
+      title.append(tspan, b);
+      block.appendChild(title);
+      const n = askUnsavedCount(ASK_GENERAL_KEY);
+      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
+      box.appendChild(block);
+      continue;
+    }
+    block.className = "psong" + (key === S.songKey ? " open" : "");
+    const title = document.createElement("div");
+    title.className = "ptitle";
+    const tspan = document.createElement("span");
+    tspan.textContent = songTitleOf(key) + (key === S.songKey ? " · open" : "");
+    title.appendChild(tspan);
+    // every row: Open / Publish / Revert (Josh, 2026-09-29) — the same three
+    // on every song, not Open only when a draft happened to exist
+    if (key !== S.songKey) {
+      const o = document.createElement("button");
+      o.textContent = "Open";
+      o.title = "Open this song here";
+      o.addEventListener("click", () => {
+        (localStorage.getItem(draftStoreKey(key)) !== null ? openDraft(key) : loadSong(key)).then(openSyncSheet);
+      });
+      title.appendChild(o);
+    }
+    const pb = document.createElement("button");
+    pb.textContent = "Publish";
+    pb.title = "Publish this song only (a job — ⏳ shows it)";
+    pb.addEventListener("click", () => {
+      const status = document.getElementById("syncstatus");
+      if (!takeToken(status)) return; // same gate as Publish all
+      const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
+      if (!job) return;
+      document.getElementById("syncsheet").classList.remove("on");
+      openPubJobSheet(job);
+    });
+    title.appendChild(pb);
+    if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
+      const rb = document.createElement("button");
+      rb.textContent = "Revert";
+      rb.title = "Drop this device's changes to this song; the published copy becomes what you see";
+      rb.addEventListener("click", () => revertSongToRepo(key));
+      title.appendChild(rb);
+    }
+    block.appendChild(title);
+    const music = draftDirtyState(key);
+    if (music) {
+      const row = line(block, "♪ music " + (music === "never" ? "never published" : "edited since publish") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
+      if (key === S.songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
+        const b = document.createElement("button");
+        b.textContent = "Compare";
+        b.title = "Outline every note that differs from the published copy on the roll";
+        b.style.marginLeft = "auto";
+        b.addEventListener("click", () => { syncsheet.classList.remove("on"); cmpEnter(); });
+        row.appendChild(b);
+      }
+    }
+    let notes = [];
+    try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
+    if (notes.length) {
+      line(block, "✎ " + notes.length + " annotation" + (notes.length === 1 ? "" : "s") + " unsynced");
+      notes.forEach((n, i) => {
+        const at = "[" + n.b1 + "." + n.q1 + (n.b2 ? " - " + n.b2 + "." + (n.q2 || "") : "") + "]";
+        const text = n.text.length > 60 ? n.text.slice(0, 57) + "…" : n.text;
+        // loop:/key: texts already carry their prefix; only label the others
+        const row = line(block, at + " " + (n.section ? "section: " : "") + text, "note");
+        const x = document.createElement("button");
+        x.textContent = "✕";
+        x.title = "Discard this note (this device only — it was never synced)";
+        x.addEventListener("click", () => discardPending(key, i));
+        row.prepend(x);
+      });
+    }
+    const chat = askUnsavedCount("ff1roll-ask-" + key);
+    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved");
+    box.appendChild(block);
+  }
+  if (!box.childElementCount) {
+    const e = document.createElement("div");
+    e.className = "pempty";
+    e.textContent = "Nothing pending on this device.";
+    box.appendChild(e);
+  }
+  const all = document.getElementById("ghsaveall");
+  const n = pendingSongs().length;
+  all.textContent = "Publish all (" + n + ")";
+  all.style.display = n > 1 ? "" : "none";
+}

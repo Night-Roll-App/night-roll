@@ -42,6 +42,30 @@ import { draftDoc } from "../model/versions.js";
 import { untitledKey } from "../model/provenance.js";
 import { publishedPaths } from "../model/catalog.js";
 import { originOf } from "../model/provenance.js";
+import { askUnsavedCount } from "../ask/bridge.js";
+import { draftDirtyState } from "../ui/chrome.js";
+import { dropLocalSong } from "../ui/sheets.js";
+import { askRevertToSaved } from "../ask/bridge.js";
+import { pubCheck } from "../ui/sheets.js";
+import { loadSong } from "./song.js";
+import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
+import { renderSyncPending } from "../ui/sheets.js";
+import { asksheet } from "../ask/sheet.js";
+import { askStoreKey } from "../ask/sheet.js";
+import { askRender } from "../hooks.js";
+import { fileStatus } from "../ui/chrome.js";
+import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
+import { writeToken } from "../sync/publish.js";
+import { catalogHas } from "../model/catalog.js";
+import { ghHeaders } from "../audio/chip.js";
+import { annotationsFor } from "../model/rollnotes.js";
+import { publishSong } from "../sync/publish.js";
+import { copyAudioClips } from "../sync/publish.js";
+import { audioDirFor } from "../audio/clips.js";
+import { deleteRepoFile } from "../sync/publish.js";
+import { updateManifest } from "../sync/publish.js";
+import { manifestPlace } from "../sync/publish.js";
+import { initCatalog } from "../model/catalog.js";
 
 // roots the user cannot save into
 export function folderChoices() { // the folders a Save can go to: this device's plus the repo's, own folders only, last used first
@@ -267,4 +291,130 @@ export function makeItMine(name, folder) {
   const title = forkClashTitle(folder, (name || songTitleOf(S.songKey)).trim() || songTitleOf(S.songKey));
   forkCurrentSong(title, folder);
   setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
+}
+
+export async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not.
+  // Reverts EVERYTHING unpublished for this song, chat included (Josh,
+  // 2026-09-30, ruling on the "N chat messages + Revert does nothing" bug) —
+  // the confirm/button name what's dropped so a chat-only revert isn't silent.
+  const chatKey = "ff1roll-ask-" + key;
+  const chatN = askUnsavedCount(chatKey);
+  const chatPhrase = chatN ? chatN + " chat message" + (chatN === 1 ? "" : "s") : "";
+  let notes = [];
+  try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* corrupt: treat as none */ }
+  const hasEdits = !!draftDirtyState(key) || notes.length > 0;
+  const drops = hasEdits && chatPhrase ? "your edits and " + chatPhrase
+              : hasEdits ? "your edits"
+              : chatPhrase ? chatPhrase
+              : "";
+  const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
+    "Discards this device's unpublished changes to this song" + (hasEdits ? " — music, unsynced annotations, deletions" : "") +
+    (chatPhrase ? (hasEdits ? ", and " + chatPhrase : " — " + chatPhrase) : "") + ". " +
+    "The published copy becomes what you see. Your current state is kept as a version first — File → Versions… brings it back.",
+    "Revert" + (drops ? " — drops " + drops : ""), "Cancel");
+  if (!ok) return;
+  dropLocalSong(key);
+  askRevertToSaved(chatKey);
+  pubCheck.delete(key);
+  if (key === S.songKey) { S.editUndo = []; S.editRedo = []; S.songKey = null; await loadSong(key); }
+  updateSyncBtn();
+  updateSongBtn();
+  if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
+  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender(); // chat sheet open on this song: reflect the drop live
+  setInfo("reverted " + songTitleOf(key) + (chatPhrase ? " and dropped " + chatPhrase : "") + " — this device now has the published copy");
+}
+export async function moveComposition(destDir) {
+  const oldKey = S.songKey;
+  const newKey = destDir + oldKey.split("/").pop();
+  if (newKey === oldKey) { fileStatus("Already there."); return; }
+  // version guard (docs/annotations-v2.md P3): a Move republishes the
+  // annotations at the new path (annotationsFor would refuse this itself,
+  // below — checked here too, early, so the failure shows a clear message
+  // instead of a silently-rejected promise)
+  if (S.rollnotesReadOnly) { fileStatus(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; }
+  // Leaving nightroll/ loses the by-directory editability, so the song
+  // carries its provenance with it (the draft rename below is device-local).
+  // P4 (docs/annotations-v2.md, Q8): movedFrom goes in the v2 header now,
+  // not a "moved from <path>" note — kind is kept as-is (a moved copy is
+  // still a copy, a moved composition still a composition); only the FIRST
+  // move out of nightroll/ is recorded, same as the note it replaces never
+  // got overwritten by a later move either.
+  if (oldKey.startsWith(NR_DIR) && !(S.rollnotesOrigin && S.rollnotesOrigin.movedFrom)) {
+    S.rollnotesOrigin = {...(S.rollnotesOrigin || {kind: originOf(oldKey)}), movedFrom: oldKey, at: new Date().toISOString()};
+    setOrigin(oldKey, S.rollnotesOrigin); // rides to newKey with every other per-song local key (renameLocalKeys, below)
+  }
+  const token = writeToken();
+  const renameLocal = () => renameLocalKeys(oldKey, newKey); // every per-song key rides along
+  if (!catalogHas(oldKey)) { // never published: the move is this device's alone; Publish will use the new path
+    renameLocal();
+    fileStatus("Moved to " + folderTitle(folderOf(newKey)) + ".");
+    return;
+  }
+  if (!token) { // no token: draft-only move on this device
+    renameLocal();
+    fileStatus("Moved locally (draft only — no token stored; add one in File → Settings to enable repo moves).");
+    return;
+  }
+  fileStatus("Moving to " + destDir + "…");
+  try {
+    const h = ghHeaders(token);
+    // publishSong reads annotations from DISK at the given key (plus this
+    // device's still-local additions) — the same merge for every song, open
+    // or not. The old path's disk file is about to disappear from under it,
+    // so snapshot its current, already-tombstone-filtered note set now,
+    // while it's still readable at oldKey — otherwise a move would silently
+    // drop every already-published annotation that wasn't still locally
+    // pending (Bugs found in this refactor: annotationsFor(newKey) finds
+    // nothing on disk at a path nothing has ever been published to yet).
+    const priorNotes = await annotationsFor(oldKey);
+    const origLocalNotes = localStorage.getItem("ff1roll-notes-" + oldKey); // restored verbatim if the publish below fails
+    // every per-song key (draft, local notes, tombstones, midSig) rides to
+    // newKey FIRST, so publishSong below is publishing the open song at its
+    // new path — one publish function, no hand-written writes here (Josh's
+    // ruling: a moved song is byte-identical to publishing it at the new path)
+    renameLocal();
+    // seed newKey's local-additions bucket with the COMPLETE snapshot above
+    // (overwriting whatever renameLocal() just carried over, which was only
+    // ever the still-unsynced subset) — mergeLocalAdditions re-derives each
+    // one the same way a genuine unsynced note would be, so annotationsFor
+    // (newKey) inside publishSong reproduces the full set.
+    const seed = priorNotes.map(n => ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
+      section: n.section || undefined, chord: n.chord || undefined, cnote: n.cnote || undefined, keydir: n.keydir}));
+    if (seed.length) localStorage.setItem("ff1roll-notes-" + newKey, JSON.stringify(seed));
+    else localStorage.removeItem("ff1roll-notes-" + newKey);
+    try {
+      const d = JSON.parse(localStorage.getItem(draftStoreKey(newKey)) || "null");
+      // the rename carried the OLD path's midSig along; left alone,
+      // publishSong would see "already matches" and skip writing the .mid
+      // at newKey, leaving the move mid-less. Clearing it makes publishSong
+      // treat the .mid as never-written here.
+      if (d && d.midSig !== undefined) { delete d.midSig; localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
+    } catch (err) { /* no draft to clear */ }
+    let clipFiles = [];
+    try {
+      await publishSong(newKey, h, m => fileStatus(m));
+      clipFiles = await copyAudioClips(oldKey, newKey, h, m => fileStatus(m)); // clips ride along — still before any old file is deleted
+    } catch (err) {
+      renameLocalKeys(newKey, oldKey); // failed before any delete — the old files (and clips) are intact; undo the rename so the device still points at a path that has them
+      // renameLocalKeys just carried the FULL snapshot back under "ff1roll-notes-" + oldKey (it followed the "ff1roll-notes-" prefix); oldKey's own disk file already had the ones that weren't local-only, so put back exactly what was there before this attempt, not the superset
+      if (origLocalNotes === null) localStorage.removeItem("ff1roll-notes-" + oldKey); else localStorage.setItem("ff1roll-notes-" + oldKey, origLocalNotes);
+      throw err;
+    }
+    // a delete that silently fails is how a Move becomes two copies of a song
+    const left = [];
+    for (const p of [oldKey,
+                     oldKey.replace(/\.mid$/, ".rollnotes.json"),
+                     oldKey.replace(/\.mid$/, ".notes.txt"),
+                     oldKey.replace(/\.mid$/, ".rollnotes"), // last one: legacy, if any
+                     ...clipFiles.map(f => audioDirFor(oldKey) + "/" + f)]) {
+      if (!await deleteRepoFile(p, h)) left.push(p.split("/").pop());
+    }
+    await updateManifest(h, albums => manifestPlace(albums, oldKey, newKey));
+    await initCatalog().catch(() => {});
+    updateSongBtn();
+    fileStatus(left.length
+      ? "Moved → " + newKey + " — but the old copy could NOT be removed (" +
+        left.join(", ") + "). Both paths now exist; clean up in the repo."
+      : "Moved ✓ → " + newKey);
+  } catch (err) { fileStatus("Move failed: " + err.message); }
 }
