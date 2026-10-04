@@ -138,3 +138,10 @@ export function chordQualCompose(base, exts) {
 export function parseChordSym(sym) {
   return (sym || "").trim().match(/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?(?:\s+\((.*)\))?$/);
 }
+
+export function transposeChordLabel(text, dP) { // "G#m" + 2 → "A#m"; spelling flat-preferred like inserts
+  const m = text.match(/^([A-G])([#b♯♭]?)(.*)$/);
+  if (!m) return text;
+  const pc = (LETTER_PC[m[1]] + (m[2] === "#" || m[2] === "♯" ? 1 : m[2] === "b" || m[2] === "♭" ? -1 : 0) + 1200 + dP) % 12;
+  return CHORD_FLAT[pc] + m[3];
+}
