@@ -216,6 +216,23 @@ Each step below gives: what moves, what must not change, how to verify. Every st
   index.html hasn't cut over yet — that fixture is 0a-only scaffolding, not
   part of the shipped app. See "Deviations" below for where reality diverged
   from this section's letter, and what 0b should know going in.
+- **Updated 2026-10-04 (docs/split-phase2-plan.md's own step 0)**: five
+  `move.mjs`/`verbatim.mjs` bugs this section's own "Done" note didn't yet
+  know about — found across steps 8-14 and documented piecemeal in this
+  file's own Deviations and in open-items.md — are now fixed at the root:
+  `move.mjs` never emits a self-import (checks `--to`'s own declarations
+  before falling through to `--from`'s imports), a moved name's
+  `X = prof("X", X);` wrap travels with its declaration (fixing the
+  line-joining/comment-drop bug scope.mjs's `leadingComments` was the real
+  cause of — a trailing same-line comment is no longer mistaken for the
+  next node's leading one), a reverse `--to src/app.js` move lands before
+  the generated e2e footer rather than after it (never deleted by
+  `regen-e2e-footer.mjs` again), and `--init <InitName>` mode exists with
+  its own call-stub import. `check.mjs` gained rule 9 (stale import
+  specifiers) and rule 10 (`src/hooks.js` upcall ports, once that file
+  exists). `verbatim.mjs` tolerates `--init`'s structural lines and gained
+  `--hook X,Y` mode. New `tools/split/blockers.mjs`. Full accounting:
+  docs/split-phase2-plan.md's own step 0 note and tests/modules.test.mjs.
 
 **0b. Cutover to modules: the whole script becomes one module.**
 - Add `tools/split/cutover.mjs`, a deterministic re-runnable script: it extracts the inline `<script>` into `src/app.js` verbatim, moves the EDITION line into `src/edition.js` (app.js imports it), writes `src/main.js` (`import "./app.js"`, plus the devtools hook), `src/devtools.js` and `src/package.json`, and replaces the script tag. The whole script already parses as a strict-mode module (checked).

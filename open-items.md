@@ -5972,7 +5972,7 @@ phone width, compared to before the step, per the plan's own verify line,
 before pushing and building. See docs/split-plan.md "Deviations (11)" and
 NIGHT-ROLL.md's six new `render/*` entries.
 
-## QUEUED 2026-10-03 — tools/split/move.mjs: a same-file self-import guard is overdue (three occurrences across two steps)
+## RESOLVED 2026-10-04 (split phase 2 step 0, tooling) — tools/split/move.mjs: a same-file self-import guard is overdue (three occurrences across two steps)
 `move.mjs` resolves a moved node's free identifier against the `--from`
 file's OWN existing imports before checking whether the name is already a
 LOCAL declaration in `--to`, so when `--from` already imports a name FROM
@@ -5988,7 +5988,15 @@ back-import for a free identifier, check whether the resolved specifier
 equals `--to` itself (or, more generally, whether the name is already a
 local declaration in `--to`) and skip emitting it in that case.
 
-## QUEUED 2026-10-03 — tools/split/move.mjs: a second line-joining bug (two statements landing on one line after a deletion)
+**Fixed**: `planMove` now checks `toDeclaredNames` (every name already
+declared in `--to`) BEFORE falling through to `--from`'s own imports, and
+separately drops any import whose resolved specifier would equal `--to`
+itself, as a defensive backstop. Reproduced the exact `MODE_OFFSET`
+self-import from steps 8-10 as a unit test first (confirmed it failed on
+the old code), then fixed it. Test: "move.mjs (a): never emits an import of
+a file into itself" (tests/modules.test.mjs).
+
+## RESOLVED 2026-10-04 (split phase 2 step 0, tooling) — tools/split/move.mjs: a second line-joining bug (two statements landing on one line after a deletion)
 Step 9's fix commit (4316dc7a, "Split the line the step-9 move joined")
 fixed one instance (`saveDraft = prof(...)` joined onto
 `function saveVersion(quiet) {`) by hand, without a tooling fix. Step 10 hit
@@ -6074,6 +6082,46 @@ shipped. Five documented bug classes now across `move.mjs`/
 misattachment, missing-init-import, verbatim's-no-tolerance-for-init-
 wrapping) — the same combined tooling-fix pass this note has been
 accumulating against, now overdue.
+
+**All five, plus the step-14 footer-ordering slip and the step-14
+stale-specifier/lost-export gap below, fixed 2026-10-04 (split phase 2
+step 0, tooling)**:
+- Line-joining + trailing-comment-misattachment: root cause was
+  `scope.mjs`'s `leadingComments`, which treated a comment with only
+  whitespace before the NEXT node as that node's leading comment even when
+  the comment sat on the SAME LINE as unrelated preceding code (a trailing
+  comment, not a leading one). Fixed there (one extra line-start check) —
+  fixes both the join and the misattachment at the root, for every tool
+  that calls it, not just move.mjs's own cut logic.
+- Missing-init-import: `move.mjs` now adds the synthesized `init<Module><N>`
+  (or `--init <InitName>`, new — see below) name to `--from`'s import list
+  unconditionally the moment it decides to wrap a group, not by scanning for
+  it among ordinary declared-name back-references.
+- `--init <InitName>`: added, so a single synthesized init wrapper can take
+  an explicit name instead of the auto-numbered `init<Module><N>` sequence.
+- `verbatim.mjs`'s no-tolerance-for-init-wrapping: fixed — it now
+  recognizes the `export function <InitName>() {` header and the bare
+  `<InitName>();` stub unconditionally (unambiguous by shape), and budgets
+  exactly as many tolerated bare `}` lines as there are net new/removed
+  headers (never more, so an unrelated unmatched brace is still caught).
+  `--hook X,Y` mode added too (docs/split-phase2-plan.md §1 M4.3, ahead of
+  step 1 actually needing it).
+- Step-14's footer-ordering slip (a reverse `--to src/app.js` move landing
+  after the generated e2e footer, which `regen-e2e-footer.mjs` then deleted
+  along with the stale footer): `move.mjs`'s `assembleTo()` now splits the
+  footer off, inserts new content before it, and reattaches it at the true
+  end — every time, not just when a human remembers to check.
+- Step-14's stale-specifier/lost-export gap (an import whose specifier
+  resolves at a legal layer but the target no longer exports that name):
+  promoted into `check.mjs` as rule 9, exactly as that step's own note
+  proposed. Checked against the real repo: zero findings (the repo is
+  currently clean of this).
+- Self-import guard: see the entry immediately above this one.
+All reproduced as failing unit tests against the OLD code first, then
+fixed, then re-verified clean against the real commits that originally hit
+them (`node tools/split/verbatim.mjs 868beff8`/`b92ec10d` still print ✔).
+See docs/split-phase2-plan.md step 0's own closing note and
+tests/modules.test.mjs's `move.mjs`/`verbatim.` test blocks.
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 12: src/input/{gestures,record}.js (docs/split-plan.md)
 Shipped: the table's own two named leaf functions (`evtPos`/

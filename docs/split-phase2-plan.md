@@ -123,6 +123,48 @@ illegal-layer imports.
 | 12a–f | L | top-level blocks → init functions, each with its cluster: canvas pointer listeners → input/gestures; editor/chord-widget/notes wiring → ui/note-editor + ui/notes; sheet/wm/modal wiring → ui/sheets + ui/wm; ask wiring → ask/sheet; ?perf HUD → ui/perf.js; migration IIFEs → model/*; boot IIFE → session/boot.js boot() | ~3,400 |
 | 13 | final | app.js = imports + footer + init stubs → delete; stub list becomes main.js; drop LEGACY_CONTAINER + harness legacy path; doc sweep (§4 step 15) | ~1,000 |
 
+**Step 0 — Done** (2026-10-04, tooling-only, no src/ edits). `move.mjs`:
+(a) never emits an import of a file into itself — checks every name already
+declared in `--to` before falling through to `--from`'s own imports, plus a
+defensive drop when a resolved specifier equals `--to` itself (fixes the
+self-import bug steps 8-10/13 hit five times); (b) a moved name's own
+`X = prof("X", X);` statement now travels WITH its declaration (and only
+then) — attached to the same group in `partitionGroups`, never left for the
+generic init-wrapper path; (c) `assembleTo()` splits app.js's generated e2e
+footer off, inserts new content before it, and reattaches the footer at the
+true end, for every `--to src/app.js` move (fixes step 14's silent-loss
+bug); (d) the actual root cause of the line-joining/comment-misattachment
+bugs (steps 9-11) was `scope.mjs`'s `leadingComments` treating a trailing
+same-line comment as the NEXT node's leading comment — fixed there (one
+line-start check), which also fixes (b) for free; (e) `--init <InitName>`
+mode (one non-declaration group only), and the synthesized call's own
+import is now added to `--from` unconditionally, not by the ordinary
+declared-name back-reference scan (fixes the gap step 12 hit).
+`check.mjs`: rule 9 (every import specifier's target still exports the
+name — zero findings on the real repo today); rule 10 (hooks.js's shape,
+one `XImpl` per port strictly above every caller's layer, no top-level
+initializer calling a port — all gated on `src/hooks.js` existing, so
+nothing fires before step 1); LAYERS gained `hooks.js` (layer 0), `wire.js`
+(layer 5), `session` (layer 4) now, ahead of steps 1/6 actually creating
+them. `verbatim.mjs`: tolerates `--init`'s structural lines (header, call
+stub unconditionally; the closing brace budgeted to exactly as many net new
+headers, so an unrelated unmatched brace is still caught) and gains
+`--hook X,Y` mode (hooks.js/wire.js changes unrestricted; `function X(` →
+`function XImpl(` and the prof-wrap rename tolerated per listed name, label
+string unchanged; a single `installHooks();` tolerated) — both ahead of
+step 1 needing them. New `tools/split/blockers.mjs <names> --to <file>`:
+transitive closure of still-app.js-declared dependencies + illegal-layer
+imports + a one-line verdict; smoke-tested against the real repo
+(`chipSource --to src/audio/chip.js` correctly reproduces docs/split-plan.md's
+documented `CHIPS`/`logErr` blocker chain). 33 new fixture unit tests in
+tests/modules.test.mjs (scope/check/move/verbatim/blockers), all green;
+`npm test` on the real repo: only `ps2-real`/`instruments` fail (pre-existing
+local-rip-fixture gap, unrelated). `node tools/split/check.mjs` on the real
+repo: unchanged (one pre-existing `oldBpb` finding; rule 9 adds zero new
+findings, so no allowlist was needed). `node tools/split/verbatim.mjs` on
+868beff8/b92ec10d: still ✔. See open-items.md's two move.mjs QUEUED entries
+(now RESOLVED) for the full before/after on each bug.
+
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
 blockers.mjs, then add one port (own H commit) or leave the name for step 11
