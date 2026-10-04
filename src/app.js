@@ -1519,6 +1519,9 @@ import { initPublish1 } from "./sync/publish.js";
 import { initPublish2 } from "./sync/publish.js";
 import { initPublish3 } from "./sync/publish.js";
 import { initBackend1 } from "./ask/backend.js";
+import { initSheet1 } from "./ask/sheet.js";
+import { initSheet2 } from "./ask/sheet.js";
+import { initSheet3 } from "./ask/sheet.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2075,8 +2078,7 @@ initSheets5();
          initBackend1();
 
 
-   // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
-try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
+   initSheet1();
   
       initChrome15();
 
@@ -2107,30 +2109,7 @@ document.getElementById("deploynow").addEventListener("click", deployInstallNow)
 // (askStatusPoll asks only an allowed host, and never again after a 404 —
 // so for LM Studio or no AI at all this costs one request, then nothing)
 if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
- document.getElementById("askattach").addEventListener("click", () => {
-  const btn = document.getElementById("askattach"), menu = document.getElementById("askattachmenu");
-  const was = S.dropUpOpen === menu && menu.classList.contains("on");
-  closeFileMenus();
-  if (was) return;
-  const r = btn.getBoundingClientRect();
-  menu.style.left = Math.max(6, Math.min(r.right - 240, window.innerWidth - 246)) + "px"; // right-aligned to ＋: it sits at the AI window's right edge
-  menu.style.bottom = (wmInnerHeight() - r.top + 6) + "px";
-  menu.classList.add("on");
-  S.dropUpOpen = menu;
-});
-document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true}); // the item's own handler still runs
-document.getElementById("askshot").addEventListener("click", askShotTake);
-document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
-document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());
-document.getElementById("askpickfile").addEventListener("change", e => {
-  // copy BEFORE clearing: e.target.files is live, and WebKit empties it when
-  // value is reset — the picker then "did nothing" (Josh, 2026-10-03, iPad)
-  const files = Array.from(e.target.files || []); e.target.value = ""; askPickFiles(files);
-});
-if (typeof document !== "undefined" && document.addEventListener) {
-  document.addEventListener("visibilitychange", () => { if (document.hidden) askDraftSave(); });
-  if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", askDraftSave);
-}
+ initSheet2();
   for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
   try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
   catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
@@ -2138,42 +2117,7 @@ if (typeof document !== "undefined" && document.addEventListener) {
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
 askInboxStart();
 initWm1();
-                             document.getElementById("askbtn").addEventListener("click", askBtnTap);
-for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
-  if ((S.askTerminal ? "terminal" : S.askGeneral ? "general" : "song") === mode) return;
-  askSetMode(mode);
-  askRender(); askRefresh(); askSessionRefresh();
-});
-document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
-document.getElementById("askreplybtn").addEventListener("click", openAsk);
-document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
-document.getElementById("askclear").addEventListener("click", async () => { // Clear = new session; unsaved messages are the one thing it can destroy
-  const n = askUnsavedCount();
-  if (n && !(await appConfirm("Clear chat", n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them") + ". Clear anyway?", "Clear", "Keep"))) return;
-  localStorage.removeItem(askStoreKey()); askSentReset(askStoreKey()); askRender(); updateSongBtn();
-  // Clear really resets (open-items.md "NEXT: AI SESSION CONTROLS" #1, Josh:
-  // "the app's Clear chat only clears this device's log and never tells the
-  // bridge, so the same Claude session keeps being resumed and growing"):
-  // drop the bridge's session id too, when the backend is the bridge —
-  // best-effort, never blocks the local clear above
-  if (S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal) {
-    const key = askSessionName();
-    delete S.askSessionCache[key];
-    try { await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeaders()}); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
-    askSessionRender();
-  }
-});
-document.getElementById("asksend").addEventListener("click", askSend);
-document.getElementById("askstop").addEventListener("click", () => { if (S.askBusy) S.askBusy.abort(); });
-askinput.addEventListener("input", askGrow);
-askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); }); // the draft is saved; a build may go ahead
-document.getElementById("askmic").addEventListener("click", () => {
-  if (!SPEECH) { askstatus.textContent = "no speech recognition in this browser — the keyboard mic still works"; return; }
-  micToggle(document.getElementById("askmic"), askinput, s2 => { askstatus.textContent = s2; });
-});
-askinput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(); }
-});
+                             initSheet3();
 
  
  
