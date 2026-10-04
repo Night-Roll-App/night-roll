@@ -13,7 +13,7 @@
     /* Text-size root (DAW review item 12, 2026-09-30): every font-size in this
        file is N/16 rem so the default render is byte-identical to the old
        fixed px — only the ROOT size moves. --ts follows iOS Dynamic Type
-       (set by the boot script below, via -apple-system-body; WebKit only —
+       (set by index.html's ts-boot script, via -apple-system-body; WebKit only —
        everywhere else it stays 1); --userscale is the Settings → Other
        "Text size" device pref (Small/Default/Large/Larger, also 1 by
        default). Layout (padding, grid, canvas) is NOT in rem on purpose —
