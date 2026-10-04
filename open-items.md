@@ -5,6 +5,20 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
+## On-screen keyboard — DONE 2026-10-04 (docs/daw-inventory.md §1a, the
+shortlist's first item). Real-piano look, fixed 44 px keys over the whole
+88-key piano with a scroll, Play/Scroll switch, two-finger scroll in either
+mode, ‹ C3 – E5 › octave buttons, 🔒 lock, Sustain, edge chevrons for lit
+keys off-screen. See NIGHT-ROLL.md "On-screen keyboard". Built on a
+worktree branch (not yet merged/pushed). Decisions taken without asking:
+no auto-follow during playback (chevrons instead); the scroll pref
+persists per device and does NOT re-home on song load once set (home only
+until the first scroll); Sustain also rings the guitar's taps; a chord that
+turns into a two-finger scroll lets go of its notes. To eyeball on the
+iPad: the black-key offsets, the bar at phone width (wraps under 560 px),
+two-finger scroll vs chord feel. Remaining from §1a: Logic's Scale mode
+(gated on a declared key — Learning rules), Sustain as a hold button.
+
 ## Playhead strip — DONE 2026-10-03 (Josh: "if I could click that spot
 under the ruler I wouldn't have that problem"). A thin band under the
 ruler, right above the notes, in Roll/Tracks/Score: tap moves the cursor,
@@ -7042,3 +7056,21 @@ askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes — and
 `askRenderImpl`, the last port body still in app.js besides
 `recFinishImpl`), step 10 (input/*), step 11 (the remainder by
 blockers.mjs), step 12 (the ~320 top-level statements → init functions).
+
+
+## QUEUED 2026-10-04 — DAW inventory shortlist (Josh, Terminal #104; docs/daw-inventory.md)
+1. ~~Playhead tag inside the strip, triangle gone (Roll/Tracks/Score) — S~~
+   DONE 2026-10-04 (built on a worktree branch off main, not the split
+   branch; NIGHT-ROLL.md "Playhead tag"). Eyeball on device: tag colour
+   against the panel, phone width, Score view, mid-play drag.
+2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
+3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
+4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
+5. Capture MIDI (keep the last ~60 s; "Keep that") — M
+6. Velocity lane — M
+7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
+8. Score → PDF/print — M
+Build after the module-split branch merges (they touch render/input code the split is moving).
+
+## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)
+Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tetris album (17/17 GBS tracks captured; rip header "Tetris v1.0", Hirokazu Tanaka). Interval search (E B C D C B A A C E, any key, repeats collapsed) over every channel of every GB/NES Tetris capture: found ONLY in NES › Tetris (Bullet-Proof Software) track-01. "A-Type Music (version 1.1)" is a real, different song (Josh confirmed). Next: fetch another GB Tetris rip (Zophar GBS/m3u) and compare track lists/lengths — rip lacks it vs our capture garbled a track.

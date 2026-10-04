@@ -34,7 +34,11 @@ export const LAYERS = [
   // are reachable from audio/* without a port. Checked ahead of "ui" (layer
   // 4, below) since layerOf() returns the FIRST matching entry, lowest
   // layer first.
-  ["state.js", "edition.js", "ui/icons.js", "ui/controls.js", "midi", "theory", "hooks.js"],
+  // ui/piano.js (merge of main, 2026-10-04): the on-screen keyboard's DOM-free
+  // geometry — imports nothing, and render/instrument.js (layer 3) draws
+  // with it, so like icons/controls it is a layer-0 leaf that happens to
+  // live under ui/.
+  ["state.js", "edition.js", "ui/icons.js", "ui/controls.js", "ui/piano.js", "midi", "theory", "hooks.js"],
   ["platform"],
   ["model", "gen"],
   ["audio", "render"],

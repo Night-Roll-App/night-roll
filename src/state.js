@@ -201,6 +201,18 @@ export const S = {
   instPtrOn: false,
   instLastP: null,
   instInfoTimer: 0,
+  // the on-screen keyboard (src/ui/piano.js + app.js's instrument block):
+  // scroll is a white-key index, null = home (the song's lowest octave)
+  instMode: "play",
+  instLock: false,
+  instSustain: false,
+  instScroll: null,
+  instPtrs: new Map(),   // pointerId → {x, y, x0, y0, dead, moved, panX}
+  instGesture: null,     // "two" (chord that may become a scroll) | "pan2"
+  instPanX: 0,
+  instPanX0: 0,
+  instHeld: new Map(),   // pitch → {o, g}: voices ringing under Sustain
+  instChevrons: null,    // {left: pitch|null, right: pitch|null}, set by drawPiano
   recording: false,
   recTake: [],
   recPending: new Map(),

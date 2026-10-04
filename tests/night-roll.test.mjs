@@ -442,11 +442,15 @@ test("instrument panel: degrees vs the recorded tonic, guitar/piano hit maps", (
   assert.deepEqual(val(`guitarHit(10, 168, 800, 168)`), {p: 40, si: 5, f: 0});  // open low E
   const g5 = val(`guitarHit(44 + ((800 - 50) / 24) * 2.5, 14, 800, 168)`);      // 3rd fret, high e
   assert.deepEqual(g5, {p: 67, si: 0, f: 3});
-  // piano: no song range set here → default C4..B4 octave-aligned keyboard
-  run(`song = null;`);
+  // piano (2026-10-04, src/ui/piano.js): the whole 88-key piano at a fixed
+  // 44px key width, homed on the song's lowest octave — no song → C4 at the
+  // left edge, so the old expectations still hold where the geometry agrees
+  run(`song = null; instScroll = null;`);
   assert.deepEqual(val(`instRange()`), [60, 71]);
-  assert.equal(run(`pianoHit(1, 160, 700, 168)`), 60);          // bottom-left = middle C
-  assert.equal(run(`pianoHit(700 / 7 - 2, 10, 700, 168)`), 61); // black-key zone over the C/D seam = C#
+  assert.equal(run(`pianoHit(1, 160, 700, 168)`), 60);   // bottom-left = middle C
+  assert.equal(run(`pianoHit(40, 10, 700, 168)`), 61);   // black-key zone just left of the C/D seam (44px) = C♯, which leans toward C
+  assert.equal(run(`pianoHit(100, 10, 700, 168)`), 63);  // D♯ leans toward E: past the D/E seam (88px)
+  assert.equal(run(`pianoHit(100, 160, 700, 168)`), 64); // below the black keys the same x is E4
 });
 
 test("roll zoom-out clamp: floors flush to song extents, fitView lands on them", () => {
@@ -2762,7 +2766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -2780,6 +2784,8 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Chip stream (experimental)",
     "Game order",
     "without touching your cycle",
+    "drag the tag to scrub",
+    "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -10481,6 +10487,20 @@ test("playhead strip tap while rolling plays from exactly there — inside the c
   assert.notEqual(val(`Math.round(loopSeg.start * 1000)`), val(`Math.round(tickToSec(song, 1920) * 1000)`), "outside: this pass doesn't cycle");
   assert.deepEqual(val(`[rangeSel.a, rangeSel.b, !!rangeSel.cycle]`), [1920, 1920 * 5, true], "the cycle itself is untouched");
   run(`stop();`);
+});
+
+test("⏮ goes to the ruler selection's start — armed or parked — and scrolls the view there, not to bar 1 (Josh, 2026-10-04)", async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 64; keyRegions = []; playCursor = 0; viewMode = "roll"; view.x = 0;
+       rangeSel = {a: 1920 * 40, b: 1920 * 44, cycle: true};`);
+  run(`document.getElementById("rwbtn").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`playCursor`), 1920 * 40, "armed: the cycle's start");
+  assert.ok(val(`view.x`) > 0, "the view follows, it doesn't jump to bar 1");
+  run(`playCursor = 1920 * 50; view.x = 0; rangeSel.off = true; document.getElementById("rwbtn").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`playCursor`), 1920 * 40, "parked: still the selection's start");
+  run(`rangeSel = null; document.getElementById("rwbtn").dispatchEvent(new Event("click"));`);
+  assert.deepEqual([val(`playCursor`), val(`view.x`)], [0, 0], "no selection: bar 1");
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {

@@ -16,6 +16,7 @@ import { barTicks } from "../model/rollnotes.js";
 import { secToTick } from "../midi/parse.js";
 import { trackShown } from "./roll.js";
 import { drawLasso } from "./roll.js";
+import { PIANO_LO, PIANO_HI, pianoIsWhite, pianoGeom, pianoHitAt, pianoClampScroll, pianoScrollTo, pianoScrollCentering, pianoRangeLabel, pianoOffscreen } from "../ui/piano.js";
 
 // {p, si, f, until} tap flash (si/f only for guitar)
 export const instWrap = document.getElementById("instwrap");
@@ -75,35 +76,88 @@ export function drawInst() {
   else drawGuitar(W, H, lit);
 }
 drawInst = prof("drawInst", drawInst); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-export function pianoGeom(W) {
-  const [lo, hi] = instRange();
-  const whites = [];
-  for (let p = lo; p <= hi; p++) if (WHITE_PCS.includes(p % 12)) whites.push(p);
-  const wW = W / whites.length;
-  const wx = {};
-  whites.forEach((p, i) => wx[p] = i * wW);
-  return {lo, hi, whites, wW, wx};
+// The keyboard's scroll (src/ui/piano.js): a white-key index, null until
+// the first scroll = "home", the song's own lowest octave (the old range
+// start), so a song opens where its notes are. A device-local pref, like
+// the panel's open/tab state — the song never carries it.
+export function instScrollNow(W) {
+  const w = W || instWrap.clientWidth || 800;
+  return pianoClampScroll(S.instScroll === null ? pianoScrollTo(instRange()[0], w) : S.instScroll, w);
 }
+export function instGeom(W, H) { return pianoGeom(W, H || instWrap.clientHeight || 168, instScrollNow(W)); }
+// every scroll goes through here: clamped, remembered, and the readout and
+// keys repainted — the lock refuses ALL of them (Josh, 2026-10-04: a stray
+// swipe must not move the keys), the octave buttons included
+export function instSetScroll(v, opts) {
+  if (S.instLock) return false;
+  const W = instWrap.clientWidth || 800;
+  const next = pianoClampScroll(v, W);
+  if (S.instScroll !== null && next === S.instScroll) return false;
+  S.instScroll = next;
+  if (!(opts && opts.transient)) localStorage.setItem("ff1roll-inst-scroll-piano", String(next));
+  drawInst();
+  return true;
+}
+export function instScrollBy(dxPx) { // the finger drags the keys: moving right scrolls toward the bass
+  const W = instWrap.clientWidth || 800;
+  return instSetScroll(instScrollNow(W) - dxPx / instGeom(W).wW, {transient: true});
+}
+export function instOctave(dir) { return instSetScroll(instScrollNow() + dir * 7); }
+// scroll so an off-screen lit key lands mid-window (the edge chevrons' tap)
+export function instRevealPitch(p) { return instSetScroll(pianoScrollCentering(p, instWrap.clientWidth || 800)); }
 export function instLitColor(p, lit) {
   if (S.instFlash && S.instFlash.p === p) return trackColor(S.selTrack); // tap flash wears the selected track's color
   if (lit.sel.has(p)) return trackColor(lit.sel.get(p)); // lasso'd: source track's color
   if (lit.live.has(p)) return trackColor(lit.live.get(p)); // sounding: its track's color
   return null;
 }
+// a canvas gradient, or the flat fallback where the context has none (the
+// vm harness's 2d stub hands back no gradient object)
+export function instGrad(x0, y0, x1, y1, stops, flat) {
+  const gr = ictx.createLinearGradient && ictx.createLinearGradient(x0, y0, x1, y1);
+  if (!gr || !gr.addColorStop) return flat;
+  stops.forEach(([o, c]) => gr.addColorStop(o, c));
+  return gr;
+}
+export function instRoundBottom(x, y, w, h, r) { // a key's outline: square top, rounded bottom
+  ictx.beginPath();
+  ictx.moveTo(x, y);
+  ictx.lineTo(x + w, y);
+  ictx.lineTo(x + w, y + h - r);
+  ictx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ictx.lineTo(x + r, y + h);
+  ictx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ictx.closePath();
+}
+// Real-piano look (2026-10-04, after Logic's keyboard — Josh: "it looks like
+// a real keyboard rather than ours just has the notes laid out"): fixed-width
+// keys from src/ui/piano.js, whites with a soft top-to-bottom gradient,
+// rounded bottom corners and a shadow lip over a dark gap; black keys at
+// their true offsets with a lighter top face. Lit keys keep their track
+// colors, labels and rings exactly as before — the lighting is Night Roll's,
+// only the wood changed. Ivory and ebony are literal colors, not theme vars:
+// a piano reads the same on any panel color.
 export function drawPiano(W, H, lit) {
-  const g = pianoGeom(W);
+  const g = instGeom(W, H);
   const kn = keyNameAt(curTick()), sf = sfDeclaredAt(curTick());
+  const pad = 3; // the dark rail the keys hang from
+  ictx.fillStyle = "#15151a";
+  ictx.fillRect(0, 0, W, H);
   ictx.textAlign = "center";
+  const whiteH = H - 2;
   for (const p of g.whites) {
     const x = g.wx[p], c = instLitColor(p, lit);
-    ictx.fillStyle = c || "#e8e4da";
-    ictx.fillRect(x + 0.5, 0, g.wW - 1, H - 1);
-    ictx.strokeStyle = "#333";
-    ictx.strokeRect(x + 0.5, 0.5, g.wW - 1, H - 2);
+    instRoundBottom(x + 0.75, pad, g.wW - 1.5, whiteH - pad, 3.5);
+    ictx.fillStyle = c || instGrad(0, pad, 0, whiteH, [[0, "#f6f3ea"], [0.85, "#ebe7dc"], [1, "#d9d3c5"]], "#e8e4da");
+    ictx.fill();
+    if (!c) { // the lip: a shadow line where the key's front face would be
+      ictx.fillStyle = "rgba(0,0,0,0.18)";
+      ictx.fillRect(x + 1, whiteH - 3, g.wW - 2, 2.5);
+    }
     if (lit.live.has(p) && lit.sel.has(p)) { // a LASSO'D note sounding NOW: white ring
       ictx.strokeStyle = "#fff";
       ictx.lineWidth = 2.5;
-      ictx.strokeRect(x + 2.5, 2, g.wW - 5, H - 5);
+      ictx.strokeRect(x + 2.5, pad + 2, g.wW - 5, whiteH - pad - 5);
       ictx.lineWidth = 1;
     }
     if (c) {
@@ -113,19 +167,28 @@ export function drawPiano(W, H, lit) {
       const deg = degreeOf(p % 12, kn);
       if (deg) { ictx.font = "9px " + css("--mono"); ictx.fillText(deg, x + g.wW / 2, H - 6); }
     } else if (p % 12 === 0) { // C labels for orientation
-      ictx.fillStyle = "#999";
-      ictx.font = "9px " + css("--mono");
-      ictx.fillText("C" + (p / 12 - 1), x + g.wW / 2, H - 6);
+      ictx.fillStyle = "#8d8778";
+      ictx.font = "bold 10px " + css("--mono");
+      ictx.fillText("C" + (p / 12 - 1), x + g.wW / 2, H - 8);
     }
   }
-  const bw = g.wW * 0.6, bh = H * 0.6;
+  const bw = g.bw, bh = g.bh;
   for (let p = g.lo; p <= g.hi; p++) {
-    if (WHITE_PCS.includes(p % 12)) continue;
-    const x = g.wx[p - 1] + g.wW - bw / 2, c = instLitColor(p, lit);
-    ictx.fillStyle = c || "#1a1a1a";
-    ictx.fillRect(x, 0, bw, bh);
-    ictx.strokeStyle = "#000";
-    ictx.strokeRect(x + 0.5, 0.5, bw - 1, bh - 1);
+    if (pianoIsWhite(p)) continue;
+    const x = g.keyX(p), c = instLitColor(p, lit);
+    instRoundBottom(x, 0, bw, bh, 2.5); // the body: dark sides and the bottom lip
+    ictx.fillStyle = c || "#0b0b0d";
+    ictx.fill();
+    if (c) { // a lit black key keeps a darker lip so it still reads as raised
+      ictx.fillStyle = "rgba(0,0,0,0.3)";
+      ictx.fillRect(x, bh - 5, bw, 5);
+    } else { // the lighter top face, with a highlight along its top edge
+      ictx.fillStyle = instGrad(0, 0, 0, bh, [[0, "#4a4a50"], [0.12, "#2e2e33"], [1, "#1c1c20"]], "#26262b");
+      instRoundBottom(x + 2, 0, bw - 4, bh - 6, 2);
+      ictx.fill();
+      ictx.fillStyle = "rgba(255,255,255,0.10)";
+      ictx.fillRect(x + 2, 0, bw - 4, 1.5);
+    }
     if (lit.live.has(p) && lit.sel.has(p)) {
       ictx.strokeStyle = "#fff";
       ictx.lineWidth = 2.5;
@@ -140,8 +203,43 @@ export function drawPiano(W, H, lit) {
       if (deg) { ictx.font = "8px " + css("--mono"); ictx.fillText(deg, x + bw / 2, bh - 4); }
     }
   }
+  drawInstChevrons(W, H, lit, g);
+  updateInstRange();
 }
 drawPiano = prof("drawPiano", drawPiano); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+// Edge chevrons: a lit key (sounding, lasso'd, or the one just tapped) that
+// sits outside the window shows as a small ‹ or › at that edge in its
+// track's color — the guitar's ▴/▾ octave-fold idea: a sounding note
+// off-screen is still seen. S.instChevrons remembers which pitch each edge
+// points at so a tap there (instPointerDown) scrolls to it.
+export const INST_CHEVRON_W = 26;
+export function drawInstChevrons(W, H, lit, g) {
+  const pitches = new Set([...lit.sel.keys(), ...lit.live.keys()]);
+  if (S.instFlash && S.instFlash.p !== undefined) pitches.add(S.instFlash.p);
+  const off = pianoOffscreen(pitches, W, H, g.scroll);
+  S.instChevrons = {left: off.left.length ? off.left[0] : null, right: off.right.length ? off.right[0] : null};
+  const draw = (p, atLeft) => {
+    const x = atLeft ? 4 : W - INST_CHEVRON_W + 4, y = H / 2 - 16, w = INST_CHEVRON_W - 8;
+    ictx.fillStyle = "rgba(0,0,0,0.55)";
+    ictx.beginPath();
+    ictx.roundRect(x, y, w, 32, 6);
+    ictx.fill();
+    ictx.fillStyle = instLitColor(p, lit) || css("--gold");
+    ictx.font = "bold 18px " + css("--sans");
+    ictx.textAlign = "center";
+    ictx.fillText(atLeft ? "‹" : "›", x + w / 2, y + 23);
+  };
+  if (S.instChevrons.left !== null) draw(S.instChevrons.left, true);
+  if (S.instChevrons.right !== null) draw(S.instChevrons.right, false);
+}
+// the "C3 – E5" readout between ‹ ›: rewritten only when it changes, since
+// drawPiano runs on every playback frame
+export function updateInstRange() {
+  const el = document.getElementById("instrange");
+  const label = pianoRangeLabel(instWrap.clientWidth || 800, instScrollNow());
+  if (el.textContent !== label) el.textContent = label;
+}
+export function pianoHit(x, y, W, H) { return pianoHitAt(x, y, W, H, instScrollNow(W)); }
 export function guitarGeom(W, H) {
   const nutX = 44, top = 14, bot = 24;
   return {nutX, top, bot, fw: (W - nutX - 6) / GTR_FRETS, sh: (H - top - bot) / (GTR_TUNING.length - 1)};
@@ -260,13 +358,12 @@ export function drawFall(W, H) {
   const nowSec = S.playing ? playSec() : tickToSec(S.song, S.playCursor);
   const pps = H / FALL_WINDOW;
   const secY = s => H - (s - nowSec) * pps;
-  const g = pianoGeom(W);
-  const bw = g.wW * 0.6;
+  const g = instGeom(W);
   ctx.fillStyle = css("--grid-soft"); // black-key lanes banded like the roll
   for (let p = g.lo; p <= g.hi; p++) {
-    if (WHITE_PCS.includes(p % 12)) continue;
+    if (pianoIsWhite(p)) continue;
     ctx.globalAlpha = 0.5;
-    ctx.fillRect(g.wx[p - 1] + g.wW - bw / 2, 0, bw, H);
+    ctx.fillRect(g.keyX(p), 0, g.bw, H);
   }
   ctx.globalAlpha = 1;
   ctx.textAlign = "left";
@@ -298,13 +395,13 @@ export function drawFall(W, H) {
     if (!trackShown(ti) || trackIsDrums(ti)) return;
     const color = trackColor(ti);
     tr.notes.forEach((n, ni) => {
-      if (n.gone || n.t > tick1 || n.t + n.d < tick0) return;
+      if (n.gone || n.t > tick1 || n.t + n.d < tick0 || n.p < PIANO_LO || n.p > PIANO_HI) return;
       const yB = secY(tickToSec(S.song, n.t));       // bottom edge = note-on
       const yT = secY(tickToSec(S.song, n.t + n.d));
       if (yT > H || yB < 0) return;                // fully past / not yet in view
-      const white = WHITE_PCS.includes(n.p % 12);
-      const x = white ? g.wx[n.p] + 1 : g.wx[n.p - 1] + g.wW - bw / 2;
-      const w = (white ? g.wW : bw) - 2;
+      const white = pianoIsWhite(n.p);
+      const x = g.keyX(n.p) + (white ? 1 : 0);
+      const w = g.keyW(n.p) - 2;
       const sounding = yB >= H && yT < H;          // remainder sinks into the keys
       ctx.globalAlpha = 0.55 + 0.45 * (n.v / 127);
       if (S.findPc !== null && n.p % 12 !== S.findPc) ctx.globalAlpha *= 0.15; // finder dims non-matches

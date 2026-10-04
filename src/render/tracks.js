@@ -237,9 +237,6 @@ export function drawTracks(W, H, skipCursor) {
   if (skipCursor) return;
   const x = S.RULER_W + (S.playing ? secToTick(S.song, playSec()) : S.playCursor) * ppt - S.view.x;
   ctx.fillStyle = S.playing ? css("--gold") : css("--accent");
-  ctx.fillRect(x - (S.playing ? 0 : 1), 0, S.playing ? 1.5 : 2.5, H);
-  ctx.beginPath();
-  ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-  ctx.fill();
+  ctx.fillRect(x - (S.playing ? 0 : 1), 0, S.playing ? 1.5 : 2.5, H); // the handle is the strip's tag (drawStripPlayhead)
 }
 drawTracks = prof("drawTracks", drawTracks); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

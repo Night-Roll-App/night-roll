@@ -358,7 +358,7 @@ export async function play(fromSec = 0, opts = {}) {
     if (!S.playing) return;
     const x = secToTick(S.song, playSec()) * pxPerTick();
     const W = wrap.clientWidth - S.RULER_W;
-    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.cursor || S.drag.stripCursor);
+    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.stripCursor);
     if (S.followFree) {
       // user scrolled away: hands off until the playhead enters their view
       if (x >= S.view.x && x <= S.view.x + W) S.followFree = false;

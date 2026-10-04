@@ -879,6 +879,79 @@ S.hooks is the only writable path) — grepped tests/e2e/: no Playwright
 test stubs `appConfirm` or `S.hooks`, so nothing to add; if one ever
 does on an import/sync flow, the same two-binding rule belongs in
 devtools.js.
+**Merge of main (2026-10-04)** — `git merge origin/main` into the branch
+after step 8 (15 main-only commits: the ⏮ back-to-selection change, the
+playhead tag in the strip, the on-screen keyboard rewrite + `src/ui/piano.js`,
+docs/daw-inventory.md, help/HELP.md/NIGHT-ROLL/open-items, and Josh's
+lotion.* saves, which merged untouched). Five files conflicted; main's
+app.js hunks (28) were applied as SEMANTIC changes at each function's
+current home, never by resurrecting moved code — `git checkout --ours
+src/app.js` first, then each hunk by hand against `git diff <merge-base>
+origin/main -- src/app.js`. Where every one landed:
+
+- `index.html` (modulepreload) — both lines kept: `src/hooks.js` (branch) +
+  `src/ui/piano.js` (main).
+- `sw.js` — branch's list + `src/ui/piano.js`; `SW_VERSION` nr-v24/nr-v15 →
+  **nr-v25** (above both sides); `AI_LIB`/`AI_MODULES` kept.
+- `tests/modules.test.mjs` — `fileCount` 67 → **68** (+ piano.js), vendor
+  total 69 → 70.
+- `open-items.md` — branch's text kept (its "Was blocked on Q7/Q8" supersedes
+  main's "Blocked on"), main's two new QUEUED sections (DAW inventory
+  shortlist, GB Tetris Korobeiniki) appended.
+- `src/app.js` — 9 conflict regions, resolved by location:
+  - `TAG_W`/`TAG_R`/`TAG_HIT`, the tag-shaped `drawStripPlayhead`, the
+    scrub-aware `stripPlayheadX` → **render/roll.js** (`STRIP_H`'s home;
+    `wrap`/`ctx` already there).
+  - `playbackFrame`'s `x = stripPlayheadX()` + triangle removal, `drawFull`'s
+    `cursorHandle` removal → **ui/chrome.js** (`playbackFrameImpl`/`drawFull`);
+    `scoreTickToX` import dropped there as now unused.
+  - `drawTracks` triangle removal → **render/tracks.js**; `drawScore`'s
+    `drawHandle` removal → **render/score.js**.
+  - `cursorHandleHit`/`cursorHit` rewrite (tag zone, any mode, while
+    playing) → **input/gestures.js**, importing `fallActive`/`stripPlayheadX`/
+    `TAG_HIT` from render/roll.js (layer 4 → 3, legal).
+  - `play()`'s `handMidGesture` losing `S.drag.cursor` → **audio/transport.js**.
+  - `pianoGeom` (the old song-range version) deleted from
+    **render/instrument.js**; main's `instScrollNow`/`instGeom`/
+    `instSetScroll`/`instScrollBy`/`instOctave`/`instRevealPitch`,
+    `instGrad`/`instRoundBottom`, the real-piano `drawPiano`,
+    `INST_CHEVRON_W`/`drawInstChevrons`/`updateInstRange`, the `drawFall`
+    geometry change and `pianoHit` (one-line `pianoHitAt` wrapper; it was in
+    app.js on both sides, moved here because `instTap` is its only caller
+    and `instScrollNow` is here) all landed in **render/instrument.js**,
+    exported.
+  - `applyInst` gaining `applyInstBar()` → **ui/chrome.js**, and
+    `applyInstBar` itself lives there (its callers are `applyInst` and
+    app.js's `instSet*`; chrome.js can't import app.js).
+  - Stayed in **app.js** (step 10's input cluster, untouched otherwise):
+    `finalizeLasso`/`fallHitNote` (now `instGeom` + `PIANO_LO/HI` +
+    `pianoIsWhite`), the canvas `pointerdown`/`pointermove`/`endPointer`
+    changes (`plain`/`onCursor`, `S.drag.cursor` folded into `stripCursor`,
+    the grabbed-and-released rule), the ⏮ `reveal` handler, `instPlay`'s
+    ticket + Sustain, `instReleaseVoice`/`Held`/`All`, `instTap`'s ticket,
+    the whole `instPointerDown`/`Move`/`Up` gesture machine + `instPtr*`/
+    `instLetGo`/`instScrollPersist`/`INST_PAN_SLOP`, `instSetMode`/`Lock`/
+    `Sustain`, the #instbar listeners, `instbtn`'s `instReleaseAll`, and
+    the four new localStorage prefs next to `S.instTab`/`S.instOpen`.
+  - app.js import lines: `pianoGeom`/`WHITE_PCS`/`cursorHandleHit` dropped
+    (no callers left); `instGeom`/`pianoHit`/`instScrollBy`/`instOctave`/
+    `instRevealPitch`/`INST_CHEVRON_W` (render/instrument.js), `PIANO_LO`/
+    `PIANO_HI`/`pianoIsWhite` (ui/piano.js), `applyInstBar` (ui/chrome.js)
+    added.
+
+`check.mjs` LAYERS: **`ui/piano.js` placed at layer 0** beside
+`ui/icons.js`/`ui/controls.js` — it imports nothing and
+`render/instrument.js` (layer 3) draws with it, so under the plain `ui`
+entry (layer 4) rule 5 fails; the file stays where main created it. Auto-
+merged without conflict: `src/state.js` (the `inst*` fields), `src/ui/
+controls.js` (CONTROLS entries), `src/devtools.js` (piano namespace),
+`tests/gestures.test.mjs` (new), `tests/night-roll.test.mjs`,
+`tests/e2e/editor.spec.mjs`, NIGHT-ROLL.md, docs. `node tools/build_help.mjs`
+re-run (no diff — main's HELP.md already current);
+`regen-e2e-footer.mjs` re-run (pianoHit left app.js). NIGHT-ROLL.md's
+Module map gained a `ui/piano.js` entry naming every landing spot above.
+Verification: `perl -e 'alarm 1200; exec @ARGV' npm test` — only `ps2-real` (4) and `instruments` (13) fail, the pre-existing local-rip gap; night-roll 428/429 (1 skip), modules 89/89, and main's new tests all green on the branch (the seven `keyboard:` gestures tests, the `⏮ goes to the ruler selection's start` test). `check.mjs`: clean except `oldBpb` (70 files). `check-e2e-globals` (1945 names)/`check-controls` (32) clean. Sorted `prof("…")` label set unchanged (30). `test:e2e:smoke`: 8/8. Grep-verified on the branch: `TAG_W` (render/roll.js), `instSetScroll` (render/instrument.js), the rwbtn `reveal` (app.js). `src/app.js`: 7457 → 7638 lines (+181 — main's keyboard gesture machine and Sustain, which step 10 moves out). Not re-done here: main's own device checks for the tag/keyboard (open-items' DAW shortlist item 1 "eyeball on device") — they were made on main, not on this branch's module layout, so the step-10 browser check should include the keyboard panel (Play/Scroll, ‹ ›, lock, Sustain, chevrons) and a playhead-tag drag in all three views.
+
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
 blockers.mjs, then add one port (own H commit) or leave the name for step 11

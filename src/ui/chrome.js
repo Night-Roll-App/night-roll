@@ -24,6 +24,7 @@ import { curTick } from "../render/roll.js";
 import { degreeOf } from "../render/instrument.js";
 import { spellPc } from "../theory/chords.js";
 import { instResize } from "../render/instrument.js";
+import { updateInstRange } from "../render/instrument.js";
 import { iconSvg } from "./icons.js";
 import { mixerIsOpen } from "./mixer.js";
 import { isComposition } from "../model/provenance.js";
@@ -50,7 +51,6 @@ import { fallActive } from "../render/roll.js";
 import { drawInst } from "../render/instrument.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
-import { scoreTickToX } from "../render/score.js";
 import { pxPerTick } from "../render/roll.js";
 import { css } from "../render/roll.js";
 import { drawStripPlayhead } from "../render/roll.js";
@@ -384,7 +384,30 @@ export function applyInst() {
   document.getElementById("insttab-guitar").setAttribute("aria-selected", String(S.instTab === "guitar"));
   instFallBtn.classList.toggle("active", S.fallOn);
   instFallBtn.setAttribute("aria-pressed", String(S.fallOn));
+  applyInstBar();
   if (S.instOpen) instResize(); // canvas had zero size while display:none
+}
+// the keyboard's own controls in #instbar: Play/Scroll, ‹ range ›, lock and
+// Sustain. The guitar neither scrolls nor locks, so those hide on its tab;
+// Sustain rings a tapped fret too, so it stays.
+export function applyInstBar() {
+  const piano = S.instTab === "piano";
+  for (const id of ["instmodeseg", "instoctdn", "instrange", "instoctup", "instlock"]) document.getElementById(id).hidden = !piano;
+  const scroll = S.instMode === "scroll";
+  document.getElementById("instplay").classList.toggle("active", !scroll);
+  document.getElementById("instplay").setAttribute("aria-checked", String(!scroll));
+  document.getElementById("instscroll").classList.toggle("active", scroll);
+  document.getElementById("instscroll").setAttribute("aria-checked", String(scroll));
+  const lock = document.getElementById("instlock");
+  lock.classList.toggle("active", S.instLock);
+  lock.setAttribute("aria-pressed", String(S.instLock));
+  setControl("instlock", {glyph: S.instLock ? "🔒" : "🔓", aria: S.instLock ? "Keyboard locked — tap to let it scroll again" : "Lock the keyboard where it is"});
+  document.getElementById("instoctdn").disabled = S.instLock;
+  document.getElementById("instoctup").disabled = S.instLock;
+  const sus = document.getElementById("instsustain");
+  sus.classList.toggle("active", S.instSustain);
+  sus.setAttribute("aria-pressed", String(S.instSustain));
+  if (piano) updateInstRange();
 }
 // #subbtn retired from the footer (footer v2, 2026-09-30): View ▾ → 💬 Notes
 // strip is the only control now — vwSub calls this directly instead of
@@ -603,17 +626,11 @@ export function playbackFrameImpl() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   // playhead overlay — same geometry as drawFull's, clipped below the ruler
-  const tick = secToTick(S.song, playSec());
-  const x = S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x; // the score spaces by noteheads, not ticks
+  const x = stripPlayheadX(); // the score spaces by noteheads, not ticks; a mid-play scrub follows the finger
   const H = wrap.clientHeight;
   if (x >= S.RULER_W) {
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, S.RULER_H, 1.5, H - S.RULER_H);
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
     drawStripPlayhead(x, css("--gold")); // playbackFrame only ever runs while S.playing
     S.phLastX = x;
   } else S.phLastX = null;
@@ -774,26 +791,19 @@ export function drawFull(skipCursor) {
   ctx.globalAlpha = 1;
   if (S.cmp) drawCompare(ppt, rowH, W, H);
 
-  function cursorHandle(x) { // Logic-sized triangle under the ruler, made for fingers
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  }
-  // playhead / cursor — same triangle either way, gold while rolling
+  // playhead / cursor — the line only; its handle is the tag in the playhead
+  // strip (drawStripPlayhead, after drawRuler), gold while rolling. The old
+  // triangle under the ruler covered the first row of notes (Josh, 2026-10-04).
   if (skipCursor) { /* playbackFrame lays the playhead over the cached scene */ }
   else if (S.playing) {
     const tick = secToTick(S.song, playSec());
     const x = S.RULER_W + tick * ppt - S.view.x;
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, 0, 1.5, H);
-    cursorHandle(x);
   } else {
     const x = S.RULER_W + S.playCursor * ppt - S.view.x;
     ctx.fillStyle = css("--accent");
     ctx.fillRect(x - 1, 0, 2.5, H);
-    cursorHandle(x);
   }
 
   drawRuler(W, H);

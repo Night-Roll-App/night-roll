@@ -57,19 +57,47 @@ content top) keeps working unchanged; it just offsets a little further
 down now. The strip's own moving playhead mark (`drawStripPlayhead`,
 `stripPlayheadX`) is drawn AFTER `drawRuler` in `drawFull` and again in
 `playbackFrame`'s per-frame overlay — never baked into the scene cache,
-same discipline as the triangle handle's own line, because `drawRuler`'s
+same discipline as each view's own cursor line, because `drawRuler`'s
 opaque strip background would otherwise paint right over it. Gestures:
 TAP moves `playCursor` to a beat-snapped tick (`seekOrMoveCursor`, shared
 with the ruler's own tap-to-seek) WITHOUT touching `rangeSel` at all — no
 park, no clear, no re-arm, byte-identical before/after (Josh, 2026-10-03:
 "if I could click that spot under the ruler I wouldn't have that problem"
 — tapping the ruler itself still parks an armed cycle, unchanged). DRAG
-scrubs continuously via the existing `scrubTo`, same as dragging the
-playhead's triangle handle. `S.drag.stripCursor` is the new drag flag
-(alongside `.ruler`/`.cursor`/`.rangeEdge`/`.bandEdge`), included in the
-auto-follow suppression (`handMidGesture`) so a strip drag doesn't get
+scrubs continuously via the existing `scrubTo`. `S.drag.stripCursor` is
+the drag flag (alongside `.ruler`/`.rangeEdge`/`.bandEdge`), included in
+the auto-follow suppression (`handMidGesture`) so a strip drag doesn't get
 yanked out from under a finger either. Tests: `tests/gestures.test.mjs`'s
 four "playhead strip" cases (tap/drag, armed/parked cycle).
+
+**Playhead tag (2026-10-04).** The playhead's handle IS the strip's mark:
+`drawStripPlayhead(x, color)` draws one rounded tag (`TAG_W` = 18 px wide,
+`STRIP_H − 4` tall, `TAG_R` corners, bottom flush with `S.RULER_H` so the
+view's 1.5 px line through the notes grows out of it; `--accent` at rest,
+`--gold` rolling; a faint dark outline; clipped to the right of `RULER_W`).
+The Logic-sized triangle that used to hang below the ruler in Roll, Tracks
+and Score is gone — it covered the first row of notes (Josh, 2026-10-04:
+"I don't like that it's not in that little strip, it's below the strip").
+The cycle stays in the number band above (`BASE_RULER_H`), so the two never
+overlap. Hit zone: `cursorHandleHit` is the strip band (`y ∈ [STRIP_Y,
+RULER_H)`, `|dx| ≤ TAG_HIT` = 14 → a 29 px finger target) around
+`stripPlayheadX()` — so it works in every mode AND while playing (the strip
+already scrubbed mid-play; one rule for both). In `pointerdown` a press on
+the playhead (the tag, or its line through the notes at rest in select
+mode — `cursorHit`) sets `S.drag.onCursor` and rides the SAME
+`S.drag.stripCursor` path (the old separate `S.drag.cursor` is folded in);
+the one difference is on release: unmoved + `onCursor` leaves the cursor
+exactly where it is (a plain strip tap would snap it to the nearest 8th).
+Mid-play, `stripPlayheadX` follows `S.playCursor` while a strip/tag drag is
+in progress (`S.drag.moved`), so the tag tracks the finger while the audio
+keeps rolling; release calls `seekOrMoveCursor(S.playCursor, {fromHere})`
+and playback picks up from there. `playbackFrame` now takes its x from
+`stripPlayheadX()` too; its dirty-rect restore (±13 px around `phLastX`,
+28 px wide) must keep covering `TAG_W` + outline — widen both together.
+Tests: `tests/gestures.test.mjs` "the playhead's handle is a tag …" (path
+points of `drawStripPlayhead` all inside the strip band, nothing drawn in
+`(RULER_H, RULER_H + 16]`, Roll and Tracks), "a press on the tag is a
+grab …" and "the tag drags while PLAYING too …".
 
 **Playback:** WebAudio. Pulse/pulse/triangle voices by track index; drum
 tracks (name match or channel 10) get a synthesized kit. Per-track gain
@@ -190,12 +218,49 @@ and fret is tappable (plays through master, so track mutes never silence
 it — square voice on piano, triangle on guitar). Labels are the pitch
 name spelled per the governing key plus the scale degree when a `key:`
 directive governs the cursor (degrees never shown for undeclared keys —
-key discovery stays the analyst's job). Piano range = the song's own
-extent, octave-aligned. Guitar: standard tuning EADGBE, high-e on top
+key discovery stays the analyst's job). Guitar: standard tuning EADGBE, high-e on top
 (tab convention), 24 frets, inlay dots, a lit pitch appears at every
 playable position; a pitch off the neck octave-folds in (gtrFold),
 drawn with a dashed ring + tiny ▴/▾ toward its true octave — seeing it
 in the wrong octave beats not seeing it (Josh, 2026-08-07). Open state, tab, and Fall persist in localStorage.
+
+**On-screen keyboard** (2026-10-04, docs/daw-inventory.md §1a — Josh:
+"you can scroll it left and right … ours would play every note on the
+piano if you try to scroll on it"; "it looks like a real keyboard rather
+than ours just has the notes laid out"). Geometry lives in
+`src/ui/piano.js`, DOM-free: the whole 88-key piano (A0–C8) at a FIXED
+white-key width (`pianoKeyW`: 44 CSS px, 36 under 480 px wide), black
+keys at real offsets (`PIANO_BLACK_OFF`: C♯/D♯ lean apart, F♯/A♯ lean
+out, G♯ centred; 58% wide, 62% tall), and a scroll offset measured in
+white keys (`pianoClampScroll`, `pianoScrollTo`, `pianoScrollCentering`,
+`pianoVisibleRange`/`pianoRangeLabel` for the "C3 – E5" readout,
+`pianoOffscreen` for the edge chevrons). app.js wraps it: `instScrollNow()`
+resolves `S.instScroll` (null = home = the song's lowest octave, the old
+`instRange()` start), `instGeom(W, H)` is the geometry every caller
+(drawPiano, pianoHit, the Fall view) uses, and `instSetScroll()` is the
+ONE writer — it clamps, stores `ff1roll-inst-scroll-piano`, redraws, and
+refuses everything while `S.instLock` is on (so no gesture branch knows
+about the lock; the ‹ › buttons are also disabled). Gestures
+(`instPointerDown/Move/Up`, `S.instPtrs` per finger): a tap on an edge
+chevron scrolls to its key; two fingers travelling sideways past
+`INST_PAN_SLOP` become a `pan2` scroll in either mode — the chord they
+started lets go (`instLetGo`: recNoteOff, flash cleared, sustained voices
+released) and both fingers are `dead` until lifted; one finger in Play
+mode is the old glissando untouched (Record depends on it); one finger in
+Scroll mode (`S.instMode`, `ff1roll-inst-mode`) pans silently past the
+slop and otherwise plays its key on release. Sustain (`S.instSustain`,
+`ff1roll-inst-sustain`): `instPlay` parks the voice in `S.instHeld` with a
+7 s exponential decay instead of the 0.5 s blip; restriking replaces it;
+`instSetSustain(false)`, closing the panel, or `instReleaseAll()` fade
+them out over 80 ms. Recording never sees it — recNoteOff still fires at
+the finger's release. Look: `drawPiano` paints a dark rail, gradient
+whites with rounded bottoms and a shadow lip, two-tone black keys with a
+top highlight, C labels only when idle; lit colours, labels and rings are
+unchanged; `instGrad` falls back to flat fills where the 2d context has
+no gradients (the vm harness). The bar (`applyInstBar`): #instmodeseg
+Play|Scroll, ‹ #instrange ›, #instlock (🔓/🔒 via setControl), #instsustain
+— the piano-only ones hide on the Guitar tab. No auto-follow during
+playback (kept simple on purpose; the chevrons cover it).
 
 **Fall view** (2026-08-07, ▼ Fall in the panel's tab bar — which sits
 BELOW the keys so nothing blocks the landing): Synthesia-style — the
@@ -1828,6 +1893,36 @@ stale and should move up here instead.
   cluster, not a chain of individually-portable names. See
   docs/split-phase2-plan.md's step 4b writeup for the full
   commit-by-commit accounting.
+
+- `ui/piano.js` — the on-screen keyboard's DOM-free geometry (main, 2026-10-04;
+  merged into module-split the same day): `PIANO_LO`/`PIANO_HI`,
+  `pianoIsWhite`/`pianoWhiteIndex`, `pianoKeyW`, `pianoGeom(W, H, scroll)`
+  (whites/`wx`/`keyX`/`keyW`/`bw`/`bh`), `pianoHitAt`, the scroll math
+  (`pianoClampScroll`/`pianoScrollTo`/`pianoScrollCentering`),
+  `pianoVisibleRange`/`pianoRangeLabel`, `pianoOffscreen`. Imports nothing,
+  so check.mjs's LAYERS places it at layer 0 beside `ui/icons.js`/
+  `ui/controls.js` (the file stays under ui/ as main created it) —
+  `render/instrument.js` (layer 3) draws with it. The keyboard's app-side
+  pieces main added to app.js landed on this branch where the branch had
+  already moved their neighbours: `instScrollNow`/`instGeom`/
+  `instSetScroll`/`instScrollBy`/`instOctave`/`instRevealPitch`,
+  `instGrad`/`instRoundBottom`, the real-piano `drawPiano`, `INST_CHEVRON_W`/
+  `drawInstChevrons`/`updateInstRange` and `pianoHit` (now a one-line
+  `pianoHitAt` wrapper) in `render/instrument.js`; `applyInstBar` (called by
+  `applyInst`) in `ui/chrome.js`; the finger-side gesture machine
+  (`instPointerDown`/`Move`/`Up`, `instPtr*`, `instLetGo`,
+  `INST_PAN_SLOP`), Sustain (`instPlay`'s ticket + `instReleaseVoice`/
+  `Held`/`All`), `instSetMode`/`instSetLock`/`instSetSustain`, the #instbar
+  listeners and the four new prefs stay in app.js for step 10. The playhead
+  tag of the same merge: `TAG_W`/`TAG_R`/`TAG_HIT` + the tag-shaped
+  `drawStripPlayhead` and scrub-aware `stripPlayheadX` in `render/roll.js`;
+  `cursorHandleHit`/`cursorHit` rewritten in `input/gestures.js`; the
+  triangle removed from `ui/chrome.js`'s `playbackFrameImpl`/`drawFull`,
+  `render/tracks.js`'s `drawTracks`, `render/score.js`'s `drawScore`;
+  `S.drag.cursor` folded into `stripCursor` (+ `onCursor`) in app.js's
+  pointer handlers and `audio/transport.js`'s `play()` follow rule. The ⏮
+  `reveal` logic is in app.js's rwbtn handler. Full conflict list:
+  docs/split-phase2-plan.md "Merge of main (2026-10-04)".
 
 ## AI library (vendor/ai) — docs/ai-library-plan.md §1, step 1 (2026-10-04)
 

@@ -188,7 +188,7 @@ test("cycle parks on ruler tap, re-arms on tap inside; ⏮ goes to cycle start",
   await page.mouse.click(away.x, away.y);
   expect(await page.evaluate(() => rangeSel && rangeSel.off)).toBe(true);
   await page.evaluate(() => document.getElementById("rwbtn").click());
-  expect(await page.evaluate(() => playCursor)).toBe(0); // parked cycle releases ⏮
+  expect(await page.evaluate(() => playCursor)).toBe(480); // a parked selection still owns ⏮ (Josh, 2026-10-04)
   const inside = await rulerXY(960); // tap the dimmed span: re-armed, same bounds
   await page.mouse.click(inside.x, inside.y);
   expect(await page.evaluate(() => ({ a: rangeSel.a, b: rangeSel.b, off: !!rangeSel.off })))

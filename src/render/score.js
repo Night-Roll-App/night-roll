@@ -476,23 +476,17 @@ export function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cac
   drawScorePencilGuides(W, H);
   drawLasso();
   // playhead / cursor — both interpolate notehead-to-notehead (scoreTickToX),
-  // same Logic-sized triangle as the roll, gold while rolling
-  const drawHandle = x => {
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  };
+  // the line only, gold while rolling; the handle is the strip's tag
+  // (drawStripPlayhead, drawn after drawRuler in drawFull)
   if (skipCursor) return; // a playhead baked into the cache stayed as a second gold line (Josh, 2026-09-29, score view)
   if (S.playing) {
     const x = scoreTickToX(secToTick(S.song, playSec()));
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, 0, 1.5, H);
-    drawHandle(x);
   } else {
     const x = scoreTickToX(S.playCursor);
     ctx.fillStyle = css("--accent");
     ctx.fillRect(x - 1, 0, 2.5, H);
-    drawHandle(x);
   }
 }
 drawScore = prof("drawScore", drawScore); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

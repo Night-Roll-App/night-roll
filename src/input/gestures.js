@@ -2,6 +2,7 @@ import { canvas } from "../render/roll.js";
 import { S } from "../state.js";
 import { pxPerTick } from "../render/roll.js";
 import { topRow } from "../render/roll.js";
+import { fallActive, stripPlayheadX, TAG_HIT } from "../render/roll.js";
 import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
 
@@ -16,20 +17,20 @@ export function posToTickPitch(pos) { // pitch is a DISPLAY ROW (kit lane rows s
   const pitch = topRow() - Math.floor((pos.y - S.RULER_H + S.view.y) / S.view.rowH);
   return {tick, pitch};
 }
-export function cursorHandleHit(pos) { // the triangle under the ruler — outranks every tool, lasso included
-  if (S.playing || !S.song) return false;
-  const x = S.viewMode === "score" ? scoreTickToX(S.playCursor)
-                                 : S.RULER_W + S.playCursor * pxPerTick() - S.view.x;
-  return pos.y >= S.RULER_H && pos.y < S.RULER_H + 16 && Math.abs(pos.x - x) < 14;
+export function cursorHandleHit(pos) { // the tag in the playhead strip — grabbable in
+  // ANY mode and while PLAYING (the strip already scrubs mid-play; one rule
+  // for both). It outranks the strip's own tap-to-snap: a finger ON the
+  // handle is a grab, never a jump to the nearest 8th.
+  if (!S.song || fallActive()) return false;
+  return pos.y >= S.STRIP_Y && pos.y < S.RULER_H && Math.abs(pos.x - stripPlayheadX()) <= TAG_HIT;
 }
 export function cursorHit(pos) {
+  if (cursorHandleHit(pos)) return true;
   if (S.playing || !S.song) return false;
+  if (pos.y < S.RULER_H) return false; // ruler drags select a range instead
   const x = S.viewMode === "score" ? scoreTickToX(S.playCursor)
                                  : S.RULER_W + S.playCursor * pxPerTick() - S.view.x;
-  // the handle triangle under the ruler is grabbable in ANY mode
-  if (cursorHandleHit(pos)) return true;
-  if (pos.y < S.RULER_H) return false; // ruler drags select a range instead
-  return S.mode === "select" || S.mode === null ? Math.abs(pos.x - x) < 12 : false;
+  return S.mode === "select" || S.mode === null ? Math.abs(pos.x - x) < 12 : false; // the line itself, at rest
 }
 export function rulerSnapX(x) { // bar lines are magnetic in SCREEN pixels (Pencil-friendly
   // at every zoom); away from a bar line, 16ths — finer is what zoom is for

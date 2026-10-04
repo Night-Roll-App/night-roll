@@ -204,6 +204,7 @@ export const AUDIO_STRIP_H = 18;
 // it; everything that offsets the note area by RULER_H keeps working as-is
 // because RULER_H now simply includes the strip too.
 export const STRIP_H = BASE_RULER_H;
+export const TAG_W = 18, TAG_R = 4, TAG_HIT = 14; // the playhead tag in the strip (drawStripPlayhead): drawn width, corner radius, grab half-width
 export function activeNoteAt(tick) {
   let best = null;
   for (const n of S.rollnotes) {
@@ -322,16 +323,39 @@ drawLasso = prof("drawLasso", drawLasso); // ?perf=1 attribution (docs/split-pla
 // notes — x uses the same per-view geometry as every other playhead mark
 // (linear ticks, except Score's engraved spacing).
 export function stripPlayheadX() {
-  const tick = S.playing ? secToTick(S.song, playSec()) : S.playCursor;
+  // a scrub mid-play follows the finger, not the audio (which keeps rolling
+  // until release, when playback picks up from where the finger lifted)
+  const scrubbing = S.drag && S.drag.stripCursor && S.drag.moved;
+  const tick = S.playing && !scrubbing ? secToTick(S.song, playSec()) : S.playCursor;
   return S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x;
 }
-// drawn AFTER drawRuler (never baked into the scene cache, same discipline
-// as the roll/tracks/score's own cursor marks) — drawRuler's opaque strip
+// the playhead's handle (Josh, 2026-10-04): ONE rounded tag inside the strip,
+// bottom flush with S.RULER_H so the line through the notes grows out of it —
+// Logic's handle sits in the ruler's lower band the same way. It replaced a
+// triangle hung below the ruler that covered the first row of notes in all
+// three views. Width/zone: TAG_W drawn, TAG_HIT either side for the finger
+// (cursorHandleHit) — and the dirty-rect restore in playbackFrame (±13 px
+// around phLastX, 28 wide) must keep covering TAG_W + the outline.
+// Drawn AFTER drawRuler (never baked into the scene cache, same discipline
+// as the roll/tracks/score's own cursor lines) — drawRuler's opaque strip
 // background would otherwise paint right over it.
 export function drawStripPlayhead(x, color) {
   if (x < S.RULER_W) return;
+  const top = S.RULER_H - (STRIP_H - 4), bot = S.RULER_H, l = x - TAG_W / 2, r = x + TAG_W / 2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(S.RULER_W, S.STRIP_Y, wrap.clientWidth, STRIP_H); ctx.clip(); // never over the left gutter
+  ctx.beginPath();
+  ctx.moveTo(l, bot);
+  ctx.lineTo(l, top + TAG_R); ctx.arcTo(l, top, l + TAG_R, top, TAG_R);
+  ctx.lineTo(r - TAG_R, top); ctx.arcTo(r, top, r, top + TAG_R, TAG_R);
+  ctx.lineTo(r, bot);
+  ctx.closePath();
   ctx.fillStyle = color;
-  ctx.fillRect(x - 0.75, S.STRIP_Y, 1.5, S.RULER_H - S.STRIP_Y);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,.35)"; // a shade darker than the fill, on either panel tone
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
 }
 export function drawPlayheadStripBand(W) { // the strip's static look — RULER chrome,
   // not a roll row: the ruler's own panel background (drawRuler already

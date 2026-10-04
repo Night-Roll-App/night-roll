@@ -372,3 +372,284 @@ test("gesture: the ruler itself still parks an armed cycle on tap — the strip 
   app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
   assert.equal(app.run(`rangeSel.off`), true, "the ruler tap still parks the cycle, exactly as before");
 });
+
+// ---- the playhead's handle (Josh, 2026-10-04: "I don't like the way our
+// triangle cursor looks and I don't like that it's not in that little strip"):
+// one rounded tag INSIDE the strip, no triangle under the ruler, and the tag
+// is the drag handle — in any mode, even while playing.
+// Records every path point drawStripPlayhead lays down (ctx is the harness's
+// settable no-op stub) and every path point of the whole frame.
+const recordPaths = (app, view) => JSON.parse(app.run(`(() => {
+  viewMode = ${JSON.stringify(view)}; applyViewMode();
+  const pts = [], all = []; let inTag = false;
+  const real = drawStripPlayhead;
+  drawStripPlayhead = (x, c) => { inTag = true; real(x, c); inTag = false; };
+  const log = (x, y) => { all.push([x, y]); if (inTag) pts.push([x, y]); };
+  ctx.moveTo = log; ctx.lineTo = log; ctx.arcTo = (x1, y1, x2, y2) => { log(x1, y1); log(x2, y2); };
+  draw();
+  drawStripPlayhead = real; delete ctx.moveTo; delete ctx.lineTo; delete ctx.arcTo;
+  return JSON.stringify({pts, all, x: stripPlayheadX(), STRIP_Y, RULER_H});
+})()`));
+
+test("gesture: the playhead's handle is a tag drawn INSIDE the strip — nothing hangs below RULER_H (Roll and Tracks)", async () => {
+  const app = await boot("vm-gest-tag-draw");
+  app.run(`view.pxq = 200; clampView(); playCursor = 960; mode = "select";`);
+  for (const view of ["roll", "tracks"]) {
+    const r = recordPaths(app, view);
+    assert.ok(r.pts.length >= 6, view + ": the tag is a path (sides + rounded top), got " + r.pts.length + " points");
+    for (const [x, y] of r.pts) {
+      assert.ok(y >= r.STRIP_Y && y <= r.RULER_H, view + ": every tag point is inside the strip band, got y=" + y + " for [" + r.STRIP_Y + ", " + r.RULER_H + "]");
+      assert.ok(Math.abs(x - r.x) <= 9, view + ": the tag is centred on the playhead (18 px wide), got dx=" + (x - r.x));
+    }
+    assert.ok(r.pts.some(([, y]) => y === r.RULER_H), view + ": the tag's bottom is flush with RULER_H, where the line through the notes starts");
+    assert.ok(!r.all.some(([, y]) => y > r.RULER_H && y <= r.RULER_H + 16), view + ": no triangle tip under the ruler any more");
+  }
+  app.run(`viewMode = "roll"; applyViewMode();`);
+});
+
+test("gesture: a press on the tag is a grab, not a strip tap — released still, the cursor stays put; dragged, it scrubs in 32nds; rangeSel untouched", async () => {
+  const app = await boot("vm-gest-tag-grab");
+  // 540 sits on the 32nd grid (60 ticks) but NOT on an 8th: a strip TAP there would snap it to 480
+  app.run(`view.pxq = 200; clampView(); playCursor = 540; rangeSel = {a: 480, b: 1440, cycle: true}; mode = "pencil"; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  const p = stripXY(app, 540);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`!!(drag && drag.onCursor && drag.stripCursor)`), true, "the tag outranks the strip's tap-to-snap, in any mode (pencil here)");
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`playCursor`), 540, "let go without moving: the cursor did not jump to the nearest 8th");
+  drag(app, p, stripXY(app, 1930));
+  assert.equal(app.run(`playCursor`), 1920, "a drag on the tag scrubs on the 32nd grid, like a strip drag");
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical — a cursor drag never touches it");
+  // 20 px past the tag's edge is the plain strip again: a tap there still snaps to the 8th
+  const q = stripXY(app, 1920); q.x += 20;
+  app.dispatch("roll", pev("pointerdown", { clientX: q.x, clientY: q.y }));
+  assert.equal(app.run(`!!drag.onCursor`), false, "off the tag: a strip tap");
+  app.dispatch("roll", pev("pointerup", { clientX: q.x, clientY: q.y }));
+  assert.equal(app.run(`playCursor`), 1920, "the strip's own tap still lands on the nearest 8th");
+});
+
+test("gesture: the tag drags while PLAYING too — the tag follows the finger, and release plays on from the new spot; a still tap does nothing", async () => {
+  const app = await boot("vm-gest-tag-playing");
+  app.run(`ensureAudio(); view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true};
+           playing = true; loopSeg = null; playT0 = audio.currentTime; playOffset = tickToSec(song, 960); playCursor = 0;
+           globalThis.__played = []; play = (sec, opts) => { __played.push({sec, opts}); playing = true; return Promise.resolve(); };
+           stop = () => { playing = false; }; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  const p = stripXY(app, 960); // the rolling playhead is at tick 960
+  assert.ok(Math.abs(+app.run(`stripPlayheadX()`) - p.x) < 1, "the tag is drawn at the audio's position while rolling");
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`!!(drag && drag.onCursor && drag.stripCursor)`), true, "the tag is grabbable while playing");
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`__played.length`), 0, "a still tap on the tag neither seeks nor restarts");
+  assert.equal(app.run(`playing`), true);
+  const to = stripXY(app, 1920);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointermove", { clientX: to.x, clientY: to.y }));
+  assert.ok(Math.abs(+app.run(`stripPlayheadX()`) - to.x) < 1, "mid-scrub the tag follows the finger, not the audio");
+  app.dispatch("roll", pev("pointerup", { clientX: to.x, clientY: to.y }));
+  const played = JSON.parse(app.run(`JSON.stringify(__played)`));
+  assert.equal(played.length, 1, "release plays on from the new spot");
+  assert.equal(played[0].sec, +app.run(`tickToSec(song, 1920)`), "from exactly where the finger lifted");
+  assert.equal(played[0].opts.fromHere, true, "like a strip drag's release: from here, no cycle restart");
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical through a mid-play cursor drag");
+});
+
+// ---- the on-screen keyboard (2026-10-04, docs/daw-inventory.md §1a) ----
+// The panel's stubbed box is 800×600 (harness makeEl): 44px keys, 18.18
+// whites visible, black keys down to y = 372 — taps below that are whites.
+// Sustain is the spy for "did a key sound": with it on, every key instPlay
+// voices lands in S.instHeld, so a silent gesture leaves it empty.
+async function pianoApp(name) {
+  const app = await boot(name); // the booted song is C4 E4 G4 → home = C4 at the left edge
+  app.run(`instOpen = true; instTab = "piano"; instScroll = null; instSetMode("play"); instSetLock(false); instSetSustain(false); applyInst();`);
+  return app;
+}
+// instPlay awaits resumeAudio before voicing, and resumeAudio's clockAlive
+// probes sleep on the harness's FAKE clock — tick it so they fire
+const settle = async (app) => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app.tick(20); await Promise.resolve(); await Promise.resolve(); } };
+const held = (app) => JSON.parse(app.run(`JSON.stringify([...instHeld.keys()].sort((a, b) => a - b))`));
+const KEYS_Y = 500;
+function keysDrag(app, from, to, props = {}, steps = 6) {
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: from.x, clientY: from.y, ...props }));
+  for (let i = 1; i <= steps; i++) {
+    app.dispatch("instcanvas", pev("pointermove", {
+      clientX: from.x + ((to.x - from.x) * i) / steps,
+      clientY: from.y + ((to.y - from.y) * i) / steps, ...props }));
+  }
+  app.dispatch("instcanvas", pev("pointerup", { clientX: to.x, clientY: to.y, ...props }));
+}
+// two fingers (ids 1 and 2) landing `gap` px apart and travelling dx together
+function twoFingerDrag(app, x, dx, steps = 5) {
+  app.dispatch("instcanvas", pev("pointerdown", { pointerId: 1, clientX: x, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerdown", { pointerId: 2, clientX: x + 100, clientY: KEYS_Y }));
+  for (let i = 1; i <= steps; i++) {
+    const d = (dx * i) / steps;
+    app.dispatch("instcanvas", pev("pointermove", { pointerId: 1, clientX: x + d, clientY: KEYS_Y }));
+    app.dispatch("instcanvas", pev("pointermove", { pointerId: 2, clientX: x + 100 + d, clientY: KEYS_Y }));
+  }
+  app.dispatch("instcanvas", pev("pointerup", { pointerId: 1, clientX: x + dx, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { pointerId: 2, clientX: x + 100 + dx, clientY: KEYS_Y }));
+}
+
+test("keyboard geometry: 88 fixed-width keys, black keys at their real offsets, scroll clamped to the piano", async () => {
+  const app = await pianoApp("vm-keys-geom");
+  const g = JSON.parse(app.run(`JSON.stringify((() => { const g = pianoGeom(800, 168, 23);
+    return {wW: g.wW, bw: g.bw, bh: g.bh, scroll: g.scroll, c4: g.keyX(60), cs4: g.keyX(61), ds4: g.keyX(63), fs4: g.keyX(66), gs4: g.keyX(68), as4: g.keyX(70), c5: g.keyX(72)}; })())`));
+  assert.equal(g.wW, 44, "a finger-sized key, not the panel width divided by the song's range");
+  assert.equal(g.c4, 0); assert.equal(g.c5, 7 * 44);
+  assert.ok(Math.abs(g.bw - 44 * 0.58) < 1e-9 && Math.abs(g.bh - 168 * 0.62) < 1e-9);
+  const half = g.bw / 2;
+  assert.ok(Math.abs(g.cs4 - (44 - 0.09 * 44 - half)) < 1e-9, "C♯ leans toward C");
+  assert.ok(Math.abs(g.ds4 - (88 + 0.09 * 44 - half)) < 1e-9, "D♯ leans toward E");
+  assert.ok(g.fs4 < 176 - half, "F♯ leans toward F");
+  assert.ok(Math.abs(g.gs4 - (220 - half)) < 1e-9, "G♯ is centred on its seam");
+  assert.ok(g.as4 > 264 - half, "A♯ leans toward B");
+  assert.equal(app.run(`PIANO_WHITES.length`), 52, "A0..C8");
+  assert.equal(app.run(`pianoKeyW(400)`), 36, "phone width: a little narrower, one more octave");
+  assert.equal(app.run(`pianoClampScroll(-5, 800)`), 0);
+  assert.ok(Math.abs(app.run(`pianoClampScroll(999, 800)`) - (52 - 800 / 44)) < 1e-9, "the last window ends on C8, never past it");
+  // home = the song's lowest octave; the readout names the window's whites
+  assert.equal(app.run(`instScrollNow(800)`), 23);
+  assert.equal(app.run(`document.getElementById("instrange").textContent`), "C4 – F6");
+  assert.equal(app.run(`pianoHit(40, 10, 800, 168)`), 61, "the black zone just left of the C/D seam is C♯");
+  assert.equal(app.run(`pianoHit(40, 160, 800, 168)`), 60, "below the black keys the same x is C4");
+});
+
+test("keyboard: ‹ › step an octave, clamp at both ends, update the readout and the device pref", async () => {
+  const app = await pianoApp("vm-keys-oct");
+  app.el("instoctup").click();
+  assert.equal(app.run(`instScroll`), 30);
+  assert.equal(app.run(`document.getElementById("instrange").textContent`), "C5 – F7");
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-scroll-piano")`), "30", "where the keys are is a device pref");
+  for (let i = 0; i < 10; i++) app.el("instoctup").click();
+  assert.ok(Math.abs(app.run(`instScroll`) - (52 - 800 / 44)) < 1e-9, "clamped: the window ends at C8");
+  assert.ok(app.run(`document.getElementById("instrange").textContent`).endsWith("C8"));
+  for (let i = 0; i < 10; i++) app.el("instoctdn").click();
+  assert.equal(app.run(`instScroll`), 0, "clamped: the window starts at A0");
+  assert.ok(app.run(`document.getElementById("instrange").textContent`).startsWith("A0"));
+});
+
+test("keyboard: one finger in Play mode is a glissando; in Scroll mode a drag pans silently and a tap plays on release", async () => {
+  const app = await pianoApp("vm-keys-modes");
+  app.run(`instSetSustain(true)`);
+  keysDrag(app, { x: 10, y: KEYS_Y }, { x: 100, y: KEYS_Y });
+  await settle(app);
+  assert.deepEqual(held(app), [60, 62, 64], "Play mode: every key under the slide sounds (what Record relies on)");
+  app.run(`instSetSustain(false)`);
+  assert.deepEqual(held(app), [], "Sustain off releases them all");
+  app.run(`instSetSustain(true); instSetMode("scroll")`);
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-mode")`), "scroll");
+  assert.equal(app.run(`document.getElementById("instscroll").classList.contains("active")`), true);
+  const before = app.run(`instScrollNow(800)`);
+  keysDrag(app, { x: 300, y: KEYS_Y }, { x: 200, y: KEYS_Y });
+  await settle(app);
+  assert.deepEqual(held(app), [], "a Scroll-mode drag sounds nothing");
+  assert.ok(app.run(`instScrollNow(800)`) > before, "…and pans the keys (finger left → higher keys come in)");
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-scroll-piano")`), String(app.run(`instScroll`)), "the lift stores where the keys were left");
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointermove", { clientX: 13, clientY: KEYS_Y })); // within the slop: still a tap
+  await settle(app);
+  assert.deepEqual(held(app), [], "nothing sounds while the finger is down — a tap is decided on release");
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 13, clientY: KEYS_Y }));
+  await settle(app);
+  assert.equal(held(app).length, 1, "the release plays its one key");
+});
+
+test("keyboard: a two-finger sideways drag scrolls in either mode and never sounds; the chord it began lets go", async () => {
+  const app = await pianoApp("vm-keys-two");
+  app.run(`instSetSustain(true)`);
+  const before = app.run(`instScrollNow(800)`);
+  twoFingerDrag(app, 300, -120);
+  await settle(app);
+  assert.deepEqual(held(app), [], "Play mode: the two landing keys were released the moment the fingers travelled");
+  assert.ok(app.run(`instScrollNow(800)`) > before, "the keys scrolled");
+  assert.equal(app.run(`instPtrs.size`), 0, "both fingers forgotten on lift");
+  assert.equal(app.run(`instGesture`), null);
+  app.run(`instSetMode("scroll")`);
+  const mid = app.run(`instScrollNow(800)`);
+  twoFingerDrag(app, 200, 150);
+  await settle(app);
+  assert.deepEqual(held(app), []);
+  assert.ok(app.run(`instScrollNow(800)`) < mid, "Scroll mode too, the other way");
+  // two fingers placed and held still are a chord, not a scroll
+  app.run(`instSetMode("play")`);
+  app.dispatch("instcanvas", pev("pointerdown", { pointerId: 1, clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerdown", { pointerId: 2, clientX: 100, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { pointerId: 1, clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { pointerId: 2, clientX: 100, clientY: KEYS_Y }));
+  await settle(app);
+  assert.equal(held(app).length, 2, "both notes of the chord ring");
+  // a single finger afterwards still plays a run
+  app.run(`instReleaseAll()`);
+  keysDrag(app, { x: 10, y: KEYS_Y }, { x: 100, y: KEYS_Y });
+  await settle(app);
+  assert.equal(held(app).length, 3, "the glissando survives");
+});
+
+test("keyboard: the lock refuses every scroll — drag, two fingers, octave buttons — and disables ‹ ›", async () => {
+  const app = await pianoApp("vm-keys-lock");
+  app.el("instlock").click();
+  assert.equal(app.run(`instLock`), true);
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-lock")`), "1");
+  assert.equal(app.run(`document.getElementById("instoctup").disabled`), true);
+  assert.equal(app.run(`document.getElementById("instlock").getAttribute("aria-pressed")`), "true");
+  assert.ok(app.run(`document.getElementById("instlock").innerHTML`).includes("🔒"), "the glyph closes (via setControl)");
+  const s0 = app.run(`instScrollNow(800)`);
+  app.run(`instSetMode("scroll")`);
+  keysDrag(app, { x: 300, y: KEYS_Y }, { x: 100, y: KEYS_Y });
+  assert.equal(app.run(`instScrollNow(800)`), s0, "a one-finger Scroll-mode drag moves nothing");
+  twoFingerDrag(app, 300, -150);
+  assert.equal(app.run(`instScrollNow(800)`), s0, "two fingers move nothing");
+  app.el("instoctup").click();
+  app.run(`instOctave(1)`);
+  assert.equal(app.run(`instScrollNow(800)`), s0, "the octave buttons move nothing");
+  app.el("instlock").click();
+  assert.equal(app.run(`document.getElementById("instoctup").disabled`), false);
+  app.el("instoctup").click();
+  assert.equal(app.run(`instScrollNow(800)`), s0 + 7, "unlocked: ‹ › work again");
+});
+
+test("keyboard: Sustain holds a tapped key until it is turned off; without it a tap is the old blip", async () => {
+  const app = await pianoApp("vm-keys-sustain");
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
+  await settle(app);
+  assert.deepEqual(held(app), [], "no pedal: nothing is held past the blip");
+  app.el("instsustain").click();
+  assert.equal(app.run(`instSustain`), true);
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-sustain")`), "1");
+  assert.equal(app.run(`document.getElementById("instsustain").getAttribute("aria-pressed")`), "true");
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 100, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 100, clientY: KEYS_Y }));
+  await settle(app);
+  assert.deepEqual(held(app), [60, 64], "both ring on after the fingers lifted");
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
+  await settle(app);
+  assert.deepEqual(held(app), [60, 64], "restriking a ringing key replaces its voice, never stacks");
+  app.el("instsustain").click();
+  assert.deepEqual(held(app), [], "pedal up: everything released");
+  assert.equal(app.run(`localStorage.getItem("ff1roll-inst-sustain")`), "0");
+});
+
+test("keyboard: edge chevrons point at lit keys scrolled out of view, and a tap on one brings that key back", async () => {
+  const app = await pianoApp("vm-keys-chevrons");
+  selectAll(app); // C4 E4 G4 lasso'd = lit
+  app.run(`drawInst()`);
+  assert.deepEqual(app.run(`JSON.stringify(instChevrons)`), JSON.stringify({ left: null, right: null }), "home shows them all");
+  app.run(`instSetScroll(33)`); // the top of the piano: the chord is off to the left
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(instChevrons)`)), { left: 67, right: null }, "the nearest off-screen lit key (G4) is the left chevron's target");
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 6, clientY: 300 }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 6, clientY: 300 }));
+  const g = JSON.parse(app.run(`JSON.stringify((() => { const g = instGeom(800, 600); return {c4: g.keyX(60), g4: g.keyX(67)}; })())`));
+  assert.ok(g.c4 >= 0 && g.g4 + 44 <= 800, "the tap scrolled the chord into view");
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(instChevrons)`)), { left: null, right: null });
+  assert.equal(app.run(`instFlash`), null, "the chevron tap played nothing");
+  app.run(`instSetScroll(0)`); // A0 at the left: the chord is off to the right
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(instChevrons)`)), { left: null, right: 60 });
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 795, clientY: 300 }));
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 795, clientY: 300 }));
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(instChevrons)`)), { left: null, right: null });
+});
