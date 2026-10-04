@@ -21,6 +21,10 @@ import { chipActive } from "./chip.js";
 import { chipStart } from "./chip.js";
 import { clipClamp } from "./clips.js";
 import { scheduleNote } from "./voices.js";
+import { ensureAudio } from "./engine.js";
+import { setInfo } from "../hooks.js";
+import { resumeAudio } from "./engine.js";
+import { play } from "./transport.js";
 
 export function midiBase64(bytes) { // btoa in chunks — big songs overflow the arg limit
   let bin = "";
@@ -175,4 +179,34 @@ export async function renderSongOffline() {
   if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }
   if (renderErr) return {ok: false, why: "the offline render failed (" + (renderErr && renderErr.message || renderErr) + ")"};
   return {ok: true, buffer: renderedBuffer};
+}
+
+// today's path — kept as the fallback for a browser with no
+// OfflineAudioContext, or an offline render that failed: m4a on Safari, webm
+// on Chrome, both shareable everywhere. True MP3 would need a bundled
+// encoder; the recorder route is dependency-free. Resolves null (after
+// saying why) if this browser can record neither way.
+export function recordRealtimeAudio() {
+  return new Promise(resolve => {
+    ensureAudio();
+    const dest = S.audio.createMediaStreamDestination();
+    S.master.connect(dest);
+    const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!mime) { setInfo("this browser can't record audio — use Download .mid instead"); resolve(null); return; }
+    const rec = new MediaRecorder(dest.stream, {mimeType: mime, audioBitsPerSecond: 192000});
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    const ext = mime.startsWith("audio/mp4") ? "m4a" : "webm";
+    const name = (S.songKey ? S.songKey.split("/").pop().replace(/\.mid$/, "") : "song") + "." + ext;
+    rec.onstop = () => { S.master.disconnect(dest); resolve({blob: new Blob(chunks, {type: mime}), name, mime}); };
+    stop();
+    resumeAudio().then(() => {
+      rec.start();
+      setInfo("recording " + name + " — plays the song through once, hands off the transport");
+      const lenSec = tickToSec(S.song, S.songEndTick) / S.playRate + 1;
+      play(0, {noCountIn: true}).then(() => { // a count-in bar recorded as silence (Josh's re-imported export, 2026-09-16)
+        setTimeout(() => { if (!S.exporting) return; stop(); rec.stop(); }, Math.min(600, lenSec) * 1000);
+      });
+    });
+  });
 }

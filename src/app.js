@@ -1466,6 +1466,7 @@ import { dedupeSong } from "./model/selection.js";
 import { HOLD_MS } from "./input/gestures.js";
 import { HOLD_SLOP } from "./input/gestures.js";
 import { RULER_RANGE_SLOP } from "./input/gestures.js";
+import { recordRealtimeAudio } from "./audio/bounce.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -3951,35 +3952,6 @@ document.getElementById("filerevert").addEventListener("click", () => {
   closeFileMenus();
   openVersionsSheet();
 });
-// today's path — kept as the fallback for a browser with no
-// OfflineAudioContext, or an offline render that failed: m4a on Safari, webm
-// on Chrome, both shareable everywhere. True MP3 would need a bundled
-// encoder; the recorder route is dependency-free. Resolves null (after
-// saying why) if this browser can record neither way.
-function recordRealtimeAudio() {
-  return new Promise(resolve => {
-    ensureAudio();
-    const dest = S.audio.createMediaStreamDestination();
-    S.master.connect(dest);
-    const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
-    if (!mime) { setInfo("this browser can't record audio — use Download .mid instead"); resolve(null); return; }
-    const rec = new MediaRecorder(dest.stream, {mimeType: mime, audioBitsPerSecond: 192000});
-    const chunks = [];
-    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-    const ext = mime.startsWith("audio/mp4") ? "m4a" : "webm";
-    const name = (S.songKey ? S.songKey.split("/").pop().replace(/\.mid$/, "") : "song") + "." + ext;
-    rec.onstop = () => { S.master.disconnect(dest); resolve({blob: new Blob(chunks, {type: mime}), name, mime}); };
-    stop();
-    resumeAudio().then(() => {
-      rec.start();
-      setInfo("recording " + name + " — plays the song through once, hands off the transport");
-      const lenSec = tickToSec(S.song, S.songEndTick) / S.playRate + 1;
-      play(0, {noCountIn: true}).then(() => { // a count-in bar recorded as silence (Josh's re-imported export, 2026-09-16)
-        setTimeout(() => { if (!S.exporting) return; stop(); rec.stop(); }, Math.min(600, lenSec) * 1000);
-      });
-    });
-  });
-}
 document.getElementById("filedlaudio").addEventListener("click", async () => {
   if (!S.song) return;
   closeFileMenus();
@@ -5126,4 +5098,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};
+export const __nrExpose$ = {get: {"homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v)}};
