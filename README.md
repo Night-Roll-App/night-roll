@@ -29,7 +29,7 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
   21.1" writes exactly that; "compare this to ambush" reads that song. On
   your own songs, **✦ Fill** asks it to write notes into a range —
   validated, applied as one undo step exactly like the Bassist. Design in
-  `local-llm-design.md`.
+  `docs/design/local-llm-design.md`.
 - **Installable** — Safari → Share → Add to Home Screen (or the install
   icon in Chrome/Edge): own icon, full screen, works offline with the songs
   you have opened; instrument sounds are kept as first used. Nothing to
@@ -81,16 +81,17 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
 ## The learning workflow
 
 Analysis happens in dialogue, not in bulk — see each album's README. Working
-docs at the root: [open-items.md](open-items.md) (questions and owed
-exercises), [quizzes.md](quizzes.md) (spaced-recall bank),
-[supplemental-learning.md](supplemental-learning.md) (session log).
+docs: [open-items.md](open-items.md) (questions and owed exercises),
+[docs/learning/quizzes.md](docs/learning/quizzes.md) (spaced-recall bank),
+[docs/learning/supplemental-learning.md](docs/learning/supplemental-learning.md)
+(session log).
 
 ## Development
 
-`make serve` → http://localhost:8000 · `make test` → Node's built-in runner
-over `tests/` (the harness loads `src/` as real ES modules in a vm — no
-build step; see docs/split-plan.md). Technical reference:
-[NIGHT-ROLL.md](NIGHT-ROLL.md).
+`python3 -m http.server 8000` → http://localhost:8000 (fetch() needs
+http, so file:// won't do) · `npm test` → the vm suite, one file at a time
+(the harness loads `src/` as real ES modules — no build step; see
+docs/split-plan.md). Technical reference: [NIGHT-ROLL.md](NIGHT-ROLL.md).
 
 <!-- night-roll:songs -->
 ## Songs — open in Night Roll

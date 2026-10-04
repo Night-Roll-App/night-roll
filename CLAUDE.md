@@ -15,7 +15,7 @@ before touching the player.
 2. **Help sheet** entry in help/help.html (the sheet's body — one
    `.hsec` per tab; the tab buttons stay in index.html's #helpsheet);
    right tab section, touch gesture first, keyboard equivalent after.
-3. **HELP.md**: `node tools/build_help.mjs` — NEVER hand-edit it.
+3. **docs/HELP.md**: `node tools/build_help.mjs` — NEVER hand-edit it.
 4. **Drift keyword** in tests/night-roll.test.mjs FEATURES list (must
    appear in the help-sheet region; the suite fails otherwise).
 5. **Doc sweep — ask of every change:**
@@ -23,7 +23,7 @@ before touching the player.
    - `WEB-SESSION.md` — does it change what an analysis session should
      read or run? (The query tools were missed here once. Don't repeat.)
    - `README.md` — does it change what the project IS?
-   - `glossary.md` — did a new music-theory term come up? Add it
+   - `docs/learning/glossary.md` — did a new music-theory term come up? Add it
      (encountered vs demonstrated — promote only with evidence).
    - `open-items.md` — new queued work, closed items, design decisions.
 6. Browser-verify via claude-in-chrome, commit, push with hash check
@@ -107,4 +107,7 @@ before touching the player.
   annotations, loop-targets) — harness-backed, facts only.
 - Pipeline: tools/nsf/ (6502+APU capture), tools/dump_notes.mjs
   (.notes.txt for web sessions — commits also write it in-app).
+- Docs: docs/README.md is the index — docs/HELP.md (generated manual),
+  docs/design/ (shipped-feature design records), docs/learning/ (quizzes,
+  glossary, session log), docs/plans/. tools/README.md: one line per script.
 - Parked branch: `midi-input` (Web MIDI → record; awaiting Josh's test).

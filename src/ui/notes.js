@@ -207,7 +207,7 @@ export function ensureHelpLoaded() {
     } catch (err) {
       S.helpLoad = null;
       body.innerHTML = '<p class="status">Help couldn\u2019t be loaded (offline?). The full manual is on GitHub: ' +
-        '<a href="https://github.com/Night-Roll-App/night-roll/blob/main/HELP.md" target="_blank" rel="noopener">HELP.md\u2009\u2197</a></p>';
+        '<a href="https://github.com/Night-Roll-App/night-roll/blob/main/docs/HELP.md" target="_blank" rel="noopener">HELP.md\u2009\u2197</a></p>';
       return false;
     }
   })();

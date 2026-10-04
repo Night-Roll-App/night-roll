@@ -7,13 +7,15 @@ first open — see "Help sheet body" below). History: git log tells the build
 story.
 
 Live: https://night-roll-app.github.io/night-roll/ (GitHub Pages, main
-branch, root). Single file app + `vendor/vexflow.js`. No build step —
-git push is deployment (~1 min propagation; iPad may need a hard reload).
+branch, root). index.html + css/app.css + ES modules under src/ +
+`vendor/vexflow.js`, served as-is. No build step — git push is deployment
+(~1 min propagation; iPad may need a hard reload).
 
-Tests: `make test` (runs `node --test tests/*.test.mjs` — zero deps, Node's
-built-in runner). `make serve` hosts the app at localhost:8000 (fetch needs
-http, so file:// won't work). `tests/harness.mjs` extracts the inline `<script>` from index.html
-and runs it in a vm with a stub DOM, so the app stays one file. Covers the
+Tests: `npm test` (tools/run-tests.mjs: every vm test file, one at a time,
+zero deps, Node's built-in runner). `python3 -m http.server 8000` hosts
+the app at localhost:8000 (fetch needs http, so file:// won't work).
+`tests/harness.mjs` loads src/ as real ES modules in a vm with a stub DOM
+(docs/split-plan.md §3). Covers the
 pure logic: MIDI parse, rollnotes parse/serialize round-trip, key math,
 chord namer, duration decomposition, tempo maps, edit persistence. Run them
 before committing player changes; add cases when touching that logic.
@@ -2090,9 +2092,11 @@ sync (GitHub Contents API, 409 retry) · key dial · help sheet.
   or seed analysis for unanalyzed songs (see memory + open-items.md).
 - Commits auto-allowed in this repo only (.claude/settings.local.json hook,
   gitignored; script at .claude/hooks/allow-git-commit-push.py).
-- Docs: open-items.md (questions/tasks), quizzes.md (protocol + bank),
-  score-view-plan.md (score history/limitations), supplemental-learning.md
-  (session log = quiz source material).
+- Docs: open-items.md (questions/tasks); docs/learning/ (quizzes.md =
+  protocol + bank, supplemental-learning.md = session log = quiz source
+  material, glossary.md); docs/design/ (score-view-plan.md = score
+  history/limitations, and the other design records); docs/README.md is
+  the index.
 
 ## Tracks/Arrange view (advisor-designed, 2026-08-22)
 
@@ -2491,10 +2495,10 @@ chord name, key inference, or note classification; findings are Josh's.
    are index.html's #helptabs; put it in the right section, touch gesture
    first, keyboard equivalent after).
 2. **Full manual**: run `node tools/build_help.mjs` to regenerate
-   HELP.md from help/help.html + the tab labels. Never edit HELP.md by hand.
+   docs/HELP.md from help/help.html + the tab labels. Never edit it by hand.
 3. **Drift guard**: add a keyword for the feature to the FEATURES list
    in tests/night-roll.test.mjs (the keyword must appear in the help
-   sheet region). A separate test fails if HELP.md is stale — so a
+   sheet region). A separate test fails if docs/HELP.md is stale — so a
    feature with no help entry, or an unregenerated manual, breaks the
    suite by construction.
 4. Tests green: `npm test` (vm suite) and `npm run test:e2e`
@@ -3875,7 +3879,7 @@ which the guard does not explain away.
 
 ## Jobs (footer ⏳) — captures and publishes in the background (2026-09-27)
 
-Design: capture-jobs-design.md (advisor), generalized at Josh's ask —
+Design: docs/design/capture-jobs-design.md (advisor), generalized at Josh's ask —
 "we need a general job system, and captures are just the first job".
 A job is a plain record, no bytes, no DOM: `{id, kind, title, state:
 queued|running|done|failed|cancelled|interrupted, items: [{label, st,
@@ -4011,7 +4015,7 @@ Expansion-chip NSFs (header byte 0x7B: VRC6/VRC7/FDS/MMC5/N163/Sunsoft
 its lead voices, and a half-song published is worse than none — and the
 refusal surfaces as the import error both here and in the app.
 
-## ✦ Ask — in-app AI (P1a + P2a + P3 shipped 2026-09-25; P2a's ✦ Fill button removed 2026-10-02 in favor of the write_notes tool, below; design: local-llm-design.md)
+## ✦ Ask — in-app AI (P1a + P2a + P3 shipped 2026-09-25; P2a's ✦ Fill button removed 2026-10-02 in favor of the write_notes tool, below; design: docs/design/local-llm-design.md)
 
 The tutor half of the AI plan. `✦ Ask` in the top bar (hidden in listener
 mode) opens `#asksheet`: a per-song conversation with any
@@ -5997,7 +6001,7 @@ queued: a what-changed list in Save & Commit; an undoable Revert).
 ## Audio tracks — recordings as tracks (branch `audio-tracks`, 2026-09-15)
 
 Josh's son: "I wouldn't use it unless it supported waves." Design and
-the advisor review that reshaped it: `wave-tracks-design.md`. Depends
+the advisor review that reshaped it: `docs/design/wave-tracks-design.md`. Depends
 on local folder mode (above) for a home that is not GitHub.
 
 **Model.** An audio track is an ORDINARY empty track in the .mid (what ＋

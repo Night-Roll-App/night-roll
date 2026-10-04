@@ -316,7 +316,7 @@ TL), and Oil Ocean's psg3 rings D8 (period 24, attenuation 7→8→9→off in
   limitation and the fixed loop point.
 - WEB-SESSION.md: `tools/vgm/dump.mjs` beside `tools/nsf/dump.mjs`.
 - .gitignore: `*.vgm`, `*.vgz`.
-- glossary.md: FM synthesis terms if they come up in Josh's sessions
+- docs/learning/glossary.md: FM synthesis terms if they come up in Josh's sessions
   (operator, carrier/modulator, algorithm, feedback) — encountered, not
   demonstrated, until he uses them.
 - `npm test` already runs `tests/vgm.test.mjs` (synthetic file, no

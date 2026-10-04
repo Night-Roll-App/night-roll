@@ -88,7 +88,7 @@ export async function putSongsText(path, text, h) { // text sibling files in the
 }
 // audio clips whose bytes exist only on this device go up with the song, to
 // <song>.audio/<file> (folder or repo). Marked "someone else's recording"
-// (local=1) = never — see wave-tracks-design.md §14 (DMCA: GitHub removes
+// (local=1) = never — see docs/design/wave-tracks-design.md §14 (DMCA: GitHub removes
 // content on notice; a public Pages URL is distribution).
 export async function uploadAudioClips(h, report) {
   if (!S.song) return;

@@ -4125,11 +4125,11 @@ test("serialization never writes duplicate track: directives (last wins)", () =>
   run(`rollnotes = [];`);
 });
 
-test("HELP.md matches the help sheet (regenerate with node tools/build_help.mjs)", async () => {
+test("docs/HELP.md matches the help sheet (regenerate with node tools/build_help.mjs)", async () => {
   const { buildHelp } = await import("../tools/build_help.mjs");
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const md = readFileSync(new URL("../HELP.md", import.meta.url), "utf8");
-  assert.equal(md, buildHelp(html, helpBody()), "HELP.md is stale — run: node tools/build_help.mjs");
+  const md = readFileSync(new URL("../docs/HELP.md", import.meta.url), "utf8");
+  assert.equal(md, buildHelp(html, helpBody()), "docs/HELP.md is stale — run: node tools/build_help.mjs");
 });
 
 // docs/plans/2026-10-04-help-out.md: the Help sheet's body left index.html
@@ -4148,7 +4148,7 @@ test("help body lives in help/help.html: one section per tab button, none left i
   assert.match(frame, /<div id="helpbody">/, "the frame has the slot the loader fills");
   assert.match(frame, /Loading help…/, "a loading line until the fetch lands");
   // build_help.mjs closes each section on the four-space-indented </div>:
-  // every section must end that way or HELP.md silently loses a tab
+  // every section must end that way or docs/HELP.md silently loses a tab
   assert.equal([...body.matchAll(/\n    <\/div>/g)].length, 8, "each section ends with its indented </div>");
 });
 
@@ -4230,7 +4230,7 @@ test("no looping keepalive media element (the 2.0s seek beat stays gone)", () =>
   assert.ok(!/new Audio\s*\(/.test(src), "no HTMLAudioElement is constructed");
 });
 
-// ---- ✦ Ask (in-app AI): local-llm-design.md. The parser takes strings, the
+// ---- ✦ Ask (in-app AI): docs/design/local-llm-design.md. The parser takes strings, the
 // context builder reports the RULER's frame, storage never crowds drafts.
 test("Ask: SSE parser takes string chunks split anywhere, skips [DONE] and junk", () => {
   const out = val(`(() => {

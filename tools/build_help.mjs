@@ -1,8 +1,9 @@
-// Generates HELP.md from the help sheet, so the in-app help and the repo
+// Generates docs/HELP.md from the help sheet, so the in-app help and the repo
 // manual are the same text by construction. Two inputs since docs/plans/
 // 2026-10-04-help-out.md: the sections (dt/dd prose) are help/help.html, the
 // tab labels (and their order) are index.html's #helptabs.
-// Usage: node tools/build_help.mjs   (writes HELP.md at the repo root)
+// Usage: node tools/build_help.mjs   (writes docs/HELP.md; moved from the root
+// in the 2026-10-04 repo tidy — the app links it by its GitHub URL)
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +52,6 @@ export function buildHelp(html, helpHtml) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const md = buildHelp(readFileSync(join(ROOT, "index.html"), "utf8"), readFileSync(join(ROOT, "help", "help.html"), "utf8"));
-  writeFileSync(join(ROOT, "HELP.md"), md);
-  console.log(`HELP.md written (${md.length} chars)`);
+  writeFileSync(join(ROOT, "docs", "HELP.md"), md);
+  console.log(`docs/HELP.md written (${md.length} chars)`);
 }

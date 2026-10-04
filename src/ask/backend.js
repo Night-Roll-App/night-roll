@@ -168,7 +168,7 @@ export function aiBackendRows() { // the AI section shows the rows the chosen ba
 }
 // ---- in-browser backend: WebLLM (MLC), loaded only when chosen. First
 // third-party-hosted runtime dependency (code from jsdelivr, weights from
-// HuggingFace) — Josh's call, CDN over vendoring (local-llm-design.md §10.8).
+// HuggingFace) — Josh's call, CDN over vendoring (docs/design/local-llm-design.md §10.8).
 // Weights cache in the browser after the first download. Needs WebGPU.
 export const AI_WEBLLM_URL = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/lib/index.js";
 export const AI_BROWSER_MODELS = [ // curated from the prebuilt list, smallest first; sizes = VRAM at load

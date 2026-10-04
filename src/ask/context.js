@@ -64,7 +64,7 @@ export function songWhereLabel(path) {
 }
 
 // ---------------------------------------------------------------- ✦ AI (in-app AI)
-// Design: local-llm-design.md (advisor-converged, Josh's rulings 2026-09-25).
+// Design: docs/design/local-llm-design.md (advisor-converged, Josh's rulings 2026-09-25).
 // A tutor and, later, a generator, over ONE adapter: any OpenAI-compatible
 // server (LM Studio / Ollama, this machine or another on the network). The
 // house rules ride in the system prompt: hints first, answers when he insists.

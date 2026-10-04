@@ -79,7 +79,7 @@ are keyed by path (CLAUDE.md), so a song must have ONE path in both
 places — choosing a different destination at publish time would give
 every song two keys and force an "origin" link that rename and Move
 would have to maintain; (2) it is already how folder mode works
-(local-folder-design.md "Layout mirrors the repo exactly … the folder
+(docs/design/local-folder-design.md "Layout mirrors the repo exactly … the folder
 IS a repo without git"); (3) a published folder and a local folder
 then mean the same thing, so "changed since publish" is one
 comparison per path (`savedStamp`/`lastsync`, as today). Ambush:

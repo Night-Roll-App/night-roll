@@ -39,7 +39,7 @@ dim7 arpeggio (bars 13–14) before a stepwise scale resolution. Questions
 awaiting Josh in open-items.md.
 
 **2026-07-30 (overnight build):** live sheet-music view in Night Roll (see
-score-view-plan.md); every MIDI's key signature corrected in the file itself
+docs/design/score-view-plan.md); every MIDI's key signature corrected in the file itself
 (detected + analysis-pinned); Battle's corrupted MIDI repaired (was hiding 4
 of its 5 music tracks — and its key is **G minor**, quiz-worthy: what's the
 relative major?).
@@ -89,7 +89,7 @@ lead the ear back in. New `loop:` annotation type records such
 discoveries per song. **Arrangement vs. composition:** octave doublings,
 unison copies, and pad chords in downloaded MIDIs are arranger additions
 the NES (2 pulses + triangle + noise) could never play — spotting them
-is itself ear training. Also: unit tests exist now (`make test`),
+is itself ear training. Also: unit tests exist now (`make test`, today `npm test`),
 fit-to-screen on load, vertical pinch zoom, note chasing on play.
 
 **2026-09-19→22 (composition session — Night Black, Carnival; web

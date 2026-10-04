@@ -154,7 +154,7 @@ export async function renderSongOffline() {
   // once its Float32 source (chip.pcm) is already freed.
   S.playing = true; S.playT0 = 0; S.playOffset = 0; S.loopPass = 0; S.albumEndAbs = null;
   // the whole song, once, no loop: "Download audio" has always been
-  // documented as loop-off regardless of an armed ruler cycle (HELP.md
+  // documented as loop-off regardless of an armed ruler cycle (docs/HELP.md
   // "Download audio" says nothing about cycling), so this ignores rangeSel
   // deliberately rather than reading play()'s `cycling` branch
   S.loopSeg = {start: 0, end: tickToSec(S.song, S.songEndTick), looped: false};
