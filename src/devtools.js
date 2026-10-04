@@ -99,6 +99,7 @@ import * as uiWm from "./ui/wm.js";
 import * as sessionSong from "./session/song.js";
 import * as sessionAlbum from "./session/album.js";
 import * as sessionFiles from "./session/files.js";
+import * as sessionBoot from "./session/boot.js";
 import * as hooks from "./hooks.js";
 import * as wire from "./wire.js";
 import { S } from "./state.js";
@@ -121,7 +122,7 @@ export function exposeGlobals() {
                      inputGestures, inputRecord, inputKeyboard,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
-                     sessionSong, sessionAlbum, sessionFiles,
+                     sessionSong, sessionAlbum, sessionFiles, sessionBoot,
                      hooks, wire };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
