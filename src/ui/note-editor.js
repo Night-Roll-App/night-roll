@@ -28,6 +28,7 @@ import { pitchName } from "../theory/chords.js";
 import { spellPc } from "../theory/chords.js";
 import { appMode } from "../platform/mode.js";
 import { nameChord } from "../theory/chords.js";
+import { snapBeat } from "../model/grid.js";
 
 // fractional rotation while a finger is spinning the wheel
 // Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
@@ -235,7 +236,6 @@ export function micToggle(btn, textarea, statusFn) { // shared dictation: append
   try { S.micRec.start(); }
   catch (err) { statusFn("Dictation couldn't start (" + (err.message || err) + ") — tap 🎤 again"); micStop(true); } // never a listening button that isn't
 }
-export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
 export function setBeatPair(qid, sid, q) { // 2.75 → beat "2", sub ".75"
   q = snapBeat(q);
   const beat = Math.floor(q + 0.03);

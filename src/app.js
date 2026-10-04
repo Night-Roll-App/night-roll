@@ -835,7 +835,7 @@ import { openChallenge } from "./ui/notes.js";
 import { tonicOptionValue } from "./ui/notes.js";
 import { fileCheckLine } from "./ui/notes.js";
 import { chordEvidence } from "./ui/notes.js";
-import { snapBeat } from "./ui/note-editor.js";
+import { snapBeat } from "./model/grid.js";
 import { openEditor } from "./ui/note-editor.js";
 import { updateEditButtons } from "./ui/note-editor.js";
 import { CHORD_QUALS } from "./ui/note-editor.js";

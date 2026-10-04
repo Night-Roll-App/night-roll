@@ -23,7 +23,7 @@ import { editableSong } from "../model/song.js";
 import { barTicks } from "../model/rollnotes.js";
 import { trackIsDrums } from "../model/grid.js";
 import { drBassTrack } from "../gen/drummer.js";
-import { snapBeat } from "./note-editor.js";
+import { snapBeat } from "../model/grid.js";
 import { beatTicks } from "../model/grid.js";
 import { setBeatPair } from "./note-editor.js";
 import { effTs } from "../model/grid.js";
