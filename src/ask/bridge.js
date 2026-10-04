@@ -30,6 +30,15 @@ import { flushBackupNow } from "../ui/chrome.js";
 import { logDebugImpl as logDebug } from "../ui/chrome.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
+import { askShotShow } from "./shots.js";
+import { asksheet } from "./sheet.js";
+import { askBubble } from "./sheet.js";
+import { askClock } from "./sheet.js";
+import { askNoteLabel } from "./sheet.js";
+import { askSetMode } from "./sheet.js";
+import { askRender } from "../hooks.js";
+import { askResume } from "./client.js";
+import { askResumeSoon } from "./client.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -504,4 +513,69 @@ export async function deployAskTap() { // the "Not now" / "Install now" sheet (a
   } else {
     await deployHoldNow();
   }
+}
+
+export async function askInboxPoll() {
+  if (!askInboxAllowed() || !S.song) return;
+  const url = aiUrl();
+  let r;
+  try { r = await fetch(url + "/v1/inbox?since=" + (+(localStorage.getItem(askInboxSeenKey()) || 0)), {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
+  if (r.status === 404) { S.askInboxNo = url; askShotShow(false); return; }
+  if (!r.ok) return;
+  askShotShow(true); // an inbox means the Mac's bridge: it takes 📷 screenshots too
+  let j; try { j = await r.json(); } catch (err) { return; }
+  let notes = (j && j.notes || []).filter(n => n && n.text);
+  // a device that has never polled (a fresh install: the Xcode shell,
+  // 2026-09-27, got the whole night's 40 notes poured into Threnody II's
+  // chat) takes only the last few hours, then keeps up like any other
+  if (localStorage.getItem(askInboxSeenKey()) === null) { const cutoff = Date.now() - 6 * 3600e3; notes = notes.filter(n => (n.t || 0) >= cutoff); }
+  if (!notes.length) { if (j && j.last) localStorage.setItem(askInboxSeenKey(), String(j.last)); return; }
+  askNotesArrived(notes);
+  localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
+}
+export function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
+  const toTerm = n => !n.from || n.from === "terminal";
+  for (const key of [ASK_TERMINAL_KEY, null]) {
+    const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));
+    if (!mine.length) continue;
+    const k = key || askStoreKey(), msgs = askStore(k).msgs;
+    for (const n of mine) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal", mode: appMode()});
+    askSave(msgs, undefined, k);
+  }
+  const shown = asksheet.classList.contains("on") ? notes.filter(n => (toTerm(n) ? ASK_TERMINAL_KEY : askStoreKey()) === askStoreKey()) : [];
+  if (shown.length) { for (const n of shown) askBubble("note", askClock(n.t) + askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
+  if (shown.length === notes.length) return;
+  else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
+}
+export async function askStatusPoll() {
+  if (!askInboxAllowed() || !S.song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
+  const url = aiUrl();
+  if (S.askStatusNo === url) return;
+  let r;
+  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  if (r.status === 404) { S.askStatusNo = url; S.askStatusNow = null; S.askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
+  if (!r.ok) return;
+  let j; try { j = await r.json(); } catch (err) { return; }
+  S.askStatusNow = (j && j.now) || null;
+  S.askStatusRecent = (j && j.recent) || [];
+  S.askQuota = (j && j.quota) || null;
+  if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
+  deploySetHeld(!!(j && j.deployHold));
+  S.askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
+  askStatusRender();
+  askTabsApply();
+  askSessionRefresh();
+}
+export function askTabsApply() {
+  const v = askTabsVisible({backend: cfg().aiBackend === "browser" || !!aiUrl(), bridge: S.askCaps.bridge, terminal: S.askCaps.terminal});
+  const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
+  if (g) g.style.display = v.general ? "" : "none";
+  if (t) t.style.display = v.terminal ? "" : "none";
+  askTermModelsLoad();
+  if ((S.askTerminal && !v.terminal) || (S.askGeneral && !S.askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
+}
+export function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); }
+export function askNoteSeen() { // the notes are on screen: the ✉ light and its footer line go (Josh, 2026-09-29: it stayed up with the panel open)
+  document.getElementById("askbtn").classList.remove("hasnote");
+  if (/^✉ a note from your Mac/.test(S.infoFull || "")) setInfo("");
 }

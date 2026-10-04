@@ -1336,6 +1336,21 @@ import { aiHostOk } from "./ask/backend.js";
 import { askBubble } from "./ask/sheet.js";
 import { askFillBubble } from "./ask/sheet.js";
 import { askMicOff } from "./ask/sheet.js";
+import { askResume } from "./ask/client.js";
+import { askResumeSoon } from "./ask/client.js";
+import { askSend } from "./ask/client.js";
+import { askFinish } from "./ask/client.js";
+import { askFail } from "./ask/client.js";
+import { askLanded } from "./ask/client.js";
+import { askRun } from "./ask/client.js";
+import { askTerminalSend } from "./ask/client.js";
+import { askRepending } from "./ask/client.js";
+import { askStatusPoll } from "./ask/bridge.js";
+import { askInboxPoll } from "./ask/bridge.js";
+import { askInboxStart } from "./ask/bridge.js";
+import { askNoteSeen } from "./ask/bridge.js";
+import { askTabsApply } from "./ask/bridge.js";
+import { askNotesArrived } from "./ask/bridge.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -6105,71 +6120,12 @@ document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows
    // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
 try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
   
-  async function askInboxPoll() {
-  if (!askInboxAllowed() || !S.song) return;
-  const url = aiUrl();
-  let r;
-  try { r = await fetch(url + "/v1/inbox?since=" + (+(localStorage.getItem(askInboxSeenKey()) || 0)), {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
-  if (r.status === 404) { S.askInboxNo = url; askShotShow(false); return; }
-  if (!r.ok) return;
-  askShotShow(true); // an inbox means the Mac's bridge: it takes 📷 screenshots too
-  let j; try { j = await r.json(); } catch (err) { return; }
-  let notes = (j && j.notes || []).filter(n => n && n.text);
-  // a device that has never polled (a fresh install: the Xcode shell,
-  // 2026-09-27, got the whole night's 40 notes poured into Threnody II's
-  // chat) takes only the last few hours, then keeps up like any other
-  if (localStorage.getItem(askInboxSeenKey()) === null) { const cutoff = Date.now() - 6 * 3600e3; notes = notes.filter(n => (n.t || 0) >= cutoff); }
-  if (!notes.length) { if (j && j.last) localStorage.setItem(askInboxSeenKey(), String(j.last)); return; }
-  askNotesArrived(notes);
-  localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
-}
-function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
-  const toTerm = n => !n.from || n.from === "terminal";
-  for (const key of [ASK_TERMINAL_KEY, null]) {
-    const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));
-    if (!mine.length) continue;
-    const k = key || askStoreKey(), msgs = askStore(k).msgs;
-    for (const n of mine) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal", mode: appMode()});
-    askSave(msgs, undefined, k);
-  }
-  const shown = asksheet.classList.contains("on") ? notes.filter(n => (toTerm(n) ? ASK_TERMINAL_KEY : askStoreKey()) === askStoreKey()) : [];
-  if (shown.length) { for (const n of shown) askBubble("note", askClock(n.t) + askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
-  if (shown.length === notes.length) return;
-  else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
-}
-    document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
 
 
 document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
 document.getElementById("deploynow").addEventListener("click", deployInstallNow);
- async function askStatusPoll() {
-  if (!askInboxAllowed() || !S.song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
-  const url = aiUrl();
-  if (S.askStatusNo === url) return;
-  let r;
-  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
-  if (r.status === 404) { S.askStatusNo = url; S.askStatusNow = null; S.askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
-  if (!r.ok) return;
-  let j; try { j = await r.json(); } catch (err) { return; }
-  S.askStatusNow = (j && j.now) || null;
-  S.askStatusRecent = (j && j.recent) || [];
-  S.askQuota = (j && j.quota) || null;
-  if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
-  deploySetHeld(!!(j && j.deployHold));
-  S.askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
-  askStatusRender();
-  askTabsApply();
-  askSessionRefresh();
-}
-function askTabsApply() {
-  const v = askTabsVisible({backend: cfg().aiBackend === "browser" || !!aiUrl(), bridge: S.askCaps.bridge, terminal: S.askCaps.terminal});
-  const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
-  if (g) g.style.display = v.general ? "" : "none";
-  if (t) t.style.display = v.terminal ? "" : "none";
-  askTermModelsLoad();
-  if ((S.askTerminal && !v.terminal) || (S.askGeneral && !S.askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
-}
-  document.getElementById("askcompact").addEventListener("click", async () => {
+   document.getElementById("askcompact").addEventListener("click", async () => {
   const key = askSessionName();
   const u = S.askSessionCache[key];
   if (!u || !u.turns) return;
@@ -6213,158 +6169,14 @@ document.getElementById("askpickfile").addEventListener("change", e => {
   // value is reset — the picker then "did nothing" (Josh, 2026-10-03, iPad)
   const files = Array.from(e.target.files || []); e.target.value = ""; askPickFiles(files);
 });
-function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); }
 if (typeof document !== "undefined" && document.addEventListener) {
   document.addEventListener("visibilitychange", () => { if (document.hidden) askDraftSave(); });
   if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", askDraftSave);
 }
-  // The store key rides with the job: the reply belongs to the song that asked,
-// even if another song is open by the time it lands (Josh, 2026-09-26: "scroll
-// away … work on a song … get a notification").
-function askFinish(jobId, text, key) { // the reply for a pending question landed: store it, drop the marker
-  delete askPartial[jobId];
-  key = key || askStoreKey();
-  askSentCommit(key); // this context reached (and was acted on by) the bridge session — its cache entries are now confirmed
-  askSeenCommit(key); // same: the "New since" lines it carried are now confirmed seen by the bridge
-  const msgs = askStore(key).msgs;
-  const i = askPendingIndex(msgs, jobId);
-  if (i < 0) return;
-  delete msgs[i].pending;
-  msgs.splice(i + 1, 0, {role: "assistant", content: text, m: askModelName(), mode: appMode()});
-  askSave(msgs, undefined, key);
-  askLanded(key, false);
-}
-function askFail(jobId, note, key) { // no reply will come: keep the question, say why
-  delete askPartial[jobId];
-  key = key || askStoreKey();
-  askSentDrop(key); // never confirmed landed — the full sections go again next time, not a stand-in for content the bridge may never have gotten
-  askSeenDrop(key); // same: never mark a "new since" line seen that was never actually delivered
-  const msgs = askStore(key).msgs;
-  const i = askPendingIndex(msgs, jobId);
-  if (i < 0) return;
-  delete msgs[i].pending;
-  msgs.splice(i + 1, 0, {role: "assistant", content: "⚠ " + note, m: askModelName(), mode: appMode()});
-  askSave(msgs, undefined, key);
-  askLanded(key, true);
-}
-// A reply landed. Sheet open on that song: redraw it (the live bubble may be
-// a stale node — the sheet was closed and reopened mid-run). Otherwise the
-// footer gets a gold ✦ badge, the ⚠ way: it stays until tapped, and the info
-// strip says so once. Tapping opens Ask.
-function askLanded(key, failed) {
-  askSessionRefresh(); // a turn just landed on the bridge: its usage/turns grew
-  if (asksheet.classList.contains("on") && key === askStoreKey()) { askRender(); return; }
-  const b = document.getElementById("askreplybtn");
-  b.style.display = "";
-  const other = key !== askStoreKey() ? " in " + songTitleOf(key.replace(/^ff1roll-ask-/, "")) : "";
-  setInfo((failed ? "✦ AI: no reply" : "✦ AI replied") + other + " — tap ✦ reply to read it");
-}
-async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exchange (tool rounds inside); the pending marker outlives a dropped connection
-  const budget = askBudget();
-  const est = askEstimate(askSys(), messages);
-  askstatus.textContent = "thinking… (~" + (est >= 1000 ? (est / 1000).toFixed(1) + "k" : est) + " of " + Math.round(budget.win / 1000) + "k" + (budget.small ? ", small window — raise it in Settings if the server allows" : "") + ")";
-  const ctl = typeof AbortController === "function" ? new AbortController() : {abort() {}, signal: undefined};
-  S.askBusy = ctl;
-  document.getElementById("askstop").style.display = "";
-  document.getElementById("asksend").disabled = true;
-  const jobs = await askJobsSupported(); // true / false / null = unreachable this instant (the POST decides)
-  let cur = jobId, delivered = false; // cur: the job id the marker carries now (tool rounds move it); delivered: the Mac took the question
-  try {
-    let out = await aiProvider().chat({system: askSys(), messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: askToolsNow(), onTool: askRunTool, job: jobs !== false ? jobId : undefined,
-      onOpen: () => { delivered = true; },
-      onRound: id => { askRepending(key, cur, id); cur = id; if (live) live.dataset.job = id; },
-      onNote: n => { if (!live.textContent || /^…/.test(live.textContent)) live.textContent = "… (" + n + ")"; askstatus.textContent = "working: " + n; }});
-    out = out.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
-    if (!out) out = "(no reply — try rephrasing)";
-    askFillBubble(live, out);
-    askFinish(cur, out, key);
-    askstatus.textContent = "";
-  } catch (err) {
-    const aborted = err && err.name === "AbortError";
-    const partial = live.textContent && !/^…/.test(live.textContent) ? live.textContent : ""; // a step note ("… (reading x)") is not an answer
-    const http = !!(err && /^HTTP /.test(err.message));
-    if (aborted) { if (partial) askFinish(cur, partial, key); else askFail(cur, "stopped", key); askstatus.textContent = "stopped"; if (!partial) { live.classList.add("err"); live.textContent = "⚠ stopped"; } }
-    else if (jobs !== false && !http && delivered) { // the connection died, not the job: the answer is still cooking on the server
-      askstatus.textContent = "the live stream was cut (Safari does that when the app leaves the screen) — the reply keeps cooking on the Mac; checking every few seconds";
-      live.textContent = "… (still working — reopen or come back to see it)";
-      askResumeSoon(3000);
-    } else if (jobs !== false && !http && !delivered) { // no sign it arrived — but a relaunch cuts the stream before the first byte even when the Mac HAS it (Josh, 2026-09-29): keep it pending and ask the bridge (askResume: found → carries on, 404 → really not delivered)
-      live.textContent = "… (checking whether the Mac got it)";
-      askstatus.textContent = "";
-      askResumeSoon(2000);
-    } else { live.classList.add("err"); live.textContent = "⚠ " + err.message + " — check File → Settings… → AI model, and Test"; askFail(cur, err.message, key); askstatus.textContent = ""; }
-  } finally {
-    S.askBusy = null;
-    document.getElementById("askstop").style.display = "none";
-    document.getElementById("asksend").disabled = false;
-  }
-}
-for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
+  for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
   try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
   catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
 });
-async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
-  const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
-  const ctx = askTerminalContext(); // stages this turn's seen-watermark (askNewSinceLines) — committed below only if the POST actually lands
-  const bodyText = ctx ? "<context>\n" + ctx + "\n</context>\n\n" + text : text;
-  msgs.push({role: "user", content: text, t: Date.now()}); // stored/shown WITHOUT the context block, like every other chat (askStripContext strips it back out of history elsewhere; the terminal's own store never carries it at all)
-  askSave(msgs, undefined, key);
-  askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
-  askinput.value = ""; askShotClearAll(); askDraftClear(); askGrow(); askComposing(false);
-  askBubble("user", askClock(Date.now()) + askShotDisplayText(text));
-  askstatus.textContent = "sending to the terminal…";
-  try {
-    const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text: bodyText})});
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status);
-    askSeenCommit(key); // the bridge actually got it: this turn's "new since" lines are now confirmed seen
-    askstatus.textContent = j.now && j.now.text ? "sent — the terminal is working: " + j.now.text : "sent — the terminal will answer here";
-    S.askTerminalFast = Date.now() + 15 * 60000; // its answer shouldn't wait for the 60 s poll
-    if (!S.askTerminalTimer) S.askTerminalTimer = setInterval(() => {
-      if (Date.now() > S.askTerminalFast) { clearInterval(S.askTerminalTimer); S.askTerminalTimer = null; return; }
-      if (!document.hidden) { askInboxPoll(); askStatusPoll(); }
-    }, 5000);
-  } catch (err) { // not queued: say so and give the words back, never lose them
-    askSeenDrop(key); // never delivered: the "new since" lines it carried are still unseen
-    msgs.pop(); askSave(msgs, undefined, key); askRender();
-    askinput.value = text; askGrow();
-    askstatus.textContent = "⚠ not sent — the Mac's bridge didn't answer (" + err.message + "); your message is back in the box";
-  }
-}
-async function askSend() {
-  const typed = askinput.value.trim();
-  if ((!typed && !S.askShotPending.length) || S.askBusy || !S.song) return;
-  const text = askShotOutgoing(typed);
-  if (S.askTerminal) return askTerminalSend(text);
-  if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
-  const sp = askSpan();
-  S.askSpanFrozen = sp;
-  document.getElementById("askspan").textContent = askSpanLabel(sp);
-  const budget = askBudget();
-  const msgs = askLoad();
-  const ctx = askContext(sp, budget); // stages this turn's "New since your last message:" watermark (askNewSinceLines) — askFinish commits it, askFail drops it
-  const messages = askBuildMessages(msgs, text, ctx, budget);
-  const jobId = askJobId();
-  msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), pending: jobId, mode: appMode()}); // saved NOW: closing the sheet or leaving the app cannot lose it
-  askSave(msgs);
-  askMicOff(); // a live 🎤 would write its transcript back into the box after we clear it
-  askinput.value = "";
-  askShotClearAll();
-  askDraftClear();
-  askGrow();
-  askComposing(false);
-  askBubble("user", askShotDisplayText(text));
-  const live = askBubble("ai", "…");
-  live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
-  await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
-}
-function askRepending(key, from, to) { // a tool round continues under a new job id: the marker follows it (re-read, never a stale array)
-  const msgs = askStore(key).msgs, i = askPendingIndex(msgs, from);
-  if (i < 0) return false;
-  msgs[i].pending = to;
-  askSave(msgs, undefined, key);
-  return true;
-}
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
 askInboxStart();
 // Drag any sheet by its title line (and the capture panel by its title row).
@@ -6606,10 +6418,6 @@ wmSideDividerize("wmdivider-right-inner", "right");
 // phone width mid-session floats every docked window (the pref itself is
 // untouched — growing back re-offers and reapplies it)
 window.addEventListener("resize", wmLayoutAll);
-function askNoteSeen() { // the notes are on screen: the ✉ light and its footer line go (Josh, 2026-09-29: it stayed up with the panel open)
-  document.getElementById("askbtn").classList.remove("hasnote");
-  if (/^✉ a note from your Mac/.test(S.infoFull || "")) setInfo("");
-}
 function openAsk() {
   if (!S.song) return;
   askBadgeOff();
@@ -7109,56 +6917,6 @@ async function askRenderEarlier() { // what this device let go of after it reach
   } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
   askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
 }
-function askResumeSoon(ms) { clearTimeout(S.askResumeTimer); S.askResumeTimer = setTimeout(() => { S.askResumeTimer = null; askResume(); }, ms); }
-// Resume (2026-09-26 audit): every pending question gets looked at, in every
-// chat, not just the open one — and a look that cannot happen now (busy,
-// backgrounded, the Mac unreachable) is rescheduled, never dropped. Only
-// a real answer from the bridge ("no such job", "error") fails a question.
-async function askResume() {
-  const all = askPendingAll();
-  if (!all.length) return;
-  if (S.askBusy || !S.song || (typeof document.hidden === "boolean" && document.hidden)) { askResumeSoon(3000); return; }
-  const liveFor = jobId => [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
-  const sup = await askJobsSupported();
-  if (sup === null) { // unreachable right now: the reply is kept on the Mac; say so where the bubble is, and look again
-    for (const p of all) { const live = p.key === askStoreKey() ? liveFor(p.jobId) : null; if (live) live.textContent = "… (can't reach the Mac right now — the reply is kept there; retrying)"; }
-    askResumeSoon(5000); return;
-  }
-  if (!sup) { for (const p of all) askFail(p.jobId, "no reply came back (the connection dropped) — ask again", p.key); return; }
-  let again = false;
-  for (const p of all) {
-    const mine = p.key === askStoreKey(), live = mine ? liveFor(p.jobId) : null;
-    let j;
-    try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(p.jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(p.jobId, "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again", p.key); continue; } j = await r.json(); }
-    catch (err) { again = true; continue; }
-    const step = ((j.notes || []).slice(-1)[0] || "working").replace(/^using /, "").replace(/…\s*$/, "");
-    if (j.status === "running") { if (j.text) askPartial[p.jobId] = j.text; if (live) live.textContent = j.text ? j.text : "… (" + step + ")"; if (mine) askstatus.textContent = "working: " + step; again = true; continue; }
-    if (mine) askstatus.textContent = ""; // the "stream was cut" line is over once the reply lands or fails
-    if (j.status === "error") { askFail(p.jobId, j.error || "the job failed", p.key); continue; }
-    const calls = j.result && j.result.tool_calls;
-    if (!calls || !calls.length) { askFinish(p.jobId, (j.text || "").trim() || "(no reply)", p.key); continue; }
-    if (!mine) { again = true; continue; } // a tool round acts on the OPEN song: it continues when that chat is opened again
-    // the job ended in a tool call: run it here, then continue the exchange as a new job
-    const msgs = askStore(p.key).msgs, i = askPendingIndex(msgs, p.jobId);
-    if (i < 0) continue;
-    const pend = msgs[i];
-    const sp = S.askSpanFrozen || askSpan();
-    const budget = askBudget();
-    const history = msgs.slice(0, i);
-    const messages = askBuildMessages(history, pend.content, askContext(sp, budget), budget);
-    messages.push({role: "assistant", content: "", tool_calls: calls});
-    for (const c of calls) {
-      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
-      let result; try { result = await askRunTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
-      messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
-    }
-    const nextId = askJobId();
-    askRepending(p.key, p.jobId, nextId);
-    await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: p.key});
-    askResumeSoon(500); return; // one exchange at a time; the others get their look after it
-  }
-  if (again) askResumeSoon(3000);
-}
 
 
 // ---- e2e accessor mirror (docs/split-plan.md §4 step 0b deviation) -------
@@ -7184,4 +6942,4 @@ async function askResume() {
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "instReleaseVoice": () => instReleaseVoice, "instReleaseHeld": () => instReleaseHeld, "instReleaseAll": () => instReleaseAll, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "INST_PAN_SLOP": () => INST_PAN_SLOP, "instPtrXY": () => instPtrXY, "instPtrMeanX": () => instPtrMeanX, "instLetGo": () => instLetGo, "instPtrPlayed": () => instPtrPlayed, "instPtrTicket": () => instPtrTicket, "instPointerDown": () => instPointerDown, "instPointerMove": () => instPointerMove, "instPointerUp": () => instPointerUp, "instScrollPersist": () => instScrollPersist, "instSetMode": () => instSetMode, "instSetLock": () => instSetLock, "instSetSustain": () => instSetSustain, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "askRenderImpl": () => askRenderImpl, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askResume": () => askResume}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "instReleaseVoice": (v) => (instReleaseVoice = v), "instReleaseHeld": (v) => (instReleaseHeld = v), "instReleaseAll": (v) => (instReleaseAll = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "instPtrXY": (v) => (instPtrXY = v), "instPtrMeanX": (v) => (instPtrMeanX = v), "instLetGo": (v) => (instLetGo = v), "instPtrPlayed": (v) => (instPtrPlayed = v), "instPtrTicket": (v) => (instPtrTicket = v), "instPointerDown": (v) => (instPointerDown = v), "instPointerMove": (v) => (instPointerMove = v), "instPointerUp": (v) => (instPointerUp = v), "instScrollPersist": (v) => (instScrollPersist = v), "instSetMode": (v) => (instSetMode = v), "instSetLock": (v) => (instSetLock = v), "instSetSustain": (v) => (instSetSustain = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askResume": (v) => (askResume = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "instReleaseVoice": () => instReleaseVoice, "instReleaseHeld": () => instReleaseHeld, "instReleaseAll": () => instReleaseAll, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "INST_PAN_SLOP": () => INST_PAN_SLOP, "instPtrXY": () => instPtrXY, "instPtrMeanX": () => instPtrMeanX, "instLetGo": () => instLetGo, "instPtrPlayed": () => instPtrPlayed, "instPtrTicket": () => instPtrTicket, "instPointerDown": () => instPointerDown, "instPointerMove": () => instPointerMove, "instPointerUp": () => instPointerUp, "instScrollPersist": () => instScrollPersist, "instSetMode": () => instSetMode, "instSetLock": () => instSetLock, "instSetSustain": () => instSetSustain, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "askRenderImpl": () => askRenderImpl, "askRenderEarlier": () => askRenderEarlier}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "instReleaseVoice": (v) => (instReleaseVoice = v), "instReleaseHeld": (v) => (instReleaseHeld = v), "instReleaseAll": (v) => (instReleaseAll = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "instPtrXY": (v) => (instPtrXY = v), "instPtrMeanX": (v) => (instPtrMeanX = v), "instLetGo": (v) => (instLetGo = v), "instPtrPlayed": (v) => (instPtrPlayed = v), "instPtrTicket": (v) => (instPtrTicket = v), "instPointerDown": (v) => (instPointerDown = v), "instPointerMove": (v) => (instPointerMove = v), "instPointerUp": (v) => (instPointerUp = v), "instScrollPersist": (v) => (instScrollPersist = v), "instSetMode": (v) => (instSetMode = v), "instSetLock": (v) => (instSetLock = v), "instSetSustain": (v) => (instSetSustain = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "askRenderEarlier": (v) => (askRenderEarlier = v)}};
