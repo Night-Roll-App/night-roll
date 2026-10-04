@@ -35,10 +35,19 @@ export const PIANO_WHITES = (() => {
 })();
 
 // a finger needs ~44 CSS px (Apple's minimum target); a phone-width panel
-// trades a little of that for one more visible octave
-export function pianoKeyW(W) { return W < 480 ? 36 : 44; }
+// trades a little of that for one more visible octave. Once the panel is
+// wide enough for all 52 whites at that size (≥ 2288 px) the keys stretch
+// to fill it instead of leaving the right third empty (2026-10-04, a 3440
+// px window) — the finger size is a floor, never a ceiling, and with
+// everything in view there is nothing left to scroll.
+export function pianoKeyW(W) {
+  const base = W < 480 ? 36 : 44;
+  return W >= PIANO_WHITES.length * base ? W / PIANO_WHITES.length : base;
+}
 export function pianoVisibleWhites(W) { return W / pianoKeyW(W); }
-export function pianoMaxScroll(W) { return Math.max(0, PIANO_WHITES.length - pianoVisibleWhites(W)); }
+// a stretched piano divides W by W/52: the float residue must not become a
+// one-billionth-of-a-key scroll range
+export function pianoMaxScroll(W) { const n = PIANO_WHITES.length - pianoVisibleWhites(W); return n < 1e-6 ? 0 : n; }
 export function pianoClampScroll(scroll, W) {
   const s = Number.isFinite(scroll) ? scroll : 0;
   return Math.min(pianoMaxScroll(W), Math.max(0, s));

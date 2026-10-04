@@ -2802,6 +2802,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Export score",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
     "Keep that</b>", "Velocity lane</dt>",
+    "fills the panel",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));

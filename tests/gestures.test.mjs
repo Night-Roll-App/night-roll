@@ -529,6 +529,39 @@ test("keyboard: ‹ › step an octave, clamp at both ends, update the readout a
   assert.ok(app.run(`document.getElementById("instrange").textContent`).startsWith("A0"));
 });
 
+test("keyboard: when the whole piano fits, the keys stretch to fill the panel (DAW F1); 44 px stays the floor", async () => {
+  const app = await pianoApp("vm-keys-stretch");
+  // pure geometry first: a 3440 px window holds all 52 whites with room to spare
+  const wW = app.run(`pianoKeyW(3440)`);
+  assert.ok(Math.abs(wW - 3440 / 52) < 1e-9, "52 whites share the width: " + wW);
+  assert.equal(app.run(`pianoMaxScroll(3440)`), 0, "nothing left to scroll");
+  const g = JSON.parse(app.run(`JSON.stringify((() => { const g = pianoGeom(3440, 168, 0);
+    return {n: g.whites.length, first: g.whites[0], last: g.whites[g.whites.length - 1], right: g.keyX(108) + g.keyW(108), bw: g.bw}; })())`));
+  assert.equal(g.n, 52); assert.equal(g.first, 21); assert.equal(g.last, 108);
+  assert.ok(g.right <= 3440 + 1e-6 && g.right > 3440 - 1e-6, "C8's right edge lands on the panel's edge: " + g.right);
+  assert.ok(Math.abs(g.bw - wW * 0.58) < 1e-9, "black keys scale with the whites");
+  assert.deepEqual(app.run(`pianoRangeLabel(3440, 0)`), "A0 – C8");
+  // the floor: narrower panels keep the finger size, exactly at the threshold the keys are still 44
+  assert.equal(app.run(`pianoKeyW(1000)`), 44);
+  assert.equal(app.run(`pianoKeyW(375)`), 36);
+  assert.equal(app.run(`pianoKeyW(52 * 44)`), 44, "at exactly 2288 px the stretch is a no-op");
+  assert.ok(app.run(`pianoKeyW(52 * 44 + 52)`) === 45, "one px per key past the threshold");
+  assert.ok(app.run(`pianoMaxScroll(2000)`) > 0, "below the threshold the piano still scrolls");
+  // a phone-width panel wide enough for 52 × 36 can't exist (480 > 1872 is false) — the 36 base never stretches
+  assert.equal(app.run(`pianoKeyW(479)`), 36);
+  // the live panel: octave buttons and swipes have nowhere to go, the readout names the whole piano
+  app.run(`instWrap.clientWidth = 3440; instScroll = null; drawInst();`);
+  assert.equal(app.run(`document.getElementById("instrange").textContent`), "A0 – C8");
+  app.el("instoctup").click();
+  assert.equal(app.run(`instScrollNow(3440)`), 0, "‹ › can't move a piano that already fits");
+  app.run(`instScrollBy(-400)`);
+  assert.equal(app.run(`instScrollNow(3440)`), 0, "nor can a swipe");
+  assert.equal(app.run(`document.getElementById("instrange").textContent`), "A0 – C8");
+  assert.equal(app.run(`pianoHit(3440 - 1, 160, 3440, 168)`), 108, "the last px of the panel is C8");
+  assert.equal(app.run(`pianoHit(1, 160, 3440, 168)`), 21, "the first px is A0");
+  app.run(`instWrap.clientWidth = 800; instScroll = null;`);
+});
+
 test("keyboard: one finger in Play mode is a glissando; in Scroll mode a drag pans silently and a tap plays on release", async () => {
   const app = await pianoApp("vm-keys-modes");
   app.run(`instSetSustain(true)`);

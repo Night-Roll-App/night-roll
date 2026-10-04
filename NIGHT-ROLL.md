@@ -233,7 +233,10 @@ in the wrong octave beats not seeing it (Josh, 2026-08-07). Open state, tab, and
 piano if you try to scroll on it"; "it looks like a real keyboard rather
 than ours just has the notes laid out"). Geometry lives in
 `src/ui/piano.js`, DOM-free: the whole 88-key piano (A0–C8) at a FIXED
-white-key width (`pianoKeyW`: 44 CSS px, 36 under 480 px wide), black
+white-key width (`pianoKeyW`: 44 CSS px, 36 under 480 px wide — a FLOOR: once
+the panel holds all 52 whites at that size, ≥ 2288 px, the keys stretch to
+`W / 52` so the piano fills it; DAW F1, 2026-10-04; `pianoMaxScroll` is then
+0, so ‹ › and swipes are no-ops), black
 keys at real offsets (`PIANO_BLACK_OFF`: C♯/D♯ lean apart, F♯/A♯ lean
 out, G♯ centred; 58% wide, 62% tall), and a scroll offset measured in
 white keys (`pianoClampScroll`, `pianoScrollTo`, `pianoScrollCentering`,

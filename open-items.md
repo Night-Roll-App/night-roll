@@ -7176,6 +7176,7 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
    against the panel, phone width, Score view, mid-play drag.
 2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
 3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
+   + F1 (lane A) DONE 2026-10-04: keys stretch to fill when the whole piano fits (see the DONE entry below).
 4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
 5. ~~Capture MIDI (keep the last ~60 s; "Keep that") — M~~
    DONE 2026-10-04 (Fable, lane B worktree branch; NIGHT-ROLL.md "Capture
@@ -7232,8 +7233,9 @@ window plays chip audio only on the importing device. Fixed in the code
 archive root (`gh api repos/Night-Roll-App/nsf-archive/contents/`) for
 stray files and move them under their console folders.
 
-## QUEUED 2026-10-04 — keyboard: stretch keys when the whole piano fits
-On a very wide window (3440 px) all 52 whites at 44 px take 2288 px and the panel's right third is empty. When the full range fits, widen the keys to fill (keep 44 px as the minimum). Small; main's src/app.js instGeom / ui/piano.js pianoKeyW.
+## DONE 2026-10-04 (DAW F1, lane A) — keyboard: stretch keys when the whole piano fits
+Built: `pianoKeyW` returns W / 52 once W ≥ 52 × base (2288 px at 44); 44 px stays the floor; octave buttons and swipes no-op; help "fills the panel"; tests/gestures.test.mjs "keys stretch". Eyeball on the external monitor: C8's right edge on the panel edge, black keys scaled.
+Was: On a very wide window (3440 px) all 52 whites at 44 px take 2288 px and the panel's right third is empty. When the full range fits, widen the keys to fill (keep 44 px as the minimum). Small; main's src/app.js instGeom / ui/piano.js pianoKeyW.
 ## QUEUED (built on a worktree branch `finish`, not merged/pushed yet) 2026-10-04 — module split phase 2 steps 11–13: app.js is GONE (docs/split-phase2-plan.md)
 
 Branch `finish` (off `origin/module-split`), 39 commits: a third step 0
