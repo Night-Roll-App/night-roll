@@ -905,3 +905,27 @@ export function drBuildControls() {
     pr.appendChild(b);
   }
 }
+
+export function jobsLoad() { // boot: what was running when the page last died is "interrupted", with its last counts
+  try { S.jobs = JSON.parse(localStorage.getItem("ff1roll-jobs") || "[]"); } catch (err) { S.jobs = []; }
+  if (!Array.isArray(S.jobs)) S.jobs = [];
+  let hit = null;
+  for (const j of S.jobs) if (j.state === "running" || j.state === "queued") {
+    j.state = "interrupted"; j.ended = Date.now(); hit = j;
+    for (const it of j.items || []) if (it.st === "running") it.st = "interrupted";
+  }
+  jobsSave(true);
+  updateJobsBtn();
+  return hit;
+}
+export function jobStart(kind, title, items, runner, extra) { // runner(api) is async; api.aborted flips on ✕
+  const job = Object.assign({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind, title, state: "running",
+    items: items.map(it => ({label: it.label, st: "queued", pct: 0, msg: "", key: it.key || null})),
+    note: "", started: Date.now(), ended: 0, err: ""}, extra || {});
+  S.jobs.push(job);
+  jobsSave(true); jobsNotify();
+  const api = jobApi(job);
+  Promise.resolve().then(() => runner(api)).then(() => { if (job.state === "running") api.done(); }, err => api.fail(err));
+  return job;
+}
+export function jobsClearFinished() { S.jobs = S.jobs.filter(j => j.state === "running" || j.state === "queued"); jobsSave(true); jobsNotify(); }
