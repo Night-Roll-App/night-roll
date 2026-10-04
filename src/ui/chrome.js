@@ -127,6 +127,8 @@ import { catalogHas } from "../model/catalog.js";
 import { wmInnerHeight } from "./wm.js";
 import { openDraft } from "../session/song.js";
 import { idbDraftDelete } from "../platform/storage.js";
+import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
+import { clampView } from "../hooks.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -1237,4 +1239,20 @@ export function draftRow(key, label, rerender, extra) { // open + (optional extr
   });
   row.appendChild(del);
   filesub.appendChild(row);
+}
+
+// the band the Analyze sheet is currently open on
+export function setSecDepth(next) { // clamped stepper (the wrap-around cycle read as awkward)
+  next = Math.max(0, Math.min(S.secMaxDepth - 1, next));
+  if (next >= S.secMaxDepth - 1) localStorage.removeItem("ff1roll-secdepth-" + S.songKey);
+  else localStorage.setItem("ff1roll-secdepth-" + S.songKey, String(next));
+  finalizeNotes();
+  setInfo(next >= S.secMaxDepth - 1 ? "all " + S.secMaxDepth + " section levels shown"
+                                  : "showing " + (next + 1) + " of " + S.secMaxDepth + " section levels (deeper ones still drive the drums)");
+  clampView(); draw();
+  if (typeof renderViewMenu === "function") renderViewMenu();
+}
+export function cycleSecDepth() { // the gutter chevron keeps its one-tap cycle (fold, fold, unfold-all)
+  const cur = Math.min(secDepthCap(), S.secMaxDepth - 1);
+  setSecDepth(cur - 1 < 0 ? S.secMaxDepth - 1 : cur - 1);
 }
