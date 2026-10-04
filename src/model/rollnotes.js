@@ -371,3 +371,21 @@ export function notesTxtFor(doc, key) { // defaults to the open song; Publish al
   });
   return L.join("\n") + "\n";
 }
+
+// (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
+// committed "key F" produced both). Two defects were in the old predicate:
+//   n.added        — only this session's annotations carry it (it isn't
+//                    serialized), so the dedupe was structurally unable to
+//                    replace a key that had ever been synced. That is the
+//                    exact case he hit.
+//   n.keydir       — the tonic-only form stores keypartial and leaves keydir
+//                    unset, so an "F?" marker survived a real key being set.
+//                    Everywhere else in this file tests both forms.
+// ANCHOR-level, not bar-level (Josh's ruling, 2026-08-26): a key at 3.1 and a
+// key at 3.3 are two different keys and both stand — a modulation gets its
+// true beat. Only an exact anchor collision is a replacement. The keyset
+// button always sets q1:1, so it still replaces the bar's downbeat key.
+export function dropLocalKeyAt(bar, q = 1) {
+  S.rollnotes = S.rollnotes.filter(n =>
+    !((n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q));
+}
