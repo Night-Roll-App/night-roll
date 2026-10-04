@@ -16,8 +16,9 @@ import { setAnchorBQImpl, lassoedAnnosImpl } from "./ui/note-editor.js";
 import { drumStepImpl, annoInLassoImpl } from "./render/roll.js";
 import { fitViewImpl, finalizeNotesImpl, updateSongMetaImpl } from "./session/song.js";
 import { albumAdvanceImpl } from "./session/album.js";
+import { renderTrackbarImpl } from "./ui/trackbar.js";
 import {
-  renderTrackbarImpl, askRenderImpl, recFinishImpl,
+  askRenderImpl, recFinishImpl,
 } from "./app.js";
 
 export function installHooks() {

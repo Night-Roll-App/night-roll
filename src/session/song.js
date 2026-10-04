@@ -14,7 +14,7 @@ import { bakesTempo } from "../model/provenance.js";
 import { bakeTempos } from "../model/rollnotes.js";
 import { applyAudioDirs } from "../audio/clips.js";
 import { updateTrackGains } from "../audio/engine.js";
-import { renderTrackbar } from "../hooks.js";
+import { renderTrackbarImpl as renderTrackbar } from "../ui/trackbar.js";
 import { sfPreloadForSong } from "../audio/voices.js";
 import { gamePreloadForSong } from "../audio/voices.js";
 import { updateSongMeta } from "../hooks.js";

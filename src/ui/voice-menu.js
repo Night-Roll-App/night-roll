@@ -28,7 +28,7 @@ import { editableSong } from "../model/song.js";
 import { trackIsDrums } from "../model/grid.js";
 import { transposeTrack } from "../model/selection.js";
 import { trackColor } from "../render/roll.js";
-import { renderTrackbar } from "../hooks.js";
+import { renderTrackbarImpl as renderTrackbar } from "./trackbar.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
 import { drawImpl as draw } from "./chrome.js";
 import { pushUndo } from "../model/edits.js";

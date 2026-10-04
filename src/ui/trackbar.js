@@ -16,6 +16,12 @@ import { isComposition } from "../model/provenance.js";
 import { isLocalDraft } from "../model/edits.js";
 import { audioDirText } from "../model/rollnotes.js";
 import { saveDraft } from "../model/versions.js";
+import { trackColor } from "../render/roll.js";
+import { openVoiceMenu } from "./voice-menu.js";
+import { addTrackUndoable } from "../model/edits.js";
+import { trackIsDrums } from "../model/grid.js";
+import { setInfoImpl as setInfo } from "./chrome.js";
+import { prof } from "../state.js";
 
 export function updateTrackMore() {
   const bar = document.getElementById("trackbar");
@@ -118,3 +124,116 @@ export function renameTrack(ti, newName) { // compositions/local drafts only —
   draw();
   return null;
 }
+
+// chord band armed for a challenge (tap on the ruler)
+// ---------------------------------------------------------------- track chips
+export function renderTrackbarImpl() {
+  const bar = document.getElementById("trackbar");
+  bar.innerHTML = "";
+  S.song.tracks.forEach((tr, ti) => {
+    const chip = document.createElement("div");
+    const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
+    chip.className = "chip" + (st.muted || st.hidden ? " muted" : "") + (ti === S.selTrack ? " selected" : "");
+    chip.dataset.ti = String(ti); // which track this chip belongs to — the tap-away closer (below) needs it to tell "the menu's own chip" from "a different track"
+    chip.setAttribute("role", "button");
+    chip.tabIndex = 0;
+    const trName = (tr.name || "track " + (ti + 1));
+    chip.setAttribute("aria-label", trName + (ti === S.selTrack ? " — selected, activate again for voice & color" : " — select"));
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.background = trackColor(ti);
+    const label = document.createElement("span");
+    label.textContent = (tr.name || "tr" + (ti+1)).slice(0, 18) + (tr.kind === "audio" ? " ∿" : "");
+    // M silences, S solos, H hides — three separate things, as in a DAW
+    // (2026-09-29: M used to hide AND silence; muting the bass lost sight of it)
+    // Each is a real toggle for VoiceOver: role=button (a <span> gets no
+    // built-in keyboard activation — the delegated Enter/Space listener
+    // above handles that), tabindex so Tab reaches it independently of the
+    // chip, and aria-pressed kept in step with the .on class that already
+    // drives the look.
+    const mkToggle = (glyph, on, label2, key) => {
+      const s = document.createElement("span");
+      s.className = "solo" + (on ? " on" : "");
+      s.textContent = glyph;
+      s.setAttribute("role", "button");
+      s.tabIndex = 0;
+      s.setAttribute("aria-label", label2 + " " + trName);
+      s.setAttribute("aria-pressed", String(on));
+      s.addEventListener("click", e => {
+        e.stopPropagation();
+        trackToggle(ti, key);
+      });
+      return s;
+    };
+    const mute = mkToggle("M", S.trackState[ti].muted, "Mute", "muted");
+    const solo = mkToggle("S", S.trackState[ti].solo, "Solo", "solo");
+    chip.append(dot, label, mute, solo);
+    // H off the chip (Chrome density pass, 2026-10-01: ~24px narrower per
+    // chip) — hiding now starts from the voice menu's #vmhide (buildVoiceMenu)
+    // or the Mixer's own H; the chip only shows a toggle once a track IS
+    // hidden, lit gold, so one tap there still brings it straight back.
+    if (S.trackState[ti].hidden) {
+      const hide = mkToggle("H", true, "Hide", "hidden");
+      hide.title = "Unhide this track's notes";
+      chip.append(hide);
+    }
+    chip.addEventListener("click", e => {
+      if (ti === S.selTrack) { openVoiceMenu(ti, chip); return; } // second tap: voice & color
+      // a first tap on a DIFFERENT track must not leave the old track's voice
+      // menu open behind it (Josh, traced 2026-09-29) — the tap-away closer
+      // below exempts only the MENU'S OWN chip, so this one still needs to
+      // close it itself when the menu belongs to some other (now deselected) track
+      const menu = document.getElementById("voicemenu");
+      if (menu.classList.contains("on")) { menu.classList.remove("on"); S.voiceMenuTi = -1; }
+      S.selTrack = ti;
+      renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+    });
+    bar.appendChild(chip);
+  });
+  if (isComposition()) { // compositions grow: + track appends an empty NES voice
+    const add = document.createElement("div");
+    add.className = "chip";
+    add.setAttribute("role", "button");
+    add.textContent = "＋";
+    add.setAttribute("aria-label", "Add track");
+    add.title = "Add track";
+    add.addEventListener("click", () => {
+      S.selTrack = addTrackUndoable({name: "voice" + (S.song.tracks.length + 1), notes: []});
+      pushUndo({kind: "trackRemove", ti: S.selTrack});
+      S.trackExpand = true; // the new chip may land in the overflow rows — show it (Josh's iPad)
+      saveDraft();
+      renderTrackbar(); buildScoreModel(); updateTrackGains(); draw();
+    });
+    bar.appendChild(add);
+    { // ＋∿: a recording as a track — one tap opens the audio picker (Josh's son's door)
+      const au = document.createElement("div");
+      au.className = "chip";
+      au.setAttribute("role", "button");
+      au.textContent = "＋∿";
+      au.setAttribute("aria-label", "Add audio track");
+      au.title = "Add audio track (a recording: wav, mp3, m4a…)";
+      au.addEventListener("click", () => { S.audioReplaceTi = null; document.getElementById("audioinput").click(); });
+      bar.appendChild(au);
+    }
+    if (!S.song.tracks.some((_, ti) => trackIsDrums(ti))) { // one kit per song
+      const drums = document.createElement("div");
+      drums.className = "chip";
+      drums.setAttribute("role", "button");
+      drums.textContent = "＋🥁";
+      drums.setAttribute("aria-label", "Add drum track");
+      drums.title = "Add drum track";
+      drums.addEventListener("click", () => {
+        S.selTrack = addTrackUndoable({name: "drums", notes: []});
+        pushUndo({kind: "trackRemove", ti: S.selTrack});
+        S.trackExpand = true; // ditto: never hide the track just added
+        saveDraft();
+        renderTrackbar(); buildScoreModel(); updateTrackGains(); draw();
+        setInfo("drums: rows are GM kit pieces — kick C2, snare D2, hats F♯/A♯2, crash C♯3, toms around G2 (labels in the left gutter)");
+      });
+      bar.appendChild(drums);
+    }
+  }
+  updateTrackMore();
+  fitTrackRow(); // settle stacking in THIS frame: a frame later the roll shifted under whatever was just measured (a tap, an e2e drag)
+}
+renderTrackbarImpl = prof("renderTrackbar", renderTrackbarImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

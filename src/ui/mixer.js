@@ -5,7 +5,7 @@ import { trackGain } from "../audio/engine.js";
 import { editableSong } from "../model/song.js";
 import { pushUndo } from "../model/edits.js";
 import { saveDraft } from "../model/versions.js";
-import { renderTrackbar } from "../hooks.js";
+import { renderTrackbarImpl as renderTrackbar } from "./trackbar.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { clampViewImpl as clampView } from "./chrome.js";
