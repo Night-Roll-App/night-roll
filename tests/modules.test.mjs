@@ -834,6 +834,14 @@ test("blockers.mjs CLI: real repo — chipRender/chipRenderInWorker/chipPublish/
   }
 });
 
+test("blockers.mjs CLI: real repo — writeClips/setClipDir/splitClipAt/deleteClip are no longer declared in app.js at all, post-docs/split-phase2-plan.md step 4b: step 4's own three illegal-layer imports among this cluster's blockers (setAnchorBQ/computeSongEnd/scheduleBackupFlush) dissolved by this step's ports/re-homes, and buildSchedule/the tombstone helpers/saveLocalNotes (the remaining app.js closure) were re-homed down too — blockers.mjs now has nothing to chase", () => {
+  for (const name of ["writeClips", "setClipDir", "splitClipAt", "deleteClip"]) {
+    const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", name, "--to", "src/audio/clips.js"], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(r.status, 0, `${name}: ${r.stdout}`);
+    assert.match(r.stdout, /clean/);
+  }
+});
+
 // ---- promote-state.mjs -------------------------------------------------------
 
 test("promote-state.mjs: a literal-init let becomes an S field; references become S.name, shadows don't", () => {

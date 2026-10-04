@@ -6,6 +6,20 @@ import { readData } from "../platform/folder.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
 import { clipLen } from "../model/song.js";
+import { pushUndo } from "../model/edits.js";
+import { annoSnapshot } from "../model/edits.js";
+import { tombstone } from "../model/edits.js";
+import { audioDirText } from "../model/rollnotes.js";
+import { setAnchorBQ } from "../hooks.js";
+import { resolveNote } from "../model/rollnotes.js";
+import { deriveNoteTypes } from "../model/rollnotes.js";
+import { finalizeNotes } from "../hooks.js";
+import { saveLocalNotes } from "../model/edits.js";
+import { computeSongEnd } from "../model/song.js";
+import { buildSchedule } from "./transport.js";
+import { draw } from "../hooks.js";
+import { clipEndTick } from "../model/song.js";
+import { setInfo } from "../hooks.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -269,4 +283,63 @@ export function stretchPending(c) { // true while this piece's file is being re-
   if (S.playRate === 1 || !keepPitch() || !c.buffer) return false;
   const e = stretchCache.get(stretchKey(c.file, S.playRate));
   return !e || e.status !== "ready";
+}
+
+// Rewrite a track's audio: annotations from a list of pieces. Every change to a
+// piece changes its note's identity, so old notes are tombstoned (or the repo
+// copy resurrects them on the next load) and fresh added notes take their
+// place. One undo step per call.
+export function writeClips(ti, clips) {
+  const tr = S.song.tracks[ti];
+  if (!tr) return;
+  const name = tr.name || "tr" + (ti + 1);
+  pushUndo({kind: "anno", json: annoSnapshot()});
+  for (const n of S.rollnotes) if (n.audiodir && n.audiodir.track.toLowerCase() === name.toLowerCase()) tombstone(n);
+  S.rollnotes = S.rollnotes.filter(n => !(n.audiodir && n.audiodir.track.toLowerCase() === name.toLowerCase()));
+  for (const c of clips) {
+    if (!c.file) continue;
+    const d = {track: name, file: c.file, offset: Math.max(0, c.offset || 0), len: c.len || null, local: !!c.local};
+    const n = {b1: 1, q1: 1, b2: null, q2: null, text: audioDirText(d), added: true};
+    setAnchorBQ(n, Math.max(0, c.at));
+    S.rollnotes.push(resolveNote(deriveNoteTypes([n])[0]));
+  }
+  finalizeNotes();
+  saveLocalNotes();
+  computeSongEnd();
+  if (S.playing) buildSchedule();
+  draw();
+}
+export function setClipDir(ti, ci, patch) { // one piece changes; the others stand
+  const tr = S.song.tracks[ti];
+  if (!tr || tr.kind !== "audio" || !tr.clips[ci]) return;
+  const next = tr.clips.map((c, i) => i === ci ? {...c, ...patch} : c);
+  const moved = next[ci];
+  writeClips(ti, next);
+  // keep the selection on the same piece after the re-sort by anchor
+  const nci = tr.clips.findIndex(c => c.at === Math.max(0, Math.round(moved.at)) && c.file === moved.file && Math.abs(c.offset - (moved.offset || 0)) < 1e-6);
+  if (nci >= 0) S.selClip = {ti, ci: nci};
+}
+export function splitClipAt(ti, ci, tick) { // two pieces out of one, at a song tick strictly inside it
+  const c = S.song.tracks[ti].clips[ci];
+  if (!c || !c.dur) return false;
+  const end = clipEndTick(c);
+  if (tick <= c.at + 1 || tick >= end - 1) return false;
+  const leftLen = +((tickToSec(S.song, tick) - tickToSec(S.song, c.at)) * S.playRate).toFixed(3);
+  const total = clipLen(c);
+  if (leftLen < 0.05 || total - leftLen < 0.05) return false;
+  const left = {...c, len: leftLen};
+  const right = {...c, at: tick, offset: +(c.offset + leftLen).toFixed(3), len: +(total - leftLen).toFixed(3)};
+  const next = S.song.tracks[ti].clips.slice();
+  next.splice(ci, 1, left, right);
+  writeClips(ti, next);
+  const nci = S.song.tracks[ti].clips.findIndex(x => x.at === tick && x.file === c.file);
+  S.selClip = nci >= 0 ? {ti, ci: nci} : null;
+  return true;
+}
+export function deleteClip(ti, ci) { // the piece goes; the track stays
+  const tr = S.song.tracks[ti];
+  if (!tr || !tr.clips[ci]) return;
+  writeClips(ti, tr.clips.filter((_, i) => i !== ci));
+  S.selClip = null;
+  setInfo("piece removed — one undo brings it back" + (tr.clips && tr.clips.length ? "" : " (the track stays; ✕ Delete track removes it)"));
 }
