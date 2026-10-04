@@ -16,6 +16,9 @@ import { songShareURL } from "../platform/base.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { cfg } from "../platform/storage.js";
 import { linkRepoLabel } from "../platform/base.js";
+import { apiError } from "../platform/storage.js";
+import { albumTitleFor } from "../model/provenance.js";
+import { titleCaseSlug } from "../model/catalog.js";
 
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
   if (folderActive()) { await folderWrite(path, text); return {ok: true, status: 200}; }
@@ -230,4 +233,39 @@ export function takeToken(status) {
   if (!token) { status.textContent = "No token — paste one in File → Settings first."; return null; }
   localStorage.setItem("ff1roll-ghtoken", token);
   return token;
+}
+
+export async function updateManifest(h, mutate) { // GET manifest.json, mutate, PUT — keeps the dropdown honest
+  if (folderActive()) return; // the folder has no manifest: initCatalog rescans it
+  const path = "albums/manifest.json";
+  const putOnce = async () => {
+    const g = await fetch(repoApi("songs") + path + "?ref=main", {headers: h, cache: "no-store"});
+    if (!g.ok) throw apiError("songs", g, "manifest GET");
+    const j = await g.json();
+    const albums = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, "")))));
+    if (!mutate(albums)) return {ok: true};
+    return fetch(repoApi("songs") + path, {method: "PUT", headers: h, body: JSON.stringify({
+      message: "Update manifest from Night Roll", branch: "main", sha: j.sha,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(albums, null, 1) + "\n"))),
+    })});
+  };
+  let r = await putOnce();
+  if (r.status === 409) r = await putOnce();
+  if (!r.ok) throw new Error("manifest PUT " + r.status);
+}
+export function manifestPlace(albums, dropPath, addPath) { // remove one path, add another; returns changed
+  let changed = false;
+  for (const a of albums) {
+    const i = a.songs.findIndex(s => s.path === dropPath || s.path === addPath);
+    if (i >= 0) { a.songs.splice(i, 1); changed = true; }
+  }
+  if (addPath) {
+    const title = albumTitleFor(addPath);
+    let album = albums.find(a => a.title === title);
+    if (!album) { album = {title, songs: []}; albums.push(album); }
+    album.songs.push({title: titleCaseSlug(addPath.split("/").pop().replace(/\.mid$/, "")), path: addPath});
+    album.songs.sort((a, b) => a.title.localeCompare(b.title));
+    changed = true;
+  }
+  return changed;
 }
