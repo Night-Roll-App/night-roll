@@ -7,7 +7,7 @@
 // rollnotes, status line).
 //
 // Backend coverage, and why some things aren't separate tests here:
-//  - LM Studio / any OpenAI-compatible server: aiRemote() (src/app.js) is the
+//  - LM Studio / any OpenAI-compatible server: aiRemote() (src/ask/backend.js) is the
 //    app's ONE adapter — GET /v1/models, POST /v1/chat/completions
 //    (stream:true, SSE deltas). Covered below.
 //  - Ollama: the app never speaks Ollama's native API. tools/claude-bridge.mjs
@@ -85,7 +85,7 @@ async function mkApp(mode, extra) {
   // suite stubs it inline per-test); these ARE network tests, so point the
   // app's real fetch at Node's real one — `app.context` is the same
   // contextified object vm.createContext handed back, so this reaches every
-  // bare `fetch(...)` call in src/app.js exactly like any other global.
+  // bare `fetch(...)` call in src/ exactly like any other global.
   app.context.fetch = fetch;
   app.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],

@@ -8,7 +8,7 @@
 // would land ABOVE --to's own layer in check.mjs's LAYERS table (an illegal
 // move even once nothing is left in app.js). Read-only: never writes
 // anything. Node-only tooling, never shipped.
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseModule, declaredNames, freeIdentifiers, topLevelImports } from "./scope.mjs";
@@ -81,7 +81,11 @@ if (isMain()) {
   }
   if (!toPath || !names.length) throw new Error("usage: blockers.mjs <name,name,...> --to <file>");
   const fromPath = "src/app.js";
-  const fromSource = readFileSync(path.join(REPO_ROOT, fromPath), "utf8");
+  // app.js is gone since docs/split-phase2-plan.md step 13: an absent
+  // container declares nothing, so every name reports clean (the tool's
+  // real-repo tests keep asserting exactly that).
+  const fromAbs = path.join(REPO_ROOT, fromPath);
+  const fromSource = existsSync(fromAbs) ? readFileSync(fromAbs, "utf8") : "";
   const result = computeBlockers({ fromSource, fromPath, names, toPath });
   console.log("closure (still in app.js): " + (result.closure.length ? result.closure.join(", ") : "(none)"));
   console.log("illegal-layer imports: " + (result.illegalImports.length ? result.illegalImports.map(i => `${i.name} (layer ${i.layer}, "${i.specifier}")`).join(", ") : "(none)"));

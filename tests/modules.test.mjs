@@ -50,9 +50,12 @@ test("harness module mode: opts.edition swaps src/edition.js's text", async () =
   assert.equal(app.run("EDITION"), "ipad");
 });
 
-test("harness: legacy mode is still reachable (the real repo hasn't cut over)", async () => {
+test("harness: the real repo boots in module mode — main.js's init list ran (docs/split-phase2-plan.md step 13: no legacy path, no app.js)", async () => {
   const app = await createApp();
   assert.equal(app.run("1+1"), 2);
+  assert.equal(app.run("typeof loadSong"), "function");
+  assert.equal(app.run("typeof S.hooks.setInfo"), "function", "installHooks() ran first");
+  assert.equal(app.run("typeof S.APP_MODE"), "string", "initMode1() ran (platform/mode.js)");
 });
 
 test("appSource(): index.html alone when src/ doesn't exist; concatenated when it does", () => {
@@ -341,12 +344,12 @@ test("checkSrc: the real repo's LAYERS table already has room for hooks.js (laye
   assert.equal(layerOf("session/boot.js"), 4);
 });
 
-test("checkSrc: the real repo, post-step-14 (ui/{chrome,trackbar,mixer,voice-menu,notes,note-editor,sheets,wm}.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
+test("checkSrc: the real repo, post-phase-2 step 13 (app.js deleted, no legacy container, no exemptions) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 74, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, ui/piano.js (merge of main, 2026-10-04), midi/parse.js, midi/write.js, theory/chords.js, theory/key.js, model/catalog.js, model/grid.js, model/edits.js, model/rollnotes.js, platform/base.js, platform/mode.js, platform/storage.js, platform/folder.js, platform/native.js, audio/engine.js, audio/voices.js, audio/transport.js, audio/chip.js, audio/chip-stream.js, audio/clips.js, audio/metronome.js, audio/bounce.js, model/song.js, model/selection.js, model/provenance.js, model/album-order.js, model/versions.js, model/jobs.js, import/hub.js, import/capture.js, sync/publish.js, gen/drummer.js, gen/bassist.js, gen/analysis.js, render/roll.js, render/tracks.js, render/score.js, render/instrument.js, render/cof.js, render/compare.js, input/gestures.js, input/record.js, input/keyboard.js, ask/backend.js, ask/tools.js, ask/context.js, ask/bridge.js, ask/shots.js, ask/sheet.js, ask/client.js, ask/host.js, ui/chrome.js, ui/trackbar.js, ui/mixer.js, ui/voice-menu.js, ui/notes.js, ui/note-editor.js, ui/sheets.js, ui/wm.js, hooks.js, wire.js (docs/split-phase2-plan.md step 1), session/song.js, session/album.js, session/files.js (step 6), session/boot.js (phase 2 step 11), ui/perf.js, platform/sw.js (phase 2 step 12)");
+  assert.equal(result.fileCount, 73, "edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, ui/piano.js (merge of main, 2026-10-04), midi/parse.js, midi/write.js, theory/chords.js, theory/key.js, model/catalog.js, model/grid.js, model/edits.js, model/rollnotes.js, platform/base.js, platform/mode.js, platform/storage.js, platform/folder.js, platform/native.js, audio/engine.js, audio/voices.js, audio/transport.js, audio/chip.js, audio/chip-stream.js, audio/clips.js, audio/metronome.js, audio/bounce.js, model/song.js, model/selection.js, model/provenance.js, model/album-order.js, model/versions.js, model/jobs.js, import/hub.js, import/capture.js, sync/publish.js, gen/drummer.js, gen/bassist.js, gen/analysis.js, render/roll.js, render/tracks.js, render/score.js, render/instrument.js, render/cof.js, render/compare.js, input/gestures.js, input/record.js, input/keyboard.js, ask/backend.js, ask/tools.js, ask/context.js, ask/bridge.js, ask/shots.js, ask/sheet.js, ask/client.js, ask/host.js, ui/chrome.js, ui/trackbar.js, ui/mixer.js, ui/voice-menu.js, ui/notes.js, ui/note-editor.js, ui/sheets.js, ui/wm.js, hooks.js, wire.js (docs/split-phase2-plan.md step 1), session/song.js, session/album.js, session/files.js (step 6), session/boot.js (phase 2 step 11), ui/perf.js, platform/sw.js (phase 2 step 12)");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
-  ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
+  ], "convertAnchors() (src/model/rollnotes.js since phase 2 step 11; originally index.html ~line 13996) references an undeclared oldBpb — a real latent ReferenceError bug in the app that predates the split, surfaced for the first time by rule 1's static scan; out of scope for a verbatim move, flagged in open-items.md instead of silently fixed");
 });
 
 // ---- docs/split-phase2-plan.md §1 M1, step 1: src/hooks.js's real ports,
@@ -510,14 +513,13 @@ function realModuleManifests() {
   const devtools = readFileSync(path.join(ROOT, "src/devtools.js"), "utf8");
   const modulepreload = [...html.matchAll(/<link rel="modulepreload" href="src\/([^"]+)">/g)].map(m => m[1]);
   const appModules = JSON.parse(sw.match(/const APP_MODULES = (\[[\s\S]*?\]);/)[1]).map(p => p.replace(/^src\//, ""));
-  // devtools.js only imports the modules it actually mirrors (app.js,
-  // edition.js, state.js — main.js has no exports worth mirroring, and a
-  // module can't import itself), so its real import list is 2 short of the
-  // full set by design. "+ itself + main.js" accounts for exactly that gap,
-  // not a bug. Any import STYLE counts (`import * as X` for app.js/edition.js's
-  // whole-namespace mirror, `import { S }` for state.js's two-way per-field
-  // mirror, docs/split-plan.md §4 step 1) — the rule cares which modules are
-  // pulled in, not how.
+  // devtools.js only imports the modules it actually mirrors (main.js has
+  // no exports worth mirroring, and a module can't import itself), so its
+  // real import list is 2 short of the full set by design. "+ itself +
+  // main.js" accounts for exactly that gap, not a bug. Any import STYLE
+  // counts (`import * as X` for a whole-namespace mirror, `import { S }`
+  // for state.js's two-way per-field mirror, docs/split-plan.md §4 step 1)
+  // — the rule cares which modules are pulled in, not how.
   const devtoolsImports = [...devtools.matchAll(/^import .* from "\.\/([^"]+)";/gm)].map(m => m[1]).concat(["devtools.js", "main.js"]);
   // Recursive (docs/split-plan.md §4 step 2: src/ui/ is the first
   // subdirectory) — a plain readdirSync would silently stop seeing every
@@ -546,7 +548,7 @@ test("check rule 8: the real repo's four module manifests (modulepreload, sw.js 
 
 test("checkSrc: vendor/ai/web (checkSrc's extraRoots) is clean against rules 1-3/6/7 — no top-level let, every free identifier resolved, no top-level name collides with src/'s", () => {
   const result = checkSrc(path.join(ROOT, "src"), { extraRoots: [{ root: path.join(ROOT, "vendor/ai/web"), prefix: "vendor/ai/web" }] });
-  assert.equal(result.fileCount, 76, "74 src/ files (see the checkSrc test above) + 2 vendor/ai/web files (index.js, sse.js)");
+  assert.equal(result.fileCount, 75, "73 src/ files (see the checkSrc test above) + 2 vendor/ai/web files (index.js, sse.js)");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "the one pre-existing src/ finding, unchanged by adding vendor/ai/web to the scan");
@@ -581,17 +583,16 @@ test("AI library wiring: `node tools/ai-sync.mjs --check` passes — vendor/ai/'
   assert.equal(r.status, 0, "stdout: " + r.stdout + "\nstderr: " + r.stderr);
 });
 
-// ---- e2e devtools mirror, proven without a browser (docs/split-plan.md §3.4,
-// §4 step 0b deviation: app.js exports nothing on its own — none of its
-// top-level bindings survive the classic-script-to-module cutover as a
-// window property — so without the generated __nr$ accessor footer AND
-// tests/e2e/helpers.mjs setting window.__NR_EXPOSE, every bare-name
-// page.evaluate() in tests/e2e/*.mjs would throw ReferenceError only once a
-// real headless browser ran it. This statically proves the mirror covers
-// every real spec's references instead, via tools/split/check-e2e-globals.mjs
-// (reused here, same pattern as check.mjs's rule 8 above). ----------------
+// ---- e2e devtools mirror, proven without a browser (docs/split-plan.md §3.4):
+// a module's top-level bindings are not window properties, so without
+// devtools.js's exposeGlobals() AND tests/e2e/helpers.mjs setting
+// window.__NR_EXPOSE, every bare-name page.evaluate() in tests/e2e/*.mjs
+// would throw ReferenceError only once a real headless browser ran it. This
+// statically proves the mirror covers every real spec's references instead,
+// via tools/split/check-e2e-globals.mjs (reused here, same pattern as
+// check.mjs's rule 8 above). -----------------------------------------------
 
-test("check-e2e-globals: every bare identifier referenced inside tests/e2e/*.mjs page.evaluate()/evaluateHandle()/waitForFunction() callbacks resolves via src/devtools.js's window mirror (app.js's generated __nrExpose$ footer + other src/ exports) or tools/split/browser-globals.txt", async () => {
+test("check-e2e-globals: every bare identifier referenced inside tests/e2e/*.mjs page.evaluate()/evaluateHandle()/waitForFunction() callbacks resolves via src/devtools.js's window mirror (every module's exports + S's fields) or tools/split/browser-globals.txt", async () => {
   const { checkE2eGlobals } = await import("../tools/split/check-e2e-globals.mjs");
   const result = checkE2eGlobals();
   assert.deepEqual(result.violations, []);
@@ -714,22 +715,6 @@ test("move.mjs (b): moving an UNRELATED name near a prof-wrapped one never joins
   assert.match(result.fromSource, /computeSongEnd = prof\("computeSongEnd", computeSongEnd\); \/\/ \?perf=1 attribution\nfunction annoSnapshot/);
   assert.doesNotMatch(result.fromSource, /computeSongEnd\(\);\s*function annoSnapshot/); // never joined onto one line
   parseModule(result.fromSource, "app.js");
-});
-
-test("move.mjs (c): moving content back INTO app.js lands BEFORE the generated e2e footer, never after (docs/split-plan.md's Deviations 14 — regen-e2e-footer.mjs used to delete it)", async () => {
-  const { addAccessorFooter, FOOTER_MARKER } = await import("../tools/split/e2e-footer.mjs");
-  const appBody = `export function kept() { return 1; }\n`;
-  const toSource = addAccessorFooter(appBody); // simulates app.js's real generated footer
-  assert.match(toSource, new RegExp(FOOTER_MARKER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  const fromSource = `export function reverted() { return 2; }\n`;
-  const result = planMove({ fromPath: "ui/chrome.js", fromSource, toPath: "app.js", toSource, names: ["reverted"] });
-  const markerIdx = result.toSource.indexOf(FOOTER_MARKER);
-  const revertedIdx = result.toSource.indexOf("function reverted");
-  assert.ok(revertedIdx !== -1 && markerIdx !== -1 && revertedIdx < markerIdx, "moved content must sit before the footer marker");
-  // regen-e2e-footer.mjs's stripFooter() must not delete the reverted content
-  const { stripFooter } = await import("../tools/split/e2e-footer.mjs");
-  assert.match(stripFooter(result.toSource), /function reverted/);
-  parseModule(result.toSource, "app.js");
 });
 
 test("move.mjs: re-running against an existing --to file continues the init numbering and doesn't collide", () => {

@@ -1,18 +1,12 @@
 // Test harness: runs the app in a Node vm with a minimal DOM stub, so it can
-// be tested with no build step. Two modes (docs/split-plan.md §3.1), chosen
-// by whether index.html has cut over to `<script type="module" src=
-// "src/main.js">` yet:
-//   - legacy: extracts the inline <script> and runs it in the vm context.
-//     Top-level `let`/`const` bindings persist in the context's global
-//     lexical scope, so later run() calls can read and assign them like a
-//     second <script> tag would. (Pre-0b: this is the only mode reachable —
-//     index.html has no module script yet.)
-//   - module: loads src/main.js and its import graph as real
-//     vm.SourceTextModules in the same context (needs node
-//     --experimental-vm-modules — package.json's test scripts carry the
-//     flag). run() sees every module's top-level names (and `S`'s fields)
-//     through a `with`-scope Proxy (§3.2), so ~2,076 existing run() call
-//     sites keep working unedited once 0b cuts index.html over.
+// be tested with no build step (docs/split-plan.md §3.1): it loads
+// src/main.js and its import graph as real vm.SourceTextModules in one
+// context (needs node --experimental-vm-modules — package.json's test
+// scripts carry the flag). run() sees every module's top-level names (and
+// `S`'s fields) through a `with`-scope Proxy (§3.2), so the ~2,076 run()
+// call sites written against the old one-file app work unedited. (The
+// pre-cutover legacy path — the inline <script> run in the context — went
+// with src/app.js in docs/split-phase2-plan.md step 13.)
 //
 // Event injection (2026-08-23): elements/document/window RECORD their
 // listeners and expose dispatchEvent, so vm tests can drive the real pointer
@@ -335,44 +329,17 @@ function buildRuntime(opts = {}) {
   };
 }
 
-/** Builds a fresh app (vm context + module graph or legacy inline script) and
- *  returns the handle every test and tool already uses. ASYNC (docs/
- *  split-plan.md §3.1: vm.SourceTextModule#link is async in Node 22/23), so
- *  every call site is `await createApp(...)` — mechanical, no behavior change
- *  for the ~86 existing call sites. `opts.root` lets a test boot a different
- *  app tree (e.g. the packaged iPad/Pages output under dist/), defaulting to
- *  this repo's root. */
+/** Builds a fresh app (vm context + module graph) and returns the handle
+ *  every test and tool already uses. ASYNC (docs/split-plan.md §3.1:
+ *  vm.SourceTextModule#link is async in Node 22/23), so every call site is
+ *  `await createApp(...)`. `opts.root` lets a test boot a different app tree
+ *  (e.g. the packaged iPad/Pages output under dist/), defaulting to this
+ *  repo's root. */
 export async function createApp(opts = {}) {
-  const root = opts.root || ROOT;
-  const html = readFileSync(path.join(root, "index.html"), "utf8");
-  // the cutover sentinel (docs/split-plan.md §4 step 0b): until index.html
-  // has this tag, there IS no src/main.js to load, so legacy is the only
-  // reachable path — true for every song/tool/test through step 0a.
-  if (/<script\s+type="module"\s+src="src\/main\.js"\s*>/.test(html)) return createAppModule(opts, root);
-  return createAppLegacy(opts, html);
-}
-
-function createAppLegacy(opts, html) {
-  const m = html.match(/<script>\n([\s\S]*?)<\/script>/); // inline script only (vendor tag has src=)
-  if (!m) throw new Error("inline <script> not found in index.html");
-  if (opts.edition) m[1] = m[1].replace('const EDITION = "web";', 'const EDITION = "' + opts.edition + '";'); // the product build's one-line change (tools/package.mjs)
-
-  const rt = buildRuntime(opts);
-  const context = vm.createContext(rt.sandbox);
-  vm.runInContext(m[1], context, { filename: "index.html<script>" });
-  return {
-    context,
-    /** Evaluate code inside the app's global scope; returns the result. */
-    run: (code) => vm.runInContext(code, context),
-    store: rt.store, tick: rt.tick, el: rt.el,
-    dispatch: rt.dispatch, docDispatch: rt.docDispatch, winDispatch: rt.winDispatch,
-  };
+  return createAppModule(opts, opts.root || ROOT);
 }
 
 // ---- module mode (docs/split-plan.md §3.1-3.2) ---------------------------
-// Dead code until step 0b adds src/main.js and flips index.html's script tag
-// (createApp() above never reaches here before then) — exercised today only
-// by tests/modules.test.mjs's small fixture app, ahead of that cutover.
 
 /** A module's own top-level declared names, each {name, mutable} — `const`
  *  is not mutable (no setter); function/class declarations and `let`/`var`

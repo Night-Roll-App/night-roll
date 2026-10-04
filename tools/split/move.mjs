@@ -11,7 +11,9 @@
 // preserved exactly (§2.2). Adds the import lines each side now needs for
 // names that crossed the cut ("imports both ways"), including the
 // synthesized init call's own import, and never adds an import of a file
-// into itself. Node-only tooling, never shipped.
+// into itself. The split is finished (docs/split-phase2-plan.md step 13:
+// app.js is gone); the mover stays for any later module-to-module re-home.
+// Node-only tooling, never shipped.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,7 +22,6 @@ import {
   isDeclaration, freeIdentifiers, topLevelImports,
 } from "./scope.mjs";
 import { loadBrowserGlobals } from "./check.mjs";
-import { FOOTER_MARKER } from "./e2e-footer.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.dirname(path.dirname(HERE));
@@ -233,22 +234,9 @@ function assembleTo(toSource, newImportLines, chunks) {
     body = toSource.slice(insertAt);
   }
   const importBlock = newImportLines.length ? newImportLines.join("\n") + "\n" : "";
-  // app.js's own body ends with a GENERATED e2e accessor footer
-  // (tools/split/e2e-footer.mjs) — appending new content after it, as a
-  // plain append always did, put a reverse move's (`--to src/app.js`)
-  // content physically past the footer marker; the next
-  // regen-e2e-footer.mjs run then deleted it along with the stale footer it
-  // was regenerating (docs/split-plan.md's Deviations (14), the step's own
-  // "silent, total data loss" finding). Split the footer off first and
-  // always reattach it at the true end, never in the middle and never
-  // before new content.
-  const footerIdx = body.indexOf(FOOTER_MARKER);
-  let bodyMain = body, footerText = "";
-  if (footerIdx !== -1) { bodyMain = body.slice(0, footerIdx); footerText = body.slice(footerIdx); }
-  const prefix = (header + importBlock + bodyMain).trimEnd();
+  const prefix = (header + importBlock + body).trimEnd();
   const suffix = chunks.join("\n").trimEnd();
-  const assembled = (prefix ? prefix + "\n\n" : "") + suffix + "\n";
-  return footerText ? assembled.trimEnd() + footerText : assembled;
+  return (prefix ? prefix + "\n\n" : "") + suffix + "\n";
 }
 
 // ---- the plan (pure: strings in, strings out — no file I/O) --------------

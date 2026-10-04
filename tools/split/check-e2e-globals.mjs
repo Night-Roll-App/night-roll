@@ -14,8 +14,7 @@
 // vendored acorn tools/split/scope.mjs uses) and cross-checks every bare
 // identifier referenced inside a page.evaluate()/evaluateHandle()/
 // waitForFunction() callback against: (1) every top-level declared name in
-// src/**/*.js (what the __nrExpose$ footer mirrors for app.js, and what a real
-// module's exports mirror for the rest), and (2) tools/split/
+// src/**/*.js (what each module's exports mirror), and (2) tools/split/
 // browser-globals.txt (real browser/ECMAScript globals — check.mjs's own
 // allowlist, reused here since the same app surface is in play).
 //
@@ -68,13 +67,10 @@ const EVAL_METHODS = /^(evaluate|evaluateHandle|waitForFunction)$/;
 
 /** Every top-level declared name across every src/**\/*.js file — the
  *  union of what src/devtools.js's exposeGlobals() can mirror onto window
- *  once __NR_EXPOSE is set: app.js's names (via the generated __nrExpose$
- *  footer, docs/split-plan.md §4 step 0b deviation) plus every other
- *  module's real exports. A name declared in a real (non-legacy-container)
- *  module but NOT exported wouldn't actually be mirrored — a slight
- *  over-approximation, harmless while app.js (export-everything via
- *  __nrExpose$) is the only module e2e specs reach into; revisit once a spec
- *  reaches a carved-out module that keeps some top-level names private. */
+ *  once __NR_EXPOSE is set. A name declared but NOT exported wouldn't
+ *  actually be mirrored — a slight over-approximation, harmless because the
+ *  mover exports every declaration it lands (docs/split-plan.md §1); revisit
+ *  if a module ever keeps a top-level name private that a spec reaches. */
 export function appGlobalNames(srcDir = SRC_DIR) {
   const names = new Set();
   (function walk(dir) {

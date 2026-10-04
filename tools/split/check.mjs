@@ -21,13 +21,10 @@ const REPO_ROOT = path.dirname(path.dirname(HERE));
 // ---- the layer table (docs/split-plan.md §1) ---------------------------
 // A module may import only from its own layer or a lower one.
 // docs/split-phase2-plan.md §1 M1/M4: hooks.js (layer 0 — a port is a 1:1
-// synchronous forward, no heavier than state.js itself) and wire.js (layer
-// 5 — the composition root, alongside app.js/main.js) and the new
-// session/ directory (layer 4, song-lifecycle orchestration) are added to
-// the table now, ahead of docs/split-phase2-plan.md's own step 1/6 — rules
-// 5/9/10 must not fail just because neither file exists in src/ yet (every
-// rule below is a per-FILE check that simply never runs for a file that
-// isn't there).
+// synchronous forward, no heavier than state.js itself), wire.js (layer 5 —
+// the composition root, alongside main.js) and the session/ directory
+// (layer 4, song-lifecycle orchestration). Every rule below is a per-FILE
+// check, so a table entry without a file is simply never exercised.
 export const LAYERS = [
   // docs/split-phase2-plan.md §1 M2: ui/controls.js moved here (it imports
   // only ui/icons.js, same as ui/icons.js itself) so setPlayBtn/setControl
@@ -43,20 +40,8 @@ export const LAYERS = [
   ["model", "gen"],
   ["audio", "render"],
   ["input", "ui", "ask", "import", "sync", "session"],
-  ["main.js", "devtools.js", "app.js", "wire.js"],
+  ["main.js", "devtools.js", "wire.js"],
 ];
-
-// app.js (docs/split-plan.md §4 step 0b's cutover; deleted in step 15) is the
-// whole pre-split app, so it doesn't fit the layer table like a real module
-// does — it's layered alongside main.js/devtools.js (the two other things
-// that are allowed to see the whole app) so that main.js importing it, and
-// it importing any real module as steps 1-14 carve pieces out, both pass
-// rule 5. LEGACY_CONTAINER is also exempt from rule 3 (top-level mutable):
-// it still holds ~203 top-level `let`s until step 1's promote-state.mjs
-// moves them to `S`. This is the one check.mjs concession to the fact that
-// app.js is scaffolding, not a finished module — it shrinks to nothing by
-// step 15, at which point LEGACY_CONTAINER (and this comment) should go too.
-export const LEGACY_CONTAINER = "app.js";
 
 /** 0-5 layer number for a module's path relative to src/, or null if it
  *  matches no entry (check.mjs then flags it as unplaced, a stronger
@@ -152,8 +137,8 @@ function isPureLiteralish(node) {
       return true;
     // An object/array literal built only from pure-literalish parts (docs/
     // split-phase2-plan.md step 2 surfaced this: CHIPS, a plain `{nsf: {...},
-    // ...}` table of closures, moving out of app.js — the legacy container's
-    // own rule-4/rule-10d exemption — into a real module for the first time).
+    // ...}` table of closures, moving out of the then-exempt app.js into a
+    // real module for the first time).
     // Same reasoning the FunctionExpression/ArrowFunctionExpression case
     // above already rests on: a function's BODY isn't inspected here because
     // it only runs when CALLED, never at module-eval time; building the
@@ -388,12 +373,11 @@ export function ruleHooksShape(ast) {
  *  port. `declaredByFile`: Map<relPath, string[]>; `importersOf(name)`:
  *  relPath[] of files importing `name` from hooks.js; `layerOfFn`: relPath
  *  -> layer number or null. Two kinds of caller are exempt from the layer
- *  check entirely, same reasoning as rule 4/5's existing LEGACY_CONTAINER
- *  treatment above: (a) the impl's OWN home file (self-reference — the
+ *  check entirely: (a) the impl's OWN home file (self-reference — the
  *  plan's own "internal callers import the port" pattern, for call sites
  *  that keep the bare, pre-rename name — never a layer crossing, since
- *  it's the identical file at the identical layer); (b) app.js/main.js,
- *  the scaffolding tier that may always import any layer. */
+ *  it's the identical file at the identical layer); (b) main.js, the
+ *  composition tier that may always import any layer. */
 export function ruleHooksPorts(hooksAst, declaredByFile, importersOf, layerOfFn) {
   const out = [];
   const ports = hooksAst.body.map(forwarderPortName).filter(Boolean);
@@ -405,7 +389,7 @@ export function ruleHooksPorts(hooksAst, declaredByFile, importersOf, layerOfFn)
     if (owners.length > 1) { out.push({ rule: 10, message: `hooks.js port "${name}": "${implName}" is declared in more than one file (${owners.join(", ")})` }); continue; }
     const implLayer = layerOfFn(owners[0]);
     for (const callerFile of importersOf(name)) {
-      if (callerFile === owners[0] || callerFile === "main.js" || callerFile === LEGACY_CONTAINER) continue;
+      if (callerFile === owners[0] || callerFile === "main.js") continue;
       const callerLayer = layerOfFn(callerFile);
       if (implLayer === null || callerLayer === null) continue;
       if (!(implLayer > callerLayer))
@@ -507,7 +491,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
   }
 
   for (const [rel, parsed] of parsedByFile) {
-    const isStateFile = rel === "state.js" || rel === LEGACY_CONTAINER;
+    const isStateFile = rel === "state.js";
     const isVendor = vendorRels.has(rel);
     violations.push(...ruleFreeIdentifiers(parsed, browserGlobals));
     violations.push(...ruleNoAssignToImport(parsed));
@@ -531,26 +515,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
     // guarantees everything it calls has finished evaluating; rule 4 exists
     // to stop an ORDINARY module from depending on not-yet-ready state, and
     // main.js, always the last thing evaluated, can't hit that hazard.
-    //
-    // app.js (LEGACY_CONTAINER) is exempt the same way, for a narrower
-    // reason specific to it (docs/split-plan.md §4 step 2's first real hit:
-    // the volume-button boot code calling the newly-imported setVolBtn,
-    // src/ui/controls.js, at app.js's own top level): app.js sits at the
-    // SAME layer tier as main.js (the layer table, above), meaning nothing
-    // it can import — now or as later steps carve more of it out — imports
-    // app.js back (that would be a layer-table violation on the OTHER
-    // module, caught by rule 5). With no cycle possible into app.js from
-    // anything it statically imports, ES module evaluation order alone
-    // (every static import finishes evaluating before the importing
-    // module's own top-level code runs, full stop) already guarantees a
-    // name app.js imports — at ANY layer — is ready by the time app.js's
-    // top level references it. Rule 4's layer-0-only restriction exists to
-    // catch exactly the case this can't be: a reference that MIGHT be part
-    // of an unresolved cycle. Narrower than main.js's exemption (app.js
-    // still can't read not-yet-initialized STATE from a sibling at its own
-    // tier — there are none to read from), but the same underlying
-    // guarantee. Deleted with LEGACY_CONTAINER itself in step 15.
-    if (rel !== "main.js" && rel !== LEGACY_CONTAINER) violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
+    if (rel !== "main.js") violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
   }
   violations.push(...ruleUniqueNames(declaredByFile));
   violations.push(...ruleSerializedSelfContained(functionsByName));
@@ -578,15 +543,12 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
       return out;
     };
     violations.push(...ruleHooksPorts(hooksParsed.ast, declaredByFile, importersOf, layerOf));
-    // app.js/main.js excluded, same as rule 4's own call above and for the
-    // same reason: a "top-level" reference inside one of app.js's ~326
-    // listener/IIFE blocks is frequently a callback body that runs on a
-    // later event, not at module-evaluation time — topLevelEffectExpressions
-    // can't tell the two apart (by design, same as rule 4), and app.js's
-    // own `installHooks();` (its first statement) already runs before any
-    // of those callbacks ever could.
+    // main.js excluded, same as rule 4's own call above and for the same
+    // reason: its top level IS the ordered init list, and its own
+    // `installHooks();` (the first statement) runs before any init could
+    // reach a port.
     if (portSet.size) for (const [rel, parsed] of parsedByFile) {
-      if (rel === "main.js" || rel === LEGACY_CONTAINER) continue;
+      if (rel === "main.js") continue;
       violations.push(...ruleNoTopLevelPortCalls(parsed.ast, portSet));
     }
   }
