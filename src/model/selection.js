@@ -650,3 +650,32 @@ export function removeDuplicateNotes() {
   S.multiSel = dups; S.multiSelKey = new Set(dups.map(x => x.ti + ":" + x.ni));
   return deleteSelection();
 }
+
+export function moveSelectionToTrack(target, dT = 0) { // ⇄ / tracks-view retrack: keeps pitch; dT slides time
+  if (!editableSong() || !S.song.tracks[target] || S.song.tracks[target].kind === "audio") return 0;
+  const items = selEditItems().filter(({ti}) => ti !== target &&
+    (S.mvFromFilter === null || ti === S.mvFromFilter));
+  if (!items.length) return 0;
+  const tr = S.song.tracks[target], isAdd = !isComposition();
+  const added = [], erased = [];
+  for (const it of items) {
+    const n = it.n;
+    const nt = Math.max(0, n.t + dT);
+    tr.notes.push({t: nt, d: n.d, p: n.p, v: n.v, duty: n.duty, added: isAdd});
+    if (S.song.rawNotes) S.song.rawNotes[target].push({t: nt + S.chopS, d: n.d, p: n.p, v: n.v, added: isAdd});
+    added.push({ti: target, ni: tr.notes.length - 1});
+    n.gone = true;
+    const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[it.ti][n.ri];
+    if (rn) rn.gone = true;
+    erased.push({ti: it.ti, ni: it.ni});
+  }
+  pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
+  S.multiSel = added.slice();
+  S.multiSelKey = new Set(added.map(({ti, ni}) => ti + ":" + ni));
+  S.selNote = null;
+  saveEdits();
+  computeSongEnd();
+  if (S.viewMode === "score") buildScoreModel();
+  draw();
+  return items.length;
+}
