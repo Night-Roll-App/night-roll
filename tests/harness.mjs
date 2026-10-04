@@ -447,6 +447,19 @@ function scopeProxy(mods, metaByAbs) {
       const info = metaByAbs.get(abs).names.find(x => x.name === n);
       if (!info?.mutable) throw new TypeError(`"${n}" is const in ${path.basename(abs)}`);
       mods.get(abs).namespace.__nr$.set[n](v);
+      // A hooks.js port (docs/split-phase2-plan.md §1 M1: "every test's
+      // run("setInfo = …") rebinds the port and all importers see it"): a
+      // SAME-layer caller may not use the port (check.mjs rule 10) and imports
+      // the body as `XImpl as X` instead, so the body is rebound too or the
+      // stub never reaches it (phase 2 step 8: appConfirm stubbed, the real
+      // confirm sheet awaited a tap forever from import/hub.js). The reverse
+      // needs nothing - wire.js forwards through the live import binding, so
+      // `XImpl = f` already reaches every port caller.
+      if (/[\\/]hooks\.js$/.test(abs)) {
+        const implAbs = ownerOf.get(n + "Impl");
+        const implInfo = implAbs === undefined ? null : metaByAbs.get(implAbs).names.find(x => x.name === n + "Impl");
+        if (implInfo?.mutable) mods.get(implAbs).namespace.__nr$.set[n + "Impl"](v);
+      }
       return true;
     },
   });

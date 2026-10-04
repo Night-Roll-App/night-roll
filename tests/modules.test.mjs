@@ -429,6 +429,21 @@ test("hooks.js rebinding: same for draw() — a lower-layer caller (simulated he
   assert.equal(app.run("S.sceneValid"), true); // drawImpl never ran
 });
 
+test("hooks.js rebinding reaches a SAME-layer alias importer too (docs/split-phase2-plan.md step 8): run(\"appConfirm = …\") rebinds hooks.js's port AND its body appConfirmImpl (ui/chrome.js), so a layer-4 caller that imports `appConfirmImpl as appConfirm` (check.mjs rule 10 forbids it the port — import/hub.js, import/capture.js, ui/sheets.js) sees the stub; before this the real confirm sheet awaited a tap forever under test", async () => {
+  const app = await createApp();
+  app.run('appConfirm = async () => "stubbed";');
+  assert.equal(app.run("appConfirmImpl === appConfirm"), true); // the body binding followed the port
+  assert.equal(await app.run('appConfirmImpl("x", "y")'), "stubbed");
+  // the reverse needs no harness help: wire.js forwards through the live
+  // import binding, so rebinding the body alone already reaches port callers
+  app.run("S.sceneValid = true; drawImpl = () => { S.__testImplSeen = true; };");
+  app.run("draw()"); // the port, as a lower layer would call it
+  assert.equal(app.run("S.__testImplSeen"), true);
+  assert.equal(app.run("S.sceneValid"), true); // the real drawImpl never ran
+  // a non-port name with an Impl-suffixed neighbour is NOT coupled: only hooks.js's own declarations are ports
+  assert.equal(app.run("typeof S.hooks.appConfirm"), "function");
+});
+
 test("hooks.js rebinding: same for srAnnounce() (docs/split-phase2-plan.md step 4b) — a lower-layer caller (simulated: the play-gate transport) gets the rebound body, the real srAnnounceImpl (ui/chrome.js) bypassed", async () => {
   const app = await createApp();
   app.run("S.srLastText = null;"); // srAnnounceImpl sets this on every real call — the tell that it ran
