@@ -23,6 +23,14 @@ import { folderWrite } from "../platform/folder.js";
 import { writeMidi } from "../midi/write.js";
 import { serializeRollnotesStamped } from "./rollnotes.js";
 import { notesTxtFor } from "./rollnotes.js";
+import { readData } from "../platform/folder.js";
+import { parseMidi } from "../midi/parse.js";
+import { bakesMeter } from "./provenance.js";
+import { bakesTempo } from "./provenance.js";
+import { annotationsFor } from "./rollnotes.js";
+import { resolveNoteWith } from "./rollnotes.js";
+import { bakeTempos } from "./rollnotes.js";
+import { bakeMeter } from "./rollnotes.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -283,4 +291,57 @@ export async function filesMirrorFor(key, doc, content) {
     await folderWrite(base + ".notes.txt", notesTxtFor(doc, key), root);
     return true;
   } catch (err) { return false; }
+}
+
+// d.timesigs: Q9's baked meter (docs/provenance-plan.md) — undefined on anything that doesn't bake one, so this widens musicSig exactly the way adding tempos did (Bugs found): a meter-only change now republishes the .mid too
+// A draft from before the fingerprint: read the published .mid once and let
+// "edited" follow the comparison — "edited" means "differs from what is
+// published". Not when the repo is NEWER than the draft's base (that is the
+// newer-save question, asked elsewhere). The first cut also demanded equal
+// stamps, and Threnody's never were: it stayed "edited" with Compare showing
+// +0 −0 ~0 (Josh, 2026-09-29). true when the draft changed.
+export async function draftFingerprint(path, d, repoStamp) {
+  if (!d || !d.dirty || d.pubSig || !repoStamp || !d.tracks) return false;
+  const unstamped = !d.savedStamp; // "never saved" on a song the repo HAS (Carnival, Josh 2026-09-29)
+  if (!unstamped && repoStamp > d.savedStamp) return false;
+  let sig;
+  try {
+    const r = await readData("songs", path);
+    if (!r.ok) return false;
+    const pub = parseMidi(await r.arrayBuffer());
+    // pub.timesig is parseMidi's singular field (the FIRST 0x58 event) — for
+    // a non-foreign file that's the whole story, since a composition/copy/
+    // import bakes at most one meter for the whole song (bakeMeter's own
+    // comment: "one meter per song"); same one-event shape bakeMeter
+    // produces, so it lines up with dTimesigs below. Only compared when
+    // this song's origin bakes a meter at all (bakesMeter) — the same gate
+    // publishSong itself uses for whether timesigs gets written.
+    sig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks),
+      ...(bakesMeter(path) ? {timesigs: [{tick: 0, num: pub.timesig[0], den: pub.timesig[1]}]} : {})});
+  } catch (err) { return false; } // offline: stays "edited" until later
+  // pub.tempos is already baked (it's what's in the file); d.tempos is the
+  // draft's un-baked base (see draftDoc) — bake it the same way before
+  // comparing, or a song with an active tempo: annotation always disagrees
+  // with itself here (the Cool B Major Progression bug, one level up). Same
+  // idea for meter (Q9, docs/provenance-plan.md): d.timesig is the draft's
+  // un-baked base pair — bake it with the SAME notes fetch (bakesTempo and
+  // bakesMeter always agree per RULES, so one annotationsFor covers both).
+  let dTempos = d.tempos, dTimesigs;
+  if (bakesTempo(path) || bakesMeter(path)) {
+    try {
+      const ts = d.timesig || [4, 4];
+      const notes = (await annotationsFor(path)).map(n => resolveNoteWith({...n}, d.ppq, ts));
+      if (bakesTempo(path)) dTempos = bakeTempos(d.tempos, notes, d.ppq);
+      if (bakesMeter(path)) dTimesigs = bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], notes);
+    } catch (err) { /* fetch hiccup: compare on the un-baked base — worst case, the newer-save question gets asked once more */ }
+  }
+  const same = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: dTempos, timesigs: dTimesigs}) === sig;
+  // an unstamped draft adopts the repo's stamp only when its music IS the
+  // published music; otherwise which is newer is unknown, and the newer-save
+  // question must still be asked — nothing here may mask another device's save
+  if (unstamped) { if (!same) return false; d.savedStamp = repoStamp; }
+  d.pubSig = sig;
+  d.dirty = !same;
+  try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ }
+  return true;
 }
