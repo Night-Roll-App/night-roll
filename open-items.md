@@ -32,6 +32,29 @@ iPad: the black-key offsets, the bar at phone width (wraps under 560 px),
 two-finger scroll vs chord feel. Remaining from §1a: Logic's Scale mode
 (gated on a declared key — Learning rules), Sustain as a hold button.
 
+## Quiz page — DONE 2026-10-04 (docs/plans/2026-10-04-quiz.md, Fable-
+reviewed; Josh: "build some quiz stuff too. Just keep it isolated"). A
+standalone `quiz/` at the repo root, NOT linked from the app, not in the
+iPad package: the quizzes.md bank one question at a time (Got it / Shaky /
+Missed, five-box Leitner, the file's marks read never written, no answers
+anywhere — a logged "(Answered …)" note is behind a tap after the grade)
+plus generated drills (interval by ear / staff / keys, chord quality, scale
+degree, key signatures, spelling in a key — generic, never a song; a miss
+reveals nothing). Open at `/quiz/`. Shipped WITH the sw.js bypass (U3,
+nr-v35): a navigation to quiz/ or privacy.html would have overwritten the
+cached app shell. Where it WOULD be integrated (file + function) is in
+docs/quiz.md — View ▾ → Tools → Quiz, a help-sheet entry, an AI "quiz me"
+hook; none wired until Josh says so. Branch: a worktree branch (not yet
+merged/pushed); one commit per unit U1–U4. To eyeball in the real browser
+(main session, per the plan): console clean at 375 px and 1024 px, one
+bank question, ▶ Hear it sounds after a tap, the staff drill draws; after
+U3 the app still opens offline. Decisions taken without asking: the
+starting box comes from the file's mark (`[x]` → 2, `[~]` → 1, else 0);
+drills never reveal the answer (choices dim, keep going); the enharmonic
+twin is a distractor in the spelling drill and is not accepted; progress
+is device-local only (syncing it is the "Quiz platform" entry below,
+awaiting his ruling).
+
 ## Playhead strip — DONE 2026-10-03 (Josh: "if I could click that spot
 under the ruler I wouldn't have that problem"). A thin band under the
 ruler, right above the notes, in Roll/Tracks/Score: tap moves the cursor,

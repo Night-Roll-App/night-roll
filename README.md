@@ -84,6 +84,9 @@ Analysis happens in dialogue, not in bulk — see each album's README. Working
 docs at the root: [open-items.md](open-items.md) (questions and owed
 exercises), [quizzes.md](quizzes.md) (spaced-recall bank),
 [supplemental-learning.md](supplemental-learning.md) (session log).
+The bank also runs as a standalone page — `quiz/` (open `/quiz/` on the
+served site; self-graded, Leitner-scheduled, plus generated ear and sight
+drills; not linked from the app on purpose — see [docs/quiz.md](docs/quiz.md)).
 
 ## Development
 

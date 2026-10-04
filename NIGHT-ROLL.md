@@ -5701,6 +5701,77 @@ logged "audio asleep ×7" while the music played on. On return, a context
 that is running and playing is left alone, and only one wake runs at a
 time; a rebuild still happens only inside a tap.
 
+## Quiz page (quiz/) — standalone, not linked (2026-10-04)
+
+docs/plans/2026-10-04-quiz.md (Fable-reviewed); the full write-up and the
+exact integration points are docs/quiz.md. Josh: "build some quiz stuff
+too. Just keep it isolated" — so `quiz/` sits at the repo root, NOT under
+src/ (check.mjs rule 8 would force it into the modulepreload list, sw.js
+`APP_MODULES` and devtools.js, which imports every module at app boot —
+the opposite of isolated). Open it at `/quiz/` (localhost:8000/quiz/ or
+the Pages URL); nothing in the app points at it; tools/package.mjs never
+copies it (TOP_DIRS), so it is not in the iPad app.
+
+- Files: `quiz/index.html` (own doctype/viewport, no manifest, no SW
+  registration, classic `vendor/vexflow.js` then `main.js`), `quiz.css`
+  (css/app.css's `:root` tokens COPIED — tests/quiz.test.mjs fails on
+  drift — never linked: 65 KB of app layout would fight the page),
+  `main.js` wiring, `bank.js` (quizzes.md parser), `srs.js` (five-box
+  Leitner), `drills.js` (generators + grading), `tone.js` (WebAudio
+  oscillator, created inside the first tap for iOS), `ui.js` (the ONLY
+  file that touches `document`).
+- Allowed app imports, enforced by test: `src/theory/chords.js`,
+  `src/theory/key.js` (pure functions; its `S` import is read only by
+  fileKeyAt/checkMeterVsFile, which the quiz never calls), `src/ui/piano.js`
+  (DOM-free key geometry — the keys drill draws with `pianoGeom`). Nothing
+  from audio/, chrome, session/, ask/, model/, platform/.
+- Bank: `fetch("../docs/learning/quizzes.md")`, falling back to
+  `../quizzes.md` (whichever the repo tidy has left). Sections = `##`/`###`
+  headings (the "## Protocol" section and its ### children are skipped —
+  instructions, not questions); questions = `- ` list items, indented lines
+  continue them; `[ ]/[x]/[~]` marks are read (starting box 0/2/1) and never
+  written; a trailing "(Answered …)" parenthetical with no `?` in it is a
+  `note`, shown only after the grade and only on a tap. The id is FNV-1a of
+  the normalized text, so progress survives whitespace edits and
+  reordering. Pick order = quizzes.md's own: lowest box, then longest since
+  asked; Got it = box+1, Shaky (`[~]`) = box 1, Missed = box 0; rest 0/1/3/7/21
+  days. No answers anywhere — the page never invents one.
+- Drills: generic only (Learning mode — never a song, never his music; the
+  test scans quiz/*.js for `ff1roll-notes`, `ff1roll-draft`, `albums/`,
+  `S.song`). Interval ear/staff/keys, chord quality ear, scale degree ear,
+  key signatures both directions, spelling in a key (the enharmonic twin
+  is a distractor and is NOT accepted — `checkAnswer` honours
+  `drill.enharmonicOk`, false for spelling). A miss dims the choice and
+  says "not that one"; nothing is revealed; the first-try streak drives the
+  level (`levelFor`: five in a row per level, three levels).
+- Device-local keys `ff1roll-quiz-srs` / `ff1roll-quiz-prefs`, every access
+  in try/catch (the footer says when storage is blocked). Verified: the app's
+  `askEvictOthers` only touches `ff1roll-ask-*` and `hasExistingNightRollPrefs`
+  only checks lastsong/cfg/ghtoken/notes-/draft-, so the quiz keys can
+  neither be evicted by nor flip anything in the app.
+- **sw.js bypass (the hazard that had to ship WITH the page):** every
+  in-scope navigation went through `networkFirst(req, {key: "index.html"})`,
+  whose `c.put` would have overwritten the cached app shell with the quiz
+  page (privacy.html had the same latent bug). One early return before the
+  navigate branch — `if (rel === "privacy.html" || rel.startsWith("quiz/"))
+  return;` — `SW_VERSION` nr-v35; tests/pwa.test.mjs pins it before the
+  navigate branch and after `rel` is computed. quiz/ is therefore online-only
+  (not precached, not served from cache).
+- Tests: tests/quiz.test.mjs (`"quiz"` in tools/run-tests.mjs FILES): the
+  real quizzes.md parsed and counted independently; Leitner promotion/
+  demotion/due/pick order; 500 seeded draws per drill kind and level
+  (validity, coverage, every key a real signature by `keyNameToSf`); the
+  enharmonic rule; the import whitelist; the Learning-mode scan; no native
+  dialogs; the package TOP_DIRS; token drift; a stub-DOM smoke that renders
+  every view and plays every drill kind (miss, then hit).
+- Integration points (NOT wired; docs/quiz.md has file + function): View ▾
+  → Tools → Quiz (index.html `#vwToolsRow` after `#cofbtn`; wiring in
+  src/input/gestures.js `initGestures2()`; `CONTROLS` registration), a
+  help-sheet `<dt>Quiz</dt>` under `data-hsec="explore"` + build_help +
+  FEATURES keyword, an AI "quiz me" hook (src/ask/context.js `askContext`'s
+  `S.askGeneral` branch, or a `read_quiz_bank` tool in src/ask/tools.js
+  `ASK_TOOLS` + `askRunTool`).
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +
@@ -5748,6 +5819,10 @@ WebLLM CDN pass through untouched):
   device yet" in the info strip, and returns false (the old CDN-blip hang
   in open-items is closed by this).
 - `sw.js`, `404.html`: never intercepted.
+- `quiz/**`, `privacy.html` (2026-10-04, SW_VERSION nr-v35): never
+  intercepted either — they are their own pages, and the navigate branch
+  below writes whatever it fetched under the key `index.html`, so a visit
+  to either would have replaced the cached app shell (see "Quiz page").
 One cache, `night-roll-<SW_VERSION>`; a new version drops the old
 cache on activate (`skipWaiting` + `clients.claim`). Kill switch:
 `?sw=0` unregisters and clears (the PERF_FLAGS reader). The File menu's
