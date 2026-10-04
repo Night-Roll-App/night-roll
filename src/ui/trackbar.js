@@ -237,3 +237,38 @@ export function renderTrackbarImpl() {
   fitTrackRow(); // settle stacking in THIS frame: a frame later the roll shifted under whatever was just measured (a tap, an e2e drag)
 }
 renderTrackbarImpl = prof("renderTrackbar", renderTrackbarImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+export function initTrackbar1() {
+  document.getElementById("trackmore").addEventListener("click", () => {
+    S.trackExpand = !S.trackExpand;
+    updateTrackMore();
+  });
+  if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
+    const tr = document.getElementById("trackrow");
+    if (tr) new ResizeObserver(scheduleFitTrackRow).observe(tr); // the row's WIDTH changes with the window/dock; stacking only changes its height
+    const tb = document.getElementById("trackbar");
+    if (tb && typeof MutationObserver === "function") new MutationObserver(scheduleFitTrackRow).observe(tb, {childList: true}); // tracks added/removed change the need
+  }
+  // slide the whole chip cluster away when the row feels noisy (Josh, 2026-08-15)
+  {
+    const slide = document.getElementById("trackslide");
+    const tog = document.getElementById("tracktoggle");
+    const apply = hidden => {
+      slide.classList.toggle("off", hidden);
+      tog.textContent = hidden ? "▸" : "◂";
+      tog.setAttribute("aria-label", hidden ? "Show tracks" : "Hide tracks");
+      if (!hidden) updateTrackMore();
+    };
+    tog.addEventListener("click", () => {
+      const hidden = !slide.classList.contains("off");
+      localStorage.setItem("ff1roll-tracks-hidden", hidden ? "1" : "0");
+      apply(hidden);
+    });
+    // re-measure once the slide animation actually finishes — measuring at a
+    // transitional width wrapped chips onto phantom rows (Josh's toggle bug)
+    slide.addEventListener("transitionend", () => {
+      if (!slide.classList.contains("off")) updateTrackMore();
+    });
+    apply(localStorage.getItem("ff1roll-tracks-hidden") === "1");
+  }
+}

@@ -1504,6 +1504,7 @@ import { initNoteEditor6 } from "./ui/note-editor.js";
 import { initNotes1 } from "./ui/notes.js";
 import { initNotes2 } from "./ui/notes.js";
 import { initNotes3 } from "./ui/notes.js";
+import { initTrackbar1 } from "./ui/trackbar.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1610,38 +1611,7 @@ S.RULER_H = S.STRIP_Y + STRIP_H;
  initChrome2();
 
  
-document.getElementById("trackmore").addEventListener("click", () => {
-  S.trackExpand = !S.trackExpand;
-  updateTrackMore();
-});
-if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
-  const tr = document.getElementById("trackrow");
-  if (tr) new ResizeObserver(scheduleFitTrackRow).observe(tr); // the row's WIDTH changes with the window/dock; stacking only changes its height
-  const tb = document.getElementById("trackbar");
-  if (tb && typeof MutationObserver === "function") new MutationObserver(scheduleFitTrackRow).observe(tb, {childList: true}); // tracks added/removed change the need
-}
-// slide the whole chip cluster away when the row feels noisy (Josh, 2026-08-15)
-{
-  const slide = document.getElementById("trackslide");
-  const tog = document.getElementById("tracktoggle");
-  const apply = hidden => {
-    slide.classList.toggle("off", hidden);
-    tog.textContent = hidden ? "▸" : "◂";
-    tog.setAttribute("aria-label", hidden ? "Show tracks" : "Hide tracks");
-    if (!hidden) updateTrackMore();
-  };
-  tog.addEventListener("click", () => {
-    const hidden = !slide.classList.contains("off");
-    localStorage.setItem("ff1roll-tracks-hidden", hidden ? "1" : "0");
-    apply(hidden);
-  });
-  // re-measure once the slide animation actually finishes — measuring at a
-  // transitional width wrapped chips onto phantom rows (Josh's toggle bug)
-  slide.addEventListener("transitionend", () => {
-    if (!slide.classList.contains("off")) updateTrackMore();
-  });
-  apply(localStorage.getItem("ff1roll-tracks-hidden") === "1");
-}
+initTrackbar1();
  
  
  initNoteEditor1();
