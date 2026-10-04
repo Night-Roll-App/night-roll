@@ -1460,6 +1460,9 @@ import { goBackToPublished } from "./ui/sheets.js";
 import { dpSteps } from "./ui/sheets.js";
 import { dpDefault } from "./ui/sheets.js";
 import { applyTextSize } from "./ui/sheets.js";
+import { insertChordAt } from "./model/selection.js";
+import { insertProgressionAt } from "./model/selection.js";
+import { dedupeSong } from "./model/selection.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2782,74 +2785,7 @@ document.getElementById("mettap").addEventListener("click", () => {
   }
 });
 
-                  function dedupeSong() { // 🧹 back by demand (Josh 2026-08-18: old drafts keep
-  // re-saving pre-guard stacks over the cleaned repo file — HE runs it, HE
-  // saves). Whole song, every track; exact same start+pitch WITHIN one track
-  // collapses to the longest; cross-track unisons untouched by construction.
-  if (!editableSong()) return 0;
-  const erased = [];
-  S.song.tracks.forEach((tr, ti) => {
-    const best = new Map();
-    tr.notes.forEach((n, ni) => {
-      if (n.gone) return;
-      const k = n.t + ":" + n.p;
-      const prev = best.get(k);
-      if (!prev) { best.set(k, {ni, d: n.d}); return; }
-      const loser = n.d > prev.d ? prev.ni : ni;
-      if (n.d > prev.d) best.set(k, {ni, d: n.d});
-      const ln = tr.notes[loser];
-      ln.gone = true;
-      const rn = S.song.rawNotes && ln.ri !== undefined && S.song.rawNotes[ti][ln.ri];
-      if (rn) rn.gone = true;
-      erased.push({ti, ni: loser});
-    });
-  });
-  if (!erased.length) return 0;
-  pushUndo({kind: "eraseBatch", items: erased});
-  S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  draw();
-  return erased.length;
-}
-function insertChordAt(tick, rootPc, qual, oct, durQ) {
-  if (!editableSong()) return 0;
-  // P4 (docs/annotations-v2.md): closes P3's gap — this tool writes a chord
-  // BAND (an annotation, stampChordBand below) along with the notes; a
-  // locked song refuses the whole gesture rather than leave the band out
-  if (S.rollnotesReadOnly) { setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return 0; }
-  const annoBefore = annoSnapshot(); // the ruler band undoes with the notes (Josh, 2026-09-12)
-  const ivs = (CHORD_QUALS.find(([q]) => q === qual) || CHORD_QUALS[0])[1];
-  const snap = Math.max(1, Math.round(S.song.ppq * (durQ || S.pencilDur)));
-  const t0 = Math.max(0, Math.round(tick / snap) * snap);
-  const base = (oct + 1) * 12 + rootPc;
-  const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
-  const added = [];
-  for (const iv of ivs) {
-    const p = base + iv;
-    if (p < S.PMIN || p > S.PMAX) continue;
-    if (tr.notes.some(n => !n.gone && n.t === t0 && n.p === p)) continue; // never stack
-    tr.notes.push({t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: t0 + S.chopS, d: snap, p, v: S.pencilVel, added: isAdd});
-    added.push({ti: S.selTrack, ni: tr.notes.length - 1});
-  }
-  if (!added.length) return 0;
-  pushUndo({kind: "group", entries: [{kind: "anno", json: annoBefore}, {kind: "addBatch", items: added}]});
-  S.multiSel = added.slice();
-  S.multiSelKey = new Set(added.map(({ti, ni}) => ti + ":" + ni));
-  S.selNote = null;
-  stampChordBand(t0, snap, chordSym(rootPc, qual));
-  finalizeNotes();
-  saveLocalNotes();
-  S.playCursor = t0 + snap; // walk forward: the next insert lands right after
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  draw();
-  return added.length;
-}
-{
+                  {
   const roots = document.getElementById("chroots"), quals = document.getElementById("chquals");
   const preview = () => { document.getElementById("chpreview").textContent = chordLabel(); };
   roots.innerHTML = CHORD_ROOTS.map((r, i) =>
@@ -2892,44 +2828,7 @@ function insertChordAt(tick, rootPc, qual, oct, durQ) {
               : "couldn't insert — check the octave fits the C1..C7 range");
   });
 }
- function insertProgressionAt(tick, progStr, tonicPc, oct, durQ, minorScale) {
-  if (!editableSong()) return 0;
-  const chords = splitProgression(progStr).map(t => parseNumeral(t, minorScale));
-  if (!chords.length || chords.some(c => !c)) return 0;
-  const annoBefore = annoSnapshot(); // the bands undo with the notes (Josh, 2026-09-12: undo left them behind)
-  const snap = Math.max(1, Math.round(S.song.ppq * (durQ || S.pencilDur)));
-  let t0 = Math.max(0, Math.round(tick / snap) * snap);
-  const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
-  const added = [];
-  for (const c of chords) {
-    const ivs = CHORD_QUALS.find(([q]) => q === c.qual)[1];
-    const base = (oct + 1) * 12 + ((tonicPc + c.pcOff) % 12);
-    for (const iv of ivs) {
-      const p = base + iv;
-      if (p < S.PMIN || p > S.PMAX) continue;
-      if (tr.notes.some(n => !n.gone && n.t === t0 && n.p === p)) continue; // never stack
-      tr.notes.push({t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
-      if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: t0 + S.chopS, d: snap, p, v: S.pencilVel, added: isAdd});
-      added.push({ti: S.selTrack, ni: tr.notes.length - 1});
-    }
-    stampChordBand(t0, snap, chordSym((tonicPc + c.pcOff) % 12, c.qual));
-    t0 += snap;
-  }
-  if (!added.length) return 0;
-  pushUndo({kind: "group", entries: [{kind: "anno", json: annoBefore}, {kind: "addBatch", items: added}]}); // notes + bands = one undo
-  finalizeNotes();
-  saveLocalNotes();
-  S.multiSel = added.slice();
-  S.multiSelKey = new Set(added.map(({ti, ni}) => ti + ":" + ni));
-  S.selNote = null;
-  S.playCursor = t0;
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  draw();
-  return added.length;
-}
-{
+ {
   const panel = document.getElementById("progpanel");
   panel.innerHTML =
     '<div class="row" style="flex-wrap:wrap;gap:6px;padding:4px 2px 8px">' +
@@ -5227,4 +5126,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};
+export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};
