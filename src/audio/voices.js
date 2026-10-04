@@ -8,6 +8,15 @@ import { titleCompare } from "../model/catalog.js";
 import { vaultFetch } from "./chip.js";
 import { idbSf2Get } from "../platform/storage.js";
 import { idbSf2Put } from "../platform/storage.js";
+import { playGateKick } from "./transport.js";
+import { logErr } from "../hooks.js";
+import { scheduleClip } from "./clips.js";
+import { chipActive } from "./chip.js";
+import { chip } from "./chip.js";
+import { chipHas } from "./chip.js";
+import { trackIsDrums } from "../model/grid.js";
+import { drumHit } from "./engine.js";
+import { prof } from "../state.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -513,3 +522,120 @@ export function sf2Font(slug) {
   if (!sf2Fonts.has(slug)) sf2Fonts.set(slug, sf2Bytes(slug).then(async b => (await sf2Module()).parseSf2(b)));
   return sf2Fonts.get(slug);
 }
+
+// kept for the first-touch hook; the preload no longer waits for it
+export function sfPreloadForSong() { // warm every pitch a sampled track actually plays
+  if (!S.song) return;
+  S.sfPreloadPending = false;
+  S.song.tracks.forEach((tr, ti) => {
+    const file = sfFileFor(trackVoice(ti));
+    if (!file) return;
+    const ps = new Set();
+    for (const n of tr.notes) if (!n.gone) ps.add(n.p);
+    ps.add(69); // the preview pitch
+    ps.forEach(p => sfDecode(file, p));
+  });
+  playGateKick();
+}
+export async function sfWaitForSong(capMs) { // resolve when this song's sampled pitches are decoded, or at the cap
+  if (!S.song) return;
+  sfPreloadForSong(); // make sure every request exists
+  const waits = [];
+  let name = null;
+  S.song.tracks.forEach((tr, ti) => {
+    const v = trackVoice(ti), file = sfFileFor(v);
+    if (!file) return;
+    const bank = sfBank[file];
+    for (const n of tr.notes) {
+      if (n.gone || bank.buffers[n.p] || !bank.pending[n.p]) continue;
+      waits.push(bank.pending[n.p]);
+      if (!name) name = (VOICES.find(([id]) => id === v) || [, v])[1];
+    }
+  });
+  if (!waits.length) return;
+  setInfo("loading " + name + "…");
+  await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
+}
+export const gamePreloadTokens = new Map(); // voice -> the in-flight/settled preload promise, for gameWaitForSong to await
+export function gamePreloadForSong() { // warm every game/sf2 voice's library or font this song's tracks actually use
+  if (!S.song) return;
+  gameVoicesInSong().forEach(({vault, instId, voice}) => {
+    if (gamePreloadTokens.has(voice)) return; // already loading/loaded this session
+    gamePreloadTokens.set(voice, (async () => {
+      const realVault = await resolveGameVault(vault); // an old, pre-reorg vault resolves to its album's current one — gameLibSync stays keyed by the ORIGINAL vault below, so every reader (resolveVoiceInstrument) keeps finding it under the id it parsed
+      const lib = await instLibrary(gameVoiceVault(realVault));
+      const inst = lib.instruments.find(i => i.id === instId);
+      gameLibSync.set(vault, {lib, samples: (gameLibSync.get(vault) || {}).samples || {}});
+      if (!inst) return; // scheduleGameNote falls back and warns — see above
+      const P = await instPlayerReady();
+      const pitches = new Set([60]); // a sane default even if a track has no notes yet
+      S.song.tracks.forEach(tr => { if (tr.voice === voice) for (const nn of tr.notes) if (!nn.gone) pitches.add(nn.p); });
+      const hashes = new Set();
+      pitches.forEach(p => { const r = P.regionFor(inst, p, 100); if (r) hashes.add(r.sample); });
+      const samples = await instSamples(gameVoiceVault(realVault), lib, [...hashes]);
+      const entry = gameLibSync.get(vault);
+      Object.assign(entry.samples, samples);
+    })().catch(err => logErr("⚠ game instrument " + voice + " didn't load: " + err.message)));
+  });
+  // a soundfont is one self-contained file (unlike a game library's instruments.json
+  // + many separate WAVs): sf2Font already fetches-and-parses-once (every sample it
+  // could need, decoded), so there is no per-pitch lazy step here — just load it and
+  // remember it under its slug (+ warm instPlaySync, same as the game loop above —
+  // scheduleGameNote needs it regardless of which kind of voice got it going)
+  sf2VoicesInSong().forEach(({slug, voice}) => {
+    if (gamePreloadTokens.has(voice)) return;
+    gamePreloadTokens.set(voice, Promise.all([sf2Font(slug), instPlayerReady()]).then(([font]) => { sf2Sync.set(slug, font); })
+      .catch(err => logErr("⚠ soundfont " + voice + " didn't load: " + err.message)));
+  });
+  playGateKick(); // the tokens exist now: ▶ waits for them
+}
+export async function gameWaitForSong(capMs) { // resolve when this song's game/sf2 voices are ready, or at the cap
+  if (!S.song) return;
+  gamePreloadForSong(); // make sure every request exists
+  const voices = [...gameVoicesInSong(), ...sf2VoicesInSong()];
+  const waits = voices.map(({voice}) => gamePreloadTokens.get(voice)).filter(Boolean);
+  if (!waits.length) return;
+  setInfo("loading " + voices.length + " instrument voice" + (voices.length === 1 ? "" : "s") + "…");
+  await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
+}
+export function scheduleNote(ti, n, when, durSec) {
+  // transport-stopped guard: a pump/chase callback already in flight when Stop
+  // hit could still land here, wiring fresh gains to the master — those notes
+  // sat frozen in a suspended context and fired later when a pencil preview
+  // reopened it (Josh: "it just started playing, the cursor's not even moving")
+  if (!S.playing && !n._preview) return;
+  // never start an envelope in the past — WebAudio would skip the attack
+  // ramp and slam the oscillator on at full amplitude (audible click)
+  const when0 = when;
+  when = Math.max(when, S.audio.currentTime + 0.003);
+  // an audio clip: the bump above must ADVANCE into the file, not delay it
+  // (for a note 3ms late is nothing; for a take it is drift every pass)
+  if (n._clip) { scheduleClip(ti, n._clip, when, durSec - (when - when0)); return; }
+  // chip audio: the buffer IS this track's sound (auto voice only) — no oscillator doubles.
+  // A PREVIEW is exempt (Josh, 2026-08-29: tapping a note in an FF1 or Mega Man
+  // song made no sound). Nothing is sounding underneath a tap, so there is
+  // nothing to double; and the chip buffer is a whole-track render, so there
+  // is no way to sound one note from it. The preview uses the synth voice.
+  // …and only while chip sources are actually sounding: a render that lands
+  // MID-playback (the ▶ wait gave up, or the song was already rolling) set
+  // chip.key, which muted the synth here while chipStart never ran — cursor
+  // moving, nothing heard, on the SNES song and on the NES song after it
+  // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
+  if (!n._preview && chipActive() && (chip.stream ? chip.stream.live : chip.srcs.length) && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name) &&
+      (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto")) return;
+  // a game instrument OR a loaded soundfont's preset (assigned from the voice &
+  // color menu's Game instruments/Soundfonts families) renders through
+  // tools/instruments/play.mjs instead — its own function, since it neither drums
+  // nor uses the oscillator/sample path below (see "game instrument voices" above scheduleNote)
+  const gvoice = S.song.tracks[ti] && S.song.tracks[ti].voice;
+  if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
+  if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v, durSec); return; }
+  let v = trackVoice(ti);
+  // per-note chip timbre: NSF captures carry each pulse note's duty (the
+  // chip's instrument choice — 12.5% thin, 25% classic, 50% hollow; 75%
+  // mirrors 25%). Honored on auto voice; an explicit voice pick overrides.
+  if (n.duty !== undefined && (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto"))
+    v = ["square12", "square25", "square", "square25"][n.duty];
+  playSynthVoice(ti, n, when, durSec, v);
+}
+scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

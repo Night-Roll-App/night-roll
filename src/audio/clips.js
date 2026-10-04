@@ -20,6 +20,8 @@ import { buildSchedule } from "./transport.js";
 import { draw } from "../hooks.js";
 import { clipEndTick } from "../model/song.js";
 import { setInfo } from "../hooks.js";
+import { playSec } from "./transport.js";
+import { trackGain } from "./engine.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -342,4 +344,79 @@ export function deleteClip(ti, ci) { // the piece goes; the track stays
   writeClips(ti, tr.clips.filter((_, i) => i !== ci));
   S.selClip = null;
   setInfo("piece removed — one undo brings it back" + (tr.clips && tr.clips.length ? "" : " (the track stays; ✕ Delete track removes it)"));
+}
+
+export function stretchEnsure(file) { // the current rate's stretched buffer for a file: cached, pending, or kicked off now
+  const rate = S.playRate;
+  const k = stretchKey(file, rate);
+  let e = stretchCache.get(k);
+  if (e) return e;
+  const src = audioBufCache.get(audioCacheKey(file));
+  if (!src || src.status !== "ready" || !src.buffer) return null; // not decoded yet: nothing to stretch from
+  e = {status: "pending", buffer: null};
+  stretchCache.set(k, e);
+  const key = S.songKey;
+  stretchInWorker(src.buffer.getChannelData(0), rate).then(out => {
+    if (!stretchCache.has(k)) return; // rate moved on: this render was evicted
+    const sr = src.buffer.sampleRate;
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const ctxb = S.audio || (OAC ? new OAC(1, 1, sr) : null);
+    if (!ctxb) { stretchCache.delete(k); return; }
+    const b = ctxb.createBuffer(1, out.length, sr);
+    b.getChannelData(0).set(out);
+    e.buffer = b; e.status = "ready";
+    if (S.songKey === key) { if (S.playing) { buildSchedule(); audioChaseNow(file); } draw(); }
+  }).catch(() => { stretchCache.delete(k); });
+  return e;
+}
+// a take whose buffer arrives MID-PASS (decode or stretch finished while
+// playing) must not wait for the next wrap: schedule its remainder from now,
+// the way a note the cursor lands inside gets its tail
+export function audioChaseNow(file) {
+  if (!S.playing || !S.song || !S.audio || !S.loopSeg) return;
+  const now = playSec();
+  forEachClip((c, ti) => {
+    if (c.file !== file || !c.buffer) return;
+    const start = tickToSec(S.song, c.at), end = Math.min(start + clipLen(c) / S.playRate, S.loopSeg.end);
+    if (now < start - 0.05 || now >= end) return; // the pump will start it, or it is already over
+    const lead = 0.06;
+    scheduleClip(ti, c, S.audio.currentTime + lead, end - now - lead);
+  });
+}
+export function stretchEnsureAll() { // every file in the song, for the current rate; other rates are dropped (RAM)
+  if (!S.song || S.playRate === 1 || !keepPitch()) return;
+  for (const k of [...stretchCache.keys()]) if (!k.endsWith("|" + S.playRate)) stretchCache.delete(k);
+  const files = new Set();
+  forEachClip(c => files.add(c.file));
+  for (const f of files) stretchEnsure(f);
+}
+export function scheduleClip(ti, clip, when, durSec) { // durSec = WALL seconds left to play from `when`
+  if (!clip.buffer || durSec <= 0.01) return;
+  const off = clip.offset + clipLen(clip) - durSec * S.playRate; // buffer seconds: piece start + what has elapsed
+  if (off >= clip.buffer.duration) return;
+  let buffer = clip.buffer, startAt = Math.max(0, off), srcRate = S.playRate; // tape-style: pitch follows, like chip audio
+  if (S.playRate !== 1 && keepPitch()) {
+    const e = stretchEnsure(clip.file);
+    if (!e || e.status !== "ready") return; // still stretching: silent this pass, it joins the next
+    buffer = e.buffer; startAt = Math.max(0, off) / S.playRate; srcRate = 1; // the stretched copy runs at 1: pitch kept
+  }
+  const g = S.audio.createGain();
+  g.connect(trackGain(ti));
+  const R = 0.005, end = when + durSec; // 5ms ramps: a pass boundary cuts and restarts mid-waveform
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(1, when + R);
+  g.gain.setValueAtTime(1, Math.max(when + R, end - R));
+  g.gain.linearRampToValueAtTime(0, end);
+  const src = S.audio.createBufferSource();
+  src.buffer = buffer;
+  src.playbackRate.value = srcRate;
+  src.connect(g);
+  src.start(when, startAt);
+  src.stop(end + 0.01);
+  S.audioSrcs.push(src);
+  src.onended = () => { // prune, or the list grows one node per pass forever
+    const i = S.audioSrcs.indexOf(src);
+    if (i >= 0) S.audioSrcs.splice(i, 1);
+    try { g.disconnect(); } catch (err) { /* already gone */ }
+  };
 }
