@@ -20,6 +20,16 @@ import { folderWrite } from "../platform/folder.js";
 import { isCompositionKey } from "../model/provenance.js";
 import { isComposition } from "../model/provenance.js";
 import { repoApi } from "../platform/storage.js";
+import { editableSong } from "../model/song.js";
+import { saveDraft } from "../model/versions.js";
+import { readVersions } from "../model/versions.js";
+import { musicSig } from "../model/versions.js";
+import { draftDoc } from "../model/versions.js";
+import { pushVersion } from "../model/versions.js";
+import { flushBackupNow } from "../ui/chrome.js";
+import { logDebugImpl as logDebug } from "../ui/chrome.js";
+import { setInfoImpl as setInfo } from "../ui/chrome.js";
+import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -425,4 +435,73 @@ export async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: app
   }
   const now = askStore(key); // messages may have arrived meanwhile; only the snapshot is in the file
   askSave(now.msgs, {saved: now.saved + fresh.length}, key);
+}
+
+// ---- Deploy safeguard #2: a Version before every install. On deployWarn's
+// FIRST tick of a cycle, if the open song is editable and its music/
+// annotations differ from its newest Version, save one labelled "Before
+// update HH:MM" (the same Versions store File → Versions… reads) and flush
+// a backup right away too (#1) — belt and suspenders right before a relaunch.
+export function deployBeforeInstall() {
+  if (!S.song || !S.songKey || !editableSong()) return;
+  try {
+    saveDraft(false); // the working copy is what a Version snapshots — make sure it's current first
+    const list = readVersions(S.songKey); // newest LAST
+    const newest = list.length ? list[list.length - 1] : null;
+    // musicSig (not a raw-blob compare): a local/ draft's own seq stamp bumps
+    // on every saveDraft() (NIGHT-ROLL.md "Local song persistence") even when
+    // the music itself hasn't changed — comparing the full stored JSON would
+    // "detect" a change on every single tick. musicSig reads only ppq/tracks/
+    // tempos/timesigs, same fields Save Version's own dirty check uses.
+    const curSig = musicSig(draftDoc(false));
+    let curNotes = null; try { const n = localStorage.getItem("ff1roll-notes-" + S.songKey); curNotes = n ? JSON.parse(n) : null; } catch (err) { curNotes = null; }
+    const draftChanged = !newest || musicSig(newest.draft) !== curSig;
+    const notesChanged = !newest || JSON.stringify(newest.notes || null) !== JSON.stringify(curNotes);
+    if (draftChanged || notesChanged) {
+      const now = new Date(), hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      pushVersion(S.songKey, "Before update " + hhmm);
+      flushBackupNow();
+    }
+  } catch (err) { logDebug("deploy version: " + (err && err.message || err)); }
+}
+export async function deployInstallNow() {
+  const wasHeld = S.deployHeld;
+  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
+  catch (err) { logDebug("deploy install-now: " + (err && err.message || err)); }
+  deploySetHeld(false);
+  if (wasHeld) deployWarn(3000); else { S.deployAt = Date.now(); deployButtonTick(); }
+}
+export async function deployHoldNow() {
+  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: true})}); }
+  catch (err) { logDebug("deploy hold: " + (err && err.message || err)); }
+  deploySetHeld(true);
+}
+export function deployWarn(ms) {
+  const first = !S.deployTimer;
+  S.deployAt = Date.now() + ms;
+  if (first) {
+    setInfo("a new version installs in " + Math.ceil(ms / 1000) + " s — the app will restart");
+    S.deployTimer = setInterval(deployButtonTick, 1000);
+    deployBeforeInstall(); // safeguard #2 (+ a backup flush)
+  }
+  deployButtonTick();
+}
+export function deploySetHeld(on) {
+  on = !!on;
+  if (on === S.deployHeld) return;
+  S.deployHeld = on;
+  if (S.deployHeld) {
+    if (!S.deployTimer) S.deployTimer = setInterval(deployButtonTick, 1000); // held with no local countdown running yet (e.g. a fresh poll after a reload)
+    setInfo("update waiting — tap ✦ AI to install when you're ready");
+  }
+  deployButtonTick();
+}
+// a countdown or a hold is in effect: ✦ AI opens the install sheet, not the chat
+export async function deployAskTap() { // the "Not now" / "Install now" sheet (appConfirm — no native dialogs)
+  const yes = await appConfirm("Update ready", "A new version is ready. The app will restart.", "Install now", "Not now");
+  if (yes) {
+    await deployInstallNow();
+  } else {
+    await deployHoldNow();
+  }
 }
