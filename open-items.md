@@ -5666,3 +5666,6 @@ Build after the module-split branch merges (they touch render/input code the spl
 
 ## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)
 Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tetris album (17/17 GBS tracks captured; rip header "Tetris v1.0", Hirokazu Tanaka). Interval search (E B C D C B A A C E, any key, repeats collapsed) over every channel of every GB/NES Tetris capture: found ONLY in NES › Tetris (Bullet-Proof Software) track-01. "A-Type Music (version 1.1)" is a real, different song (Josh confirmed). Next: fetch another GB Tetris rip (Zophar GBS/m3u) and compare track lists/lengths — rip lacks it vs our capture garbled a track.
+
+## QUEUED 2026-10-04 — keyboard: stretch keys when the whole piano fits
+On a very wide window (3440 px) all 52 whites at 44 px take 2288 px and the panel's right third is empty. When the full range fits, widen the keys to fill (keep 44 px as the minimum). Small; main's src/app.js instGeom / ui/piano.js pianoKeyW.
