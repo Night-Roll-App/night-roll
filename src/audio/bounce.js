@@ -1,4 +1,26 @@
 import { nativeCall } from "../platform/native.js";
+import { S } from "../state.js";
+import { chip } from "./chip.js";
+import { sfWaitForSong } from "./voices.js";
+import { gameWaitForSong } from "./voices.js";
+import { forEachClip } from "./clips.js";
+import { audioEnsureFile } from "./clips.js";
+import { audioBufCache } from "./clips.js";
+import { audioCacheKey } from "./clips.js";
+import { keepPitch } from "./clips.js";
+import { stretchEnsureAll } from "./clips.js";
+import { stretchCache } from "./clips.js";
+import { stretchKey } from "./clips.js";
+import { stop } from "./transport.js";
+import { tickToSec } from "../midi/parse.js";
+import { MASTER_VOL } from "./engine.js";
+import { buildSchedule } from "./transport.js";
+import { updateTrackGains } from "./engine.js";
+import { trackGain } from "./engine.js";
+import { chipActive } from "./chip.js";
+import { chipStart } from "./chip.js";
+import { clipClamp } from "./clips.js";
+import { scheduleNote } from "./voices.js";
 
 export function midiBase64(bytes) { // btoa in chunks — big songs overflow the arg limit
   let bin = "";
@@ -60,4 +82,97 @@ export async function deliverAudioFile(blob, name) {
   const wrote = await nativeCall("Filesystem", "writeFile", {path: name, data, directory: "CACHE", recursive: true});
   if (!wrote || !wrote.uri) throw new Error("couldn't write the export to the app's cache (no Plugins.Filesystem, no nativePromise)");
   await nativeCall("Share", "share", {title: name, files: [wrote.uri]});
+}
+
+// mirrors play()'s preflight (sfWaitForSong/gameWaitForSong, the chip
+// resolve/render wait) plus audio-clip decode and time-stretch, which play()
+// leaves to catch up on a later loop pass — an offline bounce gets ONE pass,
+// so a clip not ready in time would otherwise render silent (scheduleClip:
+// "still stretching: silent this pass, it joins the next" — there is no next)
+export async function offlineWaitForAssets(capMs) {
+  if (!S.song) return;
+  if (chip.resolving && chip.resolving.key === S.songKey && chip.rendering !== S.songKey)
+    await Promise.race([chip.resolving.p.catch(() => {}), new Promise(r => setTimeout(r, capMs))]);
+  if (chip.rendering === S.songKey && chip.renderPromise)
+    await Promise.race([chip.renderPromise.catch(() => {}), new Promise(r => setTimeout(r, capMs))]);
+  await Promise.all([sfWaitForSong(capMs), gameWaitForSong(capMs)]);
+  const files = new Set();
+  forEachClip(c => files.add(c.file));
+  if (files.size) {
+    for (const f of files) audioEnsureFile(f); // kicks off decode for anything not already cached
+    const t0 = Date.now();
+    while (Date.now() - t0 < capMs && [...files].some(f => { const e = audioBufCache.get(audioCacheKey(f)); return !e || e.status === "decoding"; }))
+      await new Promise(r => setTimeout(r, 50));
+    if (S.playRate !== 1 && keepPitch()) {
+      stretchEnsureAll();
+      const t1 = Date.now();
+      while (Date.now() - t1 < capMs && [...files].some(f => { const e = stretchCache.get(stretchKey(f, S.playRate)); return !e || e.status !== "ready"; }))
+        await new Promise(r => setTimeout(r, 50));
+    }
+  }
+}
+// {ok:true, buffer} | {ok:false, why} — why is shown to Josh when the
+// real-time fallback also can't help (see the click handler)
+export async function renderSongOffline() {
+  if (!S.song) return {ok: false, why: "no song open"};
+  const OAC = typeof window !== "undefined" && (window.OfflineAudioContext || window.webkitOfflineAudioContext);
+  if (!OAC) return {ok: false, why: "this browser has no OfflineAudioContext"};
+  stop(); // export always starts from a clean stop — no live scheduler contends for the globals below
+  await offlineWaitForAssets(8000);
+  const durSec = tickToSec(S.song, S.songEndTick) / S.playRate + 1; // +1: the same tail pad the real-time capture always used, so a release isn't chopped
+  if (!(durSec > 0)) return {ok: false, why: "song has no notes to render"};
+  const rate = (S.audio && S.audio.sampleRate) || 44100;
+  let oac;
+  try { oac = new OAC(2, Math.max(1, Math.ceil(durSec * rate)), rate); }
+  catch (err) { return {ok: false, why: "couldn't create an offline context (" + (err && err.message || err) + ")"}; }
+  // Point the live engine's globals at the offline context for one
+  // synchronous scheduling pass, the way ensureAudio()/rebuildAudio() point
+  // them at a fresh live context — periodic waves (pulse25/pulse12/organWave)
+  // are tied to the context that made them (the same reason those get reset
+  // on every context rebuild), gain/panner nodes belong to one graph, and
+  // chip.buffers is cached per context (chipBuffers). Nothing here is
+  // awaited until startRendering(), so nothing else can see the swap.
+  const saved = {audio: S.audio, master: S.master, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+                 chipBuffers: chip.buffers, chipBuffersCtx: chip.buffersCtx,
+                 playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs};
+  S.audio = oac;
+  S.master = oac.createGain();
+  S.master.gain.value = MASTER_VOL * S.masterVol;
+  S.master.connect(oac.destination);
+  S.trackGains = []; S.trackPanners = [];
+  S.pulse25 = null; S.pulse12 = null; S.organWave = null;
+  // chip.buffers/buffersCtx are deliberately left as they are: chipBuffers()
+  // already rebuilds against whichever context `audio` names when the two
+  // disagree (that's how a live context REBUILD picks up a stale chip cache
+  // today), and a chip.buffers made from AudioBuffer directly (chipPcmToBuffers,
+  // the common case) has buffersCtx === null — "good in any context" — so
+  // nulling it here would have thrown away the only copy of the console audio
+  // once its Float32 source (chip.pcm) is already freed.
+  S.playing = true; S.playT0 = 0; S.playOffset = 0; S.loopPass = 0; S.albumEndAbs = null;
+  // the whole song, once, no loop: "Download audio" has always been
+  // documented as loop-off regardless of an armed ruler cycle (HELP.md
+  // "Download audio" says nothing about cycling), so this ignores rangeSel
+  // deliberately rather than reading play()'s `cycling` branch
+  S.loopSeg = {start: 0, end: tickToSec(S.song, S.songEndTick), looped: false};
+  let renderedBuffer = null, renderErr = null;
+  try {
+    buildSchedule();
+    updateTrackGains();
+    S.song.tracks.forEach((_, ti) => trackGain(ti));
+    if (chipActive()) chipStart(0);
+    for (const e of S.schedEvents) {
+      if (e.sec >= S.loopSeg.end) continue;
+      const dur = e.n._clip ? clipClamp(e.dur, S.loopSeg.end - e.sec) : e.dur;
+      if (dur > 0) scheduleNote(e.ti, e.n, e.sec, dur);
+    }
+  } catch (err) { renderErr = err; }
+  // put the live globals back BEFORE the (seconds-long) render: the nodes are
+  // already wired into the offline graph, and a note preview, a ▶ tap or the
+  // playhead during the render must see the live context, not this one
+  ({audio: S.audio, master: S.master, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+    playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs} = saved);
+  chip.buffers = saved.chipBuffers; chip.buffersCtx = saved.chipBuffersCtx;
+  if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }
+  if (renderErr) return {ok: false, why: "the offline render failed (" + (renderErr && renderErr.message || renderErr) + ")"};
+  return {ok: true, buffer: renderedBuffer};
 }
