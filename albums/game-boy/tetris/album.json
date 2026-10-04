@@ -5,6 +5,7 @@
   "2-player-mode-danger": "2 Player Mode: Danger!",
   "2-player-mode-game-over": "2 Player Mode: Game Over",
   "2-player-mode-round-over": "2 Player Mode: Round Over",
+  "a-type-music-version-1-0": "A-Type Music (version 1.0)",
   "a-type-music-version-1-1": "A-Type Music (version 1.1)",
   "b-type-game-level-9-high-0-ending": "B-Type Game: Level 9 High 0 Ending",
   "b-type-game-level-9-high-1-ending": "B-Type Game: Level 9 High 1 Ending",
@@ -34,10 +35,16 @@
     "secs": 6.2282867431640625,
     "track": 17
    },
-   "a-type-music-version-1-1": {
+   "a-type-music-version-1-0": {
     "n": 2,
     "secs": 38.5751953125,
     "track": 2
+   },
+   "a-type-music-version-1-1": {
+    "n": 2,
+    "secs": 38.5751953125,
+    "vault": "game-boy/tetris.dmg-tra-1.gbs",
+    "track": 3
    },
    "b-type-game-level-9-high-0-ending": {
     "n": 9,
