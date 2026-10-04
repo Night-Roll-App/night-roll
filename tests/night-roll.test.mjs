@@ -4912,6 +4912,16 @@ test("File → Share link shows the song's PUBLIC link — even inside the iPad 
   run(`document.getElementById("sharesheet").classList.remove("on"); APP_BASE = "https://night-roll-app.github.io/night-roll/"; songKey = null;`);
 });
 
+test("AI attach: picked photos survive the input reset — WebKit's live FileList empties when value is cleared (Josh, 2026-10-03, iPad)", () => {
+  installSong();
+  run(`globalThis.__got = null; askPickFiles = files => { __got = Array.from(files).map(f => f.name); };
+       { const inp = document.getElementById("askpickfile"); let live = [{name: "shot.png"}];
+         Object.defineProperty(inp, "files", {configurable: true, get: () => live});
+         Object.defineProperty(inp, "value", {configurable: true, get: () => "", set: () => { live.length = 0; }}); // WebKit: reset empties the live list in place
+         inp.dispatchEvent(new Event("change")); }`);
+  assert.deepEqual(val(`__got`), ["shot.png"]);
+});
+
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(val(`cfg().analysisRepo`), "Night-Roll-App/night-roll");

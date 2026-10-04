@@ -20520,7 +20520,11 @@ document.getElementById("askattachmenu").addEventListener("click", () => closeDr
 document.getElementById("askshot").addEventListener("click", askShotTake);
 document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
 document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());
-document.getElementById("askpickfile").addEventListener("change", e => { const files = e.target.files; e.target.value = ""; askPickFiles(files); });
+document.getElementById("askpickfile").addEventListener("change", e => {
+  // copy BEFORE clearing: e.target.files is live, and WebKit empties it when
+  // value is reset — the picker then "did nothing" (Josh, 2026-10-03, iPad)
+  const files = Array.from(e.target.files || []); e.target.value = ""; askPickFiles(files);
+});
 // when each note from the Mac (and each Terminal message) was sent — Josh,
 // 2026-09-30: "I want timestamps on the messages that you sent back to me"
 function askClock(t) {
