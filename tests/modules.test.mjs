@@ -11,14 +11,20 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createApp, appSource } from "./harness.mjs";
-import { parseModule, declaredNames, freeIdentifiers, topLevelImports, topLevelMutableNames } from "../tools/split/scope.mjs";
+import {
+  parseModule, declaredNames, exportedNames, freeIdentifiers, topLevelImports,
+  topLevelMutableNames, leadingComments,
+} from "../tools/split/scope.mjs";
 import {
   checkSrc, ruleFreeIdentifiers, ruleNoAssignToImport, ruleTopLevelMutable,
   ruleTopLevelInitLayerZero, ruleLayerTable, ruleUniqueNames, ruleSerializedSelfContained,
-  ruleManifestsEqual, loadBrowserGlobals, layerOf, LAYERS,
+  ruleManifestsEqual, ruleImportsResolve, ruleHooksShape, ruleHooksPorts,
+  ruleNoTopLevelPortCalls, forwarderPortName, loadBrowserGlobals, layerOf, LAYERS,
 } from "../tools/split/check.mjs";
 import { planMove } from "../tools/split/move.mjs";
 import { promoteState } from "../tools/split/promote-state.mjs";
+import { classifyDiff, findSelfImports } from "../tools/split/verbatim.mjs";
+import { computeBlockers } from "../tools/split/blockers.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURE = path.join(ROOT, "tests/split-fixtures/tiny-app");
@@ -85,6 +91,33 @@ test("scope.freeIdentifiers: property keys aren't uses; shorthand values and com
   const free = freeIdentifiers(parseModule(src, "f.js").ast.body[0]);
   assert.ok(!free.has("plain")); // non-computed key, never a reference
   assert.ok(!free.has("a")); // every use of `a` here is the param, not free
+});
+
+test("scope.leadingComments: a trailing same-line comment belongs to the PRECEDING statement, never to the node that follows it", () => {
+  // docs/split-phase2-plan.md §1 M4(d)/M1's move.mjs fix: before this, a
+  // comment with only whitespace between its end and the next node's start
+  // was unconditionally treated as that next node's leading comment, even
+  // when the comment itself sat on the SAME line as unrelated preceding
+  // code — the exact shape that silently dropped a `?perf=1` attribution
+  // comment and joined two statements onto one line (Deviations 9-11).
+  const src = `x = prof("x", x); // ?perf=1 attribution\nfunction next() {}\n`;
+  const parsed = parseModule(src, "f.js");
+  const nextNode = parsed.ast.body[1];
+  const lc = leadingComments(parsed, nextNode);
+  assert.deepEqual(lc.comments, []); // the comment is NOT next()'s leading comment
+  assert.equal(lc.start, nextNode.start);
+});
+
+test("scope.leadingComments: a comment on its OWN line (nothing but whitespace before it) is still a real leading comment", () => {
+  const src = `// a real banner\nfunction f() {}\n`;
+  const parsed = parseModule(src, "f.js");
+  const lc = leadingComments(parsed, parsed.ast.body[0]);
+  assert.equal(lc.comments.length, 1);
+});
+
+test("scope.exportedNames: declared, renamed, re-exported, default, and star-export forms", () => {
+  const src = `export function f(){}\nexport { f as g };\nexport { h } from "./h.js";\nexport default class C {}\nexport * from "./all.js";\n`;
+  assert.deepEqual(exportedNames(parseModule(src, "f.js").ast).sort(), ["*", "default", "f", "g", "h"].sort());
 });
 
 test("scope.topLevelMutableNames: let/var only, not const", () => {
@@ -186,6 +219,118 @@ test("check rule 8: manifests (modulepreload / sw.js / devtools / src listing) m
   });
   assert.equal(v.length, 1);
   assert.match(v[0].message, /"b\.js"/);
+});
+
+// ---- check.mjs rule 9 (every import specifier resolves to a name the
+// target actually exports) and rule 10 (hooks.js's upcall ports) ------------
+
+test("check rule 9: a stale specifier (imports a name a sibling file moved away from) is flagged; a correct one is not", () => {
+  const moduleExports = new Map([
+    ["a.js", new Set(["helper"])],
+    ["b.js", new Set([])], // helper moved away from b.js; the importer's specifier was never updated
+  ]);
+  const staleSrc = `import { helper } from "./b.js";\nexport function f() { return helper(); }\n`;
+  const badV = ruleImportsResolve("app.js", parseModule(staleSrc, "app.js").ast, moduleExports);
+  assert.equal(badV.length, 1);
+  assert.match(badV[0].message, /does not export "helper"/);
+
+  const okSrc = `import { helper } from "./a.js";\nexport function f() { return helper(); }\n`;
+  const okV = ruleImportsResolve("app.js", parseModule(okSrc, "app.js").ast, moduleExports);
+  assert.deepEqual(okV, []);
+});
+
+test("check rule 9: a lost export keyword (two declarations briefly shared one physical line) is flagged", () => {
+  // docs/split-plan.md's Deviations (14): rejoining two statements onto one
+  // line to satisfy verbatim.mjs left only the FIRST one `export`ed.
+  const moduleExports = new Map([["ui/sheets.js", new Set(["pubCheck"])]]); // pubCompareDraft lost its export
+  const src = `import { pubCompareDraft } from "./ui/sheets.js";\n`;
+  const v = ruleImportsResolve("app.js", parseModule(src, "app.js").ast, moduleExports);
+  assert.equal(v.length, 1);
+  assert.match(v[0].message, /"pubCompareDraft"/);
+});
+
+test("check rule 9: a target doing `export * from` is unverifiable and never flagged; a default import checks against \"default\"", () => {
+  const moduleExports = new Map([["star.js", new Set(["*"])], ["def.js", new Set(["default"])]]);
+  const starSrc = `import { anything } from "./star.js";\n`;
+  assert.deepEqual(ruleImportsResolve("app.js", parseModule(starSrc, "app.js").ast, moduleExports), []);
+  const okDefault = `import X from "./def.js";\n`;
+  assert.deepEqual(ruleImportsResolve("app.js", parseModule(okDefault, "app.js").ast, moduleExports), []);
+  const badDefault = `import X from "./star.js";\n`; // star.js's exports are unverifiable too — still not flagged
+  assert.deepEqual(ruleImportsResolve("app.js", parseModule(badDefault, "app.js").ast, moduleExports), []);
+});
+
+const HOOKS_SHAPE_SRC = `import { S } from "./state.js";
+const need = n => { throw new Error(\`hook \${n} not installed\`); };
+export function setInfo(...a) { return (S.hooks.setInfo || need("setInfo"))(...a); }
+`;
+
+test("check rule 10a (ruleHooksShape): the exact forwarder shape is accepted; anything else in hooks.js is flagged", () => {
+  const good = parseModule(HOOKS_SHAPE_SRC, "hooks.js");
+  assert.deepEqual(ruleHooksShape(good.ast), []);
+
+  const bad = parseModule(`export function setInfo(...a) { return S.hooks.setInfo(...a); }\n`, "hooks.js"); // no need() fallback — not the plan's exact shape
+  assert.equal(ruleHooksShape(bad.ast).length, 1);
+
+  const extra = parseModule(HOOKS_SHAPE_SRC + `export const EXTRA = 1;\n`, "hooks.js");
+  assert.equal(ruleHooksShape(extra.ast).length, 1);
+});
+
+test("check rule 10a (forwarderPortName): recognizes the exact shape and nothing looser", () => {
+  const ok = parseModule(`export function draw(...a) { return (S.hooks.draw || need("draw"))(...a); }`, "hooks.js");
+  assert.equal(forwarderPortName(ok.ast.body[0]), "draw");
+  const wrongLiteral = parseModule(`export function draw(...a) { return (S.hooks.draw || need("notDraw"))(...a); }`, "hooks.js");
+  assert.equal(forwarderPortName(wrongLiteral.ast.body[0]), null);
+});
+
+test("check rule 10b/10c (ruleHooksPorts): exactly one XImpl, strictly above every port caller's layer", () => {
+  const hooksAst = parseModule(`export function draw(...a) { return (S.hooks.draw || need("draw"))(...a); }\n`, "hooks.js").ast;
+
+  // missing impl
+  assert.match(
+    ruleHooksPorts(hooksAst, new Map([["ui/chrome.js", ["somethingElse"]]]), () => ["audio/engine.js"], () => 4)[0].message,
+    /no "drawImpl" declared/,
+  );
+
+  // duplicate impl
+  const dup = ruleHooksPorts(hooksAst, new Map([["ui/chrome.js", ["drawImpl"]], ["render/roll.js", ["drawImpl"]]]), () => [], () => 4);
+  assert.match(dup[0].message, /more than one file/);
+
+  // impl layer not above a real caller's layer (the step-11 mistake: draw() tried to live at render's OWN layer 3)
+  const declaredByFile = new Map([["render/roll.js", ["drawImpl"]]]);
+  const layerOfFn = (f) => (f === "render/roll.js" ? 3 : f === "audio/engine.js" ? 3 : null);
+  const tooLow = ruleHooksPorts(hooksAst, declaredByFile, () => ["audio/engine.js"], layerOfFn);
+  assert.equal(tooLow.length, 1);
+  assert.match(tooLow[0].message, /is not above caller/);
+
+  // impl strictly above every caller — clean
+  const okLayerOfFn = (f) => (f === "ui/chrome.js" ? 4 : f === "audio/engine.js" ? 3 : null);
+  const okDeclared = new Map([["ui/chrome.js", ["drawImpl"]]]);
+  assert.deepEqual(ruleHooksPorts(hooksAst, okDeclared, () => ["audio/engine.js"], okLayerOfFn), []);
+});
+
+test("check rule 10d (ruleNoTopLevelPortCalls): a top-level initializer calling a port is flagged; inside a function body is fine", () => {
+  const portNames = new Set(["draw"]);
+  const bad = parseModule(`import { draw } from "./hooks.js";\ndraw();\n`, "app.js");
+  assert.equal(ruleNoTopLevelPortCalls(bad.ast, portNames).length, 1);
+
+  const ok = parseModule(`import { draw } from "./hooks.js";\nexport function onClick() { draw(); }\n`, "app.js");
+  assert.deepEqual(ruleNoTopLevelPortCalls(ok.ast, portNames), []);
+});
+
+test("checkSrc: rules 9/10 don't fail when hooks.js doesn't exist yet (pre-step-1 of docs/split-phase2-plan.md)", async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const os = await import("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "nr-check-nohooks-"));
+  writeFileSync(path.join(dir, "state.js"), `export function f() { return 1; }\n`); // layer 0 — a name the real LAYERS table actually places, so only rule 9/10's own absence-handling is under test here
+  const result = checkSrc(dir);
+  rmSync(dir, { recursive: true, force: true });
+  assert.equal(result.ok, true);
+});
+
+test("checkSrc: the real repo's LAYERS table already has room for hooks.js (layer 0), wire.js (layer 5), and session (layer 4) ahead of docs/split-phase2-plan.md's own step 1/6", () => {
+  assert.equal(layerOf("hooks.js"), 0);
+  assert.equal(layerOf("wire.js"), 5);
+  assert.equal(layerOf("session/boot.js"), 4);
 });
 
 test("checkSrc: the real repo, post-step-14 (ui/{chrome,trackbar,mixer,voice-menu,notes,note-editor,sheets,wm}.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
@@ -330,14 +475,85 @@ test("move.mjs: --names pulls a specific declaration out of band from the range"
   assert.doesNotMatch(result.fromSource, /function scheduleNote/);
 });
 
-test("move.mjs: a non-declaration top-level statement is wrapped in init<Module><N>() at its original spot", () => {
+test("move.mjs: a non-declaration top-level statement is wrapped in init<Module><N>() at its original spot, and --from gets an import for the call stub", () => {
   const fromSource = `// ---- wiring ----\nconsole.log("boot");\nel.addEventListener("click", onClick);\n\n// ---- next ----\nfunction onClick() {}\n`;
   const result = planMove({ fromPath: "app.js", fromSource, toPath: "ui/chrome.js", range: "wiring" });
   assert.match(result.fromSource, /^initChrome1\(\);\s*$/m);
   assert.match(result.toSource, /export function initChrome1\(\) \{/);
   assert.match(result.toSource, /console\.log\("boot"\)/);
+  // docs/split-phase2-plan.md §1 M4(e): the gap step 12 hit — without this
+  // import, `initChrome1();` left in --from is a ReferenceError.
+  assert.match(result.fromSource, /import \{ initChrome1 \} from ".\/ui\/chrome\.js";/);
   parseModule(result.fromSource, "app.js");
   parseModule(result.toSource, "ui/chrome.js");
+});
+
+test("move.mjs --init <InitName>: an explicit name instead of the auto-numbered init<Module><N>", () => {
+  const fromSource = `// ---- wiring ----\nconsole.log("boot");\nel.addEventListener("click", onClick);\n\n// ---- next ----\nfunction onClick() {}\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "input/gestures.js", range: "wiring", initName: "initGestures1" });
+  assert.match(result.fromSource, /^initGestures1\(\);\s*$/m);
+  assert.match(result.toSource, /export function initGestures1\(\) \{/);
+  assert.match(result.fromSource, /import \{ initGestures1 \} from ".\/input\/gestures\.js";/);
+  parseModule(result.fromSource, "app.js");
+  parseModule(result.toSource, "input/gestures.js");
+});
+
+test("move.mjs --init: throws when more than one non-declaration group is selected (ambiguous which gets the name)", () => {
+  const fromSource = `// ---- wiring ----\nfoo();\nfunction kept() {}\nbar();\n`;
+  assert.throws(() => planMove({ fromPath: "app.js", fromSource, toPath: "input/gestures.js", range: "wiring", initName: "initGestures1" }), /more than one/);
+});
+
+test("move.mjs --init: throws when nothing non-declaration was selected", () => {
+  const fromSource = `// ---- wiring ----\nexport function onlyADecl() {}\n`;
+  assert.throws(() => planMove({ fromPath: "app.js", fromSource, toPath: "input/gestures.js", range: "wiring", initName: "initGestures1" }), /nothing non-declaration/);
+});
+
+test("move.mjs (a): never emits an import of a file into itself — a name already declared in --to is used locally, not re-imported from --from's stale import of --to", () => {
+  // docs/split-plan.md's Deviations (8)/(9)/(10): app.js already imports
+  // MODE_OFFSET from theory/key.js (moved there in an earlier step); moving
+  // a function that references MODE_OFFSET INTO theory/key.js itself used
+  // to resolve the reference via that stale --from import and add a bogus
+  // `import { MODE_OFFSET } from "./key.js";` inside key.js.
+  const fromSource = `import { MODE_OFFSET } from "./theory/key.js";\nexport function modeOfName(x) { return MODE_OFFSET[x]; }\n`;
+  const toSource = `export const MODE_OFFSET = { major: 0 };\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "theory/key.js", toSource, names: ["modeOfName"] });
+  assert.doesNotMatch(result.toSource, /import.*MODE_OFFSET.*from/);
+  parseModule(result.toSource, "theory/key.js"); // would throw "already declared" on the old bug
+  assert.doesNotMatch(result.fromSource, /function modeOfName/);
+});
+
+test("move.mjs (b): a moved name's own `X = prof(\"X\", X);` statement travels WITH its declaration, comment included, and only for that name", () => {
+  const fromSource = `import { prof } from "./state.js";\nfunction computeSongEnd() { return 1; }\ncomputeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution\nfunction sfShownAt() { return 2; }\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "model/song.js", names: ["computeSongEnd"] });
+  assert.match(result.toSource, /export function computeSongEnd\(\) \{ return 1; \}\ncomputeSongEnd = prof\("computeSongEnd", computeSongEnd\); \/\/ \?perf=1 attribution/);
+  assert.doesNotMatch(result.fromSource, /computeSongEnd/); // the wrap left with it, not orphaned
+  assert.match(result.fromSource, /function sfShownAt\(\) \{ return 2; \}/); // untouched, own line intact
+  parseModule(result.fromSource, "app.js");
+  parseModule(result.toSource, "model/song.js");
+});
+
+test("move.mjs (b): moving an UNRELATED name near a prof-wrapped one never joins lines or drops the wrap's comment (docs/split-plan.md's Deviations 9-11)", () => {
+  const fromSource = `import { prof } from "./state.js";\nfunction computeSongEnd() { return 1; }\ncomputeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution\nfunction sfShownAt() { return 2; }\nfunction annoSnapshot() { return 3; }\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "model/song.js", names: ["sfShownAt"] });
+  assert.match(result.fromSource, /computeSongEnd = prof\("computeSongEnd", computeSongEnd\); \/\/ \?perf=1 attribution\nfunction annoSnapshot/);
+  assert.doesNotMatch(result.fromSource, /computeSongEnd\(\);\s*function annoSnapshot/); // never joined onto one line
+  parseModule(result.fromSource, "app.js");
+});
+
+test("move.mjs (c): moving content back INTO app.js lands BEFORE the generated e2e footer, never after (docs/split-plan.md's Deviations 14 — regen-e2e-footer.mjs used to delete it)", async () => {
+  const { addAccessorFooter, FOOTER_MARKER } = await import("../tools/split/e2e-footer.mjs");
+  const appBody = `export function kept() { return 1; }\n`;
+  const toSource = addAccessorFooter(appBody); // simulates app.js's real generated footer
+  assert.match(toSource, new RegExp(FOOTER_MARKER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  const fromSource = `export function reverted() { return 2; }\n`;
+  const result = planMove({ fromPath: "ui/chrome.js", fromSource, toPath: "app.js", toSource, names: ["reverted"] });
+  const markerIdx = result.toSource.indexOf(FOOTER_MARKER);
+  const revertedIdx = result.toSource.indexOf("function reverted");
+  assert.ok(revertedIdx !== -1 && markerIdx !== -1 && revertedIdx < markerIdx, "moved content must sit before the footer marker");
+  // regen-e2e-footer.mjs's stripFooter() must not delete the reverted content
+  const { stripFooter } = await import("../tools/split/e2e-footer.mjs");
+  assert.match(stripFooter(result.toSource), /function reverted/);
+  parseModule(result.toSource, "app.js");
 });
 
 test("move.mjs: re-running against an existing --to file continues the init numbering and doesn't collide", () => {
@@ -354,6 +570,139 @@ test("move.mjs: numeric --range selects by current line numbers", () => {
   const fromSource = `const a = 1;\nconst b = 2;\nconst c = 3;\n`;
   const result = planMove({ fromPath: "app.js", fromSource, toPath: "other.js", range: "2-2" });
   assert.deepEqual(result.movedNames, ["b"]);
+});
+
+// ---- verbatim.mjs ------------------------------------------------------------
+
+function fakeDiff(fileRemAdd) {
+  // fileRemAdd: [{ file, rem: string[], add: string[] }] — builds a minimal
+  // unified diff classifyDiff() can parse (it only reads the `diff --git`
+  // file header and +/- lines; hunk headers/context lines are irrelevant).
+  let out = "";
+  for (const { file, rem = [], add = [] } of fileRemAdd) {
+    out += `diff --git a/${file} b/${file}\n--- a/${file}\n+++ b/${file}\n@@ -1,${rem.length} +1,${add.length} @@\n`;
+    for (const l of rem) out += `-${l}\n`;
+    for (const l of add) out += `+${l}\n`;
+  }
+  return out;
+}
+
+test("verbatim.classifyDiff: a plain move (removed text reappears added, same file set) is clean", () => {
+  const diff = fakeDiff([{ file: "src/app.js", rem: ["function helper() { return 1; }"] }, { file: "src/util.js", add: ["export function helper() { return 1; }"] }]);
+  const { lost, extra } = classifyDiff(diff);
+  assert.deepEqual(lost, []);
+  assert.deepEqual(extra, []);
+});
+
+test("verbatim.classifyDiff: real lost/dropped text is still flagged", () => {
+  const diff = fakeDiff([{ file: "src/app.js", rem: ["function helper() { return 1; }", "function other() { return 2; }"] }]);
+  const { lost } = classifyDiff(diff);
+  assert.equal(lost.length, 2);
+});
+
+test("verbatim.classifyDiff: tolerates move.mjs --init's structural lines (header, closing brace, call stub) unconditionally", () => {
+  const diff = fakeDiff([
+    { file: "src/app.js", rem: ["console.log(\"boot\");"], add: ["initChrome1();"] },
+    { file: "src/ui/chrome.js", add: ["export function initChrome1() {", "  console.log(\"boot\");", "}"] },
+  ]);
+  const { lost, extra } = classifyDiff(diff);
+  assert.deepEqual(lost, []);
+  assert.deepEqual(extra, []);
+});
+
+test("verbatim.classifyDiff: the init-wrapper's closing brace tolerance is budgeted — a genuinely unmatched extra brace elsewhere is still flagged", () => {
+  const diff = fakeDiff([
+    { file: "src/app.js", rem: ["console.log(\"boot\");"], add: ["initChrome1();"] },
+    { file: "src/ui/chrome.js", add: ["export function initChrome1() {", "  console.log(\"boot\");", "}", "}"] }, // one extra, unbudgeted "}"
+  ]);
+  const { extra } = classifyDiff(diff);
+  assert.deepEqual(extra, ["}"]);
+});
+
+test("verbatim.classifyDiff --hook: new lines in hooks.js/wire.js are always allowed", () => {
+  const diff = fakeDiff([{ file: "src/hooks.js", add: ["import { S } from \"./state.js\";", "export function draw(...a) { return (S.hooks.draw || need(\"draw\"))(...a); }"] }]);
+  const { lost, extra } = classifyDiff(diff, { hookNames: ["draw"] });
+  assert.deepEqual(lost, []);
+  assert.deepEqual(extra, []);
+});
+
+test("verbatim.classifyDiff --hook: function X( -> function XImpl( rename is tolerated for a listed name, not for an unlisted one", () => {
+  const renameDiff = fakeDiff([{ file: "src/ui/chrome.js", rem: ["export function draw() { return 1; }"], add: ["export function drawImpl() { return 1; }"] }]);
+  assert.deepEqual(classifyDiff(renameDiff, { hookNames: ["draw"] }), { lost: [], extra: [] });
+
+  const unlisted = fakeDiff([{ file: "src/ui/chrome.js", rem: ["export function setInfo() { return 1; }"], add: ["export function setInfoImpl() { return 1; }"] }]);
+  const v = classifyDiff(unlisted, { hookNames: ["draw"] }); // "setInfo" isn't in --hook's list
+  assert.ok(v.lost.length && v.extra.length);
+});
+
+test("verbatim.classifyDiff --hook: the prof-wrap rename keeps its label string unchanged", () => {
+  const diff = fakeDiff([{
+    file: "src/ui/chrome.js",
+    rem: [`draw = prof("draw", draw); // ?perf=1 attribution`],
+    add: [`drawImpl = prof("draw", drawImpl); // ?perf=1 attribution`],
+  }]);
+  assert.deepEqual(classifyDiff(diff, { hookNames: ["draw"] }), { lost: [], extra: [] });
+});
+
+test("verbatim.classifyDiff --hook: a single installHooks(); call stub is tolerated", () => {
+  const diff = fakeDiff([{ file: "src/app.js", add: ["installHooks();"] }]);
+  assert.deepEqual(classifyDiff(diff, { hookNames: ["draw"] }), { lost: [], extra: [] });
+});
+
+test("verbatim.findSelfImports: a bare file importing its own basename is flagged; a normal import is not", () => {
+  const files = new Map([
+    ["src/theory/key.js", `import { MODE_OFFSET } from "./key.js";\nexport const x = 1;\n`],
+    ["src/model/song.js", `import { S } from "../state.js";\nexport const y = 1;\n`],
+  ]);
+  const v = findSelfImports(files);
+  assert.equal(v.length, 1);
+  assert.match(v[0], /key\.js/);
+});
+
+test("verbatim.mjs CLI: still prints ✔ for real module-split commits (868beff8, b92ec10d)", () => {
+  for (const rev of ["868beff8", "b92ec10d"]) {
+    const r = spawnSync(process.execPath, ["tools/split/verbatim.mjs", rev], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(r.status, 0, `${rev}: stdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.match(r.stdout, /✔/);
+  }
+});
+
+// ---- blockers.mjs -------------------------------------------------------------
+
+test("blockers.computeBlockers: a clean name (no app.js-declared dependency, no illegal-layer import) reports empty closure and a clean verdict", () => {
+  const fromSource = `import { helper } from "./model/song.js";\nexport function pureLeaf() { return helper(); }\n`;
+  const layerOfFn = (rel) => (rel === "model/song.js" ? 2 : rel === "audio/chip.js" ? 3 : null);
+  const result = computeBlockers({ fromSource, names: ["pureLeaf"], toPath: "src/audio/chip.js", layerOfFn });
+  assert.deepEqual(result.closure, []);
+  assert.deepEqual(result.illegalImports, []);
+  assert.match(result.verdict, /^clean:/);
+});
+
+test("blockers.computeBlockers: follows the transitive closure of names still declared in app.js", () => {
+  const fromSource = `function chipSource() { return chipVaultFile(); }\nfunction chipVaultFile() { return chipExt(); }\nfunction chipExt() { return 1; }\n`;
+  const layerOfFn = () => 3;
+  const result = computeBlockers({ fromSource, names: ["chipSource"], toPath: "src/audio/chip.js", layerOfFn });
+  assert.deepEqual(result.closure.sort(), ["chipExt", "chipVaultFile"]);
+  assert.match(result.verdict, /^blocked:/);
+  assert.match(result.verdict, /chipVaultFile/);
+});
+
+test("blockers.computeBlockers: lists an already-resolved import that would cross above --to's layer", () => {
+  const fromSource = `import { logErr } from "./ui/chrome.js";\nfunction chipSource() { return logErr(); }\n`;
+  const layerOfFn = (rel) => (rel === "ui/chrome.js" ? 4 : rel === "audio/chip.js" ? 3 : null);
+  const result = computeBlockers({ fromSource, names: ["chipSource"], toPath: "src/audio/chip.js", layerOfFn });
+  assert.deepEqual(result.closure, []);
+  assert.equal(result.illegalImports.length, 1);
+  assert.equal(result.illegalImports[0].name, "logErr");
+  assert.equal(result.illegalImports[0].layer, 4);
+  assert.match(result.verdict, /illegal-layer/);
+});
+
+test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js reproduces the documented CHIPS/logErr blocker chain (docs/split-plan.md's Deviations 8/9)", () => {
+  const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipSource", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
+  assert.notEqual(r.status, 0); // blocked, per the plan's own documented finding
+  assert.match(r.stdout, /CHIPS/);
+  assert.match(r.stdout, /logErr/);
 });
 
 // ---- promote-state.mjs -------------------------------------------------------

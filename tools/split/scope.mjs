@@ -24,7 +24,21 @@ export function parseModule(source, filename = "<module>") {
 /** The contiguous leading comment block directly above `node` — a banner or
  *  doc-comment, with nothing but whitespace between it and the node (or
  *  between consecutive comments in the block). Returns {start, comments};
- *  `start` is node.start when there is no leading block. */
+ *  `start` is node.start when there is no leading block.
+ *
+ *  A comment that starts after non-whitespace text on ITS OWN line is a
+ *  TRAILING comment of whatever statement ends that line (e.g. `x = 1; //
+ *  note`), never a leading comment of whatever node happens to follow next —
+ *  the loop stops there instead of walking past it. Before this check, a
+ *  trailing same-line comment belonging to a PRECEDING statement (one not
+ *  itself being moved) was silently captured as the NEXT selected node's
+ *  leading comment by tools/split/move.mjs, which cut from the comment's
+ *  start — mid-line, after the preceding statement's own code — producing
+ *  two bugs docs/split-plan.md's Deviations (9)/(10)/(11) documented by
+ *  hand: the preceding statement's own trailing comment silently vanishing,
+ *  and (when every node between it and the next KEPT statement was removed)
+ *  that kept statement joining onto the preceding statement's line with no
+ *  newline between them. */
 export function leadingComments(parsed, node) {
   const { comments, source } = parsed;
   let cut = node.start;
@@ -34,10 +48,25 @@ export function leadingComments(parsed, node) {
     if (c.end > cut) continue;
     if (!/^[ \t]*\r?\n?[ \t]*$/.test(source.slice(c.end, cut)) &&
         !/^\s*$/.test(source.slice(c.end, cut))) break;
+    const lineStart = source.lastIndexOf("\n", c.start - 1) + 1;
+    if (!/^[ \t]*$/.test(source.slice(lineStart, c.start))) break; // trailing comment of the PRIOR line's code, not a leading comment of what follows
     block.unshift(c);
     cut = c.start;
   }
   return { start: block.length ? block[0].start : node.start, comments: block };
+}
+
+/** The end of `node`, extended through a TRAILING same-line comment
+ *  immediately following it (only whitespace, no newline, between
+ *  `node.end` and the comment's start) — the inverse of `leadingComments`'
+ *  new rule above: that comment belongs to this statement, not to whatever
+ *  node comes next, so a mover must carry it along rather than leave it to
+ *  be silently dropped or misattributed. */
+export function trailingCommentEnd(parsed, node) {
+  const { comments, source } = parsed;
+  let end = node.end;
+  const c = comments.find(cm => cm.start >= end && /^[ \t]*$/.test(source.slice(end, cm.start)));
+  return c ? c.end : end;
 }
 
 /** True when `comment` reads as one of this repo's section banners
@@ -84,6 +113,25 @@ export function isDeclaration(node) {
   return node.type === "FunctionDeclaration" || node.type === "ClassDeclaration"
     || node.type === "VariableDeclaration" || node.type === "ExportNamedDeclaration"
     || node.type === "ExportDefaultDeclaration";
+}
+
+/** Every name a module makes available to `import { name } from "this file"`
+ *  (check.mjs rule 9) — the EXTERNAL (exported) name, which can differ from
+ *  `declaredNames`' local one for a rename (`export { x as y }`) or a pure
+ *  re-export (`export { x } from "./y.js"`, no local binding at all).
+ *  `"default"` for a default export, `"*"` for `export * from ...` (a
+ *  namespace re-export rule 9 can't resolve further without following the
+ *  chain — callers treat it as "don't know, don't flag"). */
+export function exportedNames(ast) {
+  const names = [];
+  for (const node of ast.body) {
+    if (node.type === "ExportDefaultDeclaration") { names.push("default"); continue; }
+    if (node.type === "ExportAllDeclaration") { names.push("*"); continue; }
+    if (node.type !== "ExportNamedDeclaration") continue;
+    if (node.declaration) { names.push(...declaredNames(node.declaration)); continue; }
+    for (const s of node.specifiers) names.push(s.exported.name);
+  }
+  return names;
 }
 
 /** local name -> {specifier, imported} for every top-level import. */

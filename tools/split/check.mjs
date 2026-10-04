@@ -1,13 +1,17 @@
-// tools/split/check.mjs — the 8 static rules of docs/split-plan.md §3.6,
-// run by tests/modules.test.mjs (npm test) and by `node tools/split/check.mjs`
-// directly. Node-only, never shipped. Until step 0b creates src/, there is
-// nothing under src/ to check: checkSrc() then reports zero files and ok:true
-// rather than erroring, so npm test stays green through 0a.
+// tools/split/check.mjs — the 8 static rules of docs/split-plan.md §3.6, plus
+// rules 9-10 (docs/split-phase2-plan.md §1 M1/M4: every import specifier
+// actually exports the name it claims; src/hooks.js's upcall ports are
+// well-formed, each has exactly one correctly-layered XImpl, and nothing at
+// module-eval time calls one early) — run by tests/modules.test.mjs
+// (npm test) and by `node tools/split/check.mjs` directly. Node-only, never
+// shipped. Until step 0b creates src/, there is nothing under src/ to check:
+// checkSrc() then reports zero files and ok:true rather than erroring, so
+// npm test stays green through 0a.
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  parseModule, declaredNames, freeIdentifiers, topLevelImports,
+  parseModule, declaredNames, exportedNames, freeIdentifiers, topLevelImports,
   topLevelMutableNames, isDeclaration,
 } from "./scope.mjs";
 
@@ -16,13 +20,21 @@ const REPO_ROOT = path.dirname(path.dirname(HERE));
 
 // ---- the layer table (docs/split-plan.md §1) ---------------------------
 // A module may import only from its own layer or a lower one.
+// docs/split-phase2-plan.md §1 M1/M4: hooks.js (layer 0 — a port is a 1:1
+// synchronous forward, no heavier than state.js itself) and wire.js (layer
+// 5 — the composition root, alongside app.js/main.js) and the new
+// session/ directory (layer 4, song-lifecycle orchestration) are added to
+// the table now, ahead of docs/split-phase2-plan.md's own step 1/6 — rules
+// 5/9/10 must not fail just because neither file exists in src/ yet (every
+// rule below is a per-FILE check that simply never runs for a file that
+// isn't there).
 export const LAYERS = [
-  ["state.js", "edition.js", "ui/icons.js", "midi", "theory"],
+  ["state.js", "edition.js", "ui/icons.js", "midi", "theory", "hooks.js"],
   ["platform"],
   ["model", "gen"],
   ["audio", "render"],
-  ["input", "ui", "ask", "import", "sync"],
-  ["main.js", "devtools.js", "app.js"],
+  ["input", "ui", "ask", "import", "sync", "session"],
+  ["main.js", "devtools.js", "app.js", "wire.js"],
 ];
 
 // app.js (docs/split-plan.md §4 step 0b's cutover; deleted in step 15) is the
@@ -123,6 +135,38 @@ export function ruleTopLevelMutable(parsed, { isStateFile = false } = {}) {
     ({ rule: 3, message: `top-level mutable binding "${name}" outside state.js` }));
 }
 
+function isPureLiteralish(node) {
+  if (!node) return true;
+  switch (node.type) {
+    case "FunctionExpression": case "ArrowFunctionExpression": case "ClassExpression":
+    case "Literal": case "Identifier": case "TemplateLiteral":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/** Every expression that actually RUNS at module-evaluation time, across a
+ *  module's whole top level: a non-declaration statement's own expression,
+ *  or a const/let declarator's init when it isn't a side-effect-free
+ *  literal/function/class/arrow (shared by rule 4 and rule 10's "no
+ *  top-level initializer calls a port" check — both ask the identical
+ *  question, just against a different disallowed set). */
+export function topLevelEffectExpressions(ast) {
+  const effectNodes = [];
+  for (const raw of ast.body) {
+    // unwrap `export` the same way scope.declaredNames does — every top-level
+    // declaration the mover produces is exported, so this is the common case.
+    const node = (raw.type === "ExportNamedDeclaration" || raw.type === "ExportDefaultDeclaration") && raw.declaration ? raw.declaration : raw;
+    if (node.type === "VariableDeclaration") {
+      for (const d of node.declarations) if (d.init && !isPureLiteralish(d.init)) effectNodes.push(d.init);
+    } else if (!isDeclaration(node) && node.type !== "ImportDeclaration" && node.type !== "ExportDefaultDeclaration" && node.type !== "ExportNamedDeclaration") {
+      effectNodes.push(node);
+    }
+  }
+  return effectNodes;
+}
+
 /** Rule 4: a top-level initializer (anything that runs at module-evaluation
  *  time — a non-declaration statement, or a const/let declarator whose init
  *  isn't a side-effect-free literal/function/class/arrow expression) may
@@ -130,32 +174,11 @@ export function ruleTopLevelMutable(parsed, { isStateFile = false } = {}) {
  *  local name to its source module's layer (or null if unresolved/external). */
 export function ruleTopLevelInitLayerZero(parsed, importLayer) {
   const out = [];
-  const isPureLiteralish = (node) => {
-    if (!node) return true;
-    switch (node.type) {
-      case "FunctionExpression": case "ArrowFunctionExpression": case "ClassExpression":
-      case "Literal": case "Identifier": case "TemplateLiteral":
-        return true;
-      default:
-        return false;
-    }
-  };
-  for (const raw of parsed.ast.body) {
-    // unwrap `export` the same way scope.declaredNames does — every top-level
-    // declaration the mover produces is exported, so this is the common case.
-    const node = (raw.type === "ExportNamedDeclaration" || raw.type === "ExportDefaultDeclaration") && raw.declaration ? raw.declaration : raw;
-    let effectNodes = [];
-    if (node.type === "VariableDeclaration") {
-      for (const d of node.declarations) if (d.init && !isPureLiteralish(d.init)) effectNodes.push(d.init);
-    } else if (!isDeclaration(node) && node.type !== "ImportDeclaration" && node.type !== "ExportDefaultDeclaration" && node.type !== "ExportNamedDeclaration") {
-      effectNodes.push(node);
-    }
-    for (const en of effectNodes) {
-      for (const name of freeIdentifiers(en)) {
-        const layer = importLayer(name);
-        if (layer !== undefined && layer !== null && layer !== 0)
-          out.push({ rule: 4, message: `top-level initializer references "${name}" from layer ${layer}, not layer 0` });
-      }
+  for (const en of topLevelEffectExpressions(parsed.ast)) {
+    for (const name of freeIdentifiers(en)) {
+      const layer = importLayer(name);
+      if (layer !== undefined && layer !== null && layer !== 0)
+        out.push({ rule: 4, message: `top-level initializer references "${name}" from layer ${layer}, not layer 0` });
     }
   }
   return out;
@@ -228,6 +251,145 @@ export function ruleManifestsEqual(listsByLabel) {
   return out;
 }
 
+/** Rule 9 (docs/split-phase2-plan.md §1 M4): every named import specifier
+ *  actually resolves to a module that exports that name. check.mjs's rule 1
+ *  (free identifiers) only checks that a bare name resolves to SOME import
+ *  at a legal layer — not that the TARGET file still exports it under that
+ *  name after a relocation. A stale specifier (the import line wasn't
+ *  updated when the name moved again) or a lost `export` keyword (two
+ *  declarations briefly shared one physical line during a `verbatim.mjs`
+ *  fixup, and only one kept its `export`) both pass rule 1 and `verbatim.mjs`
+ *  clean — only `npm test`'s real module linking caught either, per
+ *  docs/split-plan.md's Deviations (14). `moduleExports`: Map<relPath,
+ *  string[]> (see scope.exportedNames) for every file in this scan. */
+export function ruleImportsResolve(relPath, ast, moduleExports) {
+  const out = [];
+  const selfDir = path.posix.dirname(relPath.split(path.sep).join("/"));
+  for (const node of ast.body) {
+    if (node.type !== "ImportDeclaration") continue;
+    const spec = node.source.value;
+    if (!spec.startsWith(".")) continue; // external/vendor specifier — not this scan's to resolve
+    const target = path.posix.normalize(path.posix.join(selfDir, spec));
+    const exported = moduleExports.get(target);
+    if (!exported) continue; // target isn't part of this scan (rule 5 already flags "resolves outside the layer table" for a src/-relative miss)
+    if (exported.has("*")) continue; // target itself does `export * from ...` — would need to follow the chain to verify; not this rule's concern
+    for (const s of node.specifiers) {
+      const name = s.type === "ImportDefaultSpecifier" ? "default"
+        : s.type === "ImportNamespaceSpecifier" ? null // `import * as ns` always resolves structurally
+        : s.imported.name;
+      if (name === null) continue;
+      if (!exported.has(name))
+        out.push({ rule: 9, message: `${relPath}: import "${name}" from "${spec}" — ${target} does not export "${name}"` });
+    }
+  }
+  return out;
+}
+
+// ---- Rule 10 (docs/split-phase2-plan.md §1 M1/M4): src/hooks.js's upcall
+// ports. A port is a one-line synchronous forwarder — `export function
+// X(...a) { return (S.hooks.X || need("X"))(...a); }` — that keeps the
+// original name so call sites never change; the real body, renamed `XImpl`,
+// lives at whichever module actually needs it, strictly above every module
+// that still imports the port from hooks.js (the plan's own M1 rule: "a name
+// may be a port only if its body lives at a higher layer than every port
+// caller"). Checked only `if (src/hooks.js exists)` — none of this runs
+// before docs/split-phase2-plan.md's own step 1 creates it.
+
+/** `export function X(...a) { return (S.hooks.X || need("X"))(...a); }` —
+ *  returns "X" when `node` is exactly this shape, else null. */
+export function forwarderPortName(node) {
+  if (node.type !== "ExportNamedDeclaration" || !node.declaration) return null;
+  const fn = node.declaration;
+  if (fn.type !== "FunctionDeclaration" || !fn.id) return null;
+  const name = fn.id.name;
+  if (fn.params.length !== 1 || fn.params[0].type !== "RestElement" || fn.params[0].argument.type !== "Identifier") return null;
+  const argName = fn.params[0].argument.name;
+  if (fn.body.type !== "BlockStatement" || fn.body.body.length !== 1) return null;
+  const ret = fn.body.body[0];
+  if (ret.type !== "ReturnStatement" || !ret.argument || ret.argument.type !== "CallExpression") return null;
+  const call = ret.argument;
+  if (call.arguments.length !== 1 || call.arguments[0].type !== "SpreadElement"
+    || call.arguments[0].argument.type !== "Identifier" || call.arguments[0].argument.name !== argName) return null;
+  const callee = call.callee;
+  if (callee.type !== "LogicalExpression" || callee.operator !== "||") return null;
+  const { left, right } = callee;
+  if (left.type !== "MemberExpression" || left.computed || left.object.type !== "MemberExpression" || left.object.computed) return null;
+  if (left.object.object.type !== "Identifier" || left.object.object.name !== "S") return null;
+  if (left.object.property.type !== "Identifier" || left.object.property.name !== "hooks") return null;
+  if (left.property.type !== "Identifier" || left.property.name !== name) return null;
+  if (right.type !== "CallExpression" || right.callee.type !== "Identifier" || right.callee.name !== "need") return null;
+  if (right.arguments.length !== 1 || right.arguments[0].type !== "Literal" || right.arguments[0].value !== name) return null;
+  return name;
+}
+
+/** `const need = n => { ... };` (or a plain function) — the fail-loud
+ *  helper every forwarder falls back to. Only the name/shape is load-bearing
+ *  for this rule; the exact thrown message isn't. */
+function isNeedHelper(node) {
+  if (node.type !== "VariableDeclaration" || node.kind !== "const" || node.declarations.length !== 1) return false;
+  const d = node.declarations[0];
+  if (d.id.type !== "Identifier" || d.id.name !== "need") return false;
+  return !!d.init && (d.init.type === "ArrowFunctionExpression" || d.init.type === "FunctionExpression");
+}
+
+/** Rule 10a: hooks.js contains only forwarder functions of the exact plan
+ *  shape, the `need` helper, and its own `S` import — nothing else. */
+export function ruleHooksShape(ast) {
+  const out = [];
+  for (const node of ast.body) {
+    if (node.type === "ImportDeclaration") {
+      const names = node.specifiers.map(s => s.local.name);
+      if (node.source.value !== "./state.js" || names.length !== 1 || names[0] !== "S")
+        out.push({ rule: 10, message: `src/hooks.js: unexpected import (only "import { S } from \\"./state.js\\";" is allowed)` });
+      continue;
+    }
+    if (isNeedHelper(node)) continue;
+    if (forwarderPortName(node) !== null) continue;
+    out.push({ rule: 10, message: `src/hooks.js: top-level statement is not the S import, the need() helper, or a port forwarder of the exact plan shape` });
+  }
+  return out;
+}
+
+/** Rule 10b/10c: every port named by a hooks.js forwarder has EXACTLY one
+ *  `XImpl` declared somewhere in src/, and that impl's layer is strictly
+ *  above every module that still imports the port (bare name `X`) from
+ *  hooks.js. `declaredByFile`: Map<relPath, string[]>; `importersOf(name)`:
+ *  relPath[] of files importing `name` from hooks.js; `layerOfFn`: relPath
+ *  -> layer number or null. */
+export function ruleHooksPorts(hooksAst, declaredByFile, importersOf, layerOfFn) {
+  const out = [];
+  const ports = hooksAst.body.map(forwarderPortName).filter(Boolean);
+  for (const name of ports) {
+    const implName = `${name}Impl`;
+    const owners = [];
+    for (const [file, names] of declaredByFile) if (names.includes(implName)) owners.push(file);
+    if (owners.length === 0) { out.push({ rule: 10, message: `hooks.js port "${name}" has no "${implName}" declared anywhere in src/` }); continue; }
+    if (owners.length > 1) { out.push({ rule: 10, message: `hooks.js port "${name}": "${implName}" is declared in more than one file (${owners.join(", ")})` }); continue; }
+    const implLayer = layerOfFn(owners[0]);
+    for (const callerFile of importersOf(name)) {
+      const callerLayer = layerOfFn(callerFile);
+      if (implLayer === null || callerLayer === null) continue;
+      if (!(implLayer > callerLayer))
+        out.push({ rule: 10, message: `hooks.js port "${name}": its impl (${owners[0]}, layer ${implLayer}) is not above caller ${callerFile} (layer ${callerLayer})` });
+    }
+  }
+  return out;
+}
+
+/** Rule 10d: no top-level initializer (module-evaluation-time code, same
+ *  definition rule 4 uses) anywhere in src/ may call a port — hooks aren't
+ *  installed yet at that point in boot order (main.js calls
+ *  `installHooks()` before any `init*()`, but a module's OWN top level runs
+ *  the instant it's imported, which can be earlier). `portNames`: Set<string>. */
+export function ruleNoTopLevelPortCalls(ast, portNames) {
+  const out = [];
+  for (const en of topLevelEffectExpressions(ast)) {
+    for (const name of freeIdentifiers(en)) if (portNames.has(name))
+      out.push({ rule: 10, message: `top-level initializer calls port "${name}" before hooks are installed` });
+  }
+  return out;
+}
+
 // ---- walking a real src/ tree -------------------------------------------
 
 function listJsFiles(root) {
@@ -269,6 +431,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
   const browserGlobals = loadBrowserGlobals();
   const parsedByFile = new Map(); // relPath -> parsed
   const declaredByFile = new Map(); // relPath -> string[]
+  const exportsByFile = new Map(); // relPath -> Set<string> (rule 9)
   const functionsByName = new Map(); // name -> FunctionDeclaration node (for rule 7)
   const vendorRels = new Set(); // rel keys from extraRoots — rule 4/5 skip these
 
@@ -291,6 +454,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
     const names = parsed.ast.body.flatMap(n => (n.type === "ExportNamedDeclaration" && n.source) ? [] : declaredNames(n))
       .filter(n => !imports.has(n));
     declaredByFile.set(rel, names);
+    exportsByFile.set(rel, new Set(exportedNames(parsed.ast)));
     for (const node of parsed.ast.body) {
       const decl = node.type === "ExportNamedDeclaration" ? node.declaration : node;
       if (decl?.type === "FunctionDeclaration" && decl.id) functionsByName.set(decl.id.name, decl);
@@ -309,6 +473,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
     violations.push(...ruleFreeIdentifiers(parsed, browserGlobals));
     violations.push(...ruleNoAssignToImport(parsed));
     violations.push(...ruleTopLevelMutable(parsed, { isStateFile }));
+    violations.push(...ruleImportsResolve(rel, parsed.ast, exportsByFile)); // rule 9 — runs for vendor files too, same as rules 1-3
     if (isVendor) continue; // rules 4/5 need Night Roll's own layer table, which a vendored library isn't part of
     violations.push(...ruleLayerTable(rel, parsed.ast));
 
@@ -350,6 +515,32 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
   }
   violations.push(...ruleUniqueNames(declaredByFile));
   violations.push(...ruleSerializedSelfContained(functionsByName));
+
+  // Rule 10 (docs/split-phase2-plan.md §1 M1/M4) — only once hooks.js
+  // exists; "rules must not fail on absence" (this task's own instruction)
+  // means every piece of it is gated behind this single check.
+  const hooksParsed = parsedByFile.get("hooks.js");
+  if (hooksParsed) {
+    violations.push(...ruleHooksShape(hooksParsed.ast));
+    const ports = hooksParsed.ast.body.map(forwarderPortName).filter(Boolean);
+    const portSet = new Set(ports);
+    const importersOf = (name) => {
+      const out = [];
+      for (const [rel, parsed] of parsedByFile) {
+        if (rel === "hooks.js") continue;
+        const selfDir = path.posix.dirname(rel.split(path.sep).join("/"));
+        for (const node of parsed.ast.body) {
+          if (node.type !== "ImportDeclaration" || !node.source.value.startsWith(".")) continue;
+          const target = path.posix.normalize(path.posix.join(selfDir, node.source.value));
+          if (target !== "hooks.js") continue;
+          if (node.specifiers.some(s => s.type === "ImportSpecifier" && s.imported.name === name)) { out.push(rel); break; }
+        }
+      }
+      return out;
+    };
+    violations.push(...ruleHooksPorts(hooksParsed.ast, declaredByFile, importersOf, layerOf));
+    if (portSet.size) for (const [, parsed] of parsedByFile) violations.push(...ruleNoTopLevelPortCalls(parsed.ast, portSet));
+  }
 
   const vendorFileCount = extraRoots.reduce((n, { root }) => n + listJsFiles(root).length, 0);
   return { ok: violations.length === 0, fileCount: files.length + vendorFileCount, violations };
