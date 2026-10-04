@@ -115,6 +115,16 @@ import { updateClearBtn } from "../model/edits.js";
 import { idbDraftPut } from "../platform/storage.js";
 import { jobsNotify } from "../model/jobs.js";
 import { draftWrite } from "../model/versions.js";
+import { albumMetaFor } from "../model/provenance.js";
+import { instAlbums } from "../audio/voices.js";
+import { ensureAudio } from "../audio/engine.js";
+import { resumeAudio } from "../audio/engine.js";
+import { openMaster } from "../audio/engine.js";
+import { instPlayer } from "../audio/voices.js";
+import { instSamples } from "../audio/voices.js";
+import { FOLDER_NAMES } from "../model/catalog.js";
+import { instLibrary } from "../audio/voices.js";
+import { songRow } from "./chrome.js";
 
 export function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = S.jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
 export function renderJobs() {
@@ -454,4 +464,184 @@ export function dpTick(barId, qId, sId) {
   const bar = Math.max(1, parseInt(document.getElementById(barId).value, 10) || 1);
   const q = (+document.getElementById(qId).value || 1) + (+document.getElementById(sId).value || 0);
   return (bar - 1) * barTicks() + (q - 1) * beatTicks();
+}
+
+// the systems list's order: console generations, the albums/ folder keys
+export const INST_SYS_ORDER = ["nes", "game-boy", "snes", "n64", "ps1", "ps2"];
+export function gameInstUsedBySong(inst, songTitle, path) { // usedIn holds song titles (2026-09-28 schema) — matched case-insensitively against the catalog title AND the file slug, since a song's display title and its capture slug can differ
+  const usedIn = inst.usedIn;
+  if (!usedIn || !usedIn.length) return false;
+  const slug = String(path).split("/").pop().replace(/\.mid$/i, "");
+  const set = new Set(usedIn.map(s => String(s).toLowerCase()));
+  return set.has(String(songTitle).toLowerCase()) || set.has(slug.toLowerCase());
+}
+export async function gameSongRows(g, lib) { // [[songTitle, path]] of g.songs that have at least one used instrument, in album order
+  return (g.songs || []).filter(([title, path]) => lib.instruments.some(i => i.used !== false && gameInstUsedBySong(i, title, path)));
+}
+// a song's own instruments, in the order of ITS tracks when the browsed song
+// is the one actually open (so real track names/order are known) — matched
+// by program number against the "ch N prog M[,M…]" fallback name a PS1/N64
+// capture gives an unnamed channel (tools/psx/notes.mjs, tools/n64/notes.mjs);
+// a Josh-renamed track, or the song not being the open one, falls back to
+// just the instrument name, alphabetical (natural sort, usedInstruments' rule)
+export function songInstrumentRows(lib, songTitle, path) {
+  const matched = lib.instruments.filter(i => i.used !== false && gameInstUsedBySong(i, songTitle, path));
+  const kitTag = i => i.kind === "drum-kit" ? "  · kit" : "";
+  const isOpen = S.song && path === S.songKey;
+  const byTrack = [], leftover = new Set(matched);
+  if (isOpen) {
+    S.song.tracks.forEach(tr => {
+      const m = /prog\s+([\d,]+)/i.exec(tr.name || "");
+      if (!m) return;
+      const progs = m[1].split(",").map(Number);
+      // a SNES instrument (id "spc:<hash8>:drum|inst") has no program number at all —
+      // .includes(null) is already false, so it just falls to the alphabetical
+      // "leftover" bucket below, same as an instrument no track-name regex matched
+      const inst = matched.find(i => leftover.has(i) && i.program != null && progs.includes(i.program));
+      if (inst) { leftover.delete(inst); byTrack.push({inst, label: tr.name + " · " + (inst.nameGuess || inst.id) + kitTag(inst)}); }
+    });
+  }
+  const rest = [...leftover].sort((a, b) => (a.nameGuess || a.id).localeCompare(b.nameGuess || b.id, undefined, {numeric: true, sensitivity: "base"}))
+    .map(inst => ({inst, label: (inst.nameGuess || inst.id) + kitTag(inst)}));
+  return [...byTrack, ...rest];
+}
+export async function currentSongGameContext() { // {g, songTitle, path} when the open song is a published game song with a library, else null — the "Instruments in this song" shortcut
+  if (!S.songKey) return null;
+  const entry = Object.entries(S.CATALOG).find(([, songs]) => songs.some(([, p]) => p === S.songKey));
+  if (!entry) return null;
+  const row = entry[1].find(([, p]) => p === S.songKey);
+  if (!row) return null;
+  const meta = await albumMetaFor(S.songKey).catch(() => null);
+  const vault = meta && meta.nsf && meta.nsf.vault;
+  if (!vault) return null;
+  const games = await instAlbums();
+  const g = games.find(x => x.vault === vault);
+  return g ? {g, songTitle: row[0], path: S.songKey} : null;
+}
+export function instKeys(inst) { // what a tap plays: a kit's first slots; a melodic instrument's root, fifth, octave around the keys its songs used
+  if (inst.kind === "drum-kit") return inst.keyRegions.filter(r => r.sample).slice(0, 4).map(r => r.keyLo);
+  const k = inst.keysPlayed && inst.keysPlayed.median != null ? Math.round(inst.keysPlayed.median) : 60;
+  return [k, k + 7, k + 12];
+}
+// the on-device index of known soundfonts (name + slug only — the bytes live in
+// IndexedDB/the repo, never here): what the voice menu's "Soundfonts ›" top level
+// lists without opening IndexedDB just to read a title. A device that has never
+// imported or played a given font simply doesn't list it yet — same scope as the
+// game-instrument picker, which only ever lists PUBLISHED albums, not every game
+// that might exist somewhere.
+export function sf2Registry() { try { return JSON.parse(localStorage.getItem("ff1roll-sf2-index") || "[]"); } catch (err) { return []; } }
+export function sf2RegistryAdd(slug, name) {
+  const reg = sf2Registry().filter(f => f.slug !== slug);
+  reg.push({slug, name});
+  reg.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: "base"}));
+  try { localStorage.setItem("ff1roll-sf2-index", JSON.stringify(reg)); } catch (err) { /* best-effort */ }
+}
+export async function instAudition(vault, lib, inst) {
+  ensureAudio(); await resumeAudio(); openMaster();
+  const P = await instPlayer();
+  const keys = instKeys(inst);
+  const regions = keys.map(k => P.regionFor(inst, k, 100)).filter(Boolean);
+  const samples = await instSamples(vault, lib, [...new Set(regions.map(r => r.sample))]);
+  let t = S.audio.currentTime + 0.05;
+  for (const key of keys) {
+    const pcm = P.playNote(inst, samples, {key, vel: 100, hold: 0.3, sampleRate: S.audio.sampleRate, tail: 1.5});
+    if (!pcm.length) continue;
+    let peak = 0; for (let i = 0; i < pcm.length; i++) peak = Math.max(peak, Math.abs(pcm[i]));
+    if (peak > 0.9) for (let i = 0; i < pcm.length; i++) pcm[i] *= 0.9 / peak; // a driver's own scale can run hot; an audition never clips
+    const buf = S.audio.createBuffer(1, pcm.length, S.audio.sampleRate);
+    buf.copyToChannel(pcm, 0);
+    const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(S.master); src.start(t);
+    t += 0.38;
+  }
+}
+export function usedInstruments(lib) { // a library's used instruments, alphabetical by name, natural sort (Josh, 2026-09-28: "this is just a giant list" — FF7's, most-used-first, read like noise); shared by the games browser and the voice & color menu's Game instruments picker
+  return lib.instruments.filter(i => i.used !== false)
+    .sort((a, b) => (a.nameGuess || a.id).localeCompare(b.nameGuess || b.id, undefined, {numeric: true, sensitivity: "base"}));
+}
+export function usedInstrumentRows(lib) { // usedInstruments() + the "in N songs" a leaf list shows — the "All instruments (A–Z)" level
+  return usedInstruments(lib).map(inst => {
+    const n = (inst.usedIn || []).length;
+    return {inst, label: (inst.nameGuess || inst.id) + (inst.kind === "drum-kit" ? "  · kit" : "") + "  · in " + n + " song" + (n === 1 ? "" : "s")};
+  });
+}
+// ONE navigation for both File → 🎛 Instruments… and the voice & color menu's
+// Game instruments picker (Josh, 2026-09-28: "a single navigation helper …
+// parameterised by what a tap on an instrument does"): games (+ an
+// "Instruments in this song ›" shortcut for the open song) → a game's "All
+// instruments (A–Z)" or one of its own songs → a leaf list. `nav` ({game,
+// sub} — null/null at the top; sub is null, "all", or {title, path}) is the
+// CALLER's own state, so each keeps its own back-out point and can reopen
+// anywhere; `opts` says how a caller draws a row and what a leaf tap does.
+export async function renderGameInstNav(container, nav, opts) {
+  // opts: rowFactory(label, onClick, dim) -> element; instrumentLabel(label, inst, g) -> label;
+  // onInstrument(g, lib, inst, label); onNavigate() (redraw after nav changes); isCurrent()
+  // (a stale async fill from a nav the caller already left must not append); gamesListLabel
+  // (the level-2 back button's text for the games list); backLabelAtTop/onBackAtTop (the
+  // picker's only: a back row that leaves this nav for its own family list)
+  const go = () => { const p = opts.onNavigate(); if (p && p.catch) p.catch(e => setInfo("⚠ " + e.message)); };
+  if (!nav.game) { // level 1: which game (+ the open song's own shortcut, first)
+    if (opts.backLabelAtTop) container.appendChild(opts.rowFactory("‹ " + opts.backLabelAtTop, opts.onBackAtTop, true));
+    const loading = opts.rowFactory("loading games…", () => {}, true);
+    container.appendChild(loading);
+    const ctx = await currentSongGameContext();
+    const games = await instAlbums();
+    if (!opts.isCurrent()) return;
+    loading.remove();
+    if (!games.length) { container.appendChild(opts.rowFactory("No published game has instruments yet.", () => {}, true)); return; }
+    if (!nav.sys) { // level 0: which system (Josh: organized "by game system … like the rest of the folders")
+      if (ctx) container.appendChild(opts.rowFactory("Instruments in this song ›",
+        () => { nav.sys = ctx.g.sys; nav.game = ctx.g; nav.sub = {title: ctx.songTitle, path: ctx.path}; go(); }));
+      const present = [...new Set(games.map(g => g.sys))].sort((a, b) => (INST_SYS_ORDER.indexOf(a) + 1 || 99) - (INST_SYS_ORDER.indexOf(b) + 1 || 99));
+      for (const sys of present) container.appendChild(opts.rowFactory((FOLDER_NAMES[sys] || sys) + " ›", () => { nav.sys = sys; go(); }));
+      return;
+    }
+    container.appendChild(opts.rowFactory("‹ All systems", () => { nav.sys = null; go(); }, true));
+    for (const g of games.filter(x => x.sys === nav.sys)) container.appendChild(opts.rowFactory(g.title + " ›", () => { nav.game = g; nav.sub = null; go(); }));
+    return;
+  }
+  const g = nav.game;
+  container.appendChild(opts.rowFactory("‹ " + (nav.sub ? g.title : opts.gamesListLabel),
+    () => { if (nav.sub) nav.sub = null; else nav.game = null; go(); }, true));
+  if (!nav.sub) { // level 2: this game — All instruments (A–Z), or one of its songs
+    const loading = opts.rowFactory("loading " + g.title + "…", () => {}, true);
+    container.appendChild(loading);
+    const lib = await instLibrary(g.vault);
+    if (!opts.isCurrent()) return;
+    const songs = await gameSongRows(g, lib);
+    if (!opts.isCurrent()) return;
+    loading.remove();
+    container.appendChild(opts.rowFactory("All instruments (A–Z) ›", () => { nav.sub = "all"; go(); }));
+    for (const [title, path] of songs) container.appendChild(opts.rowFactory(title + " ›", () => { nav.sub = {title, path}; go(); }));
+    return;
+  }
+  // level 3: a leaf instrument list — either the flat A–Z list, or one song's own instruments
+  const loading = opts.rowFactory("loading instruments…", () => {}, true);
+  container.appendChild(loading);
+  const lib = await instLibrary(g.vault);
+  if (!opts.isCurrent()) return;
+  loading.remove();
+  const list = nav.sub === "all" ? usedInstrumentRows(lib) : songInstrumentRows(lib, nav.sub.title, nav.sub.path);
+  if (!list.length) {
+    container.appendChild(opts.rowFactory(nav.sub === "all" ? "No used instruments in " + g.title + "." : "No used instruments found for " + nav.sub.title + ".", () => {}, true));
+    return;
+  }
+  for (const {inst, label} of list) container.appendChild(opts.rowFactory(opts.instrumentLabel(label, inst, g), () => opts.onInstrument(g, lib, inst, label), false));
+}
+export async function renderInstSheet() { // returns once drawn (tests can await it); the fileinst click below doesn't need to
+  const rows = document.getElementById("instrows"); rows.innerHTML = "";
+  document.getElementById("instsheettitle").textContent = !S.instNav.game ? "INSTRUMENTS"
+    : !S.instNav.sub ? S.instNav.game.title.toUpperCase()
+    : S.instNav.sub === "all" ? S.instNav.game.title.toUpperCase() + " — ALL INSTRUMENTS"
+    : S.instNav.sub.title.toUpperCase();
+  const token = ++S.instNavToken;
+  try {
+    await renderGameInstNav(rows, S.instNav, {
+      rowFactory: (label, onClick, dim) => songRow(label, onClick, dim),
+      instrumentLabel: label => "▶ " + label,
+      gamesListLabel: "All games",
+      onInstrument: (g, lib, inst) => instAudition(g.vault, lib, inst).catch(e => setInfo("⚠ " + e.message)),
+      onNavigate: () => renderInstSheet(),
+      isCurrent: () => S.instNavToken === token,
+    });
+  } catch (e) { setInfo("⚠ " + e.message); }
 }
