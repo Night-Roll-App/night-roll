@@ -379,6 +379,122 @@ auto-advance (iPad mute → revert first) — the chip-render/chip-stream path
 this step actually touched is exactly the "NES + one streamed console"
 and "note preview" (chip fallback) part of that list.
 
+**Step 4b — Done** (2026-10-04, worktree agent). Finished what step 4
+couldn't: its own 5 illegal-layer imports (`recOpenEnded`, `srAnnounce`,
+`scheduleBackupFlush`, `computeSongEnd`, `setAnchorBQ` — all layer 4,
+none covered by a port this plan had named) plus the clips cluster's
+own smallest sub-move (`writeClips`/`setClipDir`/`splitClipAt`/
+`deleteClip`). Nine commits, each verified independently:
+
+1. **M** `recOpenEnded` (`input/record.js`) → `model/song.js`. Pure
+   ({start, end: Infinity} from a seg), zero cross-module calls — a
+   re-home, not a port, per §1 M1's rule ("a name may be a port only
+   if its body lives at a higher layer than every caller" — the
+   inverse holds too: nothing here needs layer 4 at all). Landed
+   beside `computeSongEnd`, which its own comment already named as
+   the function that later closes the segment it creates.
+2. **M** `computeSongEnd` (`ui/sheets.js`) + the "pure clip geometry"
+   M2 already called out — `clipLen`/`clipEndTick`/`songHasAudio`
+   (`audio/clips.js`) — → `model/song.js`, together. Moving
+   `computeSongEnd` alone would have just relocated the blocker onto
+   `clipEndTick` (model importing audio is as illegal as ui importing
+   audio); moving the geometry down too clears it for good —
+   `audio/clips.js` now imports `clipLen` back from `model/song.js`,
+   a legal downward reference. Four external importers hand-fixed
+   (move.mjs only rewires `--from`/`--to`): `app.js` (stale
+   `./audio/clips.js` and `./ui/sheets.js` specifiers), `ui/notes.js`,
+   `render/tracks.js`; `ui/sheets.js`'s own now-dead `clipEndTick`
+   import deleted.
+3. **H** `srAnnounce` (`ui/chrome.js`) — genuinely layer 4 (the
+   `#srlive` DOM node + debounce state are presentation, not song
+   model): ported, not re-homed. `srAnnounceImpl` + hooks.js forwarder
+   + wire.js binding, the usual shape.
+4. **H** `scheduleBackupFlush` (`ui/chrome.js`) — its own body is
+   trivial, but what it schedules (`flushBackupNow`: draftDoc,
+   serializeRollnotes, the bridge's aiUrl/aiHeaders/fetch) is
+   genuinely layer 4; porting the trampoline alone, without moving
+   its target, keeps the body where `flushBackupNow` already lives.
+5. **H** `setAnchorBQ` (`ui/note-editor.js`) — pure on its own
+   (barTicks/beatTicks/snapBeat + Math), but `snapBeat` lives in the
+   same file and is still called from a dozen app.js sites unrelated
+   to this step's 5 named blockers; re-homing both would have
+   expanded scope well past what step 4 actually named. Ported
+   instead — the one case in this step where "pure" didn't win out
+   over "named blocker only."
+
+With all 5 cleared, `blockers.mjs` on the clips cluster's smallest
+sub-move dropped from "5 illegal-layer imports + 7 closure names" to
+"0 illegal-layer imports + 7 closure names" — the real remaining work
+was never the 5 named blockers alone, it was what they were hiding:
+
+6. **M** `buildSchedule` (independently clean once `clipLen` was
+   model-layer) → `audio/transport.js` (already existed from an
+   earlier step — a plain addition, not a new file).
+7. **M** `annoSnapshot`/`tombKey`/`tombKeyFor`/`noteIdentity`/
+   `tombstone` (the "tombstones (2026-08-19, handoff item)" undo/
+   sync-identity helpers, all pure JSON + localStorage) → `model/
+   edits.js`.
+8. **M** `saveLocalNotes` (blocked only by `scheduleBackupFlush` until
+   step 4b's own commit 4 ported it) → `model/edits.js`.
+9. **M** `writeClips`/`setClipDir`/`splitClipAt`/`deleteClip` →
+   `audio/clips.js` — clean, zero closure, zero illegal imports. The
+   clips cluster's own line in step 4's table (originally 10 names,
+   "every one... blocked") is now 4/10 moved; the other 6
+   (`scheduleClip`/`stretchEnsure(All)`/`applyAudioDirs`/
+   `audioEnsureFile`/`applyBeatMap`/`setSongTempo`) pull straight into
+   the play-gate/instrument-preload web below and stay blocked (see
+   "What's still blocked").
+
+Each M commit: plain `verbatim.mjs <sha>` (or `git show`-equivalent —
+note the tool compares `rev~1..rev`, so verification must name the
+actual commit, not a bare `HEAD` typed before committing) ✔, no
+exceptions; one recurring real `check.mjs` rule-2 gap, not a false
+positive: every move that turns a former app.js *declaration* into an
+*import* leaves app.js's generated `__nrExpose$` e2e footer still
+trying to assign it — `node tools/split/regen-e2e-footer.mjs --file
+src/app.js` re-run after every M commit (same gotcha steps 2/3 already
+documented). Each H commit: `verbatim.mjs --hook <name>` ✔;
+`tests/modules.test.mjs`'s `ALL_PORTS` grew 21→24 (the two re-homes
+don't add ports); one new rebinding test per port (3 added). `perl -e
+'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments` fail
+throughout (pre-existing); `tests/modules.test.mjs` itself grew
+78→81 (3 rebinding tests + 1 new `blockers.mjs` CLI regression test
+for the finished clips cluster, matching the existing chipRender
+precedent) and stayed green start to finish. `check.mjs`: clean except
+`oldBpb` throughout. `check-e2e-globals`/`check-controls`: clean
+throughout (e2e-globals' known-name count crept 1877→1880 as
+`srAnnounceImpl`/`scheduleBackupFlushImpl`/`setAnchorBQImpl` joined
+devtools' window mirror — expected, not a regression). Sorted
+`prof("…")` label set unchanged across all nine commits (29 — none of
+the moved/ported names were profiled). `test:e2e:smoke`: 8/8
+throughout. `node tools/package.mjs --out`: 181 files, unchanged (no
+file added — `audio/transport.js`/`model/edits.js`/`model/song.js`/
+`audio/clips.js` all already existed). `src/app.js`: 14275 → 14179
+lines (96 out — modest next to steps 2/4's hundreds, because this
+step's job was clearing blockers, not bulk code motion; the clips
+cluster's own 4 functions were ~90 of those lines).
+
+**What's still blocked** (left for a future step, not attempted here):
+the transport cluster (`play`/`stop`/`playGate*`/`renderSongOffline`/
+`audioChaseNow` → `audio/transport.js`) and voices cluster
+(`scheduleNote`/`previewNote`/preload+wait → `audio/voices.js`) both
+still pull in the SAME ~37-name app.js closure — the play-gate ticker,
+the whole SF2/game-voice/instrument preload machinery
+(`sfWaitForSong`/`gameVoicesInSong`/`instLibrary`/`INST_CHIPS`/etc.),
+and album playback (`albumStrip`). Checked directly with blockers.mjs
+(not assumed): zero illegal-layer imports remain anywhere in this web
+— every one of the 37 names is a same-cluster interdependency, not a
+blocker this step's tools (ports/re-homes) can clear one at a time.
+Moving it means moving essentially the whole play-gate/instrument-
+preload system together, in one (large, audio-fragile) move — a step
+11-sized undertaking, not a step-4b fix. The remaining clips-cluster
+names (`scheduleClip`/`stretchEnsure(All)`/`applyAudioDirs`/
+`audioEnsureFile`/`applyBeatMap`/`setSongTempo`) are blocked by the
+exact same web (confirmed: all six pull in 46 of its names when
+checked together). Per this step's own instruction ("if something is
+truly not portable, leave that cluster and document") — left bit-for-
+bit in app.js.
+
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
 blockers.mjs, then add one port (own H commit) or leave the name for step 11

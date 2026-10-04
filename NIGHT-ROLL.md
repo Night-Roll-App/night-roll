@@ -1715,6 +1715,38 @@ stale and should move up here instead.
   it imports), docs/split-phase2-plan.md §1 M2, step 1: `setControl`/
   `setPlayBtn`/`setVolBtn` are now reachable from `audio/*` once step 2
   needs them, without a port.
+- **docs/split-phase2-plan.md step 4b (2026-10-04) corrects several
+  entries above, written for phase 1's app.js-wide split, now that phase
+  2's hooks.js ports + re-homes have cleared their specific blockers**:
+  `hooks.js`/`wire.js` gained three more ports (`srAnnounce`,
+  `scheduleBackupFlush`, `setAnchorBQ` — bodies stay `ui/chrome.js`/
+  `ui/chrome.js`/`ui/note-editor.js`, same shape as step 3's sixteen).
+  `input/record.js`'s `recOpenEnded` and `ui/sheets.js`'s
+  `computeSongEnd` — both named above as pure/blocker-adjacent — moved
+  to `model/song.js`, taking `audio/clips.js`'s own `clipLen`/
+  `clipEndTick`/`songHasAudio` (named above as "the pure clip-geometry
+  leaves") down with them: `computeSongEnd`'s "permanent, clip geometry
+  is genuinely audio-layer" verdict (`model/song.js`'s own entry) no
+  longer holds once the geometry itself is model-layer, not audio-layer.
+  `model/edits.js` gained `buildSchedule` (from `audio/transport.js`'s
+  entry's "none yet split" list — independently clean once `clipLen`
+  was model-layer), the tombstone/undo helpers `annoSnapshot`/`tombKey`/
+  `tombKeyFor`/`noteIdentity`/`tombstone`, and `saveLocalNotes` (named
+  above, `ui/chrome.js`'s entry, as blocked only by `scheduleBackupFlush`
+  — now a port). `audio/clips.js` gained `writeClips`/`setClipDir`/
+  `splitClipAt`/`deleteClip` — this file's own entry named these as "the
+  functions that actually APPLY a clip... did NOT move"; with
+  `computeSongEnd`/`setAnchorBQ`/`scheduleBackupFlush`/the undo helpers/
+  `buildSchedule` all now reachable, these four cleared, but the OTHER
+  four names that entry listed in the same breath
+  (`applyAudioDirs`/`audioEnsureFile`/`applyBeatMap`/`setSongTempo`) plus
+  `scheduleClip`/`stretchEnsure`/`stretchEnsureAll` remain blocked —
+  they reach into the ~37-name play-gate/instrument-preload web
+  `audio/transport.js`'s/`audio/voices.js`'s own entries describe, which
+  step 4b's blockers.mjs runs confirm is still one single interdependent
+  cluster, not a chain of individually-portable names. See
+  docs/split-phase2-plan.md's step 4b writeup for the full
+  commit-by-commit accounting.
 
 ## AI library (vendor/ai) — docs/ai-library-plan.md §1, step 1 (2026-10-04)
 

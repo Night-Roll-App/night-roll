@@ -69,16 +69,31 @@ Q7. ANSWERED (Terminal #92: NES/SNES sound great) — step 7 shipped ba19c73. Wa
     check soon, or should I continue with the non-audio steps first?
 Q8. ANSWERED (Terminal #93): Night-Roll-App/claude-bridge, private, rename later OK; scope = ALL AI (bridge, in-browser/cloud models, Ollama, LM Studio, the AI window). Was: The AI library's new repo: name and
     visibility? Default: Night-Roll-App/claude-bridge, private.
-Q9. (ASK LATER — module split phase 2 steps 3/4, 2026-10-04) iPad ear
+Q9. (ASK LATER — module split phase 2 steps 3/4/4b, 2026-10-04) iPad ear
     check needed before these steps are considered fully verified
-    (docs/split-phase2-plan.md §3's step-4 list, narrowed to what step 4
-    actually touched): a chip song (NES + one streamed console — the
-    chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/
-    chipRenderAuto path moved file this step) and note preview (chip
-    fallback). play/stop/the whole transport/voices/clips cluster did NOT
-    move (heavily blocked — see this entry's own writeup below), so synth/
-    SF2/game-voice/clip-at-0.5×/album-auto-advance are unaffected by this
-    pair of steps and don't need a fresh check on their account.
+    (docs/split-phase2-plan.md §3's step-4 list, narrowed to what steps 4
+    and 4b actually touched): a chip song (NES + one streamed console —
+    the chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/
+    chipRenderAuto path moved file in step 4) and note preview (chip
+    fallback). Step 4b moved more code (recOpenEnded/computeSongEnd/clip
+    geometry/buildSchedule/the tombstone-undo helpers/saveLocalNotes, all
+    verbatim re-homes; srAnnounce/scheduleBackupFlush/setAnchorBQ, all
+    verbatim hook ports) but NONE of it is on an actual sound-producing
+    path — every move is either pure data/undo bookkeeping or a
+    byte-identical rename+forward (verbatim.mjs checked each commit), so
+    this narrows Q9's own list rather than widening it. The one step-4b
+    move that touches something a device test would exercise: writeClips/
+    setClipDir/splitClipAt/deleteClip (apply/split/delete an audio clip)
+    now live in audio/clips.js — a verbatim move, not a logic change, but
+    if/when you do get to the existing "clip at 0.5×" item below, splitting
+    or deleting a piece during that same pass exercises this step's own
+    code too (no separate check needed for it). play/stop/the whole
+    transport/voices/clips-remainder cluster (scheduleClip/stretchEnsure/
+    applyAudioDirs/audioEnsureFile/applyBeatMap/setSongTempo — the
+    play-gate/instrument-preload web) did NOT move (heavily blocked — see
+    this entry's own writeup below), so synth/SF2/game-voice/album-auto-
+    advance remain unaffected by steps 4/4b and don't need a fresh check
+    on their account.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
