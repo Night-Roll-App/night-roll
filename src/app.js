@@ -1531,29 +1531,15 @@ import { initAlbum1 } from "./session/album.js";
 import { initRoll1 } from "./render/roll.js";
 import { initBase1 } from "./platform/base.js";
 import { initBase2 } from "./platform/base.js";
+import { initMode1 } from "./platform/mode.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 initBase1();
  try {
   const q = typeof location !== "undefined" && songPathFromURL(location.href);
   if (q) setDocTitle(titleCaseSlug(q.split("/").pop().replace(/\.midi?$/i, "")));
 } catch (e) {}
-// Night Roll — FF1 OST analysis player. READ NIGHT-ROLL.md FIRST:
-// feature inventory, the .rollnotes format spec, this file's section map,
-// and the project conventions (keys are Josh's discoveries — never pre-fill).
-"use strict";
-S.APP_MODE = (() => {
-  try {
-    const v = localStorage.getItem("ff1roll-mode");
-    if (v === "learning" || v === "normal") return v; // never overwritten once set
-    const mode = hasExistingNightRollPrefs() ? "learning" : "normal";
-    localStorage.setItem("ff1roll-mode", mode);
-    return mode;
-  } catch (e) { return "learning"; } // storage denied: default to the law
-})();
- if (typeof document !== "undefined" && document.body) {
-  document.body.dataset.mode = S.APP_MODE;
-}
- if (PERF_FLAGS.get("dpr")) { // override the source, not the call sites — every
+initMode1();
+  if (PERF_FLAGS.get("dpr")) { // override the source, not the call sites — every
   const forced = +PERF_FLAGS.get("dpr") || 1; // dpr read in the app picks it up
   try { Object.defineProperty(window, "devicePixelRatio", {get: () => forced, configurable: true}); }
   catch (err) { /* locked down: the flag simply does nothing */ }
