@@ -832,7 +832,11 @@ test("verbatim.findSelfImports: a bare file importing its own basename is flagge
   assert.match(v[0], /key\.js/);
 });
 
-test("verbatim.mjs CLI: still prints ✔ for real module-split commits (868beff8, b92ec10d)", () => {
+// needs the split's history: CI's shallow checkout has only the tip commit
+const haveRev = rev => spawnSync("git", ["cat-file", "-e", `${rev}^{commit}`], { cwd: ROOT }).status === 0 &&
+  spawnSync("git", ["cat-file", "-e", `${rev}~1^{commit}`], { cwd: ROOT }).status === 0;
+test("verbatim.mjs CLI: still prints ✔ for real module-split commits (868beff8, b92ec10d)",
+  { skip: !(haveRev("868beff8") && haveRev("b92ec10d")) && "shallow checkout: the split commits aren't here" }, () => {
   for (const rev of ["868beff8", "b92ec10d"]) {
     const r = spawnSync(process.execPath, ["tools/split/verbatim.mjs", rev], { cwd: ROOT, encoding: "utf8" });
     assert.equal(r.status, 0, `${rev}: stdout: ${r.stdout}\nstderr: ${r.stderr}`);
