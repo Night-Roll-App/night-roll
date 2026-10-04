@@ -39,6 +39,7 @@ import { askSetMode } from "./sheet.js";
 import { askRenderImpl as askRender } from "./sheet.js";
 import { askResume } from "./client.js";
 import { askResumeSoon } from "./client.js";
+import { askSentReset } from "./context.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -578,4 +579,42 @@ export function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTime
 export function askNoteSeen() { // the notes are on screen: the ✉ light and its footer line go (Josh, 2026-09-29: it stayed up with the panel open)
   document.getElementById("askbtn").classList.remove("hasnote");
   if (/^✉ a note from your Mac/.test(S.infoFull || "")) setInfo("");
+}
+
+export function initBridge1() {
+  document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
+  document.getElementById("deploynow").addEventListener("click", deployInstallNow);
+     document.getElementById("askcompact").addEventListener("click", async () => {
+    const key = askSessionName();
+    const u = S.askSessionCache[key];
+    if (!u || !u.turns) return;
+    const yes = await appConfirm("Compact chat", "Summarize this chat's memory on the bridge and shrink it — " + askSessionLine(u) + " now. This can't be undone.", "Compact", "Cancel");
+    if (!yes) return;
+    const btn = document.getElementById("askcompact");
+    btn.disabled = true;
+    askstatus.textContent = "compacting…";
+    try {
+      const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key) + "/compact", {method: "POST", headers: aiHeaders(), body: JSON.stringify({model: askCompactModelName()})});
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((j.error && j.error.message) || "HTTP " + r.status);
+      askSentReset(askStoreKey()); // the compacted session no longer holds the full text verbatim — resend in full next time
+      const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
+      askstatus.textContent = "compacted: " + j.turnsBefore + " → " + j.turnsAfter + " turns · ~" + k(j.tokensBefore) + " → ~" + k(j.tokensAfter) + " tokens";
+    } catch (err) { askstatus.textContent = "⚠ Compact failed — " + err.message; }
+    await askSessionRefresh();
+  });
+  // live while the bridge is there and the app is on screen: every 10 s (the
+  // inbox keeps its own 60 s pace)
+  // (askStatusPoll asks only an allowed host, and never again after a 404 —
+  // so for LM Studio or no AI at all this costs one request, then nothing)
+  if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
+}
+
+export function initBridge2() {
+  for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
+    try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
+    catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
+  });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
+  askInboxStart();
 }
