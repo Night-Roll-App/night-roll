@@ -127,6 +127,7 @@ document.getElementById("clearbtn").addEventListener("click", () => {
 window.addEventListener("resize", resize);
 new ResizeObserver(resize).observe(wrap);
 document.addEventListener("pointerdown", function midiWarm() {
+document.getElementById("instkeep").addEventListener("click", () => captureKeep());
 document.getElementById("recbtn").addEventListener("click", async () => {
 instCanvas.addEventListener("pointerdown", instPointerDown);
 instCanvas.addEventListener("pointermove", instPointerMove);

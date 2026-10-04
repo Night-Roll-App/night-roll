@@ -2016,6 +2016,7 @@ export function initChrome11() {
     proxy("emDivide", () => document.getElementById("divbtn").click());
     proxy("emJoin", () => document.getElementById("joinbtn").click());
     proxy("emQuantize", () => document.getElementById("quantbtn").click());
+    proxy("emKeep", () => document.getElementById("instkeep").click()); // Capture MIDI (src/input/record.js captureKeep)
     proxy("emDedupe", () => {
       if (!editableSong()) { setInfo("Remove duplicate notes works on your own songs"); return; }
       const k = removeDuplicateNotes();

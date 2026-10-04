@@ -653,3 +653,26 @@ test("keyboard: edge chevrons point at lit keys scrolled out of view, and a tap 
   app.dispatch("instcanvas", pev("pointerup", { clientX: 795, clientY: 300 }));
   assert.deepEqual(JSON.parse(app.run(`JSON.stringify(instChevrons)`)), { left: null, right: null });
 });
+
+test("keyboard: a key tapped while nothing records goes to the Capture MIDI buffer (on at the press, off at the lift); while ● rolls it goes to Record instead", async () => {
+  const app = await pianoApp("vm-keys-capture");
+  app.run(`captureBuf = []; recording = false; playing = false; recPending = new Map();`);
+  app.tick(500);
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y })); // C4, the home key at the left edge
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(captureBuf.map(c => ({p: c.p, open: c.off === null})))`)), [{ p: 60, open: true }], "the press opens a buffered note");
+  app.tick(300);
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
+  assert.equal(app.run(`captureBuf[0].off - captureBuf[0].at`), 300, "the lift closes it with the real hold time");
+  assert.equal(app.run(`recPending.size`), 0, "Record saw nothing");
+  // a glissando: every new key is its own buffered note, the previous one closed
+  keysDrag(app, { x: 10, y: KEYS_Y }, { x: 10 + 44 * 2, y: KEYS_Y });
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(captureBuf.map(c => c.p))`)), [60, 60, 62, 64]);
+  assert.equal(app.run(`captureBuf.filter(c => c.off === null).length`), 0, "all closed after the lift");
+  // ● rolling: Record owns the key
+  app.run(`captureBuf = []; recording = true; playing = true; recTake = []; playOffset = 0; playT0 = audio.currentTime;`);
+  app.dispatch("instcanvas", pev("pointerdown", { clientX: 10, clientY: KEYS_Y }));
+  assert.equal(app.run(`recPending.size`), 1);
+  assert.equal(app.run(`captureBuf.length`), 0);
+  app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
+  app.run(`recording = false; playing = false; recTake = [];`);
+});

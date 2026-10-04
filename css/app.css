@@ -376,7 +376,7 @@
   #instpanel.on { display: block; }
   #instbar { display: flex; align-items: center; gap: 8px; padding: 4px 12px 6px; }
   #instbar .seg button { border: 0; min-height: 32px; padding: 5px 14px; }
-  #instfall, #instlock, #instsustain, .instoct { min-height: 32px; padding: 5px 12px; }
+  #instfall, #instlock, #instsustain, #instkeep, .instoct { min-height: 32px; padding: 5px 12px; }
   /* the keyboard's ‹ C3 – E5 › group reads as one control: the readout
      sits between the octave buttons at a fixed width so it doesn't jitter
      as the letters change */

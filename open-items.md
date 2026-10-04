@@ -7177,7 +7177,15 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
 2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
 3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
 4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
-5. Capture MIDI (keep the last ~60 s; "Keep that") — M
+5. ~~Capture MIDI (keep the last ~60 s; "Keep that") — M~~
+   DONE 2026-10-04 (Fable, lane B worktree branch; NIGHT-ROLL.md "Capture
+   MIDI — Keep that"): S.captureBuf (RAM, 60 s, cleared by setSong) fed by
+   inputNoteOn/Off from the keys and MIDI-in whenever ● is not rolling;
+   #instkeep + Edit ▾ → Keep that write it at the cursor through the tempo
+   map as one addBatch undo via the Record commit path. Side fix: a finger
+   wiggling on one key no longer splits a held Record note. Open: no
+   hardware key for Keep that yet; iPad: try keys → Keep that, MIDI → Keep
+   that, Keep that on a capture (refused), after a song switch (empty).
 6. Velocity lane — M
 7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
 8. ~~Score → PDF/print — M~~ DONE 2026-10-04 (DAW F6, lane C, Fable worktree

@@ -2801,6 +2801,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "drag the tag to scrub",
     "Export score",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
+    "Keep that</b>",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -3634,6 +3635,88 @@ test("recording: raw by default (keeps an off-grid start); the Snap while record
   const snapped = val(`song.tracks[0].notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p}))`);
   assert.deepEqual(snapped, [{t: 120, d: 120, p: 67}], "the pref restores today's snap-to-grid recording");
   run(`recFinish(); localStorage.removeItem("ff1roll-recsnap"); recording = false; playing = false; songKey = null;`);
+});
+
+test("Capture MIDI (Keep that): keys/MIDI played while NOT recording fill captureBuf; Keep that writes them at the cursor through the tempo map as ONE undo step", () => {
+  installSong();
+  run(`
+    createComposition(120, 4, 4); // ppq 480, 120 bpm: 1 s = 960 ticks
+    ensureAudio(); selTrack = 0; playing = false; recording = false;
+    captureBuf = []; recTake = []; recPending = new Map(); editUndo = []; editRedo = [];
+    pencilVel = 80; playCursor = 480; localStorage.removeItem("ff1roll-recsnap");
+  `);
+  app.tick(1000);
+  run(`inputNoteOn("k1", 60)`); // an on-screen key: no velocity of its own
+  app.tick(300);
+  run(`inputNoteOff("k1")`);
+  app.tick(200);
+  run(`inputNoteOn("midi64", 64, 100)`); // a MIDI note keeps its velocity
+  app.tick(250);
+  run(`inputNoteOff("midi64")`);
+  assert.equal(val(`captureBuf.length`), 2, "both notes buffered");
+  assert.equal(val(`recPending.size`), 0, "nothing went to Record: ● is not rolling");
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 0, "the buffer alone writes nothing");
+  assert.equal(val(`captureKeep()`), 2);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v}))`),
+    [{t: 480, d: 288, p: 60, v: 80}, {t: 960, d: 240, p: 64, v: 100}],
+    "first note at the cursor, the rest at their wall-clock offsets in song ticks; raw (288 is off the 120-tick grid)");
+  assert.equal(val(`captureBuf.length`), 0, "kept = consumed");
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /kept 2 notes — one undo removes the take/);
+  assert.equal(val(`editUndo[editUndo.length - 1].kind`), "addBatch");
+  run(`editUndoPop()`);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 0, "one ⟲ removes the whole phrase");
+  // the tempo at the cursor decides: 90 bpm → 1 s = 720 ticks
+  run(`createComposition(90, 4, 4); captureBuf = []; editUndo = []; selTrack = 0; playCursor = 0;`);
+  run(`inputNoteOn("k1", 62)`);
+  app.tick(300);
+  run(`inputNoteOff("k1")`);
+  assert.equal(val(`captureKeep()`), 1);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d}))`), [{t: 0, d: 216}]);
+  // a tempo change INSIDE the phrase: 120 bpm for the first beat, 60 bpm after — the map, not one bpm
+  run(`
+    createComposition(120, 4, 4); captureBuf = []; editUndo = []; selTrack = 0; playCursor = 0;
+    song.tempos = [{tick: 0, usq: 500000, sec: 0}, {tick: 480, usq: 1000000, sec: 0.5}];
+  `);
+  run(`inputNoteOn("k1", 60)`);
+  app.tick(1000); // 1 s = the 120-bpm beat (480) + half a 60-bpm beat (240)
+  run(`inputNoteOff("k1")`);
+  assert.equal(val(`captureKeep()`), 1);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d}))`), [{t: 0, d: 720}]);
+  run(`editUndoPop(); songKey = null;`);
+});
+
+test("Capture MIDI: the buffer keeps the last 60 s, empties on a song change, and Keep that refuses with a reason on an empty buffer, an audio track, or a song that isn't yours", () => {
+  installSong();
+  run(`createComposition(120, 4, 4); ensureAudio(); selTrack = 0; playing = false; recording = false; captureBuf = []; editUndo = [];`);
+  run(`inputNoteOn("k1", 60); inputNoteOff("k1");`);
+  app.tick(30000);
+  run(`inputNoteOn("k2", 62); inputNoteOff("k2");`);
+  app.tick(31000); // the first note is now 61 s old
+  run(`inputNoteOn("k3", 64); inputNoteOff("k3");`);
+  assert.deepEqual(val(`captureBuf.map(c => c.p)`), [62, 64], "anything older than 60 s is forgotten as new notes arrive");
+  run(`createComposition(120, 4, 4);`);
+  assert.equal(val(`captureBuf.length`), 0, "a new song starts with an empty buffer");
+  run(`selTrack = 0;`);
+  assert.equal(val(`captureKeep()`), 0);
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /nothing to keep yet/);
+  run(`inputNoteOn("k1", 60); inputNoteOff("k1"); song.tracks[0].kind = "audio";`);
+  assert.equal(val(`captureKeep()`), 0, "an audio track holds clips, not notes");
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /pick a note track/);
+  assert.equal(val(`captureBuf.length`), 1, "a refused Keep that keeps the phrase for the next try");
+  run(`delete song.tracks[0].kind;`);
+  // while ● rolls the keys go to Record, not the buffer
+  run(`recording = true; playing = true; recTake = []; recPending = new Map(); playOffset = 0; playT0 = audio.currentTime;`);
+  run(`inputNoteOn("k9", 67)`);
+  assert.equal(val(`recPending.size`), 1, "Record owns the note while rolling");
+  assert.equal(val(`captureBuf.length`), 1, "…and the buffer didn't grow");
+  assert.equal(val(`captureKeep()`), 0, "Keep that waits for ● to stop");
+  run(`recPending = new Map(); recording = false; playing = false;`);
+  // not your song: refused
+  installSong();
+  run(`captureBuf = [{at: 0, off: 10, p: 60, key: "k"}];`);
+  assert.equal(val(`captureKeep()`), 0);
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /your own songs/);
+  run(`captureBuf = []; songKey = null;`);
 });
 
 test("rulerSnapX: bar lines are magnetic in pixels; 16ths elsewhere", () => {

@@ -217,6 +217,11 @@ export const S = {
   recording: false,
   recTake: [],
   recPending: new Map(),
+  // Capture MIDI (2026-10-04, DAW shortlist F3): the last ~60 s of notes
+  // played on the keys / MIDI-in while NOT recording — {at, off, p, vel,
+  // key}, wall-clock ms. RAM only: a take is not song state until "Keep
+  // that" writes it, and setSong empties it.
+  captureBuf: [],
   midiReady: false,
   midiAccess: null,
   midiErr: null,

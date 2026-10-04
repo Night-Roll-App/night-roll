@@ -6085,6 +6085,53 @@ looser (a MIDI keyboard's natural feel, a fast run).
   MIDI keyboard on the iPad itself) was still open — see the next
   section, now done.
 
+## Capture MIDI — "Keep that" (2026-10-04, DAW shortlist F3)
+
+Logic's Capture Recording / Ableton Note's retrospective record: the keys
+and MIDI-in are always listened to, and a phrase played with nothing
+recording can be kept after the fact. `src/input/record.js`:
+
+- **One entry point for a played note.** The on-screen keys
+  (`src/input/keyboard.js`: `instPointerDown/Move/Up`, `instLetGo`) and
+  MIDI-in (`midiMessage`, Web MIDI and the CoreMIDI bridge alike) call
+  `inputNoteOn(key, p, vel)` / `inputNoteOff(key)` and never decide where a
+  note goes: ● rolling (`S.recording && S.playing`) means `recNoteOn/Off`
+  own it exactly as before; otherwise `captureNoteOn/Off` do. A glissando
+  opens a new note only when the KEY changes (`instPointerMove` compares the
+  finger's last key, `pt.p`) — a finger wiggling on one key used to re-enter
+  `recNoteOn`, which closes-and-reopens, splitting a held Record note.
+- **The buffer.** `S.captureBuf` (src/state.js): `{at, off, p, vel, key}`
+  in `performance.now()` ms, `off === null` while held. `captureTrim(now)`
+  drops entries older than `CAPTURE_MS` (60 s) on every note-on and on
+  Keep; `setSong` empties it (a phrase noodled over the last song is not
+  this song's). RAM only, by rule — a take is not song state until it is
+  written, so nothing reaches localStorage or the draft.
+- **Keep that.** `#instkeep` (end of `#instbar`, a `CONTROLS` entry) and
+  Edit ▾ → 🎹 Keep that (`emKeep`, a proxy click) call `captureKeep()`.
+  Gates, each with its status line: `editableSong()` (the Record gate —
+  captures and read-only songs refuse), `S.recording` (● owns input),
+  `tr.kind === "audio"`, an empty buffer. Timing: the phrase's first note
+  lands at `curTick()`; every other on/off is `secToTick(song,
+  tickToSec(song, cursor) + (ms − t0)/1000)` — THROUGH the tempo map from
+  the cursor, so a tempo change inside the phrase lands where Record would
+  have put it, and `S.playRate` applies the same way Record's `playSec`
+  does. Ticks go through `recSnap` (raw, or grid with the Snap-while-
+  recording pref) and the Record floor (`recMinD`). Each note is written by
+  `recTakeNote(tick, end, p, vel)` — the push `recNoteOff` itself now uses
+  (track note, `rawNotes` twin, `S.recTake` index; an on-screen key with no
+  velocity takes `S.pencilVel`) — and `recCommitTake("kept")` is the same
+  commit `recFinishImpl` runs at ■: one `addBatch` undo, `saveEdits`,
+  `saveDraft` for compositions/local drafts, `computeSongEnd`, score model.
+  The buffer is cleared only after a successful Keep; a refused one keeps
+  the phrase for the next try.
+
+Tests: tests/night-roll.test.mjs "Capture MIDI (Keep that)" (120 vs 90 bpm
+mapping, a tempo change mid-phrase, velocities, one undo) and "Capture
+MIDI: the buffer keeps the last 60 s…" (cap, song change, the four gates,
+Record precedence); tests/gestures.test.mjs "keyboard: a key tapped while
+nothing records…" (press/lift, glissando, ● rolling). Help: Editor →
+"Keep that (Capture MIDI)". No hardware key yet (open-items).
+
 ## iPad CoreMIDI bridge (2026-09-30)
 
 Josh's son records from a MIDI keyboard via Web MIDI on a MacBook

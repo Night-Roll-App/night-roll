@@ -393,6 +393,7 @@ export function setSong(parsed, key) {
   S.selClip = null;
   stretchCache.clear(); // stretched takes belong to one song
   S.editUndo = []; // undo history belongs to ONE song — stale entries would mutate the wrong notes
+  S.captureBuf = []; // a phrase noodled over the last song is not this song's
   playGateTick.queued = false; // a play queued while the last song loaded is not for this one
   S.trackState = S.song.tracks.map(() => ({muted: false, solo: false}));
   S.selTrack = 0;

@@ -16,10 +16,10 @@ import { GTR_NAMES } from "../render/instrument.js";
 import { pitchName } from "../theory/chords.js";
 import { sfShownAt } from "../model/song.js";
 import { drawInst } from "../render/instrument.js";
-import { recNoteOff } from "./record.js";
+import { inputNoteOff } from "./record.js";
 import { INST_CHEVRON_W } from "../render/instrument.js";
 import { instRevealPitch } from "../render/instrument.js";
-import { recNoteOn } from "./record.js";
+import { inputNoteOn } from "./record.js";
 import { instScrollBy } from "../render/instrument.js";
 import { applyInstBar } from "../ui/chrome.js";
 import { instResize } from "../render/instrument.js";
@@ -141,7 +141,7 @@ export function instPtrMeanX() {
   return n ? sum / n : 0;
 }
 export function instLetGo(pid) { // a finger stops sounding/recording without lifting
-  recNoteOff(pid);
+  inputNoteOff(pid);
   const q = S.instPtrs.get(pid);
   if (q && q.p !== undefined) instReleaseHeld(q.p); // a chord that became a scroll must not ring on under Sustain
   if (q && q.ticket) q.ticket.live = false; // …nor may a voice still waking up park itself after this
@@ -179,7 +179,7 @@ export function instPointerDown(e) {
   S.instPtrOn = true;
   const p = instTap(e);
   instPtrPlayed(e.pointerId, p);
-  if (S.recording && S.playing && p !== undefined) recNoteOn(e.pointerId, p);
+  if (p !== undefined) inputNoteOn(e.pointerId, p);
 }
 export function instPointerMove(e) {
   const pt = S.instPtrs.get(e.pointerId);
@@ -214,14 +214,15 @@ export function instPointerMove(e) {
     return;
   }
   if (!S.instPtrOn) return;
+  const prevP = pt.p; // the key this finger last sounded: a wiggle on the same key is not a new note (Record would split it; the capture buffer would double it)
   const p = instTap(e, true);
   instPtrPlayed(e.pointerId, p);
-  if (S.recording && S.playing && p !== undefined) recNoteOn(e.pointerId, p);
+  if (p !== undefined && p !== prevP) inputNoteOn(e.pointerId, p);
 }
 export function instPointerUp(e, cancelled) {
   const pt = S.instPtrs.get(e.pointerId);
   S.instPtrs.delete(e.pointerId);
-  recNoteOff(e.pointerId);
+  inputNoteOff(e.pointerId);
   if (S.instGesture === "pan2" || S.instGesture === "two") {
     if (S.instPtrs.size < 2) { // the remaining finger is spent: lifting one finger of a scroll must not start a note
       S.instGesture = null;
@@ -230,7 +231,7 @@ export function instPointerUp(e, cancelled) {
     } else S.instPanX = instPtrMeanX();
   } else if (pt && !pt.dead && !pt.moved && !cancelled && S.instTab === "piano" && S.instMode === "scroll") {
     const p = instTap(e); // the Scroll-mode tap: one key, on release
-    if (S.recording && S.playing && p !== undefined) { recNoteOn(e.pointerId, p); recNoteOff(e.pointerId); }
+    if (p !== undefined) { inputNoteOn(e.pointerId, p); inputNoteOff(e.pointerId); }
   } else if (pt && pt.moved) instScrollPersist();
   if (S.instPtrs.size === 0) { S.instPtrOn = false; S.instLastP = null; S.instGesture = null; }
 }

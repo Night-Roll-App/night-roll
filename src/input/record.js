@@ -19,6 +19,7 @@ import { editableSong } from "../model/song.js";
 import { applyInst } from "../ui/chrome.js";
 import { play } from "../audio/transport.js";
 import { tickToSec } from "../midi/parse.js";
+import { curTick } from "../render/roll.js";
 
 // RAW by default (recSnapOn() off): the exact tick played, just rounded to
 // an integer — no grid involved. recSnapOn() on: the old snap-to-grid
@@ -65,28 +66,102 @@ export function recNoteOff(pid) {
   // minimum is the app's usual shortest-editable-note floor (resizeSelection
   // uses the same number) — a very fast tap must not leave a zero/negative
   // length note behind.
-  const minD = recSnapOn() ? moveSnapTicks() : Math.max(24, Math.round(S.song.ppq / 8));
-  const d = Math.max(minD, end - pend.tick);
-  const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
-  const vv = pend.vel !== undefined ? pend.vel : S.pencilVel;
-  tr.notes.push({t: pend.tick, d, p: pend.p, v: vv, added: isAdd});
-  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: pend.tick + S.chopS, d, p: pend.p, v: vv, added: isAdd});
-  S.recTake.push({ti: S.selTrack, ni: tr.notes.length - 1});
+  recTakeNote(pend.tick, end, pend.p, pend.vel);
   draw();
 }
-export function recFinishImpl() { // called from stop(): close pendings, commit the take
-  for (const pid of [...S.recPending.keys()]) recNoteOff(pid);
-  S.recording = false;
-  document.getElementById("recbtn").classList.remove("rec");
+// the take's minimum length: a snapped take's is one grid step (unchanged); a
+// raw take's is the app's usual shortest-editable-note floor (resizeSelection
+// uses the same number) — a very fast tap must not leave a zero/negative
+// length note behind
+export function recMinD() { return recSnapOn() ? moveSnapTicks() : Math.max(24, Math.round(S.song.ppq / 8)); }
+// one note of a take onto the selected track, S.recTake remembering it for
+// the batch undo — Record (recNoteOff) and Keep that (captureKeep) both land
+// here, so a kept phrase is a recording in every way that matters
+export function recTakeNote(tick, end, p, vel) {
+  const d = Math.max(recMinD(), end - tick);
+  const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
+  const vv = vel !== undefined ? vel : S.pencilVel;
+  tr.notes.push({t: tick, d, p, v: vv, added: isAdd});
+  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: tick + S.chopS, d, p, v: vv, added: isAdd});
+  S.recTake.push({ti: S.selTrack, ni: tr.notes.length - 1});
+}
+// commit S.recTake as ONE undo step (+ save); `verb` names it in the status line
+export function recCommitTake(verb) {
   if (S.recTake.length) {
     pushUndo({kind: "addBatch", items: S.recTake.slice()});
     saveEdits();
     if (isComposition() || isLocalDraft()) saveDraft(); // the take is part of the working copy, not just the undo stack
     computeSongEnd();
     if (S.viewMode === "score") buildScoreModel();
-    setInfo("recorded " + S.recTake.length + " note" + (S.recTake.length === 1 ? "" : "s") + " — one undo removes the take");
+    setInfo(verb + " " + S.recTake.length + " note" + (S.recTake.length === 1 ? "" : "s") + " — one undo removes the take");
   }
   S.recTake = [];
+}
+export function recFinishImpl() { // called from stop(): close pendings, commit the take
+  for (const pid of [...S.recPending.keys()]) recNoteOff(pid);
+  S.recording = false;
+  document.getElementById("recbtn").classList.remove("rec");
+  recCommitTake("recorded");
+}
+// Capture MIDI (2026-10-04, docs/daw-inventory.md §4 #5 — Logic's Capture
+// Recording, Ableton Note's retrospective record): every key or MIDI note
+// played while NOT recording goes into S.captureBuf with its wall clock,
+// the last CAPTURE_MS of them kept; "Keep that" (#instkeep, Edit ▾) writes
+// the buffered phrase at the cursor on the selected track as one take.
+// The keys and MIDI-in call inputNoteOn/Off and never choose: ● rolling
+// means Record owns the note, otherwise the buffer does.
+export const CAPTURE_MS = 60000;
+export function inputNoteOn(key, p, vel) {
+  if (S.recording && S.playing) recNoteOn(key, p, vel);
+  else captureNoteOn(key, p, vel);
+}
+export function inputNoteOff(key) {
+  recNoteOff(key);
+  captureNoteOff(key);
+}
+export function captureTrim(now) {
+  const cut = now - CAPTURE_MS;
+  let i = 0;
+  while (i < S.captureBuf.length && S.captureBuf[i].at < cut) i++;
+  if (i) S.captureBuf.splice(0, i);
+}
+export function captureNoteOn(key, p, vel) {
+  if (!S.song) return;
+  captureNoteOff(key); // sliding to a new key closes the old one, as Record does
+  const now = performance.now();
+  captureTrim(now);
+  S.captureBuf.push({at: now, off: null, p, vel, key});
+}
+export function captureNoteOff(key) {
+  for (let i = S.captureBuf.length - 1; i >= 0; i--) {
+    const c = S.captureBuf[i];
+    if (c.key === key && c.off === null) { c.off = performance.now(); return; }
+  }
+}
+// Keep that: the buffer → notes at the cursor. Wall-clock offsets from the
+// phrase's first note map through the tempo map FROM THE CURSOR (tickToSec
+// of the cursor, then secToTick of cursor-seconds + offset), so a tempo
+// change inside the phrase lands where Record would have put it; the speed
+// slider applies the same way it does to a recording. Raw unless the
+// Snap-while-recording pref is on (recSnap), exactly Record's rule.
+export function captureKeep() {
+  if (!S.song || !editableSong()) { setInfo("Keep that works on your own songs"); return 0; }
+  if (S.recording) { setInfo("Record is already taking this down — ● or ■ stops it first"); return 0; }
+  const tr = S.song.tracks[S.selTrack];
+  if (!tr || tr.kind === "audio") { setInfo("pick a note track to keep the phrase on (tap its chip)"); return 0; }
+  const now = performance.now();
+  captureTrim(now);
+  const buf = S.captureBuf;
+  if (!buf.length) { setInfo("nothing to keep yet — play on the keys (or a MIDI keyboard) while stopped, then Keep that"); return 0; }
+  const cursor = curTick(), sec0 = tickToSec(S.song, cursor), t0 = buf[0].at;
+  const at = ms => secToTick(S.song, sec0 + (ms - t0) / 1000);
+  S.recTake = [];
+  for (const c of buf) recTakeNote(recSnap(at(c.at)), recSnap(at(c.off === null ? now : c.off)), c.p, c.vel);
+  const n = S.recTake.length;
+  recCommitTake("kept");
+  S.captureBuf = [];
+  draw();
+  return n;
 }
 // CoreMidi source names, once the iPad app has connected any
 // One MIDI message's bytes (status, data1, data2?) — Web MIDI's
@@ -96,12 +171,12 @@ export function midiMessage(data) {
   const [st, note, vel] = data;
   const cmd = st & 0xf0;
   if (cmd === 0x90 && vel > 0) {
-    if (S.recording && S.playing) recNoteOn("midi" + note + (st & 15), note, vel);
+    inputNoteOn("midi" + note + (st & 15), note, vel);
     previewNote(S.selTrack, note);
     S.instFlash = {p: note, until: performance.now() + 300}; // light the panel key
     if (S.instOpen) drawInst();
   } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) {
-    recNoteOff("midi" + note + (st & 15));
+    inputNoteOff("midi" + note + (st & 15));
   }
 }
 export function initWebMidi() {
@@ -167,6 +242,7 @@ export function initRecord1() {
     if (C && C.isNativePlatform && C.isNativePlatform()) return;
     initWebMidi(); // permission prompt wants a user gesture
   }, {capture: true});
+  document.getElementById("instkeep").addEventListener("click", () => captureKeep());
   document.getElementById("recbtn").addEventListener("click", async () => {
     albumClear();
     if (S.recording || S.playing) { stop(); return; } // ● while rolling = stop (commits the take)
