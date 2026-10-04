@@ -4939,6 +4939,17 @@ test("boot watchdog: only errors from Night Roll's own files show the failure pa
   assert.equal(failed.length, 1, "our own file's error still shows the panel");
 });
 
+test("metronome following the song still clicks while the song is STOPPED — the song's own tempo from the cursor (Josh, 2026-10-03: Start was silent)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: []}]};
+       songKey = "midi/test.mid"; playCursor = 0; playing = false; ensureAudio(); ensureMetGain();
+       met.follow = "song"; met.on = true; metIdx = 0; metNext = audio.currentTime + 0.01;`);
+  run(`metPump();`);
+  assert.ok(val(`metIdx`) >= 1, "a click was scheduled with the song stopped");
+  assert.equal(Math.round(val(`metNext - audio.currentTime`) * 100) / 100 <= 0.62, true, "at the song's 120 bpm (0.5 s a beat)");
+  run(`met.on = false;`);
+});
+
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(val(`cfg().analysisRepo`), "Night-Roll-App/night-roll");

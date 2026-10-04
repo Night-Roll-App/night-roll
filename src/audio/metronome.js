@@ -69,7 +69,13 @@ export function metFollowBeatTicks() {
 }
 export function metFollowNum() { return met.follow === "trial" ? met.num : effTs()[0]; }
 export function metPumpFollow() {
-  if (!S.playing) return; // follow/trial click only while the song runs
+  // song stopped: click its own tempo + meter from the cursor, so ⏱ Start is
+  // never silent (Josh, 2026-10-03: "I hit start and … I don't hear anything")
+  if (!S.playing) {
+    const tb = metFollowBeatTicks(), t0 = S.playCursor || 0;
+    metPumpSteady(Math.max(0.05, tickToSec(S.song, t0 + tb) - tickToSec(S.song, t0)), metFollowNum(), 1);
+    return;
+  }
   const tb = metFollowBeatTicks();
   const num = metFollowNum();
   const now = playSec();
@@ -99,12 +105,15 @@ export function metPumpFollow() {
 }
 export function metPump() {
   if (met.follow !== "free") { metPumpFollow(); return; }
-  const spb = 60 / met.bpm; // seconds per counted (denominator) beat
+  metPumpSteady(60 / met.bpm, met.num, met.sub); // seconds per counted (denominator) beat
+}
+function metPumpSteady(spb, num, sub) { // a steady click from S.metNext on
+  if (S.metNext < S.audio.currentTime - 0.2) { S.metNext = S.audio.currentTime + 0.05; S.metIdx = 0; } // the song just stopped under a following click: restart, never burst the backlog
   while (S.metNext < S.audio.currentTime + 0.12) {
-    const i = S.metIdx % met.num;
+    const i = S.metIdx % num;
     const lv = met.accents[i];
     if (lv > 0) metClick(S.metNext, lv);
-    for (let s = 1; s < met.sub; s++) metClick(S.metNext + spb * s / met.sub, 0); // sub-clicks, quiet
+    for (let s = 1; s < sub; s++) metClick(S.metNext + spb * s / sub, 0); // sub-clicks, quiet
     const delay = Math.max(0, (S.metNext - S.audio.currentTime) * 1000);
     setTimeout(() => {
       if (!met.on) return;
