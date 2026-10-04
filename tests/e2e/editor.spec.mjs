@@ -95,7 +95,10 @@ test("buttons gray out when they can't act", async ({ page }) => {
 });
 
 test("help sheet: tabs switch sections and remember the last one", async ({ page }) => {
-  await page.evaluate(() => { showHelpTab("editor"); document.getElementById("helpsheet").classList.add("on"); });
+  // openHelp fetches help/help.html on the first open (docs/plans/2026-10-04-
+  // help-out.md); awaiting it means the sections are injected before the
+  // visibility check below, which would otherwise race the fetch
+  await page.evaluate(() => openHelp("editor"));
   await expect(page.locator('.hsec[data-hsec="editor"]')).toBeVisible();
   await page.click('#helptabs button[data-hs="playback"]');
   await expect(page.locator('.hsec[data-hsec="playback"]')).toBeVisible();

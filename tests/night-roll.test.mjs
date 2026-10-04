@@ -3,7 +3,7 @@
 import test from "node:test";
 import { readFileSync, existsSync } from "node:fs";
 import assert from "node:assert/strict";
-import { createApp, appSource } from "./harness.mjs";
+import { createApp, appSource, helpSource, helpBody } from "./harness.mjs";
 import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
 
 const app = await createApp();
@@ -2767,8 +2767,7 @@ test("GBS import: the Game Boy chip goes through the same capture path (syntheti
 });
 
 test("help sheet covers every shipped feature (drift guard — extend this list when you ship)", () => {
-  const html = appSource();
-  const help = html.match(/id="helpsheet"[\s\S]*?id="viewsheet"/)[0]; // the sheet ends where the View menu begins (its Close button is gone; the pinned ✕ closes it)
+  const help = helpSource(); // index.html's frame (#helptabs, the Full-manual link) + help/help.html (the sections — docs/plans/2026-10-04-help-out.md)
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
@@ -4130,7 +4129,49 @@ test("HELP.md matches the help sheet (regenerate with node tools/build_help.mjs)
   const { buildHelp } = await import("../tools/build_help.mjs");
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const md = readFileSync(new URL("../HELP.md", import.meta.url), "utf8");
-  assert.equal(md, buildHelp(html), "HELP.md is stale — run: node tools/build_help.mjs");
+  assert.equal(md, buildHelp(html, helpBody()), "HELP.md is stale — run: node tools/build_help.mjs");
+});
+
+// docs/plans/2026-10-04-help-out.md: the Help sheet's body left index.html
+// for help/help.html. The frame (tabs) and the body (sections) must keep
+// describing the same eight tabs, and nothing may creep back into the page.
+test("help body lives in help/help.html: one section per tab button, none left in index.html, #helpbody to receive them", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const frame = html.match(/id="helpsheet"[\s\S]*?id="viewsheet"/)[0];
+  const tabs = [...frame.matchAll(/<button data-hs="(\w+)"/g)].map(m => m[1]);
+  const body = helpBody();
+  const secs = [...body.matchAll(/<div class="hsec" data-hsec="(\w+)">/g)].map(m => m[1]);
+  assert.equal(tabs.length, 8);
+  assert.deepEqual([...secs].sort(), [...tabs].sort(), "every tab has its section and vice versa");
+  assert.equal(secs.length, new Set(secs).size, "no section twice");
+  assert.ok(!/class="hsec"/.test(html), "no help section left in index.html — they live in help/help.html");
+  assert.match(frame, /<div id="helpbody">/, "the frame has the slot the loader fills");
+  assert.match(frame, /Loading help…/, "a loading line until the fetch lands");
+  // build_help.mjs closes each section on the four-space-indented </div>:
+  // every section must end that way or HELP.md silently loses a tab
+  assert.equal([...body.matchAll(/\n    <\/div>/g)].length, 8, "each section ends with its indented </div>");
+});
+
+test("openHelp: the sheet opens at once, help/help.html is fetched once and injected, a failed load shows the manual link and retries next time", async () => {
+  const a = await createApp({storage: {}});
+  let calls = 0, fail = true;
+  // the stub replaces the context's global fetch, which the app's own boot
+  // pollers (catalog refresh) also reach — only the help URL is counted
+  a.context.fetch = (url) => { if (url !== "help/help.html") return Promise.reject(new Error("no network in tests")); calls++; return fail ? Promise.reject(new Error("offline")) : Promise.resolve({ok: true, text: async () => '<div class="hsec" data-hsec="views">V</div><div class="hsec" data-hsec="editor">E</div>'}); };
+  const p = a.run(`openHelp("editor")`);
+  assert.ok(a.el("helpsheet").classList.contains("on"), "the sheet is on before the fetch settles");
+  assert.equal(await p, false, "the first load fails");
+  assert.match(a.el("helpbody").innerHTML, /couldn.t be loaded/, "a one-line error, no native dialog");
+  assert.match(a.el("helpbody").innerHTML, /HELP\.md/, "…pointing at the manual");
+  assert.equal(a.run("S.helpLoad"), null, "a failed load is forgotten so the next open retries");
+  fail = false;
+  assert.equal(await a.run(`openHelp("editor")`), true);
+  assert.equal(calls, 2);
+  assert.match(a.el("helpbody").innerHTML, /data-hsec="editor"/, "the body was injected");
+  assert.equal(a.run(`localStorage.getItem("ff1roll-helptab")`), "editor", "the asked-for tab is remembered");
+  await a.run(`ensureHelpLoaded()`);
+  await a.run(`openHelp()`);
+  assert.equal(calls, 2, "fetched once for the page's life");
 });
 
 test("selection editing: move, resize, copy/paste, delete — with undo restoring", () => {

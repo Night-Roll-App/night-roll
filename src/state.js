@@ -11,6 +11,7 @@ export const S = {
 })(),
   APP_MODE: null,
   vwOpenGroup: null,
+  helpLoad: null, // ui/notes.js ensureHelpLoaded: the one in-flight/settled fetch of help/help.html, null until Help first opens (and again after a failed load)
   fileOpenRecentOpen: false,
   CATALOG: {},
   kitShowAll: localStorage.getItem("ff1roll-kitshowall") === "1",

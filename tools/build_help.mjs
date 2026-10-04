@@ -1,5 +1,7 @@
-// Generates HELP.md from the help sheet inside index.html, so the in-app
-// help and the repo manual are the same text by construction.
+// Generates HELP.md from the help sheet, so the in-app help and the repo
+// manual are the same text by construction. Two inputs since docs/plans/
+// 2026-10-04-help-out.md: the sections (dt/dd prose) are help/help.html, the
+// tab labels (and their order) are index.html's #helptabs.
 // Usage: node tools/build_help.mjs   (writes HELP.md at the repo root)
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -21,8 +23,8 @@ function inline(t) {
   ).replace(/\s+/g, " ").trim();
 }
 
-export function buildHelp(html) {
-  const sheet = html.slice(html.indexOf('id="helpsheet"'), html.indexOf('id="filesheet"'));
+export function buildHelp(html, helpHtml) {
+  const sheet = html.slice(html.indexOf('id="helpsheet"'), html.indexOf('id="filesheet"')) + "\n" + helpHtml;
   const tabs = {};
   // [^>]* (2026-09-30, VoiceOver first pass): the tabs now carry role="tab"
   // aria-selected="…" between data-hs and the closing '>' — tolerate any
@@ -34,7 +36,7 @@ export function buildHelp(html) {
   secs.sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]));
 
   let out = "# Night Roll — Manual\n\n" +
-    "<!-- GENERATED from index.html's help sheet by tools/build_help.mjs — do not edit by hand. -->\n" +
+    "<!-- GENERATED from help/help.html (sections) and index.html's help tabs by tools/build_help.mjs — do not edit by hand. -->\n" +
     "\nEverything here is also in the app: File → Help.\n";
   for (const [, key, body] of secs) {
     out += `\n## ${tabs[key] || key}\n`;
@@ -48,7 +50,7 @@ export function buildHelp(html) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const md = buildHelp(readFileSync(join(ROOT, "index.html"), "utf8"));
+  const md = buildHelp(readFileSync(join(ROOT, "index.html"), "utf8"), readFileSync(join(ROOT, "help", "help.html"), "utf8"));
   writeFileSync(join(ROOT, "HELP.md"), md);
   console.log(`HELP.md written (${md.length} chars)`);
 }

@@ -5,6 +5,19 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
+## Help text out of index.html — DONE 2026-10-04 (Josh: "Sure, move the
+help text out." — docs/plans/2026-10-04-help-out.md, Fable review +
+build). The eight help sections (110 KB, half of index.html) moved
+verbatim to help/help.html; index.html keeps the frame (#helptabs, the
+Full-manual link) and a #helpbody slot that src/ui/notes.js fills on
+first open (openHelp → ensureHelpLoaded: fetch once, "Loading help…"
+until it lands, a one-line HELP.md link on failure, retried next open).
+sw.js precaches it and routes help/ network-first (nr-v34); package.mjs
+ships it; build_help.mjs reads it + the tab labels; the FEATURES drift
+guard reads helpSource(). Built on a worktree branch (not merged/pushed).
+To eyeball: each Help tab, the saved tab reopening, an airplane-mode
+reopen on the iPad after one online launch.
+
 ## On-screen keyboard — DONE 2026-10-04 (docs/daw-inventory.md §1a, the
 shortlist's first item). Real-piano look, fixed 44 px keys over the whole
 88-key piano with a scroll, Play/Scroll switch, two-finger scroll in either

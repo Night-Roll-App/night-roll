@@ -471,18 +471,39 @@ export function appCss(root = ROOT) {
   return [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => readFileSync(path.join(root, m[1]), "utf8")).join("\n");
 }
 
-/** index.html, its stylesheets (appCss) and every src/**\/*.js concatenated
- *  (§3.3) — what a test that greps the app's source should search, instead
- *  of index.html alone, once code has started moving out into modules.
- *  index.html comes first so a markup match sits where it always did; a
- *  test that wants only the CSS uses appCss(). A no-op concatenation
- *  (returns just index.html) until src/ exists. */
+/** The Help sheet's body — help/help.html, the eight .hsec sections that
+ *  src/ui/notes.js fetches into #helpbody (docs/plans/2026-10-04-help-out.md).
+ *  Empty string when the file is absent (a fixture tree). */
+export function helpBody(root = ROOT) {
+  const p = path.join(root, "help", "help.html");
+  return existsSync(p) ? readFileSync(p, "utf8") : "";
+}
+
+/** The whole Help sheet as a test should grep it: index.html's frame (the
+ *  #helpsheet overlay up to where #viewsheet begins — title, #helptabs with
+ *  the tab labels, the Full-manual link) followed by helpBody(). The FEATURES
+ *  drift guard reads this: its keywords live in both halves. */
+export function helpSource(root = ROOT) {
+  const html = readFileSync(path.join(root, "index.html"), "utf8");
+  const m = html.match(/id="helpsheet"[\s\S]*?id="viewsheet"/);
+  return (m ? m[0] : "") + "\n" + helpBody(root);
+}
+
+/** index.html, its stylesheets (appCss), the Help body (helpBody) and every
+ *  src/**\/*.js concatenated (§3.3) — what a test that greps the app's
+ *  source should search, instead of index.html alone, once code has started
+ *  moving out into modules. index.html comes first so a markup match sits
+ *  where it always did; a test that wants only the CSS uses appCss(), only
+ *  the Help sheet helpSource(). A no-op concatenation (returns just
+ *  index.html) until src/ exists. */
 export function appSource(root = ROOT) {
   const html = readFileSync(path.join(root, "index.html"), "utf8");
   const srcDir = path.join(root, "src");
   if (!existsSync(srcDir)) return html;
   const css = appCss(root);
   let modulesText = css ? "\n" + css : "";
+  const help = helpBody(root);
+  if (help) modulesText += "\n" + help;
   (function walk(dir) {
     for (const ent of readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, ent.name);

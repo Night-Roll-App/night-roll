@@ -173,13 +173,55 @@ export function renderNoteJump(counts) {
 }
 export function showHelpTab(name) {
   const sheet = document.getElementById("helpsheet");
-  if (!sheet.querySelector('.hsec[data-hsec="' + name + '"]')) name = "views";
+  const secs = [...sheet.querySelectorAll(".hsec")];
+  // an unknown tab falls back to Views — but only once the sections are
+  // there to check against: before ensureHelpLoaded lands there are none,
+  // and the asked-for tab must stay highlighted so the right one shows
+  // the moment the body arrives (openHelp re-runs this then)
+  if (secs.length && !secs.some(s => s.dataset.hsec === name)) name = "views";
   for (const b of sheet.querySelectorAll("#helptabs button")) {
     b.classList.toggle("on", b.dataset.hs === name);
     b.setAttribute("aria-selected", String(b.dataset.hs === name));
   }
-  for (const sec of sheet.querySelectorAll(".hsec")) sec.classList.toggle("on", sec.dataset.hsec === name);
+  for (const sec of secs) sec.classList.toggle("on", sec.dataset.hsec === name);
   try { localStorage.setItem("ff1roll-helptab", name); } catch (e) {}
+}
+// The help body (the eight .hsec sections, 110 KB) is help/help.html, not
+// index.html (docs/plans/2026-10-04-help-out.md): fetched the first time Help
+// opens, injected into #helpbody, never re-fetched for the page's life. The
+// promise lives on S (no top-level let outside state.js); a failed load
+// clears it so the next open tries again instead of showing the error
+// forever. Offline the service worker answers from its precache (sw.js);
+// with no worker at all (dev server, first-ever visit gone offline) the
+// error line below points at the GitHub manual — never a native dialog.
+export const HELP_URL = "help/help.html";
+export function ensureHelpLoaded() {
+  if (S.helpLoad) return S.helpLoad;
+  const body = document.getElementById("helpbody");
+  S.helpLoad = (async () => {
+    try {
+      const r = await fetch(HELP_URL);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      body.innerHTML = await r.text();
+      return true;
+    } catch (err) {
+      S.helpLoad = null;
+      body.innerHTML = '<p class="status">Help couldn\u2019t be loaded (offline?). The full manual is on GitHub: ' +
+        '<a href="https://github.com/Night-Roll-App/night-roll/blob/main/HELP.md" target="_blank" rel="noopener">HELP.md\u2009\u2197</a></p>';
+      return false;
+    }
+  })();
+  return S.helpLoad;
+}
+// The one way to open Help (File ▾ → Help; the e2e suite): the sheet shows
+// at once with the tab strip live and "Loading help…" in the body, and the
+// chosen section switches on when the body lands. `tab` defaults to the
+// last one read on this device.
+export function openHelp(tab) {
+  const name = tab || localStorage.getItem("ff1roll-helptab") || "views";
+  showHelpTab(name);
+  document.getElementById("helpsheet").classList.add("on");
+  return ensureHelpLoaded().then(ok => { if (ok) showHelpTab(name); return ok; });
 }
 export const lassobtn = document.getElementById("lassobtn");
 // Challenge a chord band (Josh, 2026-08-07): tap the band, then ask. Reports
@@ -577,8 +619,7 @@ export function initNotes2() {
   });
   document.getElementById("filehelp").addEventListener("click", () => {
     closeFileMenus();
-    showHelpTab(localStorage.getItem("ff1roll-helptab") || "views");
-    document.getElementById("helpsheet").classList.add("on");
+    openHelp();
   });
   document.getElementById("fileabout").addEventListener("click", () => {
     closeFileMenus();

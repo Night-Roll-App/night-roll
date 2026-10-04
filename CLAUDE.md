@@ -12,8 +12,9 @@ before touching the player.
    and blocked his writing; this is a hard rule). After pushing, check
    the run with `gh run list/watch` instead. `test:e2e:smoke` (~5s)
    is allowed locally only when Josh isn't actively using the machine.
-2. **Help sheet** entry in index.html (#helpsheet, right tab section,
-   touch gesture first, keyboard equivalent after).
+2. **Help sheet** entry in help/help.html (the sheet's body — one
+   `.hsec` per tab; the tab buttons stay in index.html's #helpsheet);
+   right tab section, touch gesture first, keyboard equivalent after.
 3. **HELP.md**: `node tools/build_help.mjs` — NEVER hand-edit it.
 4. **Drift keyword** in tests/night-roll.test.mjs FEATURES list (must
    appear in the help-sheet region; the suite fails otherwise).

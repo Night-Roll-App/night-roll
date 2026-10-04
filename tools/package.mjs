@@ -33,7 +33,11 @@ const CHECK_ONLY = argv.includes("--check");
 const ALLOWED_ALBUM_DIRS = ["albums/starters"];
 const FORBIDDEN = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|teenage mutant|nintendo|capcom|konami|square ?enix|castlevania|zelda|metroid/i;
 const TOP_FILES = ["index.html", "sw.js", "app.webmanifest", "404.html", "LICENSE"];
-const TOP_DIRS = ["vendor", "icons", "src", "css"];
+const TOP_DIRS = ["vendor", "icons", "src", "css", "help"];
+// help/help.html (docs/plans/2026-10-04-help-out.md): the Help sheet's body,
+// fetched at runtime by src/ui/notes.js — the URL it fetches, so the guard
+// below can refuse a bundle whose Help would open empty.
+const HELP_FRAGMENT = "help/help.html";
 // Runtime modules: the browser imports these from tools/ (chip captures, chip
 // audio in the Worker). Only what the app's entry points reach, transitively —
 // the node-only scripts in the same folders (dumps, tests, bridges) stay home.
@@ -184,7 +188,8 @@ for (const f of files) {
   // (comments quoting Josh, feature names, …), the same reason index.html
   // always was — the PATH scan two lines up and the album/compositions
   // guards below still apply to it. css/** (step 16) is index.html's own
-  // former <style> block, exempt for the same reason.
+  // former <style> block, exempt for the same reason; help/help.html is its
+  // former help prose and, being .html, was never in this extension list.
   if (/\.(json|md|txt|webmanifest|js|css)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/") && !r.startsWith("src/") && !r.startsWith("css/")) {
     const t = readFileSync(f, "utf8");
     if (FORBIDDEN.test(t)) fail("forbidden text in " + r + ": " + t.match(FORBIDDEN)[0]);
@@ -198,6 +203,8 @@ if (!CHECK_ONLY) for (const m of SRC.all) if (!existsSync(path.join(OUT, "src", 
 // in index.html must resolve to a repo file AND a packaged one — index.html
 // without css/app.css is an unstyled app, offline and in the iPad bundle alike.
 if (!STYLESHEETS.length) fail("index.html links no stylesheet (css/app.css, docs/split-plan.md §4 step 16)");
+if (!existsSync(path.join(ROOT, HELP_FRAGMENT))) fail("the Help sheet's body is missing from the repo: " + HELP_FRAGMENT);
+else if (!CHECK_ONLY && !existsSync(path.join(OUT, HELP_FRAGMENT))) fail("the Help sheet's body is not in the output: " + HELP_FRAGMENT);
 for (const href of STYLESHEETS) {
   if (!existsSync(path.join(ROOT, href))) fail("index.html links a stylesheet that does not exist: " + href);
   else if (!CHECK_ONLY && !existsSync(path.join(OUT, href))) fail("stylesheet linked by index.html is not in the output: " + href);

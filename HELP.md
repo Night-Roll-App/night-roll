@@ -1,6 +1,6 @@
 # Night Roll — Manual
 
-<!-- GENERATED from index.html's help sheet by tools/build_help.mjs — do not edit by hand. -->
+<!-- GENERATED from help/help.html (sections) and index.html's help tabs by tools/build_help.mjs — do not edit by hand. -->
 
 Everything here is also in the app: File → Help.
 
