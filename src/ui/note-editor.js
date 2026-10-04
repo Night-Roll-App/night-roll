@@ -29,6 +29,8 @@ import { spellPc } from "../theory/chords.js";
 import { appMode } from "../platform/mode.js";
 import { nameChord } from "../theory/chords.js";
 import { snapBeat } from "../model/grid.js";
+import { setEndBQ } from "../model/rollnotes.js";
+import { dropSupersededBy } from "../model/rollnotes.js";
 
 // fractional rotation while a finger is spinning the wheel
 // Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
@@ -357,34 +359,6 @@ export function setAnchorBQImpl(n, tick) { // start anchor from a tick
   const bt = barTicks(), qt = beatTicks(), t = Math.max(0, tick);
   n.b1 = Math.floor(t / bt) + 1;
   n.q1 = snapBeat((t % bt) / qt + 1);
-}
-export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
-  n.b2 = Math.floor(t / bt) + 1;
-  n.q2 = snapBeat((t % bt) / qt + 1);
-}
-// Editing an annotation used to leave the old one sitting beside the new one:
-// airship ended up with two keys at 1.1, two chord bands on 15.1–15.4, and the
-// same tritone note at two anchors — invisible in the roll, because duplicate
-// bands draw on top of each other (Josh, 2026-08-26: "something feels wrong
-// with the annotation sometimes"). Call this before pushing a new annotation.
-// Josh's rules, per type:
-//   chord — one band per exact span. A new band REPLACES whatever was on that
-//           span, whatever its label; that is what re-labelling a bar means.
-//   note  — several notes at one anchor are legitimate and stay. Only a
-//           byte-identical text at the same anchor is a duplicate.
-//   key   — handled by dropLocalKeyAt (anchor-level).
-// Sections are deliberately left alone: nesting is by containment and he has
-// not asked for a rule there.
-export function dropSupersededBy(fresh) {
-  const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
-  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
-                                         (n.q2 || null) === (fresh.q2 || null);
-  if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
-  else if (!isDirective(fresh)) {
-    const t = (fresh.text || "").trim();
-    S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));
-  }
 }
 export function lassoedAnnos() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
 
