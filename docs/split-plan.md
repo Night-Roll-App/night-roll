@@ -1731,6 +1731,308 @@ constraint for whoever next considers moving these two.
 
 **11. `render/*`.**
 - Verify: **browser screenshots** of roll, tracks, score, instrument, circle of fifths and compare at desktop and phone width, compared to before the step.
+- **Done** (2026-10-04, Sonnet builder, worktree branch). This step hit the
+  single sharpest instance of "the hub stays" the whole split has found:
+  `resize`, `draw`, `drawFull`, `playbackFrame`, and `updateCanvasA11y` —
+  render's own headline functions, the ones the table names first — did NOT
+  move, and not for a "not yet split" reason. `resize`/`drawFull` each call
+  `updateTrackMore`/`updateEditButtons` through a `typeof x === "function"`
+  guard (a pre-module-split defensiveness idiom); both are `ui/trackbar.js`/
+  `ui/note-editor.js` content (step 14, layer 4) — PERMANENTLY above
+  render's layer 3, the identical shape step 7 found for `ensureAudio`'s
+  `logDebug`/`logErr`/`setInfo` calls. `draw`/`playbackFrame` each call
+  `drawFull` directly and inherit the block. `updateCanvasA11y` (called only
+  by `drawFull`) has its own, independent permanent blocker: `songTitleOf`
+  calls `impDisplayTitle` (`import/capture.js`, layer 4). All five stay in
+  app.js, bare-name reachable, importing everything genuinely pure
+  underneath them back from the six new files below — this task's own
+  framing ("`draw()` is the hub many modules call: if moving it would need
+  an upward import or a logic change, leave it in app.js") called this
+  exactly.
+  - `render/roll.js` (new, 60 names) ← `canvas`, `ctx`, `wrap` (the roll's
+    DOM/2d-context lookups), `cssCache`/`css`, `pxPerTick`, the whole
+    kit-lane row-math family (`DRUM_LABELS`, `DRUM_SLOTS`, `kitSlots`,
+    `songHasDrums`, `topRow`, `computeLaneTop`, `kitLaneTop`, `laneBotRow`,
+    `botRow`, `inKitLane`, `noteRow`, `drumStep`), the farthest-point
+    auto-color algorithm (`AUTO_COLOR_S`/`AUTO_COLOR_L`, `hslToHex`,
+    `hueOf`, `hueDist`, `relLuminance`, `contrastRatio`,
+    `ROLL_SURFACE_COLORS`, `TRACK_COLOR_CANDIDATES`, `pickFarthestColor`,
+    `TRACK_COLORS`, `autoTrackColors`, `trackColor`), the ruler/strip
+    geometry constants (`RULER_W_ROLL`, `TRACKS_GUTTER`, `BASE_RULER_H`,
+    `LANE_H`, `AUDIO_STRIP_H`, `STRIP_H`), `trackShown`, `drawRangeTints`,
+    the view/range-selection persistence trio (`viewKey`/`viewPersistSoon`/
+    `viewRestore`, `rangeSelKey`/`rangeSelPersist`/`rangeSelRestore`), the
+    "added this session" outline toggle (`showAddedOutline`/
+    `setAddedOutline`), `drawLasso`, `drawRuler`, the playhead-strip family
+    (`stripPlayheadX`, `drawStripPlayhead`, `drawPlayheadStripBand`), the
+    lasso-vs-annotation predicates (`isDirective`, `isCopyableAnno`,
+    `annoInLasso` — unlisted by the table, moved here because nothing at a
+    lower layer needs them yet and `drawRuler` does), `activeNoteAt`,
+    `curTick`, `sectionPathAt`, `drawAnalysisLayer` (explicitly deferred
+    here by step 10's own Deviations), and `fallActive` (the Fall-view
+    predicate `drawRuler`/`drawFull` both guard on — placed here rather
+    than instrument.js specifically so instrument.js could import it
+    downward without a cycle through app.js).
+  - `render/tracks.js` (new, 13 names) ← the Tracks view's own geometry and
+    draw (`tracksLaneH`, `laneGeom`, `trackLaneAt`, `tracksNoteY`,
+    `selClipIs`, `selClipObj`, `clipSpanX`, `clipStatusText`, `clipLabel`,
+    `fmtSec`, `drawAudioStrip`, `drawClipLane`, `drawTracks`).
+  - `render/score.js` (new, 18 names) ← `VF` and the stave-geometry
+    constants, `DRUM_SCORE`/`drumScoreRole`, `vexKey`, `durationPieces`,
+    `buildScoreModel`, `scoreContentH`, `renderMeasure`, `renderIntro`,
+    `scoreTickToX`, `scoreXToTick`, `drawScore`, `scoreMeasureAnchors`,
+    `drawScorePencilGuides`. `scorePencil`/`scoreErase`/`scoreTap`/
+    `scoreStaveAt`/`scorePencilTick` (note entry/erase/tap — the score's own
+    gesture handlers) did NOT move: each reaches `saveEdits`/`draw`/
+    `renderTrackbar`/`setInfo`, none yet split (model/edits.js's SAFETY
+    block, step 5; ui, step 14) — left for step 12/14, same as every other
+    step's hit-test/gesture code next to pure drawing.
+  - `render/instrument.js` (new, 21 names) ← `instWrap`/`instCanvas`/
+    `ictx`, the piano/guitar geometry constants (`WHITE_PCS`, `GTR_TUNING`,
+    `GTR_NAMES`, `GTR_FRETS`, `DEGREE_LABEL`), `degreeOf`, `instRange`,
+    `instLitPitches`, `drawInst`, `pianoGeom`, `instLitColor`, `drawPiano`,
+    `guitarGeom`, `drawGuitar`, `gtrFold`, `FALL_WINDOW`, `drawFall`,
+    `instResize`. `pianoHit`/`guitarHit`/`instTap`/`instPlay`/`recNoteOn`/
+    `recNoteOff`/`recFinish`/MIDI wiring (hit-test, recording, Web MIDI) did
+    NOT move — input/record territory, step 12 — importing `pianoGeom`/
+    `guitarGeom`/`gtrFold` back down.
+  - `render/cof.js` (new, 8 names) ← `cofCanvas`/`cofCtx`, `cofMinor`,
+    `cofDim`, `cofSigLabel`, `cofMajorName`, `wrapSf`, `drawCof`.
+    `cofAngle`/`cofRelease`/the wheel's pointerdown/move/up wiring (drag
+    interaction) stay — gesture territory, step 12 — `--names` never
+    selected them (no top-level `const`/`function` to select; the mover
+    only ever touches whole declarations, so the wiring statements were
+    left untouched by construction, not by a judgment call).
+  - `render/compare.js` (new, 3 names) ← `cmpTrackKey`, `cmpDiff`,
+    `drawCompare` (pure outline-drawing + diff math). `cmpEnter`/`cmpExit`/
+    `cmpShow`/`cmpBar` (the compare-mode UI: fetch the published copy,
+    swap tracks, the status bar) did NOT move — each reaches `setInfo`/
+    `readData`/`draw()` (the last one being this step's own permanent
+    blocker above).
+  - **A same-layer forward-reference cycle between `roll.js` and
+    `score.js`, resolved the same way step 5 resolved `rollnotes.js`/
+    `grid.js`'s**: `drawRuler`/`stripPlayheadX` (roll.js) call
+    `scoreTickToX` (score.js: the score spaces by engraved noteheads, not
+    linear ticks, so every playhead/band x-coordinate asks it first), and
+    `buildScoreModel`/`drawScore` (score.js) need `trackColor`/`trackShown`/
+    `pxPerTick`/`css`/`ctx`/`drawRangeTints`/`drawLasso` (roll.js). Moving
+    `roll.js` first left it with a temporary `import { scoreTickToX } from
+    "../app.js"` (true at that instant — score.js didn't exist yet) and
+    `import { drawAudioStrip } from "../app.js"` (same reason, for
+    tracks.js); both were hand-corrected to `"./score.js"`/`"./tracks.js"`
+    the moment those files existed — an import-specifier-only edit, §0's
+    allowance, confirmed by `check.mjs` rule 5 (which would otherwise flag
+    render importing the layer-5 `LEGACY_CONTAINER`) and by re-diffing that
+    no function body changed.
+  - **The `?perf=1` self-profiler wrap (§2.4) needed hand repair at every
+    one of the ten profiled functions this step moved** (`drawRangeTints`,
+    `drawLasso`, `drawRuler`, `drawTracks`, `buildScoreModel`, `drawScore`,
+    `drawInst`, `drawPiano`, `drawGuitar`, `drawFall`): each one's own
+    `X = prof("X", X); // ?perf=1 attribution …` statement is a plain
+    top-level assignment with no declared name, so `--names` never selects
+    it — it stayed behind in app.js, now illegal (`check.mjs` rule 2:
+    assignment to an imported binding) and, in most cases, silently
+    absorbed into a neighboring selected node's `leadingComments` scan
+    (scope.mjs's backward comment-walk treats the trailing `// ?perf…`
+    comment as the NEXT selected node's leading comment, carrying it across
+    into the `--to` file while the `X = prof(...)` code before it vanishes
+    from BOTH files with no diagnostic — not `move.mjs`'s two previously
+    documented slips, but a close cousin of the "joined line" one, found by
+    the same discipline this task's instructions required: re-diffing every
+    hunk for a dropped statement). Two of the ten (`drawRuler`'s and
+    `drawPiano`'s) left no trace anywhere — fully deleted between two
+    selected cuts — and had to be reconstructed from the pre-move source
+    rather than relocated. Fixed by inserting
+    `X = prof("X", X); // ?perf=1 attribution (docs/split-plan.md §2.4) —
+    see state.js's prof()` immediately after each function's own new
+    definition (the step 7 convention) in its new file, importing `prof`
+    alongside `S` from `../state.js`; confirmed by `grep -c "= prof("`
+    across src/ before vs. after (26 both times, none lost, none
+    duplicated).
+  - `regen-e2e-footer.mjs --file src/app.js` re-run once, after the main
+    six-file move (cleared 98 rule-2 violations from the stale footer in
+    one pass — the step 5/9 precedent exactly); a second no-op run after
+    the hand-fixes above confirmed nothing else had drifted. `check.mjs`
+    clean except the pre-existing `oldBpb` finding; `check-e2e-globals.mjs`
+    and `check-controls.mjs` clean (26 controls, unchanged — this step
+    touched no control). `devtools.js` gained `renderRoll`/`renderTracks`/
+    `renderScore`/`renderInstrument`/`renderCof`/`renderCompare` namespace
+    imports (GET-only). `sw.js` `APP_MODULES` gained all six files,
+    `SW_VERSION` bumped `nr-v16` → `nr-v17`; `index.html`'s modulepreload
+    list gained all six (after `gen/`, before `app.js` — all layer 3,
+    grouped with `audio/` per the layer table). `tests/modules.test.mjs`'s
+    `checkSrc` fileCount assertion bumped 40 → 46. `node tools/package.mjs
+    --out /tmp/nr-dist-s11`: 47 runtime modules, unchanged (no
+    `tools/`-side runtime module corresponds to `render/`, same as every
+    prior layer-3-and-up step). `node tools/dump_notes.mjs` re-run against
+    scratch copies of all four `albums/starters/` songs (never
+    `albums/compositions/`) — every one byte-identical to its committed
+    `.notes.txt`; `tools/at.mjs` re-verified against `fur-elise.mid`. Tests,
+    under `perl -e 'alarm 1200; exec @ARGV' npm test`: night-roll 428 (427
+    pass + 1 pre-existing vault-only skip — every "local song: …"
+    SAFETY-regression test and every P6 Analyze-layer test passes
+    unchanged, since none of that code moved a byte), modules 33/33
+    (fileCount bumped 40 → 46), controls 3/3, pwa 3/3, package 3/3, nsf
+    20/23 (3 pre-existing vault-only skips, same gap as every prior step);
+    the only two failing files were `ps2-real` and `instruments`, both
+    pre-existing local-rip-fixture gaps unrelated to this step (confirmed
+    by grep: no moved name is referenced by `tools/ps2/*.mjs` or either
+    test file). `npm run test:e2e:smoke`: chromium 8/8. `node tools/split/
+    verbatim.mjs HEAD` is clean for every moved function and constant
+    except one: `AUDIO_STRIP_H` (one `lost`/two `extra`, the two statements
+    that originally shared one physical source line with the boot-time
+    `S.RULER_W` default — see "Deviations (11, 2026-10-04)" below for why
+    this specific split cannot be phrased any way `verbatim.mjs`'s
+    line-granular checker accepts, and the hand-verification, token by
+    token, that nothing was actually lost). See "Deviations (11,
+    2026-10-04)" below for the full accounting.
+
+## Deviations (11, 2026-10-04)
+
+- **`draw`/`resize`/`drawFull`/`playbackFrame`/`updateCanvasA11y` — render's
+  own headline hub — are a NEW, PERMANENT class of blocker, not a "stays
+  until a later step lands its dependency" one.** Every prior permanent
+  blocker (`logErr`/`setInfo`/`updateJobsBtn`/`CHIPS`) was a callee render
+  reached OUT to. This one is the opposite shape: `resize()`/`drawFull()`
+  reach OUT to `updateTrackMore`/`updateEditButtons` (both guarded by
+  `typeof x === "function"`, a defensiveness idiom predating the module
+  split, now load-bearing) — `ui/trackbar.js`/`ui/note-editor.js` content,
+  step 14, layer 4, strictly ABOVE render's own layer 3. Once step 14 lands
+  those two files, the import would still be upward — this can never clear,
+  the identical permanence step 7 established for `ensureAudio`'s
+  `logDebug`/`logErr`. `draw()` and `playbackFrame()` each call `drawFull`
+  directly and inherit the block with no blocker of their own.
+  `updateCanvasA11y` (drawFull's own a11y-label updater) has an
+  INDEPENDENT permanent blocker one level down: `songTitleOf` calls
+  `impDisplayTitle` (`import/capture.js`, layer 4) for a draft's typed
+  title. This is this task's own "draw() is the hub" warning, realized
+  exactly as described: moving it would need an upward import (into step
+  14's or step 9's territory) or a logic change (dropping the a11y/edit-
+  button refresh, or the typed-title fallback) — neither is a move. All
+  five stay in app.js, importing the ~113 genuinely pure names below them
+  back from the six new files.
+- **`fallActive` was placed in `render/roll.js`, not `render/instrument.js`
+  (where the table's "fall" responsibility line would suggest), to break a
+  same-layer cycle cleanly rather than route it through app.js.**
+  `drawRuler`/`drawFull` (roll.js) both guard on `fallActive()` before
+  deciding whether to draw the normal roll or hand off to Fall; `drawFall`
+  itself (instrument.js) does NOT call `fallActive` (its caller `drawFull`
+  does the check). Since nothing in instrument.js needs to OWN the
+  predicate, and roll.js's own drawing logic reads it directly, roll.js is
+  the natural single owner; instrument.js was never going to need it
+  regardless of where it landed, so there was no real tension — just a
+  naming choice against the table's prose, the same kind of judgment call
+  steps 4-10 made repeatedly ("physical/thematic position in the table
+  lies; check actual call graphs").
+- **The forward-reference cycle between `render/roll.js` and
+  `render/score.js`** (roll.js's `drawRuler`/`stripPlayheadX` need
+  score.js's `scoreTickToX`; score.js's `buildScoreModel`/`drawScore` need
+  roll.js's `trackColor`/`trackShown`/`pxPerTick`/`css`/`ctx`/
+  `drawRangeTints`/`drawLasso`) and the matching one for `render/tracks.js`
+  (roll.js's `drawRuler` calls tracks.js's `drawAudioStrip`) are both
+  legal under §2.3 ("cycles inside layers 3-5 are allowed") but `move.mjs`
+  only ever resolves a free identifier against the CURRENT state of
+  `--from`/`--to`, exactly the step-5 `rollnotes.js`/`grid.js` finding
+  repeated at the render layer. Moving `roll.js` first (a deliberate,
+  necessary order choice — every other render file's own moved content
+  needs `roll.js`'s `css`/`ctx`/`trackColor`/`curTick`/etc., but nothing in
+  `roll.js`'s own moved content needs `tracks.js`'s or `score.js`'s,
+  EXCEPT these two reverse references) left two import lines reading
+  `"../app.js"` for one call each — both caught immediately by `check.mjs`
+  rule 5 (render, layer 3, importing the `LEGACY_CONTAINER`, layer 5) the
+  moment `tracks.js`/`score.js` didn't exist yet, and both cleared the
+  instant those files were created by hand-correcting the specifier only
+  (§0's allowance: "the only allowed changes are import/export lines").
+  `render/instrument.js`/`render/cof.js`/`render/compare.js` had no such
+  reverse reference — each depends only on `roll.js` (already moved) plus
+  already-lower layers — so they needed no such fix, confirming this was a
+  property of the SPECIFIC mutual pair, not a general render-layer hazard.
+- **A new failure mode in the `?perf=1` self-profiler's own wrap lines,
+  related to but distinct from `move.mjs`'s two documented slips.** Every
+  profiled function's `X = prof("X", X); // comment` statement (step 7's
+  convention: a plain top-level assignment, no declared name) is
+  structurally invisible to `--names` selection — it never travels with
+  its function. For nine of this step's ten profiled functions, the
+  statement's OWN trailing comment was captured as the NEXT (unrelated)
+  selected node's leading comment by `scope.mjs`'s backward comment-walk
+  (`leadingComments`: a comment with only whitespace between its end and
+  the next node's start counts as that node's leading comment, with no
+  check for intervening code before an EARLIER cut), silently relocating
+  the comment into the wrong file while the code statement vanished with
+  no trace in either file — not caught by `check.mjs` (a dangling comment
+  parses fine) or `verbatim.mjs` (comments are explicitly normalized out of
+  its line-for-line comparison, by design — they're not "moved code").
+  Only caught because this task's own instructions required re-diffing
+  every hunk for exactly the "joined line"/"dropped text" shape step 9/10
+  already knew to watch for. Two of the ten statements (`drawRuler`'s,
+  `drawPiano`'s) left no trace at all, comment included — both sat between
+  TWO selected cuts with no surviving node for the comment to attach to.
+  All ten were reconstructed by hand, verified against `grep -c "= prof("`
+  (26 before, 26 after, none duplicated) rather than against the diff
+  (which, by construction, shows nothing different about them — they were
+  never "moved" by any tool, only restored). Worth a `move.mjs`/
+  `scope.mjs` fix (treat a trailing same-line comment as bound to the
+  statement it follows, not available for a later node's leading-comment
+  scan, once this class of bug is in scope for tooling work) — flagged in
+  open-items.md.
+- **`keyNameShownAt` (app.js, `sfShownAt`'s unmoved sibling since step 4's
+  Deviations first named it) was checked and left alone, correctly.**
+  `instTap` (stays, input territory) is its only caller; no render
+  function needs it (`drawPiano`/`drawGuitar` call `keyNameAt`/
+  `sfDeclaredAt` directly, not the Learning/Normal-aware wrapper). Unlike
+  `sfShownAt` (which step 10 finally relocated because `gen/analysis.js`'s
+  real move needed it), nothing in THIS step's actual move set needed
+  `keyNameShownAt`, so moving it would have been the same "speculative
+  widening" step 0a's Deviations warned against. It is still a real,
+  on-topic leaf (model/song.js territory, now that `estimateKey`/
+  `keyNameAt` both live there) for whichever step next has a caller for
+  it — noted in open-items.md, not acted on.
+- **`drawAnalysisLayer` landed in `render/roll.js` exactly where step 10's
+  Deviations predicted**, with zero surprises: pure canvas drawing
+  (`S.analysisBands`/`S.analysisChordLane`/`S.analysisKeyLane`, `ctx`,
+  `css`, `BASE_RULER_H`, `LANE_H`), no blocker, called only from
+  `drawRuler` (now same-file). The three `adopt*` functions and
+  `scheduleAnalysisRecompute` that step 10 found still blocked by
+  `finalizeNotes`/`draw` remain exactly as blocked as step 10 left them —
+  this step didn't touch `finalizeNotes` and confirmed (by this step's own
+  `draw`-stays finding above) that `draw` itself is now understood to be
+  permanently blocked too, not just "not yet split."
+- **A genuinely unfixable `verbatim.mjs` false alarm, found and understood,
+  not papered over: `AUDIO_STRIP_H`.** Its original line in app.js
+  (`const AUDIO_STRIP_H = 18; S.RULER_W = RULER_W_ROLL;`) holds TWO
+  independent top-level statements sharing one physical source line — a
+  `const` declaration and an unrelated boot-time `S.RULER_W` default
+  assignment that happens to sit right after it. `AUDIO_STRIP_H` itself is
+  pure and blocker-free (used only by `drawAudioStrip`, now `render/
+  tracks.js`); the `S.RULER_W` assignment is a non-declaration top-level
+  statement that must stay in app.js (§2.2 — rule 3 forbids a bare one
+  anywhere else, and this one isn't part of any `--range` this step used).
+  Moving `AUDIO_STRIP_H` alone necessarily splits that physical line across
+  two files — the only alternative is to not move it, which would in turn
+  block `drawAudioStrip`, and transitively `drawRuler` (which calls it),
+  undoing this step's actual headline function for no structural reason.
+  `verbatim.mjs` compares the unified diff LINE BY LINE with no concept of
+  "two statements shared one line, only one moved": the original removed
+  line's full text (both statements) can never equal any single added
+  line's text once genuinely split, for ANY phrasing of the split — tried
+  and rejected: wrapping the assignment in an `initRollN()` the normal
+  §2.2 way (adds a third mismatched line, not fewer), combining both onto
+  one line in the destination (illegal — rule 3 forbids a bare top-level
+  statement outside app.js), and duplicating the value under a second name
+  (rule 6: names unique across src/). Confirmed by hand, token-by-token,
+  that nothing was actually lost: `const AUDIO_STRIP_H = 18;` reappears
+  verbatim in `render/roll.js`, `S.RULER_W = RULER_W_ROLL;` reappears
+  verbatim in app.js, and nothing else changed. `node tools/split/
+  verbatim.mjs HEAD` therefore reports exactly one `lost`/two `extra` for
+  this single line and cannot be made to print a clean `✔` without either
+  reverting this move (actively wrong) or a `verbatim.mjs` change (out of
+  this task's scope: a line-level text differ, not an AST-aware one, would
+  need to understand per-statement rather than per-line correspondence to
+  ever accept this class of split). Flagged in open-items.md as a fourth,
+  distinct tooling-limitation class (self-import, line-joining,
+  trailing-comment-misattachment, and now this: same-line, multi-statement
+  splits) — the one of the four with no hand-fix, only a documented,
+  verified-by-hand exception.
 
 **12. `input/gestures.js`, `input/record.js`.**
 - Verify: gestures.test; e2e editor/docking specs in CI; on the iPad, draw a note, hold-to-grab, pinch.

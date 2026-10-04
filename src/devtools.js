@@ -70,6 +70,12 @@ import * as syncPublish from "./sync/publish.js";
 import * as genDrummer from "./gen/drummer.js";
 import * as genBassist from "./gen/bassist.js";
 import * as genAnalysis from "./gen/analysis.js";
+import * as renderRoll from "./render/roll.js";
+import * as renderTracks from "./render/tracks.js";
+import * as renderScore from "./render/score.js";
+import * as renderInstrument from "./render/instrument.js";
+import * as renderCof from "./render/cof.js";
+import * as renderCompare from "./render/compare.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -85,7 +91,8 @@ export function exposeGlobals() {
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce,
                      modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
                      importHub, importCapture, syncPublish,
-                     genDrummer, genBassist, genAnalysis };
+                     genDrummer, genBassist, genAnalysis,
+                     renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global

@@ -448,6 +448,129 @@ import { nextChange } from "./gen/bassist.js";
 import { bsChordTone } from "./gen/bassist.js";
 import { computeAnalysisLayer } from "./gen/analysis.js";
 import { harmonyTrackIndices } from "./gen/analysis.js";
+import { RULER_W_ROLL } from "./render/roll.js";
+import { BASE_RULER_H } from "./render/roll.js";
+import { STRIP_H } from "./render/roll.js";
+import { TRACK_COLORS } from "./render/roll.js";
+import { LANE_H } from "./render/roll.js";
+import { AUDIO_STRIP_H } from "./render/roll.js";
+import { isDirective } from "./render/roll.js";
+import { curTick } from "./render/roll.js";
+import { activeNoteAt } from "./render/roll.js";
+import { sectionPathAt } from "./render/roll.js";
+import { rangeSelRestore } from "./render/roll.js";
+import { trackColor } from "./render/roll.js";
+import { canvas } from "./render/roll.js";
+import { wrap } from "./render/roll.js";
+import { ctx } from "./render/roll.js";
+import { drawRangeTints } from "./render/roll.js";
+import { rangeSelPersist } from "./render/roll.js";
+import { viewPersistSoon } from "./render/roll.js";
+import { fallActive } from "./render/roll.js";
+import { pxPerTick } from "./render/roll.js";
+import { css } from "./render/roll.js";
+import { drawStripPlayhead } from "./render/roll.js";
+import { drawRuler } from "./render/roll.js";
+import { stripPlayheadX } from "./render/roll.js";
+import { topRow } from "./render/roll.js";
+import { botRow } from "./render/roll.js";
+import { inKitLane } from "./render/roll.js";
+import { kitLaneTop } from "./render/roll.js";
+import { trackShown } from "./render/roll.js";
+import { noteRow } from "./render/roll.js";
+import { showAddedOutline } from "./render/roll.js";
+import { drawLasso } from "./render/roll.js";
+import { laneBotRow } from "./render/roll.js";
+import { kitSlots } from "./render/roll.js";
+import { DRUM_LABELS } from "./render/roll.js";
+import { drumStep } from "./render/roll.js";
+import { annoInLasso } from "./render/roll.js";
+import { songHasDrums } from "./render/roll.js";
+import { viewRestore } from "./render/roll.js";
+import { TRACKS_GUTTER } from "./render/roll.js";
+import { setAddedOutline } from "./render/roll.js";
+import { DRUM_SLOTS } from "./render/roll.js";
+import { computeLaneTop } from "./render/roll.js";
+import { AUTO_COLOR_S } from "./render/roll.js";
+import { AUTO_COLOR_L } from "./render/roll.js";
+import { hslToHex } from "./render/roll.js";
+import { hueOf } from "./render/roll.js";
+import { hueDist } from "./render/roll.js";
+import { relLuminance } from "./render/roll.js";
+import { contrastRatio } from "./render/roll.js";
+import { ROLL_SURFACE_COLORS } from "./render/roll.js";
+import { TRACK_COLOR_CANDIDATES } from "./render/roll.js";
+import { pickFarthestColor } from "./render/roll.js";
+import { autoTrackColors } from "./render/roll.js";
+import { cssCache } from "./render/roll.js";
+import { viewKey } from "./render/roll.js";
+import { rangeSelKey } from "./render/roll.js";
+import { drawPlayheadStripBand } from "./render/roll.js";
+import { isCopyableAnno } from "./render/roll.js";
+import { drawAnalysisLayer } from "./render/roll.js";
+import { drawTracks } from "./render/tracks.js";
+import { trackLaneAt } from "./render/tracks.js";
+import { laneGeom } from "./render/tracks.js";
+import { tracksNoteY } from "./render/tracks.js";
+import { clipLabel } from "./render/tracks.js";
+import { clipSpanX } from "./render/tracks.js";
+import { selClipIs } from "./render/tracks.js";
+import { tracksLaneH } from "./render/tracks.js";
+import { fmtSec } from "./render/tracks.js";
+import { clipStatusText } from "./render/tracks.js";
+import { selClipObj } from "./render/tracks.js";
+import { drawAudioStrip } from "./render/tracks.js";
+import { drawClipLane } from "./render/tracks.js";
+import { buildScoreModel } from "./render/score.js";
+import { scoreTickToX } from "./render/score.js";
+import { VF } from "./render/score.js";
+import { drawScore } from "./render/score.js";
+import { SCORE_PAD } from "./render/score.js";
+import { renderMeasure } from "./render/score.js";
+import { SCORE_INTRO_W } from "./render/score.js";
+import { scoreContentH } from "./render/score.js";
+import { scoreXToTick } from "./render/score.js";
+import { SCORE_TOP } from "./render/score.js";
+import { STAVE_H } from "./render/score.js";
+import { DRUM_SCORE } from "./render/score.js";
+import { drumScoreRole } from "./render/score.js";
+import { vexKey } from "./render/score.js";
+import { durationPieces } from "./render/score.js";
+import { renderIntro } from "./render/score.js";
+import { scoreMeasureAnchors } from "./render/score.js";
+import { drawScorePencilGuides } from "./render/score.js";
+import { drawInst } from "./render/instrument.js";
+import { drawFall } from "./render/instrument.js";
+import { FALL_WINDOW } from "./render/instrument.js";
+import { pianoGeom } from "./render/instrument.js";
+import { WHITE_PCS } from "./render/instrument.js";
+import { degreeOf } from "./render/instrument.js";
+import { drawPiano } from "./render/instrument.js";
+import { drawGuitar } from "./render/instrument.js";
+import { guitarGeom } from "./render/instrument.js";
+import { GTR_FRETS } from "./render/instrument.js";
+import { GTR_TUNING } from "./render/instrument.js";
+import { instCanvas } from "./render/instrument.js";
+import { instWrap } from "./render/instrument.js";
+import { GTR_NAMES } from "./render/instrument.js";
+import { instResize } from "./render/instrument.js";
+import { ictx } from "./render/instrument.js";
+import { DEGREE_LABEL } from "./render/instrument.js";
+import { instRange } from "./render/instrument.js";
+import { instLitPitches } from "./render/instrument.js";
+import { instLitColor } from "./render/instrument.js";
+import { gtrFold } from "./render/instrument.js";
+import { wrapSf } from "./render/cof.js";
+import { drawCof } from "./render/cof.js";
+import { cofCanvas } from "./render/cof.js";
+import { cofCtx } from "./render/cof.js";
+import { cofMinor } from "./render/cof.js";
+import { cofDim } from "./render/cof.js";
+import { cofSigLabel } from "./render/cof.js";
+import { cofMajorName } from "./render/cof.js";
+import { drawCompare } from "./render/compare.js";
+import { cmpDiff } from "./render/compare.js";
+import { cmpTrackKey } from "./render/compare.js";
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
     const b = document.createElement("base"); b.href = S.APP_BASE;
@@ -527,188 +650,12 @@ if (PERF_FLAGS.get("dpr")) { // override the source, not the call sites — ever
   try { Object.defineProperty(window, "devicePixelRatio", {get: () => forced, configurable: true}); }
   catch (err) { /* locked down: the flag simply does nothing */ }
 }
- const DRUM_LABELS = {35: "kick2", 36: "kick", 37: "stick", 38: "snare", 40: "snar2",
-  41: "tomF", 42: "hat", 43: "tomL", 44: "hatP", 45: "tom", 46: "hatO",
-  47: "tomM", 48: "tomH", 49: "crash", 51: "ride"}; // GM kit rows, shown while a drum track is selected
-const DRUM_SLOTS = [42, 38, 36, 46, 44, 49, 51, 48, 47, 45, 43, 41, 40, 37, 35];   // cached with _laneTop (same reset points)
-function kitSlots() { // visible lane rows: the trio always, plus whatever the song USES —
-  // unused pieces hide so the lane stays small ("I have no toms at all; hide those")
-  if (S.kitShowAll) return DRUM_SLOTS;
-  if (S._kitSlots) return S._kitSlots;
-  const used = new Set();
-  if (S.song) S.song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti)) for (const n of tr.notes) if (!n.gone) used.add(n.p);
-  });
-  S._kitSlots = DRUM_SLOTS.filter((p, i) => i < 3 || used.has(p));
-  return S._kitSlots;
-}
-function songHasDrums() { return !!S.song && S.song.tracks.some((_, ti) => trackIsDrums(ti)); }
-function topRow() { return S.PMAX; }
- // cached per edit/draw — kitLaneTop scans every note
-function computeLaneTop() { // the lane DOCKS just under the lowest melodic note
-  // (Josh: an empty octave sat between his bass and the kick) — and slides
-  // itself down if a lower note ever appears
-  let lo = Infinity;
-  S.song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti)) return;
-    for (const n of tr.notes) if (!n.gone && n.p < lo) lo = n.p;
-  });
-  if (lo === Infinity) lo = S.PMIN + kitSlots().length + 1; // empty song: lane at the floor
-  return lo - 2; // one gap row between the bass and the hat
-}
- // Josh dragged the lane here — wins over auto-dock, saved per song
-function kitLaneTop() {
-  if (S.laneOverride !== null) return S.laneOverride;
-  if (S._laneTop === null) S._laneTop = computeLaneTop();
-  return S._laneTop;
-}
-function laneBotRow() { return kitLaneTop() - kitSlots().length + 1; }
-function botRow() { return songHasDrums() ? Math.min(S.PMIN, laneBotRow() - 3) : S.PMIN; } // ⋯ expander row + two pitch rows of air under the kit (Josh: "show two more notes under the drums")
-function inKitLane(row) { return songHasDrums() && row <= kitLaneTop() + 1 && row >= laneBotRow() - 1; } // -1: ⋯ row taps route through the lane gesture
-function noteRow(ti, p) { // display row: drums live in the docked lane
-  if (!trackIsDrums(ti)) return p;
-  const i = kitSlots().indexOf(p);
-  return kitLaneTop() - (i < 0 ? 0 : i);
-}
-function drumStep(p, d) { // vertical moves walk the VISIBLE kit slots, not semitones
-  const ks = kitSlots();
-  const i = ks.indexOf(p);
-  return ks[Math.min(ks.length - 1, Math.max(0, (i < 0 ? 0 : i) + d))];
-}
-// Default track colors: farthest-point (max-min) selection (Josh 2026-10-02,
-// replacing the fixed +150° walk — that only separated CONSECUTIVE indexes
-// and still wrapped to 60° between the 1st and 3rd, "orange, blue, PINK").
-// "There has to be some sort of algorithm that always picks the furthest
-// color away from all the colors you currently have in a set." Candidates:
-// 24 hues 15° apart, one fixed saturation/lightness (vivid enough to read as
-// a chip at any hue), filtered by two hard rules — no black-ish or
-// near-white candidate (near-white is excluded outright: on this dark theme
-// it reads as the playhead/selection/highlight gold, never a track), and
-// WCAG contrast >= 3 against the roll's own surfaces: --bg and the pitch-row
-// shading drawn in drawFull (--grid-soft, --grid) — a chip must never blend
-// into its own lane. All 24 candidates clear both bars after the lift (no
-// dark/light theme split: there's only the one theme, see :root above).
-const AUTO_COLOR_S = 0.70, AUTO_COLOR_L = 0.50;
-function hslToHex(h, s, l) {
-  h = ((h % 360) + 360) % 360 / 360;
-  const hue2rgb = (p, q, t) => {
-    if (t < 0) t += 1; if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
-  const r = hue2rgb(p, q, h + 1 / 3), g = hue2rgb(p, q, h), b = hue2rgb(p, q, h - 1 / 3);
-  const toHex = x => Math.round(x * 255).toString(16).padStart(2, "0");
-  return "#" + toHex(r) + toHex(g) + toHex(b);
-}
-function hueOf(hex) { // same formula tests use (and the only place in the app
-  // that needs a hex→hue conversion), kept here so autoTrackColors and the
-  // test can both check it against real song colors
-  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  if (d === 0) return 0;
-  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
-  h *= 60;
-  return h < 0 ? h + 360 : h;
-}
-function hueDist(a, b) { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
-function relLuminance(hex) { // WCAG relative luminance
-  const c = [hex.slice(1, 3), hex.slice(3, 5), hex.slice(5, 7)].map(h => parseInt(h, 16) / 255);
-  const lin = c.map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
-  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-}
-function contrastRatio(hexA, hexB) {
-  const a = relLuminance(hexA), b = relLuminance(hexB);
-  const hi = Math.max(a, b), lo = Math.min(a, b);
-  return (hi + 0.05) / (lo + 0.05);
-}
-// the roll's own surfaces a track chip is drawn over: --bg (the canvas fill)
-// and the pitch-row shading drawFull paints over it (--grid-soft for black-key
-// rows, --grid for the C/F orientation lines) — literal here (not css()
-// lookups) because the candidate list is filtered once, before any canvas or
-// computed style exists; keep these in sync with the :root values above if
-// the theme ever changes
-const ROLL_SURFACE_COLORS = ["#0D1120", "#1A2138", "#242C48"];
-const TRACK_COLOR_CANDIDATES = (() => {
-  const out = [];
-  for (let h = 0; h < 360; h += 15) {
-    // the old hand-picked palette's depth (L 0.50), lifted per hue only as far
-    // as the contrast bar needs (blues/violets come out lighter) — a uniform
-    // L 0.65 read pastel next to the colors Josh was used to
-    let L = AUTO_COLOR_L, hex = hslToHex(h, AUTO_COLOR_S, L);
-    while (L < 0.75 && ROLL_SURFACE_COLORS.some(s => contrastRatio(hex, s) < 3)) hex = hslToHex(h, AUTO_COLOR_S, L += 0.02);
-    const l = relLuminance(hex);
-    if (l < 0.08 || l > 0.85) continue; // black-ish / near-white band
-    if (ROLL_SURFACE_COLORS.some(s => contrastRatio(hex, s) < 3)) continue; // must read against every roll surface
-    out.push({ h, hex });
-  }
-  return out;
-})();
-// greedy max-min: the candidate whose MINIMUM circular hue distance to every
-// hue already in play is the largest (an empty set has nothing to avoid —
-// score is unbounded, so the tie-break alone decides: closest to orange).
-// Ties prefer the candidate nearest 30° (orange — the very first pick always
-// lands exactly there), then the lowest hue, so the walk is deterministic.
-// returns the whole candidate ({h, hex}), not just hex — callers that just
-// picked a color track its EXACT candidate hue, not hueOf(hex): the hex is
-// quantized to 8-bit-per-channel, and recovering the hue from it can drift a
-// few hundredths of a degree, enough to flip an exact tie (two candidates
-// genuinely equidistant from everything in play) in iteration-order instead
-// of by the tie-break rule below
-function pickFarthestColor(usedHues) {
-  let best = null, bestScore = -1, bestTie = Infinity;
-  for (const cand of TRACK_COLOR_CANDIDATES) {
-    const score = usedHues.length ? Math.min(...usedHues.map(u => hueDist(cand.h, u))) : 360;
-    const tie = hueDist(cand.h, 30);
-    if (score > bestScore || (score === bestScore && (tie < bestTie || (tie === bestTie && cand.h < best.h)))) {
-      best = cand; bestScore = score; bestTie = tie;
-    }
-  }
-  return best;
-}
-// a plain categorical palette for things that just cycle through distinct
-// colors (sectionColors below) — the same candidates, in the order the
-// greedy walk would assign them to an all-auto track list
-const TRACK_COLORS = (() => {
-  const used = [], out = [];
-  for (let i = 0; i < TRACK_COLOR_CANDIDATES.length; i++) {
-    const pick = pickFarthestColor(used);
-    used.push(pick.h);
-    out.push(pick.hex);
-  }
-  return out;
-})();
-function autoTrackColors(tracks) {
-  const key = tracks.map(t => t.color || "").join("|") + "#" + tracks.length;
-  if (S._autoColorCache.key === key) return S._autoColorCache.colors;
-  // S = every EXPLICIT color in the song, any index — Josh's own picks are
-  // avoided even when they sit on a later track than the one being assigned.
-  // An explicit color has no candidate h of its own, so it's the one place
-  // hueOf(hex) is unavoidable.
-  const used = [];
-  tracks.forEach(t => { if (t.color) used.push(hueOf(t.color)); });
-  const out = tracks.map(t => {
-    if (t.color) return t.color;
-    const pick = pickFarthestColor(used);
-    used.push(pick.h);
-    return pick.hex;
-  });
-  S._autoColorCache = { key, colors: out };
-  return out;
-}
-
+         
  
                  // storage key (filename) or null for loaded files
 const PSX_SOUNDING_ON = false;                       const HOLD_MS = 160; // hold-to-grab dwell (was 230 — "way too damn hard", 2026-08-24)
 const HOLD_SLOP = 20;                                                                                             // rollnote being edited, or null for new
-const RULER_RANGE_SLOP = 24;                                                           // key dial preview override (null = follow regions)
-
-const canvas = document.getElementById("roll");
-const ctx = canvas.getContext("2d");
-const wrap = document.getElementById("rollwrap");
-// An anchored menu/dropdown clamped against raw window.innerWidth could open
+const RULER_RANGE_SLOP = 24;                                                           // An anchored menu/dropdown clamped against raw window.innerWidth could open
 // spilling under the right dock (window manager, build steps 1-2) — the song
 // area's own right edge is narrower than the window whenever a sheet is
 // docked. Every such clamp site uses this instead of window.innerWidth.
@@ -720,19 +667,7 @@ function songRegionRight() {
   if (r && typeof r.width === "number") return (typeof r.right === "number" ? r.right : r.left + r.width);
   return (typeof window !== "undefined" && window.innerWidth) || 1024;
 }
-const RULER_W_ROLL = 46, TRACKS_GUTTER = 148, BASE_RULER_H = 24, LANE_H = 15;
-const AUDIO_STRIP_H = 18; S.RULER_W = RULER_W_ROLL;
-// playhead/position strip (Josh, 2026-10-03): a band directly under the
-// ruler, right above the notes — tap it to move the cursor WITHOUT parking
-// or re-arming a cycle (the ruler itself keeps that behavior). Its own
-// height matches the bar-number row. S.STRIP_Y (set alongside S.RULER_H,
-// here and in finalizeNotes) is the strip's own top — the OLD meaning of
-// RULER_H (ruler + section/chord/analysis rows + the audio strip, no
-// playhead strip) — kept as its own field so the handful of call sites that
-// mean "the ruler band, not the strip" (bandEdge grab, lassoAnno) still use
-// it; everything that offsets the note area by RULER_H keeps working as-is
-// because RULER_H now simply includes the strip too.
-const STRIP_H = BASE_RULER_H;
+ S.RULER_W = RULER_W_ROLL;
 S.STRIP_Y = BASE_RULER_H;
 S.RULER_H = S.STRIP_Y + STRIP_H;
       // the band the Analyze sheet is currently open on
@@ -1339,25 +1274,6 @@ function dropSupersededBy(fresh) {
     S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));
   }
 }
-function isDirective(n) { // anything that isn't a plain text note
-  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio):/i.test(n.text));
-}
-function activeNoteAt(tick) {
-  let best = null;
-  for (const n of S.rollnotes) {
-    if (isDirective(n)) continue; // directives aren't subtitles
-    if (tick >= n.start && tick < n.end) best = n;
-  }
-  return best;
-}
-function sectionPathAt(tick) {
-  return S.rollnotes.filter(n => (n.section || n.chord) && tick >= n.start && tick < n.end)
-                  .sort((a, b) => a.depth - b.depth).map(s => s.text).join(" › ");
-}
-function curTick() {
-  return S.playing ? secToTick(S.song, playSec()) : S.playCursor;
-}
 (function migrateAlbumPaths() {
   const remap = v => v.replace(/^(ff1roll-(?:notes|edits|ts)-)?midi\//, "$1albums/final-fantasy-i/songs/")
                      .replace(/^(ff1roll-(?:notes|edits|ts)-)?compositions\//, "$1albums/compositions/");
@@ -1863,7 +1779,7 @@ function trackToggle(ti, what) { // M / S / H from a chip or a lane header: the 
   if (S.song && S.song.tracks[ti]) saveTrackDir(ti); // finalizeNotes re-applies it, then renders
   renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
 }
-function trackShown(ti) { return !(S.trackState[ti] && S.trackState[ti].hidden); } // what you SEE and can select: H on the chip
+ // what you SEE and can select: H on the chip
 
 // ---------------------------------------------------------------- Mixer
 // DAW CONVENTIONS REVIEW item 11 (open-items.md, 2026-09-29 advisor round):
@@ -2200,78 +2116,8 @@ function resize() {
   if (typeof updateTrackMore === "function") updateTrackMore(); // wrap point moves with width
   draw();
 }
-const cssCache = {}; // theme is static — cache so 60fps draw() skips getComputedStyle
-function css(name) {
-  return cssCache[name] || (cssCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim());
-}
-// on-demand highlight of the active note's span (⊙ in the subtitle strip)
-// + ruler-drag selection tint (both views). Always-on ambient tints are
-// gone: on a fully-annotated song they covered everything and meant nothing.
-function drawRangeTints(W, H) {
-  const ppt = pxPerTick();
-  const n = S.hlOn && S.song ? activeNoteAt(curTick()) : null;
-  if (n && n.end > n.start) {
-    const x = S.RULER_W + n.start * ppt - S.view.x;
-    const w = (n.end - n.start) * ppt;
-    if (x + w >= S.RULER_W && x <= W) {
-      ctx.fillStyle = css("--gold");
-      ctx.globalAlpha = 0.09;
-      ctx.fillRect(x, S.RULER_H, w, H);
-      ctx.globalAlpha = 1;
-    }
-  }
-  if (S.rangeSel && !S.rangeSel.off) { // parked cycle: body tint hides with it, back on re-arm
-    const x = S.RULER_W + S.rangeSel.a * ppt - S.view.x;
-    ctx.fillStyle = css("--accent");
-    ctx.globalAlpha = 0.12;
-    ctx.fillRect(x, S.RULER_H, (S.rangeSel.b - S.rangeSel.a) * ppt, H);
-    ctx.globalAlpha = 1;
-  }
-}
-drawRangeTints = prof("drawRangeTints", drawRangeTints); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function pxPerTick() { return S.view.pxq / S.song.ppq; }
 function draw() { S.sceneValid = false; rangeSelPersist(); viewPersistSoon(); drawFull(false); }
 draw = prof("draw", draw); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-// each song's zoom + scroll, per view mode (roll / tracks), kept on this
-// device so reopening it — or a relaunch — comes back to where he was (Josh,
-// 2026-10-03: "remember what zoom level I was at"). Debounced: scrolling
-// redraws every frame. A song never opened here still fits on open.
-function viewKey(k, mode) { return "ff1roll-view-" + mode + "-" + k; }
-function viewPersistSoon() {
-  if (!S.songKey || !S.song || S.viewMode === "score") return;
-  const v = S.view, sig = [S.songKey, S.viewMode, v.pxq, v.rowH, Math.round(v.x), Math.round(v.y)].join("|");
-  if (sig === viewPersistSoon.last) return;
-  viewPersistSoon.last = sig;
-  clearTimeout(viewPersistSoon.t);
-  const k = S.songKey, mode = S.viewMode, snap = {pxq: v.pxq, rowH: v.rowH, x: Math.round(v.x), y: Math.round(v.y)};
-  viewPersistSoon.t = setTimeout(() => { try { localStorage.setItem(viewKey(k, mode), JSON.stringify(snap)); } catch (err) { /* private mode */ } }, 400);
-}
-function viewRestore() {
-  if (!S.songKey) return false;
-  let v = null;
-  try { v = JSON.parse(localStorage.getItem(viewKey(S.songKey, S.viewMode)) || "null"); } catch (err) { v = null; }
-  if (!v || !(v.pxq > 0) || !(v.rowH > 0)) return false;
-  S.view.pxq = v.pxq; S.view.rowH = v.rowH; S.view.x = v.x || 0; S.view.y = v.y || 0;
-  return true; // clampView (the caller's next step) still enforces the floors and the song's bounds
-}
-// the ruler selection (cycle range) is view state, kept per song on this
-// device so a relaunch — an install, a crash — comes back to the same loop
-// and Play plays it (Josh, 2026-10-03: "after the app reboot I lose the
-// selection that I had in the ruler"). Written from draw(), which every
-// range edit ends with; only when it actually changed.
-function rangeSelKey(k) { return "ff1roll-range-" + k; }
-function rangeSelPersist() {
-  if (!S.songKey) return;
-  const r = S.rangeSel, sig = r ? r.a + ":" + r.b + ":" + (r.cycle ? 1 : 0) + ":" + (r.off ? 1 : 0) : "";
-  if (sig === rangeSelPersist.last && S.songKey === rangeSelPersist.key) return;
-  rangeSelPersist.last = sig; rangeSelPersist.key = S.songKey;
-  try { if (r) localStorage.setItem(rangeSelKey(S.songKey), JSON.stringify({a: r.a, b: r.b, cycle: !!r.cycle, off: !!r.off})); else localStorage.removeItem(rangeSelKey(S.songKey)); } catch (err) { /* private mode: session only */ }
-}
-function rangeSelRestore(k) {
-  rangeSelPersist.key = k; rangeSelPersist.last = undefined;
-  try { const r = JSON.parse(localStorage.getItem(rangeSelKey(k)) || "null"); if (r && r.b > r.a) { rangeSelPersist.last = r.a + ":" + r.b + ":" + (r.cycle ? 1 : 0) + ":" + (r.off ? 1 : 0); return {a: r.a, b: r.b, cycle: !!r.cycle, ...(r.off ? {off: true} : {})}; } } catch (err) { /* corrupt: none */ }
-  return null;
-}
 function playbackFrame() {
   if (!S.song) { draw(); return; }
   if (PERF_NOSCENE) { drawFull(false); return; } // ?scene=0: never allocate the cache
@@ -2345,20 +2191,6 @@ function updateCanvasA11y() {
   const barTo = Math.max(barFrom, Math.floor((S.view.x + W) / ppt / bt) + 1);
   const nt = S.song.tracks.length;
   el.setAttribute("aria-label", title + " — " + viewName + " view, bars " + barFrom + "–" + barTo + ", " + nt + " track" + (nt === 1 ? "" : "s"));
-}
-// the dashed "added this session" outline — a device-local View toggle, off
-// by default (Josh, 2026-10-02: "I just don't wanna see it all the time…
-// writing a new song, of course I know they're all unpublished"). A function,
-// not a top-level let: drawFull runs on the boot path, before later lets exist.
-function showAddedOutline() {
-  if (showAddedOutline.v === undefined) {
-    try { showAddedOutline.v = localStorage.getItem("ff1roll-added-outline") === "1"; } catch (err) { showAddedOutline.v = false; }
-  }
-  return showAddedOutline.v;
-}
-function setAddedOutline(on) {
-  showAddedOutline.v = !!on;
-  try { localStorage.setItem("ff1roll-added-outline", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
 }
 function drawFull(skipCursor) {
   updateCanvasA11y();
@@ -2757,51 +2589,6 @@ function fallHitNote(pos) { // reverse of drawFall's geometry
   });
   return best;
 }
-function drawLasso() {
-  if (!S.lassoRect) return;
-  const r = S.lassoRect;
-  ctx.strokeStyle = css("--gold");
-  ctx.fillStyle = css("--gold");
-  ctx.globalAlpha = 0.08;
-  ctx.fillRect(Math.min(r.x0, r.x1), Math.min(r.y0, r.y1), Math.abs(r.x1 - r.x0), Math.abs(r.y1 - r.y0));
-  ctx.globalAlpha = 1;
-  ctx.setLineDash([4, 3]);
-  ctx.strokeRect(Math.min(r.x0, r.x1), Math.min(r.y0, r.y1), Math.abs(r.x1 - r.x0), Math.abs(r.y1 - r.y0));
-  ctx.setLineDash([]);
-}
-drawLasso = prof("drawLasso", drawLasso); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-
-// ---- TRACKS VIEW (advisor-designed, 2026-08-22): one lane per track, note
-// thumbnails per-lane-normalized, headers with M/S/fader. Time axis is the
-// roll's own map — ruler, cycle, bar magnet, playhead all shared. ----
-function tracksLaneH() {
-  const n = S.song ? S.song.tracks.length : 1;
-  return Math.max(44, Math.min(88, Math.floor((wrap.clientHeight - S.RULER_H) / Math.max(1, n))));
-}
-function laneGeom(ti) { // screen box + pitch normalization for one track's lane
-  const lh = tracksLaneH();
-  const y0 = S.RULER_H + ti * lh - S.view.y;
-  const tr = S.song.tracks[ti];
-  let lo = Infinity, hi = -Infinity;
-  if (trackIsDrums(ti)) { lo = 0; hi = Math.max(1, kitSlots().length - 1); }
-  else {
-    for (const n of tr.notes) if (!n.gone) { if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p; }
-    if (lo === Infinity) { lo = 57; hi = 69; }
-    if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; } // min one-octave span
-  }
-  return {y0, lh, lo, hi};
-}
-function trackLaneAt(y) {
-  const ti = Math.floor((y - S.RULER_H + S.view.y) / tracksLaneH());
-  return S.song && ti >= 0 && ti < S.song.tracks.length ? ti : -1;
-}
-function tracksNoteY(g, ti, p) { // y of a note's center inside its lane
-  const inner = g.lh - 8;
-  const frac = trackIsDrums(ti)
-    ? (kitSlots().indexOf(p) < 0 ? 0.5 : kitSlots().indexOf(p) / Math.max(1, kitSlots().length - 1))
-    : 1 - (p - g.lo) / Math.max(1, g.hi - g.lo);
-  return g.y0 + 4 + frac * inner;
-}
 function hitTracksNote(pos) {
   const ti = trackLaneAt(pos.y);
   if (ti < 0 || pos.x < S.RULER_W) return null;
@@ -2816,111 +2603,7 @@ function hitTracksNote(pos) {
   }
   return null;
 }
-  // ti of the selected audio clip (tracks view), or null
-// selClip = {ti, ci} of the selected piece. A piece spans [at, at + len] in
-// song time and plays the file from `offset`; nothing sounds before its anchor.
-function selClipIs(ti, ci) { return !!S.selClip && S.selClip.ti === ti && S.selClip.ci === ci; }
-function selClipObj() { return S.selClip && S.song.tracks[S.selClip.ti] && S.song.tracks[S.selClip.ti].clips ? S.song.tracks[S.selClip.ti].clips[S.selClip.ci] || null : null; }
-function clipSpanX(c) { // screen x0/x1 of the piece's body, ghost applied while it drags (move or a trim edge)
-  const ppt = pxPerTick();
-  const sel = selClipObj() === c && S.tracksGhost ? S.tracksGhost : null;
-  let t0 = c.at, t1 = c.dur ? clipEndTick(c) : c.at + barTicks();
-  if (sel) {
-    if (sel.zone === "clip") { t0 += sel.dT; t1 += sel.dT; }
-    else if (sel.zone === "clipL") t0 = Math.min(t1 - 1, t0 + sel.dT);
-    else if (sel.zone === "clipR") t1 = Math.max(t0 + 1, t1 + sel.dT);
-  }
-  return {x0: S.RULER_W + t0 * ppt - S.view.x, x1: S.RULER_W + t1 * ppt - S.view.x};
-}
-function clipStatusText(c) {
-  return c.status === "ready" ? "" : c.status === "missing" ? "audio missing on this device"
-       : c.status === "undecodable" ? "can't decode this file" : "decoding…";
-}
-function clipLabel(ti, ci) {
-  const tr = S.song.tracks[ti], c = tr.clips[ci];
-  const where = c.where === "device" || !c.where ? "on this device only" : c.where === "folder" ? "in your folder" : "in the repo";
-  return (tr.name || "track") + (tr.clips.length > 1 ? " · piece " + (ci + 1) + "/" + tr.clips.length : "") + " · " + c.file +
-    (c.dur ? " · " + fmtSec(clipLen(c)) + " of " + fmtSec(c.dur) : "") +
-    " · starts " + fmtBarBeat(c.at) + (c.offset ? " · from " + c.offset.toFixed(3) + "s in" : "") +
-    " · " + (clipStatusText(c) || where) + (c.local ? " · someone else's recording — never uploaded" : "");
-}
-function fmtSec(s) { const m = Math.floor(s / 60); return m + ":" + String(Math.floor(s - m * 60)).padStart(2, "0"); }
-function drawAudioStrip(W) { // every view: one bar per clip, "a recording plays here"
-  if (!songHasAudio()) return;
-  const y = S.STRIP_Y - AUDIO_STRIP_H; // bottom of the old ruler band — right above the playhead strip
-  ctx.fillStyle = css("--grid-soft");
-  ctx.fillRect(S.RULER_W, y, W - S.RULER_W, AUDIO_STRIP_H);
-  ctx.font = "10px " + css("--mono");
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  forEachClip((c, ti) => {
-    const {x0, x1} = clipSpanX(c);
-    if (x1 < S.RULER_W || x0 > W) return;
-    const l = Math.max(S.RULER_W, x0), r = Math.min(W, x1);
-    ctx.fillStyle = trackColor(ti);
-    ctx.globalAlpha = c.status === "ready" ? 0.55 : 0.25;
-    ctx.fillRect(l, y + 3, Math.max(2, r - l), AUDIO_STRIP_H - 6);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = css("--text");
-    const label = "∿ " + (S.song.tracks[ti].name || "audio") + (clipStatusText(c) ? " — " + clipStatusText(c) : "");
-    if (r - l > 40) ctx.fillText(label.slice(0, Math.floor((r - l) / 6)), l + 4, y + AUDIO_STRIP_H / 2);
-  });
-  ctx.textBaseline = "alphabetic";
-}
-function drawClipLane(ti, ci, g, W) { // tracks view: one piece's waveform (peaks per pixel column)
-  const c = S.song.tracks[ti].clips[ci];
-  const {x0, x1} = clipSpanX(c);
-  if (x1 < S.RULER_W || x0 > W || x1 <= x0) return;
-  const l = Math.max(S.RULER_W, x0), r = Math.min(W, x1);
-  const mid = g.y0 + g.lh / 2, half = (g.lh - 10) / 2;
-  ctx.fillStyle = trackColor(ti);
-  if (!c.peaks || !c.dur) { // not decoded (yet): a dim bar that says why
-    ctx.globalAlpha = 0.2;
-    ctx.fillRect(l, g.y0 + 4, Math.max(2, r - l), g.lh - 8);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = css("--dim");
-    ctx.font = "11px " + css("--mono");
-    ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText(c.file + " — " + clipStatusText(c), l + 6, mid);
-    return;
-  }
-  // pixel → file time: the piece shows file seconds [offset, offset + len] across [x0, x1]
-  // (a trim-edge ghost stretches the visible window with it, so the sound stays put)
-  const sel = selClipObj() === c && S.tracksGhost ? S.tracksGhost : null;
-  let off = c.offset, len = clipLen(c);
-  if (sel && sel.zone === "clipL") { const d = (tickToSec(S.song, c.at + sel.dT) - tickToSec(S.song, c.at)) * S.playRate; off += d; len -= d; }
-  if (sel && sel.zone === "clipR") len += (tickToSec(S.song, c.at + sel.dT) - tickToSec(S.song, c.at)) * S.playRate;
-  const nb = c.peaks.length / 2, bpsec = nb / c.dur; // buckets per file second
-  ctx.globalAlpha = 0.75;
-  for (let x = Math.floor(l); x < r; x++) {
-    const f0 = off + ((x - x0) / (x1 - x0)) * len, f1 = off + ((x + 1 - x0) / (x1 - x0)) * len;
-    const k0 = Math.floor(f0 * bpsec), k1 = Math.max(k0 + 1, Math.floor(f1 * bpsec));
-    let lo = 1, hi = -1;
-    for (let k = Math.max(0, k0); k < Math.min(nb, k1); k++) { const a = c.peaks[k * 2], b = c.peaks[k * 2 + 1]; if (a < lo) lo = a; if (b > hi) hi = b; }
-    if (hi < lo) continue;
-    const yTop = mid - hi * half, yBot = mid - lo * half;
-    ctx.fillRect(x, yTop, 1, Math.max(1, yBot - yTop));
-  }
-  ctx.globalAlpha = 1;
-  ctx.fillRect(l, g.y0 + 4, 1, g.lh - 8); // piece edges — also the trim handles in Select
-  ctx.fillRect(r - 1, g.y0 + 4, 1, g.lh - 8);
-  if (stretchPending(c)) { // the slowed copy is rendering: this piece is silent until it lands
-    ctx.fillStyle = css("--dim");
-    ctx.font = "11px " + css("--mono");
-    ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText("⏳ preparing " + Math.round(S.playRate * 100) + "% (pitch kept)…", l + 6, g.y0 + 12);
-  }
-  if (selClipIs(ti, ci)) {
-    ctx.strokeStyle = css("--gold");
-    ctx.strokeRect(l + 0.5, g.y0 + 3.5, r - l - 1, g.lh - 7);
-    if (S.mode === "select") { // handle nubs so the edges read as grabbable
-      ctx.fillStyle = css("--gold");
-      ctx.fillRect(l, mid - 8, 3, 16);
-      ctx.fillRect(r - 3, mid - 8, 3, 16);
-    }
-  }
-}
-// Rewrite a track's audio: annotations from a list of pieces. Every change to a
+  // Rewrite a track's audio: annotations from a list of pieces. Every change to a
 // piece changes its note's identity, so old notes are tombstoned (or the repo
 // copy resurrects them on the next load) and fresh added notes take their
 // place. One undo step per call.
@@ -3020,258 +2703,6 @@ function hitTracksClip(pos) { // {ti, ci, zone: "clip" | "clipL" | "clipR"} for 
   }
   return null;
 }
-function drawTracks(W, H, skipCursor) {
-  const ppt = pxPerTick();
-  drawRangeTints(W, H);
-  for (let ti = 0; ti < S.song.tracks.length; ti++) {
-    const g = laneGeom(ti);
-    if (g.y0 + g.lh < S.RULER_H || g.y0 > H) continue;
-    // lane body
-    if (ti === S.selTrack) {
-      ctx.fillStyle = css("--accent");
-      ctx.globalAlpha = 0.05;
-      ctx.fillRect(S.RULER_W, g.y0, W - S.RULER_W, g.lh);
-      ctx.globalAlpha = 1;
-    }
-    ctx.strokeStyle = css("--grid");
-    ctx.beginPath(); ctx.moveTo(0, g.y0 + g.lh - 0.5); ctx.lineTo(W, g.y0 + g.lh - 0.5); ctx.stroke();
-    // notes (thumbnail): per-lane normalized; ghost offset applies to the selection
-    const tr = S.song.tracks[ti];
-    if (tr.kind === "audio") tr.clips.forEach((c, ci) => drawClipLane(ti, ci, g, W));
-    const noteH = Math.max(2, Math.min(8, (g.lh - 8) / Math.max(12, g.hi - g.lo)));
-    tr.notes.forEach((n, ni) => {
-      if (n.gone) return;
-      const selHere = S.multiSelKey.has(ti + ":" + ni) || (S.selNote && S.selNote.ti === ti && S.selNote.ni === ni);
-      const gdT = selHere && S.tracksGhost ? S.tracksGhost.dT : 0;
-      const x = S.RULER_W + (n.t + gdT) * ppt - S.view.x;
-      const w = Math.max(2, n.d * ppt);
-      if (x + w < S.RULER_W || x > W) return;
-      let y = tracksNoteY(g, ti, n.p);
-      if (selHere && S.tracksGhost && S.tracksGhost.dLane) y += S.tracksGhost.dLane * g.lh;
-      ctx.fillStyle = trackColor(ti);
-      ctx.globalAlpha = (selHere && S.tracksGhost ? 0.6 : 0.55 + 0.45 * ((n.v || 80) / 127));
-      ctx.fillRect(x, y - noteH / 2, w, noteH);
-      ctx.globalAlpha = 1;
-      if (selHere) {
-        ctx.strokeStyle = css("--gold");
-        ctx.strokeRect(x - 0.5, y - noteH / 2 - 0.5, w + 1, noteH + 1);
-      }
-    });
-    // header column (over the notes' left edge)
-    ctx.fillStyle = css("--panel");
-    ctx.fillRect(0, g.y0, S.RULER_W, g.lh);
-    ctx.strokeStyle = css("--grid");
-    ctx.beginPath(); ctx.moveTo(S.RULER_W - 0.5, g.y0); ctx.lineTo(S.RULER_W - 0.5, g.y0 + g.lh); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, g.y0 + g.lh - 0.5); ctx.lineTo(S.RULER_W, g.y0 + g.lh - 0.5); ctx.stroke();
-    ctx.fillStyle = trackColor(ti);
-    ctx.beginPath(); ctx.arc(12, g.y0 + 14, 4, 0, 7); ctx.fill();
-    ctx.fillStyle = ti === S.selTrack ? css("--gold") : css("--text");
-    ctx.font = "11px " + css("--mono");
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText((tr.name || "track " + (ti + 1)).slice(0, 10) + (tr.kind === "audio" ? " ∿" : ""), 22, g.y0 + 14);
-    // M / S chips
-    const st = S.trackState[ti] || {};
-    const chip = (label, on, x0) => {
-      ctx.fillStyle = on ? css("--gold") : css("--panel2");
-      ctx.fillRect(x0, g.y0 + 24, 22, 16);
-      ctx.fillStyle = on ? "#111" : css("--dim");
-      ctx.textAlign = "center";
-      ctx.fillText(label, x0 + 11, g.y0 + 32);
-      ctx.textAlign = "left";
-    };
-    chip("M", !!st.muted, 8);
-    chip("S", !!st.solo, 34);
-    // fader (hidden when the lane is squeezed; vol% always shows)
-    const vol = tr.vol === undefined ? 1 : tr.vol;
-    if (g.lh >= 56) {
-      const fx = 62, fw = 56, fy = g.y0 + 32;
-      ctx.strokeStyle = css("--grid");
-      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + fw, fy); ctx.stroke();
-      ctx.fillStyle = css("--accent");
-      ctx.beginPath(); ctx.arc(fx + fw * Math.min(1, vol / 1.5), fy, 5, 0, 7); ctx.fill();
-    }
-    ctx.fillStyle = css("--dim");
-    ctx.textAlign = "right";
-    ctx.fillText(Math.round(vol * 100) + "%", S.RULER_W - 8, g.y0 + 14);
-    ctx.textAlign = "left";
-  }
-  // playhead — never into the scene cache: playbackFrame lays the live one
-  // over the cached scene, and a wheel scroll mid-play re-cached this view
-  // WITH a playhead, so a frozen twin stood beside the moving one (Josh,
-  // 2026-09-16, graveyard-2 in Tracks)
-  if (skipCursor) return;
-  const x = S.RULER_W + (S.playing ? secToTick(S.song, playSec()) : S.playCursor) * ppt - S.view.x;
-  ctx.fillStyle = S.playing ? css("--gold") : css("--accent");
-  ctx.fillRect(x - (S.playing ? 0 : 1), 0, S.playing ? 1.5 : 2.5, H);
-  ctx.beginPath();
-  ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-  ctx.fill();
-}
-drawTracks = prof("drawTracks", drawTracks); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-// playhead strip (Josh, 2026-10-03): a band under the ruler, right above the
-// notes — x uses the same per-view geometry as every other playhead mark
-// (linear ticks, except Score's engraved spacing).
-function stripPlayheadX() {
-  const tick = S.playing ? secToTick(S.song, playSec()) : S.playCursor;
-  return S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x;
-}
-// drawn AFTER drawRuler (never baked into the scene cache, same discipline
-// as the roll/tracks/score's own cursor marks) — drawRuler's opaque strip
-// background would otherwise paint right over it.
-function drawStripPlayhead(x, color) {
-  if (x < S.RULER_W) return;
-  ctx.fillStyle = color;
-  ctx.fillRect(x - 0.75, S.STRIP_Y, 1.5, S.RULER_H - S.STRIP_Y);
-}
-function drawPlayheadStripBand(W) { // the strip's static look — RULER chrome,
-  // not a roll row: the ruler's own panel background (drawRuler already
-  // filled it), a line above, bar ticks full height and beat ticks short from
-  // the bottom edge like a ruler's. A --grid-soft fill read as one of the
-  // roll's light pitch rows (Josh, 2026-10-03: "it's just actually
-  // confusing"). The moving playhead is drawStripPlayhead's, never here.
-  const ppt = pxPerTick(), bt = barTicks(), beatT = beatTicks();
-  const t0 = S.view.x / ppt, t1 = (S.view.x + W) / ppt;
-  ctx.strokeStyle = css("--grid");
-  ctx.beginPath(); ctx.moveTo(S.RULER_W, S.STRIP_Y + 0.5); ctx.lineTo(W, S.STRIP_Y + 0.5); ctx.stroke();
-  ctx.fillStyle = css("--dim");
-  for (let t = Math.floor(t0 / beatT) * beatT; t < t1; t += beatT) {
-    const x = S.RULER_W + t * ppt - S.view.x;
-    if (x < S.RULER_W) continue;
-    const isBar = Math.round(t) % bt === 0;
-    const h = isBar ? STRIP_H - 4 : Math.round(STRIP_H * 0.35);
-    ctx.globalAlpha = isBar ? 0.8 : 0.5;
-    ctx.fillRect(x, S.RULER_H - h, 1, h);
-  }
-  ctx.globalAlpha = 1;
-}
-function drawRuler(W, H) {
-  const ppt = pxPerTick();
-  const bt = barTicks();
-  const t0 = S.view.x / ppt, t1 = (S.view.x + W) / ppt;
-  ctx.fillStyle = css("--panel");
-  ctx.fillRect(0, 0, W, S.RULER_H);
-  ctx.strokeStyle = css("--grid");
-  ctx.beginPath(); ctx.moveTo(0, S.RULER_H - 0.5); ctx.lineTo(W, S.RULER_H - 0.5); ctx.stroke();
-  drawAudioStrip(W);
-  drawPlayheadStripBand(W);
-  ctx.font = "10px " + css("--mono");
-  ctx.textAlign = "left";
-  // xFrom/xTo restrict the pass to a pixel span (the cycle strip's re-ink)
-  const drawNumbers = (xFrom, xTo) => {
-    for (let t = Math.floor(t0 / bt) * bt; t < t1; t += bt) {
-      const x = S.RULER_W + t * ppt - S.view.x;
-      if (x < S.RULER_W - 4 || x < xFrom || x >= xTo) continue;
-      ctx.fillText(String(Math.round(t / bt) + 1), x + 4, 15);
-    }
-  };
-  ctx.fillStyle = css("--text"); // bright like the octave labels — dim was hard to read
-  drawNumbers(-Infinity, Infinity);
-  // Logic-style subdivision ticks along the ruler's bottom edge: bars always,
-  // beats when there's room, 16ths when zoomed right in — density-adaptive.
-  // xFrom/xTo restrict the pass to a pixel span (the cycle strip's re-ink).
-  const drawTicks = (xFrom, xTo) => {
-    const qt = beatTicks();
-    const step = qt * ppt >= 96 ? qt / 4 : qt * ppt >= 14 ? qt : bt;
-    ctx.beginPath();
-    for (let t = Math.floor(t0 / step) * step; t < t1; t += step) {
-      const x = Math.round(S.RULER_W + t * ppt - S.view.x) + 0.5;
-      if (x < S.RULER_W || x < xFrom || x >= xTo) continue;
-      const onBar = Math.abs(t / bt - Math.round(t / bt)) < 1e-6;
-      const onBeat = Math.abs(t / qt - Math.round(t / qt)) < 1e-6;
-      const h = onBar ? 9 : onBeat ? 6 : 3;
-      // ticks live in the number strip (BASE_RULER_H), above any section lanes
-      ctx.moveTo(x, BASE_RULER_H - 1); ctx.lineTo(x, BASE_RULER_H - 1 - h);
-    }
-    ctx.stroke();
-  };
-  ctx.strokeStyle = css("--dim");
-  ctx.globalAlpha = 0.7;
-  drawTicks(-Infinity, Infinity);
-  ctx.globalAlpha = 1;
-  if (S.rangeSel) {
-    // amber = Logic's cycle strip (▶ loops this); a band-tap selection keeps
-    // the quiet accent tint — it feeds + Note but never hijacks playback
-    const rsx = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.a) : S.RULER_W + S.rangeSel.a * ppt - S.view.x;
-    const rse = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.b) : S.RULER_W + S.rangeSel.b * ppt - S.view.x;
-    ctx.fillStyle = S.rangeSel.cycle ? "#E09A3E" : css("--accent");
-    ctx.globalAlpha = (S.rangeSel.cycle ? 0.75 : 0.3) * (S.rangeSel.off ? 0.35 : 1); // dimmed = parked, tap to re-arm
-    ctx.fillRect(rsx, 0, rse - rsx, BASE_RULER_H); // number strip only — lanes stay readable
-    ctx.globalAlpha = 1;
-    if (S.rangeSel.cycle && !S.rangeSel.off) { // the bright amber swallows the ticks and numbers: re-ink them black (Josh, 2026-09-07)
-      ctx.strokeStyle = "#000";
-      ctx.globalAlpha = 0.8;
-      drawTicks(rsx, rse);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#000";
-      ctx.font = "10px " + css("--mono"); // the tick pass doesn't touch it, but stay explicit
-      drawNumbers(rsx, rse);
-    }
-  }
-  // in score view, band edges follow the ENGRAVED positions (scoreTickToX,
-  // the playhead's own map) — linear time put "A part" a hair off its notes
-  const tickX = t => S.viewMode === "score" && S.scoreModel ? scoreTickToX(t) : S.RULER_W + t * ppt - S.view.x;
-  // bands the lasso has taken (or is taking, mid-drag) get a gold outline —
-  // the only sign that ⧉/✂ will carry them (Josh, 2026-09-13)
-  let hl = S.lassoAnno;
-  if (S.lassoRect && S.viewMode === "roll" && !fallActive() && Math.min(S.lassoRect.y0, S.lassoRect.y1) < S.STRIP_Y) {
-    const xa = Math.min(S.lassoRect.x0, S.lassoRect.x1), xb = Math.max(S.lassoRect.x0, S.lassoRect.x1);
-    hl = {t0: (xa - S.RULER_W + S.view.x) / ppt, t1: (xb - S.RULER_W + S.view.x) / ppt,
-          y0: Math.min(S.lassoRect.y0, S.lassoRect.y1), y1: Math.max(S.lassoRect.y0, S.lassoRect.y1)};
-  }
-  const taken = n => annoInLasso(n, hl);
-  for (const n of S.rollnotes) {
-    if (!n.section && !n.chord) continue;
-    if (n.lane === null) continue; // collapsed level: folded out of the ruler
-    const x = tickX(n.start);
-    const w = tickX(n.end) - x;
-    if (x + w < S.RULER_W || x > W) continue;
-    const y = BASE_RULER_H + n.lane * LANE_H;
-    const color = S.sectionColors[n.text] || css("--accent");
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.3;
-    ctx.fillRect(x + 1, y + 1, w - 2, LANE_H - 2);
-    ctx.globalAlpha = 1;
-    if (taken(n)) {
-      ctx.strokeStyle = css("--gold");
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(Math.max(x, S.RULER_W) + 1.5, y + 1.5, w - 3 - Math.max(0, S.RULER_W - x), LANE_H - 3);
-      ctx.lineWidth = 1;
-    }
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(Math.max(x, S.RULER_W), y, w - 2 - Math.max(0, S.RULER_W - x), LANE_H);
-    ctx.clip();
-    ctx.fillStyle = css("--text");
-    ctx.font = "10px " + css("--mono");
-    ctx.fillText((n.stale ? "⚠ " : "") + n.text + (n.cnote ? " ✱" : ""), Math.max(x, S.RULER_W) + 5, y + 11);
-    ctx.restore();
-  }
-  // P6: the Analyze layer draws AFTER the real section/chord bands, in its
-  // own rows below them (analysisChordLane/analysisKeyLane, set by
-  // finalizeNotes) — dashed/outlined so it never reads as a real annotation.
-  if (S.analysisOn && appMode() === "normal") drawAnalysisLayer(tickX, W);
-  for (const n of S.rollnotes) {
-    if (n.section || n.chord || n.chopdir) continue; // chop anchors are raw-space: no flag
-    const x = S.RULER_W + n.start * ppt - S.view.x;
-    if (x < S.RULER_W - 8 || x > W) continue;
-    if (taken(n)) { // lasso'd text note: a ring behind its flag
-      ctx.strokeStyle = css("--gold");
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(x, BASE_RULER_H - 7, 7, 0, Math.PI * 2); ctx.stroke();
-      ctx.lineWidth = 1;
-    }
-    ctx.fillStyle = css("--gold");
-    ctx.globalAlpha = n.added ? 0.6 : 1;
-    ctx.beginPath();
-    ctx.moveTo(x, S.STRIP_Y - 8); // bottom of the ruler/bands — above the playhead strip, same spot as before it existed
-    ctx.lineTo(x + 8, S.STRIP_Y - 4.5);
-    ctx.lineTo(x, S.STRIP_Y - 1);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-}
-drawRuler = prof("drawRuler", drawRuler); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
 // ---------------------------------------------------------------- hit test / coords
 function evtPos(e) {
@@ -3438,19 +2869,7 @@ function resizeSelection(dTicks) { // same delta for every note — a chord shri
   if (!items.length) return false;
   return selEditApply(items, nn => { nn.d = Math.max(minD, nn.d + dTicks); });
 }
-  // {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
-const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
-function annoInLasso(n, L) { // lane-precise: the band's own row must be inside the box, and its time
-  if (!L || !isCopyableAnno(n)) return false;
-  if (!(n.start < L.t1 && (n.b2 ? n.end : n.start + 1) > L.t0)) return false;
-  if (n.section || n.chord) {
-    if (n.lane === null || n.lane === undefined) return false; // folded out of the ruler
-    const y = BASE_RULER_H + n.lane * LANE_H;
-    return y < L.y1 && y + LANE_H > L.y0;
-  }
-  return L.y0 < BASE_RULER_H; // text-note flags live in the number strip
-}
-function copySelection() { // returns notes + annotations copied (0 = nothing to copy)
+  function copySelection() { // returns notes + annotations copied (0 = nothing to copy)
   const items = selEditItems();
   const lassoed = lassoedAnnos(); // bands alone are a copy too (Josh, 2026-09-13: ⧉ was gray with only chords lasso'd)
   if (!items.length && !lassoed.length) return 0;
@@ -5576,12 +4995,6 @@ function autoVoiceLabel(ti) { // what "auto" actually resolves to for THIS track
   const v = voiceType(ti);
   return (VOICES.find(([id]) => id === v) || [, v])[1];
 }
-function trackColor(ti) {
-  if (!S.song || !S.song.tracks.length) return TRACK_COLORS[((ti % TRACK_COLORS.length) + TRACK_COLORS.length) % TRACK_COLORS.length];
-  const n = S.song.tracks.length, i = ((ti % n) + n) % n; // wrap, same as the old modulo palette did
-  const c = S.song.tracks[i].color;
-  return c || autoTrackColors(S.song.tracks)[i];
-}
 function saveVoices() { saveTrackDir(S.voiceMenuTi); }
 function saveTrackDir(ti) { // upsert this track's "track:" directive — a normal
   // synced annotation (Josh, 2026-08-15): voice & color are song truths; so
@@ -7547,498 +6960,12 @@ document.getElementById("albumnext").addEventListener("click", albumNext);
 document.getElementById("albumleave").addEventListener("click", albumLeave);
 
 
-// ---------------------------------------------------------------- score view
-const VF = (() => {
-  try { return Vex.Flow.Stave ? Vex.Flow : Vex; } catch (e) { return null; }
-})();
-  if (S.viewMode === "tracks") S.RULER_W = TRACKS_GUTTER;                        // cached clef/key/time column
-const STAVE_H = 100, SCORE_TOP = 18, SCORE_PAD = 50, SCORE_INTRO_W = 100; 
-// Drum-chart conventions (handoff spec): staff positions are ROLES, not
-// pitches — kick bottom space, snare 3rd space, toms by size, hats above the
-// top line; x-heads for metal; stems up = hands, down = feet.
-const DRUM_SCORE = {
-  35: {key: "f/4", x: false, hand: false}, 36: {key: "f/4", x: false, hand: false}, // kicks
-  44: {key: "d/4", x: true,  hand: false},                                          // hat pedal
-  37: {key: "c/5", x: true,  hand: true},                                           // side stick
-  38: {key: "c/5", x: false, hand: true}, 40: {key: "c/5", x: false, hand: true},   // snares
-  41: {key: "a/4", x: false, hand: true}, 43: {key: "a/4", x: false, hand: true},   // floor toms
-  45: {key: "d/5", x: false, hand: true}, 47: {key: "d/5", x: false, hand: true},   // mid toms
-  48: {key: "e/5", x: false, hand: true}, 50: {key: "e/5", x: false, hand: true},   // high toms
-  42: {key: "g/5", x: true,  hand: true}, 46: {key: "g/5", x: true,  hand: true},   // hats
-  49: {key: "a/5", x: true,  hand: true},                                           // crash
-  51: {key: "f/5", x: true,  hand: true},                                           // ride
-};
-function drumScoreRole(gm) { return DRUM_SCORE[gm] || {key: "c/5", x: true, hand: true}; }
-function vexKey(pitch, spell) {
-  const s = spell[pitch % 12];
-  const naturalPc = LETTER_PC[s.letter];
-  const accSemis = s.acc === "#" ? 1 : s.acc === "b" ? -1 : s.acc === "##" ? 2 : s.acc === "bb" ? -2 : 0;
-  // octave of the *letter*: derive from the letter's natural pitch nearest this note
-  const letterMidi = pitch - accSemis;
-  const octave = Math.floor(letterMidi / 12) - 1;
-  return s.letter.toLowerCase() + (s.acc || "") + "/" + octave;
-}
+  if (S.viewMode === "tracks") S.RULER_W = TRACKS_GUTTER;                         
 
-// duration decomposition: ticks -> notated pieces (greedy, tied)
-function durationPieces(ticks, ppq) {
-  const table = [
-    [4 * ppq, "w", 0], [3 * ppq, "h", 1], [2 * ppq, "h", 0], [1.5 * ppq, "q", 1],
-    [ppq, "q", 0], [0.75 * ppq, "8", 1], [0.5 * ppq, "8", 0],
-    [0.375 * ppq, "16", 1], [0.25 * ppq, "16", 0],
-  ];
-  const out = [];
-  let rem = ticks;
-  let guard = 0;
-  while (rem >= 0.25 * ppq - 1 && guard++ < 32) {
-    const hit = table.find(([tk]) => tk <= rem + 1);
-    if (!hit) break;
-    out.push({dur: hit[1], dots: hit[2], ticks: hit[0]});
-    rem -= hit[0];
-  }
-  return out.length ? out : [{dur: "16", dots: 0, ticks: 0.25 * ppq}];
-}
 
-function buildScoreModel() {
-  S.scoreModel = null;
-  S.scoreCache.clear();
-  S.scoreIntro = null;
-  if (!VF || !S.song) return;
-  const bt = barTicks();
-  const grid = S.song.ppq / 4; // 16th grid
-  let lastTick = 0;
-  S.song.tracks.forEach(tr => tr.notes.forEach(n => { if (!n.gone) lastTick = Math.max(lastTick, n.t + n.d); }));
-  const nMeasures = Math.max(1, Math.ceil(lastTick / bt - 0.05));
-  const sf0 = sfAt(0);
-  const staves = [];
-  S.song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti) || !trackShown(ti) || tr.kind === "audio") return; // no staff for a clip
-    // compositions keep empty tracks visible — the stave must exist before
-    // its first note can be entered on it
-    if (!tr.notes.length && !isComposition()) return;
-    // quantize + chord-group
-    const byStart = new Map();
-    for (let ni = 0; ni < tr.notes.length; ni++) {
-      const n = tr.notes[ni];
-      if (n.gone) continue;
-      const qt = Math.round(n.t / grid) * grid;
-      const qd = Math.max(grid, Math.round(n.d / grid) * grid);
-      const cur = byStart.get(qt);
-      if (cur) {
-        if (!cur.pitches.includes(n.p)) { cur.pitches.push(n.p); cur.refs.push({ti, ni}); }
-        cur.dur = Math.max(cur.dur, qd);
-      } else byStart.set(qt, {start: qt, dur: qd, pitches: [n.p], refs: [{ti, ni}]});
-    }
-    const evs = [...byStart.values()].sort((a, b) => a.start - b.start);
-    for (let k = 0; k + 1 < evs.length; k++) {
-      if (evs[k].start + evs[k].dur > evs[k+1].start) evs[k].dur = evs[k+1].start - evs[k].start;
-    }
-    const clean = evs.filter(e => e.dur > 0);
-    // avg pitch -> clef (empty track: guess from the voice name)
-    const avg = clean.reduce((a, e) => a + e.pitches[0], 0) / (clean.length || 1);
-    const clef = clean.length ? (avg < 58 ? "bass" : "treble")
-               : (/tri|bass/i.test(tr.name || "") ? "bass" : "treble");
-    // split into measures, fragments tied across barlines, gaps become rests
-    const measures = Array.from({length: nMeasures}, () => []);
-    let pos = 0; // rest-fill position
-    const pushRest = (from, to) => {
-      let f = from;
-      while (f < to - 1) {
-        const mi = Math.floor(f / bt);
-        if (mi >= nMeasures) break;
-        const mEnd = Math.min(to, (mi + 1) * bt);
-        for (const p of durationPieces(mEnd - f, S.song.ppq)) {
-          measures[mi].push({rest: true, start: f, dur: p.dur, dots: p.dots});
-          f += p.ticks;
-          if (f >= mEnd - 1) break;
-        }
-        f = Math.max(f, mEnd);
-      }
-    };
-    for (const e of clean) {
-      if (e.start > pos) pushRest(pos, e.start);
-      let f = e.start;
-      const endT = e.start + e.dur;
-      let prevPiece = null;
-      while (f < endT - 1) {
-        const mi = Math.floor(f / bt);
-        if (mi >= nMeasures) break;
-        const mEnd = Math.min(endT, (mi + 1) * bt);
-        for (const p of durationPieces(mEnd - f, S.song.ppq)) {
-          const piece = {rest: false, start: f, dur: p.dur, dots: p.dots,
-                         pitches: e.pitches.slice().sort((a, b) => a - b), refs: e.refs,
-                         tieFrom: prevPiece};
-          measures[mi].push(piece);
-          prevPiece = piece;
-          f += p.ticks;
-          if (f >= mEnd - 1) break;
-        }
-        f = Math.max(f, mEnd);
-      }
-      pos = Math.max(pos, endT);
-    }
-    staves.push({ti, clef, color: trackColor(ti), measures});
-  });
-  // the kit staff — ALWAYS at the bottom (Josh's ruling), percussion clef,
-  // hands and feet as separate voices so stems read up/down at a glance
-  S.song.tracks.forEach((tr, ti) => {
-    if (!trackIsDrums(ti) || !trackShown(ti)) return;
-    if (!tr.notes.length) return;
-    const streams = {hands: new Map(), feet: new Map()};
-    for (let ni = 0; ni < tr.notes.length; ni++) {
-      const n = tr.notes[ni];
-      if (n.gone) continue;
-      const role = drumScoreRole(n.p);
-      const qt = Math.round(n.t / grid) * grid;
-      const lane = role.hand ? streams.hands : streams.feet;
-      const cur = lane.get(qt);
-      const key = role.key + (role.x ? "/x2" : "");
-      if (cur) { if (!cur.keys.includes(key)) { cur.keys.push(key); cur.refs.push({ti, ni}); } }
-      else lane.set(qt, {start: qt, dur: grid, keys: [key], refs: [{ti, ni}]});
-    }
-    const toMeasures = (lane, fillRests) => {
-      const evs = [...lane.values()].sort((a, b) => a.start - b.start);
-      for (let k = 0; k + 1 < evs.length; k++)
-        if (evs[k].start + evs[k].dur > evs[k + 1].start) evs[k].dur = evs[k + 1].start - evs[k].start;
-      const ms = Array.from({length: nMeasures}, () => []);
-      let pos = 0;
-      for (const e of evs) {
-        const mi = Math.floor(e.start / bt);
-        if (mi >= nMeasures) break;
-        if (fillRests && e.start > pos) { // rests in the hands voice keep the meter legible
-          let f = pos;
-          while (f < e.start - 1) {
-            const rmi = Math.floor(f / bt);
-            if (rmi >= nMeasures) break;
-            const rEnd = Math.min(e.start, (rmi + 1) * bt);
-            for (const p of durationPieces(rEnd - f, S.song.ppq)) {
-              ms[rmi].push({rest: true, start: f, dur: p.dur, dots: p.dots});
-              f += p.ticks;
-              if (f >= rEnd - 1) break;
-            }
-            f = Math.max(f, rEnd);
-          }
-        }
-        const cap = Math.min(e.dur, (mi + 1) * bt - e.start); // hits never tie across barlines
-        for (const p of durationPieces(cap, S.song.ppq)) {
-          ms[mi].push({rest: false, start: e.start, dur: p.dur, dots: p.dots, keys: e.keys, refs: e.refs});
-          break; // one engraved piece per hit
-        }
-        pos = Math.max(pos, e.start + e.dur);
-      }
-      return ms;
-    };
-    staves.push({ti, clef: "percussion", drums: true, color: trackColor(ti),
-                 measures: toMeasures(streams.hands, true),
-                 measuresFeet: toMeasures(streams.feet, true)}); // feet rests engrave invisibly — they only space the voice
-  });
-  // zoom floor from the densest measure: VexFlow treats the justify width as
-  // a suggestion, so a bar needs ~20px per glyph or it spills past its barline
-  let maxEv = 1;
-  for (const st of staves) for (let k = 0; k < st.measures.length; k++) {
-    const n = st.measures[k].length + (st.measuresFeet ? st.measuresFeet[k].length : 0);
-    maxEv = Math.max(maxEv, n);
-  }
-  const quartersPerBar = bt / S.song.ppq;
-  const pxqMin = Math.min(140, Math.max(24, Math.ceil((maxEv * 24 + 72) / quartersPerBar)));
-  S.scoreModel = {nMeasures, bt, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
-}
-buildScoreModel = prof("buildScoreModel", buildScoreModel); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
-function scoreContentH() {
-  return S.scoreModel ? SCORE_TOP + S.scoreModel.staves.length * STAVE_H + 30 : 0;
-}
 
-function renderMeasure(mi) {
-  const key = mi;
-  if (S.scoreCache.has(key)) return S.scoreCache.get(key);
-  const m = S.scoreModel;
-  const ppt = pxPerTick();
-  const mw = m.bt * ppt;
-  const c = document.createElement("canvas");
-  const dpr = window.devicePixelRatio || 1;
-  c.width = Math.ceil((mw + SCORE_PAD * 2) * dpr);
-  c.height = Math.ceil(scoreContentH() * dpr);
-  const geo = [], timeMap = [];
-  let noteStartXc = SCORE_PAD;
-  const renderer = new VF.Renderer(c, VF.Renderer.Backends.CANVAS);
-  const ctx2 = renderer.getContext();
-  ctx2.scale(dpr, dpr);
-  ctx2.setFillStyle("#C7D0E8");
-  ctx2.setStrokeStyle("#C7D0E8");
-  const sfM = sfAt(mi * m.bt);
-  const spell = sfDeclaredAt(mi * m.bt) === null ? SHARP_SPELL : spellFor(sfM);
-  const sfPrev = mi > 0 ? sfAt((mi - 1) * m.bt) : sfM;
-  const keyChanged = mi > 0 && sfM !== sfPrev;
-  const built = []; // per-stave build products, formatted together below
-  m.staves.forEach((st, si) => {
-    const y = SCORE_TOP + si * STAVE_H;
-    const stave = new VF.Stave(SCORE_PAD, y, mw, {fill_style: "#3A4569"});
-    if (keyChanged && !st.drums) {
-      // cancelKey draws naturals for the outgoing signature (essential when
-      // the new key is C, whose own signature is empty)
-      try { stave.addKeySignature(SF_MAJOR[sfM] || "C", SF_MAJOR[sfPrev] || "C"); }
-      catch (e) { stave.addKeySignature(SF_MAJOR[sfM] || "C"); }
-    }
-    stave.setContext(ctx2).draw();
-    if (si === 0) noteStartXc = stave.getNoteStartX();
-    const mkVoice = (events, stemDir, hideRests) => { // stemDir null = melodic auto
-      const vnotes = [];
-      for (const e of events) {
-        let vn;
-        // dots MUST ride the constructor: Dot.buildAndAttach draws the glyph but
-        // adds NO ticks, so every dotted figure ran a beat ahead of its stave-
-        // mates and the playhead (Josh: notes engraved well before 2.4)
-        if (e.rest) {
-          vn = new VF.StaveNote({clef: st.clef === "percussion" ? "percussion" : st.clef,
-                                 keys: [st.clef === "bass" ? "d/3" : st.clef === "percussion" ? "f/4" : "b/4"],
-                                 duration: e.dur + "r", dots: e.dots || 0});
-          if (hideRests) { vn.setStyle({fillStyle: "rgba(0,0,0,0)", strokeStyle: "rgba(0,0,0,0)"}); e.hidden = true; }
-        } else if (st.drums) {
-          vn = new VF.StaveNote({clef: "percussion", keys: e.keys, duration: e.dur, stem_direction: stemDir, dots: e.dots || 0});
-        } else {
-          vn = new VF.StaveNote({clef: st.clef, keys: e.pitches.map(p => vexKey(p, spell)), duration: e.dur, auto_stem: true, dots: e.dots || 0});
-        }
-        if (!e.hidden) vn.setStyle({fillStyle: st.color, strokeStyle: st.color});
-        for (let dd = 0; dd < e.dots; dd++) VF.Dot.buildAndAttach([vn], {all: true});
-        e.vn = vn;
-        vnotes.push(vn);
-      }
-      const voice = new VF.Voice({num_beats: effTs()[0], beat_value: effTs()[1]});
-      voice.setMode(VF.Voice.Mode.SOFT);
-      voice.addTickables(vnotes);
-      return {voice, vnotes};
-    };
-    if (st.drums) { // hands (stems up) + feet (stems down), two voices, one staff
-      const hands = st.measures[mi] || [], feet = (st.measuresFeet && st.measuresFeet[mi]) || [];
-      if (!hands.length && !feet.length) { timeMap.push({tick: mi * m.bt, x: SCORE_PAD}); return; }
-      const vH = mkVoice(hands, 1), vF = mkVoice(feet, -1, true);
-      built.push({st, si, stave, voice: vH.voice, voice2: vF.voice,
-                  vnotes: vH.vnotes, vnotes2: vF.vnotes, events: hands.concat(feet)});
-      return;
-    }
-    const events = st.measures[mi] || [];
-    if (!events.length) { timeMap.push({tick: mi * m.bt, x: SCORE_PAD}); return; }
-    const {voice, vnotes} = mkVoice(events, null);
-    VF.Accidental.applyAccidentals([voice], SF_MAJOR[sfM] || "C");
-    built.push({st, si, stave, voice, vnotes, events});
-  });
-  // ONE formatter across every stave: shared tick contexts mean the same
-  // beat gets the same x column on all staves — simultaneous notes line up
-  // with each other, the playhead's anchors agree between staves, and note
-  // geometry stops interleaving (which also confused the lasso)
-  if (built.length) {
-    // softmaxFactor > default skews spacing toward duration-proportional,
-    // shrinking the playhead's crawl-then-sprint across dotted figures
-    const fmt = new VF.Formatter({softmaxFactor: 10});
-    for (const b of built) fmt.joinVoices(b.voice2 ? [b.voice, b.voice2] : [b.voice]);
-    fmt.format(built.flatMap(b => b.voice2 ? [b.voice, b.voice2] : [b.voice]),
-               mw - (built[0].stave.getNoteStartX() - SCORE_PAD) - 14);
-  }
-  for (const {st, si, stave, voice, voice2, vnotes, vnotes2, events} of built) {
-    voice.draw(ctx2, stave);
-    if (voice2) voice2.draw(ctx2, stave);
-    // rests must break beams — beaming only the notes bridges beams straight
-    // across rest gaps (spaghetti in syncopated 16th patterns)
-    let beams;
-    const beamOpts = st.drums ? {beam_rests: false, maintain_stem_directions: true} : {beam_rests: false};
-    try { beams = VF.Beam.generateBeams(vnotes, beamOpts); }
-    catch (e) { beams = VF.Beam.generateBeams(vnotes.filter(v => !v.isRest())); }
-    if (vnotes2 && vnotes2.length) {
-      try { beams = beams.concat(VF.Beam.generateBeams(vnotes2, beamOpts)); } catch (e) {}
-    }
-    beams.forEach(b => {
-      b.setStyle({fillStyle: st.color, strokeStyle: st.color});
-      b.setContext(ctx2).draw();
-    });
-    // ties within the measure
-    for (const e of events) {
-      if (!e.rest && e.tieFrom && e.tieFrom.vn && events.includes(e.tieFrom)) {
-        const idx = e.pitches.map((_, k) => k);
-        const tie = new VF.StaveTie({first_note: e.tieFrom.vn, last_note: e.vn, first_indices: idx, last_indices: idx});
-        if (tie.setStyle) tie.setStyle({fillStyle: st.color, strokeStyle: st.color});
-        tie.setContext(ctx2).draw();
-      }
-    }
-    // geometry + time map
-    for (const e of events) {
-      if (!e.vn) continue;
-      const bx = e.vn.getBoundingBox();
-      if (!e.rest && bx) {
-        geo.push({tick: e.start, x0: bx.x - 2, x1: bx.x + bx.w + 2, y0: bx.y - 2, y1: bx.y + bx.h + 2,
-                  refs: e.refs, ti: st.ti,
-                  pitches: e.pitches || e.refs.map(r => S.song.tracks[r.ti].notes[r.ni].p)});
-      }
-      if (si === 0 || !timeMap.some(tm => tm.tick === e.start)) {
-        timeMap.push({tick: e.start, x: e.vn.getAbsoluteX()});
-      }
-      delete e.vn;
-    }
-  }
-  timeMap.sort((a, b) => a.tick - b.tick);
-  // noteheads from different staves/voices at nearby ticks can engrave a few
-  // px out of order. The old fix clamped x flat, which froze the playhead
-  // across the zero-width segment (Josh caught it stalling at dotted eighths).
-  // Instead: dedupe same-tick anchors (leading stave's x), then force x
-  // STRICTLY increasing — never backwards, never flat
-  const dedup = [];
-  for (const tm of timeMap) {
-    const last = dedup[dedup.length - 1];
-    if (last && last.tick === tm.tick) last.x = Math.min(last.x, tm.x);
-    else dedup.push(tm);
-  }
-  let hx = -Infinity;
-  const xCap = SCORE_PAD + mw - 4; // dense bars can engrave past their barline
-  for (const tm of dedup) { tm.x = Math.min(Math.max(tm.x, hx + 0.5), xCap); hx = tm.x; }
-  // the cap can flatten the tail; re-spread the flattened run backwards so
-  // motion stays strictly forward into the next measure
-  for (let i = dedup.length - 2; i >= 0; i--)
-    if (dedup[i].x >= dedup[i + 1].x) dedup[i].x = dedup[i + 1].x - 0.5;
-  const entry = {canvas: c, geo, timeMap: dedup, mw, noteStartX: noteStartXc, keyChanged};
-  S.scoreCache.set(key, entry);
-  if (S.scoreCache.size > 60) S.scoreCache.delete(S.scoreCache.keys().next().value);
-  return entry;
-}
 
-function renderIntro() { // pinned-at-start clef / key / time column
-  if (S.scoreIntro) return S.scoreIntro;
-  const m = S.scoreModel;
-  const c = document.createElement("canvas");
-  const dpr = window.devicePixelRatio || 1;
-  c.width = Math.ceil(SCORE_INTRO_W * dpr);
-  c.height = Math.ceil(scoreContentH() * dpr);
-  const renderer = new VF.Renderer(c, VF.Renderer.Backends.CANVAS);
-  const ctx2 = renderer.getContext();
-  ctx2.scale(dpr, dpr);
-  ctx2.setFillStyle("#C7D0E8");
-  ctx2.setStrokeStyle("#C7D0E8");
-  m.staves.forEach((st, si) => {
-    const y = SCORE_TOP + si * STAVE_H;
-    const stave = new VF.Stave(0, y, SCORE_INTRO_W, {fill_style: "#3A4569"});
-    stave.addClef(st.clef);
-    if (m.sf !== 0 && !st.drums) stave.addKeySignature(m.keyName); // roles, not pitches
-    if (S.declaredTs) stave.addTimeSignature(S.declaredTs[0] + "/" + S.declaredTs[1]);
-    stave.setContext(ctx2).draw();
-  });
-  S.scoreIntro = c;
-  return c;
-}
-
-function scoreTickToX(tick) {
-  // piecewise-linear between engraved noteheads at their attack ticks — the
-  // line touches each notehead exactly when it sounds and glides between
-  // them, across barlines too, so pads and signature glyphs are absorbed
-  // into the glide instead of hopped (notation-app style)
-  if (!S.scoreModel) return S.RULER_W + tick * pxPerTick() - S.view.x;
-  const m = S.scoreModel;
-  const ppt = pxPerTick();
-  const mOrigin = k => S.RULER_W + k * m.bt * ppt - S.view.x - SCORE_PAD;
-  const mi = Math.min(m.nMeasures - 1, Math.max(0, Math.floor(tick / m.bt)));
-  const entry = S.scoreCache.get(mi);
-  if (!entry) return S.RULER_W + tick * ppt - S.view.x;
-  let a = null, b = null; // surrounding anchors, screen coords
-  for (const p of entry.timeMap) {
-    if (p.tick <= tick) a = {tick: p.tick, x: mOrigin(mi) + p.x};
-    else { b = {tick: p.tick, x: mOrigin(mi) + p.x}; break; }
-  }
-  if (!a) { // before this measure's first note: reach back to the previous one
-    const prev = mi > 0 ? S.scoreCache.get(mi - 1) : null;
-    const lp = prev && prev.timeMap.length ? prev.timeMap[prev.timeMap.length - 1] : null;
-    a = lp ? {tick: lp.tick, x: mOrigin(mi - 1) + lp.x}
-           : {tick: mi * m.bt, x: mOrigin(mi) + (entry.keyChanged ? entry.noteStartX : SCORE_PAD)};
-  }
-  if (!b) { // after this measure's last note: reach ahead to the next one
-    const nxt = mi + 1 < m.nMeasures ? S.scoreCache.get(mi + 1) : null;
-    const np = nxt && nxt.timeMap.length ? nxt.timeMap[0] : null;
-    b = np ? {tick: np.tick, x: mOrigin(mi + 1) + np.x}
-           : {tick: (mi + 1) * m.bt, x: mOrigin(mi) + SCORE_PAD + entry.mw};
-  }
-  const f = b.tick === a.tick ? 0 : (tick - a.tick) / (b.tick - a.tick);
-  return a.x + f * (b.x - a.x);
-}
-function scoreXToTick(x) { // inverse, coarse: linear within measure
-  const t = (x - S.RULER_W + S.view.x) / pxPerTick();
-  return Math.max(0, t);
-}
-
-function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cached scene — the overlay draws the playhead
-  const m = S.scoreModel;
-  const ppt = pxPerTick();
-  const mw = m.bt * ppt;
-  // during a pinch, keep the stale-zoom cache and blit it scaled — a full
-  // VexFlow re-engrave per pointermove melts the iPad; rebuild once at gesture end
-  if (S.scoreZoom !== S.view.pxq && !S.pinch) { S.scoreCache.clear(); S.scoreZoom = S.view.pxq; }
-  const first = Math.max(0, Math.floor(S.view.x / mw) - 1);
-  const last = Math.min(m.nMeasures - 1, Math.ceil((S.view.x + W) / mw) + 1);
-  drawRangeTints(W, H);
-  const dpr = window.devicePixelRatio || 1;
-  for (let mi = first; mi <= last; mi++) {
-    const entry = renderMeasure(mi);
-    const s = (m.bt * ppt) / entry.mw; // ≠1 only mid-pinch (entry from old zoom)
-    const x = S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD * s;
-    ctx.drawImage(entry.canvas, 0, 0, entry.canvas.width, entry.canvas.height,
-                  x, S.RULER_H + 4 - (S.view.y || 0), entry.canvas.width / dpr * s, entry.canvas.height / dpr);
-  }
-  { // intro column (clef/key/time) lives just left of bar 1
-    const intro = renderIntro();
-    const x = S.RULER_W - SCORE_INTRO_W - S.view.x;
-    if (x + SCORE_INTRO_W > S.RULER_W - 4) {
-      ctx.drawImage(intro, 0, 0, intro.width, intro.height,
-                    x, S.RULER_H + 4 - (S.view.y || 0), intro.width / dpr, intro.height / dpr);
-    }
-  }
-  // lasso-selected noteheads (gold) + pitch-class finder hits (accent)
-  if (S.multiSelKey.size || S.findPc !== null) {
-    ctx.lineWidth = 2;
-    for (let mi = first; mi <= last; mi++) {
-      const entry = S.scoreCache.get(mi);
-      if (!entry) continue;
-      const mx = S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD;
-      const my = S.RULER_H + 4 - (S.view.y || 0);
-      for (const g of entry.geo) {
-        const sel = g.refs.some(rf => S.multiSelKey.has(rf.ti + ":" + rf.ni));
-        const hit = S.findPc !== null &&
-                    g.refs.some(rf => S.song.tracks[rf.ti].notes[rf.ni].p % 12 === S.findPc);
-        if (sel || hit) {
-          ctx.strokeStyle = sel ? css("--gold") : css("--accent");
-          ctx.strokeRect(mx + g.x0, my + g.y0, g.x1 - g.x0, g.y1 - g.y0);
-        }
-      }
-    }
-    ctx.lineWidth = 1;
-  }
-  drawScorePencilGuides(W, H);
-  drawLasso();
-  // playhead / cursor — both interpolate notehead-to-notehead (scoreTickToX),
-  // same Logic-sized triangle as the roll, gold while rolling
-  const drawHandle = x => {
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  };
-  if (skipCursor) return; // a playhead baked into the cache stayed as a second gold line (Josh, 2026-09-29, score view)
-  if (S.playing) {
-    const x = scoreTickToX(secToTick(S.song, playSec()));
-    ctx.fillStyle = css("--gold");
-    ctx.fillRect(x, 0, 1.5, H);
-    drawHandle(x);
-  } else {
-    const x = scoreTickToX(S.playCursor);
-    ctx.fillStyle = css("--accent");
-    ctx.fillRect(x - 1, 0, 2.5, H);
-    drawHandle(x);
-  }
-}
-drawScore = prof("drawScore", drawScore); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-
-// Score-side note entry (2026-08-15, the promised follow-up to composition
-// mode): the tapped STAVE picks the track, the vertical position picks the
-// staff step (calibrated from VexFlow's own line geometry — no magic
-// constants), the key signature supplies the accidental unless the ♮♯♭
-// segment overrides it, and x snaps to the pencil-duration grid.
-function scoreMeasureAnchors(mi) { // how many real x→time anchors this measure has
-  const entry = S.scoreCache.get(mi) || renderMeasure(mi);
-  return entry ? entry.timeMap.length : 0;
-}
 function scorePencilTick(x) {
   // scoreXToTick interpolates between engraved noteheads — fine when a bar
   // has them, wildly coarse when it's empty (a blank composition's default).
@@ -8053,28 +6980,6 @@ function scorePencilTick(x) {
   const localX = x - (S.RULER_W + mi * mw - S.view.x - SCORE_PAD);
   const frac = Math.max(0, Math.min(0.999, (localX - nsx) / Math.max(1, mw + SCORE_PAD - nsx)));
   return mi * S.scoreModel.bt + frac * S.scoreModel.bt;
-}
-function drawScorePencilGuides(W, H) { // faint beat lines wherever the linear map governs
-  if (!S.editOn || S.mode !== "pencil" || !S.scoreModel) return;
-  const ppt = pxPerTick();
-  const mw = S.scoreModel.bt * ppt;
-  const first = Math.max(0, Math.floor(S.view.x / mw));
-  const last = Math.min(S.scoreModel.nMeasures - 1, Math.ceil((S.view.x + W) / mw));
-  const bpb = beatsPerBarDisp();
-  ctx.fillStyle = css("--accent");
-  for (let mi = first; mi <= last; mi++) {
-    if (scoreMeasureAnchors(mi) >= 2) continue; // engraved anchors govern there
-    const entry = S.scoreCache.get(mi);
-    const nsx = entry ? entry.noteStartX : SCORE_PAD;
-    const x0 = S.RULER_W + mi * mw - S.view.x - SCORE_PAD;
-    const usable = mw + SCORE_PAD - nsx;
-    ctx.globalAlpha = 0.25;
-    for (let b = 0; b < bpb; b++) {
-      const bx = x0 + nsx + (b / bpb) * usable;
-      ctx.fillRect(bx, S.RULER_H + 4, 1, scoreContentH());
-    }
-    ctx.globalAlpha = 1;
-  }
 }
 function scoreStaveAt(pos) {
   const localY = pos.y - (S.RULER_H + 4 - (S.view.y || 0));
@@ -9080,88 +7985,7 @@ const PROG_LIB = [
     cofBtn.textContent = showing ? "Progressions" : "Wheel";
   });
 }
-const cofCanvas = document.getElementById("cofcanvas");
-const cofCtx = cofCanvas.getContext("2d");
-function cofMinor(sf) { return spellPc((((sf * 7) % 12 + 12) % 12 + 9) % 12, sf) + "m"; }
-function cofDim(sf) { return spellPc((((sf * 7) % 12 + 12) % 12 + 11) % 12, sf) + "dim"; }
-function cofSigLabel(sf) { return sf === 0 ? "♮" : Math.abs(sf) + (sf > 0 ? "♯" : "♭"); }
-function cofMajorName(sf) { return sf === 6 ? "F♯/G♭" : SF_MAJOR[sf]; }
-const wrapSf = sf => { let s = ((sf + 6) % 12 + 12) % 12 - 6; return s === -6 ? 6 : s; }; // -6 shows as F#/Gb
-function drawCof() {
-  const size = Math.min(window.innerWidth * 0.84, 380);
-  const dpr = window.devicePixelRatio || 1;
-  cofCanvas.width = size * dpr;
-  cofCanvas.height = size * dpr;
-  cofCanvas.style.width = size + "px";
-  cofCanvas.style.height = size + "px";
-  const c = cofCtx;
-  c.setTransform(dpr, 0, 0, dpr, 0, 0);
-  c.clearRect(0, 0, size, size);
-  const cx = size / 2, cy = size / 2, R = size / 2 - 2;
-  const rings = [[0.74, 1.0], [0.50, 0.74], [0.30, 0.50]]; // major / minor / dim (fractions of R)
-  const win = off => wrapSf(S.cofSf + off); // degree window: -1=IV, 0=I, +1=V
-  const govern = S.song ? sfDeclaredAt(curTick()) : null;
-  const rotVal = S.cofDragRot !== null ? S.cofDragRot : S.cofRot; // wheel rotation (fractional mid-drag)
-  for (let i = 0; i < 12; i++) {
-    const sf = wrapSf(i > 6 ? i - 12 : i);
-    const rel = (((sf - rotVal) % 12) + 12) % 12; // wedge position: rotVal sits at 12 o'clock
-    const a0 = (rel - 0.5) * Math.PI / 6 - Math.PI / 2, a1 = a0 + Math.PI / 6;
-    const inWin = [win(-1), win(0), win(1)].includes(sf);
-    for (let ring = 0; ring < 3; ring++) {
-      const [rIn, rOut] = rings[ring];
-      // window shading: majors light for IV I V, minors for ii vi iii, dim only under I
-      const lit = ring < 2 ? inWin : sf === win(0);
-      c.beginPath();
-      c.arc(cx, cy, R * rOut, a0, a1);
-      c.arc(cx, cy, R * rIn, a1, a0, true);
-      c.closePath();
-      c.fillStyle = lit ? "rgba(212,175,55,0.16)" : css("--panel2");
-      c.fill();
-      c.strokeStyle = css("--grid");
-      c.stroke();
-    }
-    if (govern !== null && sf === wrapSf(govern)) { // song's key: gold rim on its major wedge
-      c.beginPath();
-      c.arc(cx, cy, R * 0.995, a0, a1);
-      c.strokeStyle = css("--gold");
-      c.lineWidth = 3;
-      c.stroke();
-      c.lineWidth = 1;
-    }
-    const mid = (a0 + a1) / 2;
-    const put = (txt, rFrac, font, color) => {
-      c.font = font;
-      c.fillStyle = color;
-      c.textAlign = "center";
-      c.textBaseline = "middle";
-      c.fillText(txt, cx + Math.cos(mid) * R * rFrac, cy + Math.sin(mid) * R * rFrac);
-    };
-    put(cofMajorName(sf), 0.90, "bold 15px " + css("--mono"), css("--text"));
-    put(cofSigLabel(sf), 0.79, "10px " + css("--mono"), css("--dim"));
-    put(cofMinor(sf), 0.62, "12px " + css("--mono"), css("--text"));
-    put(cofDim(sf), 0.40, "9px " + css("--mono"), css("--dim"));
-    // degree labels ride the window
-    if (sf === win(0)) { put("I", 0.955, "bold 10px " + css("--mono"), css("--gold")); put("vi", 0.545, "bold 9px " + css("--mono"), css("--gold")); put("vii°", 0.325, "bold 8px " + css("--mono"), css("--gold")); }
-    if (sf === win(-1)) { put("IV", 0.955, "bold 10px " + css("--mono"), css("--gold")); put("ii", 0.545, "bold 9px " + css("--mono"), css("--gold")); }
-    if (sf === win(1)) { put("V", 0.955, "bold 10px " + css("--mono"), css("--gold")); put("iii", 0.545, "bold 9px " + css("--mono"), css("--gold")); }
-  }
-  // detail: everything about the window's center key
-  const sf = win(0);
-  const sp = spellFor(sf);
-  const tonicPc = (((sf * 7) % 12) + 12) % 12;
-  const scale = [0, 2, 4, 5, 7, 9, 11].map(iv => { const s = sp[(tonicPc + iv) % 12]; return s.letter + (s.acc || ""); });
-  const triads = [scale[0], scale[1] + "m", scale[2] + "m", scale[3], scale[4], scale[5] + "m", scale[6] + "°"];
-  const DEGS = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
-  const accs = sf === 0 ? "no accidentals"
-    : sf > 0 ? ["F♯", "C♯", "G♯", "D♯", "A♯", "E♯"].slice(0, sf).join(" ")
-    : ["B♭", "E♭", "A♭", "D♭", "G♭", "C♭"].slice(0, -sf).join(" ");
-  document.getElementById("cofdetail").innerHTML =
-    "<b>" + cofMajorName(sf) + " major</b> · " + cofSigLabel(sf) + " (" + accs + ") · relative " + cofMinor(sf) + "\n" +
-    "scale: " + scale.join(" ") + "\n" +
-    DEGS.map((d, i) => d + " " + triads[i]).join("  ·  ") + "\n" +
-    "V of " + cofMajorName(sf) + " is " + cofMajorName(wrapSf(sf + 1)) + " · IV is " + cofMajorName(wrapSf(sf - 1));
-}
-document.getElementById("cofbtn").addEventListener("click", () => {
+ document.getElementById("cofbtn").addEventListener("click", () => {
   const g = S.song ? sfShownAt(curTick()) : null;
   S.cofSf = g !== null ? wrapSf(g) : 0;
   S.cofRot = S.cofSf; // the song's key rides at 12 o'clock
@@ -10263,130 +9087,7 @@ document.getElementById("clearbtn").addEventListener("click", () => {
   loadSong(S.songKey).catch(e => setInfo(e.message));
 });
 window.addEventListener("resize", resize);
-new ResizeObserver(resize).observe(wrap);     // {p, si, f, until} tap flash (si/f only for guitar)
-const instWrap = document.getElementById("instwrap");
-const instCanvas = document.getElementById("instcanvas");
-const ictx = instCanvas.getContext("2d");
-const WHITE_PCS = [0, 2, 4, 5, 7, 9, 11];
-const GTR_TUNING = [64, 59, 55, 50, 45, 40]; // high e on top — tab convention
-const GTR_NAMES = ["e", "B", "G", "D", "A", "E"];
-const GTR_FRETS = 24;
-const DEGREE_LABEL = ["1", "♭2", "2", "♭3", "3", "4", "♭5", "5", "♭6", "6", "♭7", "7"];
-function degreeOf(pc, keyName) { // degree label vs the key's tonic (major-scale convention: ♭3 in minor)
-  if (!keyName) return null;
-  const m = keyName.match(/^([A-G])([#b]?)/i);
-  if (!m) return null;
-  const tonic = (LETTER_PC[m[1].toUpperCase()] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12;
-  return DEGREE_LABEL[(pc - tonic + 12) % 12];
-}
-function instRange() { // the song's pitch extent, octave-aligned C..B
-  let lo = 60, hi = 71;
-  if (S.song) {
-    let mn = Infinity, mx = -Infinity;
-    S.song.tracks.forEach((tr, ti) => {
-      if (trackIsDrums(ti)) return;
-      for (const n of tr.notes) if (!n.gone) { if (n.p < mn) mn = n.p; if (n.p > mx) mx = n.p; }
-    });
-    if (mn <= mx) { lo = mn; hi = mx; }
-  }
-  return [Math.max(12, Math.floor(lo / 12) * 12), Math.min(107, Math.floor(hi / 12) * 12 + 11)];
-}
-function instLitPitches() { // sel = lasso'd, live = sounding — both pitch → track index
-  const sel = new Map(); // earliest track wins when the same pitch is selected twice
-  if (S.song) for (const s of S.multiSel) {
-    const p = S.song.tracks[s.ti].notes[s.ni].p;
-    if (!sel.has(p) || s.ti < sel.get(p)) sel.set(p, s.ti);
-  }
-  const live = new Map();
-  if (S.playing && S.audio) {
-    const s = playSec();
-    for (const e of S.schedEvents) {
-      if (e.sec > s) break; // sorted by sec
-      if (s < e.sec + e.dur && trackAudible(e.ti) && !(e.n.ch === 9 || trackIsDrums(e.ti)) && !live.has(e.n.p))
-        live.set(e.n.p, e.ti);
-    }
-  }
-  return {sel, live};
-}
-function drawInst() {
-  if (!S.instOpen) return;
-  const W = instWrap.clientWidth, H = instWrap.clientHeight;
-  if (!W || !H) return;
-  ictx.fillStyle = css("--panel");
-  ictx.fillRect(0, 0, W, H);
-  if (S.instFlash && S.instFlash.until < performance.now()) S.instFlash = null;
-  const lit = instLitPitches();
-  if (S.instTab === "piano") drawPiano(W, H, lit);
-  else drawGuitar(W, H, lit);
-}
-drawInst = prof("drawInst", drawInst); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function pianoGeom(W) {
-  const [lo, hi] = instRange();
-  const whites = [];
-  for (let p = lo; p <= hi; p++) if (WHITE_PCS.includes(p % 12)) whites.push(p);
-  const wW = W / whites.length;
-  const wx = {};
-  whites.forEach((p, i) => wx[p] = i * wW);
-  return {lo, hi, whites, wW, wx};
-}
-function instLitColor(p, lit) {
-  if (S.instFlash && S.instFlash.p === p) return trackColor(S.selTrack); // tap flash wears the selected track's color
-  if (lit.sel.has(p)) return trackColor(lit.sel.get(p)); // lasso'd: source track's color
-  if (lit.live.has(p)) return trackColor(lit.live.get(p)); // sounding: its track's color
-  return null;
-}
-function drawPiano(W, H, lit) {
-  const g = pianoGeom(W);
-  const kn = keyNameAt(curTick()), sf = sfDeclaredAt(curTick());
-  ictx.textAlign = "center";
-  for (const p of g.whites) {
-    const x = g.wx[p], c = instLitColor(p, lit);
-    ictx.fillStyle = c || "#e8e4da";
-    ictx.fillRect(x + 0.5, 0, g.wW - 1, H - 1);
-    ictx.strokeStyle = "#333";
-    ictx.strokeRect(x + 0.5, 0.5, g.wW - 1, H - 2);
-    if (lit.live.has(p) && lit.sel.has(p)) { // a LASSO'D note sounding NOW: white ring
-      ictx.strokeStyle = "#fff";
-      ictx.lineWidth = 2.5;
-      ictx.strokeRect(x + 2.5, 2, g.wW - 5, H - 5);
-      ictx.lineWidth = 1;
-    }
-    if (c) {
-      ictx.fillStyle = "#111";
-      ictx.font = "bold 10px " + css("--mono");
-      ictx.fillText(pitchName(p, sf), x + g.wW / 2, H - 18);
-      const deg = degreeOf(p % 12, kn);
-      if (deg) { ictx.font = "9px " + css("--mono"); ictx.fillText(deg, x + g.wW / 2, H - 6); }
-    } else if (p % 12 === 0) { // C labels for orientation
-      ictx.fillStyle = "#999";
-      ictx.font = "9px " + css("--mono");
-      ictx.fillText("C" + (p / 12 - 1), x + g.wW / 2, H - 6);
-    }
-  }
-  const bw = g.wW * 0.6, bh = H * 0.6;
-  for (let p = g.lo; p <= g.hi; p++) {
-    if (WHITE_PCS.includes(p % 12)) continue;
-    const x = g.wx[p - 1] + g.wW - bw / 2, c = instLitColor(p, lit);
-    ictx.fillStyle = c || "#1a1a1a";
-    ictx.fillRect(x, 0, bw, bh);
-    ictx.strokeStyle = "#000";
-    ictx.strokeRect(x + 0.5, 0.5, bw - 1, bh - 1);
-    if (lit.live.has(p) && lit.sel.has(p)) {
-      ictx.strokeStyle = "#fff";
-      ictx.lineWidth = 2.5;
-      ictx.strokeRect(x + 2, 1.5, bw - 4, bh - 4);
-      ictx.lineWidth = 1;
-    }
-    if (c) {
-      ictx.fillStyle = "#111";
-      ictx.font = "bold 9px " + css("--mono");
-      ictx.fillText(pitchName(p, sf), x + bw / 2, bh - 14);
-      const deg = degreeOf(p % 12, kn);
-      if (deg) { ictx.font = "8px " + css("--mono"); ictx.fillText(deg, x + bw / 2, bh - 4); }
-    }
-  }
-}
-drawPiano = prof("drawPiano", drawPiano); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+new ResizeObserver(resize).observe(wrap);
 function pianoHit(x, y, W, H) {
   const g = pianoGeom(W);
   const bw = g.wW * 0.6, bh = H * 0.6;
@@ -10398,119 +9099,6 @@ function pianoHit(x, y, W, H) {
     }
   }
   return g.whites[Math.max(0, Math.min(g.whites.length - 1, Math.floor(x / g.wW)))];
-}
-function guitarGeom(W, H) {
-  const nutX = 44, top = 14, bot = 24;
-  return {nutX, top, bot, fw: (W - nutX - 6) / GTR_FRETS, sh: (H - top - bot) / (GTR_TUNING.length - 1)};
-}
-function drawGuitar(W, H, lit) {
-  const g = guitarGeom(W, H);
-  const kn = keyNameAt(curTick()), sf = sfDeclaredAt(curTick());
-  for (let f = 0; f <= GTR_FRETS; f++) {
-    ictx.fillStyle = f === 0 ? css("--text") : css("--grid");
-    ictx.fillRect(g.nutX + f * g.fw, g.top, f === 0 ? 3 : 1, H - g.top - g.bot);
-  }
-  ictx.font = "9px " + css("--mono");
-  ictx.textAlign = "center";
-  for (const f of [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]) { // inlay dots + fret numbers
-    const cx = g.nutX + (f - 0.5) * g.fw, cy = g.top + (H - g.top - g.bot) / 2;
-    ictx.fillStyle = css("--dim");
-    ictx.globalAlpha = 0.35;
-    ictx.beginPath();
-    if (f % 12 === 0) { ictx.arc(cx, cy - g.sh, 4, 0, 7); ictx.arc(cx, cy + g.sh, 4, 0, 7); }
-    else ictx.arc(cx, cy, 4, 0, 7);
-    ictx.fill();
-    ictx.globalAlpha = 1;
-    ictx.fillText(String(f), cx, H - 6);
-  }
-  GTR_TUNING.forEach((open, si) => {
-    const y = g.top + si * g.sh;
-    ictx.fillStyle = css("--dim");
-    ictx.fillRect(g.nutX, y, W - g.nutX - 6, si >= 4 ? 1.6 : 1); // wound strings thicker
-    ictx.font = "10px " + css("--mono");
-    ictx.textAlign = "right";
-    ictx.fillText(GTR_NAMES[si], g.nutX - 8, y + 3);
-    ictx.textAlign = "center";
-  });
-  const dots = [];
-  const add = (p0, color) => {
-    const {p, shift} = gtrFold(p0); // off-the-neck pitches fold to a playable octave
-    GTR_TUNING.forEach((open, si) => {
-      const f = p - open;
-      if (f >= 0 && f <= GTR_FRETS) dots.push({si, f, p, p0, shift, color});
-    });
-  };
-  lit.live.forEach((ti, p) => add(p, trackColor(ti)));
-  lit.sel.forEach((ti, p) => add(p, trackColor(ti))); // lasso'd notes wear their track's color
-  if (S.instFlash && S.instFlash.si !== undefined) dots.push({...S.instFlash, color: trackColor(S.selTrack)});
-  // pitch-class echoes: EVERY same-named note on the neck gets a hollow ring
-  // in its source note's track color — earliest track wins. Sounding notes get
-  // the same treatment as the lasso (Josh, 2026-08-22: "the same algorithm
-  // applied to the Play button")
-  const selPcs = new Map();
-  const echo = (ti, p) => {
-    const pc = p % 12;
-    if (!selPcs.has(pc) || ti < selPcs.get(pc)) selPcs.set(pc, ti);
-  };
-  lit.sel.forEach(echo);
-  lit.live.forEach(echo);
-  if (selPcs.size) {
-    const taken = new Set(dots.map(d => d.si + ":" + d.f));
-    GTR_TUNING.forEach((open, si) => {
-      for (let f = 0; f <= GTR_FRETS; f++) {
-        const pc = (open + f) % 12;
-        if (!selPcs.has(pc) || taken.has(si + ":" + f)) continue;
-        const cx = g.nutX + (f === 0 ? 2 : (f - 0.5) * g.fw), cy = g.top + si * g.sh;
-        ictx.strokeStyle = trackColor(selPcs.get(pc));
-        ictx.globalAlpha = 0.7;
-        ictx.beginPath();
-        ictx.arc(cx, cy, 9, 0, 7);
-        ictx.stroke();
-        ictx.fillStyle = css("--dim");
-        ictx.font = "8px " + css("--mono");
-        ictx.fillText(spellPc(pc, sf), cx, cy + 3);
-        ictx.globalAlpha = 1;
-      }
-    });
-  }
-  for (const d of dots) {
-    const cx = g.nutX + (d.f === 0 ? 2 : (d.f - 0.5) * g.fw), cy = g.top + d.si * g.sh;
-    ictx.fillStyle = d.color;
-    ictx.beginPath();
-    ictx.arc(cx, cy, 11, 0, 7);
-    ictx.fill();
-    if (d.p0 !== undefined && lit.live.has(d.p0) && lit.sel.has(d.p0)) { // lasso'd AND sounding: white ring
-      ictx.strokeStyle = "#fff";
-      ictx.lineWidth = 2;
-      ictx.beginPath();
-      ictx.arc(cx, cy, 11.5, 0, 7);
-      ictx.stroke();
-      ictx.lineWidth = 1;
-    }
-    if (d.shift) { // folded octave: dashed ring + arrow toward the true pitch
-      ictx.setLineDash([3, 2.5]);
-      ictx.strokeStyle = d.color;
-      ictx.beginPath();
-      ictx.arc(cx, cy, 14, 0, 7);
-      ictx.stroke();
-      ictx.setLineDash([]);
-      ictx.font = "8px " + css("--mono");
-      ictx.fillText(d.shift < 0 ? "▴" : "▾", cx + 17, cy + 3);
-    }
-    ictx.fillStyle = "#111";
-    ictx.font = "bold 9px " + css("--mono");
-    ictx.fillText(spellPc(d.p % 12, sf), cx, cy - 1);
-    const deg = degreeOf(d.p % 12, kn);
-    if (deg) { ictx.font = "8px " + css("--mono"); ictx.fillText(deg, cx, cy + 8); }
-  }
-}
-drawGuitar = prof("drawGuitar", drawGuitar); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function gtrFold(p) { // octave-fold a pitch into the fretboard's range; shift = octaves moved
-  const lo = GTR_TUNING[GTR_TUNING.length - 1], hi = GTR_TUNING[0] + GTR_FRETS;
-  let shift = 0;
-  while (p > hi) { p -= 12; shift--; }
-  while (p < lo) { p += 12; shift++; }
-  return {p, shift};
 }
 function guitarHit(x, y, W, H) {
   const g = guitarGeom(W, H);
@@ -10739,90 +9327,6 @@ instCanvas.addEventListener("pointercancel", e => {
   S.instPtrOn = false; S.instLastP = null;
   recNoteOff(e.pointerId);
 });
-// Fall view (Synthesia-style): the MAIN canvas turns into a vertical drop —
-// notes fall down and land on the panel's piano keys the instant they sound
-// (the keys light via the live-pitch set). Time maps through seconds, so
-// tempo changes and the speed slider read truthfully. The view rides the
-// playhead (or sits at the cursor when stopped); roll gestures are disabled
-// while it's active. Piano-only: picking Guitar drops back to the roll/score.
-function fallActive() { return S.fallOn && S.instOpen && S.instTab === "piano" && !!S.song; }
-const FALL_WINDOW = 4.5; // seconds of upcoming music filling the drop
-function drawFall(W, H) {
-  const nowSec = S.playing ? playSec() : tickToSec(S.song, S.playCursor);
-  const pps = H / FALL_WINDOW;
-  const secY = s => H - (s - nowSec) * pps;
-  const g = pianoGeom(W);
-  const bw = g.wW * 0.6;
-  ctx.fillStyle = css("--grid-soft"); // black-key lanes banded like the roll
-  for (let p = g.lo; p <= g.hi; p++) {
-    if (WHITE_PCS.includes(p % 12)) continue;
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(g.wx[p - 1] + g.wW - bw / 2, 0, bw, H);
-  }
-  ctx.globalAlpha = 1;
-  ctx.textAlign = "left";
-  const bt = barTicks();
-  for (let b = 0, last = Math.ceil(S.songEndTick / bt); b <= last; b++) {
-    const y = secY(tickToSec(S.song, b * bt));
-    if (y < -2 || y > H + 14) continue;
-    ctx.fillStyle = css("--grid");
-    ctx.fillRect(0, y, W, 1);
-    ctx.fillStyle = css("--dim");
-    ctx.font = "10px " + css("--mono");
-    ctx.fillText(String(b + 1), 4, y - 4);
-  }
-  for (const n of S.rollnotes) { // chord changes ride gold lines with their symbol
-    if (!n.chord) continue;
-    const y = secY(tickToSec(S.song, n.start));
-    if (y < -2 || y > H + 14) continue;
-    ctx.fillStyle = css("--gold");
-    ctx.globalAlpha = 0.45;
-    ctx.fillRect(0, y, W, 1);
-    ctx.globalAlpha = 1;
-    ctx.font = "bold 11px " + css("--mono");
-    ctx.fillText(n.text, 24, y - 4);
-  }
-  // window in ticks first: a 1500-note SNES song converted every note every
-  // frame (9 ms median, 100 ms spikes on the Mac, worse on the iPad)
-  const tick0 = secToTick(S.song, Math.max(0, nowSec - 0.5)), tick1 = secToTick(S.song, nowSec + FALL_WINDOW + 0.5);
-  S.song.tracks.forEach((tr, ti) => {
-    if (!trackShown(ti) || trackIsDrums(ti)) return;
-    const color = trackColor(ti);
-    tr.notes.forEach((n, ni) => {
-      if (n.gone || n.t > tick1 || n.t + n.d < tick0) return;
-      const yB = secY(tickToSec(S.song, n.t));       // bottom edge = note-on
-      const yT = secY(tickToSec(S.song, n.t + n.d));
-      if (yT > H || yB < 0) return;                // fully past / not yet in view
-      const white = WHITE_PCS.includes(n.p % 12);
-      const x = white ? g.wx[n.p] + 1 : g.wx[n.p - 1] + g.wW - bw / 2;
-      const w = (white ? g.wW : bw) - 2;
-      const sounding = yB >= H && yT < H;          // remainder sinks into the keys
-      ctx.globalAlpha = 0.55 + 0.45 * (n.v / 127);
-      if (S.findPc !== null && n.p % 12 !== S.findPc) ctx.globalAlpha *= 0.15; // finder dims non-matches
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x, yT, w, Math.max(3, Math.min(yB, H) - yT - 1), 3);
-      ctx.fill();
-      if (sounding || S.multiSelKey.has(ti + ":" + ni) || (S.findPc !== null && n.p % 12 === S.findPc)) {
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = sounding ? "#fff" : S.multiSelKey.has(ti + ":" + ni) ? css("--gold") : css("--accent");
-        ctx.stroke();
-      }
-    });
-  });
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = css("--accent"); // the "now" edge the notes land on
-  ctx.fillRect(0, H - 2, W, 2);
-  drawLasso();
-}
-drawFall = prof("drawFall", drawFall); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function instResize() {
-  const dpr = window.devicePixelRatio || 1;
-  instCanvas.width = instWrap.clientWidth * dpr;
-  instCanvas.height = instWrap.clientHeight * dpr;
-  ictx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  drawInst();
-}
 new ResizeObserver(instResize).observe(instWrap);
 const instbtn = document.getElementById("instbtn");
 const instFallBtn = document.getElementById("instfall");
@@ -14922,31 +13426,6 @@ function scheduleAnalysisRecompute() { // debounced: note edits, not per frame (
     draw();
   }, 400);
 }
-function drawAnalysisLayer(tickX, W) { // dashed/outlined — visually distinct from the solid section/chord bands
-  const drawBand = (lane, start, end, text) => {
-    if (lane === null) return;
-    const x = tickX(start), w = tickX(end) - x;
-    if (x + w < S.RULER_W || x > W) return;
-    const y = BASE_RULER_H + lane * LANE_H;
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = css("--gold");
-    ctx.globalAlpha = 0.9;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(Math.max(x, S.RULER_W) + 1, y + 1, w - 3 - Math.max(0, S.RULER_W - x), LANE_H - 3);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.rect(Math.max(x, S.RULER_W), y, w - 2 - Math.max(0, S.RULER_W - x), LANE_H);
-    ctx.clip();
-    ctx.fillStyle = css("--dim");
-    ctx.font = "10px " + css("--mono");
-    ctx.fillText("🔍 analysis: " + text, Math.max(x, S.RULER_W) + 5, y + 11);
-    ctx.restore();
-  };
-  for (const c of S.analysisBands.chords) drawBand(S.analysisChordLane, c.start, c.end, c.text);
-  if (S.analysisBands.key) drawBand(S.analysisKeyLane, S.analysisBands.key.start, S.analysisBands.key.end, S.analysisBands.key.name + "~");
-}
 // ---- Adopt: the ONLY path that turns an analysis band into a real
 // annotation — same annoSnapshot/pushUndo("anno") pattern as every other
 // one-tap write (saveTrackDir, useFileKey, keysetest), so ⟲ takes it right
@@ -15962,34 +14441,7 @@ document.addEventListener("keydown", e => {
   }
 }
 
-// ---------------------------------------------------------------- Compare with repo
-// Josh (2026-09-25): "I have seven songs where it says the notes are changed,
-// but I don't know what things have changed." The open composition's notes
-// against its last save: the roll outlines every difference and one tap swaps
-// which version plays. Nothing is written — the draft stays the draft — and
-// hearing the saved copy makes the song read-only until you swap back.
-// `cmp` itself is declared with the other editor state near the top (setSong and
-// editableSong read it, and a draft can open synchronously at boot — TDZ).
-function cmpTrackKey(t, i) { return t.name || "#" + i; } // match tracks by name, unnamed ones by position
-function cmpDiff(repoTracks, curTracks) { // tick+pitch is a note's identity (tools/song-diff.mjs's rule); tombstones don't count
-  const key = n => n.t + ":" + n.p;
-  const out = {tracks: [], added: 0, removed: 0, changed: 0};
-  const cur = new Map(curTracks.map((t, i) => [cmpTrackKey(t, i), {t, i}]));
-  const rep = new Map(repoTracks.map((t, i) => [cmpTrackKey(t, i), t]));
-  for (const k of new Set([...cur.keys(), ...rep.keys()])) {
-    const c = cur.get(k), r = rep.get(k);
-    const ma = new Map((r ? r.notes : []).filter(n => !n.gone).map(n => [key(n), n]));
-    const mb = new Map((c ? c.t.notes : []).filter(n => !n.gone).map(n => [key(n), n]));
-    const added = [...mb.values()].filter(n => !ma.has(key(n)));
-    const removed = [...ma.values()].filter(n => !mb.has(key(n)));
-    const changed = [...mb.values()].filter(n => { const o = ma.get(key(n)); return o && (o.d !== n.d || o.v !== n.v); })
-      .map(n => ({now: n, was: ma.get(key(n))}));
-    if (added.length || removed.length || changed.length) out.tracks.push({name: k, ti: c ? c.i : -1, added, removed, changed});
-    out.added += added.length; out.removed += removed.length; out.changed += changed.length;
-  }
-  return out;
-}
-async function cmpEnter() {
+ async function cmpEnter() {
   if (!S.song || !S.songKey || !isComposition()) { setInfo("compare works on your own saved songs"); return; }
   if (S.chopS > 0 || S.chopE !== null) { setInfo("turn the chop off first — compare looks at the whole song"); return; }
   const key = S.songKey;
@@ -16052,28 +14504,6 @@ function cmpBar() {
   add("~" + d.changed + " changed" + (d.tracks.some(t => t.ti < 0) ? " · a deleted track is counted, not drawn" : ""));
   document.getElementById("cmpswap").textContent = mine ? "hear the saved copy" : "hear your version";
   bar.style.display = "";
-}
-function drawCompare(ppt, rowH, W, H) { // outlines only: red = the saved copy's note, gold = yours; dashed = absent from what you hear
-  const rect = (n, ti) => {
-    const x = S.RULER_W + n.t * ppt - S.view.x, w = Math.max(3, n.d * ppt - 1);
-    if (x + w < S.RULER_W || x > W) return null;
-    const y = S.RULER_H + (topRow() - noteRow(ti, n.p)) * rowH - S.view.y;
-    if (y < S.RULER_H - rowH || y > H) return null;
-    return [x, y + 1.5, w, rowH - 3];
-  };
-  const stroke = (n, ti) => { const r = rect(n, ti); if (!r) return; ctx.beginPath(); ctx.roundRect(r[0], r[1], r[2], r[3], 2.5); ctx.stroke(); };
-  const mine = S.cmp.showing === "mine";
-  ctx.globalAlpha = 1; ctx.lineWidth = 2;
-  for (const t of S.cmp.diff.tracks) {
-    if (t.ti < 0 || !trackShown(t.ti)) continue;
-    ctx.strokeStyle = "#e66767"; ctx.setLineDash(mine ? [4, 3] : []);
-    for (const n of t.removed) stroke(n, t.ti);
-    for (const c of t.changed) stroke(c.was, t.ti);
-    ctx.strokeStyle = css("--gold"); ctx.setLineDash(mine ? [] : [4, 3]);
-    for (const n of t.added) stroke(n, t.ti);
-    for (const c of t.changed) stroke(c.now, t.ti);
-  }
-  ctx.setLineDash([]); ctx.lineWidth = 1;
 }
 if (document.getElementById("cmpswap")) {
   document.getElementById("cmpswap").addEventListener("click", () => cmpShow(S.cmp && S.cmp.showing === "mine" ? "repo" : "mine"));
@@ -20269,4 +18699,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "DRUM_LABELS": () => DRUM_LABELS, "DRUM_SLOTS": () => DRUM_SLOTS, "kitSlots": () => kitSlots, "songHasDrums": () => songHasDrums, "topRow": () => topRow, "computeLaneTop": () => computeLaneTop, "kitLaneTop": () => kitLaneTop, "laneBotRow": () => laneBotRow, "botRow": () => botRow, "inKitLane": () => inKitLane, "noteRow": () => noteRow, "drumStep": () => drumStep, "AUTO_COLOR_S": () => AUTO_COLOR_S, "AUTO_COLOR_L": () => AUTO_COLOR_L, "hslToHex": () => hslToHex, "hueOf": () => hueOf, "hueDist": () => hueDist, "relLuminance": () => relLuminance, "contrastRatio": () => contrastRatio, "ROLL_SURFACE_COLORS": () => ROLL_SURFACE_COLORS, "TRACK_COLOR_CANDIDATES": () => TRACK_COLOR_CANDIDATES, "pickFarthestColor": () => pickFarthestColor, "TRACK_COLORS": () => TRACK_COLORS, "autoTrackColors": () => autoTrackColors, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "canvas": () => canvas, "ctx": () => ctx, "wrap": () => wrap, "songRegionRight": () => songRegionRight, "RULER_W_ROLL": () => RULER_W_ROLL, "TRACKS_GUTTER": () => TRACKS_GUTTER, "BASE_RULER_H": () => BASE_RULER_H, "LANE_H": () => LANE_H, "AUDIO_STRIP_H": () => AUDIO_STRIP_H, "STRIP_H": () => STRIP_H, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "askAnnotationsText": () => askAnnotationsText, "askAnnotationsTextCompact": () => askAnnotationsTextCompact, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "isDirective": () => isDirective, "activeNoteAt": () => activeNoteAt, "sectionPathAt": () => sectionPathAt, "curTick": () => curTick, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "trackShown": () => trackShown, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "cssCache": () => cssCache, "css": () => css, "drawRangeTints": () => drawRangeTints, "pxPerTick": () => pxPerTick, "draw": () => draw, "viewKey": () => viewKey, "viewPersistSoon": () => viewPersistSoon, "viewRestore": () => viewRestore, "rangeSelKey": () => rangeSelKey, "rangeSelPersist": () => rangeSelPersist, "rangeSelRestore": () => rangeSelRestore, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "showAddedOutline": () => showAddedOutline, "setAddedOutline": () => setAddedOutline, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "drawLasso": () => drawLasso, "tracksLaneH": () => tracksLaneH, "laneGeom": () => laneGeom, "trackLaneAt": () => trackLaneAt, "tracksNoteY": () => tracksNoteY, "hitTracksNote": () => hitTracksNote, "selClipIs": () => selClipIs, "selClipObj": () => selClipObj, "clipSpanX": () => clipSpanX, "clipStatusText": () => clipStatusText, "clipLabel": () => clipLabel, "fmtSec": () => fmtSec, "drawAudioStrip": () => drawAudioStrip, "drawClipLane": () => drawClipLane, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "drawTracks": () => drawTracks, "stripPlayheadX": () => stripPlayheadX, "drawStripPlayhead": () => drawStripPlayhead, "drawPlayheadStripBand": () => drawPlayheadStripBand, "drawRuler": () => drawRuler, "evtPos": () => evtPos, "posToTickPitch": () => posToTickPitch, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "isCopyableAnno": () => isCopyableAnno, "annoInLasso": () => annoInLasso, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsNotify": () => jobsNotify, "jobsLoad": () => jobsLoad, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "cursorHandleHit": () => cursorHandleHit, "cursorHit": () => cursorHit, "rulerSnapX": () => rulerSnapX, "tickAtX": () => tickAtX, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "armNoteEdit": () => armNoteEdit, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "trackColor": () => trackColor, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "VF": () => VF, "STAVE_H": () => STAVE_H, "SCORE_TOP": () => SCORE_TOP, "SCORE_PAD": () => SCORE_PAD, "SCORE_INTRO_W": () => SCORE_INTRO_W, "DRUM_SCORE": () => DRUM_SCORE, "drumScoreRole": () => drumScoreRole, "vexKey": () => vexKey, "durationPieces": () => durationPieces, "buildScoreModel": () => buildScoreModel, "scoreContentH": () => scoreContentH, "renderMeasure": () => renderMeasure, "renderIntro": () => renderIntro, "scoreTickToX": () => scoreTickToX, "scoreXToTick": () => scoreXToTick, "drawScore": () => drawScore, "scoreMeasureAnchors": () => scoreMeasureAnchors, "scorePencilTick": () => scorePencilTick, "drawScorePencilGuides": () => drawScorePencilGuides, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "songTitleOf": () => songTitleOf, "songWhereLabel": () => songWhereLabel, "updateSongBtn": () => updateSongBtn, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "fileMeterAt": () => fileMeterAt, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofCanvas": () => cofCanvas, "cofCtx": () => cofCtx, "cofMinor": () => cofMinor, "cofDim": () => cofDim, "cofSigLabel": () => cofSigLabel, "cofMajorName": () => cofMajorName, "wrapSf": () => wrapSf, "drawCof": () => drawCof, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "instWrap": () => instWrap, "instCanvas": () => instCanvas, "ictx": () => ictx, "WHITE_PCS": () => WHITE_PCS, "GTR_TUNING": () => GTR_TUNING, "GTR_NAMES": () => GTR_NAMES, "GTR_FRETS": () => GTR_FRETS, "DEGREE_LABEL": () => DEGREE_LABEL, "degreeOf": () => degreeOf, "instRange": () => instRange, "instLitPitches": () => instLitPitches, "drawInst": () => drawInst, "pianoGeom": () => pianoGeom, "instLitColor": () => instLitColor, "drawPiano": () => drawPiano, "pianoHit": () => pianoHit, "guitarGeom": () => guitarGeom, "drawGuitar": () => drawGuitar, "gtrFold": () => gtrFold, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recOpenEnded": () => recOpenEnded, "recSnap": () => recSnap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "midiStatusLine": () => midiStatusLine, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "fallActive": () => fallActive, "FALL_WINDOW": () => FALL_WINDOW, "drawFall": () => drawFall, "instResize": () => instResize, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "saveDraft": () => saveDraft, "saveVersion": () => saveVersion, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "drawAnalysisLayer": () => drawAnalysisLayer, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpTrackKey": () => cmpTrackKey, "cmpDiff": () => cmpDiff, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "drawCompare": () => drawCompare, "ASK_SYS_BASE1": () => ASK_SYS_BASE1, "RULE_LEARNING": () => RULE_LEARNING, "RULE_NORMAL": () => RULE_NORMAL, "ASK_SYS_BASE2": () => ASK_SYS_BASE2, "askSys": () => askSys, "ASK_CPT": () => ASK_CPT, "aiUrl": () => aiUrl, "aiHeaders": () => aiHeaders, "aiSSE": () => aiSSE, "aiHostKind": () => aiHostKind, "aiHostOk": () => aiHostOk, "aiRemote": () => aiRemote, "aiSay": () => aiSay, "aiModelMenu": () => aiModelMenu, "aiPickModel": () => aiPickModel, "AI_TEST_MS": () => AI_TEST_MS, "aiTest": () => aiTest, "aiRunTest": () => aiRunTest, "aiBackendRows": () => aiBackendRows, "AI_WEBLLM_URL": () => AI_WEBLLM_URL, "AI_BROWSER_MODELS": () => AI_BROWSER_MODELS, "aiBrowserMenu": () => aiBrowserMenu, "aiWebllmLoad": () => aiWebllmLoad, "aiEngineFor": () => aiEngineFor, "aiBrowserTest": () => aiBrowserTest, "aiBrowser": () => aiBrowser, "aiProvider": () => aiProvider, "ASK_TOOLS": () => ASK_TOOLS, "askAddAnnotation": () => askAddAnnotation, "askFindAnnotation": () => askFindAnnotation, "askNoteKind": () => askNoteKind, "askNoteValue": () => askNoteValue, "askAnnotationStructural": () => askAnnotationStructural, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "notesTxtForDoc": () => notesTxtForDoc, "askSongPath": () => askSongPath, "ASK_READ_BARS_MAX": () => ASK_READ_BARS_MAX, "askReadBars": () => askReadBars, "askRunTool": () => askRunTool, "askSpan": () => askSpan, "askSpanLabel": () => askSpanLabel, "askKeyDeclared": () => askKeyDeclared, "askKeySpellComment": () => askKeySpellComment, "askSpanNotes": () => askSpanNotes, "askSpanNotesCompact": () => askSpanNotesCompact, "askBarRow": () => askBarRow, "askBarFingerprint": () => askBarFingerprint, "askSpanNotesCompactCached": () => askSpanNotesCompactCached, "askSpanCachedBlock": () => askSpanCachedBlock, "askLegendText": () => askLegendText, "askAppState": () => askAppState, "askModeLine": () => askModeLine, "askKeyStateLine": () => askKeyStateLine, "askViewCursorLine": () => askViewCursorLine, "askOpenSongLine": () => askOpenSongLine, "askCapLines": () => askCapLines, "askNewSinceLines": () => askNewSinceLines, "askSentKey": () => askSentKey, "askSentGet": () => askSentGet, "askSentStage": () => askSentStage, "askSentStageBars": () => askSentStageBars, "ASK_SENT_BARS_CAP": () => ASK_SENT_BARS_CAP, "askSentCommit": () => askSentCommit, "askSentDrop": () => askSentDrop, "askSentReset": () => askSentReset, "askEpochKey": () => askEpochKey, "askEpochGet": () => askEpochGet, "askEpochSet": () => askEpochSet, "askEpochNote": () => askEpochNote, "askCachedBlock": () => askCachedBlock, "askContext": () => askContext, "askBudget": () => askBudget, "askStripContext": () => askStripContext, "ASK_LOCAL_SOFT": () => ASK_LOCAL_SOFT, "ASK_TOTAL_CAP": () => ASK_TOTAL_CAP, "ASK_GENERAL_KEY": () => ASK_GENERAL_KEY, "ASK_GENERAL_LOG": () => ASK_GENERAL_LOG, "ASK_TERMINAL_KEY": () => ASK_TERMINAL_KEY, "askSetMode": () => askSetMode, "askModeButtons": () => askModeButtons, "askStoreKey": () => askStoreKey, "askSeenKey": () => askSeenKey, "askSeenGet": () => askSeenGet, "askMaxErrId": () => askMaxErrId, "askMaxStatusId": () => askMaxStatusId, "askSeenMaxKey": () => askSeenMaxKey, "askSeenMax": () => askSeenMax, "askSeenSet": () => askSeenSet, "askSeenAdvance": () => askSeenAdvance, "askSeenStage": () => askSeenStage, "askSeenCommit": () => askSeenCommit, "askSeenDrop": () => askSeenDrop, "askStore": () => askStore, "askLoad": () => askLoad, "askUnsavedCount": () => askUnsavedCount, "askSave": () => askSave, "askRevertToSaved": () => askRevertToSaved, "askEvictOthers": () => askEvictOthers, "askModelName": () => askModelName, "askLogKey": () => askLogKey, "askLogSong": () => askLogSong, "askLogPath": () => askLogPath, "askLogHeader": () => askLogHeader, "askLogMarkdown": () => askLogMarkdown, "askCommitLog": () => askCommitLog, "askMsgMode": () => askMsgMode, "askBuildMessages": () => askBuildMessages, "askEstimate": () => askEstimate, "asksheet": () => asksheet, "asklog": () => asklog, "askinput": () => askinput, "askstatus": () => askstatus, "askSessionName": () => askSessionName, "ASK_SONG_ONLY_TOOLS": () => ASK_SONG_ONLY_TOOLS, "askToolsNow": () => askToolsNow, "askInboxSeenKey": () => askInboxSeenKey, "askInboxAllowed": () => askInboxAllowed, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askAgeText": () => askAgeText, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployButtonTick": () => deployButtonTick, "deployBannerShow": () => deployBannerShow, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployActive": () => deployActive, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsVisible": () => askTabsVisible, "askTabsApply": () => askTabsApply, "askSessionLine": () => askSessionLine, "askCompactModelName": () => askCompactModelName, "askSessionRender": () => askSessionRender, "askSessionRefresh": () => askSessionRefresh, "askStatusIdle": () => askStatusIdle, "askStatusLine": () => askStatusLine, "askStatusRender": () => askStatusRender, "askStatusRecentShow": () => askStatusRecentShow, "askStatusToggle": () => askStatusToggle, "askStatusFetchCommits": () => askStatusFetchCommits, "askShotShow": () => askShotShow, "askShotLine": () => askShotLine, "ASKSHOT_MAX": () => ASKSHOT_MAX, "b64Bytes": () => b64Bytes, "askShotCapture": () => askShotCapture, "askShotUpload": () => askShotUpload, "askShotTake": () => askShotTake, "askShotStatusLabel": () => askShotStatusLabel, "askShotRender": () => askShotRender, "askShotAdd": () => askShotAdd, "askShotRemove": () => askShotRemove, "askShotClearAll": () => askShotClearAll, "askShotRestore": () => askShotRestore, "askShotOutgoing": () => askShotOutgoing, "askShotDisplayText": () => askShotDisplayText, "MAX_SHOT_SIDE": () => MAX_SHOT_SIDE, "MAX_SHOT_KEEP_BYTES": () => MAX_SHOT_KEEP_BYTES, "askPrepImage": () => askPrepImage, "askPickFiles": () => askPickFiles, "askClock": () => askClock, "askNoteLabel": () => askNoteLabel, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askDraftStore": () => askDraftStore, "askDraftSave": () => askDraftSave, "askDraftSaveSoon": () => askDraftSaveSoon, "askComposing": () => askComposing, "askDraftLoad": () => askDraftLoad, "askDraftClear": () => askDraftClear, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askRefresh": () => askRefresh, "askPartial": () => askPartial, "askShowThinking": () => askShowThinking, "askJobsSupported": () => askJobsSupported, "askJobId": () => askJobId, "askPendingIndex": () => askPendingIndex, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askBadgeOff": () => askBadgeOff, "askRun": () => askRun, "TERM_MODELS": () => TERM_MODELS, "askTermModelsLoad": () => askTermModelsLoad, "askTerminalContext": () => askTerminalContext, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askPendingAll": () => askPendingAll, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askScrollEnd": () => askScrollEnd, "askFocusIfKeyboard": () => askFocusIfKeyboard, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askGrow": () => askGrow, "askNormChip": () => askNormChip, "askFindTrackIndex": () => askFindTrackIndex, "parsePitch": () => parsePitch, "askNoteVel": () => askNoteVel, "askWriteNotesValidate": () => askWriteNotesValidate, "askWritableGate": () => askWritableGate, "askWriteNotes": () => askWriteNotes, "askBarsCount": () => askBarsCount, "askBarsValidate": () => askBarsValidate, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "recSnapOn": () => recSnapOn, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "openShareSheet": () => openShareSheet, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "kitSlots": (v) => (kitSlots = v), "songHasDrums": (v) => (songHasDrums = v), "topRow": (v) => (topRow = v), "computeLaneTop": (v) => (computeLaneTop = v), "kitLaneTop": (v) => (kitLaneTop = v), "laneBotRow": (v) => (laneBotRow = v), "botRow": (v) => (botRow = v), "inKitLane": (v) => (inKitLane = v), "noteRow": (v) => (noteRow = v), "drumStep": (v) => (drumStep = v), "hslToHex": (v) => (hslToHex = v), "hueOf": (v) => (hueOf = v), "hueDist": (v) => (hueDist = v), "relLuminance": (v) => (relLuminance = v), "contrastRatio": (v) => (contrastRatio = v), "pickFarthestColor": (v) => (pickFarthestColor = v), "autoTrackColors": (v) => (autoTrackColors = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "askAnnotationsText": (v) => (askAnnotationsText = v), "askAnnotationsTextCompact": (v) => (askAnnotationsTextCompact = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "isDirective": (v) => (isDirective = v), "activeNoteAt": (v) => (activeNoteAt = v), "sectionPathAt": (v) => (sectionPathAt = v), "curTick": (v) => (curTick = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "trackShown": (v) => (trackShown = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "css": (v) => (css = v), "drawRangeTints": (v) => (drawRangeTints = v), "pxPerTick": (v) => (pxPerTick = v), "draw": (v) => (draw = v), "viewKey": (v) => (viewKey = v), "viewPersistSoon": (v) => (viewPersistSoon = v), "viewRestore": (v) => (viewRestore = v), "rangeSelKey": (v) => (rangeSelKey = v), "rangeSelPersist": (v) => (rangeSelPersist = v), "rangeSelRestore": (v) => (rangeSelRestore = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "showAddedOutline": (v) => (showAddedOutline = v), "setAddedOutline": (v) => (setAddedOutline = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "drawLasso": (v) => (drawLasso = v), "tracksLaneH": (v) => (tracksLaneH = v), "laneGeom": (v) => (laneGeom = v), "trackLaneAt": (v) => (trackLaneAt = v), "tracksNoteY": (v) => (tracksNoteY = v), "hitTracksNote": (v) => (hitTracksNote = v), "selClipIs": (v) => (selClipIs = v), "selClipObj": (v) => (selClipObj = v), "clipSpanX": (v) => (clipSpanX = v), "clipStatusText": (v) => (clipStatusText = v), "clipLabel": (v) => (clipLabel = v), "fmtSec": (v) => (fmtSec = v), "drawAudioStrip": (v) => (drawAudioStrip = v), "drawClipLane": (v) => (drawClipLane = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "drawTracks": (v) => (drawTracks = v), "stripPlayheadX": (v) => (stripPlayheadX = v), "drawStripPlayhead": (v) => (drawStripPlayhead = v), "drawPlayheadStripBand": (v) => (drawPlayheadStripBand = v), "drawRuler": (v) => (drawRuler = v), "evtPos": (v) => (evtPos = v), "posToTickPitch": (v) => (posToTickPitch = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "annoInLasso": (v) => (annoInLasso = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsNotify": (v) => (jobsNotify = v), "jobsLoad": (v) => (jobsLoad = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "cursorHandleHit": (v) => (cursorHandleHit = v), "cursorHit": (v) => (cursorHit = v), "rulerSnapX": (v) => (rulerSnapX = v), "tickAtX": (v) => (tickAtX = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "armNoteEdit": (v) => (armNoteEdit = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "trackColor": (v) => (trackColor = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "drumScoreRole": (v) => (drumScoreRole = v), "vexKey": (v) => (vexKey = v), "durationPieces": (v) => (durationPieces = v), "buildScoreModel": (v) => (buildScoreModel = v), "scoreContentH": (v) => (scoreContentH = v), "renderMeasure": (v) => (renderMeasure = v), "renderIntro": (v) => (renderIntro = v), "scoreTickToX": (v) => (scoreTickToX = v), "scoreXToTick": (v) => (scoreXToTick = v), "drawScore": (v) => (drawScore = v), "scoreMeasureAnchors": (v) => (scoreMeasureAnchors = v), "scorePencilTick": (v) => (scorePencilTick = v), "drawScorePencilGuides": (v) => (drawScorePencilGuides = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "songTitleOf": (v) => (songTitleOf = v), "songWhereLabel": (v) => (songWhereLabel = v), "updateSongBtn": (v) => (updateSongBtn = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofMinor": (v) => (cofMinor = v), "cofDim": (v) => (cofDim = v), "cofSigLabel": (v) => (cofSigLabel = v), "cofMajorName": (v) => (cofMajorName = v), "drawCof": (v) => (drawCof = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "degreeOf": (v) => (degreeOf = v), "instRange": (v) => (instRange = v), "instLitPitches": (v) => (instLitPitches = v), "drawInst": (v) => (drawInst = v), "pianoGeom": (v) => (pianoGeom = v), "instLitColor": (v) => (instLitColor = v), "drawPiano": (v) => (drawPiano = v), "pianoHit": (v) => (pianoHit = v), "guitarGeom": (v) => (guitarGeom = v), "drawGuitar": (v) => (drawGuitar = v), "gtrFold": (v) => (gtrFold = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recOpenEnded": (v) => (recOpenEnded = v), "recSnap": (v) => (recSnap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "midiStatusLine": (v) => (midiStatusLine = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "fallActive": (v) => (fallActive = v), "drawFall": (v) => (drawFall = v), "instResize": (v) => (instResize = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "saveDraft": (v) => (saveDraft = v), "saveVersion": (v) => (saveVersion = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "drawAnalysisLayer": (v) => (drawAnalysisLayer = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpTrackKey": (v) => (cmpTrackKey = v), "cmpDiff": (v) => (cmpDiff = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "drawCompare": (v) => (drawCompare = v), "askSys": (v) => (askSys = v), "aiUrl": (v) => (aiUrl = v), "aiHeaders": (v) => (aiHeaders = v), "aiSSE": (v) => (aiSSE = v), "aiHostKind": (v) => (aiHostKind = v), "aiHostOk": (v) => (aiHostOk = v), "aiRemote": (v) => (aiRemote = v), "aiSay": (v) => (aiSay = v), "aiModelMenu": (v) => (aiModelMenu = v), "aiPickModel": (v) => (aiPickModel = v), "aiTest": (v) => (aiTest = v), "aiRunTest": (v) => (aiRunTest = v), "aiBackendRows": (v) => (aiBackendRows = v), "aiBrowserMenu": (v) => (aiBrowserMenu = v), "aiWebllmLoad": (v) => (aiWebllmLoad = v), "aiEngineFor": (v) => (aiEngineFor = v), "aiBrowserTest": (v) => (aiBrowserTest = v), "aiBrowser": (v) => (aiBrowser = v), "aiProvider": (v) => (aiProvider = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askFindAnnotation": (v) => (askFindAnnotation = v), "askNoteKind": (v) => (askNoteKind = v), "askNoteValue": (v) => (askNoteValue = v), "askAnnotationStructural": (v) => (askAnnotationStructural = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "notesTxtForDoc": (v) => (notesTxtForDoc = v), "askSongPath": (v) => (askSongPath = v), "askReadBars": (v) => (askReadBars = v), "askRunTool": (v) => (askRunTool = v), "askSpan": (v) => (askSpan = v), "askSpanLabel": (v) => (askSpanLabel = v), "askKeyDeclared": (v) => (askKeyDeclared = v), "askKeySpellComment": (v) => (askKeySpellComment = v), "askSpanNotes": (v) => (askSpanNotes = v), "askSpanNotesCompact": (v) => (askSpanNotesCompact = v), "askBarRow": (v) => (askBarRow = v), "askBarFingerprint": (v) => (askBarFingerprint = v), "askSpanNotesCompactCached": (v) => (askSpanNotesCompactCached = v), "askSpanCachedBlock": (v) => (askSpanCachedBlock = v), "askLegendText": (v) => (askLegendText = v), "askAppState": (v) => (askAppState = v), "askModeLine": (v) => (askModeLine = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askViewCursorLine": (v) => (askViewCursorLine = v), "askOpenSongLine": (v) => (askOpenSongLine = v), "askCapLines": (v) => (askCapLines = v), "askNewSinceLines": (v) => (askNewSinceLines = v), "askSentKey": (v) => (askSentKey = v), "askSentGet": (v) => (askSentGet = v), "askSentStage": (v) => (askSentStage = v), "askSentStageBars": (v) => (askSentStageBars = v), "askSentCommit": (v) => (askSentCommit = v), "askSentDrop": (v) => (askSentDrop = v), "askSentReset": (v) => (askSentReset = v), "askEpochKey": (v) => (askEpochKey = v), "askEpochGet": (v) => (askEpochGet = v), "askEpochSet": (v) => (askEpochSet = v), "askEpochNote": (v) => (askEpochNote = v), "askCachedBlock": (v) => (askCachedBlock = v), "askContext": (v) => (askContext = v), "askBudget": (v) => (askBudget = v), "askStripContext": (v) => (askStripContext = v), "askSetMode": (v) => (askSetMode = v), "askModeButtons": (v) => (askModeButtons = v), "askStoreKey": (v) => (askStoreKey = v), "askSeenKey": (v) => (askSeenKey = v), "askSeenGet": (v) => (askSeenGet = v), "askMaxErrId": (v) => (askMaxErrId = v), "askMaxStatusId": (v) => (askMaxStatusId = v), "askSeenMaxKey": (v) => (askSeenMaxKey = v), "askSeenMax": (v) => (askSeenMax = v), "askSeenSet": (v) => (askSeenSet = v), "askSeenAdvance": (v) => (askSeenAdvance = v), "askSeenStage": (v) => (askSeenStage = v), "askSeenCommit": (v) => (askSeenCommit = v), "askSeenDrop": (v) => (askSeenDrop = v), "askStore": (v) => (askStore = v), "askLoad": (v) => (askLoad = v), "askUnsavedCount": (v) => (askUnsavedCount = v), "askSave": (v) => (askSave = v), "askRevertToSaved": (v) => (askRevertToSaved = v), "askEvictOthers": (v) => (askEvictOthers = v), "askModelName": (v) => (askModelName = v), "askLogKey": (v) => (askLogKey = v), "askLogSong": (v) => (askLogSong = v), "askLogPath": (v) => (askLogPath = v), "askLogHeader": (v) => (askLogHeader = v), "askLogMarkdown": (v) => (askLogMarkdown = v), "askCommitLog": (v) => (askCommitLog = v), "askMsgMode": (v) => (askMsgMode = v), "askBuildMessages": (v) => (askBuildMessages = v), "askEstimate": (v) => (askEstimate = v), "askSessionName": (v) => (askSessionName = v), "askToolsNow": (v) => (askToolsNow = v), "askInboxSeenKey": (v) => (askInboxSeenKey = v), "askInboxAllowed": (v) => (askInboxAllowed = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askAgeText": (v) => (askAgeText = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployButtonTick": (v) => (deployButtonTick = v), "deployBannerShow": (v) => (deployBannerShow = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployActive": (v) => (deployActive = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsVisible": (v) => (askTabsVisible = v), "askTabsApply": (v) => (askTabsApply = v), "askSessionLine": (v) => (askSessionLine = v), "askCompactModelName": (v) => (askCompactModelName = v), "askSessionRender": (v) => (askSessionRender = v), "askSessionRefresh": (v) => (askSessionRefresh = v), "askStatusIdle": (v) => (askStatusIdle = v), "askStatusLine": (v) => (askStatusLine = v), "askStatusRender": (v) => (askStatusRender = v), "askStatusRecentShow": (v) => (askStatusRecentShow = v), "askStatusToggle": (v) => (askStatusToggle = v), "askStatusFetchCommits": (v) => (askStatusFetchCommits = v), "askShotShow": (v) => (askShotShow = v), "askShotLine": (v) => (askShotLine = v), "b64Bytes": (v) => (b64Bytes = v), "askShotCapture": (v) => (askShotCapture = v), "askShotUpload": (v) => (askShotUpload = v), "askShotTake": (v) => (askShotTake = v), "askShotStatusLabel": (v) => (askShotStatusLabel = v), "askShotRender": (v) => (askShotRender = v), "askShotAdd": (v) => (askShotAdd = v), "askShotRemove": (v) => (askShotRemove = v), "askShotClearAll": (v) => (askShotClearAll = v), "askShotRestore": (v) => (askShotRestore = v), "askShotOutgoing": (v) => (askShotOutgoing = v), "askShotDisplayText": (v) => (askShotDisplayText = v), "askPrepImage": (v) => (askPrepImage = v), "askPickFiles": (v) => (askPickFiles = v), "askClock": (v) => (askClock = v), "askNoteLabel": (v) => (askNoteLabel = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askDraftStore": (v) => (askDraftStore = v), "askDraftSave": (v) => (askDraftSave = v), "askDraftSaveSoon": (v) => (askDraftSaveSoon = v), "askComposing": (v) => (askComposing = v), "askDraftLoad": (v) => (askDraftLoad = v), "askDraftClear": (v) => (askDraftClear = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askRefresh": (v) => (askRefresh = v), "askShowThinking": (v) => (askShowThinking = v), "askJobsSupported": (v) => (askJobsSupported = v), "askJobId": (v) => (askJobId = v), "askPendingIndex": (v) => (askPendingIndex = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askBadgeOff": (v) => (askBadgeOff = v), "askRun": (v) => (askRun = v), "askTermModelsLoad": (v) => (askTermModelsLoad = v), "askTerminalContext": (v) => (askTerminalContext = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askPendingAll": (v) => (askPendingAll = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askScrollEnd": (v) => (askScrollEnd = v), "askFocusIfKeyboard": (v) => (askFocusIfKeyboard = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askGrow": (v) => (askGrow = v), "askNormChip": (v) => (askNormChip = v), "askFindTrackIndex": (v) => (askFindTrackIndex = v), "parsePitch": (v) => (parsePitch = v), "askNoteVel": (v) => (askNoteVel = v), "askWriteNotesValidate": (v) => (askWriteNotesValidate = v), "askWritableGate": (v) => (askWritableGate = v), "askWriteNotes": (v) => (askWriteNotes = v), "askBarsCount": (v) => (askBarsCount = v), "askBarsValidate": (v) => (askBarsValidate = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "recSnapOn": (v) => (recSnapOn = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "openShareSheet": (v) => (openShareSheet = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};
+export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "songRegionRight": () => songRegionRight, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "askAnnotationsText": () => askAnnotationsText, "askAnnotationsTextCompact": () => askAnnotationsTextCompact, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "draw": () => draw, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "evtPos": () => evtPos, "posToTickPitch": () => posToTickPitch, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsNotify": () => jobsNotify, "jobsLoad": () => jobsLoad, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "cursorHandleHit": () => cursorHandleHit, "cursorHit": () => cursorHit, "rulerSnapX": () => rulerSnapX, "tickAtX": () => tickAtX, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "armNoteEdit": () => armNoteEdit, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "songTitleOf": () => songTitleOf, "songWhereLabel": () => songWhereLabel, "updateSongBtn": () => updateSongBtn, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "fileMeterAt": () => fileMeterAt, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recOpenEnded": () => recOpenEnded, "recSnap": () => recSnap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "midiStatusLine": () => midiStatusLine, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "saveDraft": () => saveDraft, "saveVersion": () => saveVersion, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "ASK_SYS_BASE1": () => ASK_SYS_BASE1, "RULE_LEARNING": () => RULE_LEARNING, "RULE_NORMAL": () => RULE_NORMAL, "ASK_SYS_BASE2": () => ASK_SYS_BASE2, "askSys": () => askSys, "ASK_CPT": () => ASK_CPT, "aiUrl": () => aiUrl, "aiHeaders": () => aiHeaders, "aiSSE": () => aiSSE, "aiHostKind": () => aiHostKind, "aiHostOk": () => aiHostOk, "aiRemote": () => aiRemote, "aiSay": () => aiSay, "aiModelMenu": () => aiModelMenu, "aiPickModel": () => aiPickModel, "AI_TEST_MS": () => AI_TEST_MS, "aiTest": () => aiTest, "aiRunTest": () => aiRunTest, "aiBackendRows": () => aiBackendRows, "AI_WEBLLM_URL": () => AI_WEBLLM_URL, "AI_BROWSER_MODELS": () => AI_BROWSER_MODELS, "aiBrowserMenu": () => aiBrowserMenu, "aiWebllmLoad": () => aiWebllmLoad, "aiEngineFor": () => aiEngineFor, "aiBrowserTest": () => aiBrowserTest, "aiBrowser": () => aiBrowser, "aiProvider": () => aiProvider, "ASK_TOOLS": () => ASK_TOOLS, "askAddAnnotation": () => askAddAnnotation, "askFindAnnotation": () => askFindAnnotation, "askNoteKind": () => askNoteKind, "askNoteValue": () => askNoteValue, "askAnnotationStructural": () => askAnnotationStructural, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "notesTxtForDoc": () => notesTxtForDoc, "askSongPath": () => askSongPath, "ASK_READ_BARS_MAX": () => ASK_READ_BARS_MAX, "askReadBars": () => askReadBars, "askRunTool": () => askRunTool, "askSpan": () => askSpan, "askSpanLabel": () => askSpanLabel, "askKeyDeclared": () => askKeyDeclared, "askKeySpellComment": () => askKeySpellComment, "askSpanNotes": () => askSpanNotes, "askSpanNotesCompact": () => askSpanNotesCompact, "askBarRow": () => askBarRow, "askBarFingerprint": () => askBarFingerprint, "askSpanNotesCompactCached": () => askSpanNotesCompactCached, "askSpanCachedBlock": () => askSpanCachedBlock, "askLegendText": () => askLegendText, "askAppState": () => askAppState, "askModeLine": () => askModeLine, "askKeyStateLine": () => askKeyStateLine, "askViewCursorLine": () => askViewCursorLine, "askOpenSongLine": () => askOpenSongLine, "askCapLines": () => askCapLines, "askNewSinceLines": () => askNewSinceLines, "askSentKey": () => askSentKey, "askSentGet": () => askSentGet, "askSentStage": () => askSentStage, "askSentStageBars": () => askSentStageBars, "ASK_SENT_BARS_CAP": () => ASK_SENT_BARS_CAP, "askSentCommit": () => askSentCommit, "askSentDrop": () => askSentDrop, "askSentReset": () => askSentReset, "askEpochKey": () => askEpochKey, "askEpochGet": () => askEpochGet, "askEpochSet": () => askEpochSet, "askEpochNote": () => askEpochNote, "askCachedBlock": () => askCachedBlock, "askContext": () => askContext, "askBudget": () => askBudget, "askStripContext": () => askStripContext, "ASK_LOCAL_SOFT": () => ASK_LOCAL_SOFT, "ASK_TOTAL_CAP": () => ASK_TOTAL_CAP, "ASK_GENERAL_KEY": () => ASK_GENERAL_KEY, "ASK_GENERAL_LOG": () => ASK_GENERAL_LOG, "ASK_TERMINAL_KEY": () => ASK_TERMINAL_KEY, "askSetMode": () => askSetMode, "askModeButtons": () => askModeButtons, "askStoreKey": () => askStoreKey, "askSeenKey": () => askSeenKey, "askSeenGet": () => askSeenGet, "askMaxErrId": () => askMaxErrId, "askMaxStatusId": () => askMaxStatusId, "askSeenMaxKey": () => askSeenMaxKey, "askSeenMax": () => askSeenMax, "askSeenSet": () => askSeenSet, "askSeenAdvance": () => askSeenAdvance, "askSeenStage": () => askSeenStage, "askSeenCommit": () => askSeenCommit, "askSeenDrop": () => askSeenDrop, "askStore": () => askStore, "askLoad": () => askLoad, "askUnsavedCount": () => askUnsavedCount, "askSave": () => askSave, "askRevertToSaved": () => askRevertToSaved, "askEvictOthers": () => askEvictOthers, "askModelName": () => askModelName, "askLogKey": () => askLogKey, "askLogSong": () => askLogSong, "askLogPath": () => askLogPath, "askLogHeader": () => askLogHeader, "askLogMarkdown": () => askLogMarkdown, "askCommitLog": () => askCommitLog, "askMsgMode": () => askMsgMode, "askBuildMessages": () => askBuildMessages, "askEstimate": () => askEstimate, "asksheet": () => asksheet, "asklog": () => asklog, "askinput": () => askinput, "askstatus": () => askstatus, "askSessionName": () => askSessionName, "ASK_SONG_ONLY_TOOLS": () => ASK_SONG_ONLY_TOOLS, "askToolsNow": () => askToolsNow, "askInboxSeenKey": () => askInboxSeenKey, "askInboxAllowed": () => askInboxAllowed, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askAgeText": () => askAgeText, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployButtonTick": () => deployButtonTick, "deployBannerShow": () => deployBannerShow, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployActive": () => deployActive, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsVisible": () => askTabsVisible, "askTabsApply": () => askTabsApply, "askSessionLine": () => askSessionLine, "askCompactModelName": () => askCompactModelName, "askSessionRender": () => askSessionRender, "askSessionRefresh": () => askSessionRefresh, "askStatusIdle": () => askStatusIdle, "askStatusLine": () => askStatusLine, "askStatusRender": () => askStatusRender, "askStatusRecentShow": () => askStatusRecentShow, "askStatusToggle": () => askStatusToggle, "askStatusFetchCommits": () => askStatusFetchCommits, "askShotShow": () => askShotShow, "askShotLine": () => askShotLine, "ASKSHOT_MAX": () => ASKSHOT_MAX, "b64Bytes": () => b64Bytes, "askShotCapture": () => askShotCapture, "askShotUpload": () => askShotUpload, "askShotTake": () => askShotTake, "askShotStatusLabel": () => askShotStatusLabel, "askShotRender": () => askShotRender, "askShotAdd": () => askShotAdd, "askShotRemove": () => askShotRemove, "askShotClearAll": () => askShotClearAll, "askShotRestore": () => askShotRestore, "askShotOutgoing": () => askShotOutgoing, "askShotDisplayText": () => askShotDisplayText, "MAX_SHOT_SIDE": () => MAX_SHOT_SIDE, "MAX_SHOT_KEEP_BYTES": () => MAX_SHOT_KEEP_BYTES, "askPrepImage": () => askPrepImage, "askPickFiles": () => askPickFiles, "askClock": () => askClock, "askNoteLabel": () => askNoteLabel, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askDraftStore": () => askDraftStore, "askDraftSave": () => askDraftSave, "askDraftSaveSoon": () => askDraftSaveSoon, "askComposing": () => askComposing, "askDraftLoad": () => askDraftLoad, "askDraftClear": () => askDraftClear, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askRefresh": () => askRefresh, "askPartial": () => askPartial, "askShowThinking": () => askShowThinking, "askJobsSupported": () => askJobsSupported, "askJobId": () => askJobId, "askPendingIndex": () => askPendingIndex, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askBadgeOff": () => askBadgeOff, "askRun": () => askRun, "TERM_MODELS": () => TERM_MODELS, "askTermModelsLoad": () => askTermModelsLoad, "askTerminalContext": () => askTerminalContext, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askPendingAll": () => askPendingAll, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askScrollEnd": () => askScrollEnd, "askFocusIfKeyboard": () => askFocusIfKeyboard, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askGrow": () => askGrow, "askNormChip": () => askNormChip, "askFindTrackIndex": () => askFindTrackIndex, "parsePitch": () => parsePitch, "askNoteVel": () => askNoteVel, "askWriteNotesValidate": () => askWriteNotesValidate, "askWritableGate": () => askWritableGate, "askWriteNotes": () => askWriteNotes, "askBarsCount": () => askBarsCount, "askBarsValidate": () => askBarsValidate, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "recSnapOn": () => recSnapOn, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "openShareSheet": () => openShareSheet, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "askAnnotationsText": (v) => (askAnnotationsText = v), "askAnnotationsTextCompact": (v) => (askAnnotationsTextCompact = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "draw": (v) => (draw = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "evtPos": (v) => (evtPos = v), "posToTickPitch": (v) => (posToTickPitch = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsNotify": (v) => (jobsNotify = v), "jobsLoad": (v) => (jobsLoad = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "cursorHandleHit": (v) => (cursorHandleHit = v), "cursorHit": (v) => (cursorHit = v), "rulerSnapX": (v) => (rulerSnapX = v), "tickAtX": (v) => (tickAtX = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "armNoteEdit": (v) => (armNoteEdit = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "songTitleOf": (v) => (songTitleOf = v), "songWhereLabel": (v) => (songWhereLabel = v), "updateSongBtn": (v) => (updateSongBtn = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recOpenEnded": (v) => (recOpenEnded = v), "recSnap": (v) => (recSnap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "midiStatusLine": (v) => (midiStatusLine = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "saveDraft": (v) => (saveDraft = v), "saveVersion": (v) => (saveVersion = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "askSys": (v) => (askSys = v), "aiUrl": (v) => (aiUrl = v), "aiHeaders": (v) => (aiHeaders = v), "aiSSE": (v) => (aiSSE = v), "aiHostKind": (v) => (aiHostKind = v), "aiHostOk": (v) => (aiHostOk = v), "aiRemote": (v) => (aiRemote = v), "aiSay": (v) => (aiSay = v), "aiModelMenu": (v) => (aiModelMenu = v), "aiPickModel": (v) => (aiPickModel = v), "aiTest": (v) => (aiTest = v), "aiRunTest": (v) => (aiRunTest = v), "aiBackendRows": (v) => (aiBackendRows = v), "aiBrowserMenu": (v) => (aiBrowserMenu = v), "aiWebllmLoad": (v) => (aiWebllmLoad = v), "aiEngineFor": (v) => (aiEngineFor = v), "aiBrowserTest": (v) => (aiBrowserTest = v), "aiBrowser": (v) => (aiBrowser = v), "aiProvider": (v) => (aiProvider = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askFindAnnotation": (v) => (askFindAnnotation = v), "askNoteKind": (v) => (askNoteKind = v), "askNoteValue": (v) => (askNoteValue = v), "askAnnotationStructural": (v) => (askAnnotationStructural = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "notesTxtForDoc": (v) => (notesTxtForDoc = v), "askSongPath": (v) => (askSongPath = v), "askReadBars": (v) => (askReadBars = v), "askRunTool": (v) => (askRunTool = v), "askSpan": (v) => (askSpan = v), "askSpanLabel": (v) => (askSpanLabel = v), "askKeyDeclared": (v) => (askKeyDeclared = v), "askKeySpellComment": (v) => (askKeySpellComment = v), "askSpanNotes": (v) => (askSpanNotes = v), "askSpanNotesCompact": (v) => (askSpanNotesCompact = v), "askBarRow": (v) => (askBarRow = v), "askBarFingerprint": (v) => (askBarFingerprint = v), "askSpanNotesCompactCached": (v) => (askSpanNotesCompactCached = v), "askSpanCachedBlock": (v) => (askSpanCachedBlock = v), "askLegendText": (v) => (askLegendText = v), "askAppState": (v) => (askAppState = v), "askModeLine": (v) => (askModeLine = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askViewCursorLine": (v) => (askViewCursorLine = v), "askOpenSongLine": (v) => (askOpenSongLine = v), "askCapLines": (v) => (askCapLines = v), "askNewSinceLines": (v) => (askNewSinceLines = v), "askSentKey": (v) => (askSentKey = v), "askSentGet": (v) => (askSentGet = v), "askSentStage": (v) => (askSentStage = v), "askSentStageBars": (v) => (askSentStageBars = v), "askSentCommit": (v) => (askSentCommit = v), "askSentDrop": (v) => (askSentDrop = v), "askSentReset": (v) => (askSentReset = v), "askEpochKey": (v) => (askEpochKey = v), "askEpochGet": (v) => (askEpochGet = v), "askEpochSet": (v) => (askEpochSet = v), "askEpochNote": (v) => (askEpochNote = v), "askCachedBlock": (v) => (askCachedBlock = v), "askContext": (v) => (askContext = v), "askBudget": (v) => (askBudget = v), "askStripContext": (v) => (askStripContext = v), "askSetMode": (v) => (askSetMode = v), "askModeButtons": (v) => (askModeButtons = v), "askStoreKey": (v) => (askStoreKey = v), "askSeenKey": (v) => (askSeenKey = v), "askSeenGet": (v) => (askSeenGet = v), "askMaxErrId": (v) => (askMaxErrId = v), "askMaxStatusId": (v) => (askMaxStatusId = v), "askSeenMaxKey": (v) => (askSeenMaxKey = v), "askSeenMax": (v) => (askSeenMax = v), "askSeenSet": (v) => (askSeenSet = v), "askSeenAdvance": (v) => (askSeenAdvance = v), "askSeenStage": (v) => (askSeenStage = v), "askSeenCommit": (v) => (askSeenCommit = v), "askSeenDrop": (v) => (askSeenDrop = v), "askStore": (v) => (askStore = v), "askLoad": (v) => (askLoad = v), "askUnsavedCount": (v) => (askUnsavedCount = v), "askSave": (v) => (askSave = v), "askRevertToSaved": (v) => (askRevertToSaved = v), "askEvictOthers": (v) => (askEvictOthers = v), "askModelName": (v) => (askModelName = v), "askLogKey": (v) => (askLogKey = v), "askLogSong": (v) => (askLogSong = v), "askLogPath": (v) => (askLogPath = v), "askLogHeader": (v) => (askLogHeader = v), "askLogMarkdown": (v) => (askLogMarkdown = v), "askCommitLog": (v) => (askCommitLog = v), "askMsgMode": (v) => (askMsgMode = v), "askBuildMessages": (v) => (askBuildMessages = v), "askEstimate": (v) => (askEstimate = v), "askSessionName": (v) => (askSessionName = v), "askToolsNow": (v) => (askToolsNow = v), "askInboxSeenKey": (v) => (askInboxSeenKey = v), "askInboxAllowed": (v) => (askInboxAllowed = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askAgeText": (v) => (askAgeText = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployButtonTick": (v) => (deployButtonTick = v), "deployBannerShow": (v) => (deployBannerShow = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployActive": (v) => (deployActive = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsVisible": (v) => (askTabsVisible = v), "askTabsApply": (v) => (askTabsApply = v), "askSessionLine": (v) => (askSessionLine = v), "askCompactModelName": (v) => (askCompactModelName = v), "askSessionRender": (v) => (askSessionRender = v), "askSessionRefresh": (v) => (askSessionRefresh = v), "askStatusIdle": (v) => (askStatusIdle = v), "askStatusLine": (v) => (askStatusLine = v), "askStatusRender": (v) => (askStatusRender = v), "askStatusRecentShow": (v) => (askStatusRecentShow = v), "askStatusToggle": (v) => (askStatusToggle = v), "askStatusFetchCommits": (v) => (askStatusFetchCommits = v), "askShotShow": (v) => (askShotShow = v), "askShotLine": (v) => (askShotLine = v), "b64Bytes": (v) => (b64Bytes = v), "askShotCapture": (v) => (askShotCapture = v), "askShotUpload": (v) => (askShotUpload = v), "askShotTake": (v) => (askShotTake = v), "askShotStatusLabel": (v) => (askShotStatusLabel = v), "askShotRender": (v) => (askShotRender = v), "askShotAdd": (v) => (askShotAdd = v), "askShotRemove": (v) => (askShotRemove = v), "askShotClearAll": (v) => (askShotClearAll = v), "askShotRestore": (v) => (askShotRestore = v), "askShotOutgoing": (v) => (askShotOutgoing = v), "askShotDisplayText": (v) => (askShotDisplayText = v), "askPrepImage": (v) => (askPrepImage = v), "askPickFiles": (v) => (askPickFiles = v), "askClock": (v) => (askClock = v), "askNoteLabel": (v) => (askNoteLabel = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askDraftStore": (v) => (askDraftStore = v), "askDraftSave": (v) => (askDraftSave = v), "askDraftSaveSoon": (v) => (askDraftSaveSoon = v), "askComposing": (v) => (askComposing = v), "askDraftLoad": (v) => (askDraftLoad = v), "askDraftClear": (v) => (askDraftClear = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askRefresh": (v) => (askRefresh = v), "askShowThinking": (v) => (askShowThinking = v), "askJobsSupported": (v) => (askJobsSupported = v), "askJobId": (v) => (askJobId = v), "askPendingIndex": (v) => (askPendingIndex = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askBadgeOff": (v) => (askBadgeOff = v), "askRun": (v) => (askRun = v), "askTermModelsLoad": (v) => (askTermModelsLoad = v), "askTerminalContext": (v) => (askTerminalContext = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askPendingAll": (v) => (askPendingAll = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askScrollEnd": (v) => (askScrollEnd = v), "askFocusIfKeyboard": (v) => (askFocusIfKeyboard = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askGrow": (v) => (askGrow = v), "askNormChip": (v) => (askNormChip = v), "askFindTrackIndex": (v) => (askFindTrackIndex = v), "parsePitch": (v) => (parsePitch = v), "askNoteVel": (v) => (askNoteVel = v), "askWriteNotesValidate": (v) => (askWriteNotesValidate = v), "askWritableGate": (v) => (askWritableGate = v), "askWriteNotes": (v) => (askWriteNotes = v), "askBarsCount": (v) => (askBarsCount = v), "askBarsValidate": (v) => (askBarsValidate = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "recSnapOn": (v) => (recSnapOn = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "openShareSheet": (v) => (openShareSheet = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};
