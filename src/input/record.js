@@ -1,13 +1,6 @@
 import { moveSnapTicks } from "../model/grid.js";
 import { S } from "../state.js";
 
-// pointerId → {p, tick}
-// While ● is armed the transport must not wrap at the song's end: a new song is
-// two bars, and Josh's son's arpeggiator take looped onto bars 1–2 instead of
-// growing the song (2026-09-26). An open-ended segment keeps playSec() linear,
-// the scheduler never re-arms a pass, and recFinish's computeSongEnd lets the
-// song end where the take ended.
-export function recOpenEnded(seg) { return {start: seg ? seg.start : 0, end: Infinity}; }
 // RAW by default (recSnapOn() off): the exact tick played, just rounded to
 // an integer — no grid involved. recSnapOn() on: the old snap-to-grid
 // behavior, for anyone who prefers it. Both recNoteOn's start and

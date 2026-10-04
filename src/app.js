@@ -578,7 +578,7 @@ import { armNoteEdit } from "./input/gestures.js";
 import { cursorHit } from "./input/gestures.js";
 import { rulerSnapX } from "./input/gestures.js";
 import { tickAtX } from "./input/gestures.js";
-import { recOpenEnded } from "./input/record.js";
+import { recOpenEnded } from "./model/song.js";
 import { recSnap } from "./input/record.js";
 import { recSnapOn } from "./input/record.js";
 import { midiStatusLine } from "./input/record.js";
