@@ -1,6 +1,11 @@
 import { S } from "../state.js";
 import { noteToJSON } from "./rollnotes.js";
 import { prof } from "../state.js";
+import { notesStoreKey } from "./rollnotes.js";
+import { updateSyncBtn } from "../hooks.js";
+import { updateSongBtn } from "../hooks.js";
+import { editableSong } from "./song.js";
+import { scheduleBackupFlush } from "../hooks.js";
 
 // ---------------------------------------------------------------- edits
 export function editsKey() { return S.songKey ? "ff1roll-edits-" + S.songKey : null; }
@@ -58,3 +63,17 @@ export function tombstone(n) {
     localStorage.setItem(tombKey(), JSON.stringify(t));
   } catch (err) {}
 }
+
+export function saveLocalNotes() {
+  if (!notesStoreKey()) return;
+  const local = S.rollnotes.filter(n => n.added).map(n =>
+    ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
+      section: n.section || undefined, chord: n.chord || undefined,
+      cnote: n.cnote || undefined, keydir: n.keydir}));
+  if (local.length) localStorage.setItem(notesStoreKey(), JSON.stringify(local));
+  else localStorage.removeItem(notesStoreKey());
+  updateSyncBtn();
+  if (typeof updateSongBtn === "function") updateSongBtn(); // the ● counts unpublished annotations (songUnsaved)
+  if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards)
+}
+saveLocalNotes = prof("saveLocalNotes", saveLocalNotes); // A new key at a bar REPLACES the key there — never two keys at one point
