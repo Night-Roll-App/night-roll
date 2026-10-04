@@ -5,6 +5,24 @@ import { effTs } from "./grid.js";
 import { draftInIdb } from "../platform/storage.js";
 import { idbDraftPut } from "../platform/storage.js";
 import { logErr } from "../hooks.js";
+import { isLocalDraft } from "./edits.js";
+import { editableSong } from "./song.js";
+import { scheduleBackupFlush } from "../hooks.js";
+import { baseName } from "./rollnotes.js";
+import { setInfo } from "../hooks.js";
+import { updateSongBtn } from "../hooks.js";
+import { updateSyncBtn } from "../hooks.js";
+import { prof } from "../state.js";
+import { overlayNoteSig } from "./edits.js";
+import { logDebug } from "../hooks.js";
+import { updateClearBtn } from "./edits.js";
+import { idbDraftGet } from "../platform/storage.js";
+import { nativeFs } from "../platform/folder.js";
+import { nativeDirHandle } from "../platform/folder.js";
+import { folderWrite } from "../platform/folder.js";
+import { writeMidi } from "../midi/write.js";
+import { serializeRollnotesStamped } from "./rollnotes.js";
+import { notesTxtFor } from "./rollnotes.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -173,4 +191,96 @@ export function localDraftWrite(key, doc) {
   stub.tracksRef = 1;
   localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
   return landed;
+}
+
+export function saveDraft(clean) { // clean=true right after a successful Publish; the working copy follows every edit regardless (crash recovery)
+  if (!isComposition() && !isLocalDraft()) return;
+  if (S.cmp && S.cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
+  try {
+    const landed = draftWrite(S.songKey, draftDoc(clean));
+    if (S.song.overlayFold) retireOldOverlay(S.song.overlayFold, landed);
+    if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards) — only an actual write schedules one
+  } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
+    if (saveDraft.warned !== S.songKey) { saveDraft.warned = S.songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
+    setInfo("⚠ storage full — edit not saved (see ⚠)");
+  }
+  updateSongBtn(); // the unsaved dot tracks every edit
+  updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
+  filesMirrorSoon(); // the Files copy follows, once the edits settle — every edit is kept, always (Model B)
+}
+saveDraft = prof("saveDraft", saveDraft);
+// saveDraft calls this after a write while song.overlayFold is pending;
+// landed is draftWrite's answer (true, or the IndexedDB put's promise)
+export function retireOldOverlay(f, landed) {
+  return Promise.resolve(landed).then(ok => ok ? draftRead(f.key) : null).then(d => {
+    if (!d || !d.tracks) return false;
+    const have = new Set();
+    d.tracks.forEach((tr, ti) => tr.notes.forEach(n => have.add(overlayNoteSig(ti, n))));
+    const missing = f.need.filter(sig => !have.has(sig)).length;
+    if (missing) { logDebug("old edits on " + f.key + " kept: the saved draft lacks " + missing + " of their notes"); return false; }
+    const live = "ff1roll-edits-" + f.key;
+    if (localStorage.getItem(live) !== f.raw) return false; // changed since the load: not ours to move
+    localStorage.setItem("ff1roll-retired-edits-" + f.key + "@" + Date.now(), f.raw); // a full store throws here: the overlay stays
+    localStorage.removeItem(live);
+    if (S.song && S.song.overlayFold === f) delete S.song.overlayFold;
+    updateClearBtn();
+    return true;
+  }).catch(err => { logDebug("old edits on " + f.key + " kept: " + (err && err.message || err)); return false; });
+}
+export function filesMirrorSoon() { clearTimeout(S.filesMirrorT); S.filesMirrorT = setTimeout(filesMirror, 2000); }
+export async function draftRead(key) { // the whole draft, notes included, or null
+  const raw = localStorage.getItem(draftStoreKey(key));
+  if (raw === null) return null;
+  let d = null; try { d = JSON.parse(raw); } catch (err) { return null; }
+  if (d && d.tracksRef && !d.tracks) {
+    if (key.startsWith("local/")) return localDraftTracks(key, d);
+    d.tracks = (await idbDraftGet(key)) || [];
+  }
+  return d;
+}
+export async function filesMirror() {
+  const fs = nativeFs();
+  if (!fs || !S.song || !S.songKey || !isComposition()) return false;
+  const root = nativeDirHandle(fs, "");
+  const base = S.songKey.replace(/\.mid$/, "");
+  try {
+    await folderWrite(S.songKey, writeMidi(S.song), root);
+    await folderWrite(base + ".rollnotes.json", serializeRollnotesStamped(Date.now()), root);
+    await folderWrite(base + ".notes.txt", notesTxtFor(), root);
+    return true;
+  } catch (err) {
+    if (filesMirror.warned !== S.songKey) { filesMirror.warned = S.songKey; setInfo("⚠ couldn't write the song into Files: " + err.message); }
+    return false;
+  }
+}
+// a local draft whose localStorage copy is only the stub: its notes from the
+// IndexedDB record ({seq, tracks}; an old build's is the bare tracks array).
+// A whole localStorage copy never consults IndexedDB — it was written
+// synchronously with the newest seq.
+export async function localDraftTracks(key, d) {
+  const v = await idbDraftGet(key);
+  const tracks = v ? (Array.isArray(v) ? v : v.tracks) : null, seq = v && !Array.isArray(v) ? v.seq || 0 : 0;
+  if (d.seq && seq < d.seq) logErr(key.split("/").pop() + ": the app closed before its last edit was stored — opening the copy before it");
+  d.tracks = tracks || [];
+  return d;
+}
+
+// auto-save: after the edits settle
+// same job, for a song that is NOT open (Publish all's other-song leg —
+// Bugs found, docs/provenance-plan.md: Publish all skipped the iPad Files
+// mirror for every song but the open one). doc/content are what publishSong
+// just built and wrote to the repo — reused here rather than rebuilt so the
+// two copies can't drift. Best-effort like filesMirror, but quietly: this
+// runs inside a batch job, not a single song's own status line.
+export async function filesMirrorFor(key, doc, content) {
+  const fs = nativeFs();
+  if (!fs || !key) return false;
+  const root = nativeDirHandle(fs, "");
+  const base = key.replace(/\.mid$/, "");
+  try {
+    await folderWrite(key, writeMidi(doc), root);
+    await folderWrite(base + ".rollnotes.json", content, root);
+    await folderWrite(base + ".notes.txt", notesTxtFor(doc, key), root);
+    return true;
+  } catch (err) { return false; }
 }

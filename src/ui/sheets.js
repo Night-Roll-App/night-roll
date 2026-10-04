@@ -94,7 +94,7 @@ import { idbDraftOp } from "../platform/storage.js";
 import { idbOpen } from "../platform/storage.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { addTrackUndoable } from "../model/edits.js";
-import { saveDraft } from "./chrome.js";
+import { saveDraft } from "../model/versions.js";
 import { sectionLane } from "../gen/drummer.js";
 import { drumRng } from "../gen/drummer.js";
 import { DR_FILLS } from "../gen/drummer.js";
