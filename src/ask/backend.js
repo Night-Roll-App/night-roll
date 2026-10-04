@@ -12,6 +12,7 @@ import { askRefresh } from "./sheet.js";
 // tools/package.mjs's comment-blind import scanner doesn't mistake this
 // COMMENT for a real one.
 import { aiSSE } from "../../vendor/ai/web/sse.js";
+import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 export { aiSSE };
 
 export function aiUrl() { return (cfg().aiUrl || "").replace(/\/+$/, ""); }
@@ -239,3 +240,18 @@ export function aiBrowser() {
   };
 }
 export function aiProvider() { return cfg().aiBackend === "browser" ? aiBrowser() : Object.assign(aiRemote(), {id: "remote"}); }
+
+export async function aiHostOk(url) { // per-host consent: the payload is his annotations + notes
+  const kind = aiHostKind(url);
+  if (kind === "bad") return false;
+  if (kind === "local") return true;
+  const host = new URL(url).host;
+  let ok = [];
+  try { ok = JSON.parse(localStorage.getItem("ff1roll-ai-hosts") || "[]"); } catch (err) { ok = []; }
+  if (ok.includes(host)) return true;
+  const yes = await appConfirm("Send your notes to " + host + "?",
+    "Every message sends this song's notes and your annotations to " + host + ". Only do this for a machine you trust. Asked once per machine.",
+    "Send", "Cancel");
+  if (yes) { ok.push(host); localStorage.setItem("ff1roll-ai-hosts", JSON.stringify(ok)); }
+  return yes;
+}
