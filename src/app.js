@@ -1486,6 +1486,15 @@ import { initChrome13 } from "./ui/chrome.js";
 import { initChrome14 } from "./ui/chrome.js";
 import { initChrome15 } from "./ui/chrome.js";
 import { initChrome16 } from "./ui/chrome.js";
+import { initSheets1 } from "./ui/sheets.js";
+import { initSheets2 } from "./ui/sheets.js";
+import { initSheets3 } from "./ui/sheets.js";
+import { initSheets4 } from "./ui/sheets.js";
+import { initSheets5 } from "./ui/sheets.js";
+import { initSheets6 } from "./ui/sheets.js";
+import { initSheets7 } from "./ui/sheets.js";
+import { initSheets8 } from "./ui/sheets.js";
+import { initSheets9 } from "./ui/sheets.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1633,44 +1642,8 @@ document.getElementById("octbtn").addEventListener("click", () => {
   refreshSelInfo();
 });
   
-    document.getElementById("insgo").addEventListener("click", () => {
-  const bt = barTicks(), qt = beatTicks();
-  const b = Math.max(1, Math.round(+document.getElementById("insb").value || 1));
-  const q = Math.max(1, +document.getElementById("insq").value || 1);
-  const n = Math.max(1, Math.round(+document.getElementById("insn").value || 1));
-  const T = Math.round((b - 1) * bt + (q - 1) * qt);
-  const delta = n * (S.insUnit === "bars" ? bt : S.insUnit === "beats" ? qt : qt / 4);
-  const k = insertTime(T, Math.round(delta));
-  document.getElementById("insbarsheet").classList.remove("on");
-  setInfo(k ? "inserted " + n + " " + S.insUnit + " at " + b + "." + q + " — " + k + " things moved (one undo undoes)"
-            : "nothing to insert into — is this song editable?");
-});
-document.getElementById("insclose").addEventListener("click", () =>
-  document.getElementById("insbarsheet").classList.remove("on"));
-document.getElementById("delgo").addEventListener("click", () => {
-  const bt = barTicks();
-  const fromBar = Math.max(1, Math.round(+document.getElementById("delb").value || 1));
-  const n = Math.max(1, Math.round(+document.getElementById("deln").value || 1));
-  const r = deleteTime((fromBar - 1) * bt, n * bt);
-  document.getElementById("delbarsheet").classList.remove("on");
-  const where = n > 1 ? ("bar " + fromBar + "–" + (fromBar + n - 1)) : ("bar " + fromBar);
-  setInfo(r ? where + " removed — everything after moved " + n + " bar" + (n === 1 ? "" : "s") + " earlier" +
-               (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")
-            : "nothing to delete from — is this song editable?");
-});
-document.getElementById("delclose").addEventListener("click", () =>
-  document.getElementById("delbarsheet").classList.remove("on"));
-             if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
-  document.getElementById("jobsbtn").addEventListener("click", () => { renderJobs(); document.getElementById("jobssheet").classList.add("on"); });
-  document.getElementById("jobsclear").addEventListener("click", () => { jobsClearFinished(); renderJobs(); });
-  document.getElementById("pubjobcancel").addEventListener("click", () => { if (S.pubJobShown) jobCancel(S.pubJobShown); renderPubJob(); });
-  document.getElementById("pubjobclose").addEventListener("click", () => document.getElementById("pubjobsheet").classList.remove("on"));
-  jobsOnChange(() => {
-    if (document.getElementById("jobssheet").classList.contains("on")) renderJobs();
-    if (document.getElementById("pubjobsheet").classList.contains("on")) renderPubJob();
-  });
-}
-initChrome3();
+    initSheets1();
+             initChrome3();
  
   // iOS Safari ignores user-scalable=no: kill page-level pinch zoom explicitly,
 // or a missed gesture zooms the whole page and hides the footer.
@@ -2553,221 +2526,9 @@ document.getElementById("keysetest").addEventListener("click", () => {
   setInfo("key set to " + est.name + " at bar " + bar + " (from the estimate — unsynced — Sync to commit)");
 });
 
-met.on = false;
-{
-  const num = document.getElementById("metnum");
-  for (let n = 1; n <= 12; n++) {
-    const o = document.createElement("option");
-    o.textContent = String(n);
-    num.appendChild(o);
-  }
-  num.value = String(met.num);
-  document.getElementById("metden").value = String(met.den);
-  document.getElementById("metsub").value = String(met.sub);
-  document.getElementById("metbpm").value = String(met.bpm);
-  document.getElementById("metbpmlbl").textContent = met.bpm + " bpm";
-  document.getElementById("metfollow").value = met.follow;
-  document.getElementById("metcountin").checked = !!met.countIn;
-  metBuildCells();
-  applyMetMode();
-}
-// ⏱ is a one-tap click toggle, the DAW habit (Logic's K); ⚙ beside it opens
-// the settings (Josh, 2026-09-29: three taps to turn the click on was too many)
-document.getElementById("metbtn").addEventListener("click", () => met.on ? metHalt() : metStart());
-document.getElementById("metcfg").addEventListener("click", () => {
-  const sheet = document.getElementById("metsheet");
-  if (sheet.classList.contains("on")) { sheet.classList.remove("on"); return; }
-  const r = document.getElementById("metbtn").getBoundingClientRect();
-  sheet.style.top = (r.bottom + 6) + "px";
-  sheet.classList.add("on");
-  // right-anchor near the button, clamped on-screen
-  requestAnimationFrame(() => {
-    const w = sheet.offsetWidth;
-    sheet.style.left = Math.max(6, Math.min(r.right - w, songRegionRight() - w - 6)) + "px";
-  });
-});
-document.getElementById("metclose").addEventListener("click", () =>
-  document.getElementById("metsheet").classList.remove("on")); // panel closes; the click keeps going
-document.getElementById("metgo").addEventListener("click", () => met.on ? metHalt() : metStart());
-document.getElementById("metbpm").addEventListener("input", e => {
-  met.bpm = +e.target.value;
-  document.getElementById("metbpmlbl").textContent = met.bpm + " bpm";
-  metSave();
-});
-document.getElementById("metnum").addEventListener("change", e => {
-  met.num = +e.target.value;
-  met.accents = metDefaultAccents();
-  metSave();
-  metBuildCells();
-});
-document.getElementById("metden").addEventListener("change", e => {
-  met.den = +e.target.value;
-  met.accents = metDefaultAccents();
-  metSave();
-  metBuildCells();
-});
-document.getElementById("metsub").addEventListener("change", e => {
-  met.sub = +e.target.value;
-  metSave();
-});
-document.getElementById("metfollow").addEventListener("change", e => {
-  met.follow = e.target.value;
-  applyMetMode();
-});
-document.getElementById("metnudgeL").addEventListener("click", () => {
-  met.nudge = (((met.nudge - 1) % metFollowNum()) + metFollowNum()) % metFollowNum();
-  metSave();
-});
-document.getElementById("metnudgeR").addEventListener("click", () => {
-  met.nudge = (met.nudge + 1) % metFollowNum();
-  metSave();
-});
-document.getElementById("metcountin").addEventListener("change", e => {
-  met.countIn = e.target.checked;
-  metSave();
-});
-document.getElementById("mettap").addEventListener("click", () => {
-  const now = performance.now();
-  S.metTaps = S.metTaps.filter(t => now - t < 3000);
-  S.metTaps.push(now);
-  if (S.metTaps.length >= 2) {
-    const gaps = S.metTaps.slice(1).map((t, i) => t - S.metTaps[i]);
-    const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-    met.bpm = Math.max(30, Math.min(260, Math.round(60000 / avg)));
-    document.getElementById("metbpm").value = String(met.bpm);
-    document.getElementById("metbpmlbl").textContent = met.bpm + " bpm";
-    metSave();
-  }
-});
+initSheets2();
 
-                  {
-  const roots = document.getElementById("chroots"), quals = document.getElementById("chquals");
-  const preview = () => { document.getElementById("chpreview").textContent = chordLabel(); };
-  roots.innerHTML = CHORD_ROOTS.map((r, i) =>
-    '<button data-root="' + i + '" style="min-height:40px">' + r + '</button>').join("");
-  quals.innerHTML = CHORD_QUALS.map(([q]) =>
-    '<button data-qual="' + q + '" style="min-height:40px">' + (q === "maj" ? "maj" : q) + '</button>').join("");
-  const sel = document.getElementById("choct");
-  sel.innerHTML = [2, 3, 4, 5, 6].map(o => '<option' + (o === 4 ? ' selected' : '') + '>' + o + '</option>').join("");
-  sel.addEventListener("change", () => { S.chordOct = parseInt(sel.value, 10); });
-  const durOpts = v => INS_DURS.map(([lb, q]) =>
-    '<option value="' + q + '"' + (q === v ? ' selected' : '') + '>' + lb + '</option>').join("");
-  const chdur = document.getElementById("chdur");
-  chdur.innerHTML = durOpts(S.chordInsDur);
-  chdur.addEventListener("change", () => {
-    S.chordInsDur = parseFloat(chdur.value);
-    const pg = document.getElementById("pgdur");
-    if (pg) pg.value = chdur.value;
-  });
-  const mark = () => {
-    for (const b of roots.children) b.classList.toggle("primary", +b.dataset.root === S.chordRoot);
-    for (const b of quals.children) b.classList.toggle("primary", b.dataset.qual === S.chordQual);
-    preview();
-  };
-  roots.addEventListener("click", e => {
-    const b = e.target.closest("button[data-root]");
-    if (b) { S.chordRoot = +b.dataset.root; mark(); }
-  });
-  quals.addEventListener("click", e => {
-    const b = e.target.closest("button[data-qual]");
-    if (b) { S.chordQual = b.dataset.qual; mark(); }
-  });
-  document.getElementById("insbtn").addEventListener("click", () => {
-    if (!editableSong()) { setInfo("chords insert on your own songs — captures are locked"); return; }
-    mark();
-    document.getElementById("chordsheet").classList.add("on");
-  });
-  document.getElementById("chinsert").addEventListener("click", () => {
-    const k = insertChordAt(S.playCursor, S.chordRoot, S.chordQual, S.chordOct, S.chordInsDur);
-    setInfo(k ? "inserted " + chordLabel() + " (" + k + " notes) — cursor moved to the next slot"
-              : "couldn't insert — check the octave fits the C1..C7 range");
-  });
-}
- {
-  const panel = document.getElementById("progpanel");
-  panel.innerHTML =
-    '<div class="row" style="flex-wrap:wrap;gap:6px;padding:4px 2px 8px">' +
-      '<span class="lbl">tonic</span><select id="pgtonic">' +
-        CHORD_ROOTS.map((r, i) => '<option value="' + i + '">' + r + '</option>').join("") +
-      '</select><span class="lbl">octave</span><select id="pgoct">' +
-        [2, 3, 4, 5, 6].map(o => '<option' + (o === 4 ? ' selected' : '') + '>' + o + '</option>').join("") +
-      '</select><span class="lbl">duration</span><select id="pgdur">' +
-        INS_DURS.map(([lb, q]) => '<option value="' + q + '"' + (q === 1 ? ' selected' : '') + '>' + lb + '</option>').join("") +
-      '</select><span class="lbl" style="opacity:.7">tap a progression to insert it at the cursor — one chord per slot</span></div>' +
-    '<div class="row" style="flex-wrap:wrap;gap:6px;padding:0 2px 8px">' +
-      '<span class="lbl">type your own</span>' +
-      '<input type="text" id="pgcustom" placeholder="i – VI – VII – V" style="flex:1;min-width:160px;min-height:40px">' +
-      '<select id="pgmode"><option value="major">major scale</option><option value="minor">minor scale</option></select>' +
-      '<button id="pggo">Insert</button></div>' +
-    PROG_LIB.map(([mood, prog, why], i) =>
-      '<div class="prow" data-prog="' + i + '"><b>' + mood + '</b><span class="pchords">' + prog + '</span><small>' + why + '</small></div>'
-    ).join("");
-  panel.addEventListener("click", e => {
-    const row = e.target.closest(".prow[data-prog]");
-    if (!row) return;
-    if (!editableSong()) { setInfo("progressions insert on your own songs — captures are locked"); return; }
-    const [mood, prog] = PROG_LIB[+row.dataset.prog];
-    const tonicPc = +document.getElementById("pgtonic").value;
-    const oct = parseInt(document.getElementById("pgoct").value, 10);
-    S.chordInsDur = parseFloat(document.getElementById("pgdur").value);
-    document.getElementById("chdur").value = document.getElementById("pgdur").value;
-    const k = insertProgressionAt(S.playCursor, prog, tonicPc, oct, S.chordInsDur);
-    setInfo(k ? "inserted " + mood + " in " + CHORD_ROOTS[tonicPc].split("/")[0] + " (" + k + " notes) — stretch or move them from here"
-              : "couldn't insert — check the octave fits C1..C7");
-  });
-  // typed progression: the same insert, numerals read against the chosen
-  // scale (minor pre-selects itself from a minor key at the cursor)
-  const insertCustom = () => {
-    const prog = document.getElementById("pgcustom").value.trim();
-    if (!prog) { setInfo("type a progression first — numerals like i – VI – VII – V"); return; }
-    if (!editableSong()) { setInfo("progressions insert on your own songs — captures are locked"); return; }
-    const minorScale = document.getElementById("pgmode").value === "minor";
-    const bad = splitProgression(prog).filter(t => !parseNumeral(t, minorScale));
-    if (bad.length) { setInfo("couldn't read " + bad.join(", ") + " — use I..VII, lowercase for minor, ♭/♯ or b/# in front, °/7/maj7/6 after"); return; }
-    const tonicPc = +document.getElementById("pgtonic").value;
-    const oct = parseInt(document.getElementById("pgoct").value, 10);
-    S.chordInsDur = parseFloat(document.getElementById("pgdur").value);
-    document.getElementById("chdur").value = document.getElementById("pgdur").value;
-    const k = insertProgressionAt(S.playCursor, prog, tonicPc, oct, S.chordInsDur, minorScale);
-    setInfo(k ? "inserted " + prog + " in " + CHORD_ROOTS[tonicPc].split("/")[0] + (minorScale ? " minor" : "") + " (" + k + " notes) — erase tones to make arpeggios"
-              : "couldn't insert — check the octave fits C1..C7");
-  };
-  document.getElementById("pggo").addEventListener("click", insertCustom);
-  document.getElementById("pgcustom").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); insertCustom(); } });
-  // one panel, two homes (Josh: "let's do both") — it reparents into whichever
-  // dialog summons it
-  const tabC = document.getElementById("chtab-chord"), tabP = document.getElementById("chtab-prog");
-  const seedTonic = () => { // declared key at the cursor pre-fills the tonic (override freely)
-    const name = S.song ? keyNameAt(S.playCursor) : null;
-    const pc = name ? tonicPcOfName(name) : null;
-    if (pc !== null) document.getElementById("pgtonic").value = pc;
-    if (name) document.getElementById("pgmode").value = /m$|minor|aeolian|dorian|phrygian/i.test(name) ? "minor" : "major";
-  };
-  const setTab = prog => {
-    if (prog) { document.getElementById("chprogslot").appendChild(panel); seedTonic(); }
-    document.getElementById("chchordpane").style.display = prog ? "none" : "";
-    panel.style.display = prog ? "block" : "none";
-    tabC.classList.toggle("primary", !prog);
-    tabP.classList.toggle("primary", prog);
-    tabC.setAttribute("aria-selected", String(!prog));
-    tabP.setAttribute("aria-selected", String(prog));
-  };
-  tabC.addEventListener("click", () => setTab(false));
-  tabP.addEventListener("click", () => setTab(true));
-  // reopening the dialog re-reads the key too: Josh set a key with the
-  // dialog already on the Progression tab and it kept the stale scale
-  document.getElementById("insbtn").addEventListener("click", () => { if (editableSong()) seedTonic(); });
-  const cofBtn = document.getElementById("cofprogbtn");
-  cofBtn.addEventListener("click", () => {
-    const showing = panel.parentElement.id === "cofprogslot" && panel.style.display !== "none";
-    if (!showing) { document.getElementById("cofprogslot").appendChild(panel); panel.style.display = "block"; seedTonic(); }
-    else panel.style.display = "none";
-    for (const id of ["cofcanvas", "cofdetail", "cofccw", "cofcw"])
-      document.getElementById(id).style.display = showing ? "" : "none";
-    cofBtn.textContent = showing ? "Progressions" : "Wheel";
-  });
-}
- document.getElementById("cofbtn").addEventListener("click", () => {
+                    document.getElementById("cofbtn").addEventListener("click", () => {
   const g = S.song ? sfShownAt(curTick()) : null;
   S.cofSf = g !== null ? wrapSf(g) : 0;
   S.cofRot = S.cofSf; // the song's key rides at 12 o'clock
@@ -3061,22 +2822,7 @@ instbtn.addEventListener("click", () => {
   applyInst();
   draw(); // closing the panel while Fall is active must restore the roll
 });
-// ⎘ Web session (Sync sheet): copies the clone-first bootstrap instruction —
-// Josh pastes it into a fresh Claude Web chat to start a from-bed tutoring
-// session with full project context.
-document.getElementById("websess").addEventListener("click", async e => {
-  // Copy an INSTRUCTION, not a bare URL (Josh, 2026-08-25: "I have to tell
-  // Claude on the web every single time to clone the repo instead of
-  // following URLs"). Pasting a URL makes the session's first act a fetch,
-  // and it keeps fetching from there. Lead with the clone.
-  const repo = "https://github.com/" + repoName("analysis") + ".git";
-  const msg = "Clone this repo, then read night-roll/WEB-SESSION.md from disk and follow it. " +
-    "Work entirely from the clone — do not fetch any file by URL.\n\n" +
-    "cd /home/claude && git clone --depth 1 --filter=blob:limit=1m " + repo + "\n";
-  try { await navigator.clipboard.writeText(msg); e.target.textContent = "✓ copied — paste to Claude"; }
-  catch { e.target.textContent = "✗ copy failed"; }
-  setTimeout(() => { e.target.textContent = "⎘ Web session"; }, 1800);
-});
+initSheets3();
 initChrome10();
 instFallBtn.addEventListener("click", () => {
   S.fallOn = !S.fallOn;
@@ -3354,20 +3100,7 @@ document.getElementById("ndelete").addEventListener("click", () => {
      // once per launch, a few seconds in (after the boot's own fetches): the
 // Publish (N) count is right before the sheet is ever opened
 if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
-for (const id of ["gridab", "gridaq"]) document.getElementById(id).addEventListener("input", () => {
-  const b = Math.max(1, Math.round(+document.getElementById("gridab").value || 1));
-  const q = Math.max(1, +document.getElementById("gridaq").value || 1);
-  S.gridAnchor = {b, q};
-  draw();
-  const an = document.getElementById("gridanchor");
-  if (S.gridDiv) an.textContent = "Lines run from " + b + "." + q + ", every 1/" + S.gridDiv +
-    " of a bar, across the whole song. Bar lines stay visible but don't snap.";
-});
-document.getElementById("gridoff").addEventListener("click", () => { S.gridDiv = null; syncDurSeg(); draw(); openGridSheet(); });
-document.getElementById("gridclose").addEventListener("click", () => {
-  document.getElementById("gridsheet").classList.remove("on");
-  setInfo(S.gridDiv ? "grid: " + S.gridDiv + " lines/bar — View ▾ → Grid to change" : "grid off");
-});
+initSheets4();
 initChrome11();
  JOB_KINDS.publish = {
   label: j => "Publish · " + j.title,
@@ -3459,196 +3192,9 @@ document.getElementById("copybtn").addEventListener("click", () => {
   setInfo("copied " + clipSummary() + " — move the cursor anywhere, Paste puts them there");
   updateEditButtons();
 });
-document.getElementById("dpdiv").addEventListener("change", dpRender);
-document.getElementById("drumfillbtn").addEventListener("click", () => {
-  if (!editableSong()) { setInfo("drum fills work on your own songs — captures are locked"); return; }
-  dpBuildBeatSelects();
-  const bt = barTicks(), qt = beatTicks();
-  document.getElementById("dpfromb").value = Math.floor(S.playCursor / bt) + 1; // cursor's exact spot
-  const q = snapBeat((S.playCursor % bt) / qt + 1);
-  document.getElementById("dpfromq").value = String(Math.floor(q + 0.03));
-  document.getElementById("dpfroms").value = String(Math.round((q - Math.floor(q + 0.03)) * 4) / 4);
-  document.getElementById("dptob").value = Math.floor(S.playCursor / bt) + 5;
-  document.getElementById("dptoq").value = "1";
-  document.getElementById("dptos").value = "0";
-  dpRender();
-  document.getElementById("drumsheet").classList.add("on");
-});
-document.getElementById("dpfill").addEventListener("click", () => {
-  let di = S.song.tracks.findIndex((_, ti) => trackIsDrums(ti));
-  const madeTrack = di < 0, undoLen = S.editUndo.length;
-  if (madeTrack) { // no kit yet: create one
-    di = addTrackUndoable({name: "drums", notes: []});
-    saveDraft(); // the chip path saves; this path silently lost the track on reload
-    renderTrackbar();
-  }
-  const startTick = dpTick("dpfromb", "dpfromq", "dpfroms");
-  const endTick = Math.max(startTick + barTicks(), dpTick("dptob", "dptoq", "dptos"));
-  const div = parseInt(document.getElementById("dpdiv").value, 10);
-  const step = Math.round(beatTicks() / div), bt = barTicks();
-  const tr = S.song.tracks[di], isAdd = !isComposition();
-  const added = [];
-  const passes = Math.ceil((endTick - startTick) / bt); // pattern phase starts AT the from point
-  for (let pass = 0; pass < passes; pass++) {
-    for (let pi = 0; pi < DP_PIECES.length; pi++) {
-      for (let i = 0; i < S.dpPattern[pi].length; i++) {
-        if (!S.dpPattern[pi][i]) continue;
-        const t = startTick + pass * bt + i * step;
-        if (t >= endTick) continue;
-        const p = DP_PIECES[pi][1];
-        if (tr.notes.some(n => !n.gone && n.t === t && n.p === p)) continue; // don't stack over an existing hit
-        tr.notes.push({t, d: Math.max(30, Math.round(step / 2)), p, v: S.pencilVel, added: isAdd});
-        if (S.song.rawNotes) S.song.rawNotes[di].push({t: t + S.chopS, d: Math.max(30, Math.round(step / 2)), p, v: S.pencilVel, added: isAdd});
-        added.push({ti: di, ni: tr.notes.length - 1});
-      }
-    }
-  }
-  if (added.length) {
-    pushUndo({kind: "addBatch", items: added});
-  if (madeTrack) undoTrackAdd(di, undoLen); // the new kit leaves with its fill
-    saveEdits();
-    computeSongEnd();
-    if (S.viewMode === "score") buildScoreModel();
-    S.view.y = 1e9; // the kit lane hangs below the pitch rows — scroll it into view,
-    clampView();  // or a first fill looks like nothing happened (Josh)
-    draw();
-  }
-  document.getElementById("drumsheet").classList.remove("on");
-  setInfo(added.length ? "filled " + added.length + " drum hits from bar " + (Math.floor(startTick / barTicks()) + 1) + " (one undo undoes the fill)"
-                       : "nothing to fill — pattern is empty or those hits already exist");
-});
+initSheets5();
 
- document.getElementById("bassistbtn").addEventListener("click", openBassist);
-document.getElementById("bsgen").addEventListener("click", () => {
-  const r = bsRange();
-  let targetTi = document.getElementById("bstarget").value;
-  const madeTrack = targetTi === "new", undoLen = S.editUndo.length;
-  if (madeTrack) {
-    targetTi = addTrackUndoable({name: "bass", notes: []});
-    saveDraft();
-    renderTrackbar();
-    // rebuild the pickers so the new track is selectable next time
-    const tsel = document.getElementById("bstarget");
-    const o = document.createElement("option"); o.value = String(targetTi); o.textContent = "bass";
-    tsel.insertBefore(o, tsel.lastElementChild);
-    tsel.value = String(targetTi);
-  } else targetTi = parseInt(targetTi, 10);
-  const fv = document.getElementById("bsfollow").value;
-  const opts = {
-    style: segGet("bsstyle"), busy: parseInt(segGet("bsbusy"), 10) || 3,
-    oct: parseInt(segGet("bsoct"), 10) || 2,
-    follow: fv, targetTi,
-    fromBar: r.from, toBar: r.to, t0: r.t0, t1: r.t1,
-  };
-  const seed = (Math.random() * 0xFFFFFFFF) >>> 0;
-  const k = bsGenerate(seed, opts);
-  if (madeTrack) undoTrackAdd(targetTi, undoLen); // the new bass track is part of the same undo step
-  if (!k) { bsRefresh(); return; }
-  S.bsTakes.push({seed, opts, style: opts.style, busy: opts.busy, oct: opts.oct,
-                followSel: fv, targetTi,
-                from: parseInt(document.getElementById("bsfrom").value, 10) || 1,
-                to: parseInt(document.getElementById("bsto").value, 10) || 1,
-                q: [getBeatPair("bsfromq", "bsfroms"), getBeatPair("bstoq", "bstos")]});
-  if (S.bsTakes.length > 8) S.bsTakes.shift();
-  S.bsActive = S.bsTakes.length - 1;
-  bsRefresh();
-  setInfo("take " + S.bsTakes.length + ": " + k + " bass notes in " + fmtBarBeat(r.t0) + "–" + fmtBarBeat(r.t1) + " (one undo restores what was there)");
-});
-for (const id of ["bsfrom", "bsto"]) document.getElementById(id).addEventListener("input", bsRefresh);
-for (const id of ["bsfromq", "bsfroms", "bstoq", "bstos", "bstarget", "bsfollow"]) document.getElementById(id).addEventListener("change", bsRefresh);
-document.getElementById("drgen").addEventListener("click", () => {
-  const r = drRange();
-  const opts = {
-    busy: parseInt(segGet("drbusy"), 10) || 3,
-    hard: parseInt(segGet("drhard"), 10) || 3,
-    fillAmt: (v => isNaN(v) ? 3 : v)(parseInt(segGet("drfills"), 10)),
-    parts: drPartsGet(),
-    follow: (v => v.startsWith("t") ? "bass" : v)(document.getElementById("drfollow").value),
-    followTi: (v => v.startsWith("t") ? parseInt(v.slice(1), 10) : undefined)(document.getElementById("drfollow").value),
-    feel: segGet("drfeel"),
-    fromBar: r.from, toBar: r.to, t0: r.t0, t1: r.t1,
-  };
-  if (!opts.parts.length) { setInfo("pick at least one part"); return; }
-  const seed = (Math.random() * 0xFFFFFFFF) >>> 0; // the ONLY nondeterminism; takes replay it exactly
-  const k = drGenerate(seed, opts);
-  if (!k) { drRefresh(); return; }
-  S.drTakes.push({seed, ...opts,
-                from: parseInt(document.getElementById("drfrom").value, 10) || 1,
-                to: parseInt(document.getElementById("drto").value, 10) || 1,
-                q: [getBeatPair("drfromq", "drfroms"), getBeatPair("drtoq", "drtos")]});
-  if (S.drTakes.length > 8) S.drTakes.shift();
-  S.drActive = S.drTakes.length - 1;
-  drRefresh();
-  setInfo("take " + S.drTakes.length + ": " + k + " hits in " + fmtBarBeat(r.t0) + "–" + fmtBarBeat(r.t1) + " (one undo restores what was there)");
-});
-for (const id of ["drfrom", "drto"]) document.getElementById(id).addEventListener("input", drRefresh);
-for (const id of ["drfromq", "drfroms", "drtoq", "drtos", "drfollow"]) document.getElementById(id).addEventListener("change", drRefresh);
-document.getElementById("drummerbtn").addEventListener("click", openDrummer);
-document.getElementById("movebtn").addEventListener("click", () => {
-  if (!editableSong()) { setInfo("editing works on your own songs — captures are locked"); return; }
-  const box = document.getElementById("mvtracks");
-  box.innerHTML = S.song.tracks.map((tr, ti) =>
-    '<button data-mv="' + ti + '" style="min-height:44px"' + (ti === S.selTrack ? ' class="primary"' : '') + '>' +
-    (tr.name || "track " + (ti + 1)) + '</button>').join("");
-  // selection spanning several tracks (unison doubles): offer a source filter,
-  // so Josh moves ONLY pulse2's copy instead of both (2026-08-18)
-  S.mvFromFilter = null;
-  const counts = new Map();
-  for (const {ti} of selEditItems()) counts.set(ti, (counts.get(ti) || 0) + 1);
-  const fromRow = document.getElementById("mvfromrow"), from = document.getElementById("mvfrom");
-  if (counts.size > 1) {
-    const total = [...counts.values()].reduce((a, b) => a + b, 0);
-    from.innerHTML = '<button data-mf="all" class="primary" style="min-height:44px">all (' + total + ')</button>' +
-      [...counts.entries()].map(([ti, n]) =>
-        '<button data-mf="' + ti + '" style="min-height:44px">' +
-        (S.song.tracks[ti].name || "track " + (ti + 1)) + " (" + n + ")</button>").join("");
-    fromRow.style.display = "";
-  } else fromRow.style.display = "none";
-  document.getElementById("movesheet").classList.add("on");
-});
-document.getElementById("mvfrom").addEventListener("click", e => {
-  const b = e.target.closest("button[data-mf]");
-  if (!b) return;
-  S.mvFromFilter = b.dataset.mf === "all" ? null : +b.dataset.mf;
-  for (const x of document.querySelectorAll("#mvfrom button")) x.classList.toggle("primary", x === b);
-});
-document.getElementById("mvtracks").addEventListener("click", e => {
-  const b = e.target.closest("button[data-mv]");
-  if (!b) return;
-  const k = moveSelectionToTrack(+b.dataset.mv);
-  document.getElementById("movesheet").classList.remove("on");
-  setInfo(k ? "moved " + k + " note" + (k === 1 ? "" : "s") + " to " + (S.song.tracks[+b.dataset.mv].name || "track")
-            : "select notes first (lasso or tap), then ⇄");
-});
-document.getElementById("mvdedupe").addEventListener("click", () => {
-  const k = dedupeSong();
-  document.getElementById("movesheet").classList.remove("on");
-  setInfo(k ? "removed " + k + " duplicate note" + (k === 1 ? "" : "s") + " — SAVE to make it stick (undo restores them)"
-            : "no duplicates found anywhere");
-});
-document.getElementById("pttracks").addEventListener("click", e => {
-  const b = e.target.closest("button[data-pt]");
-  if (!b) return;
-  S.ptTarget = +b.dataset.pt;
-  for (const x of document.querySelectorAll("#pttracks button")) x.classList.toggle("primary", +x.dataset.pt === S.ptTarget);
-});
-document.getElementById("ptgo").addEventListener("click", () => {
-  const oct = parseInt(document.getElementById("ptoct").value, 10) || 0;
-  const semi = Math.max(-24, Math.min(24, parseInt(document.getElementById("ptsemi").value, 10) || 0));
-  const k = pasteClipboard(S.playCursor, {ti: S.ptTarget, dP: oct * 12 + semi});
-  if (!k) { setInfo("nothing landed — every note was already there or shifted off the roll"); return; }
-  S.selTrack = S.ptTarget; renderTrackbar(); draw();
-  document.getElementById("pastesheet").classList.remove("on");
-  const shift = (oct ? (oct > 0 ? "+" : "") + oct + " oct" : "") + (semi ? (oct ? " " : "") + (semi > 0 ? "+" : "") + semi + " st" : "");
-  setInfo("pasted " + k + " note" + (k === 1 ? "" : "s") + " onto " + (S.song.tracks[S.ptTarget].name || "track") + (shift ? " (" + shift + ")" : "") + " — selected, cursor at their end");
-});
-document.getElementById("pastebtn").addEventListener("click", () => {
-  if (!editableSong()) { setInfo("paste works on your own songs — captures are locked"); return; }
-  const k = pasteClipboard(S.playCursor); // pastes the last ⧉/⌘C copy — surviving any scrolling
-  setInfo(k ? "pasted " + clipSummary() + " — cursor moved to their end, paste again to chain"
-            : "nothing copied yet — select notes and tap Copy (or ⌘C) first");
-});
-document.getElementById("octupbtn").addEventListener("click", () => {
+ document.getElementById("octupbtn").addEventListener("click", () => {
   if (nudgeSelection(0, 12)) setInfo("selection up an octave (undo undoes)");
   else setInfo("nothing selected — lasso or tap notes first");
 });
@@ -4150,21 +3696,7 @@ askinput.addEventListener("keydown", e => {
  
  
 
-            document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
-for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));
-document.getElementById("settingssheet").addEventListener("change", e => { if (e.target && e.target.id) settingsPersist(e.target.id); });
-document.getElementById("ghcheck").addEventListener("click", ghCheck);
-document.getElementById("filesettings").addEventListener("click", () => {
-  closeFileMenus();
-  openSettingsSheet();
-});
-document.getElementById("folderpick").addEventListener("click", () => { chooseFolder(); });
-document.getElementById("folderforget").addEventListener("click", () => { forgetFolder(); });
-document.getElementById("folderonly").addEventListener("change", e => {
-  if (e.target.checked) localStorage.setItem("ff1roll-folderonly", "1"); else localStorage.removeItem("ff1roll-folderonly");
-  folderAfterChange(e.target.checked ? "the song list is now your folder only" : "the song list shows the site's albums again");
-});
-document.getElementById("filefolder").addEventListener("click", () => { closeFileMenus(); chooseFolder(); });
+            initSheets6();
 if (typeof document.querySelectorAll === "function") { // vm harness stubs document
 // A sheet keeps the scroll position it had when it was last closed, so
 // reopening the notes list dropped Josh halfway down it (2026-08-25). Reset on
@@ -4269,92 +3801,13 @@ document.addEventListener("keydown", e => {
   e.preventDefault();
 });
 }
- document.getElementById("sharelink").addEventListener("click", async () => {
-  const st = document.getElementById("syncstatus");
-  if (!S.songKey || !/^albums\//.test(S.songKey)) { st.textContent = "Local files have no link — publish the song first."; return; }
-  const link = shareLinkFor(S.songKey);
-  try {
-    if (navigator.share) { await navigator.share({title: songTitleOf(S.songKey) + " · Night Roll", url: link}); st.textContent = "Shared."; return; }
-    await navigator.clipboard.writeText(link);
-    st.textContent = "Link copied: " + link;
-  } catch (err) { st.textContent = err && err.name === "AbortError" ? "" : "Couldn't share: " + err.message + " — " + link; }
-});
-document.getElementById("fileshare").addEventListener("click", () => { closeFileMenus(); openShareSheet(); });
-document.getElementById("shClose").addEventListener("click", () => document.getElementById("sharesheet").classList.remove("on"));
-document.getElementById("shUrl").addEventListener("focus", e => e.target.select());
-document.getElementById("shCopy").addEventListener("click", async e => {
-  try { await navigator.clipboard.writeText(document.getElementById("shUrl").value); e.target.textContent = "Copied ✓"; }
-  catch (err) { document.getElementById("shUrl").select(); e.target.textContent = "Select + copy"; }
-  setTimeout(() => { e.target.textContent = "Copy"; }, 1500);
-});
-document.getElementById("shSend").addEventListener("click", async () => {
-  try { await navigator.share({title: songTitleOf(S.songKey) + " · Night Roll", url: document.getElementById("shUrl").value}); }
-  catch (err) { /* AbortError = he closed the share sheet */ }
-});
-document.getElementById("copyfile").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(serializeRollnotes());
-    document.getElementById("syncstatus").textContent = "Copied to clipboard.";
-  } catch (err) { document.getElementById("syncstatus").textContent = "Copy failed: " + err.message; }
-});
-document.getElementById("dlfile").addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([serializeRollnotes()], {type: "text/plain"}));
-  a.download = baseName() + ".rollnotes.json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-document.getElementById("ghsave").addEventListener("click", async e => {
-  const btn = e.currentTarget;
-  const status = document.getElementById("syncstatus");
-  if (S.song && isUnsaved(S.songKey)) { // no folder yet (lotion, 2026-10-03): name it first — same sheet Save Version uses — then ship, instead of silently publishing annotations only
-    const token = takeToken(status);
-    if (!token) return;
-    syncsheet.classList.remove("on");
-    openSaveForm("publish");
-    return;
-  }
-  if (S.song && isComposition()) { // writing mode: the ONE button ships everything, via the one publish function
-    btn.disabled = true;
-    status.textContent = "Publishing " + S.songKey + " (.mid + annotations)…";
-    try {
-      const token = writeToken();
-      if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
-      status.textContent = await publishOpenComposition(ghHeaders(token), m => status.textContent = m);
-    } catch (err) { status.textContent = "Publish failed: " + err.message; }
-    finally { btn.disabled = false; }
-    return;
-  }
-  const token = takeToken(status);
-  if (!token) return;
-  if (!S.songKey) { status.textContent = "Local file — no repo path. Use Copy/Download."; return; }
-  btn.disabled = true;
-  status.textContent = "Publishing…";
-  try {
-    await publishSong(S.songKey, ghHeaders(token), m => status.textContent = m); // annotations only: publishSong's own hisMusic check skips the .mid
-    status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + "."
-                                        : "Published ✓ (GitHub Pages takes ~1 min to serve the new file.)";
-    setTimeout(() => { // done — close, and return to the notes list if that's where we came from
-      syncsheet.classList.remove("on");
-      if (S.syncReturnToList) { renderNoteList(); notelistSheet.classList.add("on"); }
-    }, 900);
-  } catch (err) { status.textContent = "Publish failed: " + err.message; }
-  finally { btn.disabled = false; }
-});
+ initSheets7();
 JOB_KINDS.publishall = {
   label: j => j.title,
   open: j => openPubJobSheet(j),
   retry: j => { const job = publishAllJobStart(setInfo); if (job) openPubJobSheet(job); },
 };
-document.getElementById("ghsaveall").addEventListener("click", () => {
-  const status = document.getElementById("syncstatus");
-  const token = takeToken(status);
-  if (!token) return;
-  const job = publishAllJobStart(s => { status.textContent = s; });
-  if (!job) return;
-  document.getElementById("syncsheet").classList.remove("on");
-  openPubJobSheet(job);
-});
+initSheets8();
 
 initChrome16();
 // ---- service worker (Phase 0, 2026-09-26): offline launch from the Home
@@ -4372,14 +3825,7 @@ if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof locati
       .catch(err => console.warn("sw:", err.message));
   }
 }
-try { // a job still "running" in the mirror = the page died mid-way; the row keeps its last counts (this replaced the sessionStorage capture beacon, 2026-09-27)
-  const j = jobsLoad();
-  if (j) {
-    const msg = "⚠ interrupted: " + j.title + " " + jobProgress(j) + " — tap ⏳ to see or retry";
-    setInfo(msg);
-    setTimeout(() => setInfo(msg), 2500); // outlive whatever boot writes over it
-  }
-} catch (err) { /* no mirror */ }
+initSheets9();
 (async function boot() {
   // boot watchdog (docs/split-plan.md §4 step 0b): the inline classic
   // script in index.html's <head> arms a 10s failsafe before any module
