@@ -39,6 +39,9 @@ import { setOrigin } from "../model/provenance.js";
 import { saveLocalNotes } from "../model/edits.js";
 import { draftWrite } from "../model/versions.js";
 import { draftDoc } from "../model/versions.js";
+import { untitledKey } from "../model/provenance.js";
+import { publishedPaths } from "../model/catalog.js";
+import { originOf } from "../model/provenance.js";
 
 // roots the user cannot save into
 export function folderChoices() { // the folders a Save can go to: this device's plus the repo's, own folders only, last used first
@@ -197,4 +200,71 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
   saveDraft();
   updateSongBtn();
   draw();
+}
+
+export function createComposition(bpm, num, den) { // Untitled until the first Save names it and picks its folder
+  const key = untitledKey();
+  const parsed = {ppq: 480, timesig: [num, den],
+    tempos: [{tick: 0, usq: Math.round(60e6 / bpm), sec: 0}],
+    tracks: [{name: "pulse1", notes: []}, {name: "pulse2", notes: []}, {name: "triangle", notes: []}]};
+  setSong(parsed, key);
+  S.currentPath = key;
+  rememberLastSong(key);
+  reflectSongURL(key);
+  updateSongBtn();
+  // the meter is HIS declaration (he chose it in the dialog) — record it
+  S.rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null,
+    text: "timesig: " + num + "/" + den, tsdir: [num, den], added: true}));
+  // P4 (docs/annotations-v2.md): a new composition's origin, stored in the
+  // v2 header from its first publish on — nothing to derive later, unlike
+  // copy/import which read it back off a note or a draft's source today
+  S.rollnotesOrigin = {kind: "composition", at: new Date().toISOString()};
+  setOrigin(key, S.rollnotesOrigin);
+  finalizeNotes();
+  saveLocalNotes(); // async loadNotes rebuild re-reads this stash
+  saveDraft();
+  updateSongBtn(); // now that the draft exists, the crumb names its folder
+  draw();
+}
+// ✎ Edit locally, no confirm (Josh, 2026-09-29 — Model B): editherebtn IS
+// the "start editing" gesture on your own published song with no local
+// copy yet (it sits where Edit ▾ would be — updateEditBtnVis hides the
+// real edit row/tools until a local copy exists). Tapping it now makes the
+// copy silently, with a footer notice instead of asking first.
+export function editHereNow() {
+  if (!S.song || !ownFolderPath(S.songKey) || isComposition()) return;
+  draftWrite(S.songKey, draftDoc(true)); // clean: nothing changed yet; the first edit marks it
+  updateEditBtnVis();
+  updateSongBtn();
+  setInfo("editing your copy on this device — Publish sends it");
+}
+// "Overworld" -> "Overworld 2", "Overworld 3"… on a name clash in the target
+// folder — makeItMine() always runs this, default name or typed, unlike
+// Save As's fork mode (Josh's ruling, docs/provenance-plan.md addendum).
+export function forkClashTitle(folder, title) {
+  const dir = "albums/" + folder + "/";
+  const taken = new Set([...publishedPaths(), ...draftKeys()]
+    .filter(p => p.startsWith(dir))
+    .map(p => p.slice(dir.length).replace(/\.midi?$/i, "")));
+  let n = 1, slug = slugify(title);
+  while (taken.has(slug)) { n++; slug = slugify(title + " " + n); }
+  return n === 1 ? title : title + " " + n;
+}
+// "✎ Edit" (Q4, docs/provenance-plan.md addendum, "your copy is yours"):
+// forks a capture or starter, replacing the generic "read-only here — Save
+// As…" message those used to get with no quick affordance of their own.
+// Opens the "Edit a copy" sheet (openSaveForm("editcopy")) with the folder
+// and name defaulted — name/folder here are what the sheet's confirm passes
+// in; called with neither, it's the same one-tap default as before (straight
+// to the last folder used, or my-covers/ the first time). Either way it's
+// forkCurrentSong(title, folder) under the hood, clash-suffixed — the
+// capture/starter itself is never touched.
+export function makeItMine(name, folder) {
+  if (!S.song || !S.songKey) return;
+  const origin = originOf(S.songKey);
+  if (origin !== "capture" && origin !== "starter") return; // everything else already has Edit locally/Save As
+  folder = folder || localStorage.getItem("ff1roll-lastfolder") || "my-covers";
+  const title = forkClashTitle(folder, (name || songTitleOf(S.songKey)).trim() || songTitleOf(S.songKey));
+  forkCurrentSong(title, folder);
+  setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
 }
