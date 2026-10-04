@@ -27,3 +27,4 @@ export {
   AI_SHOT_MAX, AI_MAX_SHOT_SIDE, AI_MAX_SHOT_KEEP_BYTES, aiB64Bytes, aiShotLine, aiShotUpload, aiShotOutgoing, aiShotDisplayText,
   aiPrepImage, aiCanCaptureTab, aiShotCaptureTab,
 } from "./attach.js";
+export { AI_TEXT, aiText, aiPartial, aiFinish, aiFail, aiRun, aiSendText, aiTerminalSend, aiRepending, aiResumeSoon, aiResume } from "./client.js";

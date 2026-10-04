@@ -16,13 +16,14 @@ vocabulary out of the library.
 
 Plan: Night Roll's `docs/ai-library-plan.md`.
 
-Status: v0.4 — `aiSSE` (the streaming parser, v0.1), `bridge/server.mjs`
+Status: v0.5 — `aiSSE` (the streaming parser, v0.1), `bridge/server.mjs`
 (the Mac/Node bridge server and its CLI, v0.2), `web/backends.js` (the
 remote and in-browser backends, the connection probe, per-host consent,
 v0.3), `web/store.js` + `web/ctx-cache.js` + `web/bridge-client.js` +
 `web/attach.js` (the chat record and its cursors/drafts, the sent-context
-cache, the bridge's own routes, attachments, v0.4). The rest (the client
-loop, the AI window) moves over in the plan's steps 5–6.
+cache, the bridge's own routes, attachments, v0.4), `web/client.js` (the
+exchange: store-first send, tool rounds, abort, resume of a cut stream,
+the terminal send, v0.5). The AI window moves over in the plan's step 6.
 
 ## web/
 
@@ -81,6 +82,23 @@ text, count)` (the stand-in line only when `host.state.askCaps.bridge`),
 aiShotOutgoing(text, paths)/aiShotDisplayText`, `aiPrepImage(file)`,
 `aiShotCaptureTab()` (getDisplayMedia), `AI_SHOT_MAX`. The pending list and
 a native shell's capture plugin are the app's.
+
+`web/client.js` — the exchange. The library never sees what the context
+says or which tools exist; the host builds and runs all of it:
+- `systemPrompt()`, `context(scope, budget)`, `terminalContext()`, `budget()`, `estimate(system, messages)`, `buildMessages(msgs, text, ctx, budget)` (history selection is the app's — e.g. which earlier turns may enter this request)
+- `tools()`, `runTool(name, args)`, `modelName()`, `messageMeta()` → fields merged into every message the library stores (an app's own tags)
+- `backend()` (default `aiPickBackend`), `jobsSupported()` (default `aiJobsSupported`) — overridable so an app's tests can stub one name
+- `keys.terminal`, `canResume()`, `resumeScope()`
+- `bubble(role, text, meta)` → an element-like `{textContent, dataset, classList}`; `showThinking(live, raw)`; `fillBubble(live, text)`; `liveBubble(jobId)`
+- `busy(on)`, `afterSend()`, `restoreInput(text)`, `render()`, `poll()`, `landed(key, failed)`
+- `text(key, ...args)` → optional wording override, keys in `AI_TEXT`
+
+Exports: `aiSendText(host, text, {scope, at})`, `aiTerminalSend(host, text)`,
+`aiRun(host, {msgs, text, scope, messages, jobId, live, key})`, `aiFinish`/`aiFail`
+(`host, jobId, text|note, key`), `aiRepending`, `aiResume(host)`/`aiResumeSoon(host, ms)`,
+`aiPartial(host)` (job id → words streamed so far). Runtime fields on
+`host.state`: `askBusy`, `askPartial`, `askResumeTimer`, `askTerminalTimer`,
+`askTerminalFast`.
 
 ## bridge/
 

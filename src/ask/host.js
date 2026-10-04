@@ -26,6 +26,31 @@ import { askMaxErrId } from "./bridge.js";
 import { askMaxStatusId } from "./bridge.js";
 import { askstatus } from "./sheet.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
+import { askSys } from "./context.js";
+import { askContext } from "./context.js";
+import { askTerminalContext } from "./context.js";
+import { askBuildMessages } from "./context.js";
+import { askBudget } from "./context.js";
+import { askEstimate } from "./context.js";
+import { askSpan } from "./context.js";
+import { askToolsNow } from "./bridge.js";
+import { askModelName } from "./bridge.js";
+import { askJobsSupported } from "./bridge.js";
+import { askComposing } from "./bridge.js";
+import { askRunTool } from "./tools.js";
+import { aiProvider } from "./backend.js";
+import { appMode } from "../platform/mode.js";
+import { askBubble } from "./sheet.js";
+import { askClock } from "./sheet.js";
+import { askShowThinking } from "./sheet.js";
+import { askFillBubble } from "./sheet.js";
+import { asklog } from "./sheet.js";
+import { askinput } from "./sheet.js";
+import { askMicOff } from "./sheet.js";
+import { askDraftClear } from "./sheet.js";
+import { askShotClearAll } from "./shots.js";
+import { askShotDisplayText } from "./shots.js";
+import { askLanded } from "./client.js";
 
 // The host adapter (docs/ai-library-plan.md §2): the ONE object the AI
 // library (vendor/ai/web) sees of this app. Every app-specific thing — the
@@ -55,9 +80,45 @@ export function askHost() {
     confirmHost: host => appConfirm("Send your notes to " + host + "?", // per-host consent: the payload is his annotations + notes
       "Every message sends this song's notes and your annotations to " + host + ". Only do this for a machine you trust. Asked once per machine.",
       "Send", "Cancel"),
+    // ---- the exchange (step 5): what the model is told, which tools it has,
+    // which earlier turns it may see — the Learning law lives in these three
+    // (askSys / askContext / askBuildMessages), the library only carries them
+    systemPrompt: () => askSys(),
+    context: (sp, budget) => askContext(sp, budget),
+    terminalContext: () => askTerminalContext(),
+    buildMessages: (msgs, text, ctx, budget) => askBuildMessages(msgs, text, ctx, budget), // a different mode's turn never enters this request's history
+    budget: () => askBudget(),
+    estimate: (system, messages) => askEstimate(system, messages),
+    tools: () => askToolsNow(),
+    runTool: (name, args) => askRunTool(name, args),
+    modelName: () => askModelName(),
+    messageMeta: () => ({mode: appMode()}), // every stored message carries the mode it was pushed in (SAFETY 2026-10-01); the library stores it, never reads it
+    backend: () => aiProvider(), // through this app's delegates, so a test's `aiProvider = …` / `askJobsSupported = …` reaches the loop
+    jobsSupported: () => askJobsSupported(),
+    canResume: () => !!S.song,
+    resumeScope: () => S.askSpanFrozen || askSpan(),
+    // the window: bubbles, the live stream, the box, the badge
+    bubble: (role, text, meta) => askBubble(role, (meta && meta.terminal ? askClock(meta.t) : "") + askShotDisplayText(text)),
+    showThinking: (live, raw) => askShowThinking(live, raw),
+    fillBubble: (live, text) => askFillBubble(live, text),
+    liveBubble: jobId => [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null,
+    busy: on => { document.getElementById("askstop").style.display = on ? "" : "none"; document.getElementById("asksend").disabled = on; },
+    afterSend: () => { askMicOff(); askinput.value = ""; askShotClearAll(); askDraftClear(); askGrow(); askComposing(false); }, // a live 🎤 would write its transcript back into the box after we clear it
+    restoreInput: text => { askinput.value = text; askGrow(); },
+    render: () => askRender(),
+    poll: () => { askInboxPoll(); askStatusPoll(); },
+    landed: (key, failed) => askLanded(key, failed),
+    text: key => ASK_TEXT[key], // this app's wording where it differs from the library's neutral default (it says "the Mac")
   };
   return S.aiHost;
 }
+export const ASK_TEXT = {
+  streamCut: "the live stream was cut (Safari does that when the app leaves the screen) — the reply keeps cooking on the Mac; checking every few seconds",
+  checkingDelivery: "… (checking whether the Mac got it)",
+  errorHint: "check File → Settings… → AI model, and Test",
+  jobGone: "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again",
+  unreachableRetry: "… (can't reach the Mac right now — the reply is kept there; retrying)",
+};
 
 export function openAsk() {
   if (!S.song) return;

@@ -2110,7 +2110,28 @@ chat or any key that isn't a chat store, and a save round-trips. One
 deliberate change rode along: eviction over `ASK_TOTAL_CAP` used to walk
 every `ff1roll-ask-*` key and so deleted the `-seen`/`-sentctx`/`-epoch`
 cursors (a resend, a re-poll — never messages); it now considers only
-values that are chat stores.
+values that are chat stores. Step 5 (`v0.5.0`): `web/client.js` — the
+exchange (`aiSendText`: the question stored with its pending marker BEFORE
+the request; `aiRun`: the stream, tool rounds under `-r1…` job ids, abort,
+the cut-stream branches; `aiResume`: every pending question looked up on
+the bridge; `aiTerminalSend`). The library never sees what the context says
+or which tools exist: `askHost()` hands it `systemPrompt` (= `askSys`, the
+Learning law), `context` (= `askContext`), `buildMessages` (= `askBuildMessages`
+— a different mode's turn never enters a request), `tools`/`runTool`,
+`messageMeta` (`{mode: appMode()}` — stored on every message, never read by
+the library), `backend`/`jobsSupported` (through the app's own `aiProvider`/
+`askJobsSupported` delegates, so a test's by-name stub reaches the loop),
+and the window callbacks (`bubble`, `showThinking`, `fillBubble`, `busy`,
+`afterSend`, `landed` = `askLanded`). Wording: the library's `AI_TEXT`
+defaults are neutral ("the server", "the bridge"); `host.text(key)` hands
+back this app's lines (`ASK_TEXT` in host.js: "the Mac", "File → Settings…
+→ AI model"). `src/ask/client.js` keeps `askSend` whole (the DOM read, the
+gating, the consent, the span freeze, and the user push itself with its
+`mode: appMode()` tag — the SAFETY test reads that line from the source, so
+the library's `aiSendText` is for other apps; Night Roll hands the built
+messages to `aiRun`) and every bare name as delegates; `askPartial` is now
+`S.askPartial` (aliased in sheet.js). All 68 Learning cases and
+tests/ai.test.mjs's Learning-wire test are unchanged and green.
 
 ## Code map (index.html, section comments mark these)
 

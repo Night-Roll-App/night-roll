@@ -548,7 +548,7 @@ test("check rule 8: the real repo's four module manifests (modulepreload, sw.js 
 
 test("checkSrc: vendor/ai/web (checkSrc's extraRoots) is clean against rules 1-3/6/7 — no top-level let, every free identifier resolved, no top-level name collides with src/'s", () => {
   const result = checkSrc(path.join(ROOT, "src"), { extraRoots: [{ root: path.join(ROOT, "vendor/ai/web"), prefix: "vendor/ai/web" }] });
-  assert.equal(result.fileCount, 92, "85 src/ files (see the checkSrc test above) + 7 vendor/ai/web files (index.js, sse.js, backends.js — AI library step 3; store.js, ctx-cache.js, bridge-client.js, attach.js — step 4)");
+  assert.equal(result.fileCount, 93, "85 src/ files (see the checkSrc test above) + 8 vendor/ai/web files (index.js, sse.js, backends.js — AI library step 3; store.js, ctx-cache.js, bridge-client.js, attach.js — step 4; client.js — step 5)");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "the one pre-existing src/ finding, unchanged by adding vendor/ai/web to the scan");

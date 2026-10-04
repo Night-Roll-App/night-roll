@@ -259,8 +259,28 @@ mechanical commit).
    non-store key (the one behaviour change: cursors used to be evicted
    with the chats because they share the prefix). Library tests:
    store/ctx-cache/attach (pure) + bridge-client (fake bridge).
-5. The client loop through `host.systemPrompt/context/tools/runTool`; all
-   Learning tests stay in Night Roll and must stay green unchanged.
+5. **DONE 2026-10-04 (claude-bridge `v0.5.0`).** `web/client.js`:
+   `aiSendText`/`aiRun`/`aiFinish`/`aiFail`/`aiRepending`/`aiResume`/
+   `aiResumeSoon`/`aiTerminalSend`, verbatim mechanics, every app-specific
+   thing through the host — `systemPrompt` (askSys), `context`
+   (askContext), `terminalContext`, `buildMessages` (askBuildMessages: the
+   mode filter stays app-side), `budget`/`estimate`, `tools`/`runTool`,
+   `modelName`, `messageMeta` (`{mode: appMode()}`), `backend`/
+   `jobsSupported` (the app's own delegates, stub-reachable), `canResume`/
+   `resumeScope`, the window callbacks, and `text(key)` over neutral
+   `AI_TEXT` defaults (host.js's `ASK_TEXT` keeps "the Mac" wording).
+   `src/ask/client.js` keeps `askSend` whole — gating, consent, span, and
+   the user push with its `mode: appMode()` tag (the mode-tag SAFETY test
+   reads that line from the source; `aiSendText` is the library's send for
+   other apps, Night Roll hands its built messages to `aiRun`) — and the
+   delegates; `askPartial` → `S.askPartial`. Library `tests/client.test.mjs`
+   (fake bridge + object bubbles: store-first send, tool round moves the
+   marker, HTTP 500/abort, cut stream → resume running/done/404/no-jobs/
+   unreachable, terminal send both ways). tests/ai.test.mjs and every
+   Learning case in tests/night-roll.test.mjs unchanged, green. One
+   library fix-up commit inside the step: the loop's status helper was
+   named `aiSay`, which collided with Night Roll's Settings `aiSay`
+   (check.mjs rule 6 across src/ + vendor/ai/web caught it) → `aiNotice`.
 6. Window in adopt mode (binds today's `#ask*` markup; e2e selectors unchanged).
 7. (Optional, last) the library renders its own markup + CSS +
    `mountAiSettings` — what makes a second iPad app need no copied HTML.

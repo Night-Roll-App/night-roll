@@ -117,7 +117,7 @@ export function askRefresh() { // span label + model line; called on open and af
     ? (AI_BROWSER_MODELS.find(m => m[0] === c.aiBrowserModel) || [0, c.aiBrowserModel])[1].split(" · ")[0] + " · this browser"
     : (c.aiModel || (S.askModelCache && S.askModelCache.ids[0]) || "model") + " · " + host;
 }
-export const askPartial = {};
+export const askPartial = S.askPartial; // the library's record (vendor/ai/web/client.js aiPartial), aliased for askRender/askShowThinking
 // job id -> the words streamed so far: a closed-and-reopened sheet redraws from storage, which only holds the marker (Josh, 2026-09-27: "I don't see the first part of the response")
 export function askShowThinking(live, raw) { // Qwen-style <think> blocks stay out of the bubble
   const vis = raw.replace(/<think>[\s\S]*?(<\/think>|$)/g, "").replace(/^\s+/, "");
