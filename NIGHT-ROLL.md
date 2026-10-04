@@ -1650,6 +1650,46 @@ stale and should move up here instead.
   all transitively need `wmLayoutAll` and stayed with it. The Dock menu/
   drag-to-dock action functions were never separately checked this step —
   they ride the same cluster.
+- **Phase 2 step 7 (2026-10-04) — the ui/ homes filled.** Every "did NOT
+  move, permanently" verdict in the seven `ui/*` entries above was a
+  phase-1 reading of a call that phase 2 since re-homed or ported
+  (`finalizeNotes` → session/song.js in step 6, `ensureAudio`/`play`/the
+  transport in steps 2/4c, `saveTrackDir` itself here); they are kept as
+  history, not as a map. What each file holds now, on top of its step-14
+  leaves: `ui/chrome.js` — `songRegionRight` (the song region's right
+  edge every popup positions against), `placeLassoBtn`, `toggleHl`,
+  `updateLCD`, and the port bodies `updateEditBtnVisImpl`/
+  `updateSubtitleImpl`/`updateChipBtnImpl` (+`updateChipBtnInner`);
+  `ui/trackbar.js` — `renderTrackbarImpl` (the chip bar, the step-3 port's
+  body), `trackToggle` (M/S/H → `track:` annotation), `saveTrackDir`,
+  `saveVoices`, `renameTrack`; `ui/mixer.js` — `renderMixer`/
+  `mixerStripEl`/`mixerStripDragize`/`openMixer`/`closeMixer`/
+  `toggleMixer` and `reorderTrack` (the strip drag's reorder);
+  `ui/voice-menu.js` — `openVoiceMenu`/`buildVoiceMenu`, the game and SF2
+  pickers (`buildGameVoicePicker`/`openGameVoiceMenuTo`/`renderSf2Nav`/
+  `sf2AuditionPreset`/`buildSf2VoicePicker`), `buildClipControls` (the
+  audio track's sheet), the async label fills (`gameVoiceLabel`/
+  `sf2VoiceLabel`/`resolvedGameVaultSync` + their `gameVoiceLabels`/
+  `sf2VoiceLabels`/`gameVaultResolved` caches); `ui/notes.js` —
+  `renderNoteList`/`openNoteList`, `updateChordStale`, `useFileKey`;
+  `ui/sheets.js` — File → Instruments… (`renderInstSheet`, the
+  `renderGameInstNav` browser it shares with the game-voice picker, and
+  its row builders/registries `INST_SYS_ORDER`/`gameInstUsedBySong`/
+  `gameSongRows`/`songInstrumentRows`/`currentSongGameContext`/`instKeys`/
+  `sf2Registry`/`sf2RegistryAdd`/`instAudition`/`usedInstruments`/
+  `usedInstrumentRows`) and the drummer/bassist sheets (`openDrummer`/
+  `openBassist`/`drBuildControls`/`drRefresh`/`bsBuildControls`/
+  `bsRefresh`); `ui/wm.js` — the window-manager actions (`wmLayoutAll`/
+  `wmLayoutSide`/`wmLayoutTabs`, `wmDockSide`/`wmSetSideModeFor`/
+  `wmDockBottomWindow`/`wmFloat`/`wmCloseWindow`, `makeWindow`,
+  `wmOpenMenu`, `wmSideDividerize`). Convention this step made the rule
+  (docs/split-phase2-plan.md step 7): a ui/* or session/* file never
+  imports a port from hooks.js whose impl is at layer ≤ 4 — it imports
+  `XImpl as X` from the impl's home (check.mjs rule 10 enforces it); the
+  only hooks.js imports left in ui/* are inside the impl's own file.
+  Still in app.js from these areas: the top-level wiring (`S.wm`
+  migration, `makeWindow(...)` registrations, the listener blocks) for
+  step 12, and `askRenderImpl` (step 9).
 - **`finalizeNotes` — model/rollnotes.js's own central resolver, and the
   thing `saveTrackDir`/`openVoiceMenu`'s `buildVoiceMenu`-adjacent chain and
   the drummer/bassist generators all ultimately reach — was checked here

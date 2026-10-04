@@ -115,7 +115,7 @@ illegal-layer imports.
 | 4 | M | **Done, with the transport/voices/clips clusters almost entirely blocked (see §2 writeup): only chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto actually moved**, unblocked by step 3's songTitleOf port; play/stop/playGate*/buildSchedule/renderSongOffline/audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips all stayed, still blocked. **Finished in step 4c (worktree agent, 2026-10-04): the whole cluster is out — see the 4c write-up.** | ~1,150 (actual: 220, 14495→14275; 4c: 836 more, 14179→13343) |
 | 5 | M | **Done (worktree agent, 2026-10-04; 18 commits — 14 M + 3 H carrying 4 ports; see write-up; retireOldOverlay landed in model/versions beside saveDraft, its only caller).** saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 (actual: 1,204, 13343→12139) |
 | 6 | M | **Done (worktree agent, 2026-10-04; 7 commits; see write-up — revertSongToRepo/moveComposition wait for step 8's sync web; bakeMeter/bakeTempos landed in model/rollnotes, not session).** session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 (actual: 808, 12139→11331) |
-| 7 | M | voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 |
+| 7 | M | **Done (worktree agent, 2026-10-04; 9 commits + a step 0 addendum; see write-up — the Instruments sheet web landed in ui/sheets.js, reorderTrack in ui/mixer.js).** voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 (actual: 1,971, 11331→9360) |
 | 8 | M | commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 |
 | 9 | M | askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 |
 | 10 | M | tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 |
@@ -700,6 +700,86 @@ modules.test fileCount 64 → 67 (66 → 69 with vendor/ai/web). Group:
 `src/app.js`: 12139 → 11331 (808 out). **Device check owed** (plan §3
 step 6): load, draft, Save As, fork, revert (scratch only).
 
+**Step 7 — Done** (2026-10-04, worktree agent). Nine M commits, all into
+files step 14 already created — no manifest, SW_VERSION or fileCount
+change. `blockers.mjs` on every row cluster first: the voice menu, the
+trackbar and File → Instruments… were ONE web (the menu's async label
+fills call `buildVoiceMenu` back; `renderTrackbar` opens the menu; the
+game-voice picker shares `renderGameInstNav` with the Instruments sheet;
+`trackToggle`/`saveVoices` are the menu's own save path), the Mixer hung
+off it through `trackToggle`/`saveTrackDir`, and everything else was a
+leaf once `songRegionRight` (every popup's right edge) had a home. Order
+chosen so each commit is blockers-clean on its own, leaves first:
+
+1. **M** `songRegionRight`/`placeLassoBtn`/`toggleHl`/`updateLCD` + the
+   port bodies `updateEditBtnVisImpl`/`updateSubtitleImpl`/
+   `updateChipBtnImpl` (+`updateChipBtnInner`) → ui/chrome.js. wire.js
+   imports the three impls from there; rule 10 then flagged the layer-4
+   session/ callers exactly as step 6 predicted — song.js/files.js/
+   album.js switched to `XImpl as X` aliases, gen/ and audio/ stay on
+   hooks.js.
+2. **M** `renderNoteList`/`openNoteList`/`updateChordStale`/`useFileKey` →
+   ui/notes.js (five aliases: setInfo/draw/updateSubtitle, buildScoreModel,
+   finalizeNotes).
+3. **M** the Instruments web (`INST_SYS_ORDER`, `gameInstUsedBySong`,
+   `gameSongRows`, `songInstrumentRows`, `currentSongGameContext`,
+   `instKeys`, `sf2Registry`/`sf2RegistryAdd`, `instAudition`,
+   `usedInstruments`/`usedInstrumentRows`, `renderGameInstNav`,
+   `renderInstSheet`) → **ui/sheets.js** — not named by split-plan §1; it
+   is a sheet, and the voice menu is its consumer, so sheets over
+   voice-menu. No port touched.
+4. **M** `openBassist`/`openDrummer`/`bsBuildControls`/`bsRefresh`/
+   `drRefresh`/`drBuildControls` → ui/sheets.js.
+5. **M** `wmLayoutSide`/`wmLayoutTabs`/`wmCloseWindow`/`wmLayoutAll`/
+   `wmDockSide`/`wmSetSideModeFor`/`wmDockBottomWindow`/`wmFloat`/
+   `makeWindow`/`wmOpenMenu`/`wmSideDividerize` → ui/wm.js (the phase-1
+   "wmLayoutAll calls resize()" worry was a same-layer import all along).
+   The `S.wm` migration block and the `makeWindow(...)` registrations are
+   top-level statements and stay for step 12.
+6. **M** `trackToggle`/`saveTrackDir`/`saveVoices`/`renameTrack` →
+   ui/trackbar.js.
+7. **M** `renderMixer`/`mixerStripEl`/`mixerStripDragize`/`openMixer`/
+   `closeMixer`/`toggleMixer` + `reorderTrack` → ui/mixer.js
+   (`reorderTrack`'s only caller is the strip drag and it re-renders the
+   Mixer; left behind it kept the cluster blocked).
+8. **M** the voice menu, one commit (a strongly-connected set):
+   `gameVoiceLabels`/`gameVoiceLabel`/`sf2VoiceLabels`/`sf2VoiceLabel`/
+   `openVoiceMenu`/`buildVoiceMenu`/`buildGameVoicePicker`/
+   `openGameVoiceMenuTo`/`renderSf2Nav`/`sf2AuditionPreset`/
+   `buildSf2VoicePicker`/`buildClipControls`/`gameVaultResolved`/
+   `resolvedGameVaultSync` → ui/voice-menu.js.
+9. **M** `renderTrackbarImpl` → ui/trackbar.js, last (needed
+   `openVoiceMenu` real). Its `renderTrackbarImpl = prof("renderTrackbar",
+   renderTrackbarImpl)` wrap travelled by itself — the first real use of
+   the step 0 addendum below. wire.js now imports from app.js only
+   `askRenderImpl`/`recFinishImpl`.
+
+**Step 0 addendum** (first commit of this pass): move.mjs's
+`profWrapName` accepts `XImpl = prof("X", XImpl)` (label = identifier
+minus `Impl`; any other mismatch is still not a self-wrap) — step 6's
+finding (a), with two fixture tests (modules 86 → 88).
+
+Per commit: `verbatim.mjs <sha>` ✔ ×9, zero exceptions (one false start:
+collapsing wire.js's multi-line `from "./app.js"` import onto one line
+lost its `}` line to the checker — restored to the multi-line form,
+amended, ✔); regen-e2e-footer after every move; check.mjs clean except
+`oldBpb`; e2e-globals/controls clean; sorted prof label set unchanged (30
+by `prof("…")` grep across src/ — the earlier write-ups' "29" counted the
+same set before `updateLCD`'s own wrap was in scope; the set is what the
+check compares, and it never changed). Rule 10 at layer 4 bit on every
+ui/* commit but one, each time an `import { X } from "../hooks.js"`
+move.mjs copied from app.js for a port whose impl is at layer ≤ 4 — all
+rewritten to the `XImpl as X` alias (step 6 finding (b), now the rule for
+every ui/session move); only `renderTrackbar` stayed a hooks.js import
+until commit 9 made trackbar.js its home. Group: `perl -e 'alarm 1200;
+exec @ARGV' npm test` — only `ps2-real`/`instruments` fail (pre-existing
+local-rip gap), 878 pass; modules 88/88; `test:e2e:smoke` 8/8;
+`package.mjs`: 184 files, list identical. `src/app.js`: 11331 → 9360
+(1,971 out, ~the row's ~1,700). Learning-mode gates untouched
+(`updateChordStale`'s and `useFileKey`'s bodies moved verbatim). Not
+moved: `askRenderImpl` (not in this row — step 9's ask/* cluster) and
+`recFinishImpl` (step 10, input/). **Browser check owed** (plan §3 step
+7): chips M/S/H, voice audition, mixer, wm dock/float/close, phone width.
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
 blockers.mjs, then add one port (own H commit) or leave the name for step 11

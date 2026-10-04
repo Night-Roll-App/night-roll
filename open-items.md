@@ -6962,7 +6962,7 @@ unchanged; `npm test` under alarm 1200 — only ps2-real/instruments fail
 (pre-existing); modules 86/86; smoke 8/8; package 181 → 184 files (the
 three session files only). `src/app.js`: 12139 → 11331.
 
-TOOLING GAP (move.mjs, found this step): `profWrapName` matches only
+TOOLING GAP (move.mjs, found this step; RESOLVED by step 7's step 0 addendum, below): `profWrapName` matches only
 `X = prof("X", X)`. A port body renamed in step 3 keeps its label —
 `finalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl)` — so the
 wrap line is NOT carried with the function and is left in app.js
@@ -6974,3 +6974,31 @@ XImpl)` (identifier = declared name, label = name minus `Impl`).
 
 Device check owed (plan §3 step 6): load, draft, Save As, fork, revert —
 scratch songs only.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 7: the ui/ homes filled (docs/split-phase2-plan.md)
+
+Nine M commits, verbatim-checked (plus a step 0 addendum first: move.mjs
+carries `XImpl = prof("X", XImpl)` — the TOOLING GAP step 6 logged above
+is RESOLVED, two fixture tests). In order, each blockers.mjs-clean on its
+own: chrome leaves + three port impls (`songRegionRight`, `placeLassoBtn`,
+`toggleHl`, `updateLCD`, `updateEditBtnVisImpl`/`updateSubtitleImpl`/
+`updateChipBtnImpl`) → ui/chrome.js; `renderNoteList`/`openNoteList`/
+`updateChordStale`/`useFileKey` → ui/notes.js; the Instruments sheet web
+(13 names) → ui/sheets.js; the drummer/bassist sheets → ui/sheets.js;
+the wm actions (11) → ui/wm.js; `trackToggle`/`saveTrackDir`/`saveVoices`/
+`renameTrack` → ui/trackbar.js; the Mixer (6) + `reorderTrack` →
+ui/mixer.js; the voice menu + pickers + clip controls (14) →
+ui/voice-menu.js; `renderTrackbarImpl` → ui/trackbar.js. No new files
+(manifests, SW_VERSION, fileCount unchanged). Rule 10 bit on every ui/*
+commit but one — each hooks.js port import move.mjs copied for an impl at
+layer ≤ 4 became the `XImpl as X` alias; that is now the rule for every
+layer-4 move. check.mjs clean except `oldBpb`; prof set unchanged; `npm
+test` under alarm 1200 — only ps2-real/instruments fail (pre-existing);
+modules 88/88; smoke 8/8; package 184 files, identical. `src/app.js`:
+11331 → 9360.
+
+Browser check owed (plan §3 step 7): chips M/S/H, voice audition (game +
+SF2 pickers), mixer (fader/pan/reorder), wm dock/float/close + the window
+menu, phone width. Not iPad-audio-engine code, but the voice menu's
+audition path (sf2AuditionPreset/instAudition) moved file — one ear check
+on a game voice pick is cheap insurance.
