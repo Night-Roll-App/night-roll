@@ -13,6 +13,7 @@ const FILES = [
   "n64-rare", "sounding", "chip-worker", "instruments", "instruments-export",
   "instruments-sf2", "gestures", "bridge", "ai", "pwa", "package", "m3u-real",
   "migrate-rollnotes", "modules", "controls", "boot-order", "theory",
+  "theory-harmony",
 ];
 const FORCE_EXIT = new Set(["night-roll"]); // its harness leaves timers behind
 

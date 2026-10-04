@@ -137,6 +137,7 @@ or note classification. Findings stay Josh's.
                                                              # bar/phrase repeats + sequences; range/leaps/contour; density/
                                                              # syncopation + how often his chord bands change; lowest-per-beat
                                                              # + pedals; parallel 5ths/8ves/crossings — docs/theory-toolkit.md
+    node tools/harmony.mjs <song> roman|cadences|nct|modulation|chromatic  # VERDICTS from HIS key:/chord bands only — run only when he asks for that reading (docs/theory-harmony.md)
 
 `<song>` is a bare name (`overworld`, `cool-bmaj-progression`) or a path.
 All take `--json`. Stacked duplicate notes are de-duplicated by default.
