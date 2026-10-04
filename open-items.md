@@ -1705,6 +1705,14 @@ own annotations, writes the rest tagged `ai: {model, at}` as ONE undo step;
 tests/annotate.test.mjs (13 cases, fake OpenAI-SSE server). Not yet tried
 on a real model by Josh — try on a SCRATCH song in Normal mode; roman
 numerals (the harmony toolkit) stay a later checkbox.
+Follow-up (same day): AI-tagged annotations are song state, so they used
+to stay visible after flipping back to Learning — the leak CLAUDE.md
+forbids. Now Learning HIDES them (never deletes): one choke point,
+`visibleNotes()`/`annoShown()` in src/model/rollnotes.js, used by every
+reader that shows or forwards annotations (bands, All notes, LCD/staff
+key, ✦ Ask context + tools, generators, FACTS, query tools); storage/sync/
+undo read everything, Normal shows them again. NIGHT-ROLL.md "Learning
+hides what Normal wrote"; tests/annotate.test.mjs (14 cases).
 
 ## PHASE 2 — THE REAL SHELL, STARTED 2026-09-27 (afternoon)
 

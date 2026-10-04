@@ -13,6 +13,7 @@ import { spellPc } from "../theory/chords.js";
 import { tickToSec } from "../midi/parse.js";
 import { ctx } from "./roll.js";
 import { barTicks } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { secToTick } from "../midi/parse.js";
 import { trackShown } from "./roll.js";
 import { drawLasso } from "./roll.js";
@@ -377,7 +378,7 @@ export function drawFall(W, H) {
     ctx.font = "10px " + css("--mono");
     ctx.fillText(String(b + 1), 4, y - 4);
   }
-  for (const n of S.rollnotes) { // chord changes ride gold lines with their symbol
+  for (const n of visibleNotes()) { // chord changes ride gold lines with their symbol (visibleNotes: Learning hides ✦ AI estimates)
     if (!n.chord) continue;
     const y = secY(tickToSec(S.song, n.start));
     if (y < -2 || y > H + 14) continue;

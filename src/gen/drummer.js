@@ -1,4 +1,5 @@
 import { barTicks } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { trackIsDrums } from "../model/grid.js";
 import { beatTicks } from "../model/grid.js";
@@ -100,7 +101,7 @@ export function sectionLane(bar) { // same label = same substream, bar-for-bar (
   const bt = barTicks();
   const t = (bar - 1) * bt;
   let best = null;
-  for (const n of S.rollnotes) {
+  for (const n of visibleNotes()) { // visibleNotes: the Drummer keys on no Learning-hidden ✦ AI section (model/rollnotes.js)
     if (!n.section || !(n.end > n.start)) continue;
     if (n.start <= t && n.end > t && (!best || (n.end - n.start) < (best.end - best.start))) best = n;
   }
@@ -109,7 +110,7 @@ export function sectionLane(bar) { // same label = same substream, bar-for-bar (
 }
 export function drBoundaries(t0, t1) { // section starts + loop target inside (t0, t1]
   const bt = barTicks(), out = new Set();
-  for (const n of S.rollnotes) {
+  for (const n of visibleNotes()) {
     if (n.section && n.start >= t0 && n.start <= t1) out.add(Math.floor(n.start / bt) + 1);
     if (n.loopTo !== undefined && n.loopTo >= t0 && n.loopTo <= t1) out.add(Math.floor(n.loopTo / bt) + 1);
   }
@@ -212,7 +213,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   });
   // labeled "break" sections silence EXACTLY their span (a Break ending at
   // 14.1 must not mute all of bar 14 — Josh, 2026-08-22); put() enforces it
-  const breakSpans = S.rollnotes.filter(n => n.section && /break/i.test(n.text))
+  const breakSpans = visibleNotes().filter(n => n.section && /break/i.test(n.text))
     .map(n => ({s: n.start, e: n.end || n.start + bt}));
   const inLabeledBreak = t => breakSpans.some(sp => t >= sp.s && t < sp.e);
   const isBreak = bar => {
@@ -234,7 +235,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   const crashTicks = new Set([...boundaries].map(b => (b - 1) * bt));
   if (boundaries.has(fromBar)) crashTicks.add((fromBar - 1) * bt);
   const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
-  const chordStarts = new Set(S.rollnotes.filter(n => n.chord && !n.section).map(n => n.start));
+  const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section).map(n => n.start));
   // same label = same drums (the app's own same-label-same-color convention,
   // extended; advisor 2026-08-22): the GROOVE substream keys on (label hash +
   // bar offset within the section) so identically-labeled sections restate

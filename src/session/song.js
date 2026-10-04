@@ -10,6 +10,8 @@ import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
+import { annoShown } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { bakeTempos } from "../model/rollnotes.js";
 import { applyAudioDirs } from "../audio/clips.js";
@@ -165,7 +167,7 @@ export function finalizeNotesImpl() {
   if (S.song) { updateSongMeta(); computeSongEnd(); } // grid may have changed
   if (chopChanged) { S.playCursor = Math.min(S.playCursor, S.songEndTick); if (typeof fitView === "function") fitView(); }
   updateEditBtnVis(); // "forked from" notes arrive with the rollnotes — recheck editability
-  S.keyRegions = S.rollnotes.filter(n => n.keydir !== undefined)
+  S.keyRegions = visibleNotes().filter(n => n.keydir !== undefined) // visibleNotes: a Learning-hidden ✦ AI key never reaches the staff, the LCD or the ✦ Ask key state
     .map(n => ({start: n.start, sf: n.keydir,
                 name: (n.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [, SF_MAJOR[n.keydir]])[1], // "Gm"/"D dorian" show as recorded
                 end: n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null,
@@ -185,7 +187,8 @@ export function finalizeNotesImpl() {
   // each type stacks by containment within its OWN group — sections on top,
   // chords below — so a section and a chord with identical spans can't
   // collide. An empty group contributes zero rows.
-  const secs = S.rollnotes.filter(n => n.section || n.chord);
+  for (const n of S.rollnotes) if (!annoShown(n)) n.lane = null; // a Learning-hidden ✦ AI band takes no row (folded, like a collapsed level); every lane reader also goes through visibleNotes
+  const secs = visibleNotes().filter(n => n.section || n.chord);
   secs.forEach(s => { if (s.end === null || s.end <= s.start) s.end = s.start + bt; });
   S.sectionColors = {};
   let ci = 0;

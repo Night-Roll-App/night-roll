@@ -419,3 +419,109 @@ test("gate: no song, a locked (newer-format) annotation file, an audio/drum-only
     assert.equal(srv.requests.filter(x => x.path === "/v1/chat/completions").length, 0);
   } finally { await srv.close(); }
 });
+
+// ---- Learning hides what Normal wrote --------------------------------------
+// CLAUDE.md: "nothing from Normal mode may leak into Learning mode's UI, AI
+// context, or repo files". AI-tagged annotations are song state (they ride
+// the file, the local store and undo), so Learning HIDES them — one choke
+// point, visibleNotes()/annoShown (model/rollnotes.js) — and never deletes
+// them: flip back to Normal and they are all there, byte for byte.
+test("Learning mode hides ✦ AI-tagged annotations from every reader that shows or forwards them (bands, All notes, LCD/subtitle lookups, ✦ Ask context + tools, generators) — the user's own still show, storage keeps both, Normal shows all, flipping loses nothing", async () => {
+  const app = await mkApp("normal", 8);
+  const AI = `{model: "m", at: "2026-10-04T00:00:00.000Z"}`;
+  run(app, `
+    view.pxq = 20; // every bar of the 8 on the 800 px stub canvas
+    CATALOG = {test: [["annot", "albums/test/annot.mid"], ["other", "albums/test/other.mid"]]};
+    const seed = deriveNoteTypes([
+      {b1: 1, q1: 1, b2: 4, q2: 4, text: "section: Intro"},
+      {b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: C"},
+      {b1: 5, q1: 1, b2: 8, q2: 4, text: "section: Verse", ai: ${AI}},
+      {b1: 2, q1: 1, b2: 2, q2: 4, text: "chord: Fmaj7", ai: ${AI}}, // Fmaj7, not F: the piano's own key labels draw an F too
+      {b1: 1, q1: 1, b2: null, q2: null, text: "key: C major", ai: ${AI}},
+    ]);
+    for (const n of seed) { n.added = true; rollnotes.push(resolveNote(n)); }
+    finalizeNotes(); saveLocalNotes();
+    globalThis.__drawn = [];
+    ctx.fillText = t => globalThis.__drawn.push(String(t));
+  `);
+  const bt = 1920, bar5 = 4 * bt;
+  const drawn = () => { run(app, `globalThis.__drawn.length = 0; draw();`); return val(app, `globalThis.__drawn`).join("|"); };
+  const txt = el => (el.textContent || "") + " " + (el.children || []).map(txt).join(" ");
+  const listed = () => { run(app, `renderNoteList();`); return txt(app.run(`document.getElementById("notelistrows")`)); };
+  const snapshot = run(app, `annoSnapshot()`);
+  const stored = () => val(app, `JSON.parse(localStorage.getItem(notesStoreKey())).map(n => [n.text, !!n.ai])`);
+  const otherNotes = JSON.stringify({version: 2, format: "night-roll-annotations", song: "other", notes: [
+    {at: [1, 1], to: [2, 4], type: "section", label: "Head"},
+    {at: [3, 1], to: [4, 4], type: "section", label: "Guess", ai: {model: "m", at: "2026-10-04T00:00:00.000Z"}},
+  ]});
+  app.context.fetch = async () => ({ok: true, status: 200, text: async () => otherNotes, json: async () => JSON.parse(otherNotes), arrayBuffer: async () => new ArrayBuffer(0)});
+
+  // Normal: everything shows, tags included
+  assert.equal(val(app, `rollnotes.length`), 5);
+  assert.equal(val(app, `visibleNotes().length`), 5);
+  assert.match(drawn(), /Intro/); assert.match(drawn(), /Verse/); assert.match(drawn(), /Fmaj7/);
+  assert.match(listed(), /Verse/); assert.match(listed(), /✦ AI/);
+  assert.equal(val(app, `keyRegions.length`), 1);
+  assert.equal(run(app, `sectionPathAt(${bar5})`), "Verse", "the subtitle's breadcrumb");
+  run(app, `playCursor = 0; lcdCache = null; updateLCD();`);
+  assert.equal(run(app, `document.getElementById("lcdkey").textContent`), "C major", "Normal: the AI key reads on the LCD");
+  assert.match(run(app, `keyLabelState().text`), /C major/);
+  assert.match(run(app, `askContext(askSpan(), askBudget())`), /Verse/);
+  assert.match(run(app, `askAnnotationsText()`), /Verse/); assert.match(run(app, `askAnnotationsTextCompact()`), /Verse/);
+  assert.equal(run(app, `askFindAnnotation({bar: 5, beat: 1}).text`), "Verse");
+  assert.match(await run(app, `askRunTool("read_notes", {path: "other"})`), /Guess/, "Normal: read_notes lists another song's AI estimates too");
+  assert.equal(val(app, `factsDocFromState().rollnotes.length`), 5);
+  assert.deepEqual(val(app, `bsChordTimeline(0, ${8 * bt}).map(c => c.t / ${bt})`), [0, 1], "Normal: the Bassist follows the AI chord in bar 2");
+  assert.deepEqual(val(app, `[...drBoundaries(0, ${8 * bt})]`), [1, 5], "Normal: the Drummer sees the AI section start");
+
+  // Learning: the same song, the AI layer gone from every surface — not from the data
+  run(app, `setAppMode("learning"); applyMode();`);
+  assert.equal(val(app, `rollnotes.length`), 5, "hidden, not deleted");
+  assert.deepEqual(val(app, `visibleNotes().map(n => n.text)`), ["Intro", "C"]);
+  assert.equal(val(app, `rollnotes.filter(n => n.ai).every(n => n.lane === null)`), true, "hidden bands hold no row");
+  const d = drawn();
+  assert.match(d, /Intro/); assert.match(d, /\bC\b/);
+  assert.doesNotMatch(d, /Verse/); assert.doesNotMatch(d, /Fmaj7/);
+  const l = listed();
+  assert.match(l, /Intro/); assert.doesNotMatch(l, /Verse/); assert.doesNotMatch(l, /✦ AI/); assert.doesNotMatch(l, /C major/);
+  assert.equal(val(app, `keyRegions.length`), 0, "the AI key never reaches the staff");
+  assert.equal(run(app, `sectionPathAt(${bar5})`), "", "no breadcrumb from a hidden section");
+  run(app, `lcdCache = null; updateLCD();`);
+  assert.equal(run(app, `document.getElementById("lcdkey").textContent`), "C?", "Learning: the LCD shows the undeclared default");
+  assert.equal(run(app, `keyLabelState().text`), "key: not set (C)");
+  const ctxText = run(app, `askContext(askSpan(), askBudget())`);
+  assert.match(ctxText, /Intro/); assert.doesNotMatch(ctxText, /Verse|C major/);
+  assert.match(ctxText, /key state: key: not set/);
+  for (const fn of ["askAnnotationsText()", "askAnnotationsTextCompact()"]) {
+    const t = run(app, fn);
+    assert.match(t, /Intro/); assert.doesNotMatch(t, /Verse|C major|"ai"/, fn);
+  }
+  assert.match(caught(app, `askFindAnnotation({bar: 5, beat: 1})`), /no annotation at bar 5 beat 1/);
+  const verseId = val(app, `rollnotes.findIndex(n => n.text === "Verse")`);
+  assert.match(caught(app, `askFindAnnotation({id: ${verseId}})`), /no annotation with id/);
+  assert.equal(run(app, `askFindAnnotation({bar: 1, beat: 1, match_text: "Intro"}).text`), "Intro", "his own stay addressable");
+  const rn = await run(app, `askRunTool("read_notes", {path: "other"})`);
+  assert.match(rn, /Head/); assert.doesNotMatch(rn, /Guess/, "read_notes drops another song's AI estimates in Learning");
+  assert.doesNotMatch(run(app, `notesTxtFor()`), /Verse|C major|key:/, "the notes.txt dump states no key and no AI label");
+  assert.equal(val(app, `factsDocFromState().rollnotes.length`), 2, "the FACTS/Analyze/Ask grounding never see them");
+  assert.deepEqual(val(app, `bsChordTimeline(0, ${8 * bt}).map(c => c.t / ${bt})`), [0]);
+  assert.deepEqual(val(app, `[...drBoundaries(0, ${8 * bt})]`), [1]);
+  run(app, `lassoAnno = {t0: 0, t1: ${8 * bt}, y0: 0, y1: 10000};`);
+  assert.deepEqual(val(app, `lassoedAnnos().map(n => n.text).sort()`), ["C", "Intro"], "the lasso grabs only what is shown");
+  run(app, `lassoAnno = null;`);
+  // storage still holds both, untouched
+  assert.equal(run(app, `annoSnapshot()`), snapshot, "the annotation layer is byte-identical");
+  assert.deepEqual(stored().filter(([, ai]) => ai).map(([t]) => t).sort(), ["Fmaj7", "Verse", "key: C major"], "the local store keeps the tagged ones");
+  assert.equal(val(app, `JSON.parse(serializeRollnotes()).notes.filter(e => e.ai).length`), 3, "the file writer keeps them too");
+  assert.equal(val(app, `editUndo.length`), 0, "no edit happened");
+
+  // flip back: all five again; flip twice more: still five, still identical
+  run(app, `setAppMode("normal"); applyMode();`);
+  assert.equal(val(app, `visibleNotes().length`), 5);
+  assert.equal(val(app, `keyRegions.length`), 1);
+  assert.match(drawn(), /Verse/); assert.match(listed(), /✦ AI/);
+  assert.equal(run(app, `sectionPathAt(${bar5})`), "Verse");
+  run(app, `setAppMode("learning"); applyMode(); setAppMode("normal"); applyMode();`);
+  assert.equal(val(app, `rollnotes.length`), 5);
+  assert.equal(run(app, `annoSnapshot()`), snapshot);
+});

@@ -109,6 +109,7 @@ import { originOf } from "../model/provenance.js";
 import { updateSubtitle } from "../hooks.js";
 import { refreshKeysetLabel } from "./notes.js";
 import { isDirective } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { activeNoteAt } from "../render/roll.js";
 import { sectionPathAt } from "../render/roll.js";
 import { playGateKick } from "../audio/transport.js";
@@ -374,7 +375,7 @@ export function expandKeyName(name) { // "Gm" -> "G minor", "C" -> "C major" —
 // identical text without touching the DOM (the leak this fixed: askContext
 // used to read the live label, which in Normal now says "(estimated)").
 export function keyLabelState() {
-  const partials = S.rollnotes.filter(n => n.keypartial).map(n => n.keypartial + "?");
+  const partials = visibleNotes().filter(n => n.keypartial).map(n => n.keypartial + "?"); // visibleNotes: Learning hides ✦ AI estimates (model/rollnotes.js)
   // Normal, nothing declared or stored: offer the estimate, labelled, with
   // a one-tap way to promote it to a real key: annotation. Learning never
   // reaches the estimate branch — appMode() gates it, so estimateKey() is
@@ -1120,7 +1121,7 @@ export function updateLCD() {
   for (const tp of S.song.tempos) { if (tp.tick <= t) usq = tp.usq; else break; }
   const bpm = Math.round(6e7 / usq * S.playRate);
   const meter = S.declaredTs ? S.declaredTs[0] + "/" + S.declaredTs[1] : "4/4?";
-  const partial = S.rollnotes.find(n => n.keypartial);
+  const partial = visibleNotes().find(n => n.keypartial);
   // same honesty as the meter's "4/4?": undeclared key = the C default, flagged.
   // Normal, nothing declared/stored: "Gm~" — the estimate, tilde flags it as
   // unconfirmed the same way "?" flags an undeclared default. Learning never
@@ -1148,7 +1149,7 @@ export function updateSubtitleImpl() {
   const el = document.getElementById("subtitle");
   // the slot exists for the whole song (constant height, no layout bounce);
   // only its CONTENT follows the playhead
-  const hasNotes = !!S.song && S.rollnotes.some(n => !isDirective(n));
+  const hasNotes = !!S.song && visibleNotes().some(n => !isDirective(n));
   el.classList.toggle("on", hasNotes && S.subOn);
   const n = S.song ? activeNoteAt(curTick()) : null;
   if (n === S.lastSubtitle) return;
@@ -1397,7 +1398,7 @@ export function applyMode() {
 export function governingAt(match, at) { // latest matching annotation at or before the cursor (or tick `at`)
   const t = at === undefined ? curTick() : at;
   let hit = null;
-  for (const n of S.rollnotes)
+  for (const n of visibleNotes()) // visibleNotes: a Learning-hidden ✦ AI key/tempo never governs a label
     if (match(n) && n.start <= t && (!hit || n.start >= hit.start)) hit = n;
   return hit;
 }

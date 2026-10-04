@@ -60,6 +60,7 @@ import { kitLaneTop } from "../render/roll.js";
 import { pieceState } from "../audio/engine.js";
 import { DRUM_LABELS } from "../render/roll.js";
 import { resolveNote } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { saveLocalNotes } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
@@ -825,7 +826,7 @@ export function tap(pos) {
     }
     if (pos.y >= BASE_RULER_H) { // section lanes
       const lane = Math.floor((pos.y - BASE_RULER_H) / LANE_H);
-      const sec = S.rollnotes.find(n => (n.section || n.chord) && n.lane === lane && tick >= n.start && tick < n.end);
+      const sec = visibleNotes().find(n => (n.section || n.chord) && n.lane === lane && tick >= n.start && tick < n.end); // visibleNotes: Learning hides ✦ AI estimates (model/rollnotes.js)
       if (sec) {
         if (S.tapBand.n === sec && performance.now() - S.tapBand.t < 400) { // double-tap opens the annotation
           S.tapBand = {n: null, t: 0};
@@ -863,7 +864,7 @@ export function tap(pos) {
       }
     }
     let hitMark = null;
-    for (const n of S.rollnotes) {
+    for (const n of visibleNotes()) {
       if (Math.abs((n.start - tick) * ppt) < 14) { hitMark = n; break; }
     }
     if (hitMark && hitMark.keydir !== undefined && hitMark.added && !S.playing) {

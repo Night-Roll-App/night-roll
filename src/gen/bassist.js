@@ -3,6 +3,7 @@ import { LETTER_PC } from "../theory/chords.js";
 import { CHORD_TEMPLATES } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
 import { barTicks } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { sfDeclaredAt } from "../model/song.js";
 import { keyNameAt } from "../model/song.js";
@@ -117,10 +118,10 @@ export function bsInferTimeline(t0, t1, melodyTis, seedRng) { // INTERNAL sketch
   return out.filter(Boolean);
 }
 export function bsChordTimeline(t0, t1) {
-  const bands = S.rollnotes.filter(n => n.chord && !n.section && n.end > n.start &&
+  const bands = visibleNotes().filter(n => n.chord && !n.section && n.end > n.start && // visibleNotes: the Bassist never follows a Learning-hidden ✦ AI chord
                                       n.start < t1 && n.end > t0)
     .sort((a, b) => a.start - b.start || (b.start - a.start));
-  const after = S.rollnotes.filter(n => n.chord && !n.section && n.start >= t1)
+  const after = visibleNotes().filter(n => n.chord && !n.section && n.start >= t1)
     .sort((a, b) => a.start - b.start)[0];
   const tl = [];
   for (const b of bands) {

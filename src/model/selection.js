@@ -23,6 +23,7 @@ import { drumStep } from "../hooks.js";
 import { lassoedAnnos } from "../hooks.js";
 import { annoInLasso } from "../hooks.js";
 import { noteToJSON } from "./rollnotes.js";
+import { visibleNotes } from "./rollnotes.js";
 import { ROLLNOTES_LOCK_MSG } from "./rollnotes.js";
 import { jsonToRawNote } from "./rollnotes.js";
 import { deriveNoteTypes } from "./rollnotes.js";
@@ -213,7 +214,7 @@ export function copySelection() { // returns notes + annotations copied (0 = not
   // went over them — the box reached into the ruler and spans them in time.
   // A tap-built selection, or a box that stayed among the notes, copies none.
   const L = S.lassoAnno && S.lassoAnno.t1 > t0 && S.lassoAnno.t0 < tEnd ? S.lassoAnno : null;
-  S.annoClipboard = !L ? [] : S.rollnotes
+  S.annoClipboard = !L ? [] : visibleNotes() // visibleNotes: a Learning-hidden ✦ AI band cannot be copied out either
     .filter(n => annoInLasso(n, L))
     .map(n => ({dt: n.start - t0, len: n.b2 ? n.end - n.start : null, json: noteToJSON(n), src: n})); // b2 = a real end anchor; point notes get a synthetic end elsewhere
   return S.noteClipboard.length + S.annoClipboard.length;

@@ -9,6 +9,7 @@ import { beatTicks } from "../model/grid.js";
 import { drawAudioStrip } from "./tracks.js";
 import { appMode } from "../platform/mode.js";
 import { isDirective } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { isCopyableAnno } from "../model/rollnotes.js";
 
 export const DRUM_LABELS = {35: "kick2", 36: "kick", 37: "stick", 38: "snare", 40: "snar2",
@@ -207,14 +208,14 @@ export const STRIP_H = BASE_RULER_H;
 export const TAG_W = 18, TAG_R = 4, TAG_HIT = 14; // the playhead tag in the strip (drawStripPlayhead): drawn width, corner radius, grab half-width
 export function activeNoteAt(tick) {
   let best = null;
-  for (const n of S.rollnotes) {
+  for (const n of visibleNotes()) { // visibleNotes: Learning hides ✦ AI estimates (model/rollnotes.js)
     if (isDirective(n)) continue; // directives aren't subtitles
     if (tick >= n.start && tick < n.end) best = n;
   }
   return best;
 }
 export function sectionPathAt(tick) {
-  return S.rollnotes.filter(n => (n.section || n.chord) && tick >= n.start && tick < n.end)
+  return visibleNotes().filter(n => (n.section || n.chord) && tick >= n.start && tick < n.end)
                   .sort((a, b) => a.depth - b.depth).map(s => s.text).join(" › ");
 }
 export function curTick() {
@@ -453,7 +454,7 @@ export function drawRuler(W, H) {
           y0: Math.min(S.lassoRect.y0, S.lassoRect.y1), y1: Math.max(S.lassoRect.y0, S.lassoRect.y1)};
   }
   const taken = n => annoInLasso(n, hl);
-  for (const n of S.rollnotes) {
+  for (const n of visibleNotes()) { // visibleNotes: a Learning-hidden ✦ AI band is neither drawn nor tappable
     if (!n.section && !n.chord) continue;
     if (n.lane === null) continue; // collapsed level: folded out of the ruler
     const x = tickX(n.start);
@@ -484,7 +485,7 @@ export function drawRuler(W, H) {
   // own rows below them (analysisChordLane/analysisKeyLane, set by
   // finalizeNotes) — dashed/outlined so it never reads as a real annotation.
   if (S.analysisOn && appMode() === "normal") drawAnalysisLayer(tickX, W);
-  for (const n of S.rollnotes) {
+  for (const n of visibleNotes()) {
     if (n.section || n.chord || n.chopdir) continue; // chop anchors are raw-space: no flag
     const x = S.RULER_W + n.start * ppt - S.view.x;
     if (x < S.RULER_W - 8 || x > W) continue;

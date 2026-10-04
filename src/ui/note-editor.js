@@ -1,6 +1,7 @@
 import { S, prof } from "../state.js";
 import { setAnchorBQ } from "../hooks.js";
 import { resolveNote } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { isComposition } from "../model/provenance.js";
@@ -392,7 +393,7 @@ export function setAnchorBQImpl(n, tick) { // start anchor from a tick
   n.b1 = Math.floor(t / bt) + 1;
   n.q1 = snapBeat((t % bt) / qt + 1);
 }
-export function lassoedAnnosImpl() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
+export function lassoedAnnosImpl() { return S.lassoAnno ? visibleNotes().filter(n => annoInLasso(n, S.lassoAnno)) : []; } // visibleNotes: the lasso acts only on what is shown (Learning hides ✦ AI estimates)
 
 export function refreshSelInfo() { // one source of truth for the selection readout
   // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an

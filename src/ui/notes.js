@@ -20,6 +20,7 @@ import { spellPc } from "../theory/chords.js";
 import { beatTicks } from "../model/grid.js";
 import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { computeSongEnd } from "../model/song.js";
@@ -322,7 +323,7 @@ export function updateChordStale() { // Phase 2 (open-items plan): a chord band 
   // label no longer matches what SOUNDS in its span gets a stale flag —
   // marked, never rewritten; renaming stays Josh's call in ☰ Notes
   if (!S.song || !isComposition()) return;
-  for (const band of S.rollnotes) {
+  for (const band of visibleNotes()) { // visibleNotes: no verdicts on a Learning-hidden ✦ AI band
     delete band.stale;
     if (!band.chord || band.section || !(band.end > band.start)) continue;
     const pitches = [];
@@ -360,7 +361,7 @@ export function renderNoteList() {
   const rows = document.getElementById("notelistrows");
   rows.innerHTML = "";
   const counts = new Map();
-  const sorted = [...S.rollnotes].sort((a, b) => a.start - b.start || (a.section ? -1 : 1));
+  const sorted = [...visibleNotes()].sort((a, b) => a.start - b.start || (a.section ? -1 : 1)); // visibleNotes: Learning lists no ✦ AI estimate (and so no ✦ AI badge)
   document.getElementById("notelistStatus").textContent = sorted.length
     ? sorted.length + " notes · tap one to edit or delete · synced-note changes need Sync to stick"
     : "No notes yet — add the first one.";
@@ -401,7 +402,7 @@ export function renderNoteList() {
       chk.addEventListener("click", e => {
         e.stopPropagation();
         updateChordStale();
-        const flagged = S.rollnotes.filter(n => n.stale).length;
+        const flagged = visibleNotes().filter(n => n.stale).length;
         renderNoteList();
         document.getElementById("notelistStatus").textContent = flagged
           ? flagged + " label(s) don't match what sounds in their span — shown below and as ⚠ on the bands. Your labels; rename or ignore. Any note edit clears the flags."

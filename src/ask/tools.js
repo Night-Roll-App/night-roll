@@ -1,4 +1,6 @@
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
+import { annoShown } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { noteToJSON } from "../model/rollnotes.js";
 import { baseName } from "../model/rollnotes.js";
@@ -57,7 +59,7 @@ import { deleteTime } from "../model/selection.js";
 // edit re-sorts rollnotes (finalizeNotes), so a SECOND tool call in the same
 // reply should re-target by bar/beat/match_text instead of a now-stale id.
 export function askAnnotationsText() {
-  const rows = dedupedNotesWithIndex(S.rollnotes).map(({n, i}) => "  " + JSON.stringify(Object.assign({id: i}, noteToJSON(n))));
+  const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n)).map(({n, i}) => "  " + JSON.stringify(Object.assign({id: i}, noteToJSON(n)))); // annoShown, not visibleNotes: ids stay indices into S.rollnotes whole; a Learning-hidden ✦ AI estimate is simply absent
   return '{ "version": 1, "song": ' + JSON.stringify(baseName()) + ', "notes": [\n' + rows.join(",\n") + "\n] }\n";
 }
 // askAnnotationsTextCompact (step 5, docs/ask-token-plan.md): the SAME ids
@@ -72,7 +74,7 @@ export function askAnnotationsText() {
 // they change. Sent to the BRIDGE only (askContext); local providers keep
 // askAnnotationsText, full JSON, every turn.
 export function askAnnotationsTextCompact() {
-  const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => !askAnnotationStructural(n)).map(({n, i}) => {
+  const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n) && !askAnnotationStructural(n)).map(({n, i}) => {
     const kind = askNoteKind(n), value = askNoteValue(n, kind);
     const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
     return i + " " + at + " " + kind + ": " + value + (n.cnote ? " — " + n.cnote : "");
@@ -164,12 +166,12 @@ export function askFindAnnotation(a) {
   a = a || {};
   if (a.id !== undefined && a.id !== null && a.id !== "") {
     const id = Math.round(+a.id);
-    if (!(id >= 0 && id < S.rollnotes.length)) throw new Error("no annotation with id " + a.id + " — it may be stale (another edit in this reply re-sorts them); use bar+beat instead");
+    if (!(id >= 0 && id < S.rollnotes.length) || !annoShown(S.rollnotes[id])) throw new Error("no annotation with id " + a.id + " — it may be stale (another edit in this reply re-sorts them); use bar+beat instead"); // annoShown: a Learning-hidden ✦ AI estimate was never listed, so it is not addressable either
     return S.rollnotes[id];
   }
   if (a.bar === undefined || a.beat === undefined) throw new Error("say which annotation: its id from the context, or its bar and beat");
   const bar = Math.max(1, Math.round(+a.bar)), beat = Math.max(1, +a.beat);
-  let cands = S.rollnotes.filter(n => n.b1 === bar && Math.abs((n.q1 || 1) - beat) < 1e-6);
+  let cands = visibleNotes().filter(n => n.b1 === bar && Math.abs((n.q1 || 1) - beat) < 1e-6);
   if (a.match_text) {
     const t = String(a.match_text).trim().toLowerCase();
     const narrowed = cands.filter(n => (n.text || "").toLowerCase().includes(t));
@@ -486,7 +488,7 @@ export async function askRunTool(name, a) {
     if (!res.ok) return "(no annotations saved for " + path + ")";
     let j; try { j = JSON.parse(await res.text()); } catch (err) { return "(annotations unreadable)"; }
     const at = e => "[" + (e.at || [1, 1]).join(".") + (e.to ? " - " + e.to.join(".") : "") + "]";
-    return (j.notes || []).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
+    return (j.notes || []).filter(e => annoShown(e)).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
   }
   if (name === "read_bars") return askReadBars(a || {});
   if (name === "write_notes") return askWriteNotes(a || {});

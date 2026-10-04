@@ -9,6 +9,7 @@ import { noteIdentity } from "./edits.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { readData } from "../platform/folder.js";
 import { setAnchorBQ } from "../hooks.js";
+import { appMode } from "../platform/mode.js";
 
 // ---------------------------------------------------------------- rollnotes
 export function barTicks() { return beatsPerBarEff() * S.song.ppq; }
@@ -260,6 +261,20 @@ export function dedupedNotesWithIndex(list) {
     return true;
   });
 }
+// ✦ Annotate this song (src/ask/annotate.js) writes Normal-mode estimates
+// INTO rollnotes, tagged n.ai. CLAUDE.md: nothing from Normal mode may leak
+// into Learning mode's UI, AI context or repo files — so in Learning those
+// entries are HIDDEN, never deleted. Every reader that PRESENTS or FORWARDS
+// annotations goes through here (band/flag drawing, All notes, the
+// subtitle/LCD/key lookups via finalizeNotes' lanes and keyRegions, the
+// ✦ Ask context and tools, the generators, the lasso clipboard); storage,
+// sync, undo and the anchor-moving edits read S.rollnotes whole, so flipping
+// back to Normal shows them again. Reads appMode() live — nothing cached to
+// refresh on a flip beyond what applyMode already re-derives (finalizeNotes
+// + draw). annoShown is the per-note form for readers that must keep
+// S.rollnotes indices (askAnnotationsText's ids).
+export function annoShown(n) { return !n.ai || appMode() === "normal"; }
+export function visibleNotes() { return appMode() === "normal" ? S.rollnotes : S.rollnotes.filter(n => !n.ai); }
 // P4 (docs/annotations-v2.md): the writer. Always v2 now — format + version
 // + an optional origin header, same per-note "notes" array v1 always wrote
 // (byte-identical per-entry shape; only the header is new). `origin`, when

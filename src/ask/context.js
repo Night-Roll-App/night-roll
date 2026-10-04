@@ -37,6 +37,7 @@ import { nameChord } from "../theory/chords.js";
 import { askAnnotationsTextCompact } from "./tools.js";
 import { askAnnotationsText } from "./tools.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
+import { annoShown } from "../model/rollnotes.js";
 import { askAnnotationStructural } from "./tools.js";
 import { askHost } from "./host.js";
 import { aiSentKey, aiSentGet, aiSentStage, aiSentStageBars, AI_SENT_BARS_CAP, aiSentCommit, aiSentDrop, aiSentReset, aiEpochKey, aiEpochGet, aiEpochSet, aiEpochNote, aiCachedBlock } from "../../vendor/ai/web/ctx-cache.js";
@@ -541,7 +542,7 @@ export function askContext(sp, budget) { // the ONE block per request; never sto
   const anno = S.askCaps.bridge ? askAnnotationsTextCompact() : askAnnotationsText();
   const annoCap = budget.anno * ASK_CPT;
   const annoFull = anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno;
-  const annoCount = S.askCaps.bridge ? dedupedNotesWithIndex(S.rollnotes).filter(({n}) => !askAnnotationStructural(n)).length : dedupedNotesWithIndex(S.rollnotes).length;
+  const annoCount = S.askCaps.bridge ? dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n) && !askAnnotationStructural(n)).length : dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n)).length; // annoShown: the same set askAnnotationsText*/read_notes list
   L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, annoCount));
   const spanLabel = "notes in bars " + sp.from + "–" + sp.to;
   L.push(askSpanCachedBlock(cacheKey, spanLabel, sp.t0, sp.t1, budget.span * ASK_CPT)); // step 6: per-bar collapsing on the bridge (askSpanNotesCompactCached), full askSpanNotes otherwise — see both above

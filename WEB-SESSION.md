@@ -131,6 +131,7 @@ or note classification. Findings stay Josh's.
     node tools/pitch-census.mjs <song> [--track T]           # PCs present/ABSENT, duration-weighted
     node tools/song-diff.mjs <old.mid> <new.mid>             # per-track added/removed/changed
     node tools/annotations.mjs <song> [--type T]             # resolved dump + anomaly flags
+    #   (every query tool runs the app in Learning mode: ✦ AI-tagged estimates in a rollnotes file are hidden from it — his analysis only)
     node tools/loop-targets.mjs <song>|--all                 # loop anchor/target + what sounds there
     node tools/import-set.mjs <zip|dir|file> --slug <slug>   # the app's Import → Capture all → Publish, headless (NIGHT-ROLL.md)
     node tools/theory.mjs <song> pattern --from 1.1 --to 3.1 [--track T]   # where THIS figure comes back, any transposition (--library <dir> = across songs)

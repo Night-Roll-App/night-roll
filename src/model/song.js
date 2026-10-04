@@ -9,6 +9,7 @@ import { SF_MAJOR } from "../theory/chords.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { fileKeyAt } from "../theory/key.js";
 import { barTicks } from "./rollnotes.js";
+import { visibleNotes } from "./rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { secToTick } from "../midi/parse.js";
 import { tickToSec } from "../midi/parse.js";
@@ -27,7 +28,7 @@ export function editableSong() { return !!S.song && !LINK_SONGS && canEditMusic(
 export function factsDocFromState() {
   return {ppq: S.song.ppq, barTicks: barTicks(), beatTicks: beatTicks(),
     tracks: S.song.tracks.map((t, ti) => ({name: t.name, kind: t.kind, drums: trackIsDrums(ti), notes: t.notes.filter(n => !n.gone)})).filter(t => t.kind !== "audio"),
-    rollnotes: S.rollnotes};
+    rollnotes: visibleNotes()}; // visibleNotes: the FACTS (Analyze, Annotate, the ✦ Ask grounding) never see a Learning-hidden ✦ AI estimate
 }
 
 // ---- estimateKey (P3): Krumhansl-Schmuckler, Normal mode only ----
@@ -80,7 +81,7 @@ export function tonicPcFromName(name) { // reverses tonicLabel()/partialNameOf()
 }
 export function checkKeyVsFile() {
   if (!S.song || !S.song.source || !S.song.source.keysigs || !S.song.source.keysigs.length) return {state: "nofile"};
-  const partial = S.rollnotes.find(n => n.keypartial);
+  const partial = visibleNotes().find(n => n.keypartial);
   if (!S.keyRegions.length) {
     if (!partial) return {state: "noanswer", file: fileKeyAt(0)}; // Normal still states the file's value here — see runKeyCheck
     const fk = fileKeyAt(partial.start);

@@ -21,6 +21,7 @@ import { asksheet } from "../ask/sheet.js";
 import { askStoreKey } from "../ask/sheet.js";
 import { editableSong } from "../model/song.js";
 import { barTicks } from "../model/rollnotes.js";
+import { visibleNotes } from "../model/rollnotes.js";
 import { trackIsDrums } from "../model/grid.js";
 import { drBassTrack } from "../gen/drummer.js";
 import { snapBeat } from "../model/grid.js";
@@ -729,7 +730,7 @@ export function openBassist() {
     S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(tsel, String(ti), tr2.name || "track " + (ti + 1)); });
     addOpt(tsel, "new", "＋ new bass track");
     const bi = drBassTrack();
-    const r0 = (() => { const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor); return sec; })();
+    const r0 = (() => { const sec = visibleNotes().find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor); return sec; })();
     // never default onto a track with notes in range: new track wins then
     tsel.value = "new";
     if (bi >= 0) {
@@ -738,7 +739,7 @@ export function openBassist() {
       if (!has) tsel.value = String(bi);
     }
   }
-  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  const sec = visibleNotes().find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
   let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt)), q0 = 1, q1 = 1, toBar = to + 1;
   if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
     from = Math.floor(S.rangeSel.a / bt) + 1; q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
@@ -798,7 +799,7 @@ export function openDrummer() {
     }
   }
   // default range: the section under the cursor; else the loop body; else the whole song
-  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  const sec = visibleNotes().find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
   const loop = S.rollnotes.find(n => n.loopTo !== undefined);
   let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt));
   let q0 = 1, q1 = 1, toBar;
@@ -896,7 +897,7 @@ export function drRefresh() {
   let followTxt;
   if (mode === "off") followTxt = "following: nothing";
   else if (mode === "chords") {
-    const n = S.rollnotes.filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length;
+    const n = visibleNotes().filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length; // visibleNotes: Learning hides ✦ AI estimates
     followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
   } else {
     const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();
