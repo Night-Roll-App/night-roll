@@ -125,6 +125,8 @@ import { instSamples } from "../audio/voices.js";
 import { FOLDER_NAMES } from "../model/catalog.js";
 import { instLibrary } from "../audio/voices.js";
 import { songRow } from "./chrome.js";
+import { bsGenerate } from "../gen/bassist.js";
+import { drGenerate } from "../gen/drummer.js";
 
 export function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = S.jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
 export function renderJobs() {
@@ -644,4 +646,262 @@ export async function renderInstSheet() { // returns once drawn (tests can await
       isCurrent: () => S.instNavToken === token,
     });
   } catch (e) { setInfo("⚠ " + e.message); }
+}
+
+export function openBassist() {
+  if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return; }
+  bsBuildControls();
+  const bt = barTicks();
+  { // follow: drums / tracks / chords; target: melodic tracks + new
+    const f = document.getElementById("bsfollow");
+    f.innerHTML = "";
+    const addOpt = (sel, v, label) => { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); };
+    if (S.song.tracks.some((_, ti) => trackIsDrums(ti))) addOpt(f, "drums", "drums (kick)");
+    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(f, "t" + ti, tr2.name || "track " + (ti + 1)); });
+    addOpt(f, "chords", "chords");
+    f.value = S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "drums" : "chords";
+    const tsel = document.getElementById("bstarget");
+    tsel.innerHTML = "";
+    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(tsel, String(ti), tr2.name || "track " + (ti + 1)); });
+    addOpt(tsel, "new", "＋ new bass track");
+    const bi = drBassTrack();
+    const r0 = (() => { const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor); return sec; })();
+    // never default onto a track with notes in range: new track wins then
+    tsel.value = "new";
+    if (bi >= 0) {
+      const t0g = r0 ? r0.start : 0, t1g = r0 ? (r0.end || t0g + bt) : S.songEndTick;
+      const has = S.song.tracks[bi].notes.some(n => !n.gone && n.t < t1g && n.t + n.d > t0g);
+      if (!has) tsel.value = String(bi);
+    }
+  }
+  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt)), q0 = 1, q1 = 1, toBar = to + 1;
+  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
+    from = Math.floor(S.rangeSel.a / bt) + 1; q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    toBar = Math.floor(S.rangeSel.b / bt) + 1; q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+  } else if (sec) {
+    from = Math.floor(sec.start / bt) + 1; q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    const e = sec.end || sec.start + bt;
+    toBar = Math.floor(e / bt) + 1; q1 = snapBeat((e % bt) / beatTicks() + 1);
+  }
+  document.getElementById("bsfrom").value = from;
+  document.getElementById("bsto").value = toBar;
+  setBeatPair("bsfromq", "bsfroms", q0);
+  setBeatPair("bstoq", "bstos", q1);
+  bsRefresh();
+  document.getElementById("bassistsheet").classList.add("on");
+}
+export function openDrummer() {
+  if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return; }
+  drBuildControls();
+  const bt = barTicks();
+  { // follow picker: every melodic track BY NAME (Josh: "no way to tell it what
+    // instrument to follow"), then chords / off; default = the detected bass
+    const fsel = document.getElementById("drfollow");
+    const keep = fsel.value;
+    fsel.innerHTML = "";
+    S.song.tracks.forEach((tr2, ti) => {
+      if (trackIsDrums(ti)) return;
+      const o = document.createElement("option");
+      o.value = "t" + ti;
+      o.textContent = tr2.name || "track " + (ti + 1);
+      fsel.appendChild(o);
+    });
+    for (const [v, label] of [["chords", "chords"], ["off", "off"]]) {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = label;
+      fsel.appendChild(o);
+    }
+    fsel.value = [...fsel.options].some(o => o.value === keep) ? keep : "t" + Math.max(0, drBassTrack());
+  }
+  const beats = effTs()[0]; // beat + subdivision selects, drum-fill convention
+  for (const id of ["drfromq", "drtoq"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (let b = 1; b <= beats; b++) {
+      const o = document.createElement("option");
+      o.value = String(b); o.textContent = String(b);
+      sel.appendChild(o);
+    }
+  }
+  for (const id of ["drfroms", "drtos"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
+      const o = document.createElement("option");
+      o.value = String(f); o.textContent = syl;
+      sel.appendChild(o);
+    }
+  }
+  // default range: the section under the cursor; else the loop body; else the whole song
+  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  const loop = S.rollnotes.find(n => n.loopTo !== undefined);
+  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt));
+  let q0 = 1, q1 = 1, toBar;
+  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) { // an armed ruler selection wins outright
+    from = Math.floor(S.rangeSel.a / bt) + 1;
+    q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    toBar = Math.floor(S.rangeSel.b / bt) + 1;
+    q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+  } else if (sec) { // the section's exact edges, beats included (to = exclusive end)
+    from = Math.floor(sec.start / bt) + 1;
+    q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    const e = sec.end || sec.start + bt;
+    toBar = Math.floor(e / bt) + 1;
+    q1 = snapBeat((e % bt) / beatTicks() + 1);
+  } else if (loop) {
+    from = Math.floor(loop.loopTo / bt) + 1;
+    q0 = snapBeat((loop.loopTo % bt) / beatTicks() + 1);
+    toBar = to + 1; // whole rest of the song, exclusive end on the bar after
+  } else toBar = to + 1;
+  document.getElementById("drfrom").value = from;
+  document.getElementById("drto").value = toBar;
+  setBeatPair("drfromq", "drfroms", q0);
+  setBeatPair("drtoq", "drtos", q1);
+  drRefresh();
+  document.getElementById("drummersheet").classList.add("on");
+}
+export function bsBuildControls() {
+  if (document.querySelector("#bsstyle button")) return;
+  const mkSeg = (id, vals, def) => {
+    const el = document.getElementById(id);
+    vals.forEach(v => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.v = String(v);
+      b.textContent = String(v);
+      b.addEventListener("click", () => { segSet(id, v); bsRefresh(); });
+      el.appendChild(b);
+    });
+    segSet(id, def);
+  };
+  mkSeg("bsstyle", ["chug", "pump", "arp", "walk", "riff"],
+        S.song && S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "riff" : "chug");
+  mkSeg("bsbusy", [1, 2, 3, 4, 5], 3);
+  mkSeg("bsoct", [1, 2, 3], 2);
+  const beats = effTs()[0];
+  for (const id of ["bsfromq", "bstoq"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (let b = 1; b <= beats; b++) { const o = document.createElement("option"); o.value = String(b); o.textContent = String(b); sel.appendChild(o); }
+  }
+  for (const id of ["bsfroms", "bstos"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) { const o = document.createElement("option"); o.value = String(f); o.textContent = syl; sel.appendChild(o); }
+  }
+}
+export function bsRefresh() {
+  const r = bsRange();
+  const tgt = document.getElementById("bstarget").value;
+  const ti = tgt === "new" ? -1 : parseInt(tgt, 10);
+  let replaces = 0;
+  if (ti >= 0 && S.song.tracks[ti]) S.song.tracks[ti].notes.forEach(n => { if (!n.gone && n.t >= r.t0 && n.t < r.t1) replaces++; });
+  const chordBars = new Set(bsChordTimeline(r.t0, r.t1).filter(e => !e.lookahead)
+    .flatMap(e => { const out = []; for (let b = Math.floor(Math.max(e.t, r.t0) / barTicks()); b < Math.ceil(Math.min(e.end, r.t1) / barTicks()); b++) out.push(b); return out; })).size;
+  const totBars = r.to - r.from + 1;
+  document.getElementById("bsstatus").textContent =
+    "replaces " + replaces + " note(s) on " + (ti >= 0 && S.song.tracks[ti] ? (S.song.tracks[ti].name || "track " + (ti + 1)) : "a new bass track") +
+    " · chords cover " + Math.min(chordBars, totBars) + " of " + totBars + " bar" + (totBars === 1 ? "" : "s") +
+    (chordBars === 0 ? " (will sketch harmony from your melody)" : "");
+  const row = document.getElementById("bstakes");
+  row.innerHTML = "";
+  S.bsTakes.forEach((tk, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = "take " + (i + 1) + " · " + tk.style + " " + tk.busy + " · oct" + tk.oct;
+    b.classList.toggle("active", i === S.bsActive);
+    b.addEventListener("click", () => {
+      segSet("bsstyle", tk.style); segSet("bsbusy", tk.busy); segSet("bsoct", tk.oct);
+      document.getElementById("bsfollow").value = tk.followSel;
+      document.getElementById("bstarget").value = String(tk.targetTi);
+      document.getElementById("bsfrom").value = tk.from; document.getElementById("bsto").value = tk.to;
+      if (tk.q) { setBeatPair("bsfromq", "bsfroms", tk.q[0]); setBeatPair("bstoq", "bstos", tk.q[1]); }
+      const k = bsGenerate(tk.seed, tk.opts);
+      S.bsActive = i;
+      bsRefresh();
+      setInfo("take " + (i + 1) + " — " + tk.style + " · " + k + " notes (one undo brings the previous back)");
+    });
+    row.appendChild(b);
+  });
+}
+export function drRefresh() {
+  const r = drRange();
+  const from = r.from, to = r.to;
+  const mode = (document.getElementById("drfollow") || {}).value || "bass";
+  let followTxt;
+  if (mode === "off") followTxt = "following: nothing";
+  else if (mode === "chords") {
+    const n = S.rollnotes.filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length;
+    followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
+  } else {
+    const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();
+    followTxt = ti >= 0 && S.song.tracks[ti] ? "following: " + (S.song.tracks[ti].name || "track " + (ti + 1)) : "no track to follow";
+  }
+  const nb = drBoundaries(r.t0, r.t1).size;
+  const fillsPicked = !document.querySelector("#drparts button") || drPartsGet().includes("fills");
+  document.getElementById("drstatus").textContent =
+    "replaces " + drKitCountT(r.t0, r.t1) + " kit note(s) in " + fmtBarBeat(r.t0) + "–" + fmtBarBeat(r.t1) + " · " + followTxt +
+    (fillsPicked ? " · " + nb + " fill spot" + (nb === 1 ? "" : "s") : "");
+  const row = document.getElementById("drtakes");
+  row.innerHTML = "";
+  S.drTakes.forEach((tk, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    const pa = drNormParts(tk.parts ?? "all");
+    const scoped = !["kick", "snare", "hats", "fills"].every(g => pa.includes(g));
+    b.textContent = "take " + (i + 1) + " · " + (tk.busy ?? tk.energy ?? 3) + "/" + (tk.hard ?? tk.busy ?? 3) + "/" + (tk.fillAmt ?? 3) +
+      ((tk.feel ?? "normal") === "half" ? " ½" : (tk.feel ?? "normal") === "double" ? " 2×" : "") +
+      (scoped ? " " + pa.map(g => g[0].toUpperCase()).join("+") : "");
+    b.classList.toggle("active", i === S.drActive);
+    b.addEventListener("click", () => { // a take is the FULL tuple, not just the seed
+      const busy = tk.busy ?? tk.energy ?? 3, hard = tk.hard ?? busy;
+      const follow = tk.follow ?? "bass", feel = tk.feel ?? "normal", fillAmt = tk.fillAmt ?? 3;
+      drPartsSet(tk.parts ?? "all");
+      segSet("drbusy", busy);
+      segSet("drhard", hard);
+      segSet("drfills", fillAmt);
+      document.getElementById("drfollow").value = tk.followTi !== undefined ? "t" + tk.followTi : follow;
+      segSet("drfeel", feel);
+      document.getElementById("drfrom").value = tk.from;
+      document.getElementById("drto").value = tk.to;
+      if (tk.q) { setBeatPair("drfromq", "drfroms", tk.q[0]); setBeatPair("drtoq", "drtos", tk.q[1]); }
+      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi,
+        fromBar: tk.fromBar ?? tk.from, toBar: tk.toBar ?? tk.to, t0: tk.t0, t1: tk.t1});
+      S.drActive = i;
+      drRefresh();
+      setInfo("take " + (i + 1) + " — busy " + busy + " · hard " + hard + " · fills " + fillAmt +
+              " · " + follow + " · " + feel + " · " + k + " hits (one undo brings the previous back)");
+    });
+    row.appendChild(b);
+  });
+}
+export function drBuildControls() {
+  if (document.querySelector("#drbusy button")) return;
+  const mkSeg = (id, vals, def, labels) => {
+    const el = document.getElementById(id);
+    vals.forEach((v, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.v = String(v);
+      b.textContent = labels ? labels[i] : String(v);
+      b.addEventListener("click", () => { segSet(id, v); drRefresh(); });
+      el.appendChild(b);
+    });
+    segSet(id, def);
+  };
+  mkSeg("drbusy", [1, 2, 3, 4, 5], 3);
+  mkSeg("drhard", [1, 2, 3, 4, 5], 3);
+  mkSeg("drfills", [0, 1, 2, 3, 4, 5], 3, ["off", "1", "2", "3", "4", "5"]);
+  mkSeg("drfeel", ["normal", "half", "double"], "normal");
+  const pr = document.getElementById("drparts");
+  for (const part of ["kick", "snare", "hats", "fills"]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.part = part;
+    b.textContent = part;
+    b.classList.add("active");
+    b.addEventListener("click", () => { b.classList.toggle("active"); drPartsSync(); drRefresh(); });
+    pr.appendChild(b);
+  }
 }
