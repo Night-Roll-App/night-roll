@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "lotion", "stamp": 1791002423107, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "lotion", "stamp": 1791049909087, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"to":[16,4.5],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"track","track":"triangle","vol":1.5},

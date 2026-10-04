@@ -5,6 +5,19 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
+## Playhead strip — DONE 2026-10-03 (Josh: "if I could click that spot
+under the ruler I wouldn't have that problem"). A thin band under the
+ruler, right above the notes, in Roll/Tracks/Score: tap moves the cursor,
+drag scrubs, neither ever touches rangeSel (the ruler above it still
+parks/re-arms a cycle exactly as before). See NIGHT-ROLL.md "Playhead
+strip (2026-10-03)" for the RULER_H/STRIP_Y plumbing. Branch:
+worktree-agent-ae6a59166855402f4 (not yet merged/pushed to main — built on
+a worktree per the task that spawned it). Tests: 4 new cases in
+tests/gestures.test.mjs; night-roll.test.mjs 420/420 (1 pre-existing
+skip); test:e2e:smoke 8/8 (one existing spec updated — listener mode's
+"no bands" invariant moved from RULER_H===BASE_RULER_H to
+STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
+
 ## FOR JOSH — WEEKEND TO-DO (written 2026-10-01; only things only he can do)
 1. Redirect for the bare address: in the Mac's Claude Code terminal, `!` as the
    FIRST character: `! gh repo create Night-Roll-App/night-roll-app.github.io --public --source ~/.claude/jobs/c9506483/tmp/redirect --push`
@@ -50,6 +63,12 @@ Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
     this a dead path worth deleting instead? tools/split/check.mjs's static
     scan (not a test, not an ear report) found it — not fixed as part of the
     split (a verbatim move must not touch app logic).
+
+Q7. (2026-10-03, Terminal #91) Split step 7 (audio) is built but held for
+    your NES/SNES sound check on the current iPad build. Can you do the
+    check soon, or should I continue with the non-audio steps first?
+Q8. (2026-10-03, Terminal #91) The AI library's new repo: name and
+    visibility? Default: Night-Roll-App/claude-bridge, private.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -5480,3 +5499,48 @@ the UI layer subscribes to, instead of audio code calling into logging
 directly) — is out of scope for a verbatim-move split step; this is a
 design question, not a sequencing one, so flag it to Josh specifically
 (not silently retried) if a future step proposes touching it.
+## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)
+
+## DONE 2026-10-03 14:10 — Lasso next to Select (Josh, Terminal #73): placeLassoBtn() moves #lassobtn before #modeseg when the edit row shows, back to the footer on read-only songs
+
+## DONE 2026-10-03 16:20 — Publish on a no-folder song names it first (publishUnsavedSong → saveSongAs → publishOpenComposition; .mid + annotations), Publish sheet says so up front. Was: breadcrumb still says "Local › Not saved yet › lotion" after Publish
+Josh published lotion and the breadcrumb did not change. Cause (src/app.js songWhereLabel/updateSongBtn ~L9471): "Local" shows whenever a ff1roll-draft-<path> exists OR the path is not in S.CATALOG; folder "Not saved yet" is the CATALOG group "local" (src/model/catalog.js). Publish apparently neither adds the song to its real album group nor clears/refreshes the draft marker, so the crumb stays stale. Wanted: after a successful Publish, the crumb names where it went (album/folder, Published) and Local/Not saved yet goes away. Needs a real-browser check.
+
+## DONE 2026-10-03 14:40 — File menu on Untitled songs (Josh, Terminal #75): Save Version was hidden for local/ songs (fileMenuSaveLabels used isComposition only) — now shown (isUnsaved too), and it opens the name+folder form; Save As closed instantly because openSaveForm clicked the File button again while the File menu was open (toggled it shut) — now only opens it when closed. Browser: Untitled → Save Version → name+folder → moved to albums/compositions/…, notes identical after reload.
+
+## DONE 2026-10-03 14:35 — stacked top bar split the controls (Josh, Terminal #76: volume under the tracks): only #transport moved up; #timectl (metronome/gear/speed/volume) stayed after the chips. Stacked now keeps #transport+#timectl on the top row (chips order:1 full width), and trackRowNeed counts #timectl. Sweep clean (stack 1050 / unstack 1120, 0 unstable).
+
+## DONE 2026-10-03 14:55 — "Save lost all my annotations" (Josh, Terminal #77, lotion): they were NOT lost (Mac backups after the save hold all 6; a reload shows them) — saveSongAs moved the keys but left the open song resolved under the old key, so the LCD showed the base tempo (120) and no key. saveSongAs now reopens the song from its new draft (openDraftDoc — the reload road). Browser: annotated Untitled at 175 / C locrian → Save Version → still 175 / C locrian, notes intact, crumb updated.
+
+## 2026-10-03 15:10 — CI red on 561a2e9: WebKit (iPad Pro 11, 1194px) stacks the top bar now that the threshold counts #timectl; the stack happened a frame AFTER renderTrackbar (observer → rAF), shifting the roll under e2e drags that had just measured. renderTrackbar now calls fitTrackRow() synchronously. Watching CI.
+
+## 2026-10-03 15:25 — 0310e28 reopened the song via openDraftDoc after Save; that replaced S.song under callers still holding it (e2e newComposition → seedChord lost its notes; smoke 4 failures locally). Replaced with an in-place finalizeNotes()+updateSongMeta(); smoke 8/8; browser: 175 / C locrian shown right after Save.
+
+## DONE 2026-10-03 15:45 — ruler selection survives a relaunch (Josh, Terminal #78): rangeSel kept per song in localStorage (ff1roll-range-<key>, a view pref), written from draw() when it changes, restored in setSong, carried by renameLocalKeys
+
+## DONE 2026-10-03 16:00 — opening an annotation no longer raises the iPad keyboard (Josh, Terminal #79): openEditor focuses the text box only for a NEW text note; opening an existing one of any kind blurs instead
+
+## DONE 2026-10-03 16:45 — stretching the cycle while it plays keeps the playhead (Josh, Terminal #81): the rangeEdge drag end restarts playback from where the playhead is when it is still inside the new span (from the new top only otherwise)
+
+## DONE 2026-10-03 17:05 — cycle stretch really keeps the playhead now (Josh, Terminal #83: b282f3f missed it): play() itself always reset fromSec to the cycle top; new opts.keepPos keeps an in-span position (used by the rangeEdge reschedule only; ▶ unchanged). Test proves both.
+
+## DONE 2026-10-03 17:25 — each song reopens at its own zoom + scroll (Josh, Terminal #84): ff1roll-view-<mode>-<key> (debounced from draw), restored by fitView before it would fit; ruler selection already persisted (10d1640)
+
+## DONE 2026-10-03 17:55 — playhead strip restyled as ruler chrome (Josh, Terminal #85: it looked like a light roll row): ruler panel background, a line above, bar ticks tall / beat ticks short from the bottom
+
+## DONE 2026-10-03 (740feaf) — 32nd note value now drag-snaps to 32nds (moveSnapTicks: the pick is a trigger, as item 12's original spec said; presence still triggers too)
+### was: 2026-10-03 Ask: 32nd note value does not drag-snap to 32nds
+Josh (lotion, pulse2 bar 40): with the 32nd note value selected he still can only drag/move notes in 16th steps. He expects the 32nd button to make move/drag snap to 32nds (0.125 beat). He wants to nudge a pulse2 echo of pulse1 a 32nd later. Ask wrote the shift by hand via write_notes for now. Please check whether the note-value button should drive the drag snap, and fix if so.
+
+## QUEUED 2026-10-03 — `npm test` stops at the first failing file
+The script chains files with `&&`, so when the real-rip suites (ps2-real, instruments) fail because /tmp/claude-501/rips was cleared, every later file (gestures, bridge, pwa, modules, controls…) silently never runs locally. Fix: skip real-rip tests when the rips dir is missing (like other *-real suites should), or run each file regardless and fail at the end.
+
+## QUEUED 2026-10-03 — AI interaction as its own library (Josh, Terminal #91)
+"extract all the code for the AI interaction into its own library so that we
+can write other iPad apps and just use this seamlessly … a new repo … pull it
+from there". Order: finish the module split first (step 13 = src/ask/), then
+lift src/ask/ + tools/claude-bridge.mjs (bridge server, Terminal tab, notes,
+status, shots, backups) into a standalone repo that Night Roll consumes as
+plain ES modules (no build step). Night Roll-specific context (song/annotation
+lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
+Blocked on Q7 (split order) and Q8 (repo).

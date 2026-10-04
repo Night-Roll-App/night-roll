@@ -78,6 +78,8 @@ export const S = {
   previewSf: null,
   RULER_W: null,
   RULER_H: null,
+  STRIP_Y: null, // top of the playhead strip (old RULER_H meaning: ruler + section/chord/analysis rows + audio strip — no strip). RULER_H = STRIP_Y + STRIP_H, see app.js
+
   secMaxDepth: 0,
   analysisOn: false,
   analysisBands: {chords: [], key: null},

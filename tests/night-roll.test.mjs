@@ -1139,6 +1139,28 @@ test("pencilCellAt: under a custom grid a pencil tap is one cell, anywhere it's 
   assert.deepEqual(val(`pencilCellAt(700)`), {t: 720, snap: 240}); // no grid: the chip duration, nearest line
 });
 
+test("picking the 32nd duration makes notes drag in 32nds, even in a song with none yet (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 240, p: 60, v: 80}]}]};
+       _has32 = null; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25;`);
+  assert.equal(val(`moveSnapTicks()`), 120, "16th picked: 16ths");
+  run(`pencilNV = 32; pencilDur = 0.125;`);
+  assert.equal(val(`moveSnapTicks()`), 60, "32nd picked: 32nds");
+  assert.equal(val(`gridFollowNote({t: 0, d: 240})`), false, "grabbing a straight 16th keeps the 32nd pick");
+  assert.equal(val(`moveSnapTicks()`), 60);
+});
+
+test("cursor on the ruler/strip: a tap lands on the nearest 8th, a drag steps in 32nds (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
+       _has32 = null; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25;`);
+  assert.equal(val(`cursorTapSnapTicks()`), 240, "tap: 8ths");
+  assert.equal(val(`cursorDragSnapTicks()`), 60, "drag: 32nds");
+  run(`pencilNV = 8; pencilMod = 2 / 3; pencilDur = 1 / 3;`);
+  assert.equal(val(`cursorDragSnapTicks()`), 160, "triplet picked: drag follows the triplet grid");
+  assert.equal(val(`cursorTapSnapTicks()`), 240, "a tap stays on 8ths");
+});
+
 test("gridFollowNote: the move grid follows the note you touch", () => {
   installSong();
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
@@ -2735,8 +2757,8 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
-    "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "Share a song", "File → 🔗 Share link", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
@@ -2757,6 +2779,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "VoiceOver",
     "Chip stream (experimental)",
     "Game order",
+    "without touching your cycle",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -4873,6 +4896,47 @@ test("Share link: songs= parses owner/repo or a base URL; the link carries it on
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/alice/tunes/main/"});`);
   assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://night-roll-app.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
   run(`saveCfg({songsBase: ""}); songKey = null;`);
+});
+
+test("File → Share link shows the song's PUBLIC link — even inside the iPad app (capacitor://) — and says when a song has none (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`APP_BASE = "capacitor://localhost/"; saveCfg({songsBase: ""}); songKey = "albums/compositions/nightroll/ambush.mid";`);
+  assert.equal(val(`shareLinkFor(songKey)`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`document.getElementById("fileshare").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`document.getElementById("sharesheet").classList.contains("on")`), true);
+  assert.equal(val(`document.getElementById("shUrl").value`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`document.getElementById("shClose").dispatchEvent(new Event("click")); songKey = "local/untitled-1.mid";`);
+  run(`openShareSheet();`);
+  assert.equal(val(`document.getElementById("shUrl").value`), "");
+  assert.match(val(`document.getElementById("shBody").textContent`), /only lives on this device/);
+  run(`document.getElementById("sharesheet").classList.remove("on"); APP_BASE = "https://night-roll-app.github.io/night-roll/"; songKey = null;`);
+});
+
+test("AI attach: picked photos survive the input reset — WebKit's live FileList empties when value is cleared (Josh, 2026-10-03, iPad)", () => {
+  installSong();
+  run(`globalThis.__got = null; askPickFiles = files => { __got = Array.from(files).map(f => f.name); };
+       { const inp = document.getElementById("askpickfile"); let live = [{name: "shot.png"}];
+         Object.defineProperty(inp, "files", {configurable: true, get: () => live});
+         Object.defineProperty(inp, "value", {configurable: true, get: () => "", set: () => { live.length = 0; }}); // WebKit: reset empties the live list in place
+         inp.dispatchEvent(new Event("change")); }`);
+  assert.deepEqual(val(`__got`), ["shot.png"]);
+});
+
+test("boot watchdog: only errors from Night Roll's own files show the failure panel — a browser's injected script (Brave's __firefox__) doesn't (Josh, 2026-10-03)", async () => {
+  const vm = await import("node:vm");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const src = html.match(/<script id="nr-boot-watchdog">([\s\S]*?)<\/script>/)[1];
+  let onError = null; const failed = [];
+  const document = {getElementById: () => null, body: {appendChild: () => failed.push(1)},
+    createElement: () => ({style: {}, appendChild() {}}), addEventListener() {}};
+  const window = {addEventListener: (t, f) => { if (t === "error") onError = f; }};
+  vm.runInNewContext(src, {window, document, location: {origin: "https://night-roll-app.github.io", href: "https://night-roll-app.github.io/night-roll/"},
+    setTimeout: () => 1, URL});
+  onError({message: "TypeError: undefined is not an object (evaluating 'window.__firefox__.refresh_youtube_quality_5CCF')", filename: ""});
+  onError({message: "Script error.", filename: "https://cdn.example.com/x.js"});
+  assert.equal(failed.length, 0, "foreign errors are ignored");
+  onError({message: "SyntaxError: Unexpected token", filename: "https://night-roll-app.github.io/night-roll/src/app.js"});
+  assert.equal(failed.length, 1, "our own file's error still shows the panel");
 });
 
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
@@ -10345,6 +10409,67 @@ test("panning can push the song left to show ~16 empty bars past its end; zoom-o
   const emptyBarsVisible = (r.x + r.vis - r.endPx) / r.barPx;
   assert.ok(emptyBarsVisible > 15.5 && emptyBarsVisible < 16.5, "about 16 empty bars past the end: " + emptyBarsVisible);
   run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("the ruler selection survives a relaunch: kept per song on this device, restored when that song opens (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/range-test.mid"; rangeSel = {a: 1920, b: 3840, cycle: true}; draw();`);
+  assert.deepEqual(val(`JSON.parse(localStorage.getItem("ff1roll-range-albums/compositions/nightroll/range-test.mid"))`), {a: 1920, b: 3840, cycle: true, off: false});
+  assert.deepEqual(val(`rangeSelRestore("albums/compositions/nightroll/range-test.mid")`), {a: 1920, b: 3840, cycle: true});
+  assert.equal(val(`rangeSelRestore("albums/compositions/nightroll/other.mid")`), null, "another song starts with none");
+  run(`rangeSel = null; draw();`);
+  assert.equal(val(`localStorage.getItem("ff1roll-range-albums/compositions/nightroll/range-test.mid")`), null, "cleared range is forgotten");
+  run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("Publish on an Untitled song names it first (saveSongAs), then publishes it as his music — .mid and annotations (Josh, 2026-10-03, lotion)", async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(120, 4, 4); song.tracks[0].notes.push({t: 0, d: 240, p: 60, v: 80}, {t: 480, d: 240, p: 62, v: 80}); saveDraft();
+       globalThis.__pub = []; writeToken = () => "tok"; ghHeaders = () => ({});
+       publishSong = async (key) => { __pub.push({key, his: isComposition()}); };
+       writeSongsReadme = async () => {}; initCatalog = async () => {};`);
+  assert.match(val(`songKey`), /^local\//);
+  run(`globalThis.__ok = null; publishUnsavedSong("compositions/nightroll", "qa pub song").then(v => __ok = v);`);
+  for (let i = 0; i < 50 && val(`__ok`) === null; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(val(`__ok`), true);
+  assert.equal(val(`songKey`), "albums/compositions/nightroll/qa-pub-song.mid", "moved into its folder first");
+  assert.deepEqual(val(`__pub`), [{key: "albums/compositions/nightroll/qa-pub-song.mid", his: true}], "then published as his own music (.mid included)");
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
+});
+
+test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it) keeps the playhead when inside (Josh, 2026-10-03)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 8; keyRegions = []; playCursor = 0;
+       rangeSel = {a: 1920, b: 1920 * 5, cycle: true};`);
+  run(`globalThis.__p = 0; play(tickToSec(song, 1920 * 3)).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920) * 1000)`), "▶ starts at the cycle's top");
+  run(`stop(); __p = 0; play(tickToSec(song, 1920 * 3), {keepPos: true, noCountIn: true}).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 3) * 1000)`), "a stretch keeps going from the playhead");
+  run(`stop();`);
+});
+
+test("playhead strip tap while rolling plays from exactly there — inside the cycle keeps cycling, outside plays straight on (Josh, 2026-10-03)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 8; keyRegions = []; playCursor = 0;
+       rangeSel = {a: 1920, b: 1920 * 5, cycle: true};`);
+  const startAt = async tick => {
+    run(`globalThis.__p = 0; play(tickToSec(song, ${tick}), {fromHere: true, noCountIn: true}).then(() => __p++);`);
+    for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  };
+  await startAt(1920 * 3);
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 3) * 1000)`), "inside: from the tap");
+  assert.equal(val(`Math.round(loopSeg.end * 1000)`), val(`Math.round(tickToSec(song, 1920 * 5) * 1000)`), "inside: still cycling");
+  run(`stop();`); await startAt(1920 * 6);
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 6) * 1000)`), "after the cycle: from the tap");
+  run(`stop();`); await startAt(0);
+  assert.equal(val(`Math.round(playOffset * 1000)`), 0, "before the cycle: from the tap");
+  assert.notEqual(val(`Math.round(loopSeg.start * 1000)`), val(`Math.round(tickToSec(song, 1920) * 1000)`), "outside: this pass doesn't cycle");
+  assert.deepEqual(val(`[rangeSel.a, rangeSel.b, !!rangeSel.cycle]`), [1920, 1920 * 5, true], "the cycle itself is untouched");
+  run(`stop();`);
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
