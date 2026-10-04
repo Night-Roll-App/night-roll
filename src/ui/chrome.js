@@ -114,6 +114,14 @@ import { sectionPathAt } from "../render/roll.js";
 import { playGateKick } from "../audio/transport.js";
 import { chipSource } from "../audio/chip.js";
 import { chipRenderAuto } from "../audio/chip-stream.js";
+import { readData } from "../platform/folder.js";
+import { folderActive } from "../platform/folder.js";
+import { parseMidi } from "../midi/parse.js";
+import { cmpDiff } from "../render/compare.js";
+import { stop } from "../audio/transport.js";
+import { cmpTrackKey } from "../render/compare.js";
+import { computeSongEnd } from "../model/song.js";
+import { play } from "../audio/transport.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -1099,4 +1107,54 @@ export async function updateChipBtnInner() { // name kept for call sites; now ju
     }) // not renderable: synth carries the song, and says so
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
+}
+
+export async function cmpEnter() {
+  if (!S.song || !S.songKey || !isComposition()) { setInfo("compare works on your own saved songs"); return; }
+  if (S.chopS > 0 || S.chopE !== null) { setInfo("turn the chop off first — compare looks at the whole song"); return; }
+  const key = S.songKey;
+  // Model B: Save Version is device-local history, not a publish baseline —
+  // Compare always reads against the published copy.
+  setInfo("fetching the published copy…");
+  let res = null;
+  try { res = await readData("songs", key, true); } catch (err) { res = null; }
+  if (!res || !res.ok) { setInfo("no published copy of this song " + (folderActive() ? "in the folder" : "in the repo") + " yet"); return; }
+  const parsed = parseMidi(await res.arrayBuffer());
+  if (!S.song || S.songKey !== key) return; // he moved on while it loaded
+  const scale = S.song.ppq / parsed.ppq; // same lineage, but be safe
+  const repo = parsed.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? {...n} : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
+  S.cmp = {repo, showing: "mine", mine: null, diff: cmpDiff(repo, S.song.tracks)};
+  cmpBar();
+  draw();
+  const d = S.cmp.diff;
+  setInfo(d.tracks.length ? "compare: gold = only in yours, red = only in the saved copy, dashed = not in what you hear" : "compare: your version matches the saved copy note for note");
+}
+export function cmpExit() {
+  if (!S.cmp) return;
+  if (S.cmp.showing === "repo") cmpShow("mine");
+  S.cmp = null;
+  cmpBar();
+  draw();
+}
+export function cmpShow(which) { // swap which version the roll and the transport hold; the other waits in cmp.mine
+  if (!S.cmp || S.cmp.showing === which) return;
+  const at = S.playing ? playSec() : null;
+  if (S.playing) stop();
+  if (which === "repo") {
+    S.cmp.mine = S.song.tracks.map(tr => tr.notes);
+    S.song.tracks.forEach((tr, i) => {
+      const r = S.cmp.repo.find((t, j) => cmpTrackKey(t, j) === cmpTrackKey(tr, i));
+      tr.notes = r ? r.notes.map(n => ({...n})) : [];
+    });
+  } else {
+    S.song.tracks.forEach((tr, i) => { tr.notes = S.cmp.mine[i]; });
+    S.cmp.mine = null;
+  }
+  S.cmp.showing = which;
+  S.selNote = null; S.multiSel.length = 0; S.multiSelKey.clear();
+  S._laneTop = null; S._kitSlots = null; S._has32 = null;
+  computeSongEnd();
+  cmpBar();
+  draw();
+  if (at !== null) play(at, {noCountIn: true});
 }
