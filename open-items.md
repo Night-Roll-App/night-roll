@@ -5318,14 +5318,15 @@ needs to browser-verify (localhost + packaged dist) before pushing and
 building for the iPad — same as every prior step, this is a pure refactor
 with no user-facing change.
 
-## QUEUED 2026-10-03 — split: estimateKey/checkKeyVsFile cannot move to src/theory/key.js, ever, as currently written (terminal-only, not a question for Josh)
-Corrects the 2026-10-03 00:50-ish entry this replaces, which assumed step 5 (moving trackIsDrums/barTicks out of app.js) would unblock this. Step 5 moved both (trackIsDrums, keyEstimateSig's dependency, into src/model/grid.js; barTicks, checkKeyVsFile's dependency, into src/model/rollnotes.js — see docs/split-plan.md step 5's Done note) and re-attempted the theory/key.js move; check.mjs still refuses it, and will keep refusing it regardless of which model/ file ends up holding trackIsDrums/barTicks. Reason: docs/split-plan.md's layer table makes theory/ layer 0, the LOWEST layer — a module may import its own layer or lower, and for layer 0 that means layer 0 only, forever. trackIsDrums and barTicks are genuinely layer-2 (model/) concepts (a track-kind predicate; a meter×ppq calculation) no matter which model/ file holds them. Moving them out of app.js only swapped which layer blocks the import (LEGACY_CONTAINER, then real model/) — never layer 0. So this isn't "not yet carved out," it's structural: estimateKey/checkKeyVsFile can stay in theory/key.js's own layer only if rewritten to take trackIsDrums/barTicks as parameters (dependency injection) instead of importing them — a logic change, out of scope for any mechanical move step — or they move to a model/gen-layer module instead of theory/key.js (losing the "beside keyNameFor/pearsonCorr" cohesion step 4 wanted). Whoever next considers this should pick one of those two real options rather than retry the plain move.
+## RESOLVED 2026-10-03 (step 9) — split: estimateKey/checkKeyVsFile moved to src/model/song.js, not src/theory/key.js
+Was: "estimateKey/checkKeyVsFile cannot move to src/theory/key.js, ever, as currently written" — correctly structural (theory/ is layer 0, trackIsDrums/barTicks are genuinely layer 2, no model/ file holding them ever helps). The real fix named here (the second of the two options: "move to a model/gen-layer module instead of theory/key.js") is what step 9 did: `estimateKey`/`checkKeyVsFile` (+ `keyEstimateSig`/`tonicPcFromName`/`KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`) landed in `src/model/song.js` (new this step), which is layer 2 and can legally import `trackIsDrums` (model/grid.js)/`barTicks` (model/rollnotes.js) same-layer, plus `pearsonCorr`/`keyNameFor`/`fileKeyAt`/`TONIC_SPELL`/`SF_MAJOR` (theory/, layer 0) downward. No dependency-injection rewrite needed — the plain move.mjs move worked once the DESTINATION changed. See docs/split-plan.md "Deviations (9)".
 
-## QUEUED 2026-10-03 — split: finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land (terminal-only, not a question for Josh)
-Three leftovers from step 5 (docs/split-plan.md "Deviations (5)"), each blocked by a real rule-5 violation (a model/ file, layer 2, would have to import still-unsplit app.js, layer 5), not by anything step 5 itself could fix:
-- `initCatalog` (→ src/model/catalog.js) — CORRECTED 2026-10-03 (step 8): the earlier UPDATE here assumed landing `albumMetaFor` anywhere would unblock this. Step 8 landed `albumMetaFor` in `audio/chip.js` (layer 3) — and `model/catalog.js` is layer 2, which can only ever import layer 2 or lower. This is now a PERMANENT structural block, the identical shape as `estimateKey`/`theory/key.js` below, not a "not yet split" one: `initCatalog` can only move if `albumMetaFor` itself relocates to a layer-≤2 module (real, since `albumMetaFor` has no blocker of its own — chip.js just happened to be where ITS OWN callers needed it), or `initCatalog` moves to a layer-≥3 module instead, losing its "album/group lookups" cohesion with the rest of model/catalog.js. See docs/split-plan.md "Deviations (8)".
-- `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7 — still blocked, see the audio/voices.js QUEUED entry below), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9 — `applyAudioDirs` itself was ALSO checked in step 8, for audio/clips.js, and is blocked the same way — draw()/isComposition/ownFolderPath/addTrackUndoable), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 9, 11, 14.
-- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — UPDATE 2026-10-03 (step 6): `LINK_SONGS` landed (platform/base.js) and no longer blocks anything here; UPDATE 2026-10-03 (step 8): `updateChipBtn` did NOT land in audio/chip.js (it's itself blocked by `playGateKick`, UI — see the audio/chip.js QUEUED entry below), so that blocker is unchanged. Still need `isComposition`/`ownFolderPath`/`isCaptureKey` (provenance, step 9 — `isCaptureKey` was deliberately left in app.js by step 8 to avoid a future layer deadlock, see below), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9 — `saveDraft`/`draftRead` themselves were ALSO checked in step 6, for platform/storage.js, and are blocked the same way), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
+## RESOLVED 2026-10-03 (step 9) — split: initCatalog + folderScanAlbums both landed in src/model/catalog.js
+Was: "finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land." Splitting the three leftovers apart by what actually happened:
+- `initCatalog` — RESOLVED. The step-8 CORRECTED note assumed `albumMetaFor` living in `audio/chip.js` (layer 3) was permanent; it wasn't — step 9 relocated `albumMetaCache`/`albumMetaFor` OUT of chip.js and into the new `model/provenance.js` (layer 2), a correction chip.js's OWN `isCaptureKey`/`chipSource` situation needed anyway (below). That made `albumMetaFor` same-layer for `model/catalog.js`, and `initCatalog` moved clean, by name, verbatim.
+- `folderScanAlbums` — ALSO RESOLVED, same move, and worth noting explicitly: this function was never actually in step 6's `platform/folder.js` despite some Module-map prose once implying it was (now corrected in NIGHT-ROLL.md) — step 6's own Deviations correctly listed it as blocked, by `albumTitleFor` (then still app.js). `albumTitleFor` landed in `model/provenance.js` this step too, which cleared it — but into `model/catalog.js` (alongside `initCatalog`), NOT `platform/folder.js` (its step-6-table destination): platform is layer 1, and `albumTitleFor` is layer 2, so landing it in platform now would be a permanent upward-import deadlock, the identical mistake `estimateKey`/`theory/key.js` made in steps 4-5. catalog.js was the only legal home once `albumTitleFor` moved to provenance.js.
+- `finalizeNotes` (→ src/model/rollnotes.js) — STILL BLOCKED, re-checked this step: of its dozen-ish call targets, `bakesTempo` is now clear (model/provenance.js, step 9), but `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7, still blocked), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`keyLabelState` (none yet split) remain. Re-check after steps 10/11/14.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — STILL BLOCKED, re-checked this step per its own instruction: `isComposition`/`ownFolderPath`/`isCaptureKey`/`editableSong`/`originOf` are now ALL real, legal imports (model/provenance.js + model/song.js, step 9) — real progress — but `saveEdits` still needs `scheduleAnalysisRecompute` (gen/analysis.js, step 10) and `saveDraft`/`computeSongEnd`/`updateSongMeta` (confirmed BLOCKED themselves, not step 9's to clear — see the versions.js/song.js QUEUED entries); `updateEditBtnVis` still needs `updateChipBtn` (blocked, step 8). All five stay bit-for-bit in app.js. Re-check after step 10 (gen/analysis.js) and whichever step lands `draw`/`buildScoreModel`/`finalizeNotes` for `computeSongEnd`'s sake.
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 6: src/platform/{base,mode,storage,folder,native}.js (docs/split-plan.md)
 Moved, five `move.mjs --names` invocations over src/app.js (base → mode →
@@ -5400,35 +5401,50 @@ data location, open a local-folder song) before pushing and building for
 the iPad.
 
 ## QUEUED 2026-10-03 — split: platform/sw.js, nativeOpenUrl/nativeOpenHook, sfShownAt, and the whole draft/edit-persistence SAFETY path still can't move (terminal-only, not a question for Josh)
-Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
+Leftovers from step 6 (docs/split-plan.md "Deviations (6)"), re-checked against step 9's new model/ files:
 - `platform/sw.js`: the service-worker-registration `if`/`else` (src/app.js,
   originally index.html ~line 23103) needs `setInfo` (ui/chrome.js, step
-  14) in its `else` branch. Revisit once step 14 lands; it's one statement,
-  not a cluster, so this should be a single `--range` once `setInfo` is
-  importable.
-- `nativeOpenUrl`/`nativeOpenHook` (→ platform/native.js): need `setInfo`/
-  `stop`/`closeFileMenus` (ui/chrome.js + audio/transport.js, steps 7/14)
-  and `openPickedFiles` (import/hub.js, step 9).
-- `sfShownAt` (→ platform/mode.js): blocked transitively by `estimateKey`
-  still being LEGACY_CONTAINER — same open structural question as the
-  theory/key.js entry above (Q-equivalent, not re-filed separately); revisit
-  together.
+  14) in its `else` branch. Unaffected by step 9. Revisit once step 14
+  lands; it's one statement, not a cluster, so this should be a single
+  `--range` once `setInfo` is importable.
+- `nativeOpenUrl`/`nativeOpenHook` (→ platform/native.js): still need
+  `setInfo`/`stop`/`closeFileMenus` (ui/chrome.js + audio/transport.js,
+  steps 7/14). CORRECTED: `openPickedFiles` did NOT land in `import/hub.js`
+  as this entry once assumed it would — step 9 moved only
+  `importHubLabel` there; `openPickedFiles` itself stays in app.js, blocked
+  by `CHIPS`/`setInfo`/`createComposition`, none yet split (see NIGHT-
+  ROLL.md's `import/hub.js` entry). `nativeOpenUrl` is blocked by this too
+  now, same as before, just a more specific reason.
+- `sfShownAt` (→ platform/mode.js) — CORRECTED, now understood PERMANENT,
+  not pending `estimateKey`'s move: `estimateKey` moved in step 9, but to
+  `model/song.js` (layer 2), not out of the split entirely — `platform/`
+  is layer 1, and layer 1 can never import layer 2, forever, the identical
+  shape as `estimateKey`'s own old `theory/key.js` deadlock. `sfShownAt`
+  can only ever reach platform/mode.js if REWRITTEN to take `estimateKey`
+  as a parameter (a logic change, out of scope for a move step) or if
+  `sfShownAt` itself moves to a layer-≥2 module instead — a design
+  question, flag to whoever next considers it rather than retrying the move.
 - `saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/`draftRead`/
-  `localDraftWrite`/`localDraftTracks`/`idbDraftPut` (→ platform/storage.js):
-  all reach `logErr` (ui/chrome.js, step 14) and/or provenance/model code
-  (steps 8/9). Re-check after step 14 for `logErr`'s move, and after step 9
-  for the rest of `saveDraft`'s/`saveEdits`'s dependency list (which
-  overlaps the existing model/edits.js QUEUED entry above — these are the
-  same underlying functions, checked from the storage.js/platform side
-  this time; don't re-litigate, just re-check both entries together once
-  either step lands).
-- `scheduleBackupFlush`/`flushBackupNow` (→ platform/storage.js): need
-  `serializeRollnotes` (already model/rollnotes.js, layer 2 — permanently
-  out of reach for platform, layer 1, same shape as `estimateKey`/
-  `theory/key.js`) plus `aiUrl`/`aiHeaders` (ask/, step 13) and
-  `editableSong`/`draftDoc` (model/song.js, step 9). Likely permanently
-  blocked by the `serializeRollnotes` call alone even after every other
-  step lands — flag this specifically if a future step reconsiders it.
+  `localDraftWrite`/`localDraftTracks`/`idbDraftPut` (→ platform/storage.js)
+  — RE-CHECKED 2026-10-03 (step 9): `isComposition`/`editableSong` (both
+  named here before step 9 as the "model/song.js, step 9" half of the
+  blocker list) are now real, legal imports from model/provenance.js and
+  model/song.js — but `logErr` (ui/chrome.js, step 14) still blocks
+  `idbDraftPut`/`localDraftWrite`/`localDraftTracks` directly, and
+  `saveDraft` still needs `isComposition`'s SIBLINGS `editableSong`
+  (clear)/`retireOldOverlay` (model/edits.js, still blocked)/`setInfo`/
+  `updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` (none yet split). All
+  eight stay bit-for-bit in app.js. Re-check again after step 14 (`logErr`,
+  `setInfo`) — this is now the ONLY remaining blocker class for this group.
+- `scheduleBackupFlush`/`flushBackupNow` (→ platform/storage.js) —
+  RE-CHECKED 2026-10-03 (step 9): `editableSong`/`draftDoc` are now real
+  (model/song.js/model/versions.js) — two of four blockers cleared — but
+  `serializeRollnotes` (model/rollnotes.js, layer 2 — permanently out of
+  reach for platform, layer 1, confirmed unchanged) and `aiUrl`/`aiHeaders`
+  (ask/, step 13) remain. Still permanently blocked by `serializeRollnotes`
+  alone regardless of step 13 — flag this specifically if a future step
+  reconsiders it (the same "rewrite to inject the dependency, or move the
+  function to a higher layer" choice as `sfShownAt` above).
 
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
 
@@ -5470,13 +5486,18 @@ Leftovers from step 7 (docs/split-plan.md "Deviations (7)"):
   audio/transport.js) — UPDATE 2026-10-03 (step 8): `chip.*` (audio/chip.js
   + audio/chip-stream.js), clip scheduling (`clipLen`, audio/clips.js),
   and `met.*` (audio/metronome.js) are all real exports now, so THAT
-  specific clause of this note has cleared. Still blocked regardless by
-  `document.getElementById`/`setControl`/`setPlayBtn`/`setInfo`/UI-chrome
-  calls (ui/chrome.js, step 14) and `loadSong`/`S.CATALOG`/
-  `albumEffectiveOrder` (model, step 9) — neither of which step 8 touched.
-  This remains the single most entangled cluster the split has found so
-  far; likely needs steps 9, 11, AND 14 to all land before a clean move is
-  possible. Re-check incrementally after each.
+  specific clause of this note has cleared. UPDATE 2026-10-03 (step 9):
+  `albumEffectiveOrder` also cleared (`model/album-order.js`, layer 2 —
+  legal downward import for audio/, layer 3) — but `loadSong` itself is
+  still bare in app.js (blocked by `play`/`setInfo`/`fitView`/
+  `renderTrackbar`/`buildScoreModel`/`draw`/ask-panel calls, see NIGHT-
+  ROLL.md's `model/song.js` entry), so importing it remains illegal
+  regardless. Still blocked by `document.getElementById`/`setControl`/
+  `setPlayBtn`/`setInfo`/UI-chrome calls (ui/chrome.js, step 14) and
+  `loadSong`/`S.CATALOG`. This remains the single most entangled cluster
+  the split has found so far; likely needs steps 11 AND 14 to land (step 9
+  is now done and only partially helped) before a clean move is possible.
+  Re-check incrementally after each.
 - The second `?perf=1` instrumentation wrapper (the "mark the timeline on
   an edit" pass over `saveEdits`/`selEditApply`/`insertTime`, same guarded
   block as the now-fixed `wrap()`) is STILL silently broken — same
@@ -5545,8 +5566,14 @@ NIGHT-ROLL.md's module-map entries:
   model/provenance.js (layer 2, step 9), and layer 2 can never import
   layer 3. Moving it would have traded today's `chipSource` blocker for a
   permanent step-9 deadlock, the same mistake `estimateKey`/`theory/key.js`
-  made in steps 4-5. `chipSource` stays in app.js, blocked by
-  `isCaptureKey` alone.
+  made in steps 4-5. RESOLVED 2026-10-03 (step 9): `isCaptureKey`/
+  `ownFolderPath` both landed in `model/provenance.js` exactly as predicted
+  here, and `audio/chip.js` (layer 3) can now legally import `isCaptureKey`
+  (layer 2) downward. `chipSource` ITSELF still did NOT move, though —
+  clearing this blocker surfaced a second, independent one this entry
+  never named: `chipSource` → `chipVaultFile` → `chipExt` → `CHIPS[kind]`,
+  the SAME `CHIPS`/`logErr` block below. See docs/split-plan.md
+  "Deviations (9)".
 - **`scheduleClip`/`stretchEnsure`/`stretchEnsureAll`/`audioChaseNow`** (→
   audio/clips.js) stay in app.js: `stretchEnsure`'s only real blocker is
   one `draw()` call at the end of its stretch-worker callback (render,
@@ -5566,6 +5593,10 @@ NIGHT-ROLL.md's module-map entries:
 - `initCatalog`'s QUEUED retry note (above) is CORRECTED, not cleared:
   landing `albumMetaFor` in audio/chip.js (layer 3) cannot unblock a
   layer-2 `model/catalog.js` import, ever — same shape as `estimateKey`.
+  RESOLVED 2026-10-03 (step 9): the fix was not to retry this move but to
+  relocate `albumMetaFor` ITSELF, out of audio/chip.js and into
+  model/provenance.js (layer 2) — see the "RESOLVED ... initCatalog +
+  folderScanAlbums" entry above and docs/split-plan.md "Deviations (9)".
 
 `regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except
 the pre-existing `oldBpb` finding (Q6); check-e2e-globals.mjs and
@@ -5588,6 +5619,71 @@ tools/-side runtime module of its own). `npm run test:e2e:smoke` (allowed
 once locally): chromium 8/8 passed. NOT pushed: main session still needs
 the iPad ear check (a chip song NES + one streamed console song, an
 audio-clip song at 0.5×, the metronome, Download audio) before pushing
+and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 9: src/model/{song,selection,provenance,album-order,versions,jobs}.js, src/import/{hub,capture}.js, src/sync/publish.js (docs/split-plan.md)
+This step hit the "named target stays, pure leaves move" pattern harder
+than any step before it — of the plan's own headline names for this step
+(`loadSong`/`setSong`/`computeSongEnd`, `selEditApply`/`nudgeSelection`,
+`saveSongAs`, `publishSong`), only `editableSong` moved; everything else
+reaches `draw`/`setInfo`/`buildScoreModel`/`finalizeNotes`/`saveEdits`/UI-
+button updates (render step 11, ui/chrome step 14), none yet split. What
+DID move, nine new files: `model/provenance.js` (the whole P1 origin/rule-
+table machinery — `isCaptureKey`, `ownFolderPath`, `isComposition`,
+`originOf`, `RULES`/`rulesFor`, `canEditMusic`, `bakesTempo`/`bakesMeter`,
+`albumTitleFor`, `slugify`, `isUnsaved`, + `albumMetaCache`/`albumMetaFor`
+RELOCATED here from audio/chip.js, a step-8 placement correction);
+`model/song.js` (`editableSong` + `estimateKey`/`checkKeyVsFile`,
+relocated here from the dead-end `theory/key.js` attempt, steps 4-5);
+`model/selection.js` (`selEditItems`/`clipboardHas`/`clipSummary` only —
+every mutator stayed); `model/album-order.js` (the one fully-clean file,
+matches the plan's table exactly); `model/versions.js` (the whole
+localStorage version store minus `saveVersion`/`saveDraft` themselves);
+`model/jobs.js` (the jobs store's and debug log's pure halves —
+`jobsNotify` stays, PERMANENTLY, same shape as `ensureAudio`'s logging
+calls in step 7); `import/hub.js` (`importHubLabel` only); `import/
+capture.js` (byte-magic format sniffing + pure key/label helpers);
+`sync/publish.js` (every GitHub-Contents-API/local-folder write primitive,
+the share-link builder, the README generator — 22 names — despite
+`publishSong` itself staying blocked). Along the way, relocating
+`albumMetaCache`/`albumMetaFor` also retroactively RESOLVED two separate
+permanent-looking blocks from earlier steps: `initCatalog` (steps 5/8) and
+`folderScanAlbums` (step 6) both landed in `model/catalog.js` this step,
+once `albumMetaFor`/`albumTitleFor` were layer 2 instead of layer 3. See
+the three RESOLVED entries above (estimateKey/checkKeyVsFile, initCatalog
++ folderScanAlbums, isCaptureKey/chipSource) and docs/split-plan.md
+"Deviations (9)" for the full per-cluster accounting, including a real
+`tools/split/move.mjs` tooling gap this step hit twice (a same-file
+self-import bug when a name being moved was already imported BACK from
+the destination file by an earlier invocation — hand-fixed both times,
+flagged for whoever next touches move.mjs to add a guard).
+
+`regen-e2e-footer.mjs --file src/app.js` re-run three times; check.mjs
+clean except the pre-existing `oldBpb` finding; check-e2e-globals.mjs and
+check-controls.mjs clean (26 controls, unchanged). devtools.js gained
+`modelSong`/`modelSelection`/`modelProvenance`/`modelAlbumOrder`/
+`modelVersions`/`modelJobs`/`importHub`/`importCapture`/`syncPublish`
+namespace imports; sw.js APP_MODULES gained all nine files, SW_VERSION
+nr-v14 → nr-v15; index.html's modulepreload list gained all nine.
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 28 → 37.
+
+Verified: night-roll.test.mjs 427 (426 pass + 1 pre-existing env skip —
+every "local song: …" SAFETY-regression test passes unchanged, since none
+of that code moved a byte), modules 33/33, gestures 21/21, controls 3/3,
+pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only skips),
+chip-worker 31/31, bridge 10/10, migrate-rollnotes 9/9, import-set 5/5,
+album-order 8/8, psx-render 6/6, spc-render 5/5, instruments-export 4/4,
+sounding 12/12 — all green. `node tools/split/check.mjs` clean except
+oldBpb; `node tools/package.mjs --out /tmp/nr-dist-s9`: 47 runtime modules
+(unchanged — model/import/sync add no tools/-side runtime module of their
+own). `node tools/dump_notes.mjs` re-verified byte-identical against a
+scratch copy of albums/starters/fur-elise.mid; `tools/at.mjs` re-verified
+against the same song. `npm run test:e2e:smoke` run twice (mid-step and
+after the estimateKey/initCatalog follow-up): chromium 8/8 both times.
+NOT pushed: main session still needs the browser checks this step's own
+plan entry asks for — Save As on a scratch local song, the Versions
+sheet, an NSF import into a scratch composition (never
+albums/compositions/), and a publish to a scratch path — before pushing
 and building.
 
 ## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)

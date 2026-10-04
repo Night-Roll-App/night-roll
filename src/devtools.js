@@ -58,6 +58,15 @@ import * as audioChipStream from "./audio/chip-stream.js";
 import * as audioClips from "./audio/clips.js";
 import * as audioMetronome from "./audio/metronome.js";
 import * as audioBounce from "./audio/bounce.js";
+import * as modelSong from "./model/song.js";
+import * as modelSelection from "./model/selection.js";
+import * as modelProvenance from "./model/provenance.js";
+import * as modelAlbumOrder from "./model/album-order.js";
+import * as modelVersions from "./model/versions.js";
+import * as modelJobs from "./model/jobs.js";
+import * as importHub from "./import/hub.js";
+import * as importCapture from "./import/capture.js";
+import * as syncPublish from "./sync/publish.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -70,7 +79,9 @@ export function exposeGlobals() {
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
-                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce };
+                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce,
+                     modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
+                     importHub, importCapture, syncPublish };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global

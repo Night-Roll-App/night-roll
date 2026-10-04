@@ -6,6 +6,7 @@ import { apiError } from "../platform/storage.js";
 import { repoName } from "../platform/storage.js";
 import { EDITION } from "../edition.js";
 import { trackGain } from "./engine.js";
+import { albumMetaFor } from "../model/provenance.js";
 
 // ---------------------------------------------------- authentic chip audio
 // The captured APU register log rendered through the 2A03's real DSP
@@ -29,29 +30,6 @@ export function chipTrackNo() { // NSF track number from the LIVE import session
   for (let n = 1; n < S.nsfSess.rows.length; n++)
     if (S.nsfSess.rows[n] && S.nsfSess.rows[n].key === S.songKey) return n;
   return null;
-}
-// NSF vault: a PRIVATE repo (Josh's design, 2026-08-17) holding the NSFs the
-// public repo must not — album.json links to it (vault file + track map, pure
-// metadata) and the app fetches with the same token Sync uses. Chain:
-// live import session → this device's IndexedDB cache → vault fetch (cached).
-// NSF repo config lives in cfg() (nsfBase for reads, nsfRepo for writes)
-export const albumMetaCache = {};
-// album dir -> album.json contents (or null)
-export async function albumMetaFor(key) {
-  const m = key && key.match(/^(albums\/.+?)\/(?:songs\/)?[^/]+\.mid$/); // lazy: don't swallow /songs/
-  if (!m) return null;
-  const dir = m[1];
-  if (!(dir in albumMetaCache)) {
-    try {
-      const r = await readData("songs", dir + "/album.json", true);
-      // cache SUCCESS only: a 404 during CDN lag (album committed seconds ago)
-      // must not poison the tab — it made committed songs silently play synth
-      // while drafts played chip (Josh's side-by-side, 2026-08-17)
-      if (r.ok) albumMetaCache[dir] = await r.json();
-      else { if (r.status !== 404) albumMetaFor.lastFail = {dir, why: "HTTP " + r.status}; return null; } // 404 = no album.json (a composition): not a failure
-    } catch (err) { albumMetaFor.lastFail = {dir, why: err.message || "offline"}; return null; }
-  }
-  return albumMetaCache[dir];
 }
 export async function vaultFetch(file) {
   // raw-first: a PUBLIC archive serves tokenless with open CORS — chip audio

@@ -1125,8 +1125,369 @@ constraint for whoever next considers moving these two.
 **9. `model/song.js`, `selection.js`, `provenance.js`, `album-order.js`, `versions.js`, `jobs.js`; `import/*`; `sync/publish.js`.**
 - Verify:
   - browser: Save As, versions sheet, an NSF import into a scratch composition (never Josh's songs), publish to a scratch path
+- **Done** (2026-10-03, Sonnet builder, worktree branch). This step hit the
+  "named target stays, pure leaves move" pattern harder than any step before
+  it — of this step's own seven headline names (`loadSong`, `setSong`,
+  `computeSongEnd`, `selEditApply`, `nudgeSelection`, `saveSongAs`,
+  `saveDraft`/`publishSong`), only `editableSong` actually moved; every other
+  one reaches `draw()`/`setInfo()`/`buildScoreModel()`/`finalizeNotes()`/
+  `saveEdits()`/UI-button updates, none yet split (render step 11, ui/chrome
+  step 14). What moved instead, by `move.mjs --names` (never `--range` — same
+  reason as every step since 4: these areas are each laced hundreds of lines
+  through UI/render/model-edits code a `--range` would sweep up alongside):
+  - **Correction to step 8's `audio/chip.js` placement, first** (`move.mjs
+    --from src/audio/chip.js --to src/model/provenance.js --names
+    albumMetaCache,albumMetaFor`): step 8 put these in chip.js because
+    chip.js's OWN callers (`chipSource`/`chipAlbumHasSource`) needed them
+    there, flagging the risk explicitly ("isCaptureKey... stays in app.js,
+    NOT moved, even though nothing else stood in its way" — its other
+    caller `ownFolderPath` was slated for `model/provenance.js`, layer 2,
+    which can never import chip.js's layer 3). Relocating `albumMetaCache`/
+    `albumMetaFor` to `model/provenance.js` — itself a verbatim move, not a
+    logic change — resolves that fork at the root: `audio/chip.js` (layer 3)
+    now imports them back down from `model/provenance.js` (layer 2), legal
+    in that direction, and BOTH `isCaptureKey` and the step-8/5 `initCatalog`
+    deadlock clear at once (below). `chipAlbumHasSource` needed no change —
+    it only called `albumMetaFor`, now an ordinary cross-file call.
+  - `model/provenance.js` (new) ← `albumMetaCache`, `albumMetaFor` (from
+    chip.js, above), then 27 names from app.js by `--names`: `NR_DIR`,
+    `COMP_DIR`, `PROVENANCE_RE`, `READONLY_DIRS`, `isCaptureKey`,
+    `ownFolderPath`, `isComposition`, `bakesTempo`, `hasProvenanceNote`,
+    `originOf`, `pendingOriginKey`, `setOrigin`, `pendingOrigin`,
+    `originFor`, `RULES`, `rulesFor`, `canEditMusic`, `bakesMeter`,
+    `COMP_ALBUMS`, `albumTitleFor`, `slugify`, `untitledKey`, `isUnsaved`,
+    `RESERVED_FOLDERS`, `folderFromInput`, `chosenFolder`, `isCompositionKey`
+    (the last unlisted by the plan — `publishSong`'s own "is this song mine,
+    for a key that isn't open" predicate, the natural twin of `isComposition`
+    and blocker-free: `ownFolderPath` + `draftStoreKey`). Every one of these
+    checked clean against `albumMetaCache`/`albumMetaFor`/`draftStoreKey`
+    (platform, layer ≤1) — the whole "one origin per song, one rule table"
+    P1 machinery (docs/provenance-plan.md) is now real layer-2 code.
+    **`saveSongAs`/`renameLocalKeys`/`openSaveForm` did NOT move** — all
+    three reach `finalizeNotes`/`draw`/`setInfo`/`updateSongBtn`/
+    `updateEditBtnVis`, none yet split; `saveSongAs` additionally calls
+    `finalizeNotes()` directly. They stay in app.js, now importing
+    `isUnsaved`/`slugify`/`folderTitle`/`renameLocalKeys`'s own needs back
+    from provenance.js/catalog.js unchanged.
+  - `model/catalog.js` (existing, step 5) gained `initCatalog` AND
+    `folderScanAlbums` — **both of step 5/6/8's own permanently-blocked
+    findings, cleared by the chip.js correction above, not by this step
+    re-trying the same thing twice.** `initCatalog`'s last blocker
+    (`albumMetaFor`, layer 3 in chip.js per step 8) is now layer 2; its
+    other three names (`folderOnly`/`songsURL`/`folderScanAlbums`) were
+    already platform-or-lower. But moving `folderScanAlbums` itself (step
+    6's own "Not moved" list: blocked by `albumTitleFor`, "still app.js" at
+    the time) surfaced ONE more self-import bug from `move.mjs` (below) —
+    `albumTitleFor` is model/provenance.js now, same layer 2 as catalog.js,
+    so `folderScanAlbums` moved clean too, into `model/catalog.js` rather
+    than `platform/folder.js` (its step-6-table destination): landing it in
+    platform (layer 1) would need an UPWARD import of `albumTitleFor`
+    (layer 2) the instant it moved, the identical shape of mistake
+    `estimateKey`/`theory/key.js` made in steps 4-5 — `model/catalog.js`,
+    already `folderOnly`'s/`initCatalog`'s own layer, is the only legal
+    home now that `albumTitleFor` sits in provenance.js. Both functions
+    import each other's needs down from platform/*/provenance.js exactly as
+    step 5/6/8's "Done" notes already described for everything ELSE in
+    those files; nothing about `initCatalog`'s or `folderScanAlbums`' own
+    BODY changed.
+  - **`estimateKey`/`checkKeyVsFile` placement, resolved** (open-items.md's
+    "cannot move to theory/key.js, ever" note, steps 4-5): `theory/key.js`
+    is layer 0 and can never import `trackIsDrums`(`model/grid.js`)/
+    `barTicks`(`model/rollnotes.js`), both genuinely layer 2 — permanent,
+    not "not yet split". With `model/song.js` now existing, `estimateKey`
+    (+ its own `keyEstimateSig` cache-signature helper and the Krumhansl-
+    Schmuckler profile tables `KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`) and
+    `checkKeyVsFile` (+ `tonicPcFromName`) moved there instead by `move.mjs
+    --names` — layer 2 importing `trackIsDrums`/`barTicks` (layer 2, same
+    tier) and `pearsonCorr`/`keyNameFor`/`fileKeyAt`/`TONIC_SPELL`
+    (theory/key.js, layer 0)/`SF_MAJOR` (theory/chords.js, layer 0) is
+    legal in every direction. `fileMeterAt` — textually adjacent, looking
+    like `fileKeyAt`'s meter-side twin — was checked again and still left
+    alone: it has its own UI callers and nothing in `model/song.js` needs
+    it, the identical finding step 4 made. Every "estimateKey is never
+    called in Learning" spy test still passes unchanged — the gating
+    itself never moved and nothing about either function's body changed a
+    byte; `theory/key.js` is simply no longer their home.
+  - `model/song.js` (new) ← `editableSong` (clean: `LINK_SONGS` + `canEditMusic`,
+    both ≤ layer 2), then the `estimateKey`/`checkKeyVsFile` cluster above.
+    **`loadSong`/`loadSongInner`/`setSong`/`computeSongEnd` — this step's
+    four biggest named targets — did NOT move; not one of the four has a
+    clean path.** `loadSong`/`loadSongInner`/`setSong` are each saturated
+    with `stop()`/`play()`/`setInfo()`/`fitView()`/`renderTrackbar()`/
+    `updateEditBtnVis()`/`buildScoreModel()`/`clampView()`/`draw()`/
+    `askModeButtons()`/`askRender()` — audio/render/ui/ask, none yet split,
+    more blockers in three functions than any previous step's single
+    headline target. `computeSongEnd` has exactly one: `clipEndTick`
+    (`audio/clips.js`, layer 3 — `model/song.js` is layer 2 and can never
+    import it, a permanent block of the same shape as `estimateKey`'s old
+    one, not a "not yet split" one — clip geometry genuinely belongs at the
+    audio layer). All four stay in app.js, bare-name reachable, now
+    importing `editableSong`/`canEditMusic`/`estimateKey`/`checkKeyVsFile`
+    back from `model/song.js`/`model/provenance.js` unchanged.
+  - `model/selection.js` (new) ← `selEditItems`, `clipboardHas`,
+    `clipSummary` — the three selection-adjacent reads with no blocked call
+    in their body. **`selEditApply`/`nudgeSelection`/`resizeSelection`/
+    `quantizeSelection`/`splitSelectionAt`/`splitSelectionHalves`/
+    `joinSelection`/`copySelection`/`cutSelection`/`pasteClipboard`/
+    `pasteAnnotations` — every actual mutator this step's table names
+    (`selEditApply`, `nudgeSelection`) or implies (quantize/split/join,
+    copy/paste) — did NOT move.** All of them bottom out in `selEditApply`
+    itself, which calls `saveEdits()` (model/edits.js's own SAFETY-blocked
+    function, step 5 — still bare in app.js), `computeSongEnd()` (blocked,
+    above), `buildScoreModel()`/`draw()` (render, step 11); `nudgeSelection`
+    additionally needs `editableSong` (now cleared, see model/song.js) but
+    still inherits `selEditApply`'s block. This is the plan's `selection.js`
+    row almost entirely unmet by content — the three names that DID move
+    are real, but none of them is the row's own headline.
+  - `model/album-order.js` (new) ← `setAlbumOrderPref`, `slugOfPath`,
+    `albumTrackMap`, `albumHasTrackData`, `albumOrder`, `albumEffectiveOrder`,
+    `albumOrderControl` — this step's one FULLY clean file, matching the
+    plan's table exactly: nothing here touches anything but `S`,
+    `localStorage`, `document.createElement` (a plain browser global, not a
+    cross-module import — `albumOrderControl` builds the Game order/A–Z
+    segmented control), and `albumMetaCache`/`folderOf` (provenance/catalog,
+    both layer 2). No named target was left behind.
+  - `model/versions.js` (new) ← `autosaveOn`, `versionsStoreKey`,
+    `readVersionsRaw`, `writeVersionsRaw`, `migrateVersions`, `readVersions`,
+    `pushVersion`, `songDirtyFlag`, `songUnsaved`, `draftTracks`, `musicSig`,
+    `draftDoc`, `draftKeys` — the whole LOCALSTORAGE-side version store
+    (Model B: push/read/migrate the ring buffer, the draft fingerprint
+    (`musicSig`/`draftDoc`/`draftTracks`), the "is this song ● unpublished"
+    predicate). **`saveVersion` — the plan's own named headline
+    (`saveDraft, saveDraft` appears twice in the table's one line; the
+    actual button handler is `saveVersion`) — did NOT move**: it calls
+    `openSaveForm`/`setInfo`/`saveDraft`/`filesMirror`, none yet split.
+    **`saveDraft` itself also did NOT move** — unchanged from step 6's own
+    finding for `platform/storage.js` (`isComposition`/`editableSong` are
+    now real imports, cleared; `retireOldOverlay`/`logErr`/`setInfo`/
+    `updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` are not). `draftRead`/
+    `draftWrite`/`draftFingerprint`/`pubCompareDraft`/`fingerprintOldDrafts`/
+    `markPublished` all stay too, each for its own already-documented or
+    newly-confirmed UI/model-edits reason (`draftFingerprint` specifically
+    because it calls `draftWrite`, itself permanently UI-blocked since step
+    6). `draftKeys` moved here (versions/drafts is its natural home) rather
+    than provenance.js; `localFolders`/`folderChoices` (provenance.js) import
+    it back down, same layer.
+  - `model/jobs.js` (new) ← the jobs store's PURE half (`JOB_KINDS`,
+    `jobListeners`, `jobControls`, `jobsSave`, `jobsOnChange`, `jobProgress`,
+    `jobFraction`, `JOBS_AUTOCLEAR_MS`, `jobBarSet`, `jobsList`, `jobsFind`)
+    plus the debug-log's pure half (`appErrors`, `appDebug`, `debugLogOn`,
+    `logPush`, `logLines`, `logLine`, `BENIGN_ERRORS`) — the plan's one line
+    ("jobs (footer ⏳) and the debug log") covers both clusters, and both
+    split the same way: **`jobsNotify` — the one function every job mutator
+    funnels through — did NOT move, because its own body calls
+    `updateJobsBtn()` (`document.getElementById`/`setControl`, UI-chrome,
+    not yet split), and that is now understood to be PERMANENT, not "not
+    yet split" — the same shape step 7 found for `ensureAudio`'s
+    `logDebug`/`logErr`/`setInfo` calls: status/footer-button reporting is
+    structurally a UI concern in this app's own layer table, forever. Every
+    function that calls `jobsNotify` — `jobsLoad`, `jobStart`, `jobApi`,
+    `jobCancel`, `jobsDismiss`, `jobsClearFinished`, `jobsAutoClear` —
+    inherits the block transitively (importing `jobsNotify` from app.js,
+    where it stays, is the same upward import every other blocked function
+    in this split has hit), even though NONE of them individually touches
+    UI.** `logErr`/`logDebug`/`errChip` similarly stay (both resolve to
+    `errChip()`'s `setControl`/`document.getElementById`/`askSeenMax()` —
+    `ask/`, layer 4, step 13 — the same permanent-logging-blocker shape).
+    `renderJobs`/`openPubJobSheet`/`pubItemIcon`/`renderPubJob` (DOM-heavy
+    UI) and the init-time `addEventListener` wiring block all stay with
+    them. The split is clean and symmetric: read-only/pure-mutate-on-S
+    functions moved, anything that notifies the UI or logs stayed, with no
+    function straddling the line.
+  - `import/hub.js` (new) ← `importHubLabel` only — the Import hub's single
+    pure leaf (a lookup into `model/catalog.js`'s `FOLDER_NAMES`).
+    `openPickedFiles` — the hub's real dispatcher — stays in app.js: it
+    calls `CHIPS[kind]` (blocked, below), `setInfo`, `createComposition`,
+    `importAudioFiles`, `openChipImport`, `importSf2File`,
+    `applyM3uToAlbum`/`applyM3uNames`, none yet split. Every
+    `addEventListener`/`dragover`/`drop` wiring statement for the hub's
+    panel stays too (non-declaration top-level code `--names` never
+    selects, and none of it is pure regardless).
+  - `import/capture.js` (new) ← `impDirFor`, `importDraftKeys`,
+    `impTrackKey`, `streamedAudioMagic`, `audioMagic`, `sf2Magic`,
+    `impDisplayTitle`, `impTrackLabel` — format-identification (byte-magic
+    sniffing: none of the three `*Magic` functions touch anything but their
+    own byte array) and pure key/label helpers. `importDraftKeys` needed
+    `draftKeys` (now `model/versions.js`, layer 2) and `isCaptureKey` (now
+    `model/provenance.js`, layer 2) — both clean for `import/` (layer 4).
+    **Everything else named or implied by "NSF/chip import, captures as
+    jobs" stays**: `chipKindOf` needs `CHIPS` (below); `impCapture`/
+    `captureJobStart`/`renameImportDraft` each reach `draftWrite`/`jobStart`/
+    `updateSongBtn`/`updateChipBtn`, none yet split.
+  - `sync/publish.js` (new) — the biggest new file this step wrote, despite
+    its own headline (`publishSong`) staying blocked: `putMidAt`,
+    `deleteRepoFile`, `audioDirFiles`, `declaredTsForKey`, `notesTxtFor`,
+    `putSongsText`, `uploadAudioClips`, `uploadAudioClipsFor`, `putRollnotes`,
+    `recordLastSync`, `writeToken`, `connected`, `takeToken`, `shareLinkFor`,
+    `songsReadmeBlock`, `spliceReadme`, `writeSongsReadme`, `APP_REPO`,
+    `PUBLIC_BASE`, `publicBase`, `README_OPEN`, `README_CLOSE` — every GitHub-
+    Contents-API / local-folder write primitive, the share-link builder, and
+    the README/manifest-text generators, all pure functions of their own
+    arguments plus `S`/`platform/*`/`midi/write.js`/`audio/clips.js`/
+    `audio/bounce.js` (all ≤ layer 4 for a `sync/` file). **`publishSong`,
+    `markPublished`, `markCurrentSongSynced`, `publishOpenComposition` did
+    NOT move** — `publishSong` alone reaches `saveDraft`/`draftRead`/
+    `askCommitLog`/`filesMirror`/`filesMirrorFor`/`declaredTsForKey`'s
+    sibling `notesTxtFor`'s own caller context (fine) but also
+    `updateManifest`/`manifestPlace` (left in app.js — see below) and
+    `markPublished` (blocked by `draw`/`updateSubtitle`/`saveDraft`/
+    `draftWrite`); none of its blockers are this step's to clear.
+    `updateManifest`/`manifestPlace`/`albumTitleFor`'s manifest-editing
+    cousins were considered for provenance.js/sync/publish.js and left in
+    app.js unchanged — `updateManifest` needs `folderActive` (fine) but
+    nothing in it REQUIRES moving for anything above to work, and it reads
+    more like catalog maintenance than either file's own charter; left for
+    a later pass rather than guessed at.
+  - **`chipSource` (step 8's leftover) still did NOT move, and the reason
+    is not the one step 8 named.** Step 8 said `chipSource`'s only blocker
+    was `isCaptureKey`; that cleared the moment `isCaptureKey` landed in
+    `model/provenance.js` above. But `chipSource` also calls
+    `chipVaultFile(meta.nsf, base)`, which calls `chipExt(kind)`, which
+    reads `CHIPS[kind]` directly — the SAME permanently-blocked table step
+    8 found for `chipRender` (`CHIPS.usf.capture`'s one guarded `logErr`
+    call, which can never move until `errChip`/`askSeenMax` do, steps 13/14).
+    `chipSource` inherits this exactly the way `scheduleNote` inherited a
+    SECOND blocker from `scheduleClip` in step 8's own writeup — clearing
+    the named blocker surfaced a real, independently-blocking one underneath
+    it, not a false all-clear. Corrected in open-items.md.
+  - `regen-e2e-footer.mjs --file src/app.js` re-run (three times total this
+    step, after the provenance/song/selection/album-order/versions/jobs
+    batch, after import/hub+capture+sync/publish, and after the
+    estimateKey/initCatalog/folderScanAlbums follow-up); `check.mjs` clean
+    except the pre-existing `oldBpb` finding; `check-e2e-globals.mjs` and
+    `check-controls.mjs` clean (26 controls, unchanged — this step touched
+    no control). **Two `move.mjs` self-import bugs, same shape as each
+    other, both hand-fixed as an import-line-only edit (§0's own
+    allowance):** moving `albumMetaCache`/`albumMetaFor` out of chip.js
+    into provenance.js, and later `folderScanAlbums` into catalog.js
+    alongside `titleCaseSlug`, each left behind a bogus self-referencing
+    import line (`import { albumMetaCache } from "./provenance.js"` inside
+    provenance.js itself; `import { titleCaseSlug } from "./catalog.js"`
+    inside catalog.js itself) — `move.mjs`'s back-import logic resolves a
+    selected node's free identifier against the FROM file's own top-level
+    imports before checking whether the name is already a LOCAL declaration
+    in the TO file, and in both cases the FROM file (app.js) already
+    imported the name from the very file it was being moved into. A real,
+    narrow tooling gap (worth fixing in move.mjs itself before a future
+    step hits it again), not something a plan-level workaround should paper
+    over; deleting the one bogus line each time was the whole fix, confirmed
+    by re-running check.mjs clean immediately after.
+    `devtools.js` gained `modelSong`/`modelSelection`/`modelProvenance`/
+    `modelAlbumOrder`/`modelVersions`/`modelJobs`/`importHub`/`importCapture`/
+    `syncPublish` namespace imports (GET-only). `sw.js` `APP_MODULES` gained
+    all nine new files, `SW_VERSION` bumped nr-v14 → nr-v15; index.html's
+    modulepreload list gained all nine (after `audio/bounce.js`, before
+    `app.js`, grouped model/import/sync — same "append in step order, not
+    strict layer order" convention every prior step used). `node
+    tools/package.mjs --out /tmp/nr-dist-s9`: 47 runtime modules, unchanged
+    from post-step-8 (no `tools/`-side runtime module corresponds to
+    model/import/sync). `node tools/dump_notes.mjs` re-verified against a
+    scratch copy of `albums/starters/fur-elise.mid` — byte-identical to the
+    committed `.notes.txt`; `tools/at.mjs` re-verified against the same
+    starter song. Tests, each under `perl -e 'alarm 240; exec @ARGV'`:
+    night-roll 427 (426 pass + 1 pre-existing vault-only skip — every
+    "local song: …" SAFETY-regression test passes unchanged, since none of
+    that code moved a byte), modules 33/33 (fileCount bumped 28 → 37, the
+    usual mechanical bump), gestures 21/21, controls 3/3, pwa 3/3, package
+    3/3, nsf 20/23 (3 pre-existing vault-only skips), chip-worker 31/31,
+    bridge 10/10, migrate-rollnotes 9/9, import-set 5/5, album-order 8/8,
+    psx-render 6/6, spc-render 5/5, instruments-export 4/4, sounding 12/12 —
+    all green. `npm run test:e2e:smoke` run twice (once mid-step, once
+    after the estimateKey/initCatalog follow-up): 8/8 both times. See
+    "Deviations (9)" below for the full per-cluster accounting and the
+    `chipSource`/`model/edits.js` SAFETY-function re-checks this step's
+    provenance.js/versions.js landings prompted.
 
-**10. `gen/drummer.js`, `gen/bassist.js`, `gen/analysis.js`.**
+## Deviations (9, 2026-10-03)
+
+- **Three cross-step corrections, not new blockers**: `albumMetaCache`/
+  `albumMetaFor` relocated out of `audio/chip.js` (step 8) into
+  `model/provenance.js`; `initCatalog` (step 5) and `folderScanAlbums`
+  (never moved, step 6's own "Not moved" list) both landed in
+  `model/catalog.js`; `estimateKey`/`checkKeyVsFile` (steps 4-5, found
+  permanently unable to reach `theory/key.js`) landed in `model/song.js`
+  instead. None of these changed a function's body or logic — each is a
+  verbatim move to a DIFFERENT destination than the step that first placed
+  (or tried to place) the code, made possible because a later step's own
+  new files changed which layer a dependency lives at. This is the same
+  kind of correction step 5 made to step 4's `spellPc` and step 8 made to
+  steps 5/7's `playSec`-needing callers, just with more of them landing in
+  one step.
+- **`model/edits.js`'s SAFETY functions (`loadEdits`/`saveEdits`/
+  `foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis`, step 5) and
+  `platform/storage.js`'s SAFETY functions (`saveDraft`/`draftWrite`/
+  `draftRead`/`localDraftWrite`/`localDraftTracks`, step 6) were
+  re-checked against this step's new `isComposition`/`editableSong` — both
+  now real, legal imports — and BOTH STILL stay exactly where they were.**
+  `saveEdits` needs `isComposition()` (now clear) but also
+  `scheduleAnalysisRecompute` (gen/, step 10) and `saveDraft`/
+  `computeSongEnd`/`updateSongMeta` (the latter two confirmed permanently
+  model-layer-blocked-by-render/audio above, not step 9's to clear);
+  `updateEditBtnVis` needs `editableSong` (now clear) but also
+  `updateChipBtn` (still blocked, step 8) and `originOf` (now clear,
+  unused alone). `saveDraft` needs `isComposition`/`editableSong` (both now
+  clear) but also `retireOldOverlay`/`logErr`/`setInfo`/`updateSongBtn`/
+  `updateSyncBtn`/`filesMirrorSoon` (none yet split). Real, partial
+  progress — two of each function's blockers cleared — but every SAFETY
+  function named by CLAUDE.md's 2026-10-02 regression stays bit-for-bit
+  where it was, per the same "move it whole or not at all" discipline step
+  5 set. Corrected in open-items.md (not re-opened as a fresh question —
+  the existing QUEUED entries already anticipated re-checking after this
+  step and are updated in place).
+- **`chipSource` (step 8's own "still did NOT move" leftover) has a SECOND,
+  independent blocker step 8 never saw, because its own named blocker
+  (`isCaptureKey`) hid it**: `chipVaultFile` → `chipExt` → `CHIPS[kind]`,
+  the exact table step 8 found permanently blocked by `CHIPS.usf.capture`'s
+  one `logErr` call. Clearing `isCaptureKey` (this step) was necessary but
+  not sufficient. `chipSource` stays in app.js, now blocked by `CHIPS`
+  alone — the same open-items.md entry already tracks `CHIPS`'s own
+  resolution (steps 13/14, once `errChip`/`askSeenMax` land), so no new
+  entry was needed, only a correction to the existing one naming
+  `chipSource` as a casualty of the SAME block, not a separate one.
+- **`updateManifest`/`manifestPlace` were checked for both `model/
+  provenance.js` and `sync/publish.js` and left in app.js on purpose, not
+  overlooked.** Both are genuinely pure-ish (`folderActive`/`repoApi`/
+  `apiError`/`albumTitleFor`/`titleCaseSlug`, all ≤ layer 2, no DOM) and
+  nothing in either new file strictly requires them to move — `publishSong`
+  (which calls `updateManifest`) stays blocked by other things regardless.
+  Moving genuinely clean, unrequired code on spec, with no caller in
+  either destination file to justify it, is exactly the "speculative
+  widening" step 0a's own Deviations warned against; left for whichever
+  step (likely 14, when the manifest-editing UI around it finally splits)
+  actually needs them.
+- **`fillFolderSelect`/`folderTree`/`nodeAt`/`nodeCount`/`parentFolder`/
+  `subfolderKeys`/`songStatus`/`publishDest`/`publishLabel` were checked
+  and left in app.js — some blocked, some simply not load-bearing for
+  anything that moved.** `fillFolderSelect` itself has no blocked call
+  (`folderChoices`/`folderTitle`, both now ≤ layer 2) but nothing in
+  provenance.js calls it and it's DOM-UI shaped (builds `<option>`
+  elements for a File-menu form) — left with its one caller, `openSaveForm`
+  (blocked, stays). `songStatus`/`publishDest`/`publishLabel` each need
+  `dirtySongs`/`fsRoot.mode` or are simple booleans with UI-only callers;
+  none is this step's row to claim and none was required by anything that
+  did move.
+- **`move.mjs`'s self-import bug (see the Done note above) is a real,
+  narrow tooling finding, not a one-off.** It triggers specifically when a
+  node being moved OUT of `--from` references a name that `--from` itself
+  already imports FROM `--to` (i.e., the name was moved to `--to` in an
+  EARLIER, separate invocation, and `--from`'s import line was hand- or
+  tool-updated to point there before this invocation ran). `move.mjs`'s
+  `referenced` resolution checks `remainingDeclaredNames` (declarations
+  left in `--from`) before `fromImports` (imports already in `--from`), so
+  a name resolved via the second path can target `--to` itself and produce
+  a same-file self-import. Both instances this step hit were caught
+  immediately by `check.mjs` (a parse error, loud and immediate — never a
+  silent wrong behavior) and fixed by deleting the one bogus line; flagged
+  in open-items.md for whoever next touches `tools/split/move.mjs` to add a
+  guard (skip emitting an import whose resolved specifier equals `--to`
+  itself).
+- **Browser verification is still owed by the main session** (this
+  builder's task explicitly excludes it): Save As on a scratch local song,
+  the Versions sheet open/restore, an NSF import into a scratch
+  composition (never `albums/compositions/`), and a publish to a scratch
+  path — the plan's own four checks for this step, none of which a vm test
+  can stand in for completely (Publish's GitHub/folder write path and the
+  Versions sheet's rendering are both UI-side).
 - Verify: drummer/bassist tests; Analyze is Normal-mode only and nothing leaks into Learning (test).
 
 **11. `render/*`.**

@@ -23,14 +23,14 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v14"; // bumped: step 8 (docs/split-plan.md §4 step 8) adds src/audio/{chip,chip-stream,clips,metronome,bounce}.js to APP_MODULES
+const SW_VERSION = "nr-v15"; // bumped: step 9 (docs/split-plan.md §4 step 9) adds src/model/{song,selection,provenance,album-order,versions,jobs}.js, src/import/{hub,capture}.js, src/sync/publish.js to APP_MODULES
 const CACHE = "night-roll-" + SW_VERSION;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's
 // mirrored-module imports, and the real src/ file listing must all describe
 // the same set (tests/modules.test.mjs enforces it); a module missing here
 // means a 404 offline instead of a silent fallback.
-const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js", "src/model/catalog.js", "src/model/grid.js", "src/model/edits.js", "src/model/rollnotes.js", "src/platform/base.js", "src/platform/mode.js", "src/platform/storage.js", "src/platform/folder.js", "src/platform/native.js", "src/audio/engine.js", "src/audio/voices.js", "src/audio/transport.js", "src/audio/chip.js", "src/audio/chip-stream.js", "src/audio/clips.js", "src/audio/metronome.js", "src/audio/bounce.js"];
+const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js", "src/model/catalog.js", "src/model/grid.js", "src/model/edits.js", "src/model/rollnotes.js", "src/platform/base.js", "src/platform/mode.js", "src/platform/storage.js", "src/platform/folder.js", "src/platform/native.js", "src/audio/engine.js", "src/audio/voices.js", "src/audio/transport.js", "src/audio/chip.js", "src/audio/chip-stream.js", "src/audio/clips.js", "src/audio/metronome.js", "src/audio/bounce.js", "src/model/song.js", "src/model/selection.js", "src/model/provenance.js", "src/model/album-order.js", "src/model/versions.js", "src/model/jobs.js", "src/import/hub.js", "src/import/capture.js", "src/sync/publish.js"];
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
                   "src/app.js", "src/edition.js", "src/devtools.js", "src/main.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
