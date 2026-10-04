@@ -2,6 +2,19 @@ import { S } from "../state.js";
 import { MASTER_VOL } from "../audio/engine.js";
 import { setVolBtn } from "./controls.js";
 import { trackGain } from "../audio/engine.js";
+import { editableSong } from "../model/song.js";
+import { pushUndo } from "../model/edits.js";
+import { saveDraft } from "../model/versions.js";
+import { renderTrackbar } from "../hooks.js";
+import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
+import { updateTrackGains } from "../audio/engine.js";
+import { clampViewImpl as clampView } from "./chrome.js";
+import { drawImpl as draw } from "./chrome.js";
+import { trackColor } from "../render/roll.js";
+import { trackToggle } from "./trackbar.js";
+import { trackVol } from "../audio/engine.js";
+import { saveTrackDir } from "./trackbar.js";
+import { trackPan } from "../audio/engine.js";
 
 // what you SEE and can select: H on the chip
 
@@ -130,3 +143,204 @@ export function ensureMixerMeterLoop() {
   S.mixerMeterRunning = true;
   S.mixerMeterRaf = requestAnimationFrame(mixerMeterLoop);
 }
+
+// Drag a strip (or, later, a track chip) left/right to move a track — the
+// .mid's own track order, so this reorders song.tracks itself (unlike
+// mute/solo/color/pan, which live in the name-keyed track: annotation and
+// are untouched by where a track sits). ONE undo step: a full snapshot of
+// every ti-indexed array this function's own strips touch (shallow — no
+// note arrays are cloned, just the per-track SLOTS), the same LIFO trick
+// trackRemove/trackInsert already rely on (addTrackUndoable's comment):
+// nothing OLDER on the undo stack is reachable until this entry is undone
+// first, so an older entry's own `ti`s are still valid once that happens.
+// multiSel (transient lasso selection) is safely cleared, same as every
+// other track-structure change (trackInsert/trackRemove do the same).
+export function reorderTrack(from, to) {
+  if (!S.song || !editableSong()) return false;
+  const n = S.song.tracks.length;
+  to = Math.max(0, Math.min(to, n - 1));
+  if (from < 0 || from >= n || from === to) return false;
+  pushUndo({kind: "trackReorder", tracks: S.song.tracks.slice(), trackState: S.trackState.slice(),
+            trackGains: S.trackGains.slice(), trackPanners: S.trackPanners.slice(),
+            rawNotes: S.song.rawNotes ? S.song.rawNotes.slice() : null,
+            selTrack: S.selTrack, selNote: S.selNote ? {ti: S.selNote.ti, ni: S.selNote.ni} : null,
+            selClip: S.selClip ? {ti: S.selClip.ti, ci: S.selClip.ci} : null});
+  moveInSameOrder(S.song.tracks, from, to);
+  moveInSameOrder(S.trackState, from, to);
+  moveInSameOrder(S.trackGains, from, to);
+  moveInSameOrder(S.trackPanners, from, to);
+  if (S.song.rawNotes) moveInSameOrder(S.song.rawNotes, from, to);
+  const remap = ti => { // where did the track that used to sit at `ti` end up?
+    if (ti === from) return to;
+    if (from < to) return (ti > from && ti <= to) ? ti - 1 : ti;
+    return (ti >= to && ti < from) ? ti + 1 : ti;
+  };
+  S.selTrack = remap(S.selTrack);
+  if (S.selNote) S.selNote = {ti: remap(S.selNote.ti), ni: S.selNote.ni};
+  if (S.selClip) S.selClip = {ti: remap(S.selClip.ti), ci: S.selClip.ci};
+  S.multiSel = []; S.multiSelKey = new Set();
+  saveDraft(); // same call addTrackUndoable's own callers make — no-ops on anything but a composition/local draft
+  renderTrackbar(); renderMixer(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+  return true;
+}
+export function renderMixer() {
+  const wrap = document.getElementById("mixerstrips");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  S.mixerMeterEls = []; S.mixerStripEls = [];
+  if (!S.song) return;
+  const canReorder = editableSong();
+  S.song.tracks.forEach((tr, ti) => {
+    const strip = mixerStripEl(tr, ti, canReorder);
+    S.mixerStripEls[ti] = strip;
+    wrap.appendChild(strip);
+  });
+  wrap.appendChild(mixerMasterStripEl());
+}
+export function mixerStripEl(tr, ti, canReorder) {
+  const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
+  const strip = document.createElement("div");
+  strip.className = "mixerstrip" + (ti === S.selTrack ? " selected" : "");
+  strip.dataset.ti = String(ti);
+
+  const name = document.createElement("div");
+  name.className = "mixername";
+  if (canReorder) name.title = "Drag to reorder";
+  name.setAttribute("role", "button");
+  name.tabIndex = 0;
+  name.setAttribute("aria-label", "Select " + (tr.name || "track " + (ti + 1)) + (ti === S.selTrack ? " (selected)" : ""));
+  const dot = document.createElement("span");
+  dot.className = "dot";
+  dot.style.background = trackColor(ti);
+  const label = document.createElement("span");
+  label.textContent = (tr.name || "tr" + (ti + 1)).slice(0, 10);
+  name.append(dot, label);
+  name.addEventListener("click", () => {
+    if (S.mixerDrag) return; // a drag's own pointerup already handled the tap
+    S.selTrack = ti;
+    renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw(); renderMixer();
+  });
+  strip.appendChild(name);
+
+  const btns = document.createElement("div");
+  btns.className = "mixerbtns";
+  const mkBtn = (txt, on, key, label2) => {
+    const b = document.createElement("button");
+    b.className = "solo" + (on ? " on" : "");
+    b.textContent = txt;
+    b.setAttribute("aria-label", label2 + " " + (tr.name || "track " + (ti + 1)));
+    b.setAttribute("aria-pressed", String(on));
+    b.addEventListener("click", e => { e.stopPropagation(); trackToggle(ti, key); renderMixer(); });
+    return b;
+  };
+  btns.append(mkBtn("M", st.muted, "muted", "Mute"), mkBtn("S", st.solo, "solo", "Solo"), mkBtn("H", st.hidden, "hidden", "Hide"));
+  strip.appendChild(btns);
+
+  const fbox = document.createElement("div");
+  fbox.className = "mixerfaderbox";
+  const meter = document.createElement("div");
+  meter.className = "mixermeter";
+  const meterfill = document.createElement("div");
+  meterfill.className = "mixermeterfill";
+  meter.appendChild(meterfill);
+  S.mixerMeterEls[ti] = meterfill;
+
+  const faderwrap = document.createElement("div");
+  faderwrap.className = "mixerfaderwrap";
+  const fader = document.createElement("input");
+  fader.type = "range"; fader.className = "mixerfader";
+  fader.min = "0"; fader.max = "1.5"; fader.step = "0.05";
+  fader.value = String(trackVol(ti));
+  fader.setAttribute("aria-label", (tr.name || "Track " + (ti + 1)) + " volume");
+  faderwrap.appendChild(fader);
+  fbox.append(meter, faderwrap);
+  strip.appendChild(fbox);
+
+  const vlbl = document.createElement("div");
+  vlbl.className = "mixervlbl";
+  vlbl.textContent = Math.round(trackVol(ti) * 100) + "%";
+  strip.appendChild(vlbl);
+  fader.addEventListener("input", () => { // live while dragging — same semantics as the voice menu's own fader
+    tr.vol = +fader.value === 1 ? undefined : +fader.value;
+    vlbl.textContent = Math.round((+fader.value) * 100) + "%";
+    updateTrackGains();
+  });
+  fader.addEventListener("change", () => { saveTrackDir(ti); }); // persist as the track: annotation, on release
+
+  const pan = document.createElement("input");
+  pan.type = "range"; pan.className = "mixerpan";
+  pan.min = "-1"; pan.max = "1"; pan.step = "0.05";
+  pan.value = String(trackPan(ti));
+  pan.setAttribute("aria-label", (tr.name || "Track " + (ti + 1)) + " pan");
+  const plbl = document.createElement("div");
+  plbl.className = "mixerplbl";
+  plbl.textContent = mixerPanLabel(trackPan(ti));
+  pan.addEventListener("input", () => {
+    tr.pan = Math.round((+pan.value) * 100) / 100;
+    plbl.textContent = mixerPanLabel(+pan.value);
+    updateTrackGains();
+  });
+  pan.addEventListener("change", () => { saveTrackDir(ti); });
+  strip.append(pan, plbl);
+
+  if (canReorder) mixerStripDragize(strip, name, ti);
+  return strip;
+}
+// Pointer-drag reorder (sheetDrag/wmSideDividerize's own pattern: capture
+// the pointer on down, read deltas on move, commit on up). Only wired when
+// canReorder (editableSong()) — on a capture/published-not-local song the
+// strip has no drag handler at all, so its order is read-only, as spec'd.
+export function mixerStripDragize(strip, handle, ti) {
+  const move = e => {
+    if (!S.mixerDrag || e.pointerId !== S.mixerDrag.id || S.mixerDrag.from !== ti) return;
+    if (Math.abs(e.clientX - S.mixerDrag.x0) < 6) return; // slop — a tap must not register as a drag
+    let target = null, before = true;
+    S.mixerStripEls.forEach(s => {
+      if (!s || s === strip) return;
+      const r = s.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right) { target = s; before = e.clientX < r.left + r.width / 2; }
+    });
+    S.mixerStripEls.forEach(s => s && s.classList.remove("dropbefore", "dropafter"));
+    if (target && target.dataset.ti !== undefined && target.dataset.ti !== "") {
+      target.classList.add(before ? "dropbefore" : "dropafter");
+      S.mixerDrag.to = Number(target.dataset.ti);
+      S.mixerDrag.before = before;
+    } else S.mixerDrag.to = undefined;
+  };
+  const end = e => {
+    if (!S.mixerDrag || (e && e.pointerId !== S.mixerDrag.id) || S.mixerDrag.from !== ti) return;
+    strip.classList.remove("dragging");
+    S.mixerStripEls.forEach(s => s && s.classList.remove("dropbefore", "dropafter"));
+    const d = S.mixerDrag; S.mixerDrag = null;
+    if (d.to !== undefined) {
+      let toIdx = d.to - (d.from < d.to ? 1 : 0);
+      if (!d.before) toIdx += 1;
+      reorderTrack(d.from, toIdx);
+    }
+  };
+  handle.addEventListener("pointerdown", e => {
+    if (!editableSong()) return;
+    if (e.button && e.button !== 0) return;
+    S.mixerDrag = {from: ti, id: e.pointerId, x0: e.clientX, to: undefined};
+    strip.classList.add("dragging");
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
+}
+export function openMixer() {
+  if (!S.song) return;
+  renderMixer();
+  const el = document.getElementById("mixersheet");
+  if (el) el.classList.add("on");
+  ensureMixerMeters();
+  ensureMixerMeterLoop();
+}
+export function closeMixer() {
+  const el = document.getElementById("mixersheet");
+  if (el) el.classList.remove("on");
+  teardownMixerMeters();
+}
+export function toggleMixer() { if (mixerIsOpen()) closeMixer(); else openMixer(); }
