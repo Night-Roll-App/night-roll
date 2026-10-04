@@ -195,14 +195,37 @@ mechanical commit).
    green (ai/bridge/modules/package/pwa; only the pre-existing local-rip
    gaps ps2-real/instruments fail) and `npm run test:e2e:smoke` green.
    Proved Pages + package + harness + SW on one pure function, as intended.
-2. Bridge server → `bridge/server.mjs` + profile; bridge.test moves to the
-   library; Night Roll keeps the shim + `tests/bridge-shim.test.mjs` (health,
-2. Bridge server → `bridge/server.mjs` + profile; bridge.test moves to the
-   library; Night Roll keeps the shim + `tests/bridge-shim.test.mjs` (health,
-   models, /shapes, Learning convention in the system prompt). launchd keeps
-   running `tools/claude-bridge.mjs`; update = `ai-sync --ref vX` then
-   `launchctl kickstart -k gui/$UID/com.nightroll.bridge` (not while the app
-   says typing — reuse the deploy-hold check).
+2. **DONE 2026-10-04 (branch module-split).** Bridge server →
+   `bridge/server.mjs` exporting `startBridge(opts, profile)` + `main(argv,
+   profile)` (claude-bridge v0.2.0, library commit 900292b), carrying
+   today's server logic verbatim except every Night Roll-specific value
+   threaded through `profile` (`sys.{common,read,full,link}` — the system
+   prompts, including the Learning-mode convention — `stateDirName`,
+   `label`, the optional `shapes` static mount; `--repo` now required,
+   with no HERE-relative default of the library's own). `tests/bridge.test.mjs`
+   moved to the library against a neutral test profile
+   (`tests/helpers/`); the library's `tests/lint.test.mjs` now also
+   covers `bridge/`. `bridge/launchd/install.sh` + `template.plist` (generic,
+   `--entry`/`--label`). Night Roll: `tools/ai-profile.mjs` (every moved
+   string, verbatim) + `tools/claude-bridge.mjs` as a 4-line shim (`import
+   {main} … import {profile} from "./ai-profile.mjs"; main(process.argv,
+   profile);` — the file path, every flag, `npm run bridge`, and the
+   launchd plist all keep working unchanged); `tools/launchd/install.sh`
+   likewise shims to the library's installer with `--entry
+   tools/claude-bridge.mjs --label com.nightroll.bridge` (its log file is
+   now `~/Library/Logs/com.nightroll.bridge.log`, named after the label
+   rather than hand-picked). Night Roll's `tests/bridge.test.mjs` is now
+   the shim test (`/health`, `/v1/models`, `--repo`'s default, `/shapes`,
+   and that the system prompt carries Night Roll's own Learning-mode
+   text, not the library's neutral one) — `tests/ai.test.mjs` unchanged
+   throughout. `node tools/ai-sync.mjs --ref v0.2.0` vendored
+   `vendor/ai/bridge/`; `tools/package.mjs` already excluded
+   `vendor/ai/bridge/**` from the product (step 1) — reverified. `npm
+   test` green (only the pre-existing ps2-real/instruments local-rip gaps
+   fail); `npm run test:e2e:smoke` green. Update flow going forward:
+   `node tools/ai-sync.mjs --ref vX` then `launchctl kickstart -k
+   gui/$UID/com.nightroll.bridge` — the terminal session's job, after
+   Josh's merge, never a build/worktree session's.
 3. Backends via `host.settings`/`host.confirm`; tests/ai.test.mjs unchanged
    is the oracle; library gets client.test with ported fake servers.
 4. Store, ctx-cache, bridge-client, attach — with a fixture test that today's

@@ -1,6 +1,10 @@
 {
   "LICENSE": "5a02f191a6333badf75ba07c751f1c6a5a5b1033401c0892d8124702d0af98c8",
-  "README.md": "3e926d266508aed1c604c2c8d5fc2129addd92a23c75cbf402ad7d15d44f3a45",
+  "README.md": "1a9c3647c4c6b648cd96fc71a79a4d7fa4d09b73bd3112e5042a5ee86accb10d",
+  "bridge/launchd/README.md": "934c801a84d4cf37412422c5111dbad0d1745725bf1531d078f997edb86173f5",
+  "bridge/launchd/install.sh": "9e7db4671b25dfba831643ddd0b6c2c36fd6e52cdd2fcfd2e1291706e0517a89",
+  "bridge/launchd/template.plist": "aed13dab1da5dc5067b780df4ba57b65a8b7591d503693a8717c7885bf084ad3",
+  "bridge/server.mjs": "45aeb4ebc5e488188152ccef810466986c603fb116d5e90318daeadafb1499fb",
   "web/index.js": "b429b087c54a8119892360f45b02a75f0885ce5858b682b21b112b3f0922027a",
   "web/sse.js": "55a863664e75aa59a5986753df1308d4eda93b7c5d5bed142bba946e49ab6892"
 }

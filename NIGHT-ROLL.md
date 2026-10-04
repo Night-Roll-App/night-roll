@@ -4026,7 +4026,28 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   generalized the same day — Josh: "I want to make sure everybody can run
   this with LM Studio or Claude Code or both, or Ollama").** A
   dependency-free Node server (Node 18+) speaking the OpenAI protocol,
-  meant to be THE server Settings points at. Flags/env in the file header:
+  meant to be THE server Settings points at. **Where it lives now**
+  (docs/ai-library-plan.md §2 step 2, 2026-10-04): the server itself —
+  every flag, endpoint, job/session/compact/backup mechanism described
+  below — moved verbatim into the `Night-Roll-App/claude-bridge` library
+  (`bridge/server.mjs`, `startBridge(opts, profile)` + `main(argv,
+  profile)`), vendored here read-only at `vendor/ai/bridge/` by
+  `tools/ai-sync.mjs`. Night Roll's own system prompts (the Learning-mode
+  convention, `NIGHT-ROLL.md`/`CLAUDE.md` pointers), the `.night-roll-bridge`
+  state-directory name, the `/shapes` mount, and the startup-banner text
+  all live in `tools/ai-profile.mjs` instead — the library itself carries
+  no app vocabulary (`tests/lint.test.mjs`, library repo). `tools/claude-bridge.mjs`
+  is now a 10-line shim: `import {main} from "../vendor/ai/bridge/server.mjs";
+  import {profile} from "./ai-profile.mjs"; main(process.argv, profile);`
+  — every flag below, `npm run bridge`, the launchd plist, and every
+  `node tools/claude-bridge.mjs --say "…"` call keep working unchanged.
+  **Update flow**: `node tools/ai-sync.mjs --ref vX` (pulls the library's
+  tag into `vendor/ai/`) then `launchctl kickstart -k
+  gui/$UID/com.nightroll.bridge` (restarts the live launch agent on the
+  new code) — both run from the terminal session, after Josh's merge,
+  never from a build/worktree session. `tests/bridge.test.mjs` here is
+  now the shim test (profile wiring only); the server's own behavior is
+  tested in the library. Flags/env in the file header:
   `--port/--host/--token`, `--upstream name=url` (repeatable; without any,
   LM Studio :1234 and Ollama :11434 are probed and listed only while
   running), `--no-claude`, `--claude read|full` (default read), `--repo`,
@@ -4623,18 +4644,32 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     is a static page). TLS is someone else's job: Josh uses `tailscale
     serve --bg --set-path /claude 8787` → `https://<mac>.<tailnet>.ts.net/claude`
     (tailnet-only); Caddy or any reverse proxy works the same.
-  - **Tests:** tests/bridge.test.mjs runs the bridge with `--no-claude`
-    against a fake upstream: model merge with prefixing, a job outliving
-    a dropped client, replay on re-attach, tool_calls assembly,
-    non-stream on a finished job, kill, 404, the token gate, the inbox
-    (POST/GET/since, the `--say` client, token). In `npm test`.
-  - **Always on (2026-09-26):** `sh tools/launchd/install.sh --claude full
-    --upstream lmstudio=http://localhost:1234` installs
-    `~/Library/LaunchAgents/com.nightroll.bridge.plist` (template in
-    tools/launchd/, absolute node/repo/PATH filled in, RunAtLoad +
-    KeepAlive, log `~/Library/Logs/nightroll-bridge.log`); `--uninstall`
-    removes it. Installed on Josh's Mac that night. LM Studio's own
-    start-at-login is separate (`lms server start --cors` otherwise).
+  - **Tests (split 2026-10-04):** the server's own behavior — model merge
+    with prefixing, a job outliving a dropped client, replay on
+    re-attach, tool_calls assembly, non-stream on a finished job, kill,
+    404, the token gate, the inbox (POST/GET/since, the `--say` client,
+    token), sessions/compact/deploy-safeguards — is now
+    `Night-Roll-App/claude-bridge`'s own `tests/bridge.test.mjs`, run
+    there against a neutral test profile. Night Roll's
+    `tests/bridge.test.mjs` is the shim test: spawns
+    `tools/claude-bridge.mjs` with `--no-claude`, checks `/health`,
+    `/v1/models`, the `/shapes` mount, that `--repo` defaults to this
+    repo's root with no flag passed, and that the system prompt a fake
+    `claude` binary receives carries the Learning-mode convention and
+    `NIGHT-ROLL.md`/`CLAUDE.md` pointers (`tools/ai-profile.mjs`'s own
+    text, not the library's neutral one). Both run in `npm test`.
+  - **Always on (2026-09-26; installer moved to the library 2026-10-04):**
+    `sh tools/launchd/install.sh --claude full --upstream
+    lmstudio=http://localhost:1234` is now a shim onto the claude-bridge
+    library's own installer (`vendor/ai/bridge/launchd/install.sh --entry
+    tools/claude-bridge.mjs --label com.nightroll.bridge`, template in
+    `vendor/ai/bridge/launchd/`), which installs
+    `~/Library/LaunchAgents/com.nightroll.bridge.plist` (absolute
+    node/entry/PATH filled in, RunAtLoad + KeepAlive, log
+    `~/Library/Logs/com.nightroll.bridge.log` — the log file is now named
+    after the launchd label, not hand-picked; `--uninstall` removes it.
+    Installed on Josh's Mac 2026-09-26. LM Studio's own start-at-login is
+    separate (`lms server start --cors` otherwise).
 - **iPad route (P4) — done 2026-09-25.** Josh's iPad asks the Mac's LM
   Studio over Tailscale, verified end to end (Test listed the models,
   ✦ Ask answered). Exact recipe on the Mac: `lms server start --cors`

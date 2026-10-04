@@ -5791,6 +5791,40 @@ library's own markup) remain queued — see docs/ai-library-plan.md §4.
 NOT pushed from this worktree: browser-verify (offline + the iPad package)
 is step 1's own stated verify line, still owed before this merges/ships.
 
+**Step 2 DONE 2026-10-04 (branch module-split, worktree agent-a20925efe82cb8d31):**
+the Mac bridge server itself moved to `Night-Roll-App/claude-bridge@v0.2.0`
+(library commit 900292b) as `bridge/server.mjs` — `startBridge(opts,
+profile)` + `main(argv, profile)`, today's logic carried over verbatim
+except every Night Roll-specific value (system prompts incl. the
+Learning-mode convention, the `.night-roll-bridge` state-dir name, the
+`/shapes` mount, the startup banner) threaded through a `profile` object;
+`--repo` is now required, with no default of the library's own.
+`tests/bridge.test.mjs` moved to the library against a neutral test
+profile; its `tests/lint.test.mjs` (app-vocabulary ban) now also covers
+`bridge/`. `bridge/launchd/` is a generic `--entry`/`--label` installer.
+Night Roll: `node tools/ai-sync.mjs --ref v0.2.0` vendored
+`vendor/ai/bridge/` (package.mjs's never-ships-bridge guard, from step 1,
+reverified clean); `tools/ai-profile.mjs` holds every moved string,
+verbatim; `tools/claude-bridge.mjs` is now a 4-line shim
+(`main(process.argv, profile)`) — its path, every flag, `npm run bridge`,
+and the launchd plist all keep working unchanged; `tools/launchd/install.sh`
+likewise shims to the library's installer (log file now
+`~/Library/Logs/com.nightroll.bridge.log`, named after the launchd label
+rather than hand-picked — the only externally-visible behavior change).
+Night Roll's own `tests/bridge.test.mjs` is now the shim test (`/health`,
+`/v1/models`, `--repo`'s default, `/shapes`, the Learning-mode text in the
+system prompt) — `tests/ai.test.mjs` unchanged throughout. `npm test`
+green (only the pre-existing ps2-real/instruments local-rip gaps fail);
+`npm run test:e2e:smoke` green; `node tools/split/check.mjs` clean except
+the known pre-existing `oldBpb`. NOT pushed from this worktree, and NOT
+merged into the running bridge (launchd `com.nightroll.bridge` on the main
+checkout, branch `main`, untouched) — the terminal session applies this
+after Josh's merge: `node tools/ai-sync.mjs --ref v0.2.0` (already run
+here; re-run after merge if needed) then `launchctl kickstart -k
+gui/$UID/com.nightroll.bridge`. Steps 3-7 (backends, store/ctx-cache/
+bridge-client/attach, the client loop, the window, the library's own
+markup) remain queued — docs/ai-library-plan.md §4.
+
 ## OVERNIGHT PLAN 2026-10-03 (Josh, Terminal #97/#99/#100) — all on branch module-split, Josh tests in the morning
 1. Split steps 9–15 (builders, one step at a time, merged here).
 2. AI library: new private repo Night-Roll-App/claude-bridge (name/visibility Josh's, Q8) holding ALL AI support (bridge server, in-browser/cloud models, Ollama, LM Studio, the AI window); Night Roll imports it (plain ES modules, no build step).
