@@ -37,6 +37,7 @@ import * as app from "./app.js";
 import * as edition from "./edition.js";
 import * as icons from "./ui/icons.js";
 import * as controls from "./ui/controls.js";
+import * as piano from "./ui/piano.js";
 import * as midiParse from "./midi/parse.js";
 import * as midiWrite from "./midi/write.js";
 import * as theoryChords from "./theory/chords.js";
@@ -66,7 +67,7 @@ export function exposeGlobals() {
   // actually evaluation-order-sensitive — but keeping the object literal
   // out of top-level init code is the same discipline §2.2 asks of every
   // other module, free to apply here too.
-  const MODULES = { app, edition, icons, controls, midiParse, midiWrite, theoryChords, theoryKey,
+  const MODULES = { app, edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
