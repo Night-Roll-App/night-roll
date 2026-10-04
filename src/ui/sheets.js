@@ -112,7 +112,6 @@ import { nextChange } from "../gen/bassist.js";
 import { isLocalDraft } from "../model/edits.js";
 import { editsKey } from "../model/edits.js";
 import { updateClearBtn } from "../model/edits.js";
-import { clipEndTick } from "../audio/clips.js";
 import { idbDraftPut } from "../platform/storage.js";
 import { jobsNotify } from "../model/jobs.js";
 
@@ -491,24 +490,6 @@ export function drPartsSync() { // fills chip off = the fills knob is inert (sco
   row.style.pointerEvents = on ? "" : "none";
 }
 
-export function computeSongEnd() { // re-run whenever the effective meter changes
-  let lastTick = 0;
-  S.song.tracks.forEach(tr => tr.notes.forEach(n => { lastTick = Math.max(lastTick, n.t + n.d); }));
-  S.song.tracks.forEach(tr => { // an audio piece can outlast every note (an audio-only song must not loop one bar)
-    if (tr.kind === "audio") for (const c of tr.clips) if (c.dur) lastTick = Math.max(lastTick, clipEndTick(c));
-  });
-  const bt = barTicks();
-  S.songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
-  // extend (never shrink) the default C1..C7 pitch range to whatever this
-  // song actually uses — see PMIN/PMAX's own comment
-  let lo = 24, hi = 96;
-  S.song.tracks.forEach(tr => tr.notes.forEach(n => {
-    if (n.gone) return;
-    if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p;
-  }));
-  S.PMIN = Math.max(0, lo); S.PMAX = Math.min(127, hi);
-}
-computeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function dpTick(barId, qId, sId) {
   const bar = Math.max(1, parseInt(document.getElementById(barId).value, 10) || 1);
   const q = (+document.getElementById(qId).value || 1) + (+document.getElementById(sId).value || 0);

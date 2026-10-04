@@ -9,6 +9,9 @@ import { TONIC_SPELL } from "../theory/key.js";
 import { fileKeyAt } from "../theory/key.js";
 import { barTicks } from "./rollnotes.js";
 import { appMode } from "../platform/mode.js";
+import { secToTick } from "../midi/parse.js";
+import { tickToSec } from "../midi/parse.js";
+import { prof } from "../state.js";
 
 // ------------------------------------------------ selection editing (Josh's
 // requests, 2026-08-17: move lasso'd notes in pitch/time, resize many at
@@ -136,3 +139,29 @@ export function keyNameAt(tick) { // recorded key name governing this tick, or n
 // the scheduler never re-arms a pass, and recFinish's computeSongEnd lets the
 // song end where the take ended.
 export function recOpenEnded(seg) { return {start: seg ? seg.start : 0, end: Infinity}; }
+
+export function songHasAudio() { return !!S.song && S.song.tracks.some(tr => tr.kind === "audio" && tr.clips.length); }
+export function clipLen(c) { return c.len || Math.max(0, c.dur - c.offset); }
+// buffer seconds this piece plays
+export function clipEndTick(c) { // rate-independent: both conversions carry playRate
+  return secToTick(S.song, tickToSec(S.song, c.at) + clipLen(c) / S.playRate);
+}
+
+export function computeSongEnd() { // re-run whenever the effective meter changes
+  let lastTick = 0;
+  S.song.tracks.forEach(tr => tr.notes.forEach(n => { lastTick = Math.max(lastTick, n.t + n.d); }));
+  S.song.tracks.forEach(tr => { // an audio piece can outlast every note (an audio-only song must not loop one bar)
+    if (tr.kind === "audio") for (const c of tr.clips) if (c.dur) lastTick = Math.max(lastTick, clipEndTick(c));
+  });
+  const bt = barTicks();
+  S.songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
+  // extend (never shrink) the default C1..C7 pitch range to whatever this
+  // song actually uses — see PMIN/PMAX's own comment
+  let lo = 24, hi = 96;
+  S.song.tracks.forEach(tr => tr.notes.forEach(n => {
+    if (n.gone) return;
+    if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p;
+  }));
+  S.PMIN = Math.max(0, lo); S.PMAX = Math.min(127, hi);
+}
+computeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

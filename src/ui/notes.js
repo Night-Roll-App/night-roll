@@ -22,7 +22,7 @@ import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { updateTrackGains } from "../audio/engine.js";
-import { computeSongEnd } from "./sheets.js";
+import { computeSongEnd } from "../model/song.js";
 import { SF_MAJOR } from "../theory/chords.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { keyLabelState } from "./chrome.js";
@@ -30,7 +30,7 @@ import { secDepthCap } from "../model/grid.js";
 import { TRACK_COLORS } from "../render/roll.js";
 import { BASE_RULER_H } from "../render/roll.js";
 import { LANE_H } from "../render/roll.js";
-import { songHasAudio } from "../audio/clips.js";
+import { songHasAudio } from "../model/song.js";
 import { AUDIO_STRIP_H } from "../render/roll.js";
 import { STRIP_H } from "../render/roll.js";
 

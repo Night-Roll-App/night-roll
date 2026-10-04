@@ -5,6 +5,7 @@ import { idbAudioGet } from "../platform/storage.js";
 import { readData } from "../platform/folder.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
+import { clipLen } from "../model/song.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -21,12 +22,6 @@ export const PEAK_BUCKET = 256;
 // samples per min/max pair (~3 min = 31k pairs)
 export function audioDirFor(key) { return (key || "").replace(/\.midi?$/i, "") + ".audio"; }
 export function audioCacheKey(file) { return S.songKey + "|" + file; }
-export function songHasAudio() { return !!S.song && S.song.tracks.some(tr => tr.kind === "audio" && tr.clips.length); }
-export function clipLen(c) { return c.len || Math.max(0, c.dur - c.offset); }
-// buffer seconds this piece plays
-export function clipEndTick(c) { // rate-independent: both conversions carry playRate
-  return secToTick(S.song, tickToSec(S.song, c.at) + clipLen(c) / S.playRate);
-}
 export function clipClamp(d, ...limits) { for (const l of limits) if (l < d) d = l; return d; }
 export function forEachClip(fn) { // fn(clip, ti, ci)
   if (!S.song) return;
