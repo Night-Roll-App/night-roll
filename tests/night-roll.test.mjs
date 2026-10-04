@@ -442,11 +442,15 @@ test("instrument panel: degrees vs the recorded tonic, guitar/piano hit maps", (
   assert.deepEqual(val(`guitarHit(10, 168, 800, 168)`), {p: 40, si: 5, f: 0});  // open low E
   const g5 = val(`guitarHit(44 + ((800 - 50) / 24) * 2.5, 14, 800, 168)`);      // 3rd fret, high e
   assert.deepEqual(g5, {p: 67, si: 0, f: 3});
-  // piano: no song range set here → default C4..B4 octave-aligned keyboard
-  run(`song = null;`);
+  // piano (2026-10-04, src/ui/piano.js): the whole 88-key piano at a fixed
+  // 44px key width, homed on the song's lowest octave — no song → C4 at the
+  // left edge, so the old expectations still hold where the geometry agrees
+  run(`song = null; instScroll = null;`);
   assert.deepEqual(val(`instRange()`), [60, 71]);
-  assert.equal(run(`pianoHit(1, 160, 700, 168)`), 60);          // bottom-left = middle C
-  assert.equal(run(`pianoHit(700 / 7 - 2, 10, 700, 168)`), 61); // black-key zone over the C/D seam = C#
+  assert.equal(run(`pianoHit(1, 160, 700, 168)`), 60);   // bottom-left = middle C
+  assert.equal(run(`pianoHit(40, 10, 700, 168)`), 61);   // black-key zone just left of the C/D seam (44px) = C♯, which leans toward C
+  assert.equal(run(`pianoHit(100, 10, 700, 168)`), 63);  // D♯ leans toward E: past the D/E seam (88px)
+  assert.equal(run(`pianoHit(100, 160, 700, 168)`), 64); // below the black keys the same x is E4
 });
 
 test("roll zoom-out clamp: floors flush to song extents, fitView lands on them", () => {
@@ -2780,6 +2784,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Chip stream (experimental)",
     "Game order",
     "without touching your cycle",
+    "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));

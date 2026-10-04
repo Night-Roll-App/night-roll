@@ -190,12 +190,49 @@ and fret is tappable (plays through master, so track mutes never silence
 it — square voice on piano, triangle on guitar). Labels are the pitch
 name spelled per the governing key plus the scale degree when a `key:`
 directive governs the cursor (degrees never shown for undeclared keys —
-key discovery stays the analyst's job). Piano range = the song's own
-extent, octave-aligned. Guitar: standard tuning EADGBE, high-e on top
+key discovery stays the analyst's job). Guitar: standard tuning EADGBE, high-e on top
 (tab convention), 24 frets, inlay dots, a lit pitch appears at every
 playable position; a pitch off the neck octave-folds in (gtrFold),
 drawn with a dashed ring + tiny ▴/▾ toward its true octave — seeing it
 in the wrong octave beats not seeing it (Josh, 2026-08-07). Open state, tab, and Fall persist in localStorage.
+
+**On-screen keyboard** (2026-10-04, docs/daw-inventory.md §1a — Josh:
+"you can scroll it left and right … ours would play every note on the
+piano if you try to scroll on it"; "it looks like a real keyboard rather
+than ours just has the notes laid out"). Geometry lives in
+`src/ui/piano.js`, DOM-free: the whole 88-key piano (A0–C8) at a FIXED
+white-key width (`pianoKeyW`: 44 CSS px, 36 under 480 px wide), black
+keys at real offsets (`PIANO_BLACK_OFF`: C♯/D♯ lean apart, F♯/A♯ lean
+out, G♯ centred; 58% wide, 62% tall), and a scroll offset measured in
+white keys (`pianoClampScroll`, `pianoScrollTo`, `pianoScrollCentering`,
+`pianoVisibleRange`/`pianoRangeLabel` for the "C3 – E5" readout,
+`pianoOffscreen` for the edge chevrons). app.js wraps it: `instScrollNow()`
+resolves `S.instScroll` (null = home = the song's lowest octave, the old
+`instRange()` start), `instGeom(W, H)` is the geometry every caller
+(drawPiano, pianoHit, the Fall view) uses, and `instSetScroll()` is the
+ONE writer — it clamps, stores `ff1roll-inst-scroll-piano`, redraws, and
+refuses everything while `S.instLock` is on (so no gesture branch knows
+about the lock; the ‹ › buttons are also disabled). Gestures
+(`instPointerDown/Move/Up`, `S.instPtrs` per finger): a tap on an edge
+chevron scrolls to its key; two fingers travelling sideways past
+`INST_PAN_SLOP` become a `pan2` scroll in either mode — the chord they
+started lets go (`instLetGo`: recNoteOff, flash cleared, sustained voices
+released) and both fingers are `dead` until lifted; one finger in Play
+mode is the old glissando untouched (Record depends on it); one finger in
+Scroll mode (`S.instMode`, `ff1roll-inst-mode`) pans silently past the
+slop and otherwise plays its key on release. Sustain (`S.instSustain`,
+`ff1roll-inst-sustain`): `instPlay` parks the voice in `S.instHeld` with a
+7 s exponential decay instead of the 0.5 s blip; restriking replaces it;
+`instSetSustain(false)`, closing the panel, or `instReleaseAll()` fade
+them out over 80 ms. Recording never sees it — recNoteOff still fires at
+the finger's release. Look: `drawPiano` paints a dark rail, gradient
+whites with rounded bottoms and a shadow lip, two-tone black keys with a
+top highlight, C labels only when idle; lit colours, labels and rings are
+unchanged; `instGrad` falls back to flat fills where the 2d context has
+no gradients (the vm harness). The bar (`applyInstBar`): #instmodeseg
+Play|Scroll, ‹ #instrange ›, #instlock (🔓/🔒 via setControl), #instsustain
+— the piano-only ones hide on the Guitar tab. No auto-follow during
+playback (kept simple on purpose; the chevrons cover it).
 
 **Fall view** (2026-08-07, ▼ Fall in the panel's tab bar — which sits
 BELOW the keys so nothing blocks the landing): Synthesia-style — the

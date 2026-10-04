@@ -59,6 +59,14 @@ export const CONTROLS = {
   vwLearning: {glyph: "🎓", cls: "", label: "  Learning mode", prefix: "   "},
   vwListener: {icon: "radio", cls: "", label: "Listener mode", prefix: "   "},
   vwGrid: {icon: "gridOn", cls: "", label: "  Grid…", prefix: "   "},
+  // the on-screen keyboard's bar (2026-10-04): only the lock swaps its glyph
+  // (🔓 → 🔒), the rest are registered so their wording lives here too
+  instplay: {label: "Play", aria: null},
+  instscroll: {label: "Scroll", aria: null},
+  instoctdn: {glyph: "‹", cls: "", label: "", aria: "Keyboard down an octave"},
+  instoctup: {glyph: "›", cls: "", label: "", aria: "Keyboard up an octave"},
+  instlock: {glyph: "🔓", cls: "", label: "", aria: "Lock the keyboard where it is"},
+  instsustain: {label: "Sustain", aria: null},
 };
 
 function glyphHtml(glyph, cls) {
