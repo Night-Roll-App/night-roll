@@ -4922,6 +4922,23 @@ test("AI attach: picked photos survive the input reset — WebKit's live FileLis
   assert.deepEqual(val(`__got`), ["shot.png"]);
 });
 
+test("boot watchdog: only errors from Night Roll's own files show the failure panel — a browser's injected script (Brave's __firefox__) doesn't (Josh, 2026-10-03)", async () => {
+  const vm = await import("node:vm");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const src = html.match(/<script id="nr-boot-watchdog">([\s\S]*?)<\/script>/)[1];
+  let onError = null; const failed = [];
+  const document = {getElementById: () => null, body: {appendChild: () => failed.push(1)},
+    createElement: () => ({style: {}, appendChild() {}}), addEventListener() {}};
+  const window = {addEventListener: (t, f) => { if (t === "error") onError = f; }};
+  vm.runInNewContext(src, {window, document, location: {origin: "https://night-roll-app.github.io", href: "https://night-roll-app.github.io/night-roll/"},
+    setTimeout: () => 1, URL});
+  onError({message: "TypeError: undefined is not an object (evaluating 'window.__firefox__.refresh_youtube_quality_5CCF')", filename: ""});
+  onError({message: "Script error.", filename: "https://cdn.example.com/x.js"});
+  assert.equal(failed.length, 0, "foreign errors are ignored");
+  onError({message: "SyntaxError: Unexpected token", filename: "https://night-roll-app.github.io/night-roll/src/app.js"});
+  assert.equal(failed.length, 1, "our own file's error still shows the panel");
+});
+
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(val(`cfg().analysisRepo`), "Night-Roll-App/night-roll");

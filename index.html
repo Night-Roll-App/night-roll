@@ -1267,6 +1267,12 @@
   window.__nrBoot = setTimeout(function() { nrBootFail("timed out after 10s — a module may have failed to load"); }, 10000);
   window.addEventListener("error", function(e) {
     if (!window.__nrBoot) return; // boot() already cleared it: a later runtime error is a normal bug, not a boot failure
+    // only OUR files count: browsers inject their own scripts into every page
+    // (Brave/Firefox on iOS: window.__firefox__.refresh_youtube_quality_… threw
+    // and this panel buried a healthy app — Josh, 2026-10-03). Those report no
+    // filename or a foreign one; a real module failure still names our file,
+    // and anything that silently stalls boot still trips the 10s timeout
+    if (!e || !e.filename || e.filename.indexOf(location.origin + "/") !== 0) return;
     nrBootFail((e && (e.message || (e.error && e.error.message))) || "unknown error");
   });
 })();
