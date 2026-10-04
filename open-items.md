@@ -64,6 +64,12 @@ Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
     scan (not a test, not an ear report) found it — not fixed as part of the
     split (a verbatim move must not touch app logic).
 
+Q7. (2026-10-03, Terminal #91) Split step 7 (audio) is built but held for
+    your NES/SNES sound check on the current iPad build. Can you do the
+    check soon, or should I continue with the non-audio steps first?
+Q8. (2026-10-03, Terminal #91) The AI library's new repo: name and
+    visibility? Default: Night-Roll-App/claude-bridge, private.
+
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
 wash" using the hardware NOISE generator as a texture, not a drum — but
@@ -5461,3 +5467,13 @@ Josh (lotion, pulse2 bar 40): with the 32nd note value selected he still can onl
 
 ## QUEUED 2026-10-03 — `npm test` stops at the first failing file
 The script chains files with `&&`, so when the real-rip suites (ps2-real, instruments) fail because /tmp/claude-501/rips was cleared, every later file (gestures, bridge, pwa, modules, controls…) silently never runs locally. Fix: skip real-rip tests when the rips dir is missing (like other *-real suites should), or run each file regardless and fail at the end.
+
+## QUEUED 2026-10-03 — AI interaction as its own library (Josh, Terminal #91)
+"extract all the code for the AI interaction into its own library so that we
+can write other iPad apps and just use this seamlessly … a new repo … pull it
+from there". Order: finish the module split first (step 13 = src/ask/), then
+lift src/ask/ + tools/claude-bridge.mjs (bridge server, Terminal tab, notes,
+status, shots, backups) into a standalone repo that Night Roll consumes as
+plain ES modules (no build step). Night Roll-specific context (song/annotation
+lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
+Blocked on Q7 (split order) and Q8 (repo).
