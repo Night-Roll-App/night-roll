@@ -1440,6 +1440,26 @@ import { editRedoPop } from "./ui/note-editor.js";
 import { selectAllNotes } from "./ui/note-editor.js";
 import { invertEdit } from "./ui/note-editor.js";
 import { applyEditEntry } from "./ui/note-editor.js";
+import { openGridSheet } from "./ui/sheets.js";
+import { openPasteTo } from "./ui/sheets.js";
+import { openInsertBars } from "./ui/sheets.js";
+import { openDeleteBars } from "./ui/sheets.js";
+import { openVersionsSheet } from "./ui/sheets.js";
+import { dpRender } from "./ui/sheets.js";
+import { dpBuildBeatSelects } from "./ui/sheets.js";
+import { DP_PIECES } from "./ui/sheets.js";
+import { segGet } from "./ui/sheets.js";
+import { settingsPersist } from "./ui/sheets.js";
+import { chooseFolder } from "./ui/sheets.js";
+import { forgetFolder } from "./ui/sheets.js";
+import { folderAfterChange } from "./ui/sheets.js";
+import { renderFolderUI } from "./ui/sheets.js";
+import { goBackToVersion } from "./ui/sheets.js";
+import { renderVersionsSheet } from "./ui/sheets.js";
+import { goBackToPublished } from "./ui/sheets.js";
+import { dpSteps } from "./ui/sheets.js";
+import { dpDefault } from "./ui/sheets.js";
+import { applyTextSize } from "./ui/sheets.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1613,24 +1633,7 @@ document.getElementById("octbtn").addEventListener("click", () => {
   refreshSelInfo();
 });
   
-    function openInsertBars() {
-  const bt = barTicks(), qt = beatTicks();
-  document.getElementById("insb").value = Math.floor(S.playCursor / bt) + 1;
-  document.getElementById("insq").value = Math.round(((S.playCursor % bt) / qt + 1) * 100) / 100;
-  const row = document.getElementById("insunit");
-  row.innerHTML = "";
-  for (const u of ["bars", "beats", "16ths"]) {
-    const b = document.createElement("button");
-    b.textContent = u;
-    b.className = "chip" + (S.insUnit === u ? " selected" : "");
-    b.style.cssText = "min-height:44px;justify-content:center" +
-      (S.insUnit === u ? ";background:var(--gold);color:#111;font-weight:700" : "");
-    b.addEventListener("click", () => { S.insUnit = u; openInsertBars(); });
-    row.appendChild(b);
-  }
-  document.getElementById("insbarsheet").classList.add("on");
-}
-document.getElementById("insgo").addEventListener("click", () => {
+    document.getElementById("insgo").addEventListener("click", () => {
   const bt = barTicks(), qt = beatTicks();
   const b = Math.max(1, Math.round(+document.getElementById("insb").value || 1));
   const q = Math.max(1, +document.getElementById("insq").value || 1);
@@ -1644,12 +1647,6 @@ document.getElementById("insgo").addEventListener("click", () => {
 });
 document.getElementById("insclose").addEventListener("click", () =>
   document.getElementById("insbarsheet").classList.remove("on"));
-function openDeleteBars() {
-  const bt = barTicks();
-  document.getElementById("delb").value = Math.floor(S.playCursor / bt) + 1;
-  document.getElementById("deln").value = 1;
-  document.getElementById("delbarsheet").classList.add("on");
-}
 document.getElementById("delgo").addEventListener("click", () => {
   const bt = barTicks();
   const fromBar = Math.max(1, Math.round(+document.getElementById("delb").value || 1));
@@ -3666,96 +3663,6 @@ document.getElementById("ndelete").addEventListener("click", () => {
      // once per launch, a few seconds in (after the boot's own fetches): the
 // Publish (N) count is right before the sheet is ever opened
 if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
-function openVersionsSheet() {
-  document.getElementById("versionssheet").classList.add("on");
-  renderVersionsSheet();
-}
-async function goBackToVersion(key, idx) {
-  const list = readVersions(key);
-  const v = list[idx];
-  if (!v) return;
-  const label = versionLabel(v);
-  const ok = await appConfirm("GO BACK TO " + label.toUpperCase() + "?",
-    "Your current state is kept as a version first.", "Go back to this", "Cancel");
-  if (!ok) return;
-  pushVersion(key, "Before going back"); // list[idx] is still valid after this: pushVersion only appends
-  localStorage.setItem(draftStoreKey(key), JSON.stringify(v.draft));
-  if (v.notes) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(v.notes)); else localStorage.removeItem("ff1roll-notes-" + key);
-  if (v.ts) localStorage.setItem("ff1roll-ts-" + key, v.ts); else localStorage.removeItem("ff1roll-ts-" + key);
-  S.editUndo = []; S.editRedo = [];
-  if (key === S.songKey) await openDraft(key);
-  document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to " + label + " — your previous state is saved as a version too");
-}
-function renderVersionsSheet() {
-  const box = document.getElementById("versionsrows");
-  box.textContent = "";
-  const key = S.songKey;
-  const row = (label, onGoBack) => {
-    const r = document.createElement("div");
-    r.className = "noterow";
-    const body = document.createElement("span");
-    body.className = "body";
-    body.textContent = label;
-    r.appendChild(body);
-    if (onGoBack) {
-      const b = document.createElement("button");
-      b.className = "fitem";
-      b.style.cssText = "flex:none;width:auto";
-      b.textContent = "Go back to this";
-      b.addEventListener("click", onGoBack);
-      r.appendChild(b);
-    }
-    box.appendChild(r);
-    return r;
-  };
-  if (!key) { row("open a song first"); return; }
-  if (catalogHas(key)) row("Published copy", () => goBackToPublished(key));
-  const list = readVersions(key);
-  if (!list.length && !catalogHas(key)) row("Nothing saved here yet — File → Save Version to start.");
-  for (let i = list.length - 1; i >= 0; i--) { // newest first on screen
-    const v = list[i];
-    row(versionLabel(v), () => goBackToVersion(key, i));
-  }
-}
-async function goBackToPublished(key) { // same door as the Publish sheet's Revert (revertSongToRepo) — same contract: chat included
-  const chatKey = "ff1roll-ask-" + key;
-  const chatN = askUnsavedCount(chatKey);
-  const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
-    "Your current state is kept as a version first." + (chatN ? " Drops " + chatN + " unsaved chat message" + (chatN === 1 ? "" : "s") + " too." : ""),
-    "Go back to this", "Cancel");
-  if (!ok) return;
-  dropLocalSong(key);
-  askRevertToSaved(chatKey);
-  pubCheck.delete(key);
-  S.editUndo = []; S.editRedo = [];
-  if (key === S.songKey) { S.songKey = null; await loadSong(key); }
-  updateSyncBtn();
-  updateSongBtn();
-  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender();
-  document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
-}
-function openGridSheet() {
-  const row = document.getElementById("gridchips");
-  row.innerHTML = "";
-  for (const n of [4, 5, 6, 7, 8, 9, 10, 12, 16]) {
-    const b = document.createElement("button");
-    b.textContent = String(n);
-    b.className = "chip" + (S.gridDiv === n ? " selected" : "");
-    b.style.cssText = "min-width:52px;min-height:44px;font-size:1.0625rem;justify-content:center" +
-      (S.gridDiv === n ? ";background:var(--gold);color:#111;font-weight:700" : "");
-    b.addEventListener("click", () => { S.gridDiv = n; syncDurSeg(); draw(); openGridSheet(); });
-    row.appendChild(b);
-  }
-  const ab = document.getElementById("gridab"), aq = document.getElementById("gridaq");
-  ab.value = S.gridAnchor.b; aq.value = S.gridAnchor.q;
-  const an = document.getElementById("gridanchor");
-  an.textContent = !S.gridDiv ? "Grid off — the roll shows the meter's own lines."
-    : "Lines run from " + S.gridAnchor.b + "." + S.gridAnchor.q + ", every 1/" + S.gridDiv +
-      " of a bar, across the whole song. Bar lines stay visible but don't snap.";
-  document.getElementById("gridsheet").classList.add("on");
-}
 for (const id of ["gridab", "gridaq"]) document.getElementById(id).addEventListener("input", () => {
   const b = Math.max(1, Math.round(+document.getElementById("gridab").value || 1));
   const q = Math.max(1, +document.getElementById("gridaq").value || 1);
@@ -4298,63 +4205,7 @@ document.getElementById("copybtn").addEventListener("click", () => {
   setInfo("copied " + clipSummary() + " — move the cursor anywhere, Paste puts them there");
   updateEditButtons();
 });
-const DP_PIECES = [["hat", 42], ["snare", 38], ["kick", 36]];  // [piece][step] booleans, rebuilt when meter/grid changes
-function dpSteps() { return effTs()[0] * parseInt(document.getElementById("dpdiv").value, 10); }
-function dpDefault() { // a sane backbeat for the current meter: kick on 1 (+mid), snare on the even beats, hat everywhere
-  const beats = effTs()[0], div = parseInt(document.getElementById("dpdiv").value, 10), n = beats * div;
-  const kick = Array(n).fill(false), snare = Array(n).fill(false), hat = Array(n).fill(true);
-  kick[0] = true;
-  if (beats >= 4) kick[Math.floor(beats / 2) * div] = true;
-  for (let b = 1; b < beats; b += 2) snare[b * div] = true;
-  return [hat, snare, kick]; // same order as DP_PIECES
-}
-function dpRender() {
-  const n = dpSteps(), div = parseInt(document.getElementById("dpdiv").value, 10);
-  if (!S.dpPattern || S.dpPattern[0].length !== n) S.dpPattern = dpDefault();
-  const g = document.getElementById("dpgrid");
-  g.innerHTML = "";
-  DP_PIECES.forEach(([name], pi) => {
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;gap:3px;align-items:center;margin-top:6px";
-    const lb = document.createElement("span");
-    lb.className = "lbl";
-    lb.style.cssText = "width:44px;flex:none";
-    lb.textContent = name;
-    row.appendChild(lb);
-    for (let i = 0; i < n; i++) {
-      const c = document.createElement("button");
-      c.style.cssText = "flex:1;min-width:0;min-height:40px;padding:0;border-radius:5px;" +
-        (i % div === 0 ? "border-width:2px;" : "opacity:.9;");
-      c.classList.toggle("primary", S.dpPattern[pi][i]);
-      c.textContent = i % div === 0 ? String(i / div + 1) : "·";
-      c.addEventListener("click", () => { S.dpPattern[pi][i] = !S.dpPattern[pi][i]; dpRender(); });
-      row.appendChild(c);
-    }
-    g.appendChild(row);
-  });
-}
 document.getElementById("dpdiv").addEventListener("change", dpRender);
-function dpBuildBeatSelects() { // bar typed (fills extend past the song's end), beat+sub picked
-  const beats = effTs()[0];
-  for (const id of ["dpfromq", "dptoq"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (let b = 1; b <= beats; b++) {
-      const o = document.createElement("option");
-      o.value = String(b); o.textContent = String(b);
-      sel.appendChild(o);
-    }
-  }
-  for (const id of ["dpfroms", "dptos"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
-      const o = document.createElement("option");
-      o.value = String(f); o.textContent = syl;
-      sel.appendChild(o);
-    }
-  }
-}
 document.getElementById("drumfillbtn").addEventListener("click", () => {
   if (!editableSong()) { setInfo("drum fills work on your own songs — captures are locked"); return; }
   dpBuildBeatSelects();
@@ -4451,7 +4302,6 @@ document.getElementById("bsgen").addEventListener("click", () => {
 });
 for (const id of ["bsfrom", "bsto"]) document.getElementById(id).addEventListener("input", bsRefresh);
 for (const id of ["bsfromq", "bsfroms", "bstoq", "bstos", "bstarget", "bsfollow"]) document.getElementById(id).addEventListener("change", bsRefresh);
-function segGet(id) { const a = document.querySelector("#" + id + " button.active"); return a ? a.dataset.v : null; }
 document.getElementById("drgen").addEventListener("click", () => {
   const r = drRange();
   const opts = {
@@ -4522,16 +4372,6 @@ document.getElementById("mvdedupe").addEventListener("click", () => {
   setInfo(k ? "removed " + k + " duplicate note" + (k === 1 ? "" : "s") + " — SAVE to make it stick (undo restores them)"
             : "no duplicates found anywhere");
 });
-function openPasteTo() {
-  if (!editableSong()) { setInfo("paste works on your own songs — captures are locked"); return; }
-  if (!clipboardHas()) { setInfo("nothing copied yet — select notes and tap Copy (or ⌘C) first"); return; }
-  S.ptTarget = S.selTrack;
-  const box = document.getElementById("pttracks");
-  box.innerHTML = S.song.tracks.map((tr, ti) =>
-    '<button data-pt="' + ti + '" style="min-height:44px"' + (ti === S.ptTarget ? ' class="primary"' : '') + '>' +
-    (tr.name || "track " + (ti + 1)) + '</button>').join("");
-  document.getElementById("pastesheet").classList.add("on");
-}
 document.getElementById("pttracks").addEventListener("click", e => {
   const b = e.target.closest("button[data-pt]");
   if (!b) return;
@@ -5068,114 +4908,8 @@ askinput.addEventListener("keydown", e => {
  
  
 
-   function renderFolderUI() {
-  const nameEl = document.getElementById("foldername");
-  const pick = document.getElementById("folderpick");
-  const forget = document.getElementById("folderforget");
-  const recon = document.getElementById("filefolder");
-  const native = !!nativeFs();
-  document.getElementById("filesrow").style.display = native ? "" : "none";
-  document.getElementById("folderrow").style.display = native ? "none" : "";
-  if (native) { // the iPad app: nothing to set — Files is where saves live, GitHub is where Publish goes
-    document.getElementById("fileshelp").textContent = "Your songs are kept in Files → On My iPad → Night Roll: every Save writes a copy there. Publish sends them to GitHub.";
-  } else if (!folderSupported() && fsRoot.mode !== "opfs") {
-    // Chrome hides the API on plain http (except localhost/127.0.0.1) — say
-    // which of the two it is, or a LAN-served dev copy reads as "wrong browser"
-    const insecure = typeof window !== "undefined" && window.isSecureContext === false;
-    const brave = typeof navigator !== "undefined" && !!navigator.brave; // Brave ships the API switched OFF (Josh hit this, 2026-09-15)
-    nameEl.textContent = insecure
-      ? "needs https (or localhost) — this page is plain http, so Chrome hides the folder door; saves go to GitHub here"
-      : brave ? "Brave turns this off: open brave://flags/#file-system-access-api, enable, relaunch — or use Chrome"
-      : "needs Chrome or Edge on a computer — saves go to GitHub here";
-    pick.style.display = "none";
-    forget.style.display = "none";
-  } else if (fsRoot.handle) {
-    nameEl.textContent = (fsRoot.needsGrant ? "⚠ reconnect: " : "📁 ") + fsRoot.name +
-      (fsRoot.needsGrant ? " (Chrome needs a fresh OK)" : " — every Publish writes here, nothing goes to GitHub");
-    pick.textContent = fsRoot.needsGrant ? "Reconnect" : "Change folder…";
-    pick.style.display = "";
-    forget.style.display = fsRoot.mode === "opfs" ? "none" : "";
-  } else {
-    nameEl.textContent = "not set — saves go to GitHub";
-    pick.textContent = "Choose folder…";
-    pick.style.display = "";
-    forget.style.display = "none";
-  }
-  recon.style.display = fsRoot.handle && fsRoot.needsGrant ? "" : "none";
-  document.getElementById("folderonlyrow").style.display = folderActive() ? "" : "none";
-  document.getElementById("folderonly").checked = localStorage.getItem("ff1roll-folderonly") === "1";
-  document.getElementById("filesave").textContent = folderActive() ? "Publish to folder…" : "Publish…";
-  updateSyncBtn();
-  updateSongBtn();
-}
-async function folderAfterChange(msg) { // the catalog and the open song both depend on where data lives
-  renderFolderUI();
-  albumMetaCache && Object.keys(albumMetaCache).forEach(k => delete albumMetaCache[k]);
-  try { await initCatalog(); } catch (err) { /* offline: the folder alone still lists */ }
-  if (S.currentPath) { const k = S.currentPath; S.songKey = null; await loadSong(k).catch(() => {}); }
-  setInfo(msg);
-}
-async function chooseFolder() { // must run inside a user gesture
-  if (fsRoot.handle && fsRoot.needsGrant) { // reconnect: same folder, fresh permission
-    if (await folderPermission(true) === "granted") { fsRoot.needsGrant = false; await folderAfterChange("folder reconnected: " + fsRoot.name); }
-    else setInfo("Chrome didn't grant the folder — choose it again");
-    return;
-  }
-  if (!folderSupported()) return;
-  let h;
-  try { h = await window.showDirectoryPicker({mode: "readwrite", id: "nightroll"}); }
-  catch (err) { return; } // cancelled
-  fsRoot.handle = h; fsRoot.name = h.name; fsRoot.mode = "picker"; fsRoot.needsGrant = false;
-  await idbFsPut(h);
-  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-  await folderAfterChange("saving to folder: " + h.name);
-}
-async function forgetFolder() {
-  fsRoot.handle = null; fsRoot.name = ""; fsRoot.mode = null; fsRoot.needsGrant = false;
-  await idbFsPut(null);
-  await folderAfterChange("folder forgotten — saves go to GitHub again");
-}
-         document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
+            document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
 for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));
-function applyTextSize(v) { try { document.documentElement.style.setProperty("--userscale", v); } catch (err) {} }
-function settingsPersist(id) {
-  const v = el => document.getElementById(el).value.trim();
-  const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
-  switch (id) {
-    case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); updateSyncBtn(); updateSongBtn(); break; // connecting/disconnecting GitHub changes whether the footer Publish button and ● show (Model B)
-    case "cfglearning": setAppMode(document.getElementById("cfglearning").checked ? "learning" : "normal"); applyMode(); break;
-    case "cfgnotetapcursor": { try { localStorage.setItem("ff1roll-notetapcursor", document.getElementById("cfgnotetapcursor").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
-    case "cfgpeninstant": { try { localStorage.setItem("ff1roll-peninstant", document.getElementById("cfgpeninstant").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
-    case "cfgrecsnap": { try { localStorage.setItem("ff1roll-recsnap", document.getElementById("cfgrecsnap").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
-    case "cfgtextsize": { const tv = v("cfgtextsize") || "1"; try { localStorage.setItem("ff1roll-textsize", tv); } catch (err) { /* private mode */ } applyTextSize(tv); break; }
-    case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
-    case "cfgchipstream": { const sv = v("cfgchipstream") || "auto"; try { localStorage.setItem("ff1roll-chipstream", sv); } catch (err) { /* private mode: stays the default */ } break; }
-    case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); S.askModelCache = null; break;
-    case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;
-    case "cfgaibrowsermodel": saveCfg({aiBrowserModel: v("cfgaibrowsermodel") || "Llama-3.2-1B-Instruct-q4f16_1-MLC"}); break;
-    case "cfgaiurl": {
-      const url = (v("cfgaiurl") || "http://localhost:1234").replace(/\/+$/, "");
-      if (url !== cfg().aiUrl) { saveCfg({aiUrl: url}); S.askModelCache = null; aiModelMenu([], cfg().aiModel); }
-      break;
-    }
-    case "cfgaimodel": saveCfg({aiModel: v("cfgaimodel")}); break;
-    case "cfgaiwindow": saveCfg({aiWindow: parseInt(v("cfgaiwindow"), 10) || 8192}); break;
-
-    case "cfgsongsrepo": { // annotations follow unless the advanced row split them on purpose
-      const c = cfg(), repo = v("cfgsongsrepo") || "Night-Roll-App/night-roll", patch = {songsRepo: repo};
-      if (c.analysisRepo === c.songsRepo) patch.analysisRepo = repo;
-      // saveCfg stores every default with the first saved setting, so a new
-      // user's cfg carried Josh's archive; switching to their own songs repo
-      // then published their game files to a repo their token can't write
-      // (Josh, 2026-09-28: "it's going to try to push to my NSF repo?")
-      if (repo !== "Night-Roll-App/night-roll" && c.nsfRepo === "Night-Roll-App/nsf-archive") { patch.nsfRepo = ""; patch.nsfBase = ""; document.getElementById("cfgnsfrepo").value = ""; }
-      saveCfg(patch); ghCheckOut(""); break;
-    }
-    case "cfgnsfrepo": { const r = v("cfgnsfrepo"); saveCfg({nsfRepo: r, nsfBase: r ? "https://raw.githubusercontent.com/" + r + "/main" : ""}); cfg.c = null; break; }
-    default: return; // folderonly has its own listener
-  }
-  if (id.startsWith("cfgai")) askRefresh();
-}
 document.getElementById("settingssheet").addEventListener("change", e => { if (e.target && e.target.id) settingsPersist(e.target.id); });
 document.getElementById("ghcheck").addEventListener("click", ghCheck);
 document.getElementById("filesettings").addEventListener("click", () => {
@@ -5493,4 +5227,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};
