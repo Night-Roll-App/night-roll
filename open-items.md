@@ -7360,3 +7360,7 @@ check is "it still works", not "it works differently":
   sheet (folder pick, text size), Share.
 - Step 2's (still owed): the ⚠ chip count + debug log, an NSF/SPC chip
   render.
+
+## 2026-10-05 — Ask tool call failed (from Josh, via Ask on chaos-temple) — FIXED 4949718 (AI library v0.6.1: the bridge now holds back a trailing {"tool_call"} line after prose and runs it; bridge restarted)
+Josh: "you are unable to do what you just did because it just came across as JSON, so you need to tell the terminal that the call you just tried failed."
+What happened: Ask replied with a sentence BEFORE the one-line {"tool_call":...} (add_annotation, kind section, text "Turn", bar 14, end_bar 16, comment = the Neapolitan note). The app showed the raw JSON as chat text and ran nothing. The bridge/app should either (a) find a tool_call line even when prose precedes it, or (b) the Ask prompt should be stricter. Josh wants: section "Turn" over bars 14-16 and the old note (id 16) removed. Ask will retry with a bare JSON line.
