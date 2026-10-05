@@ -4,7 +4,7 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
-## Ask tool for the Drummer — BUILT 2026-10-05 on a worktree branch, awaiting Josh (from Josh, via Ask on ambush; docs/plans/2026-10-05-ask-drummer-tool.md)
+## Ask tool for the Drummer — SHIPPED 2026-10-05 (from Josh, via Ask on ambush; docs/plans/2026-10-05-ask-drummer-tool.md)
 
 Josh wants to SPEAK drum requests to Ask and have Ask run the real Drummer
 ("rerun the A part with slightly less energy settings than the maximum I
@@ -7426,7 +7426,7 @@ The reference content Josh wants on the sheet (Ask's answer to "what does a prof
 - Summary: a short plain-words statement of what the piece does and why it works; comparison with other pieces by the same composer.
 - Josh's current gaps, by Ask's read of his annotations: Roman numerals, cadence labels, motif tracking (phrase lengths/pairing too).
 
-## 2026-10-05 — Ask tool for the Drummer (from Josh, via Ask on ambush) — QUEUED
+## 2026-10-05 — Ask tool for the Drummer (from Josh, via Ask on ambush) — SHIPPED (see the top entry)
 Josh wants to SPEAK drum requests to Ask and have Ask invoke the real Drummer generator (Fills, Busy, groove, fill types), instead of operating it by hand or having Ask hand-write hits with write_notes. Today Ask has no drummer tool.
 Wanted: a new Ask tool (e.g. drummer) taking a bar range, groove, Fills and Busy settings, fill types, and what to follow (which tracks the drums should shadow). Own editable songs only, only on request, replace the range's existing drum hits, ONE undo step, refuse on locked/capture songs. Same registration/tool-call plumbing as write_notes/copy_bars.
 First use case, in Josh's words (ambush, 4/4, 32 bars): intro (bars 1-4), A (5-12), A' (13-20). A' shifts pulse2 up an octave and has more energy, so A should be slightly more subdued than A' to let the energy climb: "rerun the A part with slightly less energy settings than the maximum I used for the entire thing". The intro's generated drums are way over the top for a very simple intro: "redo the intro, probably to match pulse one and pulse two rather than following the triangle". So the generator needs a follow-source option (pulse1/pulse2 vs. triangle) as well as per-section energy settings.
