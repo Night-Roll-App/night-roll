@@ -4,6 +4,22 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Tailscale drops on the iPad — PARKED 2026-10-05 (Terminal #120–121; Josh: "maybe we'll deal with it later if it keeps happening I'll bring it back up")
+
+The iPad lost Tailscale about 3 times in one hour. The Mac side checked fine:
+it never sleeps, and the iPad was connected direct over LAN at the time, so
+iOS is killing the VPN. Advice sent (bridge #392):
+
+- Tailscale app → VPN On Demand on.
+- iOS VPN settings → Tailscale → Connect On Demand on.
+- Low Power Mode off.
+- Admin console: disable key expiry on ipad166 and the Mac.
+
+Other iOS VPNs (ZeroTier etc.) get killed the same way. If the drops keep
+happening, the real alternative is a Cloudflare Tunnel: no VPN on the iPad,
+the bridge sits behind a Cloudflare Access login. Bigger setup — only when
+Josh brings it back up.
+
 ## Publish window tweaks — DONE 2026-10-04 (Terminal #111; Josh: "Don't
 want chat to show up in the count of the songs that need to be
 published… the main publish window is actually potentially useful to be
