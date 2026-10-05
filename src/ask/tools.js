@@ -874,6 +874,7 @@ export function askEditNotes(a) {
     const toTi = a.to_track === undefined || a.to_track === null || a.to_track === "" ? undefined : askEditNotesTarget(a.to_track);
     const dP = askEditNotesShift(a), labels = askActTruthy(a.labels);
     const at = Math.round((toBar - 1) * barTicks() + (toBeat - 1) * beatTicks());
+    const barsBefore = askBarsCount(); // the reply mentions the length only when the copy grew the song
     const keep = [S.noteClipboard, S.annoClipboard]; // the user's own clipboard survives, as ⌘D's duplicateSelection keeps it
     let annos = 0;
     try {
@@ -884,7 +885,7 @@ export function askEditNotes(a) {
     } finally { [S.noteClipboard, S.annoClipboard] = keep; }
     if (!k) return {ok: true, note: "nothing landed — " + (sel.count ? "every note was already there or shifted off the roll" : "no note on " + trackLabel + " in " + where) + "; nothing changed"};
     const notes = Math.max(0, k - annos);
-    return {ok: true, note: "copied " + notes + " note" + (notes === 1 ? "" : "s") + (annos ? " + " + annos + " annotation" + (annos === 1 ? "" : "s") : "") + " from " + trackLabel + " in " + where + " to " + toBar + "." + toBeat + (toTi !== undefined ? " on " + (S.song.tracks[toTi].name || "track " + (toTi + 1)) : "") + (dP ? ", " + askShiftText(dP) : "") + " — the song now has " + askBarsCount() + " bars; cursor at the copy's end (one undo restores what was there)"};
+    return {ok: true, note: "copied " + notes + " note" + (notes === 1 ? "" : "s") + (annos ? " + " + annos + " annotation" + (annos === 1 ? "" : "s") : "") + " from " + trackLabel + " in " + where + " to " + toBar + "." + toBeat + (toTi !== undefined ? " on " + (S.song.tracks[toTi].name || "track " + (toTi + 1)) : "") + (dP ? ", " + askShiftText(dP) : "") + (askBarsCount() > barsBefore ? " — the song grew to " + askBarsCount() + " bars" : "") + "; cursor at the copy's end (one undo restores what was there)"};
   } else if (op === "to_track") {
     if (a.to_track === undefined || a.to_track === null || a.to_track === "") throw new Error("say to_track: " + S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1)).join(", "));
     const toTi = askEditNotesTarget(a.to_track);

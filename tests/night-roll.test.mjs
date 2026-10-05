@@ -6731,7 +6731,7 @@ test("edit_notes copy: Paste to…'s own copy+paste — to a bar (past the end g
   run(`noteClipboard = [{dt: 0, p: 1, d: 1, v: 1, ti: 0}]; annoClipboard = [];`);
   const before = askMoveSnap();
   const r = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9})`);
-  assert.match(r.note, /^copied 3 notes from pulse1 in bar 3 to 9\.1 — the song now has 9 bars; cursor at the copy's end \(one undo/);
+  assert.match(r.note, /^copied 3 notes from pulse1 in bar 3 to 9\.1 — the song grew to 9 bars; cursor at the copy's end \(one undo/);
   assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 15360).map(n => [n.t, n.p])`), [[15360, 60], [15840, 64], [16320, 67]]);
   assert.deepEqual(askMoveBar3(), [60, 64, 67], "the source stays");
   assert.deepEqual(val(`noteClipboard`), [{dt: 0, p: 1, d: 1, v: 1, ti: 0}], "the clipboard is the user's");
