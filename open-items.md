@@ -4,7 +4,7 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
-## QUEUED 2026-10-05 — role "note" messages may break LM Studio/Ollama (from the act batch 2–3 builder)
+## DONE 2026-10-05 — role "note" messages may break LM Studio/Ollama (fixed in the app: askBuildMessages sends notes as labelled user turns) (from the act batch 2–3 builder)
 Stored `role: "note"` messages (inbox notes, the ↪ handoff line from open_song)
 go to the model as role "note" because askBuildMessages copies the role. The
 Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)

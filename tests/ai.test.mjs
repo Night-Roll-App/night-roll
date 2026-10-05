@@ -262,7 +262,7 @@ test("open_song end to end: the switch waits until the reply has landed (one req
     assert.equal(last.role, "user"); assert.match(last.content, /\n\nplay it from bar 9$/, "the carried words, as the user's own message, with the new song's context block");
     assert.match(last.content, /night-rain|Night Rain/, "the context block is the new song's");
     assert.ok(!reqs[1].json.messages.some(m => /open night rain and play it/.test(m.content) && m.role === "user" && !/↪/.test(m.content)), "the old chat's turn is not carried as history");
-    assert.ok(reqs[1].json.messages.some(m => /^↪ from From: open night rain and play it from bar 9$/.test(m.content)), "the ↪ line is the one thing the new chat knows of the old one");
+    assert.ok(reqs[1].json.messages.some(m => m.role === "user" && /^\[note from handoff\] ↪ from From: open night rain and play it from bar 9$/.test(m.content)), "the ↪ line is the one thing the new chat knows of the old one — a labelled user turn, not role \"note\"");
     for (let i = 0; i < 40 && !/bar 9 it is/.test(JSON.stringify(val(app, `askStore("ff1roll-ask-local/night-rain.mid").msgs`))); i++) { app.tick(300); await new Promise(r => setTimeout(r, 25)); }
     const neu = val(app, `askStore("ff1roll-ask-local/night-rain.mid").msgs`);
     assert.deepEqual(neu.map(m => m.role), ["note", "user", "assistant"]);

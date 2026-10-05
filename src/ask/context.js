@@ -466,7 +466,11 @@ export function askBuildMessages(msgs, text, ctx, budget) { // stripped history 
     const c = askStripContext(msgs[i].content);
     if (c.length > left) break;
     left -= c.length;
-    out.unshift({role: msgs[i].role, content: c});
+    // a stored note (an inbox note, open_song's ↪ line) is shown as its own
+    // bubble but goes to the model as a labelled user turn: OpenAI-strict
+    // servers (LM Studio, Ollama) reject any role but system/user/assistant/tool
+    const r = msgs[i].role;
+    out.unshift(r === "user" || r === "assistant" ? {role: r, content: c} : {role: "user", content: "[" + (r === "note" ? "note" + (msgs[i].m ? " from " + msgs[i].m : "") : r) + "] " + c});
   }
   out.push({role: "user", content: "<context>\n" + ctx + "\n</context>\n\n" + text});
   return out;

@@ -12863,3 +12863,14 @@ test("Analysis sheet (S2): tap a listed annotation → the cursor jumps to its b
   run(`document.getElementById("ncancel").click();`);
   studyReset();
 });
+
+test("askBuildMessages: a stored note goes to the model as a labelled user turn — OpenAI-strict local servers reject role \"note\" (queued 2026-10-05)", () => {
+  installSong();
+  const out = val(`askBuildMessages([
+    {role: "user", content: "hi", mode: appMode()},
+    {role: "note", content: "↪ from Ambush: open graveyard", m: "handoff", mode: appMode()},
+    {role: "assistant", content: "ok", mode: appMode()},
+  ], "next", "ctx", {hist: 100000})`);
+  assert.deepEqual(out.map(m => m.role), ["user", "user", "assistant", "user"]);
+  assert.equal(out[1].content, "[note from handoff] ↪ from Ambush: open graveyard");
+});
