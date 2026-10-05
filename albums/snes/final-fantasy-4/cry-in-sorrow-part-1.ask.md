@@ -148,3 +148,17 @@ I've asked the terminal to build one. It would be a "publish this song" command 
 For now, tap Publish on this song in the app. The new numerals and your chords will go out together.
 
 **Mac (ask):** Josh: wants a publish_song Ask tool (say 'publish this song' in chat, runs the per-song Publish). Queued in open-items 23:40, next to the edit/delete tools.
+
+### 2026-09-30 23:44 · bars 1–3 (in view)
+
+**Josh:** Basically you need to have full control over annotations so you need to be able to delete them edit them and add them whenever I ask and then I will ask you to delete the text annotations that you put in and then edit the cord annotations. To fill in the text fields in them
+
+**AI (claude-code-sonnet):** Understood, and that's how it's queued: the terminal has add, edit and delete for annotations in the Ask chat, plus "publish this song", and it said it comes right after Game order and the view switcher. Once it lands, I'll delete the four text notes I added and fill in the chord notes: the Bbm, the Absus4add2 and the Gbmaj9.
+
+One thing to decide before then. Your Gbmaj9 note is about your surprise at the major nine. Do you want me to leave your words as they are and add the numeral and explanation after them, or replace them? I'd add after, and I won't touch your words unless you say so. Your Bbm chord has no note yet, so that one would get just the numeral.
+
+### 2026-09-30 23:46 · bars 1–2 (in view)
+
+**Josh:** You can leave my words in there and just add more and what do you mean by B minor cord has no note yet. Oh it has no text note sure right that would just get the numeral that's fine
+
+**AI (claude-code-sonnet):** Yes, that's what I meant: the Bbm chord has no note text yet, so it would just get its numeral. Your words stay as they are, and I add after them. I wrote that rule in open-items so it holds when the edit tools land.
