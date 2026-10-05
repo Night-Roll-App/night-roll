@@ -11264,3 +11264,10 @@ test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \
     assert.match(b.run(`appErrors.map(e => e.msg).join(" ")`), /closed before its last edit was stored/);
   });
 }
+
+test("the AI window's span / model / gear row stays hidden on the song tab too (Josh, 2026-10-05, Terminal #122, #128)", () => {
+  installSong();
+  // index.html hides it inline; the stub DOM has no inline styles, so mark it and check nothing un-hides it
+  run(`document.getElementById("askspanrow").style.display = "none"; askGeneral = true; askTerminal = false; askModeButtons(); askGeneral = false; askModeButtons();`);
+  assert.equal(run(`String(document.getElementById("askspanrow").style.display)`), "none", "the library's tab switch must not re-show it");
+});

@@ -122,7 +122,9 @@ export function askHost() {
     landed: (key, failed) => askLanded(key, failed),
     text: key => ASK_TEXT[key], // this app's wording where it differs from the library's neutral default (it says "the Mac")
     // ---- the window (step 6, adopt mode: the library binds index.html's own
-    // #ask* ids — AI_WINDOW_IDS are exactly this app's, no override needed)
+    // #ask* ids). spanRow points nowhere: the library re-shows that row on
+    // the song tab, and Josh wants it gone (Terminal #122, #128)
+    ids: {spanRow: null},
     copyText: (text, btn) => askCopyText(text, btn),
     onDraftChange: has => askComposing(has), // the bridge's "composing" notice: a build may wait
     shotPaths: () => S.askShotPending.map(s => s.path),
