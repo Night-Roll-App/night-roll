@@ -4,6 +4,13 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## QUEUED 2026-10-05 — role "note" messages may break LM Studio/Ollama (from the act batch 2–3 builder)
+Stored `role: "note"` messages (inbox notes, the ↪ handoff line from open_song)
+go to the model as role "note" because askBuildMessages copies the role. The
+Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)
+may reject it. Fix in the AI library: map note → user with a label. Untested
+against a real local server.
+
 ## AI parity batch 1 — the `act` tool — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
 
 Built by a Fable builder on branch `worktree-agent-ae7c4048101970432`:
