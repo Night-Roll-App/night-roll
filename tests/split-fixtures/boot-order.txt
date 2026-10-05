@@ -284,8 +284,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) { as
 askInboxStart();
 (function sheetDrag() {
 S.wm = wmLoad();
-for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[side].ids.includes("moresheet")) S.wm = wmRemoveSideTab(S.wm, side, "moresheet");
-if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
+S.wm = wmPurgeId(wmPurgeId(S.wm, "moresheet"), "pubjobsheet");
 wmSave(S.wm);
 try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }
 if (typeof document !== "undefined" && document.body) {
@@ -293,8 +292,9 @@ makeWindow("asksheet", {dockable: true});
 makeWindow("notelistsheet", {dockable: true});
 makeWindow("instsheet", {dockable: true});
 makeWindow("jobssheet", {dockable: true});
-makeWindow("pubjobsheet", {dockable: true});
+makeWindow("syncsheet", {dockable: true});
 makeWindow("mixersheet", {dockable: true});
+makeWindow("pubjobsheet", {dockable: false});
 makeWindow("infosheet", {dockable: false});
 makeWindow("importhub", {dockable: false});
 makeWindow("versionssheet", {dockable: false});
