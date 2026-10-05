@@ -45,6 +45,7 @@ import { parseMidi } from "../midi/parse.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { applyTake } from "../gen/bassist.js";
+import { bsGenerate } from "../gen/bassist.js";
 import { insertTime } from "../model/selection.js";
 import { openGapShift } from "../model/selection.js";
 import { pushUndo } from "../model/edits.js";
@@ -57,6 +58,9 @@ import { folderOf } from "../model/catalog.js";
 import { folderTitle } from "../model/catalog.js";
 import { deleteTime } from "../model/selection.js";
 import { drGenerate } from "../gen/drummer.js";
+import { addTrackUndoable } from "../model/edits.js";
+import { undoTrackAdd } from "../model/edits.js";
+import { renderTrackbarImpl as renderTrackbar } from "../ui/trackbar.js"; // same layer as ask/tools.js — direct import, not the hooks.js port (that's for gen/drummer.js's lower-layer upcall)
 import { drBassTrack } from "../gen/drummer.js";
 import { askAct } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
 
@@ -565,7 +569,10 @@ export function askDeleteBars(a) { // {from_bar, count}: removes bars — same g
 // Reached as the `drummer` ACTION of the act tool (src/ask/actions.js) — its
 // own ASK_TOOLS entry went the same day it landed: ~350 tokens on every
 // message (Josh via Ask #449). A plain function either way.
-export function askDrummerRange(a) { // → {fromBar, toBar}: whole bars, or ONE declared section label's span
+// → {fromBar, toBar}: whole bars, or ONE declared section label's span.
+// Despite the name this is generic (bar/section resolution only, nothing
+// drum-specific) and is reused by askBassist and askSelectRange (batch 4/5).
+export function askDrummerRange(a) {
   const bt = barTicks(), nBars = askBarsCount();
   if (a.section !== undefined && a.section !== null && String(a.section).trim()) {
     const want = String(a.section).trim().toLowerCase();
@@ -640,4 +647,82 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
     (parts !== "all" ? " · " + parts.join("+") + " only" : "") + " · " + followTxt + " · seed " + seed;
   if (!k) return {ok: true, note: "Drummer: no hits in " + where + " — every bar there is a break (only the followed track plays, or a section labeled break) · " + recipe + " (one undo restores what was there)"};
   return {ok: true, note: "Drummer: " + k + " hit" + (k === 1 ? "" : "s") + " in " + where + " · " + recipe + " (one undo restores what was there)"};
+}
+// ---- bassist (docs/ai-parity.md §5 batch 4, 2026-10-05): Ask's "bass line
+// for bars X–Y" — the drummer tool's shape, over bsGenerate (the Bassist
+// sheet's own generator) + applyTake (same erase-by-onset, one group undo).
+// askDrummerRange is reused as-is for bar/section resolution — it is
+// generic over "whole bars, or one declared section label's span", not
+// drummer-specific. track resolution mirrors the sheet's own default
+// (src/ui/sheets.js openBassist/bsgen): an explicit name (or "new") wins;
+// omitted picks the detected bass track when nothing of its own already
+// sounds in the range, else a fresh "bass" track — created AND folded into
+// the SAME undo step as undoTrackAdd does for the Drummer's kit. Learning
+// mode is the law: the reply never states a chord or key — bsGenerate's own
+// melody-inferred sketch is internal only and never printed (src/gen/
+// bassist.js's own comment); the reply names only what it replaced and the
+// seed, never the harmony it read.
+export function askBassist(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const {fromBar, toBar} = askDrummerRange(a);
+  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1))
+    throw new Error("bars " + fromBar + "–" + toBar + " cross a meter change — generate each meter's bars separately");
+  const trackName = ti => S.song.tracks[ti].name || "track " + (ti + 1);
+  const hasDrums = S.song.tracks.some((_, ti) => trackIsDrums(ti));
+  const STYLES = ["chug", "pump", "arp", "walk", "riff"];
+  let style = a.style === undefined || a.style === null || a.style === "" ? (hasDrums ? "riff" : "chug") : String(a.style).trim().toLowerCase();
+  if (!STYLES.includes(style)) throw new Error("style must be one of " + STYLES.join(", "));
+  const knob = (v, lo, hi, name, def) => {
+    if (v === undefined || v === null || v === "") return def;
+    const n = Math.round(+v);
+    if (!(n >= lo && n <= hi)) throw new Error(name + " must be " + lo + "–" + hi);
+    return n;
+  };
+  const busy = knob(a.busy, 1, 5, "busy", 3);
+  const oct = knob(a.octave, 1, 3, "octave", 2);
+  // follow: auto (default) | chords | drums | a named track (riff style's
+  // rhythmic cue only — pitch always comes off the chord/key ladder above)
+  let follow = "auto", followTxt = hasDrums ? "following the drums" : "following the chords";
+  if (a.follow !== undefined && a.follow !== null && String(a.follow).trim() !== "") {
+    const f = String(a.follow).trim().toLowerCase();
+    if (f === "auto") { follow = "auto"; followTxt = hasDrums ? "following the drums" : "following the chords"; }
+    else if (f === "chords") { follow = "chords"; followTxt = "following the chords"; }
+    else if (f === "drums") { follow = "drums"; followTxt = "following the drums"; }
+    else { const ti = askFindTrackIndex(a.follow); follow = "t" + ti; followTxt = "following " + trackName(ti); }
+  }
+  // track: an existing name, or "new"; omitted mirrors the sheet's own
+  // default (openBassist) — never onto a track already sounding in range
+  let targetTi, madeTrack = false;
+  if (a.track !== undefined && a.track !== null && String(a.track).trim() !== "") {
+    if (/^new$/i.test(String(a.track).trim())) madeTrack = true;
+    else {
+      targetTi = askFindTrackIndex(a.track);
+      if (trackIsDrums(targetTi)) throw new Error("\"" + trackName(targetTi) + "\" is a drum/noise track — the bass needs its own track");
+    }
+  } else {
+    const bi = drBassTrack();
+    if (bi >= 0 && !S.song.tracks[bi].notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0)) targetTi = bi;
+    else madeTrack = true;
+  }
+  const undoLen = S.editUndo.length;
+  if (madeTrack) {
+    targetTi = addTrackUndoable({name: "bass", notes: []});
+    saveDraft();
+    renderTrackbar();
+  }
+  const before = S.song.tracks[targetTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1).length;
+  const seed = a.seed !== undefined && a.seed !== null && a.seed !== "" ? (Math.round(+a.seed) >>> 0) : (Math.random() * 0xFFFFFFFF) >>> 0; // the ONLY nondeterminism, same as the sheet's Generate
+  const opts = {style, busy, oct, follow, targetTi, fromBar, toBar};
+  const k = bsGenerate(seed, opts);
+  if (madeTrack) undoTrackAdd(targetTi, undoLen); // a bass track the Bassist made leaves with its take, same as the Drummer's kit
+  const where = fromBar === toBar ? "bar " + fromBar : "bars " + fromBar + "–" + toBar;
+  const recipe = "style " + style + " · busy " + busy + " · octave " + oct + " · " + followTxt + " · seed " + seed;
+  if (!k) return {ok: true, note: "Bassist: no chords, melody or key declared in " + where + " — nothing to read · " + recipe + (madeTrack ? " (one undo removes the added bass track)" : " (nothing changed)")};
+  S.bsTakes.push({seed, opts, style, busy, oct, followSel: follow, targetTi, from: fromBar, to: toBar + 1, q: [1, 1]}); // the sheet's take chips show and replay it (to = exclusive bar, as its own fields)
+  if (S.bsTakes.length > 8) S.bsTakes.shift();
+  S.bsActive = S.bsTakes.length - 1;
+  return {ok: true, note: "Bassist: replaced " + before + " note" + (before === 1 ? "" : "s") + " with " + k + " on " + trackName(targetTi) + " in " + where + (madeTrack ? " (new track)" : "") + " · " + recipe + " (one undo restores what was there)"};
 }

@@ -332,8 +332,8 @@ and fails if the menu ever grows past half the twelve-tool menu.
 | `set_track` | track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave? | edits (M/S/H are quiet) |
 | `add_track` / `delete_track` | name, voice? / track | edits |
 | `keep_that` | track? | edits |
-| `bassist` | from_bar, to_bar, track?, style?, busy?, octave?, follow? | edits |
-| `drummer` | (in progress — its own spec) | edits |
+| `bassist` | from_bar, to_bar \| section, track?, style?, busy?, octave?, follow?, seed? | edits — **done batch 4** |
+| `drummer` | from_bar, to_bar \| section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed? | edits — done (batch 0, folded into `act` batch 1) |
 | `song_file` | new\|save_version\|versions\|save_as\|rename\|share_link, title?, label? | answered |
 | `check` | chord\|key_vs_file\|meter_vs_file, bar?, beat? | answered, on request only |
 | `song_facts` | form\|melody\|rhythm\|bass\|voices, from_bar?, to_bar? | answered, on request only |
@@ -374,6 +374,7 @@ never guesses.
 - "Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2." — act: drummer
 - "What can you do?" / "Help with drummer." — act: help
 - "Open Graveyard." / "Open Graveyard and play it from bar 9." — act: open_song (batch 2, 2026-10-05): the switch waits for the reply to land, the ↪ line and the carried-over request land in Graveyard's chat (§4)
+- "Bass line for bars 1 to 16, busy 2, follow the drums." — act: bassist (batch 4, 2026-10-05): the same bsGenerate the Bassist sheet runs, one undo, the reply never names the chord it read or inferred
 - Help → AI → **AI commands** lists every one of these with a phrase, generated from the registry.
 
 ### Coming (proposed in §1; all of these are `act` actions)
@@ -395,7 +396,6 @@ In build order (§5): the tedious things first, the one-tap things
 - "Make bar 4's notes on pulse 1 softer — velocity 60." — velocity
 - "Split the long note at bar 7 at beat 3." / "Divide it into three." — split / divide
 - "Keep that on pulse 1." — keep_that
-- "Bass line for bars 1 to 16, busy 2, follow the drums." — bassist
 - "Show the score." / "Open the mixer." / "Show the circle of fifths." — show
 - "Light up every B flat." / "find off." — find_pitch
 - "Challenge my chord at bar 14." — check (facts about your label, only on request)
@@ -525,7 +525,7 @@ typical request (quiet = 1, edits and questions = 2).
 | 1 | The `act` tool (foundation) | registry, index builder, `help`, quiet `{final}` results, `undo` | src/ask/tools.js (registry, `act` runner), src/ask/bridge.js (`askToolsNow`), vendor/ai/web/backends.js + client.js (`{final}` ends the exchange — library change, made in Night-Roll-App/claude-bridge and synced) | menu byte-identical across two messages; menu size printed and pinned; a list runs in order, stops at the first failure; a bad call's error carries the spec; an all-quiet call = exactly one request to the fake server; undo reports what it undid | measured **3,276** (act alone 325) | 1–2 | **done 2026-10-05 (Fable)** — src/ask/actions.js; also go_to/play/stop/select from batch 9, `drummer` folded in, 7 tolerance tests for local models (#443), `runActions` with no model (§7), Help → AI commands generated from the registry (#451); library commit dfef7e7 awaits a tag + `ai-sync --ref` |
 | 2 | Open a song + chat handoff | `open_song` (§4) | src/ask/tools.js, src/ask/client.js (`askLanded` runs the switch), src/ask/sheet.js (↪ line, carried-over chip), src/ask/context.js (one prompt line) | switch only after landing; nothing after `open_song` runs; ambiguous name lists matches; local drafts found; unsent draft → chip, not send; album run cleared; load failure → no handoff; one hop only | measured **3,297** (act alone 346, 8 actions) | 1 | **done 2026-10-05 (Fable)** — `askOpenSongQueue` (src/ask/actions.js), `askSwitchRun`/`askSend(text)` (src/ask/client.js), `askCarryChip`/`askDraftText` (src/ask/sheet.js), `askSongMatches` (src/ask/tools.js), `openRecentSong` async; Q13's default (the follow-on sends itself; a chip only when the new chat holds a draft) |
 | 3 | Fold the old tools in | the 12 tools of §1 + `meter`/`chop` kinds | src/ask/tools.js, src/ask/bridge.js (`ASK_SONG_ONLY_TOOLS` becomes a per-action flag), src/ask/context.js (prompt text naming old tools) | every existing tool test passes through `act`; their rule texts reachable by `help` and in errors; Learning sweep; menu size drops | measured **636** (act alone, 20 actions; 2,355 chars) | as today | **done 2026-10-05 (Fable)** — all twelve are `ASK_ACTIONS` entries over the same src/ask/tools.js functions; `ASK_TOOLS` empty, `ASK_SONG_ONLY_TOOLS` gone (the `song` flag), `askRunTool` dispatches act alone, the prompt's twelve sentences are one paragraph; add_annotation writes `meter`/`chop`, delete_annotation takes them back |
-| 4 | Regenerate drums and bass | `drummer` as an action (if needed), `bassist` | src/ask/tools.js (wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; copy the drummer's shape) | says what it replaces; refuses on captures; one undo; reply never names a chord it guessed (Learning sweep) | ~440 | 2 | EASY — Sonnet |
+| 4 | Regenerate drums and bass | `bassist` | src/ask/tools.js (`askBassist`, wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; the drummer's shape — `askDrummerRange` reused for bars/section, track creation folded into the same undo via `undoTrackAdd`, same as the Drummer's kit) | says what it replaces and the seed; refuses on captures; one undo; reply never names a chord or key it read or inferred (Learning sweep) | measured **672** (act alone, 21 actions; 2,487 chars) | 2 | **done 2026-10-05 (Sonnet)** — bar range or section label, track by name or "new" or omitted (the sheet's own default: the detected bass track when free in range, else a fresh one), style/busy/octave/follow/seed all validated against the sheet's own knobs |
 | 5 | Bulk note edits | `edit_notes` ops delete, quantize, velocity, split, join, divide, dedupe — over bars + tracks | src/ask/tools.js (one `askSelectRange` helper: bars+tracks → selection, then src/model/selection.js) | one undo step per item; refuses on captures; unknown track errors | ~470 | 2 | EASY — Sonnet |
 | 6 | Moving music over ranges | `edit_notes` ops transpose, move, copy, to_track | src/ask/tools.js, src/model/selection.js (reuse Paste to…'s code) | in-key transpose uses the declared key or says there's none; copied chord labels transpose like Paste to…; one undo | ~480 | 2 | **TRICKY — Fable** |
 | 7 | Tracks and albums | `set_track`, `add_track`, `delete_track`, `keep_that`, `album` | src/ask/tools.js (`saveTrackDir`, `renameTrack`, `addTrackUndoable`; src/session/album.js) | settings land as `track:` annotations, never localStorage; voice names matched against the menu's list; one undo | ~550 | 1–2 | EASY — Sonnet |

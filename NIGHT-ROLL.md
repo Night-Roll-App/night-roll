@@ -4947,6 +4947,33 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   the bodies; tests/annotate.test.mjs reads read_notes through act. The
   Help sheet's AI commands rows are all `(act: …)` now — `ASK_TOOL_PHRASES`
   went with the tools.
+- **bassist (2026-10-05; docs/ai-parity.md §5 batch 4, Sonnet).** An
+  `ASK_ACTIONS` entry over bars (or a section label) on a named track,
+  same gate/undo shape as `drummer`. `bassist` (`askBassist`,
+  src/ask/tools.js) wraps `bsGenerate` + its `applyTake` (src/gen/
+  bassist.js) the way `askDrummer` wraps `drGenerate` — `askDrummerRange`
+  (despite its name, generic bar/section resolution) is reused as-is.
+  `track` picks the target the way the Bassist sheet's own
+  `openBassist`/`bsgen` default does: an explicit name or "new" wins;
+  omitted picks the detected bass track (`drBassTrack`) when nothing of
+  its own already sounds in the range, else a fresh "bass" track —
+  created with `addTrackUndoable` and folded into the SAME undo step via
+  `undoTrackAdd`, exactly as the Drummer's kit track is. `style` defaults
+  to riff when the song has a drum track, else chug (the sheet's own
+  default); `busy`/`octave`/`follow`/`seed` validate like the sheet's
+  knobs. Learning mode is the law for the reply too: bsGenerate's
+  melody-inferred harmony sketch (src/gen/bassist.js's own comment: "never
+  displayed and never written") is never named — the reply states only
+  what it replaced and the seed, never a chord or key. **Measured** (the
+  vm test prints it every run, chars ÷ 3.7): the song-chat menu (act
+  alone, since batch 3) went from 2,355 chars (~636 tokens, 20 actions) to
+  **2,487 (~672 tokens, 21 actions)**. Tests: tests/night-roll.test.mjs
+  "bassist: …" (range/section, the track default and its undo-folded
+  new-track case, every knob and follow/track validator, the
+  locked-capture refusal, hidden from the general chat, through `act`, the
+  Learning-mode chord/key sweep against both the declared-chord and
+  melody-sketch paths). Help: the generated AI commands rows; drift
+  keyword "busy 2, follow the drums" (tests/night-roll.test.mjs FEATURES).
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

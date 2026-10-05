@@ -2811,6 +2811,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
     "Analysis sheet", "Check coverage", "What to look for", // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
+    "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6282,6 +6283,142 @@ test("drummer: refuses on a locked capture with nothing changed; hidden from the
   assert.match(val(`askActTool(false).function.description`), /\ndrummer from_bar to_bar\|section [^\n]* — run the Drummer/, "one index line in the song chat's act tool");
   run(`askGeneral = true;`);
   assert.doesNotMatch(val(`askActTool(true).function.description`), /drummer/, "drummer hidden in the general chat (needs the open song)");
+  run(`askGeneral = false;`);
+});
+
+// bassist Ask tool (docs/ai-parity.md §5 batch 4, 2026-10-05) — the drummer
+// tool's shape over bsGenerate (the Bassist sheet's own generator) +
+// applyTake. Scratch song only: 8 bars of 4/4, declared chords Am (1–4) / C
+// (5–8), two sections, a kick-only drum track, and a named "bass" track
+// with hand notes in and out of every bar range the tests use.
+function installAskBassSong() {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/askbass-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // the local copy: editable
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [{t: 0, d: 15360, p: 72, v: 80}]}, // sounds everywhere: the melody fallback has something to read
+        {name: "drums", notes: [0, 1, 2, 3, 4, 5, 6, 7].map(b => ({t: b * 1920, d: 60, p: 36, v: 90}))}, // a kick on every downbeat
+        {name: "bass", notes: [
+          {t: 0, d: 480, p: 40, v: 80},       // bar 1 — kept by every bars-2-4 test
+          {t: 1920, d: 480, p: 42, v: 80},    // bar 2 — in range for bars 2-4, replaced
+          {t: 13440, d: 480, p: 40, v: 80}]}, // bar 8 — kept by every bars-2-4 test
+      ]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null; bsTakes = []; bsActive = -1;
+    rollnotes = deriveNoteTypes([
+      {b1: 1, q1: 1, b2: 2, q2: 4, text: "section: Intro", added: true},
+      {b1: 3, q1: 1, b2: 4, q2: 4, text: "section: Verse", added: true},
+      {b1: 1, q1: 1, b2: 4, q2: 4, text: "chord: Am", added: true},
+      {b1: 5, q1: 1, b2: 8, q2: 4, text: "chord: C", added: true},
+    ]).map(resolveNote);
+    declaredTs = null; keyRegions = []; previewSf = null;
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const askBsSnap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v, n.d]))`);
+const askBsTrack = ti => val(`song.tracks[${ti}].notes.filter(n => !n.gone).map(n => ({t: n.t, p: n.p, v: n.v}))`);
+
+test("bassist: runs the generator on bars 2–4 reading the declared Am chord — replaces only the bass track's notes in range, other tracks and the annotations untouched; ONE undo restores every track exactly; names what it replaced and the seed", () => {
+  installAskBassSong();
+  const before = askBsSnap();
+  const annoBefore = val(`rollnotes.map(n => [n.start, n.text])`);
+  const r = val(`askBassist({from_bar: 2, to_bar: 4, track: "bass", style: "chug", busy: 2, seed: 777})`);
+  assert.match(r.note, /^Bassist: replaced 1 note with \d+ on bass in bars 2–4 · style chug · busy 2 · octave 2 · following the drums · seed 777 \(one undo/);
+  const bass = askBsTrack(2);
+  const inRange = bass.filter(h => h.t >= 1920 && h.t < 7680), outRange = bass.filter(h => h.t < 1920 || h.t >= 7680);
+  assert.ok(inRange.length > 0, "notes landed in the range");
+  assert.deepEqual(outRange, [{t: 0, p: 40, v: 80}, {t: 13440, p: 40, v: 80}], "out-of-range bass notes untouched");
+  const after = askBsSnap();
+  assert.deepEqual(after[0], before[0], "the melody track is untouched");
+  assert.deepEqual(after[1], before[1], "the drums are untouched");
+  assert.deepEqual(val(`rollnotes.map(n => [n.start, n.text])`), annoBefore, "annotations untouched");
+  assert.equal(val(`editUndo.length`), 1, "ONE undo step");
+  assert.equal(val(`bsTakes.length`), 1, "the take chip exists for the sheet");
+  assert.equal(val(`bsTakes[0].seed`), 777);
+  run(`editUndoPop();`);
+  assert.deepEqual(askBsSnap(), before, "undo restored every track exactly");
+  run(`editUndo = []; bsTakes = [];`);
+});
+
+test("bassist: a section label resolves to its bars; track omitted picks the detected bass track when it is free there, else makes a new one folded into the SAME undo step; an unknown track, a drum target, a bad knob, an unknown follow name and a meter change all error with nothing changed", () => {
+  installAskBassSong();
+  assert.deepEqual(val(`askDrummerRange({section: "intro"})`), {fromBar: 1, toBar: 2});
+  const r = val(`askBassist({section: "Verse", seed: 3})`); // bars 3-4: the bass track's own notes (bar 1, 2, 8) are all outside — it gets reused
+  assert.match(r.note, /in bars 3–4/);
+  assert.doesNotMatch(r.note, /new track/);
+  assert.equal(val(`song.tracks.length`), 3, "no track added — the existing bass track was free in that range");
+  run(`editUndoPop(); bsTakes = [];`);
+  const undoLenBefore = val(`editUndo.length`);
+  const r2 = val(`askBassist({from_bar: 2, to_bar: 2, seed: 4})`); // bar 2: the bass track already has a note there — a new track is made instead
+  assert.match(r2.note, /new track/);
+  assert.equal(val(`song.tracks.length`), 4, "a new bass track was added");
+  assert.equal(val(`editUndo.length`), undoLenBefore + 1, "the track add folded into the SAME undo step as the notes");
+  run(`editUndoPop(); bsTakes = [];`);
+  assert.equal(val(`song.tracks.length`), 3, "undo removed the added track too");
+  const s0 = askBsSnap();
+  assert.throws(() => run(`askBassist({})`), /say the bars/);
+  assert.throws(() => run(`askBassist({from_bar: 3, to_bar: 2})`), /to_bar must be ≥ from_bar/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 999})`), /don't all exist/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, style: "funk"})`), /style must be one of/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, busy: 9})`), /busy must be 1–5/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, octave: 9})`), /octave must be 1–3/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, track: "bogus"})`), /no track named "bogus"/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, track: "drums"})`), /drum\/noise track/);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, follow: "bogus"})`), /no track named "bogus"/);
+  run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 3, q1: 1, text: "timesig: 3/4", added: true}])[0])); finalizeNotes();`);
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, seed: 1})`), /cross a meter change/);
+  assert.deepEqual(askBsSnap(), s0, "nothing changed after any rejected call");
+  assert.equal(val(`editUndo.length`), 0, "no undo entry from a rejected call");
+  assert.equal(val(`bsTakes.length`), 0, "no take chip from a rejected call");
+  run(`rollnotes = rollnotes.filter(n => !n.tsdir); declaredTs = null; finalizeNotes();`);
+});
+
+test("bassist: refuses on a locked capture with nothing changed; hidden from the general (no-song) chat; listed as a song-only action", () => {
+  installAskBassSong();
+  const s0 = askBsSnap();
+  run(`
+    songKey = "albums/nes/mega-man-2/bassist-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askBassist({from_bar: 2, to_bar: 3, seed: 1})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.deepEqual(askBsSnap(), s0, "nothing changed on a locked song");
+  assert.equal(val(`editUndo.length`), 0);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+  assert.ok(!val(`ASK_TOOLS.some(t => t.function.name === "bassist")`), "no standalone bassist tool");
+  assert.ok(val(`ASK_ACTIONS.some(d => d.name === "bassist")`), "registered as an action");
+  assert.match(val(`askActTool(false).function.description`), /\nbassist from_bar to_bar\|section [^\n]* — run the Bassist/, "one index line in the song chat's act tool");
+  run(`askGeneral = true;`);
+  assert.doesNotMatch(val(`askActTool(true).function.description`), /bassist/, "bassist hidden in the general chat (needs the open song)");
+  run(`askGeneral = false;`);
+});
+
+test("bassist: the reply never names a chord or key it read or inferred (Learning mode is the law) — declared chords, and the melody-inferred sketch once none are declared", () => {
+  installAskBassSong();
+  const CHORD_OR_KEY = /\bAm\b|\bC\b|chord|\bkey\b/i;
+  const r1 = val(`askBassist({from_bar: 2, to_bar: 4, seed: 9}).note`);
+  assert.doesNotMatch(r1, CHORD_OR_KEY, "declared-chord case: " + r1);
+  run(`editUndoPop(); bsTakes = [];`);
+  run(`rollnotes = rollnotes.filter(n => !n.chord); finalizeNotes();`); // strip every chord band: bsGenerate must sketch from pulse1's melody instead
+  const r2 = val(`askBassist({from_bar: 2, to_bar: 4, seed: 9}).note`);
+  assert.doesNotMatch(r2, CHORD_OR_KEY, "melody-sketch case: " + r2);
+  run(`editUndoPop(); bsTakes = [];`);
+});
+
+const askActRun = async code => JSON.parse(JSON.stringify(await run(code))); // an awaited act result, localized out of the vm realm
+test("bassist: reached through act — a \"do\" list runs it, undo restores exactly through act too, and the general chat refuses it", async () => {
+  installAskBassSong();
+  const before = askBsSnap();
+  const r = await askActRun(`askAct({do: [{action: "bassist", from_bar: 2, to_bar: 4, seed: 42}]})`);
+  assert.match(typeof r === "string" ? r : r.final, /^Bassist: replaced/);
+  assert.equal(val(`editUndo.length`), 1);
+  await askActRun(`askAct({do: [{action: "undo"}]})`);
+  assert.deepEqual(askBsSnap(), before);
+  run(`editUndo = []; editRedo = []; bsTakes = [];`);
+  run(`askGeneral = true;`);
+  await assert.rejects(askActRun(`askAct({do: [{action: "bassist", from_bar: 2, to_bar: 4}]})`), /works in a song's/);
   run(`askGeneral = false;`);
 });
 

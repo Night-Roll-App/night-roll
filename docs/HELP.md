@@ -416,6 +416,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: write one annotation in the user's words**
 **“Put an F#m chord on bar 21.”** Say the kind (chord, section, key, tempo, loop, meter, chop, note), the text in your words, the bar and beat. (act: add_annotation kind text bar beat end_bar? end_beat? comment?)
 
+**Ask: run the Bassist over bars or a section label (one undo)**
+**“Bass line for bars 1 to 16, busy 2, follow the drums.”** Say the bars or one of your section labels, then what you want: style (chug, pump, arp, walk, riff), busy 1–5, octave 1–3, what it follows (drums, chords, or a track name); name a track to pick where the bass goes, else it uses your bass track or makes one. "that one again, quieter" works because the reply names the seed. (act: bassist from_bar to_bar|section track? style? busy? octave? follow? seed?)
+
 **Ask: repeat bars: open a gap, copy the music into it (one undo)**
 **“Repeat bars 5 and 6 right after themselves.”** Say the bars to copy and where the copy lands. (act: copy_bars from_bar to_bar at_bar)
 
