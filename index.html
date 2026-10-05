@@ -1296,21 +1296,6 @@
 </div>
 </div><!-- /jobssheet-home -->
 
-<div id="pubjobsheet-home" style="display:contents">
-<div class="overlay" id="pubjobsheet">
-  <div class="sheet">
-    <h2 id="pubjobsheet-h2"><span id="pubjobtitle">PUBLISH</span></h2>
-    <div class="row"><div class="jobbar" id="pubjobbar"><div></div></div></div>
-    <div id="pubjoblist"></div>
-    <div class="status" id="pubjobnote"></div>
-    <div class="row" style="margin-top:10px">
-      <button id="pubjobcancel" style="display:none">Cancel</button>
-      <button id="pubjobclose">Close</button>
-    </div>
-  </div>
-</div>
-</div><!-- /pubjobsheet-home -->
-
 <div class="overlay" id="errsheet">
   <div class="sheet">
     <h2>MESSAGES</h2>
@@ -1570,6 +1555,22 @@
   </div>
 </div>
 </div><!-- /syncsheet-home -->
+
+<div id="pubjobsheet-home" style="display:contents">
+<div class="overlay" id="pubjobsheet">
+  <div class="sheet">
+    <h2 id="pubjobsheet-h2"><span id="pubjobtitle">PUBLISH</span></h2>
+    <div class="row"><div class="jobbar" id="pubjobbar"><div></div></div></div>
+    <div id="pubjoblist"></div>
+    <div class="status" id="pubjobnote"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="pubjobcancel" style="display:none">Cancel</button>
+      <button id="pubjobretry" style="display:none" title="Retry what is left">Retry</button>
+      <button id="pubjobclose">Close</button>
+    </div>
+  </div>
+</div>
+</div><!-- /pubjobsheet-home -->
 
 <link rel="modulepreload" href="src/state.js">
 <link rel="modulepreload" href="src/edition.js">

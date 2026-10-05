@@ -245,7 +245,7 @@ export function renderPubJob() {
   if (!job) { sheet.classList.remove("on"); return; }
   document.getElementById("pubjobtitle").textContent = job.title || "Publish";
   jobBarSet(document.getElementById("pubjobbar"), jobFraction(job));
-  document.getElementById("pubjobnote").textContent = job.note || "";
+  document.getElementById("pubjobnote").textContent = job.note || (job.err ? "⚠ " + job.err : ""); // a job that failed before any item ran (no token) has only job.err to show
   const list = document.getElementById("pubjoblist");
   list.innerHTML = "";
   for (const it of job.items || []) {
@@ -280,6 +280,8 @@ export function renderPubJob() {
   }
   const running = job.state === "running" || job.state === "queued";
   document.getElementById("pubjobcancel").style.display = running ? "" : "none";
+  const kind = JOB_KINDS[job.kind]; // Retry: the Jobs list's rule — over and not done, and the kind knows how
+  document.getElementById("pubjobretry").style.display = !running && job.state !== "done" && kind && kind.retry ? "" : "none";
 }
 export function publishDest() { // where Publish would send things: "github" | "folder" | null
   if (folderActive()) return "folder";
@@ -1062,8 +1064,8 @@ export function renderSyncPending() {
       if (!takeToken(status)) return; // same gate as Publish all
       const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
       if (!job) return;
-      syncSheetRelease();
-      openPubJobSheet(job);
+      openPubJobSheet(job); // over the Publish window, which stays until the outcome
+      pubJobOneMotion(job);
     });
     title.appendChild(pb);
     if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
@@ -1188,6 +1190,34 @@ export function renderSyncChats(chats, line) {
 // dialog takes over (as before); docked, it stays — closing a docked window
 // collapses its dock mid-job, and the list re-renders as the job runs.
 export function syncSheetRelease() { if (!wmWhereIs(S.wm, "syncsheet")) syncsheet.classList.remove("on"); }
+// One song, one motion (Josh, Terminal #112): a one-song job does not release
+// the Publish window at launch — the dialog opens over it — and when the job
+// is DONE both go: the dialog, and the window through syncSheetRelease (a
+// floating window was a step; a docked one is a place and stays, its list
+// already re-rendered without the song). The status line keeps the outcome,
+// since the window's own #syncstatus goes with it. Failed, both stay: the
+// error is in the dialog, Retry beside Close. Publish all / Publish chats
+// keep today's shape — several outcomes to read.
+export function pubJobOneMotion(job) {
+  const off = jobsOnChange(() => {
+    if (job.state === "running" || job.state === "queued") return;
+    off();
+    if (job.state !== "done") return;
+    if (S.pubJobShown === job.id) document.getElementById("pubjobsheet").classList.remove("on");
+    syncSheetRelease();
+    setInfo("Published " + (job.items[0] ? job.items[0].label : job.title) + " ✓");
+  });
+}
+// ⇪ Publish song, done (both of its branches): the status line keeps
+// "Published <song> ✓" past the window, then the window goes (a docked one
+// stays) — back to the notes list when that is where it came from.
+export function syncPublishedOne() {
+  setInfo("Published " + songTitleOf(S.songKey) + " ✓");
+  setTimeout(() => {
+    syncSheetRelease();
+    if (S.syncReturnToList) { renderNoteList(); notelistSheet.classList.add("on"); }
+  }, 900);
+}
 
 export function openInsertBars() {
   const bt = barTicks(), qt = beatTicks();
@@ -1509,6 +1539,7 @@ export function initSheets1() {
     document.getElementById("jobsclear").addEventListener("click", () => { jobsClearFinished(); renderJobs(); });
     document.getElementById("pubjobcancel").addEventListener("click", () => { if (S.pubJobShown) jobCancel(S.pubJobShown); renderPubJob(); });
     document.getElementById("pubjobclose").addEventListener("click", () => document.getElementById("pubjobsheet").classList.remove("on"));
+    document.getElementById("pubjobretry").addEventListener("click", () => { const job = S.jobs.find(j => j.id === S.pubJobShown), kind = job && JOB_KINDS[job.kind]; if (kind && kind.retry) kind.retry(job); }); // the retry opens its own job's dialog
     jobsOnChange(() => {
       if (document.getElementById("jobssheet").classList.contains("on")) renderJobs();
       if (document.getElementById("pubjobsheet").classList.contains("on")) renderPubJob();
@@ -2032,6 +2063,7 @@ export function initSheets7() {
         const token = writeToken();
         if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
         status.textContent = await publishOpenComposition(ghHeaders(token), m => status.textContent = m);
+        syncPublishedOne();
       } catch (err) { status.textContent = "Publish failed: " + err.message; }
       finally { btn.disabled = false; }
       return;
@@ -2045,10 +2077,7 @@ export function initSheets7() {
       await publishSong(S.songKey, ghHeaders(token), m => status.textContent = m); // annotations only: publishSong's own hisMusic check skips the .mid
       status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + "."
                                           : "Published ✓ (GitHub Pages takes ~1 min to serve the new file.)";
-      setTimeout(() => { // done — close (a docked window stays), and return to the notes list if that's where we came from
-        syncSheetRelease();
-        if (S.syncReturnToList) { renderNoteList(); notelistSheet.classList.add("on"); }
-      }, 900);
+      syncPublishedOne();
     } catch (err) { status.textContent = "Publish failed: " + err.message; }
     finally { btn.disabled = false; }
   });

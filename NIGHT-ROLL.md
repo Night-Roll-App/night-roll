@@ -4179,6 +4179,33 @@ runs. Tests: "Publish lists: …", "Publish window: songs first…",
 dockable…" in tests/night-roll.test.mjs; tests/e2e/docking.spec.mjs
 WINDOWS (syncsheet in, pubjobsheet out).
 
+**One song, one motion (Josh, Terminal #112, 2026-10-04 — "when that's
+done the whole thing should be done"):** a ONE-song job (a row's
+Publish, `publishAllJobStart(fn, [key])`) does NOT release the Publish
+window at launch — the dialog opens over it (`#pubjobsheet-home` sits
+after `#syncsheet-home` in index.html so it paints on top and Esc
+closes it first; no z-index rule) — and `pubJobOneMotion(job)`
+(sheets.js) subscribes once via `jobsOnChange`: job `done` → the dialog
+drops `on` (if it still shows that job), `syncSheetRelease()` (floating
+closes; docked stays — a place, not a step — its list already
+re-rendered without the song), and `setInfo("Published <song> ✓")`
+since the window's own `#syncstatus` goes with it (the runner's summary
+for a one-item job says the same, not "Published 1 ✓"). Any other end
+state: nothing closes. Jobs keep their selection: `publishAllJobStart`
+stores `keys` on the job (`jobStart`'s extra; null for Publish all), and
+`JOB_KINDS.publishall.retry` re-runs `j.keys` (what is still pending of
+them — everything pending only when the job had none) and re-arms the
+one-motion close when the retry is one key. The dialog has
+`#pubjobretry` (`renderPubJob`: shown when the job is over and not
+`done` and its kind has a `retry` — the Jobs list's rule; the note line
+falls back to `"⚠ " + job.err` for a job that failed before any item
+ran, e.g. no token). Publish all / Publish chats are unchanged: release
+at launch, the dialog stays until auto-clear. ⇪ Publish song's two
+branches end in `syncPublishedOne()`: `setInfo` + the 900 ms
+`syncSheetRelease` (+ notes list when `syncReturnToList`) — the
+composition branch used to leave the window open. Test: "One song, one
+motion (Terminal #112): …".
+
 Auto-clear (2026-09-29): a job that ends `done` or `cancelled` calls
 `jobsAutoClear(id)` from `jobApi`'s `finish()`, which `setTimeout`s
 `JOBS_AUTOCLEAR_MS` (10 s) then dismisses it IF it's still in that state
@@ -4208,8 +4235,11 @@ the CURRENT job from `jobs` (so `jobsOnChange` keeps it live while
 open) — title (`job.title`, bare, no "Publish · " prefix), an overall
 `.jobbar`, a row per item (`pjname` + a `pjstate`: a small `.jobbar.sm`
 while `running`, else `pubItemIcon(it)` — `…` queued, `✓` done/silent,
-`⚠ <msg>` failed, `✕ cancelled`/`⚠ interrupted`), the job's `note` line,
-`Cancel` (`jobCancel`) shown only while running/queued, `Close` always
+`⚠ <msg>` failed, `✕ cancelled`/`⚠ interrupted`), the job's `note` line
+(or `⚠ job.err` when there is no note — a job that failed before any
+item ran), `Cancel` (`jobCancel`) shown only while running/queued,
+`Retry` (`#pubjobretry` → `JOB_KINDS[kind].retry(job)`, Terminal #112)
+once the job is over and not done, `Close` always
 — the generic `.overlay` backdrop-tap/pinned-✕ close it too, and none of
 those touch the job (closing never cancels). Opened by: `JOB_KINDS.publish.open`
 and `JOB_KINDS.publishall.open` (so the jobs list's Open on either kind

@@ -2805,6 +2805,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Keep that</b>", "Velocity lane</dt>",
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
     "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
+    "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2875,6 +2876,9 @@ test("Import hub (docs/import-hub-design.md): the File menu opens it, all ten se
   // Terminal #111 (2026-10-04): the Publish window docks, the publish job dialog does not
   assert.match(html, /makeWindow\("syncsheet", \{dockable: true\}\)/);
   assert.match(html, /makeWindow\("pubjobsheet", \{dockable: false\}\)/);
+  // Terminal #112: the job dialog sits AFTER the Publish window in the DOM — a one-song publish keeps the window open under it, and paint order + Esc go by DOM order; Retry beside Close
+  assert.ok(html.indexOf('id="syncsheet-home"') < html.indexOf('id="pubjobsheet-home"'), "pubjobsheet after syncsheet");
+  assert.match(html, /<button id="pubjobretry" style="display:none"[^>]*>Retry<\/button>\s*<button id="pubjobclose">Close<\/button>/);
 });
 
 test("tempo: directives rebuild the map from the song's base; removal restores", () => {
@@ -7031,6 +7035,88 @@ test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is 
   assert.equal(val(`localStorage.getItem(draftStoreKey("${A}"))`), null, "reverted: this device's copy is gone");
   assert.equal(val(`readVersions("${A}").slice(-1)[0].label`), "Before going back", "current state kept as a version first, so File → Versions… can undo it");
   run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken; appConfirm = globalThis.__realConfirm;
+       for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);`);
+});
+
+test("One song, one motion (Terminal #112): a row's Publish keeps the Publish window under the job dialog; done, the dialog closes itself and takes a floating window with it, \"Published <song> ✓\" on the status line; a docked window stays; failed, both stay with the error and a Retry that re-runs just that song; Publish all keeps today's shape; ⇪ Publish song's close", async () => {
+  const A = "albums/compositions/nightroll/om-a.mid", B = "albums/compositions/nightroll/om-b.mid";
+  const titleB = val(`songTitleOf("${B}")`);
+  const settle = async () => { for (let i = 0; i < 30; i++) await run(`Promise.resolve()`); };
+  const rowPublish = k => `[...[...document.getElementById("syncpending").children].find(x => x.className.startsWith("psong") && x.children[0].children[0].textContent.startsWith(songTitleOf("${k}"))).children[0].children].find(c => c.textContent === "Publish")`;
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
+       globalThis.__om = {pendingSongs, writeToken, publishSong, writeSongsReadme, initCatalog, takeToken, songKey, syncReturnToList};
+       takeToken = () => "tok"; writeToken = () => "tok";
+       publishSong = async () => {}; writeSongsReadme = async () => {}; initCatalog = async () => {};
+       globalThis.__pend = ["${A}", "${B}"]; pendingSongs = () => __pend.slice();
+       for (const k of ["${A}", "${B}"]) localStorage.setItem(draftStoreKey(k), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
+       window.innerWidth = 1200; wm = {}; wmLayoutAll();
+       document.getElementById("pubjobsheet").classList.remove("on");
+       syncsheet.classList.add("on"); renderSyncPending();`);
+  // success, floating: the window stays under the dialog while the job runs, then both go
+  run(`${rowPublish(B)}.click();`);
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), true, "the job dialog opened");
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "the floating Publish window is NOT released at launch any more — it waits for the outcome");
+  assert.deepEqual(val(`jobs.slice(-1)[0].keys`), [B], "the job keeps its selection");
+  run(`__pend = ["${A}"];`); // the publish took: the song is no longer pending when the list re-renders
+  await settle();
+  assert.equal(val(`jobs.slice(-1)[0].state`), "done");
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), false, "done: the dialog closed itself");
+  assert.equal(val(`syncsheet.classList.contains("on")`), false, "done: the floating Publish window went with it");
+  assert.equal(val(`infoFull`), "Published " + titleB + " ✓", "the status line keeps the one-line confirmation");
+  assert.equal(val(`document.getElementById("syncstatus").textContent`), "Published " + titleB + " ✓", "the window's own line names the song, not \"Published 1 ✓\"");
+  // success, docked: a place, not a step — the window stays, its list re-rendered without the song
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); __pend = ["${A}", "${B}"]; syncsheet.classList.add("on"); renderSyncPending(); wmDockSide("syncsheet", "right");`);
+  run(`${rowPublish(B)}.click(); __pend = ["${A}"];`);
+  await settle();
+  assert.equal(val(`jobs.slice(-1)[0].state`), "done");
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), false, "docked: the dialog still closes itself");
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "docked: the Publish window stays");
+  assert.deepEqual(val(`wm.right.ids`), ["syncsheet"], "and stays docked");
+  assert.equal(val(`[...document.getElementById("syncpending").children].filter(x => x.className.startsWith("psong")).length`), 1, "its list is one song shorter");
+  run(`wmFloat("syncsheet"); jobs = jobs.filter(j => j.kind !== "publishall");`);
+  // failure: both stay, the error is in the dialog, Retry beside Close re-runs just that song (and is one motion again)
+  run(`writeToken = () => null; __pend = ["${A}", "${B}"]; renderSyncPending();`);
+  run(`${rowPublish(B)}.click();`);
+  await settle();
+  assert.equal(val(`jobs.slice(-1)[0].state`), "failed");
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), true, "failed: the dialog stays");
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "failed: the Publish window stays too");
+  assert.match(val(`document.getElementById("pubjobnote").textContent`), /⚠ No GitHub token/, "the error is in the dialog even when no item got as far as running");
+  assert.equal(val(`document.getElementById("pubjobretry").style.display`), "", "Retry shows on a failed job");
+  assert.equal(val(`document.getElementById("pubjobcancel").style.display`), "none");
+  const failedId = val(`jobs.slice(-1)[0].id`);
+  run(`writeToken = () => "tok"; document.getElementById("pubjobretry").click(); __pend = ["${A}"];`);
+  assert.notEqual(val(`jobs.slice(-1)[0].id`), failedId, "Retry started a new job");
+  assert.deepEqual(val(`jobs.slice(-1)[0].items.map(i => i.key)`), [B], "…for that one song only, not everything pending");
+  assert.equal(val(`pubJobShown === jobs.slice(-1)[0].id`), true, "the dialog shows the retry");
+  await settle();
+  assert.equal(val(`jobs.slice(-1)[0].state`), "done");
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), false, "the retry is one motion too: done, the dialog closed");
+  assert.equal(val(`syncsheet.classList.contains("on")`), false, "…and the floating window with it");
+  // Publish all: unchanged — the floating window closes at launch, the dialog stays up for its several outcomes
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); __pend = ["${A}", "${B}"]; syncsheet.classList.add("on"); renderSyncPending(); document.getElementById("ghsaveall").click();`);
+  assert.equal(val(`jobs.slice(-1)[0].title`), "Publish all");
+  assert.equal(val(`jobs.slice(-1)[0].keys`), null, "no selection: a retry is everything pending again");
+  assert.equal(val(`syncsheet.classList.contains("on")`), false, "Publish all: the floating window closes at launch, as before");
+  run(`__pend = [];`);
+  await settle();
+  assert.equal(val(`jobs.slice(-1)[0].state`), "done");
+  assert.equal(val(`document.getElementById("pubjobsheet").classList.contains("on")`), true, "Publish all: the dialog stays (auto-clear takes it later)");
+  assert.equal(val(`document.getElementById("pubjobnote").textContent`), "Published 2 ✓");
+  assert.equal(val(`document.getElementById("pubjobretry").style.display`), "none", "nothing to retry on a done job");
+  // ⇪ Publish song's end (both branches call it): status line, then the 900 ms close — floating only
+  run(`document.getElementById("pubjobsheet").classList.remove("on"); songKey = "${A}"; syncReturnToList = false; syncsheet.classList.add("on"); syncPublishedOne();`);
+  assert.equal(val(`infoFull`), "Published " + val(`songTitleOf("${A}")`) + " ✓");
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "not yet — the ✓ is readable first");
+  app.tick(900);
+  assert.equal(val(`syncsheet.classList.contains("on")`), false, "floating: closed after the pause");
+  run(`syncsheet.classList.add("on"); wmDockSide("syncsheet", "right"); syncPublishedOne();`);
+  app.tick(900);
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "docked: stays");
+  run(`wmFloat("syncsheet"); syncsheet.classList.remove("on"); wm = {}; wmLayoutAll();
+       jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
+       pendingSongs = __om.pendingSongs; writeToken = __om.writeToken; publishSong = __om.publishSong; writeSongsReadme = __om.writeSongsReadme; initCatalog = __om.initCatalog; takeToken = __om.takeToken; songKey = __om.songKey; syncReturnToList = __om.syncReturnToList;
+       delete globalThis.__om; delete globalThis.__pend;
        for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);`);
 });
 

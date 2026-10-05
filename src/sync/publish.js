@@ -69,6 +69,7 @@ import { pubCompareDraft } from "../ui/sheets.js";
 import { logDebugImpl as logDebug } from "../ui/chrome.js";
 import { JOB_KINDS } from "../model/jobs.js";
 import { openPubJobSheet } from "../ui/sheets.js";
+import { pubJobOneMotion } from "../ui/sheets.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
@@ -633,11 +634,11 @@ export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's 
     updateSyncBtn();
     updateSongBtn();
     renderSyncPending();
-    const msg = failed ? failed + " of " + pending.length + " failed to publish" : "Published " + pending.length + " ✓";
+    const msg = failed ? failed + " of " + pending.length + " failed to publish" : "Published " + (pending.length === 1 ? items[0].label : pending.length) + " ✓";
     api.note(msg);
     statusFn && statusFn(msg);
     if (failed) throw new Error(msg);
-  });
+  }, {keys: onlyKeys ? onlyKeys.slice() : null}); // the selection stays with the job: Retry re-runs these keys, not everything pending
 }
 export async function fingerprintOldDrafts() {
   if (S.pubCheckRunning || LINK_SONGS) return;
@@ -682,6 +683,11 @@ export function initPublish3() {
   JOB_KINDS.publishall = {
     label: j => j.title,
     open: j => openPubJobSheet(j),
-    retry: j => { const job = publishAllJobStart(setInfo); if (job) openPubJobSheet(job); },
+    retry: j => { // what is left of the job's own selection; a Publish all (no keys) is everything pending again
+      const job = publishAllJobStart(setInfo, j.keys || undefined);
+      if (!job) return;
+      openPubJobSheet(job);
+      if (job.keys && job.keys.length === 1) pubJobOneMotion(job); // a one-song retry is one motion too
+    },
   };
 }

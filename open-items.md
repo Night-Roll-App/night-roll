@@ -22,6 +22,16 @@ keywords, NIGHT-ROLL.md ("Publish window: songs vs chats"), boot-order
 snapshot, docking.spec WINDOWS. To eyeball: dock the Publish window
 left/right/bottom and at phone width (no Dock button), the folded Chats
 row and its open state, a song row's Publish popup with no Dock button.
+Addendum (Terminal #112, "one motion for one song", built 2026-10-04 on
+the same branch; plan's "Review (Fable) — addendum", D6–D9): a song
+row's Publish keeps the Publish window under the job dialog; done, the
+dialog closes itself and takes a floating window with it ("Published
+‹song› ✓" on the status line) — a docked window stays; failed, both stay
+with the error and a Retry in the dialog that re-runs just that song
+(jobs keep their `keys`). Publish all / Publish chats unchanged. ⇪
+Publish song's composition branch now closes the floating window too.
+To eyeball: a one-song Publish floating and docked, a failing one
+(remove the token) and its Retry.
 
 ## Theory FACTS toolkit — BUILT 2026-10-04, not wired in (Josh: "make sure they're tested… just tell me where it would be integrated")
 
