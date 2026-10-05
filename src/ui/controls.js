@@ -49,6 +49,7 @@ export const CONTROLS = {
   vwScore: {glyph: "𝄞", cls: "", label: "  Score view", prefix: "   "},
   vwTracksView: {icon: "tableRows", cls: "", label: "Tracks view", prefix: "   "},
   vwMixer: {icon: "tune", cls: "", label: "Mixer", prefix: "   "},
+  vwStudy: {icon: "list", cls: "", label: "Analysis sheet", prefix: "   "},
   vwTracks: {glyph: "◂", cls: "", label: "  Tracks", prefix: "   "},
   vwEdit: {icon: "construction", cls: "", label: "Edit toolbar", prefix: "   "},
   vwAdded: {glyph: "┄", cls: "", label: "  Outline new notes", prefix: "   "},

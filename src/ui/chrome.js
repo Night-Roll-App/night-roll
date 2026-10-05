@@ -167,6 +167,7 @@ import { setVolBtn } from "./controls.js";
 import { MASTER_VOL } from "../audio/engine.js";
 import { trackIsDrums } from "../model/grid.js";
 import { toggleMixer } from "./mixer.js";
+import { studyIsOpen, toggleStudySheet } from "./study-sheet.js";
 import { setAppMode } from "../platform/mode.js";
 import { computeAnalysisLayer } from "../gen/analysis.js";
 import { setAddedOutline } from "../render/roll.js";
@@ -542,6 +543,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwListener: {icon: "radio", text: "Listener mode"},
     vwTracksView: {icon: "tableRows", text: "Tracks view"},
     vwMixer: {icon: "tune", text: "Mixer"},
+    vwStudy: {icon: "list", text: "Analysis sheet"},
     vwTracks: {glyph: "◂", text: "Tracks"},
     vwEdit: {icon: "construction", text: "Edit toolbar"},
     vwAdded: {glyph: "┄", text: "Outline new notes"},
@@ -590,6 +592,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     document.getElementById(g.row).style.display = open ? "" : "none";
   }
   set("vwMixer", mixerIsOpen());
+  set("vwStudy", studyIsOpen());
   set("vwCompare", !!S.cmp, !(S.song && S.songKey && isComposition())); // dimmed where there is nothing to compare against
   // P6: Normal-mode only — the item is ABSENT (not dimmed) in Learning, same
   // discipline as every other Learning-mode hiding place (CLAUDE.md).
@@ -1972,6 +1975,7 @@ export function initChrome11() {
     });
     on("vwTracksView", () => setViewMode("tracks"));
     on("vwMixer", () => toggleMixer());
+    on("vwStudy", () => toggleStudySheet());
     on("vwLearning", () => { setAppMode(appMode() === "learning" ? "normal" : "learning"); applyMode(); });
     on("vwAnalyze", () => { // Normal-only (the item is absent otherwise) — compute on toggle, never per frame
       if (!analysisAvailable() || !S.song) return;

@@ -252,6 +252,23 @@ Q10. (ASK before deploying the Tetris repair, 2026-10-04) Game Boy › Tetris:
     to albums/game-boy/tetris/a-type-music-version-1-1.mid (recent list,
     local notes or edits) would attach to the new song. Did you write
     anything on it locally? If yes, say so and I move it with the file.
+Q11. (Analysis sheet, plan §6.1 — shipped with a default) The sixteen prompts
+    as written in the sheet (Form 3 / Harmony 5 / Melody 3 / Texture 3 /
+    Summary 2), or fewer to start? The ids are stored in your files and
+    stay; only the wording changes if you want it to. Example: "Phrase
+    pairing — question and answer, or a changed ending" could just be
+    "Phrase pairing".
+Q12. (Analysis sheet, plan §6.2 — NOT built yet, S3) "File under" chips in
+    the annotation editor, so a bar note can be listed under Cadences /
+    Motifs etc.? One more row in the editor you use constantly; without it
+    the sheet lists only sections and chords by type and everything else
+    goes through the tick + answer box. Default if you say nothing: build
+    it after you've used the sheet for a week.
+Q13. (Analysis sheet, plan §6.3 — shipped with a default) The one count the
+    sheet shows unasked is "▸ N chord bands" (your own bands, same number
+    ☰ All notes shows). Keep it, or hide every number except inside Check
+    coverage? Example: Harmony → Key and chords → "key: …" then "▸ 16
+    chord bands".
 
 Q11. (AI parity, docs/ai-parity.md §6, 2026-10-05) Which tier for Ask's
     feature access? Minimal ≈470 tokens/round, Core ≈590, Full ≈780 (today's
@@ -7415,7 +7432,14 @@ check is "it still works", not "it works differently":
 Josh: "you are unable to do what you just did because it just came across as JSON, so you need to tell the terminal that the call you just tried failed."
 What happened: Ask replied with a sentence BEFORE the one-line {"tool_call":...} (add_annotation, kind section, text "Turn", bar 14, end_bar 16, comment = the Neapolitan note). The app showed the raw JSON as chat text and ran nothing. The bridge/app should either (a) find a tool_call line even when prose precedes it, or (b) the Ask prompt should be stricter. Josh wants: section "Turn" over bars 14-16 and the old note (id 16) removed. Ask will retry with a bare JSON line.
 
-## 2026-10-05 — Per-song analysis sheet: Fable advisor wanted (from Josh, via Ask on chaos-temple) — PLAN WRITTEN: docs/plans/2026-10-05-analysis-sheet.md, awaiting Josh
+## 2026-10-05 — Per-song analysis sheet: Fable advisor wanted (from Josh, via Ask on chaos-temple) — PLAN WRITTEN: docs/plans/2026-10-05-analysis-sheet.md; S0 guide (cbd8979), S1 storage (c52444d), S2 window BUILT (branch, awaiting merge + Josh's iPad look)
+S2 (src/ui/study-sheet.js — `study` stem; "Analysis sheet" is the label) as built, decisions recorded:
+- Reached from ☰ Notes ▴ → Analysis sheet and View ▾ → Panels → Analysis sheet; the drop-up's "Analysis guide" item is GONE (Josh, Terminal #147) — the guide is a button at the top of the sheet.
+- Group chips are bare names (review 6a). The only unasked count is "▸ N chord bands" (his own type count, the ☰ All notes number). Every prompt has a tick + an Answer box (dictation via Speak, no auto-focus); typed prompts list his bands (tap = jump + editor). Help folds per group are folded by default and clone one data-topic <dd> from the guide.
+- Check coverage: on demand, status line, one-shot (cleared on next open / song change), counts ticks + answers + annotation types only; a vm spy test proxies song.tracks and estimateKey.
+- Song switch: setSong's first call commits an open box to the outgoing song; a mismatched Done stashes a device-local draft (ff1roll-study-draft-<song>|<item>) restored on next open. Locked song → lock reason on the status line.
+- NOT built: S3 "File under" chips (located prompts list by type only), S5 Ask writing entries. Open questions: Q11–Q13 below.
+- The frozen chaos-temple fixture the review asked for was not made (the builder's sandbox refused to read his rollnotes — fine: tests use a scratch fixture with placeholder bodies instead, which the review's 6b preferred anyway).
 Josh's words (speech-to-text, lightly cleaned): "I would like a Fable advisor to consider adding something like an analysis sheet for every song. I don't know where it would be accessed from, or what would be on it. It would probably have some sort of checklist like all the things you mentioned, or different sections where I could fill out all that stuff. We already have the annotations, so maybe you could reference those somehow — they're nice where they are — but having some centralized place where I can have all the analysis would be nice, per song. Every song has its own analysis sheet. This is my idea; Fable should critique it, and if it has better ideas that's fine. If it agrees, the notes you just gave me about what comes in an analysis should be available on the sheet — maybe beefed up with more detail per section. I'm certainly not going to remember everything you said, so I want to be able to refer back to it."
 Josh's ask is a plan + Fable critique (plan -> Fable review -> Fable implement); nothing built yet. Per the Learning-mode law the sheet must be prompts and structure only: never pre-filled answers, keys, chords or verdicts.
 The reference content Josh wants on the sheet (Ask's answer to "what does a professional analyst put in an analysis", 2026-10-05):

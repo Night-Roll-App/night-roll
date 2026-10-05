@@ -362,10 +362,11 @@
 <div id="notesmenu" class="dropup">
   <button class="fitem" id="notebtn">+ New note</button>
   <button class="fitem" id="notesall"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>All notes</button>
-  <!-- Analysis guide (docs/plans/2026-10-05-analysis-sheet.md §0): one tap to
-       the generic reference text — what a full analysis covers, how to find
-       each part in Night Roll, how to write it down. Reuses openHelp(). -->
-  <button class="fitem" id="notesguide">Analysis guide</button>
+  <!-- Analysis sheet (docs/plans/2026-10-05-analysis-sheet.md §2, S2): the
+       per-song window — his annotations grouped under the guide's prompts,
+       his ticks, his answers. The guide itself is a button INSIDE the sheet
+       (Josh, Terminal #147: "I don't wanna clutter the drop-up"), not here. -->
+  <button class="fitem" id="notesstudy">Analysis sheet</button>
   <!-- the strip above the footer, one tap from the notes it shows (Josh,
        2026-10-02: "we used to have a button … show the notes or hide the
        notes"; it moved to View ▾ → Panels and was hard to find) -->
@@ -542,6 +543,28 @@
   </div>
 </div>
 </div><!-- /notelistsheet-home -->
+
+<!-- Analysis sheet (docs/plans/2026-10-05-analysis-sheet.md §2, S2;
+     src/ui/study-sheet.js — `study` stem on purpose: `analysis*` is the
+     Normal-only estimate layer): a dockable window like ☰ All notes. The h2
+     carries the song's title (studysheettitle, as #instsheettitle does);
+     #studyjump is the group strip (names only), #studytools the Analysis
+     guide / Check coverage buttons, #studyStatus the one line Check coverage
+     writes, #studyrows the designated scrolling body while docked. -->
+<div id="studysheet-home" style="display:contents">
+<div class="overlay" id="studysheet">
+  <div class="sheet help">
+    <h2 id="studysheet-h2"><span id="studysheettitle">ANALYSIS</span></h2>
+    <div id="studyjump"></div>
+    <div class="row" id="studytools">
+      <button id="studyguide" aria-label="Analysis guide — what a full analysis covers (Help → Analysis)">Analysis guide</button>
+      <button id="studycheck" aria-label="Check coverage — which prompts have no tick or answer, counted from your own notes">Check coverage</button>
+    </div>
+    <div class="status" id="studyStatus"></div>
+    <div id="studyrows"></div>
+  </div>
+</div>
+</div><!-- /studysheet-home -->
 
 <div id="mixersheet-home" style="display:contents">
 <div class="overlay" id="mixersheet">
@@ -951,6 +974,7 @@
     <button class="fitem" id="vwSub">Notes strip</button>
     <button class="fitem" id="vwVel">Velocity lane</button>
     <button class="fitem" id="vwMixer">Mixer</button>
+    <button class="fitem" id="vwStudy">Analysis sheet</button>
     <button class="fitem" id="vwTracks">Tracks</button>
   </div>
   <div class="fdiv"></div>
@@ -1663,6 +1687,7 @@
 <link rel="modulepreload" href="src/ui/voice-menu.js">
 <link rel="modulepreload" href="src/ui/notes.js">
 <link rel="modulepreload" href="src/ui/note-editor.js">
+<link rel="modulepreload" href="src/ui/study-sheet.js">
 <link rel="modulepreload" href="src/ui/sheets.js">
 <link rel="modulepreload" href="src/ui/wm.js">
 <link rel="modulepreload" href="src/ui/vellane.js">

@@ -1014,7 +1014,7 @@
     dock (240px default) cut off the input row/buttons below a tall log otherwise. Header rows and trailing button
     rows keep their natural size; the one designated scrolling body per window (below) is flex:1 + min-height:0, so
     IT shrinks and scrolls while the header and the input/button rows stay put. */
-  #asksheet.docked #asklog, #instsheet.docked #instrows, #notelistsheet.docked #notelistrows,
+  #asksheet.docked #asklog, #instsheet.docked #instrows, #notelistsheet.docked #notelistrows, #studysheet.docked #studyrows,
   #jobssheet.docked #jobslist, #syncsheet.docked #syncpending, #infosheet.docked #infosheettext {
     flex: 1; min-height: 0; overflow-y: auto;
   }
@@ -1209,6 +1209,35 @@
     cursor: pointer;
   }
   .notegroup .grows { display: flex; flex-direction: column; gap: 7px; }
+  /* Analysis sheet (src/ui/study-sheet.js): reuses .notegroup/.ghead/.noterow;
+     its own rows wrap (a prompt is a sentence; the window must not scroll
+     sideways at phone width or in a 380px dock) and every tap target is 44px */
+  #studyjump { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0; background: var(--panel); }
+  #studyjump button { min-height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--grid); background: transparent;
+    color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.06em; }
+  #studytools { flex-wrap: wrap; gap: 6px; }
+  #studyrows { display: flex; flex-direction: column; gap: 7px; }
+  .studyprompt { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 6px; border-top: 1px solid var(--grid); }
+  .studyhead { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+  .studytick { flex: 0 0 auto; min-width: 44px; min-height: 44px; border-radius: 8px; border: 1px solid var(--grid);
+    background: var(--panel2); color: var(--dim); font-size: 1.25rem; line-height: 1; }
+  .studytick.on { color: var(--gold); border-color: var(--gold); }
+  .studylbl { flex: 1 1 auto; min-width: 0; font-size: 0.875rem; color: var(--text); line-height: 1.35; padding-top: 11px; overflow-wrap: anywhere; }
+  .studyacts { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 46%; }
+  .studyacts .gadd { min-height: 36px; font-family: var(--mono); font-size: 0.75rem; padding: 3px 10px; border: 1px solid var(--grid);
+    border-radius: 8px; background: var(--panel2); color: var(--text); white-space: nowrap; }
+  .studyauto { margin-left: 52px; }
+  .studyfoldbtn { align-self: flex-start; min-height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--grid);
+    background: transparent; color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.04em; margin-left: auto; }
+  .studyauto .studyfoldbtn { margin-left: 0; }
+  .studytext { margin-left: 52px; font-size: 0.8125rem; color: var(--text); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere;
+    padding: 8px 10px; border: 1px solid var(--grid); border-radius: 8px; background: var(--panel2); cursor: pointer; }
+  .studyanswer { margin-left: 52px; display: flex; flex-direction: column; gap: 6px; }
+  .studyanswer textarea { width: 100%; box-sizing: border-box; min-height: 72px; font-size: 1rem; line-height: 1.4; padding: 8px 10px;
+    border: 1px solid var(--grid); border-radius: 8px; background: var(--panel2); color: var(--text); resize: vertical; }
+  .studyanswerrow { flex-wrap: wrap; gap: 6px; }
+  .studyguide { font-size: 0.8125rem; color: var(--dim); line-height: 1.45; margin: 0 0 8px; overflow-wrap: anywhere; }
+  @media (max-width: 480px) { .studyauto, .studytext, .studyanswer { margin-left: 0; } .studyacts { max-width: 100%; } }
 #progpanel{max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .prow{padding:8px 2px;border-bottom:1px solid #2a2a3a}
 .prow b{color:var(--gold);font-size:0.875rem}

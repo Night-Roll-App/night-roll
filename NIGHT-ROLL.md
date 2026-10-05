@@ -1830,6 +1830,19 @@ sections are these modules now.
   `fingerprintOldDrafts` (the publish/sync-status sheet) were tried too:
   blocked by `openDraft`/`loadSong` (→ `play`, the permanent transport
   wall) — stayed in app.js.
+- `ui/study-sheet.js` — the Analysis sheet (2026-10-05, docs/plans/
+  2026-10-05-analysis-sheet.md S2; the `study` stem is deliberate —
+  `analysis*` in src/ is the Normal-only estimate layer): `STUDY_GROUPS`/
+  `STUDY_PROMPTS` (the sixteen prompt ids, stored in his files, never
+  renamed), the pure `studyGroups(notes)`/`studyCoverage(notes)`/
+  `studyCoverageText`, `renderStudySheet`/`openStudySheet`/
+  `closeStudySheet`/`toggleStudySheet`/`studyIsOpen`, the one write
+  `studyWrite` (→ `putStudyEntry`, one "anno" undo step, the lock reason
+  on the status line), the answer-box draft (`studyCommitDraft`/
+  `studyDiscardDraft`/`studyBeforeSongChange`/`studyAfterNotesChange` —
+  the last two are called from `session/song.js`'s `setSong` and
+  `finalizeNotesImpl`), `studyRunCheck`, `initStudySheet1`. See
+  "Analysis sheet" below.
 - `ui/wm.js` — every pure window-shape/layout-math leaf: the `WM_*`
   constants, `wmClampSize`/`wmClampHeight`/`wmClampSplit`/`wmAllowed`,
   `wmMigrate`/`wmMigrateShape`/`wmMigrateShapeB`, `wmSetSide*`/
@@ -2747,9 +2760,11 @@ and it says so.
 
 Step S0 of docs/plans/2026-10-05-analysis-sheet.md: a ninth help tab
 (`data-hs="analysis"`, body `help/help.html`'s `data-hsec="analysis"`),
-reached via **Help → Analysis** or **☰ Notes ▴ → Analysis guide**
-(`#notesguide`, `openHelp("analysis")` in `src/ui/notes.js`'s
-`initNotes2`). It is the reference text Josh asked for (Terminal #133):
+reached via **Help → Analysis** or the **Analysis guide** button at the
+top of the Analysis sheet (`#studyguide`, `openHelp("analysis")` in
+`src/ui/study-sheet.js`). It was briefly a ☰ Notes ▴ item (`#notesguide`,
+S0) until Josh moved it into the sheet (Terminal #147: "I don't wanna
+clutter the drop-up"). It is the reference text Josh asked for (Terminal #133):
 not a checklist he fills in, just "here's all the things that analysis
 needs" so he can mentally check his own annotations against it — the
 sixteen things a full analysis covers, grouped Form/Harmony/Melody/
@@ -2766,6 +2781,69 @@ own prompt's "What to look for ▸" fold — one source, never duplicated.
 attributes); the guide's `data-topic="form"` etc. (so S2+ can clone one
 group's text) needed it widened to `<dd[^>]*>`, or every attributed dd's
 body silently vanished from docs/HELP.md.
+
+## Analysis sheet (☰ Notes ▴ → Analysis sheet, 2026-10-05)
+
+Step S2 of docs/plans/2026-10-05-analysis-sheet.md (storage was S1,
+".rollnotes format" above), built against docs/reviews/2026-10-05-
+analysis-sheet-review.md. `src/ui/study-sheet.js`; markup `#studysheet`
+(`#studysheet-home` wrapper, `#studysheet-h2` → `#studysheettitle`,
+`#studyjump`, `#studytools` = `#studyguide` + `#studycheck`,
+`#studyStatus`, `#studyrows`); `makeWindow("studysheet", {dockable:
+true})` and `S.wmOpeners.studysheet = openStudySheet`, so it docks as a
+tab beside AI and comes back after a relaunch; View ▾ → Panels →
+Analysis sheet (`#vwStudy`, a `setControl` control like `vwMixer`).
+
+What it shows, per song: the five groups of the guide (FORM, HARMONY,
+MELODY, TEXTURE & RHYTHM, SUMMARY) with a bare-name jump strip (no
+fractions — review finding 6a), and under each group its prompts — one
+tick button (44 px, one tap, `☐`/`☑`), the prompt text, an **Answer**
+(or **Edit**) button and a **+ section / + chord / + note** button that
+opens the ordinary editor at the cursor. A typed prompt lists his
+annotations of that type (`studyTypeMatch`: section bands under
+Sections; key lines inline and chord bands behind a "▸ N chord bands"
+fold under Key and chords) as ☰ All notes rows — tap one and the cursor
+jumps to its bar, the view follows, its editor opens (`studyJumpTo`).
+His plain bar notes sit in a last "BAR NOTES · N" fold. Each group's
+"What to look for ▸" fold (folded by default — Josh, Terminal #144)
+clones that group's `data-topic` `<dd>` out of help/help.html's
+analysis section through `ensureHelpLoaded()` — one source, offline via
+the same precache. Learning-mode law throughout: the sheet never names a
+key or chord of its own, never says what is missing, shows no coverage
+figure; the only unasked count is the number of chord bands HE wrote
+(the number ☰ All notes shows). `visibleNotes()` feeds it, so a Learning
+sheet never lists an ✦ AI estimate band.
+
+Writes: `studyWrite(item, patch)` is the only path — `annoSnapshot()`,
+`putStudyEntry()` (S1: retires the old entry, saves the unsynced store,
+throws on a locked song → the lock reason goes to `#studyStatus`, never
+a native dialog), `pushUndo({kind: "anno"})`, `finalizeNotes()` (whose
+tail calls `studyAfterNotesChange()` → re-render). A tick is one tap; an
+answer box is an inline textarea with Done / Cancel / Speak
+(`micToggle`, the editor's dictation), never auto-focused (the keyboard
+pops only when he taps it). `S.studyDraft = {item, songKey, ta}` is the
+one open box; `setSong` calls `studyBeforeSongChange()` FIRST, while
+`S.songKey`/`S.rollnotes` are still the outgoing song's, so an album
+run commits the words to the song they were written on (or, if that
+write refuses, stashes them device-locally under
+`ff1roll-study-draft-<songKey>|<item>` and restores them the next time
+that box opens on that song — review finding 9). Done with a mismatched
+song key stashes the same way and says so on the status line. A shared
+link (`LINK_SONGS`) is read-only here as in the editor.
+
+**Check coverage** (`studyRunCheck` → `studyCoverage(notes)`, pure):
+the one on-demand report (CLAUDE.md's 2026-08-19 corollary; the
+Check-vs-file precedent) — "Nothing ticked or answered under: …" plus
+"N of M chord bands have no note.", computed from his ticks, his
+answers and his annotation TYPES only (a typed prompt with bands counts
+as covered). It takes the notes list and nothing else; a vm test proxies
+`song.tracks` and spies `estimateKey` to prove a render + a check never
+touch the music. The line lives in `S.studyCheck`, shown in
+`#studyStatus`, cleared on the next open and on song change.
+
+Not built here (later steps, by design): S3 "File under" chips (`topic`
+on bar notes — located prompts list by type only until then) and S5
+(Ask writing sheet entries; reading them already works).
 
 ## Shipping checklist (every user-facing feature, Josh's standing rule)
 

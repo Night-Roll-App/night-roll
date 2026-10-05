@@ -97,7 +97,6 @@ cofCanvas.addEventListener("pointercancel", () => { S.cofPtr = null; S.cofDragRo
 document.getElementById("listbtn").addEventListener("click", e => {
 document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
 document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
-document.getElementById("notesguide").addEventListener("click", () => { closeDropUp(); openHelp("analysis"); });
 document.getElementById("notelistSync").addEventListener("click", () => {
 document.getElementById("notelistAdd").addEventListener("click", () => {
 document.getElementById("helptabs").addEventListener("click", e => {
@@ -109,6 +108,9 @@ findsel.addEventListener("change", () => {
 lassobtn.addEventListener("click", () => {
 document.getElementById("chcopy").addEventListener("click", async e => {
 document.getElementById("chordbtn").addEventListener("click", () => {
+document.getElementById("notesstudy").addEventListener("click", () => { closeDropUp(); openStudySheet(); });
+document.getElementById("studyguide").addEventListener("click", () => { openHelp("analysis"); });
+document.getElementById("studycheck").addEventListener("click", () => { studyRunCheck(); });
 if (typeof document !== "undefined" && document.body) {
 fitReadline();
 {
@@ -296,6 +298,7 @@ makeWindow("instsheet", {dockable: true});
 makeWindow("jobssheet", {dockable: true});
 makeWindow("syncsheet", {dockable: true});
 makeWindow("mixersheet", {dockable: true});
+makeWindow("studysheet", {dockable: true});
 makeWindow("pubjobsheet", {dockable: false});
 makeWindow("infosheet", {dockable: false});
 makeWindow("importhub", {dockable: false});

@@ -293,6 +293,15 @@ export const S = {
   wmBottomEls: [],
   filesMirrorT: 0,
   syncReturnToList: false,
+  // the Analysis sheet (src/ui/study-sheet.js): the one open answer box
+  // ({item, songKey, ta} — songKey so an album run can't land it in the next
+  // song), the last Check coverage line (one-shot: cleared on open and on
+  // song change), and which folds are open (device-session only, never stored)
+  studyDraft: null,
+  studyCheck: "",
+  studyFolds: {},
+  studyChordsOpen: false,
+  studyBarNotesOpen: false,
   perfRec: null, // ?perf=1 HUD (step 7, docs/split-plan.md §2.4): null when idle,
   // else the in-flight recording session object. prof() below reads this to
   // decide whether a wrapped call accrues into perfTotal — was a

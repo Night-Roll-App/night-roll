@@ -43,7 +43,7 @@ test("PWA: the stylesheet ships offline — index.html links css/app.css (its on
   assert.ok(existsSync(new URL("css/app.css", root)));
   const css = read("css/app.css");
   assert.match(css, /^\s*:root \{/, "starts with the :root token block index.html's <style> did");
-  assert.match(css, /\.sheet\.help \.hsec\.on\{display:block\}\s*$/, "ends where the old <style> block ended");
+  assert.match(css, /\.sheet\.help \.hsec\.on\{display:block\}\n(\.hsubtabs[^\n]*\n|\.sheet\.help \.hsub[^\n]*\n)*\s*$/, "ends where the old <style> block ended (plus the analysis guide's .hsubtabs/.hsub rules, a61cff9)");
   const sw = read("sw.js");
   const list = JSON.parse(sw.match(/const PRECACHE = (\[[\s\S]*?\]);/)[1].replace(/\s+/g, " "));
   assert.ok(list.includes("css/app.css"), "precached, so an offline launch is styled");

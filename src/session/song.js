@@ -1,4 +1,5 @@
 import { LINK_SONGS } from "../platform/base.js";
+import { studyBeforeSongChange, studyAfterNotesChange } from "../ui/study-sheet.js";
 import { isUnsaved } from "../model/provenance.js";
 import { recentSongs } from "../platform/base.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
@@ -230,6 +231,7 @@ export function finalizeNotesImpl() {
   S.STRIP_Y = BASE_RULER_H + (secRows + (S.listenerMode ? 0 : chRows) + analysisRows) * LANE_H +
             (songHasAudio() ? AUDIO_STRIP_H : 0); // clip spans ride under the ruler in every view
   S.RULER_H = S.STRIP_Y + STRIP_H; // + the playhead strip, always present, right above the notes
+  studyAfterNotesChange(); // an open Analysis sheet follows every change to the layer (edit, undo, a song's notes landing)
 }
 finalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export async function loadNotes() {
@@ -371,6 +373,7 @@ export async function loadSongInner(path) {
   setSong(parseMidi(buf, {trust: path.startsWith("albums/imports/")}), path); // an import album's file is our own writing: no corrupt-file guards
 }
 export function setSong(parsed, key) {
+  studyBeforeSongChange(); // FIRST, while S.songKey/S.rollnotes are still the outgoing song's: an open Analysis-sheet answer box is committed to the song it was written on, never the next one
   S.loadGen++; // covers the local-file path: invalidate any in-flight catalog load
   S.cmp = null; if (typeof cmpBar === "function") cmpBar(); // compare belongs to one song
   S.song = parsed;

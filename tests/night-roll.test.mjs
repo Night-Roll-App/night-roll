@@ -2809,6 +2809,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
+    "Analysis sheet", "Check coverage", "What to look for", // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -11680,7 +11681,7 @@ test("one-song publish: a song-list (README) warning stays on screen — status 
 
 test("windows open at the last launch reopen through their own openers, once, after the first song (Josh, 2026-10-04, Terminal #119)", () => {
   installSong();
-  assert.deepEqual(val(`Object.keys(wmOpeners)`).sort(), ["asksheet", "instsheet", "jobssheet", "mixersheet", "notelistsheet", "syncsheet"]);
+  assert.deepEqual(val(`Object.keys(wmOpeners)`).sort(), ["asksheet", "instsheet", "jobssheet", "mixersheet", "notelistsheet", "studysheet", "syncsheet"]);
   run(`globalThis.__opened = []; globalThis.__keep = Object.assign({}, wmOpeners); for (const id of Object.keys(wmOpeners)) wmOpeners[id] = () => __opened.push(id);
        for (const id of ["asksheet", "mixersheet"]) document.getElementById(id).classList.remove("on"); // earlier tests may have left them open; an open window is skipped
        wmRestored = false; localStorage.setItem(WM_OPEN_KEY, JSON.stringify(["asksheet", "mixersheet", "nosuchsheet"]));`);
@@ -11851,4 +11852,241 @@ test("the analysis guide reads one part at a time: a tab per part, each part its
   assert.match(m[1], /<div class="hsub on" data-hsub="overview">/);
   for (const t of ["form", "harmony", "melody", "texture", "summary"]) assert.match(m[1], new RegExp(`data-topic="${t}"`), "the sheet's per-group text is still there to clone: " + t);
   assert.match(run(`showHelpSub.toString()`), /hsub/);
+});
+
+// ---- S2: the Analysis sheet window (docs/plans/2026-10-05-analysis-sheet.md
+// §2 + review findings 6, 9, 16, 18; src/ui/study-sheet.js). A SCRATCH
+// fixture throughout — placeholder bodies, a made-up key and four made-up
+// chord bands, never a reading of any real song (review finding 6b).
+const studyFixture = () => JSON.stringify({format: "night-roll-annotations", version: 2, song: "scratch", notes: [
+  {at: [1, 1], type: "key", key: "C"},
+  {at: [1, 1], to: [8, 4], type: "section", label: "A"},
+  {at: [9, 1], to: [14, 4], type: "section", label: "B", note: "<your note on B>"},
+  {at: [15, 1], to: [16], type: "section", label: "Turn"},
+  {at: [1, 1], to: [2], type: "chord", chord: "C"},
+  {at: [3, 1], to: [4], type: "chord", chord: "G", note: "<your chord note>"},
+  {at: [5, 1], to: [6], type: "chord", chord: "Am"},
+  {at: [7, 1], to: [8], type: "chord", chord: "F"},
+  {at: [4, 4], text: "<a bar note>"},
+  {at: [12, 1], text: "<another bar note>"},
+  {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>"},
+  {at: [1, 1], type: "analysis", item: "melody.shape", done: true},
+]});
+const studyLoad = (doc) => run(`rollnotes = parseRollnotes(${JSON.stringify(doc || studyFixture())}).map(resolveNote); finalizeNotes();`);
+// the stub tree: walk every node's own textContent (a real browser's
+// textContent would read straight through; the harness keeps one string per
+// node and a children array — see tests/harness.mjs makeEl)
+const studyWalk = (el, out = []) => { if (!el) return out; if (el.textContent) out.push(el.textContent); for (const c of el.children || []) studyWalk(c, out); return out; };
+const studyText = () => studyWalk(app.el("studyjump")).concat(studyWalk(app.el("studyrows")), [app.el("studyStatus").textContent || ""]).join(" | ");
+const studyFind = (el, pred) => { if (!el) return null; if (pred(el)) return el; for (const c of el.children || []) { const f = studyFind(c, pred); if (f) return f; } return null; };
+const studyBtn = (ariaStart) => studyFind(app.el("studyrows"), e => typeof e.getAttribute === "function" && (e.getAttribute("aria-label") || "").startsWith(ariaStart));
+const studyByText = (text) => studyFind(app.el("studyrows"), e => e.textContent === text);
+const studyReset = () => run(`studyDraft = null; studyCheck = ""; studyFolds = {}; studyChordsOpen = false; studyBarNotesOpen = false; document.getElementById("studysheet").classList.remove("on"); document.getElementById("noteeditor").classList.remove("on"); rollnotes = []; editUndo = []; editRedo = []; rollnotesReadOnly = false; songKey = "midi/test.mid";`);
+
+test("Analysis sheet (S2): markup and wiring — #studysheet is a dockable, restorable window; ☰ Notes ▴ holds Analysis sheet and no longer the guide (Josh, Terminal #147); View ▾ → Panels toggles it", () => {
+  const html = appSource();
+  assert.match(html, /id="studysheet-home" style="display:contents"/, "a -home wrapper like every migrated window");
+  assert.match(html, /<h2 id="studysheet-h2"><span id="studysheettitle">/, "the h2 makeWindow appends the Dock button to; the title span follows the song");
+  for (const id of ["studyjump", "studyguide", "studycheck", "studyStatus", "studyrows", "notesstudy", "vwStudy"]) assert.match(html, new RegExp('id="' + id + '"'), id);
+  assert.ok(!/id="notesguide"/.test(html), "the drop-up's own guide item is gone — the guide is a button inside the sheet");
+  const menu = html.slice(html.indexOf('id="notesmenu"'), html.indexOf('id="notesmenu"') + html.slice(html.indexOf('id="notesmenu"')).indexOf("</div>"));
+  assert.ok(menu.indexOf('id="notesall"') < menu.indexOf('id="notesstudy"'), "+ New note, All notes, Analysis sheet — in that order");
+  const at = s => html.indexOf(s);
+  assert.ok(at('id="vwPanels"') < at('id="vwStudy"') && at('id="vwStudy"') < at('id="vwTools"'), "vwStudy sits in the Panels group");
+  assert.match(html, /#studysheet\.docked #studyrows/, "the designated scrolling body while docked (css/app.css rides in appSource)");
+  assert.equal(val(`WM_WINDOWS.studysheet`).dockable, true);
+  assert.deepEqual(val(`wmSetSide({}, "right", ["asksheet", "studysheet"], "studysheet", 380, "inner", 1000)`), {right: {ids: ["asksheet", "studysheet"], active: "studysheet", w: 380, mode: "inner"}}, "a tab beside AI on the iPad");
+  assert.equal(run(`typeof wmOpeners.studysheet`), "function", "window-restore reopens it through openStudySheet");
+  installSong(); studyReset(); studyLoad();
+  run(`closeDropUp(); document.getElementById("listbtn").click(); document.getElementById("notesstudy").click();`);
+  assert.equal(val(`document.getElementById("studysheet").classList.contains("on")`), true, "☰ Notes ▴ → Analysis sheet opens it");
+  assert.equal(val(`document.getElementById("notesmenu").classList.contains("on")`), false, "and the drop-up closed");
+  assert.equal(val(`document.getElementById("studysheettitle").textContent`).startsWith("ANALYSIS — "), true);
+  run(`document.getElementById("vwStudy").dispatchEvent({type: "click"});`);
+  assert.equal(val(`document.getElementById("studysheet").classList.contains("on")`), false, "View ▾ → Panels → Analysis sheet toggles it closed");
+  run(`document.getElementById("vwStudy").dispatchEvent({type: "click"});`);
+  assert.equal(val(`document.getElementById("studysheet").classList.contains("on")`), true, "and open again");
+  assert.match(val(`document.getElementById("vwStudy").textContent`), /✓/, "the menu item shows the ✓ while open (setControl)");
+  run(`document.getElementById("studyguide").click();`);
+  assert.equal(val(`document.getElementById("helpsheet").classList.contains("on")`), true, "Analysis guide inside the sheet opens Help → Analysis");
+  assert.equal(val(`localStorage.getItem("ff1roll-helptab")`), "analysis");
+  run(`document.getElementById("helpsheet").classList.remove("on");`);
+  studyReset();
+});
+
+test("Analysis sheet (S2): studyGroups / studyCoverage are pure — bands by TYPE under Sections and Key and chords, entries by item, bar notes apart; coverage counts ticks, answers and types only", () => {
+  installSong(); studyReset(); studyLoad();
+  const g = val(`(() => { const r = studyGroups(visibleNotes()); return {groups: r.groups.map(x => ({id: x.id, prompts: x.prompts.map(p => ({id: p.id, auto: p.auto.map(n => n.text), entry: p.entry ? {done: p.entry.study.done, cnote: p.entry.cnote || null} : null})) })), barNotes: r.barNotes.map(n => n.text)}; })()`);
+  assert.deepEqual(g.groups.map(x => x.id), ["form", "harmony", "melody", "texture", "summary"]);
+  const p = Object.fromEntries(g.groups.flatMap(x => x.prompts).map(x => [x.id, x]));
+  assert.equal(Object.keys(p).length, 16, "the sixteen prompts of the guide");
+  assert.deepEqual(p["form.sections"].auto, ["A", "B", "Turn"], "section bands list under Sections");
+  assert.deepEqual(p["harmony.chords"].auto, ["key: C", "C", "G", "Am", "F"], "the key line and the chord bands list under Key and chords");
+  assert.deepEqual(p["summary.what"].entry, {done: true, cnote: "<your summary>"});
+  assert.deepEqual(p["melody.shape"].entry, {done: true, cnote: null}, "a tick with no words");
+  for (const id of ["form.phrases", "harmony.cadences", "texture.rhythm", "summary.compare"]) { assert.deepEqual(p[id].auto, []); assert.equal(p[id].entry, null); }
+  assert.deepEqual(g.barNotes, ["<a bar note>", "<another bar note>"], "plain text notes, never a directive or a sheet entry");
+  const c = val(`studyCoverage(visibleNotes())`);
+  assert.deepEqual(c, {empty: ["Phrase lengths, in bars", "Phrase pairing", "Roman numerals", "Cadences", "The bass line as its own melody", "Where tension builds and where it releases", "Scale degrees at phrase ends", "Motifs that return changed", "Who carries the tune, the harmony, the bass", "Rhythm and groove", "What it does in the scene", "Compared with the composer's other work"], chords: 4, bare: 3});
+  assert.equal(run(`studyCoverageText(studyCoverage(visibleNotes()))`),
+    "Nothing ticked or answered under: Phrase lengths, in bars, Phrase pairing, Roman numerals, Cadences, The bass line as its own melody, Where tension builds and where it releases, Scale degrees at phrase ends, Motifs that return changed, Who carries the tune, the harmony, the bass, Rhythm and groove, What it does in the scene, Compared with the composer's other work. 3 of 4 chord bands have no note. — counted from your ticks, answers and annotation types, never from the music.");
+  assert.deepEqual(val(`studyCoverage([])`), {empty: studyFixtureAllLabels(), chords: 0, bare: 0});
+  assert.equal(run(`studyCoverageText({empty: [], chords: 2, bare: 0})`), "Every prompt has a tick or an answer. Every chord band has a note. — counted from your ticks, answers and annotation types, never from the music.");
+  studyReset();
+});
+function studyFixtureAllLabels() { return val(`STUDY_PROMPTS.map(p => p.label.split(" — ")[0])`); }
+
+test("Analysis sheet (S2, Learning net — review finding 16): the FOLDED sheet on a song with no annotations names no key, chord or pitch, says nothing about what is missing, and its group chips are bare names; a Learning ✦ AI band is absent", () => {
+  installSong(); studyReset();
+  run(`rollnotes = []; finalizeNotes(); openStudySheet();`);
+  const text = studyText();
+  assert.ok(text.length > 200, "the sheet rendered: " + text.slice(0, 80));
+  assert.ok(!/missing|\byet\b|\bgap\b|%|bars long|\d+\/\d+/i.test(text), "no coverage wording or figure unasked: " + text);
+  assert.ok(!/\b[A-G][#b♯♭]?(m|maj7?|min|dim|aug|sus\d?|7)\b|\bkey:/.test(text), "no key, chord or pitch name of the app's own: " + text);
+  assert.deepEqual(studyWalk(app.el("studyjump")), ["FORM", "HARMONY", "MELODY", "TEXTURE & RHYTHM", "SUMMARY"], "names only — no fractions (review finding 6a)");
+  assert.equal(val(`document.getElementById("studyStatus").textContent`), "", "the status line is empty until Check coverage is tapped");
+  assert.ok(studyWalk(app.el("studyrows")).some(t => t === "What to look for ▸"), "each group's guide is folded");
+  assert.ok(!studyWalk(app.el("studyrows")).some(t => /What to find/.test(t)), "and the guide text is not on the sheet until unfolded");
+  // Learning never lists an AI-estimate band (visibleNotes)
+  run(`rollnotes = parseRollnotes(${JSON.stringify(JSON.stringify({format: "night-roll-annotations", version: 2, song: "scratch", notes: [
+    {at: [1, 1], to: [2], type: "chord", chord: "Dm", ai: {model: "test", at: "2026-10-05"}},
+    {at: [3, 1], to: [4], type: "chord", chord: "G7"},
+  ]}))}).map(resolveNote); finalizeNotes();`);
+  assert.equal(run(`appMode()`), "learning");
+  assert.ok(studyWalk(app.el("studyrows")).some(t => t === "▸ 1 chord band"), "the one band he wrote is counted: " + studyText());
+  assert.ok(!studyText().includes("Dm"), "the ✦ AI band is not on the sheet in Learning");
+  studyReset();
+});
+
+test("Analysis sheet (S2): a tick is one tap through putStudyEntry — one analysis line, one undo step back to the previous file; the same tap unticks (removed, not written empty)", () => {
+  installSong(); studyReset(); studyLoad();
+  run(`openStudySheet();`);
+  const before = run(`serializeRollnotes()`);
+  const undoLen = val(`editUndo.length`);
+  studyBtn("Not ticked: Motifs that return changed").click();
+  const after = JSON.parse(run(`serializeRollnotes()`)).notes.filter(n => n.type === "analysis");
+  assert.deepEqual(after.map(n => [n.item, n.done === true, n.note || null]).sort(), [["melody.motifs", true, null], ["melody.shape", true, null], ["summary.what", true, "<your summary>"]], "exactly one new line");
+  assert.equal(val(`editUndo.length`), undoLen + 1, "one undo step");
+  assert.ok(studyBtn("Ticked: Motifs that return changed"), "the row re-rendered ticked");
+  assert.equal(studyBtn("Ticked: Motifs that return changed").getAttribute("aria-pressed"), "true");
+  run(`editUndoPop();`);
+  assert.equal(run(`serializeRollnotes()`), before, "undo restores the previous file byte for byte");
+  assert.ok(studyBtn("Not ticked: Motifs that return changed"), "and the sheet followed the undo (finalizeNotes → studyAfterNotesChange)");
+  studyBtn("Not ticked: Motifs that return changed").click();
+  studyBtn("Ticked: Motifs that return changed").click();
+  assert.equal(val(`rollnotes.filter(n => n.study && n.study.item === "melody.motifs").length`), 0, "unticked with no words: removed");
+  studyBtn("Ticked: What the piece does and why it works").click();
+  assert.deepEqual(val(`(e => [e.study.done, e.cnote])(studyEntryFor("summary.what"))`), [false, "<your summary>"], "unticking keeps the words");
+  studyReset();
+});
+
+test("Analysis sheet (S2): the answer box — Answer opens a textarea (no forced focus), Done writes the words through putStudyEntry, Edit reopens them, Cancel discards, nothing changed = no write", () => {
+  installSong(); studyReset(); studyLoad();
+  run(`openStudySheet();`);
+  studyBtn("Answer: Rhythm and groove").click();
+  const ta = studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "Rhythm and groove" && "placeholder" in e && e.placeholder);
+  assert.ok(ta, "a textarea for that prompt");
+  assert.equal(ta.value, "", "empty — nothing pre-filled");
+  assert.equal(val(`studyDraft && studyDraft.item`), "texture.rhythm");
+  assert.equal(val(`studyDraft.songKey`), "midi/test.mid", "the box remembers its song");
+  ta.value = "<your words on the groove>";
+  const undoLen = val(`editUndo.length`);
+  studyByText("Done").click();
+  assert.deepEqual(val(`(e => e && [e.study.done, e.cnote, !!e.added])(studyEntryFor("texture.rhythm"))`), [false, "<your words on the groove>", true], "written, unsynced, untick stays as it was");
+  assert.equal(val(`editUndo.length`), undoLen + 1);
+  assert.equal(val(`studyDraft`), null);
+  assert.ok(studyByText("<your words on the groove>"), "the answer shows under its prompt");
+  assert.ok(studyBtn("Edit your answer: Rhythm and groove"), "the button now says Edit");
+  studyBtn("Edit your answer: Rhythm and groove").click();
+  const ta2 = studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "Rhythm and groove" && "placeholder" in e && e.placeholder);
+  assert.equal(ta2.value, "<your words on the groove>", "Edit reopens the saved words");
+  studyByText("Done").click();
+  assert.equal(val(`editUndo.length`), undoLen + 1, "Done with nothing changed is not a write");
+  studyBtn("Edit your answer: Rhythm and groove").click();
+  studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "Rhythm and groove" && "placeholder" in e && e.placeholder).value = "<discarded>";
+  studyByText("Cancel").click();
+  assert.equal(val(`studyEntryFor("texture.rhythm").cnote`), "<your words on the groove>", "Cancel discards");
+  studyReset();
+});
+
+test("Analysis sheet (S2, review finding 9): an open answer box never saves into a different song — setSong's first call commits it to the outgoing song; a late Done after a switch stashes a device-local draft and says so; the draft comes back on that song", () => {
+  installSong(); studyReset();
+  run(`songKey = "midi/study-a.mid"; localStorage.removeItem("ff1roll-notes-" + songKey); localStorage.removeItem("ff1roll-notes-midi/study-b.mid"); rollnotes = []; finalizeNotes(); openStudySheet();`);
+  studyBtn("Answer: What it does in the scene").click();
+  studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "What it does in the scene" && "placeholder" in e && e.placeholder).value = "<words for song A>";
+  // what setSong does, in order: studyBeforeSongChange() while songKey/rollnotes are still A's, then the switch
+  run(`studyBeforeSongChange(); songKey = "midi/study-b.mid"; rollnotes = []; finalizeNotes();`);
+  assert.deepEqual(JSON.parse(run(`localStorage.getItem("ff1roll-notes-midi/study-a.mid")`)).map(n => [n.text, n.cnote]), [["analysis: texture.scene", "<words for song A>"]], "the words landed in A's unsynced store");
+  assert.equal(val(`localStorage.getItem("ff1roll-notes-midi/study-b.mid")`), null, "nothing in B");
+  assert.equal(val(`studyDraft`), null, "no box carried over");
+  assert.ok(!studyFind(app.el("studyrows"), e => "placeholder" in e && e.placeholder), "B's sheet shows no open box");
+  // a Done that races the switch: the box was B's, the song is now A again
+  studyBtn("Answer: What it does in the scene").click();
+  studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "What it does in the scene" && "placeholder" in e && e.placeholder).value = "<words for song B>";
+  run(`songKey = "midi/study-a.mid"; rollnotes = mergeLocalAdditions([], songKey); rollnotes.forEach(resolveNote); finalizeNotes();`); // the switch happened under the box (no studyBeforeSongChange: the race the review describes); finalizeNotes re-renders the open sheet
+  assert.equal(val(`studyDraft`), null, "the other song's box is gone from A's sheet");
+  assert.equal(val(`(studyEntryFor("texture.scene") || {}).cnote`), "<words for song A>", "A's answer untouched");
+  assert.equal(val(`localStorage.getItem(studyDraftKey("midi/study-b.mid", "texture.scene"))`), "<words for song B>", "B's words wait as a device-local draft, never dropped");
+  // the same race with Done tapped before any re-render: the box is B's, the song is A
+  run(`studyDraft = {item: "texture.scene", songKey: "midi/study-b.mid", ta: {value: "<later words for song B>"}}; studyCommitDraft();`);
+  assert.equal(val(`(studyEntryFor("texture.scene") || {}).cnote`), "<words for song A>", "still A's answer");
+  assert.equal(val(`localStorage.getItem(studyDraftKey("midi/study-b.mid", "texture.scene"))`), "<later words for song B>", "the newer words replace the stash");
+  assert.match(val(`document.getElementById("studyStatus").textContent`), /kept as a draft/);
+  run(`songKey = "midi/study-b.mid"; rollnotes = []; finalizeNotes();`);
+  studyBtn("Answer: What it does in the scene").click();
+  assert.equal(studyFind(app.el("studyrows"), e => e.getAttribute && e.getAttribute("aria-label") === "What it does in the scene" && "placeholder" in e && e.placeholder).value, "<later words for song B>", "and come back the next time that box opens on B");
+  assert.equal(val(`localStorage.getItem(studyDraftKey("midi/study-b.mid", "texture.scene"))`), null, "taken once");
+  run(`studyDiscardDraft(); localStorage.removeItem("ff1roll-notes-midi/study-a.mid");`);
+  studyReset();
+});
+
+test("Analysis sheet (S2): a locked song (newer Night Roll) refuses on the status line — no entry, no undo step, no native dialog", () => {
+  installSong(); studyReset(); studyLoad();
+  run(`openStudySheet(); rollnotesReadOnly = true; rollnotesLockReason = null;`);
+  const undoLen = val(`editUndo.length`), before = run(`serializeRollnotes()`);
+  studyBtn("Not ticked: Cadences").click();
+  assert.match(val(`document.getElementById("studyStatus").textContent`), /newer Night Roll/);
+  assert.equal(run(`serializeRollnotes()`), before);
+  assert.equal(val(`editUndo.length`), undoLen);
+  studyReset();
+});
+
+test("Analysis sheet (S2): Check coverage is on demand and never reads the music — a render plus a check touch neither song.tracks nor estimateKey; the line is one-shot (gone on the next open)", () => {
+  installSong(); studyReset(); studyLoad();
+  run(`globalThis.__trackReads = 0; globalThis.__estCalls = 0;
+       globalThis.__realSong = song;
+       song = new Proxy(__realSong, {get: (t, k) => { if (k === "tracks" || k === "rawNotes") globalThis.__trackReads++; return t[k]; }});
+       globalThis.__realEst = estimateKey; estimateKey = function() { globalThis.__estCalls++; return __realEst.apply(this, arguments); };
+       openStudySheet();`);
+  assert.equal(val(`document.getElementById("studyStatus").textContent`), "", "nothing until asked");
+  run(`document.getElementById("studycheck").click();`);
+  const line = val(`document.getElementById("studyStatus").textContent`);
+  assert.match(line, /^Nothing ticked or answered under: .*3 of 4 chord bands have no note\. — counted from your ticks, answers and annotation types, never from the music\.$/);
+  assert.ok(!/Phrase lengths.*Sections|Key and chords|What the piece does/.test(line.split(".")[0]), "prompts with his bands, ticks or answers are not listed: " + line);
+  run(`renderStudySheet();`);
+  assert.equal(val(`__trackReads`), 0, "render + check never touch the notes");
+  assert.equal(val(`__estCalls`), 0, "never estimate a key");
+  run(`song = __realSong; estimateKey = __realEst;`);
+  assert.equal(val(`studyCheck`), line, "the line persists across re-renders while the sheet stays open");
+  run(`closeStudySheet(); openStudySheet();`);
+  assert.equal(val(`document.getElementById("studyStatus").textContent`), "", "cleared on the next open");
+  studyReset();
+});
+
+test("Analysis sheet (S2): tap a listed annotation → the cursor jumps to its bar and its editor opens; the sheet stays", () => {
+  installSong(); studyReset(); studyLoad();
+  run(`openStudySheet(); playCursor = 0; studyChordsOpen = true; renderStudySheet();`);
+  const row = studyFind(app.el("studyrows"), e => e.textContent === "B" && e._parent && e._parent.className === "noterow");
+  assert.ok(row, "the B section band's row");
+  row._parent.click();
+  assert.equal(val(`playCursor`), val(`rollnotes.find(n => n.section && n.text === "B").start`), "cursor at bar 9");
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "its editor opened");
+  assert.equal(val(`document.getElementById("studysheet").classList.contains("on")`), true, "the window did not close (it may be docked)");
+  assert.ok(studyFind(app.el("studyrows"), e => e.textContent === "F" && e._parent && e._parent.className === "noterow"), "chord bands list once the fold is open");
+  const keyRow = studyFind(app.el("studyrows"), e => e.textContent === "key: C" && e._parent && e._parent.className === "noterow");
+  assert.ok(keyRow, "the key line lists inline under Key and chords");
+  keyRow._parent.click(); // (a chord row's editor needs the real chord-chip DOM — document.querySelectorAll — which the vm harness does not stub; the key editor is the same jump path)
+  assert.equal(val(`playCursor`), 0, "cursor at bar 1");
+  run(`document.getElementById("ncancel").click();`);
+  studyReset();
 });

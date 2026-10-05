@@ -10,6 +10,7 @@ import { ensureMixerMeterLoop } from "./mixer.js";
 import { openMixer } from "./mixer.js";
 import { openAsk } from "../ask/host.js";
 import { openNoteList } from "./notes.js";
+import { openStudySheet } from "./study-sheet.js";
 import { openSyncSheet } from "./sheets.js";
 
 // ---- Window manager: shell + docks, phase A (open-items.md, "a real
@@ -789,6 +790,7 @@ export function initWm1() {
   makeWindow("jobssheet", {dockable: true});
   makeWindow("syncsheet", {dockable: true}); // the Publish window (Terminal #111, 2026-10-04): a list worth keeping beside the roll while working
   makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
+  makeWindow("studysheet", {dockable: true}); // the Analysis sheet (src/ui/study-sheet.js): a tab beside AI on the iPad
   // the publish job dialog was dockable until 2026-10-04 (Terminal #111: "a
   // very temporary window") — registered, floating only; initWm1 above
   // purges a saved dock for it
@@ -875,7 +877,7 @@ export function initWm1() {
 export function initWm2() {
   // how each dockable window opens, for wmRestoreOpen after a relaunch
   Object.assign(S.wmOpeners, {
-    asksheet: openAsk, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer,
+    asksheet: openAsk, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer, studysheet: openStudySheet,
     instsheet: () => document.getElementById("fileinst").click(),
     jobssheet: () => document.getElementById("jobsbtn").click(),
   });

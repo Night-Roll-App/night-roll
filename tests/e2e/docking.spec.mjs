@@ -15,7 +15,7 @@ import { openApp } from "./helpers.mjs";
 // window popping up and it's just unnecessary"), so it's OUT of this list.
 // pubjobsheet (the publish job dialog) left it 2026-10-04 (Terminal #111:
 // "a very temporary window"); syncsheet (the Publish window) joined.
-const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "syncsheet"];
+const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "syncsheet", "studysheet"];
 
 test.use({ viewport: { width: 1366, height: 1024 } });
 

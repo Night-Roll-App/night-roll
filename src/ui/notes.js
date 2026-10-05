@@ -617,7 +617,7 @@ export function initNotes2() {
   });
   document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
   document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
-  document.getElementById("notesguide").addEventListener("click", () => { closeDropUp(); openHelp("analysis"); });
+  // #notesstudy (Analysis sheet) is wired in src/ui/study-sheet.js's initStudySheet1; the guide is a button inside that sheet (Josh, Terminal #147)
   document.getElementById("notelistSync").addEventListener("click", () => {
     notelistSheet.classList.remove("on");
     document.getElementById("syncbtn").click();
