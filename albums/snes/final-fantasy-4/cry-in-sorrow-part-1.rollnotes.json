@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "cry-in-sorrow-part-1", "origin": {"kind":"capture"}, "stamp": 1790825921474, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cry-in-sorrow-part-1", "origin": {"kind":"capture"}, "stamp": 1791167428327, "notes": [
   {"at":[1,1],"to":[1,3],"type":"chord","chord":"Bbm"},
   {"at":[1,1],"type":"track","track":"voice2","color":"#f80030"},
   {"at":[1,1],"type":"key","key":"Bbm"},
