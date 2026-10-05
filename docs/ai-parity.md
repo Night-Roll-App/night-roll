@@ -40,9 +40,11 @@ get built.
 
 ## 1. Inventory
 
-### Ask's tools today (src/ask/tools.js, `ASK_TOOLS`)
+### Ask's original twelve (src/ask/tools.js — since 2026-10-05 all of them are `act` actions, batch 3)
 
-| tool | what it does | song chat | general (Ask tab) |
+The functions are the same; each is an `ASK_ACTIONS` entry now (§2), `ASK_TOOLS` is empty, and the "general" column is the entry's `song: false` flag.
+
+| action (was a tool) | what it does | song chat | general (Ask tab) |
 |---|---|---|---|
 | `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat | yes | — |
 | `edit_annotation` | changes an existing annotation's text or position | yes | — |
@@ -57,10 +59,11 @@ get built.
 | `insert_bars` | inserts empty bars; everything later slides right | yes | — |
 | `delete_bars` | deletes bars; everything later slides left | yes | — |
 
-Song-only tools are listed in `ASK_SONG_ONLY_TOOLS` (src/ask/bridge.js);
-the general chat gets only the read-another-song tools. Not every
-annotation kind is covered: `meter` and `chop` can't be written by Ask
-today (they count as "structural"). Neither can track settings.
+The general chat gets only the read-another-song actions (and open_song,
+help). Since batch 3 add_annotation also writes `meter` (3/4) and `chop`
+(start|end), and delete_annotation takes a dictated one back; edit still
+refuses structural directives, and track settings are not annotations Ask
+writes (set_track, §1 below).
 
 ### Every feature against Ask
 
@@ -290,6 +293,24 @@ chars as an action instead of ~1,370 as a tool, and batch 3 (folding the
 `help`. The vm test "act: one tool, one index line per registered action…"
 prints both numbers every run and caps act's at 650 + 110 × actions.
 
+**Measured after batch 2 (2026-10-05, open_song added as the 8th
+action):** act 1,279 chars ≈ 346 tokens; the whole song-chat menu 12,199
+chars ≈ **3,297 tokens** (still the twelve tools beside it).
+
+**Measured after batch 3 (2026-10-05, the twelve tools folded in; same
+`toolInstructions` shape, chars ÷ 3.7):** the whole song-chat menu is the
+act tool alone — **2,355 chars ≈ 636 tokens for 20 actions** (go_to, play,
+stop, select, undo, drummer, help, open_song + the twelve), against 12,199
+(~3,297) the hour before and 10,919 (~2,950) before act existed. That is
+**~2,660 tokens saved on every round**, ~118 chars (~32 tokens) per action
+on average, because the twelve's long rule texts now ride only in `spec`
+(help and rejected calls). The estimate of ~400 above was optimistic by
+~240 tokens: write_notes' and edit_annotation's index lines carry their
+argument shapes (`notes[{pitch bar beat dur_beats vel?}]`, `id|bar beat
+match_text? …`), which a local model needs to see without a help round.
+The vm test "batch 3: the menu is act alone…" prints this number every run
+and fails if the menu ever grows past half the twelve-tool menu.
+
 ### Actions (the registry)
 
 "quiet" = ends without a second model round. "edits" = goes through
@@ -325,8 +346,8 @@ did) unless all items in the call are quiet.
 
 ## 3. How to ask (plain phrases)
 
-Say it the way you'd say it to a person. Ask maps it to a tool, does it,
-and answers in one line. If a name is ambiguous it asks which one — it
+Say it the way you'd say it to a person. Ask maps it to an `act` action
+(every one of these is one, since batch 3), does it, and answers in one line. If a name is ambiguous it asks which one — it
 never guesses.
 
 ### Works today
@@ -503,7 +524,7 @@ typical request (quiet = 1, edits and questions = 2).
 | 0 | Drummer | `drummer` | — | — | — | — | **done 2026-10-05** — landed as a tool (~370 tokens), folded into `act` as an action the same day (Josh #449). |
 | 1 | The `act` tool (foundation) | registry, index builder, `help`, quiet `{final}` results, `undo` | src/ask/tools.js (registry, `act` runner), src/ask/bridge.js (`askToolsNow`), vendor/ai/web/backends.js + client.js (`{final}` ends the exchange — library change, made in Night-Roll-App/claude-bridge and synced) | menu byte-identical across two messages; menu size printed and pinned; a list runs in order, stops at the first failure; a bad call's error carries the spec; an all-quiet call = exactly one request to the fake server; undo reports what it undid | measured **3,276** (act alone 325) | 1–2 | **done 2026-10-05 (Fable)** — src/ask/actions.js; also go_to/play/stop/select from batch 9, `drummer` folded in, 7 tolerance tests for local models (#443), `runActions` with no model (§7), Help → AI commands generated from the registry (#451); library commit dfef7e7 awaits a tag + `ai-sync --ref` |
 | 2 | Open a song + chat handoff | `open_song` (§4) | src/ask/tools.js, src/ask/client.js (`askLanded` runs the switch), src/ask/sheet.js (↪ line, carried-over chip), src/ask/context.js (one prompt line) | switch only after landing; nothing after `open_song` runs; ambiguous name lists matches; local drafts found; unsent draft → chip, not send; album run cleared; load failure → no handoff; one hop only | measured **3,297** (act alone 346, 8 actions) | 1 | **done 2026-10-05 (Fable)** — `askOpenSongQueue` (src/ask/actions.js), `askSwitchRun`/`askSend(text)` (src/ask/client.js), `askCarryChip`/`askDraftText` (src/ask/sheet.js), `askSongMatches` (src/ask/tools.js), `openRecentSong` async; Q13's default (the follow-on sends itself; a chip only when the new chat holds a draft) |
-| 3 | Fold the old tools in | the 12 tools of §1 + `meter`/`chop` kinds | src/ask/tools.js, src/ask/bridge.js (`ASK_SONG_ONLY_TOOLS` becomes a per-action flag), src/ask/context.js (prompt text naming old tools) | every existing tool test passes through `act`; their rule texts reachable by `help` and in errors; Learning sweep; menu size drops | **~400** | as today | **TRICKY — Fable** |
+| 3 | Fold the old tools in | the 12 tools of §1 + `meter`/`chop` kinds | src/ask/tools.js, src/ask/bridge.js (`ASK_SONG_ONLY_TOOLS` becomes a per-action flag), src/ask/context.js (prompt text naming old tools) | every existing tool test passes through `act`; their rule texts reachable by `help` and in errors; Learning sweep; menu size drops | measured **636** (act alone, 20 actions; 2,355 chars) | as today | **done 2026-10-05 (Fable)** — all twelve are `ASK_ACTIONS` entries over the same src/ask/tools.js functions; `ASK_TOOLS` empty, `ASK_SONG_ONLY_TOOLS` gone (the `song` flag), `askRunTool` dispatches act alone, the prompt's twelve sentences are one paragraph; add_annotation writes `meter`/`chop`, delete_annotation takes them back |
 | 4 | Regenerate drums and bass | `drummer` as an action (if needed), `bassist` | src/ask/tools.js (wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; copy the drummer's shape) | says what it replaces; refuses on captures; one undo; reply never names a chord it guessed (Learning sweep) | ~440 | 2 | EASY — Sonnet |
 | 5 | Bulk note edits | `edit_notes` ops delete, quantize, velocity, split, join, divide, dedupe — over bars + tracks | src/ask/tools.js (one `askSelectRange` helper: bars+tracks → selection, then src/model/selection.js) | one undo step per item; refuses on captures; unknown track errors | ~470 | 2 | EASY — Sonnet |
 | 6 | Moving music over ranges | `edit_notes` ops transpose, move, copy, to_track | src/ask/tools.js, src/model/selection.js (reuse Paste to…'s code) | in-key transpose uses the declared key or says there's none; copied chord labels transpose like Paste to…; one undo | ~480 | 2 | **TRICKY — Fable** |

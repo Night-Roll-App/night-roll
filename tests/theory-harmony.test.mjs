@@ -345,7 +345,7 @@ test("not wired: the modules are reachable (devtools mirror, so package.mjs ship
     const app = await createApp({storage: {"ff1roll-mode": mode}});
     assert.equal(app.run(`typeof hmRomanNumeral`), "function", "loaded in the vm (" + mode + ")");
     assert.equal(app.run(`appMode()`), mode);
-    const offered = app.run(`JSON.stringify(askToolsNow().map(t => t.function.name))`);
+    const offered = app.run(`JSON.stringify(askActList(!!askGeneral).map(d => d.name))`);
     for (const name of PLANNED) assert.ok(!JSON.parse(offered).includes(name), name + " is not offered in " + mode + " mode");
     const sys = app.run(`askSys()`);
     assert.doesNotMatch(sys, /roman numeral|cadence tool|hm[A-Z]/, "the system prompt says nothing about them (" + mode + ")");

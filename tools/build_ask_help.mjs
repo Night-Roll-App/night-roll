@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // tools/build_ask_help.mjs — writes the Help sheet's "AI commands" rows into
 // help/help.html between its ask-commands markers, from the act registry
-// (src/ask/actions.js: askHelpCommandsHTML over ASK_ACTIONS + the standalone
-// tools' ASK_TOOL_PHRASES), so the sheet lists exactly what Ask can do and
+// (src/ask/actions.js: askHelpCommandsHTML over ASK_ACTIONS — every
+// Ask command is an action since batch 3, 2026-10-05), so the sheet lists exactly what Ask can do and
 // how to say it (Josh via Ask #451). Harness-backed, like the query tools:
 // the registry's run() closures import app modules, so the registry loads
 // only inside the vm app. Run it after adding or rewording an action, then

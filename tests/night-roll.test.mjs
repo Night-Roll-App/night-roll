@@ -4721,8 +4721,8 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.equal(val(`askSessionName()`), "general");
   assert.equal(val(`askLogPath()`), "ask/general.ask.md");
   assert.match(val(`askContext({t0: 0, t1: 1920, from: 1, to: 1}, {win: 8192})`), /^general chat — no song attached/);
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "add_annotation")`), "no annotation tool in the general chat");
-  assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
+  assert.ok(!val(`askActOffered("add_annotation")`), "no annotation tool in the general chat");
+  assert.ok(val(`askActOffered("read_song")`), "reading songs still allowed");
   assert.match(val(`askLogHeader()`), /^# ✦ AI log — general/);
   run(`{ const g = askLoad(); g.push({role: "user", content: "hello general", t: 1}); askSave(g); }`);
   assert.ok(val(`JSON.stringify(pendingChats())`).includes('"general"'), "unsaved general chat shows in the Publish list's Chats section");
@@ -5040,11 +5040,11 @@ test("Ask tools: edit_annotation/delete_annotation target by id or bar+beat(+mat
   // structural directives (meter/chop/track/audio/lane) are out of scope — a clear refusal, never a silent mutate
   run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "timesig: 6/8"}])[0])); finalizeNotes();`);
   assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "4/4"})`), /structural directive/);
-  assert.throws(() => run(`askDeleteAnnotation({bar: 1, beat: 1})`), /structural directive/);
+  assert.doesNotThrow(() => run(`askDeleteAnnotation({bar: 1, beat: 1})`)); assert.ok(!val(`rollnotes.some(n => n.tsdir)`), "a dictated meter can be taken back through Ask (batch 3, 2026-10-05); edit still refuses it (above)");
   // not in the general chat: no open song to annotate, edit, delete or publish there
   run(`askGeneral = true;`);
-  for (const t of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]) assert.ok(!val(`askToolsNow().some(t => t.function.name === ${JSON.stringify(t)})`), t + " hidden in the general chat");
-  assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
+  for (const t of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]) assert.ok(!val(`askActOffered(${JSON.stringify(t)})`), t + " hidden in the general chat");
+  assert.ok(val(`askActOffered("read_song")`), "reading songs still allowed");
   run(`askGeneral = false;
        localStorage.removeItem(tombKeyFor(songKey)); rollnotes = []; localStorage.removeItem("ff1roll-notes-" + songKey);
        localStorage.removeItem("ff1roll-draft-" + songKey); songKey = null;`);
@@ -5871,8 +5871,8 @@ test("write_notes: no song open; refuses on a capture/locked song naming the fix
   run(`localStorage.removeItem(draftStoreKey(songKey)); songKey = null; song = null;`);
   // absent from the general (no-song) chat's tool list, same as the other song-only tools
   run(`askGeneral = true;`);
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "write_notes")`), "write_notes hidden in the general chat");
-  assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
+  assert.ok(!val(`askActOffered("write_notes")`), "write_notes hidden in the general chat");
+  assert.ok(val(`askActOffered("read_song")`), "reading songs still allowed");
   run(`askGeneral = false;`);
 });
 
@@ -5991,8 +5991,8 @@ test("copy_bars: bad ranges error with nothing changed; refuses on a locked capt
   run(`localStorage.removeItem(draftStoreKey(songKey));`);
 
   run(`askGeneral = true;`);
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "copy_bars")`), "copy_bars hidden in the general chat");
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "insert_bars")`), "insert_bars hidden in the general chat");
+  assert.ok(!val(`askActOffered("copy_bars")`), "copy_bars hidden in the general chat");
+  assert.ok(!val(`askActOffered("insert_bars")`), "insert_bars hidden in the general chat");
   run(`askGeneral = false;`);
 });
 test("insert_bars: empty bars, same shift as copy_bars, no notes added; one ⟲ step", () => {
@@ -6137,7 +6137,7 @@ test("delete_bars: bad ranges error with nothing changed; refuses on a locked ca
   run(`localStorage.removeItem(draftStoreKey(songKey));`);
 
   run(`askGeneral = true;`);
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "delete_bars")`), "delete_bars hidden in the general chat");
+  assert.ok(!val(`askActOffered("delete_bars")`), "delete_bars hidden in the general chat");
   run(`askGeneral = false;`);
 });
 
@@ -6325,8 +6325,8 @@ test("act: one tool, one index line per registered action in name order, byte-id
   assert.ok(expected.includes("go_to") && expected.includes("play") && expected.includes("stop") && expected.includes("select") && expected.includes("undo") && expected.includes("drummer") && expected.includes("help"));
   // the general chat: only what needs no song (help); the song-only tools are gone as before
   run(`askGeneral = true;`);
-  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "open_song"]); // open_song opens from the general chat too (docs/ai-parity.md §4)
-  assert.ok(val(`askToolsNow().some(t => t.function.name === "act")`) && !val(`askToolsNow().some(t => t.function.name === "write_notes")`));
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song"]); // what needs no open song: help, the read-another-song three (batch 3), open_song (§4)
+  assert.ok(val(`askToolsNow().some(t => t.function.name === "act")`) && !val(`askActOffered("write_notes")`));
   run(`askGeneral = false;`);
   // the cost, measured the way the bridge pastes it (toolInstructions: "- name: description\n  schema: {…}"), printed so every batch shows its number, capped so a long-winded entry fails here
   const menuOf = tools => tools.map(t => `- ${t.function.name}: ${t.function.description}\n  schema: ${JSON.stringify(t.function.parameters || {})}`).join("\n");
@@ -6519,9 +6519,10 @@ test("open_song queues the switch and opens nothing itself: quiet one-line reply
     assert.equal(sw.from, "ff1roll-ask-" + before); assert.match(sw.fromTitle, /Act Test|act-test/i);
     // the same reply: nothing more may touch the song being left
     await assert.rejects(run(`askAct({do: [{action: "go_to", bar: 2}]})`), /the song is changing — ask again in Night Rain's chat/);
-    await assert.rejects(run(`askRunTool("write_notes", {track: "pulse1", notes: []})`), /the song is changing — ask again in Night Rain's chat/);
-    await assert.rejects(run(`askRunTool("read_bars", {from_bar: 1})`), /the song is changing/);
-    assert.equal(await run(`askRunTool("list_songs", {}).then(l => Array.isArray(l))`), true, "reading the catalog is not touching the song");
+    await assert.rejects(run(`askAct({do: [{action: "write_notes", track: "pulse1", notes: []}]})`), /the song is changing — ask again in Night Rain's chat/);
+    await assert.rejects(run(`askAct({do: [{action: "read_bars", from_bar: 1}]})`), /the song is changing/);
+    await assert.rejects(run(`askAct({do: [{action: "list_songs"}]})`), /the song is changing/, "nothing at all runs after open_song in the same reply");
+    await assert.rejects(run(`askRunTool("write_notes", {track: "pulse1", notes: []})`), /unknown tool write_notes — every app action is inside act/, "the old tool names are gone from the dispatcher (batch 3)");
     run(`askSwitch = null;`);
     // open_song must be last: an item after it fails at that step, the switch stays queued from the item that ran
     await assert.rejects(run(`askAct({do: [{action: "open_song", song: "Night Rain"}, {action: "play"}]})`), /step 2 \(play\) failed: the song is changing — ask again in Night Rain's chat\ndone before it: 1\. opening Night Rain/);
@@ -6623,6 +6624,116 @@ test("open_song landing: askLanded on the asking chat runs the switch after the 
   }
 });
 
+// ---- batch 3 (docs/ai-parity.md §5): the twelve standalone tools are act actions — same functions, same gates, same undo steps; the schemas are gone
+test("batch 3: the menu is act alone (ASK_TOOLS empty, every former tool one index line); the general chat offers only what needs no open song, by the entry's flag; the cost is printed and below the twelve-tool menu's", () => {
+  installActSong();
+  assert.deepEqual(val(`askToolsNow().map(t => t.function.name)`), ["act"], "no schema rides beside act");
+  assert.deepEqual(val(`ASK_TOOLS`), []);
+  const index = val(`askActTool(false).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]);
+  for (const n of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "list_songs", "read_song", "read_notes", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars", "drummer", "open_song", "help"]) assert.ok(index.includes(n), n + " is in the song chat's index");
+  run(`askGeneral = true;`);
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song"], "the general chat: reading another song, opening one, help — nothing about THE open song");
+  for (const n of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"]) assert.ok(!val(`askActOffered(${JSON.stringify(n)})`), n + " hidden in the general chat");
+  run(`askGeneral = false;`);
+  const menuOf = tools => tools.map(t => `- ${t.function.name}: ${t.function.description}\n  schema: ${JSON.stringify(t.function.parameters || {})}`).join("\n");
+  const all = menuOf(val(`askToolsNow()`)).length, act = menuOf([val(`askActTool(false)`)]).length;
+  assert.equal(all, act, "the whole song-chat menu IS the act tool");
+  console.log(`batch 3 menu: ${all} chars (~${Math.round(all / 3.7)} tokens) for ${index.length} actions — was 12,199 chars (~3,297 tokens) with the twelve tools beside act, 10,919 (~2,950) before act existed`);
+  assert.ok(all < 10919 / 2, "the menu dropped to well under half of the twelve-tool menu: " + all);
+  // the system prompt names no tool that no longer exists as one, and keeps the law
+  const sys = val(`askSys()`);
+  assert.match(sys, /ONE app tool, act/);
+  assert.doesNotMatch(sys, /twelve app tools/);
+  assert.match(sys, /never on your own initiative/);
+  assert.match(sys, /never a chord, key or note of your own choosing/);
+});
+
+test("batch 3: annotations through act — add (chord; the new meter and chop kinds), edit, delete; results quote the user's own words; a bad kind, a bad meter, a stale id and an ambiguous target are errors carrying the spec; nothing is written on an error", async () => {
+  installActSong();
+  try {
+    assert.equal(await aval(`askAct({do: [{action: "add_annotation", kind: "chord", text: "F#m", bar: 2, beat: 1, comment: "his call"}]})`), "written [2.1] F#m — on this device until Publish (the Publish sheet can discard it)");
+    assert.ok(val(`rollnotes.some(n => n.chord && n.added && n.b1 === 2 && n.cnote === "his call")`), "landed as an added chord with its comment");
+    assert.match(await aval(`askAct({do: [{action: "add_annotation", kind: "meter", text: "3/4", bar: 1, beat: 1}]})`), /^written \[1\.1\] timesig: 3\/4 — on this device/);
+    assert.deepEqual(val(`declaredTs`), [3, 4], "the user's declared meter, as the editor would set it");
+    await assert.rejects(run(`askAct({do: [{action: "add_annotation", kind: "meter", text: "waltz", bar: 1, beat: 1}]})`), /a meter is written like 3\/4[\s\S]*add_annotation \{kind, text, bar, beat/);
+    await assert.rejects(run(`askAct({do: [{action: "add_annotation", kind: "tonality", text: "x", bar: 1, beat: 1}]})`), /kind must be chord, section, key, tempo, loop, meter, chop or note/);
+    await assert.rejects(run(`askAct({do: [{action: "add_annotation", kind: "chop", text: "middle", bar: 1, beat: 1}]})`), /chop takes start or end/);
+    await assert.rejects(run(`askAct({do: [{action: "add_annotation", kind: "chord", text: "", bar: 1, beat: 1}]})`), /empty text/);
+    assert.equal(val(`rollnotes.filter(n => n.added).length`), 2, "two written, nothing on the errors");
+    // edit by bar+beat+text, moving it; a stale id; the moved one deleted by its new place
+    assert.equal(await aval(`askAct({do: [{action: "edit_annotation", bar: 2, beat: 1, match_text: "F#m", text: "G7", new_bar: 3}]})`), "edited in place: [3.1] G7");
+    assert.ok(!val(`rollnotes.some(n => n.chord && n.b1 === 2)`) && val(`rollnotes.some(n => n.chord && n.b1 === 3 && /G7/.test(n.text))`), "moved, not duplicated");
+    await assert.rejects(run(`askAct({do: [{action: "edit_annotation", id: 99, text: "x"}]})`), /no annotation with id 99[\s\S]*edit_annotation \{id \| bar, beat/);
+    await assert.rejects(run(`askAct({do: [{action: "edit_annotation", bar: 1, beat: 1, text: "4/4"}]})`), /structural directive/, "a meter is not edited in place — delete it and add the new one");
+    assert.equal(await aval(`askAct({do: [{action: "delete_annotation", bar: 3, beat: 1}]})`), "deleted [3.1] G7");
+    assert.match(await aval(`askAct({do: [{action: "delete_annotation", bar: 1, beat: 1}]})`), /^deleted \[1\.1\] timesig: 3\/4$/, "the dictated meter can be taken back the same way");
+    assert.equal(val(`declaredTs`), null);
+    assert.equal(val(`rollnotes.filter(n => n.added).length`), 0);
+    // two notes at one spot: ambiguous until match_text says which
+    await aval(`askAct({do: [{action: "add_annotation", kind: "note", text: "first thought", bar: 5, beat: 1}, {action: "add_annotation", kind: "note", text: "second thought", bar: 5, beat: 1}]})`);
+    await assert.rejects(run(`askAct({do: [{action: "delete_annotation", bar: 5, beat: 1}]})`), /more than one annotation at bar 5 beat 1[\s\S]*delete_annotation \{id \| bar, beat, match_text\?\}/);
+    assert.equal(await aval(`askAct({do: [{action: "delete_annotation", bar: 5, beat: 1, match_text: "second"}]})`), "deleted [5.1] second thought");
+    // chop: written as the grammar's own line, taken back the same way
+    assert.match(await aval(`askAct({do: [{action: "add_annotation", kind: "chop", text: "Start", bar: 2, beat: 1}]})`), /^written \[2\.1\] chop: start/);
+    assert.ok(val(`rollnotes.some(n => n.chopdir === "start")`));
+    assert.match(await aval(`askAct({do: [{action: "delete_annotation", bar: 2, beat: 1, match_text: "chop"}]})`), /^deleted \[2\.1\] chop: start$/);
+    assert.ok(!val(`rollnotes.some(n => n.chopdir)`));
+  } finally { installActSong(); }
+});
+
+test("batch 3: notes and bars through act — write_notes (strings for numbers and a JSON string for the list are tolerated; an unknown track names the song's tracks), copy_bars, insert_bars, delete_bars, read_bars (tracks as a string) — one undo step each, the lines facts; a locked capture refuses every editing one with nothing changed", async () => {
+  installActSong();
+  assert.equal(await aval(`askAct({do: [{action: "write_notes", track: "pulse1", notes: [{pitch: "C4", bar: "2", beat: "1", dur_beats: "1"}, {pitch: "E4", bar: 2, beat: 2, dur_beats: 1, vel: "70"}]}]})`), "wrote 2 notes on pulse1, bar 2");
+  assert.equal(val(`editUndo.length`), 1, "one undo step");
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 1920 && n.t < 2 * 1920).map(n => n.p + "@" + n.v).join(",")`), "60@96,64@70");
+  assert.equal(await aval(`askAct({do: [{action: "write_notes", track: "pulse 1", notes: '[{"pitch":"G4","bar":3,"beat":1,"dur_beats":1}]'}]})`), "wrote 1 note on pulse1, bar 3", "a JSON string where the list was meant");
+  await assert.rejects(run(`askAct({do: [{action: "write_notes", track: "bassoon", notes: [{pitch: "C4", bar: 2, beat: 1, dur_beats: 1}]}]})`), /no track named "bassoon" — this song's tracks: pulse1, drums[\s\S]*write_notes \{track, notes/);
+  await assert.rejects(run(`askAct({do: [{action: "write_notes", track: "pulse1", notes: [{pitch: "Q4", bar: 2, beat: 1, dur_beats: 1}]}]})`), /pitch must be like C4/);
+  await assert.rejects(run(`askAct({do: [{action: "write_notes", track: "drums", notes: [{pitch: "C4", bar: 2, beat: 1, dur_beats: 1}]}]})`), /drum\/noise track/);
+  assert.equal(val(`editUndo.length`), 2, "nothing landed on the errors");
+  assert.equal(await aval(`askAct({do: [{action: "copy_bars", from_bar: 2, to_bar: 3, at_bar: 4}]})`), "copied bars 2–3 to bar 4; everything after moved 2 bars later");
+  assert.equal(val(`editUndo.length`), 3);
+  assert.equal(await aval(`askAct({do: [{action: "insert_bars", at_bar: 1, count: 1}]})`), "inserted 1 empty bar at bar 1 — everything after moved 1 bar later");
+  assert.equal(await aval(`askAct({do: [{action: "delete_bars", from_bar: 1, count: 1}]})`), "bar 1 removed — everything after moved 1 bar earlier");
+  assert.equal(val(`editUndo.length`), 5);
+  await assert.rejects(run(`askAct({do: [{action: "delete_bars", from_bar: 3, count: 0}]})`), /count must be ≥ 1[\s\S]*delete_bars \{from_bar, count\}/);
+  const rb = await aval(`askAct({do: [{action: "read_bars", from_bar: 2, to_bar: 3, tracks: "pulse1"}]})`);
+  assert.match(rb, /T1 pulse1/); assert.doesNotMatch(rb, /T2 drums/);
+  assert.match(await aval(`askAct({do: [{action: "read_bars", from_bar: 2}]})`), /(^|\n)2\|/, "the compact rows, bar 2 first");
+  assert.match(await aval(`askAct({do: [{action: "undo"}]})`), /^undid: /, "the registry's undo undoes the last of them");
+  assert.doesNotMatch("wrote 2 notes on pulse1, bar 2", /\b(key|chord|meter|major|minor)\b/i, "facts only"); assert.match(rb, /states no key/, "read_bars keeps its Learning preamble");
+  // a locked capture: every editing action refuses with the spec, nothing changes
+  const snap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).length)`);
+  const s0 = snap(), u0 = val(`editUndo.length`);
+  run(`songKey = "albums/nes/mega-man-2/act-fold-capture.mid"; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));`);
+  for (const call of [`{action: "write_notes", track: "pulse1", notes: [{pitch: "C4", bar: 2, beat: 1, dur_beats: 1}]}`, `{action: "copy_bars", from_bar: 2, to_bar: 3, at_bar: 4}`, `{action: "insert_bars", at_bar: 2, count: 1}`, `{action: "delete_bars", from_bar: 2, count: 1}`])
+    await assert.rejects(run(`askAct({do: [${call}]})`), /locked here \(a capture or starter\) — ✎ Edit[\s\S]*\{/, call);
+  assert.deepEqual(snap(), s0); assert.equal(val(`editUndo.length`), u0);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+  installActSong();
+});
+
+test("batch 3: reading and publishing through act — list_songs names albums, paths and this device's own songs; read_song / read_notes take a title or path and refuse an ambiguous one; publish_song refuses when not connected — all with the spec in the error", async () => {
+  installActSong();
+  run(`CATALOG["FF1"] = [["Graveyard", "albums/ff1/graveyard.mid"]]; localStorage.setItem(draftStoreKey("local/fold-test.mid"), "{}");`);
+  try {
+    const ls = await aval(`askAct({do: [{action: "list_songs"}]})`);
+    assert.match(ls, /FF1:\n  Graveyard — albums\/ff1\/graveyard\.mid/);
+    assert.match(ls, /on this device only:\n(.*\n)*  Fold Test — local\/fold-test\.mid/);
+    await assert.rejects(run(`askAct({do: [{action: "read_song", path: "nothing-here"}]})`), /no song named "nothing-here" — list_songs lists them[\s\S]*read_song \{path, from_bar\?, to_bar\?\}/);
+    assert.match(await aval(`askAct({do: [{action: "read_notes", path: "Graveyard"}]})`), /^\(no annotations( saved for albums\/ff1\/graveyard\.mid)?\)$/, "the name resolved; nothing is published for it here (no network in tests)");
+    await assert.rejects(run(`askAct({do: [{action: "read_song", path: "Graveyard", from_bar: 1, to_bar: 4}]})`), e => !/no song named|which one/.test(e.message), "the name resolved (the read itself fails here: no network in tests)");
+    run(`localStorage.setItem(draftStoreKey("local/graveyard.mid"), "{}");`);
+    await assert.rejects(run(`askAct({do: [{action: "read_song", path: "graveyard"}]})`), /which one\? Graveyard \(FF1\) or Graveyard \(/, "never a guess between the two");
+    run(`localStorage.removeItem(draftStoreKey("local/graveyard.mid"));`);
+    await assert.rejects(run(`askAct({do: [{action: "publish_song"}]})`), /not connected — add a GitHub token[\s\S]*publish_song \{\}/);
+    run(`askGeneral = true;`);
+    assert.match(await aval(`askAct({do: [{action: "list_songs"}]})`), /Graveyard/, "the general chat lists songs too");
+    await assert.rejects(run(`askAct({do: [{action: "read_bars", from_bar: 1}]})`), /works in a song's ♪ chat, not here/);
+    run(`askGeneral = false;`);
+  } finally { run(`delete CATALOG["FF1"]; localStorage.removeItem(draftStoreKey("local/fold-test.mid"));`); }
+});
+
 test("act: the Help sheet's AI commands rows are generated from the registry (node tools/build_ask_help.mjs) and the file matches it; every action and every standalone tool has a row with an example phrase", () => {
   const html = helpSource();
   const m = html.match(/<!-- ask-commands:begin[^>]*-->\n\s*([\s\S]*?)\n\s*<!-- ask-commands:end -->/);
@@ -6633,7 +6744,6 @@ test("act: the Help sheet's AI commands rows are generated from the registry (no
     assert.ok(m[1].includes("(act: " + d.name), d.name + " has a Help row");
     assert.ok(d.example && d.say && d.gloss && d.spec && d.args !== undefined, d.name + ": example, say, gloss, spec and args are all set");
   }
-  for (const name of val(`ASK_TOOLS.map(t => t.function.name)`)) assert.ok(m[1].includes("(tool: " + name + ")"), name + " has a Help row (ASK_TOOL_PHRASES, until batch 3 folds it into an action)");
   assert.ok(readFileSync(new URL("../docs/HELP.md", import.meta.url), "utf8").includes("(act: go_to bar beat?)"), "docs/HELP.md was rebuilt after the rows (node tools/build_help.mjs)");
 });
 
@@ -10281,9 +10391,9 @@ test("P10 read_bars: returns exactly askSpanNotesCompact for the span, from LIVE
   const live = a.run(`askReadBars({from_bar: 2, to_bar: 2})`);
   assert.match(live, /2\|1B4\/1/, "live app state, not a snapshot from an earlier call");
 
-  assert.ok(a.run(`askToolsNow().some(t => t.function.name === "read_bars")`), "sanity: offered in a song chat");
+  assert.ok(a.run(`askActOffered("read_bars")`), "sanity: offered in a song chat");
   a.run(`askGeneral = true;`);
-  assert.ok(!a.run(`askToolsNow().some(t => t.function.name === "read_bars")`), "not offered in the general chat — read_bars is about THE open song, unlike read_song/read_notes");
+  assert.ok(!a.run(`askActOffered("read_bars")`), "not offered in the general chat — read_bars is about THE open song, unlike read_song/read_notes");
   a.run(`askGeneral = false;`);
 });
 test("P10 read_bars: caps the span and says so when the request asks for more", async () => {

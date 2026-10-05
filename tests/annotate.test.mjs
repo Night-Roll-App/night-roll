@@ -188,7 +188,7 @@ test("Learning mode: no menu item, the hidden button opens nothing, the runner r
     assert.equal(val(app, `rollnotes.length`), 0);
     assert.equal(val(app, `editUndo.length`), 0);
     // the chat surface is untouched by construction: no tool, no prompt text
-    const tools = val(app, `askToolsNow().map(t => t.function.name)`);
+    const tools = val(app, `askActList(!!askGeneral).map(d => d.name)`);
     assert.ok(!tools.some(n => /annot/i.test(n) && !/annotation$/.test(n)), "no annotate tool in askToolsNow: " + tools.join(", "));
     assert.doesNotMatch(run(app, `JSON.stringify(ASK_TOOLS)`), /Annotate this song|annotate_song|ANNOTATE_SYS|AI estimate/, "ASK_TOOLS carries no such tool");
     assert.doesNotMatch(run(app, `askSys()`), /annotate|estimate/i, "the Learning system prompt is unchanged");
@@ -469,7 +469,7 @@ test("Learning mode hides ✦ AI-tagged annotations from every reader that shows
   assert.match(run(app, `askContext(askSpan(), askBudget())`), /Verse/);
   assert.match(run(app, `askAnnotationsText()`), /Verse/); assert.match(run(app, `askAnnotationsTextCompact()`), /Verse/);
   assert.equal(run(app, `askFindAnnotation({bar: 5, beat: 1}).text`), "Verse");
-  assert.match(await run(app, `askRunTool("read_notes", {path: "other"})`), /Guess/, "Normal: read_notes lists another song's AI estimates too");
+  assert.match(await run(app, `askRunTool("act", {do: [{action: "read_notes", path: "other"}]})`), /Guess/, "Normal: read_notes lists another song's AI estimates too");
   assert.equal(val(app, `factsDocFromState().rollnotes.length`), 5);
   assert.deepEqual(val(app, `bsChordTimeline(0, ${8 * bt}).map(c => c.t / ${bt})`), [0, 1], "Normal: the Bassist follows the AI chord in bar 2");
   assert.deepEqual(val(app, `[...drBoundaries(0, ${8 * bt})]`), [1, 5], "Normal: the Drummer sees the AI section start");
@@ -500,7 +500,7 @@ test("Learning mode hides ✦ AI-tagged annotations from every reader that shows
   const verseId = val(app, `rollnotes.findIndex(n => n.text === "Verse")`);
   assert.match(caught(app, `askFindAnnotation({id: ${verseId}})`), /no annotation with id/);
   assert.equal(run(app, `askFindAnnotation({bar: 1, beat: 1, match_text: "Intro"}).text`), "Intro", "his own stay addressable");
-  const rn = await run(app, `askRunTool("read_notes", {path: "other"})`);
+  const rn = await run(app, `askRunTool("act", {do: [{action: "read_notes", path: "other"}]})`);
   assert.match(rn, /Head/); assert.doesNotMatch(rn, /Guess/, "read_notes drops another song's AI estimates in Learning");
   assert.doesNotMatch(run(app, `notesTxtFor()`), /Verse|C major|key:/, "the notes.txt dump states no key and no AI label");
   assert.equal(val(app, `factsDocFromState().rollnotes.length`), 2, "the FACTS/Analyze/Ask grounding never see them");

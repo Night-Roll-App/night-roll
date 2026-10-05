@@ -413,8 +413,23 @@ Every Settings field saves itself the moment you leave it — there is no Save b
 **AI commands**
 Everything you can tell Ask, one row each — a phrase that works, then how to phrase your own. Several at once run in order ("go to bar 13 and play"); a quick one (go to, play, stop, select) answers with its one line and nothing more. Ask only ever does what you asked in that message. Generated from the app's own action list, so this is exactly what it can do today.
 
+**Ask: write one annotation in the user's words**
+**“Put an F#m chord on bar 21.”** Say the kind (chord, section, key, tempo, loop, meter, chop, note), the text in your words, the bar and beat. (act: add_annotation kind text bar beat end_bar? end_beat? comment?)
+
+**Ask: repeat bars: open a gap, copy the music into it (one undo)**
+**“Repeat bars 5 and 6 right after themselves.”** Say the bars to copy and where the copy lands. (act: copy_bars from_bar to_bar at_bar)
+
+**Ask: remove one existing annotation**
+**“Delete the note at bar 16.”** Say which one — bar and beat, plus its text if two share the spot. (act: delete_annotation id|bar beat match_text?)
+
+**Ask: delete bars; everything later slides left (one undo)**
+**“Delete bars 30 to 32.”** Say the first bar and how many (or the last bar). (act: delete_bars from_bar count)
+
 **Ask: run the Drummer over bars or a section label (one undo)**
 **“Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2.”** Say the bars or one of your section labels, then what you want: energy 1–5 (or busy/hard apart), fills, feel, which parts, what the kick follows; "that one again, quieter" works because the reply names the seed. (act: drummer from_bar to_bar|section energy? busy? hard? fills? feel? parts? follow? seed?)
+
+**Ask: change an existing annotation's text or place**
+**“Change the chord at 14.1 to G7.”** Say which one (its bar and beat, or its text) and the new text or place. (act: edit_annotation id|bar beat match_text? text comment? new_bar? new_beat? new_end_bar? new_end_beat?)
 
 **Ask: move the cursor there, scrolled into view**
 **“Go to bar 13.”** Say the bar, and a beat if you mean one ("bar 13 beat 3"). (act: go_to bar beat?)
@@ -422,11 +437,29 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: the action list, or one action's full text**
 **“What can you do?”** That lists them; "help with drummer" gives one action's details. (act: help name?)
 
+**Ask: insert empty bars; everything later slides right (one undo)**
+**“Insert two empty bars at bar 9.”** Say where, and how many. (act: insert_bars at_bar count)
+
+**Ask: the songs here: albums, titles, paths**
+**“What songs are there?”** It lists albums, titles and paths — the ones on this device too. (act: list_songs)
+
 **Ask: open another song — the chat moves there; put it LAST**
 **“Open Graveyard and play it from bar 9.”** Name the song (its title, file name or path); whatever you asked for after that is sent again in that song's chat, in your words. If two songs share the name it asks which. (act: open_song song then?)
 
 **Ask: play from the cursor, or from a bar**
 **“Play from bar 17.”** "Play" alone plays from the cursor; name a bar (and beat) to start there. (act: play from_bar? beat?)
+
+**Ask: publish the open song (the footer's Publish)**
+**“Publish.”** Just that; it runs the footer's Publish and reports what happened. (act: publish_song)
+
+**Ask: read more bars of THIS song, live state**
+**“What's on the triangle in bars 40 to 48?”** Say the bars, and tracks if you want fewer. (act: read_bars from_bar to_bar? tracks?)
+
+**Ask: read another song's annotations**
+**“What did I write in Graveyard's notes?”** Name the song. (act: read_notes path)
+
+**Ask: read another song's notes (optional bar range)**
+**“Compare this to Ambush.”** Name the other song; add bars ("bars 1 to 8 of Ambush") to keep it short. (act: read_song path from_bar? to_bar?)
 
 **Ask: ruler selection; ▶ loops it unless cycle: false**
 **“Loop bars 5 to 12.”** Say the first and last bar; "select" instead of "loop", or "no cycle", marks them without looping; "clear the selection" drops it. (act: select from_bar to_bar? cycle? clear?)
@@ -437,41 +470,8 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: undo the last edit(s); redo: true redoes**
 **“Undo that.”** "Undo the last three" for several; "redo" to redo. (act: undo steps? redo?)
 
-**Ask: write one annotation**
-**“Put an F#m chord on bar 21.”** Say the kind (chord, section, key, tempo, loop, note), the text in your words, the bar and beat. (tool: add_annotation)
-
-**Ask: change an annotation**
-**“Change the chord at 14.1 to G7.”** Say which one (its bar and beat, or its text) and the new text or place. (tool: edit_annotation)
-
-**Ask: remove an annotation**
-**“Delete the note at bar 16.”** Say which one — bar and beat, plus its text if two share the spot. (tool: delete_annotation)
-
-**Ask: publish the open song**
-**“Publish.”** Just that; it runs the footer's Publish and reports what happened. (tool: publish_song)
-
-**Ask: list the songs here**
-**“What songs are there?”** It lists albums, titles and paths. (tool: list_songs)
-
-**Ask: read another song's notes**
-**“Compare this to Ambush.”** Name the other song; add bars ("bars 1 to 8 of Ambush") to keep it short. (tool: read_song)
-
-**Ask: read another song's annotations**
-**“What did I write in Graveyard's notes?”** Name the song. (tool: read_notes)
-
-**Ask: read more bars of this song**
-**“What's on the triangle in bars 40 to 48?”** Say the bars, and tracks if you want fewer. (tool: read_bars)
-
-**Ask: write dictated notes**
-**“On pulse 2, write C5 at bar 3 beat 1, an eighth, then D5 on beat 1.5.”** Say the track, then every note: pitch, bar, beat, length (a "gallop" must be spelled out as its three notes). (tool: write_notes)
-
-**Ask: repeat bars**
-**“Repeat bars 5 and 6 right after themselves.”** Say the bars to copy and where the copy lands. (tool: copy_bars)
-
-**Ask: insert empty bars**
-**“Insert two empty bars at bar 9.”** Say where, and how many. (tool: insert_bars)
-
-**Ask: delete bars**
-**“Delete bars 30 to 32.”** Say the first bar and how many (or the last bar). (tool: delete_bars)
+**Ask: write dictated notes on a named track (one undo)**
+**“On pulse 2, write C5 at bar 3 beat 1, an eighth, then D5 on beat 1.5.”** Say the track, then every note: pitch, bar, beat, length (a "gallop" must be spelled out as its three notes). (act: write_notes track notes[{pitch bar beat dur_beats vel?}] replace{from_bar from_beat? to_bar? to_beat?}?)
 
 ## Analysis
 

@@ -155,8 +155,8 @@ test("Night Roll bridge wire format: x-nr-job/x-nr-song headers, and a streamed 
       if (round === 1) {
         // the model proposes an annotation via a streamed tool call, split
         // across chunks the same way a real OpenAI-protocol server does
-        sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, id: "c1", function: { name: "add_annotation", arguments: "{\"kind\":\"chord\"," } }] } }] });
-        sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: "\"text\":\"ii-V\",\"bar\":1,\"beat\":1}" } }] } }] });
+        sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, id: "c1", function: { name: "act", arguments: "{\"do\":[{\"action\":\"add_annotation\",\"kind\":\"chord\"," } }] } }] });
+        sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: "\"text\":\"ii-V\",\"bar\":1,\"beat\":1}]}" } }] } }] });
         sse(res, { choices: [{ delta: {}, finish_reason: "tool_calls" }] });
       } else {
         for (const w of ["noted ", "— ii–V at bar 1."]) sse(res, { choices: [{ delta: { content: w } }] });
@@ -179,7 +179,7 @@ test("Night Roll bridge wire format: x-nr-job/x-nr-song headers, and a streamed 
     assert.equal(reqs[1].headers["x-nr-job"], reqs[0].headers["x-nr-job"] + "-r1", "round 2 gets its own job id — the pending marker follows it");
     const toolMsg = reqs[1].json.messages.find(m => m.role === "tool");
     assert.ok(toolMsg, "round 2 carries the tool's result back to the model");
-    assert.match(toolMsg.content, /"unsynced":true/);
+    assert.match(toolMsg.content, /written \[1\.1\] ii-V — on this device until Publish/, "the action's own line (batch 3: add_annotation is an act action)");
 
     // the app actually ran the tool against live state — not a stub
     assert.equal(val(app, `rollnotes.length`), 1);

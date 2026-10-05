@@ -95,78 +95,7 @@ export function askAnnotationsTextCompact() {
 // that speaks OpenAI tool calls. Annotations land as "added" (unsynced), like
 // his own, with the ✕ in Save & Commit; the prompt limits writing to what he
 // asked for in words.
-export const ASK_TOOLS = [
-  {type: "function", function: {name: "add_annotation", description: "Write ONE annotation into the open song at a bar and beat, exactly as the user asked. Only when the user explicitly asks you to annotate, mark, label or write something — never on your own initiative.",
-    parameters: {type: "object", properties: {
-      kind: {type: "string", enum: ["chord", "section", "key", "tempo", "loop", "note"], description: "chord = a chord symbol (e.g. F#m, G7/B, Cmaj7#11); section = a form label (Intro, A, B'); key = a key (F#m, Bb, A#/Bb? for tonic-only); tempo = bpm; loop = the return point as bar.beat, placed at the jump point; note = plain prose"},
-      text: {type: "string", description: "the symbol, label, key, bpm, bar.beat, or prose — in the user's words"},
-      bar: {type: "integer", minimum: 1}, beat: {type: "number", minimum: 1, description: "counted beat, 1 = downbeat; fractions allowed (2.5)"},
-      end_bar: {type: "integer", minimum: 1, description: "optional: the last bar the annotation spans"}, end_beat: {type: "number", minimum: 1, description: "optional: the last beat it spans (omit = end of that bar)"},
-      comment: {type: "string", description: "optional: a note attached to the annotation, in the user's words"}},
-      required: ["kind", "text", "bar", "beat"]}}},
-  {type: "function", function: {name: "edit_annotation", description: "Change an EXISTING annotation's text (and, optionally, where it sits). Only when the user explicitly asks you to edit, change, rename, move or correct one — never on your own initiative. Target it by id (from this turn's context block) or by its current bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
-    parameters: {type: "object", properties: {
-      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it — the surest target; stale after an earlier tool call in the SAME reply changes the annotations, so use bar/beat/match_text for a second edit in one turn"},
-      bar: {type: "integer", minimum: 1, description: "the annotation's CURRENT bar — with beat, used to find it when id is omitted or stale"},
-      beat: {type: "number", minimum: 1, description: "the annotation's CURRENT counted beat"},
-      match_text: {type: "string", description: "the annotation's current text — disambiguates when more than one annotation shares that bar.beat"},
-      text: {type: "string", description: "the new symbol, label, key, bpm, bar.beat, or prose — in the user's words"},
-      comment: {type: "string", description: "optional: replaces the note attached to the annotation; omit to leave the existing one"},
-      new_bar: {type: "integer", minimum: 1, description: "optional: moves the annotation to this bar"}, new_beat: {type: "number", minimum: 1, description: "optional: moves it to this beat"},
-      new_end_bar: {type: "integer", minimum: 1, description: "optional: changes the last bar it spans"}, new_end_beat: {type: "number", minimum: 1, description: "optional: changes the last beat it spans"}},
-      required: ["text"]}}},
-  {type: "function", function: {name: "delete_annotation", description: "Remove ONE existing annotation. Only when the user explicitly asks you to delete, remove or take back one — never on your own initiative. Give id, or bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
-    parameters: {type: "object", properties: {
-      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it"},
-      bar: {type: "integer", minimum: 1, description: "the annotation's current bar — with beat, used when id is omitted or stale"}, beat: {type: "number", minimum: 1, description: "the annotation's current counted beat"},
-      match_text: {type: "string", description: "its current text — disambiguates when more than one annotation shares that bar.beat"}}}}},
-  {type: "function", function: {name: "publish_song", description: "Publish the open song — the same Publish the footer button runs (song + annotations, or annotations only for a locked capture). Only when the user explicitly says to publish. Refuses, with a reason, when the device isn't connected or there is nothing here to publish.", parameters: {type: "object", properties: {}}}},
-  {type: "function", function: {name: "list_songs", description: "List the songs available in this Night Roll (albums, titles, paths) — use when the user refers to another song.", parameters: {type: "object", properties: {}}}},
-  {type: "function", function: {name: "read_song", description: "Read another song's notes (or a bar range of it) in the same text format as the context block. Use only when the user asks about another song.",
-    parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}, from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1}}, required: ["path"]}}},
-  {type: "function", function: {name: "read_notes", description: "Read another song's annotations (the user's own analysis of it). Use only when the user asks about another song.",
-    parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}}, required: ["path"]}}},
-  {type: "function", function: {name: "read_bars", description: "Read bars of the OPEN song beyond what the context block's current window already shows — the same compact note rows, from LIVE app state (any unsaved edits included). Ask for this instead of guessing what an out-of-view bar holds, or claiming you cannot see it. The span is capped; a truncated reply says so and names where to continue from.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1},
-      to_bar: {type: "integer", minimum: 1, description: "inclusive; omit for just from_bar"},
-      tracks: {type: "array", items: {type: "string"}, description: "optional: limit to these tracks, by number (\"1\") or name — omit for every track"}},
-      required: ["from_bar"]}}},
-  {type: "function", function: {name: "write_notes", description: "Write notes into THIS song on a track the user names. Only when the user explicitly asks you to write, insert, add, or fill in notes — their request is the per-instance approval for their own song; never on your own initiative, and never volunteer chords, keys, or any note they didn't dictate. Spell out every note individually — a shorthand term like \"gallop\" means nothing to the app; write it as the eighth note plus two sixteenths it stands for. track names an EXISTING track exactly as the user said it (e.g. \"triangle\", \"pulse1\") — matched against this song's own track names; never default to whichever track is selected in the app, and an unknown or ambiguous name is an error naming this song's actual track names, never a guess. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix (✎ Edit makes an editable copy). Every note is validated before anything is written; one bad note and nothing lands. The written notes land as ONE undo step, and the reply is one short line saying what was written.",
-    parameters: {type: "object", properties: {
-      track: {type: "string", description: "the track name as the user said it (e.g. \"triangle\", \"pulse1\") — matched case-insensitively against this song's track names"},
-      notes: {type: "array", description: "every note to write, spelled out individually in the user's words", items: {type: "object", properties: {
-        pitch: {type: "string", description: "scientific pitch like C4, F#3, Bb2 (C4 = middle C) — or a MIDI note number"},
-        bar: {type: "integer", minimum: 1, description: "the ruler's bar number"},
-        beat: {type: "number", minimum: 1, description: "counted beat, 1 = downbeat; fractions allowed (2.5)"},
-        dur_beats: {type: "number", exclusiveMinimum: 0, description: "duration in beats"},
-        vel: {type: "number", minimum: 1, maximum: 127, description: "optional: velocity 1–127 — omit for the app's own default"}},
-        required: ["pitch", "bar", "beat", "dur_beats"]}},
-      replace: {type: "object", description: "optional: a bar/beat range on the SAME track whose existing notes (by onset) are removed first", properties: {
-        from_bar: {type: "integer", minimum: 1}, from_beat: {type: "number", minimum: 1},
-        to_bar: {type: "integer", minimum: 1}, to_beat: {type: "number", minimum: 1}}}},
-      required: ["track", "notes"]}}},
-  {type: "function", function: {name: "copy_bars", description: "Repeat, duplicate or copy bars that already exist in THIS song. Inserts (to_bar − from_bar + 1) bars at at_bar on EVERY track — the same operation as Edit ▾ → Insert bars…, so every later note AND annotation (sections, chords, loop, key/tempo/meter) slides later to make room — then copies the notes of bars from_bar..to_bar (every track, drums included) into the new gap. Prefer this over write_notes whenever the request is to repeat or copy music that is already there, rather than dictate new notes. Only when the user explicitly asks to repeat, duplicate or copy bars — never on your own initiative. Annotations inside the copied range are never duplicated (they are the user's own analysis); only annotations after at_bar shift, same as Insert bars. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1, description: "first bar to copy"},
-      to_bar: {type: "integer", minimum: 1, description: "last bar to copy, inclusive"},
-      at_bar: {type: "integer", minimum: 1, description: "where the copy lands (the gap opens here); to repeat bars 5–6 right after themselves, at_bar is 7"}},
-      required: ["from_bar", "to_bar", "at_bar"]}}},
-  {type: "function", function: {name: "insert_bars", description: "Insert empty bars into THIS song — the same operation as Edit ▾ → Insert bars…: every later note AND annotation (sections, chords, loop, key/tempo/meter) slides later to make room. Only when the user explicitly asks to insert, add or make room for blank/empty bars — for repeating or copying music that already exists, use copy_bars instead. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      at_bar: {type: "integer", minimum: 1, description: "where the new bars go"},
-      count: {type: "integer", minimum: 1, description: "how many empty bars to insert"}},
-      required: ["at_bar", "count"]}}},
-  {type: "function", function: {name: "delete_bars", description: "Delete bars that already exist in THIS song — the same operation as Edit ▾ → Delete bars…, and the inverse of insert_bars: removes count bars starting at from_bar on EVERY track (a note starting inside is deleted, one sustaining across the cut is clipped there) and everything after slides EARLIER to close the gap — annotations too (sections, chords, loop, key/tempo/meter). Annotations are never destroyed: one anchored inside the deleted span moves to the cut point instead, and one straddling the cut shrinks rather than being duplicated or orphaned. Only when the user explicitly asks to delete or remove bars — never on your own initiative. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1, description: "first bar to delete"},
-      count: {type: "integer", minimum: 1, description: "how many bars to delete"}},
-      required: ["from_bar", "count"]}}},
-  // Nothing new goes in this list (docs/ai-parity.md §2, Josh #435): a new
-  // feature is an ACTION in src/ask/actions.js's registry, reached through
-  // the one `act` tool askToolsNow appends — the menu above rides with every
-  // message and must not grow. The drummer went that way first (2026-10-05).
-];
+export const ASK_TOOLS = []; // empty since 2026-10-05 (docs/ai-parity.md §5 batch 3): every one of the twelve became an action of `act` (src/ask/actions.js) — the same functions below, reached through the registry. Kept as the (pure-data) place a tool with a schema of its own would go, should one ever need one; askToolsNow appends act to it.
 // edit_annotation/delete_annotation (2026-10-01, open-items): targeting for
 // an EXISTING annotation, robust the way the issue asked — by id (this
 // turn's context listing, dedupedNotesWithIndex's index into rollnotes) or
@@ -406,9 +335,13 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   const bar = Math.max(1, Math.round(+a.bar || 1)), beat = Math.max(1, +a.beat || 1);
   const eb = a.end_bar ? Math.max(bar, Math.round(+a.end_bar)) : null;
   const eq = eb && a.end_beat ? Math.max(1, +a.end_beat) : null;
-  const kind = String(a.kind || "note"), text = String(a.text || "").trim();
+  let kind = String(a.kind || "note").trim().toLowerCase();
+  const text = String(a.text || "").trim();
   if (!text) throw new Error("empty text");
-  const line = (kind === "note" ? text : kind + ": " + text) + (a.comment ? "\n" + String(a.comment).trim() : "");
+  if (kind === "meter" || kind === "timesig") { kind = "timesig"; if (!/^\d+\s*\/\s*\d+$/.test(text)) throw new Error("a meter is written like 3/4"); } // the .rollnotes grammar's own names (batch 3, 2026-10-05: the user's declared meter and chop, dictated like any other annotation)
+  else if (kind === "chop") { if (!/^(start|end)$/i.test(text)) throw new Error("chop takes start or end — the bar.beat is where it sits"); }
+  else if (!["chord", "section", "key", "tempo", "loop", "note"].includes(kind)) throw new Error("kind must be chord, section, key, tempo, loop, meter, chop or note");
+  const line = (kind === "note" ? text : kind + ": " + (kind === "chop" ? text.toLowerCase() : text)) + (a.comment ? "\n" + String(a.comment).trim() : "");
   const head = "[" + bar + "." + beat + (eb ? " - " + eb + (eq ? "." + eq : "") : "") + "]";
   const parsed = parseRollnotes(head + "\n" + line);
   if (!parsed.length) throw new Error("could not parse that annotation");
@@ -464,7 +397,7 @@ export function askEditAnnotation(a) {
 export function askDeleteAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   const n = askFindAnnotation(a || {});
-  if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — remove it in the app's own editor, not here");
+  if (askAnnotationStructural(n) && !n.tsdir && !n.chopdir) throw new Error("that annotation is a structural directive (track/audio/lane) — remove it in the app's own editor, not here"); // a meter or chop the user dictated can be taken back the same way (batch 3); track/audio/lane stay the editor's
   const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
   tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
   S.rollnotes = S.rollnotes.filter(x => x !== n);
@@ -501,35 +434,33 @@ export async function askPublishSong() {
   const where = folderActive() ? ("to " + fsRoot.name) : "(GitHub Pages takes ~1 min to serve it)";
   return {ok: true, message: "Published " + S.songKey + " " + where + (hisMusic ? " — song and annotations together." : " — annotations.")};
 }
-export async function askRunTool(name, a) {
-  if (S.askSwitch && name !== "act" && !["list_songs", "read_song", "read_notes"].includes(name)) throw new Error("the song is changing — ask again in " + S.askSwitch.title + "'s chat"); // open_song queued a switch in THIS reply: nothing more touches the song it is leaving (docs/ai-parity.md §4); act's own list has the same rule (runActions)
-  if (name === "add_annotation") return askAddAnnotation(a || {});
-  if (name === "edit_annotation") return askEditAnnotation(a || {});
-  if (name === "delete_annotation") return askDeleteAnnotation(a || {});
-  if (name === "publish_song") return askPublishSong();
-  if (name === "list_songs") return Object.entries(S.CATALOG).map(([album, songs]) => ({album, songs: songs.map(([title, path]) => ({title, path}))}));
-  if (name === "read_song") {
-    const path = askSongPath(a && a.path);
-    const res = await readData("songs", path);
-    if (!res.ok) throw new Error("could not read " + path);
-    const doc = parseMidi(await res.arrayBuffer());
-    return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000, path);
-  }
-  if (name === "read_notes") {
-    const path = askSongPath(a && a.path);
-    const res = await readData("analysis", path.replace(/\.midi?$/i, "") + ".rollnotes.json");
-    if (!res.ok) return "(no annotations saved for " + path + ")";
-    let j; try { j = JSON.parse(await res.text()); } catch (err) { return "(annotations unreadable)"; }
-    const at = e => "[" + (e.at || [1, 1]).join(".") + (e.to ? " - " + e.to.join(".") : "") + "]";
-    return (j.notes || []).filter(e => annoShown(e)).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
-  }
-  if (name === "read_bars") return askReadBars(a || {});
-  if (name === "write_notes") return askWriteNotes(a || {});
-  if (name === "copy_bars") return askCopyBars(a || {});
-  if (name === "insert_bars") return askInsertBars(a || {});
-  if (name === "delete_bars") return askDeleteBars(a || {});
+export function askListSongs() { // the catalog AND this device's drafts, the way askSongPath sees them — one line per song, so an answer can name a path
+  const L = [];
+  for (const [album, songs] of Object.entries(S.CATALOG)) { L.push(album + ":"); for (const [title, path] of songs) L.push("  " + title + " — " + path); }
+  const local = draftKeys().filter(k => !Object.values(S.CATALOG).some(songs => songs.some(([, p]) => p === k)));
+  if (local.length) { L.push("on this device only:"); for (const k of local) L.push("  " + songTitleOf(k) + " — " + k); }
+  return L.join("\n") || "(no songs listed yet)";
+}
+export async function askReadSong(a) { // another song's notes, notesTxtForDoc's shape, 6000 chars, optional bar range
+  a = a || {};
+  const path = askSongPath([a.path, a.song, a.title].find(v => v !== undefined && v !== null && v !== ""));
+  const res = await readData("songs", path);
+  if (!res.ok) throw new Error("could not read " + path);
+  const doc = parseMidi(await res.arrayBuffer());
+  return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000, path);
+}
+export async function askReadNotes(a) { // another song's saved annotations as "[b.q - b.q] type: value — note" lines
+  a = a || {};
+  const path = askSongPath([a.path, a.song, a.title].find(v => v !== undefined && v !== null && v !== ""));
+  const res = await readData("analysis", path.replace(/\.midi?$/i, "") + ".rollnotes.json");
+  if (!res.ok) return "(no annotations saved for " + path + ")";
+  let j; try { j = JSON.parse(await res.text()); } catch (err) { return "(annotations unreadable)"; }
+  const at = e => "[" + (e.at || [1, 1]).join(".") + (e.to ? " - " + e.to.join(".") : "") + "]";
+  return (j.notes || []).filter(e => annoShown(e)).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
+}
+export async function askRunTool(name, a) { // the AI library's one door (host.runTool): since batch 3 the only tool is act — every action, the old twelve included, is a registry entry (src/ask/actions.js)
   if (name === "act") return askAct(a); // the whole argument object as sent — askActItems tolerates every shape a model emits (a string, one item, nested lists)
-  throw new Error("unknown tool " + name);
+  throw new Error("unknown tool " + name + " — every app action is inside act; its description lists them");
 }
 export function askWriteNotes(a) {
   const gate = askWritableGate();

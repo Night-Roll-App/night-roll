@@ -13,7 +13,18 @@ import { drawImpl as draw } from "../ui/chrome.js";
 import { askWritableGate } from "./tools.js";
 import { askBarsCount } from "./tools.js";
 import { askDrummer } from "./tools.js";
-import { ASK_TOOLS } from "./tools.js";
+import { askAddAnnotation } from "./tools.js";
+import { askEditAnnotation } from "./tools.js";
+import { askDeleteAnnotation } from "./tools.js";
+import { askPublishSong } from "./tools.js";
+import { askListSongs } from "./tools.js";
+import { askReadSong } from "./tools.js";
+import { askReadNotes } from "./tools.js";
+import { askReadBars } from "./tools.js";
+import { askWriteNotes } from "./tools.js";
+import { askCopyBars } from "./tools.js";
+import { askInsertBars } from "./tools.js";
+import { askDeleteBars } from "./tools.js";
 import { askSongPath } from "./tools.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { draftDirtyState } from "../ui/chrome.js";
@@ -52,7 +63,7 @@ import { askShotDisplayText } from "./shots.js";
 //           goes through askWritableGate() and lands ONE undo step.
 // The registry runs without any model: runActions(items) (docs/ai-parity.md
 // §7 — a cheap dispatcher model or a no-model fast path calls the same door).
-const ASK_ACT_HEAD = "Do things in the app — one or several actions in ONE call, in order; it stops at the first failure and says which. Only what the user asked in THIS message, never on your own initiative. A call of only go_to/play/stop/select ends your turn: the app shows its result line. Actions (name args — what it does; ? = optional):";
+const ASK_ACT_HEAD = "Do things in the app — one or several actions in ONE call, in order; it stops at the first failure and says which. Only what the user asked in THIS message, never on your own initiative. A call of only go_to/play/stop/select/open_song ends your turn: the app shows its result line. Actions (name args — what it does; ? = optional):";
 const ASK_ACT_FOOT = "A rejected call's error carries that action's full text; so does help {name}. E.g. {\"do\":[{\"action\":\"go_to\",\"bar\":13},{\"action\":\"play\"}]}";
 export const ASK_ACTIONS = [
   {name: "go_to", args: "bar beat?", gloss: "move the cursor there, scrolled into view", quiet: true,
@@ -121,31 +132,73 @@ export const ASK_ACTIONS = [
    example: "Open Graveyard and play it from bar 9.", say: "Name the song (its title, file name or path); whatever you asked for after that is sent again in that song's chat, in your words. If two songs share the name it asks which.",
    spec: "open_song {song, then?}: opens that song — song is a title, file name or path from the catalog or this device's drafts; an ambiguous name is an error listing the matches, never a guess — the way File → Open Recent does, AFTER this reply has landed; the chat then moves to that song's own history with a ↪ line naming where it came from. then = the rest of the user's request in THEIR words (\"play it from bar 9\"), sent as their next message in the new song's chat, where its notes are in view. It must be the LAST item of the call: nothing after it runs, and nothing else in this reply may touch the song being left. Opening is not editing — a locked or capture song opens fine (its edits refuse there as usual).",
    run(a) { return askOpenSongQueue(a); }},
+  // ---- the twelve standalone tools of 2026-09-26…10-02, folded in 2026-10-05
+  // (docs/ai-parity.md §5 batch 3): the same functions in src/ask/tools.js,
+  // the same gates and undo steps; only the schema went. Their rule texts
+  // live in `spec` now — sent on help and in a rejected call's error.
+  {name: "add_annotation", args: "kind text bar beat end_bar? end_beat? comment?", gloss: "write one annotation in the user's words",
+   example: "Put an F#m chord on bar 21.", say: "Say the kind (chord, section, key, tempo, loop, meter, chop, note), the text in your words, the bar and beat.",
+   spec: "add_annotation {kind, text, bar, beat, end_bar?, end_beat?, comment?}: writes ONE annotation at bar.beat exactly as the user asked — kind chord (a symbol: F#m, G7/B), section (a form label: Intro, A, B'), key (F#m, Bb, A#/Bb? for tonic-only), tempo (bpm), loop (the return point as bar.beat, placed at the jump point), meter (3/4), chop (start or end), note (plain prose); text in the user's words; end_bar/end_beat make it span; comment is a note attached to it. Only when the user explicitly asks to annotate, mark, label or write something. It lands as added (unsynced) on this device; Publish sends it, and the Publish sheet can discard it.",
+   run(a) { const r = askAddAnnotation(a); return "written " + r.at + " " + r.text.split("\n")[0] + " — on this device until Publish (the Publish sheet can discard it)"; }},
+  {name: "edit_annotation", args: "id|bar beat match_text? text comment? new_bar? new_beat? new_end_bar? new_end_beat?", gloss: "change an existing annotation's text or place",
+   example: "Change the chord at 14.1 to G7.", say: "Say which one (its bar and beat, or its text) and the new text or place.",
+   spec: "edit_annotation {id | bar, beat, match_text?; text, comment?, new_bar?, new_beat?, new_end_bar?, new_end_beat?}: changes an EXISTING annotation's text (and, if asked, where it sits) — never a duplicate beside it. Target it by id exactly as this turn's context block lists it (stale after an earlier edit in the SAME reply re-sorts them — then use bar+beat), or by its current bar and beat (+ match_text when more than one annotation shares that spot); an ambiguous target is an error, never a guess. text = the new symbol, label, key, bpm, bar.beat or prose in the user's words; comment replaces the attached note (omit to keep it). Only when the user explicitly asks to edit, change, rename, move or correct one. Structural directives (meter, chop, track, audio, lane) are the editor's.",
+   run(a) { const r = askEditAnnotation(a); return "edited in place: " + r.at + " " + r.text.split("\n")[0]; }},
+  {name: "delete_annotation", args: "id|bar beat match_text?", gloss: "remove one existing annotation",
+   example: "Delete the note at bar 16.", say: "Say which one — bar and beat, plus its text if two share the spot.",
+   spec: "delete_annotation {id | bar, beat, match_text?}: removes ONE existing annotation — by id from this turn's context block, or by its current bar and beat (+ match_text when more than one shares the spot); an ambiguous target is an error, never a guess. Only when the user explicitly asks to delete, remove or take back one. A meter or chop the user dictated goes the same way; track/audio/lane directives are the editor's.",
+   run(a) { const r = askDeleteAnnotation(a); return "deleted " + r.at + " " + r.text; }},
+  {name: "publish_song", args: "", gloss: "publish the open song (the footer's Publish)",
+   example: "Publish.", say: "Just that; it runs the footer's Publish and reports what happened.",
+   spec: "publish_song {}: publishes the open song — the same Publish the footer button runs (song + annotations for the user's own song, annotations only for a locked capture). Only when the user explicitly says to publish. Refuses, saying why, when the device isn't connected (no GitHub token, no folder) or nothing here can be published.",
+   async run() { return (await askPublishSong()).message; }},
+  {name: "list_songs", args: "", gloss: "the songs here: albums, titles, paths", song: false,
+   example: "What songs are there?", say: "It lists albums, titles and paths — the ones on this device too.",
+   spec: "list_songs {}: lists every song in this Night Roll — album by album, title and path — plus the songs that exist only on this device. Use it when the user names a song you can't place; read_song / read_notes / open_song take the path or the title.",
+   run() { return askListSongs(); }},
+  {name: "read_song", args: "path from_bar? to_bar?", gloss: "read another song's notes (optional bar range)", song: false,
+   example: "Compare this to Ambush.", say: "Name the other song; add bars (\"bars 1 to 8 of Ambush\") to keep it short.",
+   spec: "read_song {path, from_bar?, to_bar?}: reads another song's notes (a title or path; an ambiguous name errors with the candidates) in the same text format as the context block, a bar range optional, capped at 6000 characters. Only when the user asks about another song; then answer under THE RULE as usual.",
+   run(a) { return askReadSong(a); }},
+  {name: "read_notes", args: "path", gloss: "read another song's annotations", song: false,
+   example: "What did I write in Graveyard's notes?", say: "Name the song.",
+   spec: "read_notes {path}: reads another song's saved annotations (the user's own analysis of it) as \"[bar.beat - bar.beat] kind: value — note\" lines. Only when the user asks about another song.",
+   run(a) { return askReadNotes(a); }},
+  {name: "read_bars", args: "from_bar to_bar? tracks?", gloss: "read more bars of THIS song, live state",
+   example: "What's on the triangle in bars 40 to 48?", say: "Say the bars, and tracks if you want fewer.",
+   spec: "read_bars {from_bar, to_bar?, tracks?}: reads bars of the OPEN song beyond what the context block's window shows — the same compact note rows, from LIVE app state (unsaved edits included); tracks limits it to those tracks by number (\"1\") or name. Ask for this instead of guessing what an out-of-view bar holds, or saying you cannot see it; a bar shown as \"as sent earlier\" you already have from this chat. The span is capped at 32 bars; a truncated reply says where to continue from.",
+   run(a) { if (askActGiven(a.tracks)) { a.tracks = askActJSON(a.tracks); if (typeof a.tracks === "string") a.tracks = a.tracks.split(/\s*,\s*/).filter(Boolean); } return askReadBars(a); }},
+  {name: "write_notes", args: "track notes[{pitch bar beat dur_beats vel?}] replace{from_bar from_beat? to_bar? to_beat?}?", gloss: "write dictated notes on a named track (one undo)",
+   example: "On pulse 2, write C5 at bar 3 beat 1, an eighth, then D5 on beat 1.5.", say: "Say the track, then every note: pitch, bar, beat, length (a \"gallop\" must be spelled out as its three notes).",
+   spec: "write_notes {track, notes: [{pitch, bar, beat, dur_beats, vel?}], replace?: {from_bar, from_beat?, to_bar?, to_beat?}}: writes the notes the user dictated onto an EXISTING track named as they said it (matched against this song's own track names — never the one selected in the app; an unknown or ambiguous name is an error naming the song's tracks). Spell out every note yourself: pitch like C4 / F#3 / Bb2 (C4 = middle C) or a MIDI number, the ruler's bar, the counted beat (fractions allowed), dur_beats > 0, vel 1–127 optional — a shorthand like \"gallop\" means nothing here (it is an eighth plus two sixteenths: write all three). replace first removes that range's existing notes (by onset) on the same track. Only when the user explicitly asks to write, insert, add or fill in notes — never a chord, key or note of your own choosing. Every note is validated before anything is written (one bad note, nothing lands); up to 256 notes a call; never on a drum track; one undo step; own editable songs only (refuses on a locked/capture song, naming ✎ Edit).",
+   run(a) {
+     a.notes = askActJSON(a.notes); a.replace = askActJSON(a.replace);
+     const num = v => (typeof v === "string" && v.trim() !== "" && Number.isFinite(+v) ? +v : v); // a local model's "3" for 3 (the validator stays strict about everything else)
+     if (Array.isArray(a.notes)) a.notes = a.notes.map(n => n && typeof n === "object" ? {...n, bar: num(n.bar), beat: num(n.beat), dur_beats: num(n.dur_beats), ...(askActGiven(n.vel) ? {vel: num(n.vel)} : {})} : n);
+     return askWriteNotes(a).note;
+   }},
+  {name: "copy_bars", args: "from_bar to_bar at_bar", gloss: "repeat bars: open a gap, copy the music into it (one undo)",
+   example: "Repeat bars 5 and 6 right after themselves.", say: "Say the bars to copy and where the copy lands.",
+   spec: "copy_bars {from_bar, to_bar, at_bar}: repeats, duplicates or copies bars that already exist — inserts (to_bar − from_bar + 1) bars at at_bar on EVERY track (the same shift as Edit ▾ → Insert bars…: every later note AND annotation slides later), then copies bars from_bar..to_bar (every track, drums included) into the gap; to repeat bars 5–6 right after themselves, at_bar is 7. The way to repeat existing music — never a hand-spelled write_notes. Annotations inside the copied range are never duplicated (the user's own analysis), only shifted. Only when the user explicitly asks; one undo step; own editable songs only.",
+   run(a) { return askCopyBars(a).note; }},
+  {name: "insert_bars", args: "at_bar count", gloss: "insert empty bars; everything later slides right (one undo)",
+   example: "Insert two empty bars at bar 9.", say: "Say where, and how many.",
+   spec: "insert_bars {at_bar, count}: inserts count empty bars at at_bar — the same operation as Edit ▾ → Insert bars…: every later note AND annotation (sections, chords, loop, key/tempo/meter) slides later to make room. For repeating music that exists, copy_bars instead. Only when the user explicitly asks; one undo step; own editable songs only.",
+   run(a) { return askInsertBars(a).note; }},
+  {name: "delete_bars", args: "from_bar count", gloss: "delete bars; everything later slides left (one undo)",
+   example: "Delete bars 30 to 32.", say: "Say the first bar and how many (or the last bar).",
+   spec: "delete_bars {from_bar, count}: removes count bars starting at from_bar on EVERY track — the inverse of insert_bars (Edit ▾ → Delete bars…): a note starting inside is deleted, one sustaining across the cut is clipped there, and everything after slides earlier to close the gap, annotations too; an annotation anchored inside the span moves to the cut point, one straddling it shrinks — none is destroyed. Only when the user explicitly asks to delete or remove bars; one undo step; own editable songs only.",
+   run(a) { return askDeleteBars(a).note; }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",
    spec: "help {name?}: without name, the index of every action available in this chat; with one, that action's full text (args, rules, what it answers).",
    run(a) { const n = [a.name, a.about, a.action, a.topic].find(askActGiven); return askActGiven(n) ? askActSpec(n) : askActIndex(!!S.askGeneral) + "\nhelp {name} gives one action's full text."; }},
 ];
-// The standalone tools' Help rows, until docs/ai-parity.md §5 batch 3 folds
-// them into actions (their example/say then move onto the entries above).
-export const ASK_TOOL_PHRASES = {
-  add_annotation: {gloss: "write one annotation", example: "Put an F#m chord on bar 21.", say: "Say the kind (chord, section, key, tempo, loop, note), the text in your words, the bar and beat."},
-  edit_annotation: {gloss: "change an annotation", example: "Change the chord at 14.1 to G7.", say: "Say which one (its bar and beat, or its text) and the new text or place."},
-  delete_annotation: {gloss: "remove an annotation", example: "Delete the note at bar 16.", say: "Say which one — bar and beat, plus its text if two share the spot."},
-  publish_song: {gloss: "publish the open song", example: "Publish.", say: "Just that; it runs the footer's Publish and reports what happened."},
-  list_songs: {gloss: "list the songs here", example: "What songs are there?", say: "It lists albums, titles and paths."},
-  read_song: {gloss: "read another song's notes", example: "Compare this to Ambush.", say: "Name the other song; add bars (\"bars 1 to 8 of Ambush\") to keep it short."},
-  read_notes: {gloss: "read another song's annotations", example: "What did I write in Graveyard's notes?", say: "Name the song."},
-  read_bars: {gloss: "read more bars of this song", example: "What's on the triangle in bars 40 to 48?", say: "Say the bars, and tracks if you want fewer."},
-  write_notes: {gloss: "write dictated notes", example: "On pulse 2, write C5 at bar 3 beat 1, an eighth, then D5 on beat 1.5.", say: "Say the track, then every note: pitch, bar, beat, length (a \"gallop\" must be spelled out as its three notes)."},
-  copy_bars: {gloss: "repeat bars", example: "Repeat bars 5 and 6 right after themselves.", say: "Say the bars to copy and where the copy lands."},
-  insert_bars: {gloss: "insert empty bars", example: "Insert two empty bars at bar 9.", say: "Say where, and how many."},
-  delete_bars: {gloss: "delete bars", example: "Delete bars 30 to 32.", say: "Say the first bar and how many (or the last bar)."},
-};
 export function askActList(general) { // the registry in index order (by name — stable across sessions and songs); the general chat gets only what needs no open song
   return ASK_ACTIONS.filter(d => !general || d.song === false).slice().sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0));
 }
 export function askActFind(name, general) { const n = String(name === undefined || name === null ? "" : name).trim().toLowerCase(); return askActList(general).find(d => d.name === n) || null; }
+export function askActOffered(name) { return askActList(!!S.askGeneral).some(d => d.name === String(name)); } // is this action in the open chat's index? (the tests' question; what ASK_SONG_ONLY_TOOLS answered before batch 3)
 export function askActIndex(general) { return askActList(general).map(d => d.name + (d.args ? " " + d.args : "") + " — " + d.gloss).join("\n"); }
 export function askActSpec(name) {
   const d = askActFind(name, false);
@@ -318,10 +371,5 @@ export function askHelpCommandsHTML() {
   const rows = [];
   rows.push("<dt>AI commands</dt><dd>Everything you can tell Ask, one row each — a phrase that works, then how to phrase your own. Several at once run in order (\"go to bar 13 and play\"); a quick one (go to, play, stop, select) answers with its one line and nothing more. Ask only ever does what you asked in that message. Generated from the app's own action list, so this is exactly what it can do today.</dd>");
   for (const d of askActList(false)) rows.push("<dt>Ask: " + esc(d.gloss) + "</dt><dd><b>“" + esc(d.example) + "”</b> " + esc(d.say) + " <i>(act: " + esc(d.name + (d.args ? " " + d.args : "")) + ")</i></dd>");
-  for (const t of ASK_TOOLS) {
-    const p = ASK_TOOL_PHRASES[t.function.name];
-    if (!p) continue;
-    rows.push("<dt>Ask: " + esc(p.gloss) + "</dt><dd><b>“" + esc(p.example) + "”</b> " + esc(p.say) + " <i>(tool: " + esc(t.function.name) + ")</i></dd>");
-  }
   return rows.join("\n      ");
 }
