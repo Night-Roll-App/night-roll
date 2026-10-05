@@ -51,6 +51,10 @@ import { pushUndo } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { saveDraft } from "../model/versions.js";
+import { draftKeys } from "../model/versions.js";
+import { groupOf } from "../model/catalog.js";
+import { folderOf } from "../model/catalog.js";
+import { folderTitle } from "../model/catalog.js";
 import { deleteTime } from "../model/selection.js";
 import { drGenerate } from "../gen/drummer.js";
 import { drBassTrack } from "../gen/drummer.js";
@@ -238,11 +242,31 @@ export function notesTxtForDoc(doc, name, fromBar, toBar, maxChars, key) { // no
   if (cut !== null) L.push("# (cut at bar " + cut + " to fit — ask for a narrower range)");
   return L.join("\n");
 }
-export function askSongPath(p) { // accept a path, a title, or a bare name
-  p = String(p || "").trim();
-  if (!p) throw new Error("which song?");
-  for (const songs of Object.values(S.CATALOG)) for (const [title, path] of songs) if (path === p || path === p + ".mid" || title.toLowerCase() === p.toLowerCase() || path.split("/").pop().replace(/\.midi?$/i, "") === p.toLowerCase()) return path;
-  throw new Error("no song at " + p + " — use list_songs");
+// askSongMatches / askSongPath (rewritten 2026-10-05, docs/ai-parity.md §4):
+// the catalog AND this device's drafts (local/ songs and local copies — the
+// first version took the first catalog hit and never saw a draft), every
+// match listed, never a guess: an exact path / title / file-name match wins
+// outright; failing that, a title that contains the words; more than one
+// survivor is an error naming each with where it lives, so the user says
+// which. One path is one song even when a draft shadows its catalog entry.
+export function askSongMatches(p) { // → [{path, title, where}] in catalog order, drafts after
+  const q = String(p || "").trim().toLowerCase().replace(/\.midi?$/i, "");
+  if (!q) return [];
+  const all = [], seen = new Set();
+  const add = (path, title, where) => { if (!seen.has(path)) { seen.add(path); all.push({path, title, where}); } };
+  for (const [album, songs] of Object.entries(S.CATALOG)) for (const [title, path] of songs) add(path, title, album);
+  for (const key of draftKeys()) add(key, songTitleOf(key), (groupOf(key) || folderTitle(folderOf(key))) + ", on this device");
+  const file = s => s.path.split("/").pop().replace(/\.midi?$/i, "").toLowerCase();
+  const exact = all.filter(s => s.path.toLowerCase() === q || s.path.toLowerCase() === q + ".mid" || s.title.toLowerCase() === q || file(s) === q);
+  if (exact.length) return exact;
+  return all.filter(s => s.title.toLowerCase().includes(q) || file(s).includes(q));
+}
+export function askSongPath(p) { // a path, a title, or a bare name → the one path; an ambiguous name is an error listing the candidates
+  if (!String(p || "").trim()) throw new Error("which song?");
+  const m = askSongMatches(p);
+  if (m.length === 1) return m[0].path;
+  if (!m.length) throw new Error("no song named " + JSON.stringify(String(p).trim()) + " — list_songs lists them");
+  throw new Error("which one? " + m.map(s => s.title + " (" + s.where + ")").join(" or ") + " — say the title and album, or the path");
 }
 // askReadBars (step 6, docs/ask-token-plan.md): the OPEN song only (another
 // song's bars are read_song's job) — LIVE state (song.tracks, not a reload),
@@ -478,6 +502,7 @@ export async function askPublishSong() {
   return {ok: true, message: "Published " + S.songKey + " " + where + (hisMusic ? " — song and annotations together." : " — annotations.")};
 }
 export async function askRunTool(name, a) {
+  if (S.askSwitch && name !== "act" && !["list_songs", "read_song", "read_notes"].includes(name)) throw new Error("the song is changing — ask again in " + S.askSwitch.title + "'s chat"); // open_song queued a switch in THIS reply: nothing more touches the song it is leaving (docs/ai-parity.md §4); act's own list has the same rule (runActions)
   if (name === "add_annotation") return askAddAnnotation(a || {});
   if (name === "edit_annotation") return askEditAnnotation(a || {});
   if (name === "delete_annotation") return askDeleteAnnotation(a || {});

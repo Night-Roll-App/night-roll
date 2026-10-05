@@ -408,7 +408,7 @@ File → Settings… → **AI model**. **In this browser**: pick a small model (
 Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.
 
 **Asking it to act**
-"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo. Say it the way you'd say it to a person; if a name is ambiguous it asks which one, never guesses. Every command it knows is listed next, each with a phrase that works.
+"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo. "Open Graveyard" (or "Open Graveyard and play it from bar 9") opens that song the way Open Recent does — once the reply has landed, never mid-answer — and moves you to Graveyard's own chat, with a gold ↪ line quoting what you asked from the song you left; the rest of your request is sent again there, in your words, so Graveyard's AI does it with Graveyard's notes in front of it (if that chat holds an unsent draft of yours, it waits as a one-tap chip instead of sending). Songs on this device count too; two songs with the same name make it ask which. Say it the way you'd say it to a person; if a name is ambiguous it asks which one, never guesses. Every command it knows is listed next, each with a phrase that works.
 
 **AI commands**
 Everything you can tell Ask, one row each — a phrase that works, then how to phrase your own. Several at once run in order ("go to bar 13 and play"); a quick one (go to, play, stop, select) answers with its one line and nothing more. Ask only ever does what you asked in that message. Generated from the app's own action list, so this is exactly what it can do today.
@@ -421,6 +421,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: the action list, or one action's full text**
 **“What can you do?”** That lists them; "help with drummer" gives one action's details. (act: help name?)
+
+**Ask: open another song — the chat moves there; put it LAST**
+**“Open Graveyard and play it from bar 9.”** Name the song (its title, file name or path); whatever you asked for after that is sent again in that song's chat, in your words. If two songs share the name it asks which. (act: open_song song then?)
 
 **Ask: play from the cursor, or from a bar**
 **“Play from bar 17.”** "Play" alone plays from the cursor; name a bar (and beat) to start there. (act: play from_bar? beat?)

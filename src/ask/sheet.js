@@ -36,6 +36,7 @@ import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
 import { askHost } from "./host.js";
 import { aiDraftKey } from "../../vendor/ai/web/store.js";
+import { aiDraftRead } from "../../vendor/ai/web/store.js";
 import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
 import { aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard, aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking, aiTabSet, aiTabButtons, aiRenderLog } from "../../vendor/ai/web/window.js";
 import { askSessionRender } from "./bridge.js";
@@ -84,7 +85,7 @@ export const askstatus = document.getElementById("askstatus");
 // when each note from the Mac (and each Terminal message) was sent — Josh,
 // 2026-09-30: "I want timestamps on the messages that you sent back to me"
 export function askClock(t) { return aiClock(t); }
-export function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
+export function askNoteLabel(from) { return from === "handoff" ? "" : "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; } // a handoff line (open_song, src/ask/client.js askSwitchRun) is its own "↪ from …" — no envelope
 // the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
 // paragraphs lost today to the app reinstalling under him). Per chat, device-
 // local (a composer draft is not the song's state); cleared on Send. The
@@ -95,6 +96,7 @@ export function askDraftSave() { aiDraftSaveNow(askHost()); }
 export function askDraftSaveSoon() { aiDraftSaveSoon(askHost()); } // also the bridge's "composing" notice (host.onDraftChange → askComposing)
 export function askDraftLoad() { aiDraftLoad(askHost()); } // the panel now shows a different chat: its own unsent message comes back
 export function askDraftClear() { aiDraftDrop(askHost()); }
+export function askDraftText(key) { return aiDraftRead(askHost(), key).text.trim(); } // that chat's unsent words, from storage — open_song's handoff must not wipe them by sending (docs/ai-parity.md §4)
 export function askRefresh() { // span label + model line; called on open and after Settings
   if (!S.song) return;
   const sp = askSpan();
@@ -158,7 +160,16 @@ export function askPasteInsert(text) { // at the caret when the box already has 
 export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
 export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
-export function askRenderImpl() { aiRenderLog(askHost()); } // the draft, the greeting (askGreeting), each message with its mode tag (askMsgTag), pending bubbles, the earlier block (askRenderEarlier)
+export function askRenderImpl() { aiRenderLog(askHost()); askCarryChip(); } // the draft, the greeting (askGreeting), each message with its mode tag (askMsgTag), pending bubbles, the earlier block (askRenderEarlier) — then this app's carried-over chip, if one waits here
+export function askCarryChip() { // open_song carried a request into a chat that held an unsent draft (docs/ai-parity.md §4): one tap sends it, the draft untouched; nothing is stored — a relaunch drops it, the words are in the ↪ line
+  const c = S.askCarry;
+  if (!c || c.key !== askStoreKey()) return;
+  const b = document.createElement("button");
+  b.className = "askcarry";
+  b.textContent = "Send carried-over request: “" + c.text + "”";
+  b.addEventListener("click", () => { S.askCarry = null; b.remove(); S.askHopKey = c.key; askHost().send(c.text); });
+  asklog.appendChild(b);
+}
 export async function askRenderEarlier(div) { // what this device let go of after it reached the repo file; `div` is the library's placeholder bubble (or none, when called alone)
   if (!div) { div = askBubble("ai", ""); div.classList.add("earlier"); }
   div.textContent = "loading the earlier messages from the repo file…";

@@ -1596,15 +1596,20 @@ export function renderOpenRecentRow() {
   row.appendChild(clear);
 }
 // tapping a row: the same two functions File → Open…'s own rows use
-// (fsubFolder/renderFolder) — a local draft wins, otherwise the catalog path
-export function openRecentSong(key) {
-  if (localStorage.getItem(draftStoreKey(key)) !== null) { openDraft(key); return; }
-  albumClear(); // picking a song by hand ends an album run — Open…'s own rule (fsubFolder)
+// (fsubFolder/renderFolder) — a local draft wins, otherwise the catalog path.
+// Resolves to whether that song is now the open one: Ask's open_song awaits
+// it (src/ask/client.js askSwitchRun) and must not hand off into a song that
+// never arrived; the menu's own tap ignores the result (loadSong says why).
+export async function openRecentSong(key) {
+  albumClear(); // picking a song by hand ends an album run — Open…'s own rule (fsubFolder), for a local copy too (it skipped the draft branch before 2026-10-05)
+  if (localStorage.getItem(draftStoreKey(key)) !== null) { await openDraft(key); return S.songKey === key; }
   S.currentPath = key;
   rememberLastSong(key);
   reflectSongURL(key);
   updateSongBtn();
-  loadSong(key).catch(err => setInfo(err.message));
+  let ok = false;
+  try { ok = (await loadSong(key)) !== false; } catch (err) { setInfo(err.message); }
+  return ok && S.songKey === key;
 }
 
 export const speedsl = document.getElementById("speedsl");

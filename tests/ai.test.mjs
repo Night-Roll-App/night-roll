@@ -221,6 +221,57 @@ test("act: a call made only of quiet actions ends the exchange on the tool's own
   } finally { await srv.close(); }
 });
 
+test("open_song end to end: the switch waits until the reply has landed (one request in the old chat, nothing opened mid-exchange), then the song opens and the follow-on is a NEW request in the new song's chat — its own session, the ↪ line in its history, the carried words as the user message (docs/ai-parity.md §4)", async () => {
+  let round = 0;
+  const srv = await startServer((req, res, rec) => {
+    if (rec.method === "GET" && rec.path === "/v1/models") return sendJson(res, 200, { data: [{ id: "claude-code" }] });
+    if (rec.method === "GET" && rec.path === "/v1/jobs") return sendJson(res, 200, { ok: true, running: 0, inbox: true, terminal: true, terminalLive: true, sessions: true });
+    if (rec.method === "POST" && rec.path === "/v1/chat/completions") {
+      round++;
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      if (round === 1) {
+        sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, id: "c1", function: { name: "act", arguments: "{\"do\":[{\"action\":\"open_song\",\"song\":\"Night Rain\",\"then\":\"play it from bar 9\"}]}" } }] } }] });
+        sse(res, { choices: [{ delta: {}, finish_reason: "tool_calls" }] });
+      } else {
+        sse(res, { choices: [{ delta: { content: "bar 9 it is." } }] });
+        sse(res, { choices: [{ delta: {}, finish_reason: "stop" }] });
+      }
+      return sseDone(res);
+    }
+    res.writeHead(404); res.end();
+  });
+  const app = await mkApp("learning");
+  try {
+    run(app, `saveCfg({aiUrl: ${JSON.stringify(srv.url)}, aiModel: "claude-code", aiBackend: "remote"}); songKey = "albums/test/from.mid"; rollnotes = []; finalizeNotes(); songEndTick = 8 * 1920;
+      localStorage.setItem(draftStoreKey("local/night-rain.mid"), JSON.stringify({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], dirty: false, tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}));`);
+    run(app, `askinput.value = "open night rain and play it from bar 9";`);
+    await run(app, `askSend()`);
+    let reqs = srv.requests.filter(r => r.path === "/v1/chat/completions");
+    assert.equal(reqs.length, 1, "the asking chat: one round — open_song is quiet, nothing else was asked of the model there");
+    assert.equal(reqs[0].headers["x-nr-song"], "albums/test/from.mid");
+    assert.equal(val(app, `songKey`), "albums/test/from.mid", "nothing opened inside the exchange");
+    const old = val(app, `askStore("ff1roll-ask-albums/test/from.mid").msgs`);
+    assert.equal(old.at(-1).role, "assistant"); assert.match(old.at(-1).content, /^opening Night Rain · then: play it from bar 9$/);
+    assert.equal(val(app, `askSwitch`), null, "taken at the landing");
+    for (let i = 0; i < 40 && srv.requests.filter(r => r.path === "/v1/chat/completions").length < 2; i++) { app.tick(300); await new Promise(r => setTimeout(r, 25)); }
+    reqs = srv.requests.filter(r => r.path === "/v1/chat/completions");
+    assert.equal(reqs.length, 2, "the follow-on is a new request");
+    assert.equal(val(app, `songKey`), "local/night-rain.mid", "the song opened first");
+    assert.equal(reqs[1].headers["x-nr-song"], "local/night-rain.mid", "in the NEW song's session");
+    const last = reqs[1].json.messages.at(-1);
+    assert.equal(last.role, "user"); assert.match(last.content, /\n\nplay it from bar 9$/, "the carried words, as the user's own message, with the new song's context block");
+    assert.match(last.content, /night-rain|Night Rain/, "the context block is the new song's");
+    assert.ok(!reqs[1].json.messages.some(m => /open night rain and play it/.test(m.content) && m.role === "user" && !/↪/.test(m.content)), "the old chat's turn is not carried as history");
+    assert.ok(reqs[1].json.messages.some(m => /^↪ from From: open night rain and play it from bar 9$/.test(m.content)), "the ↪ line is the one thing the new chat knows of the old one");
+    for (let i = 0; i < 40 && !/bar 9 it is/.test(JSON.stringify(val(app, `askStore("ff1roll-ask-local/night-rain.mid").msgs`))); i++) { app.tick(300); await new Promise(r => setTimeout(r, 25)); }
+    const neu = val(app, `askStore("ff1roll-ask-local/night-rain.mid").msgs`);
+    assert.deepEqual(neu.map(m => m.role), ["note", "user", "assistant"]);
+    assert.equal(neu[1].content, "play it from bar 9"); assert.equal(neu[2].content, "bar 9 it is.");
+    assert.equal(val(app, `askHopKey`), "ff1roll-ask-local/night-rain.mid", "one hop: this chat's carried message may not open another song");
+    assert.equal(val(app, `askStoreKey()`), "ff1roll-ask-local/night-rain.mid", "the window's ♪ tab is the new song's");
+  } finally { await srv.close(); }
+});
+
 test("Learning mode: no key/chord estimate or lasso chord name leaves the device in the wire request; Normal mode sends them", async () => {
   const srv = await startServer((req, res, rec) => {
     if (rec.method === "GET" && rec.path === "/v1/models") return sendJson(res, 200, { data: [{ id: "m" }] });

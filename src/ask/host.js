@@ -138,7 +138,7 @@ export function askHost() {
     msgTag: m => askMsgTag(m), // which turns are "another mode's" is decided here (askMsgMode/appMode), never in the library
     noteLabel: from => askNoteLabel(from),
     showText: content => askStripContext(content),
-    send: () => askSend(),
+    send: text => askSend(text), // the library's Send button passes nothing; the carried-over chip (askCarryChip) passes its words
   };
   return S.aiHost;
 }

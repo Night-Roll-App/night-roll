@@ -1135,6 +1135,7 @@
   #askmoderow { gap: 6px; margin-bottom: 4px; }
   #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 0.75rem; }
   .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
+  .askcarry { align-self: flex-start; margin: 2px 0 6px; padding: 8px 12px; min-height: 40px; border-radius: 10px; border: 1px solid rgba(230,192,96,.6); background: rgba(230,192,96,.14); color: var(--gold); font: inherit; text-align: left; cursor: pointer; } /* open_song's carried-over request, waiting for a tap (src/ask/sheet.js askCarryChip) */
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
   .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid

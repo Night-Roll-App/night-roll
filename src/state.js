@@ -261,6 +261,9 @@ export const S = {
   askSentPending: {},
   askGeneral: false,
   askTerminal: false,
+  askSwitch: null, // open_song (docs/ai-parity.md §4): {path, title, then, from, said} — queued by the action, run by askLanded once the reply that asked has landed
+  askCarry: null, // a carried-over request waiting for a tap (the new chat had an unsent draft): {key, text}
+  askHopKey: null, // the chat whose last message was carried over by open_song — it may not open another song (one hop only)
   askCaps: {bridge: false, terminal: false, sessions: false},
   askSeenPending: {},
   askInboxNo: "",

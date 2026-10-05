@@ -2810,7 +2810,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
     "Analysis sheet", "Check coverage", "What to look for", // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
-    "go to bar 13 and play", "AI commands", "(act: go_to", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
+    "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6325,7 +6325,7 @@ test("act: one tool, one index line per registered action in name order, byte-id
   assert.ok(expected.includes("go_to") && expected.includes("play") && expected.includes("stop") && expected.includes("select") && expected.includes("undo") && expected.includes("drummer") && expected.includes("help"));
   // the general chat: only what needs no song (help); the song-only tools are gone as before
   run(`askGeneral = true;`);
-  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help"]);
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "open_song"]); // open_song opens from the general chat too (docs/ai-parity.md §4)
   assert.ok(val(`askToolsNow().some(t => t.function.name === "act")`) && !val(`askToolsNow().some(t => t.function.name === "write_notes")`));
   run(`askGeneral = false;`);
   // the cost, measured the way the bridge pastes it (toolInstructions: "- name: description\n  schema: {…}"), printed so every batch shows its number, capped so a long-winded entry fails here
@@ -6472,6 +6472,155 @@ test("act tolerance 7: numbers and booleans sent as strings", async () => {
   assert.deepEqual(await aval(`askAct({do: [{action: "select", clear: "true"}]})`), {final: "selection cleared"});
   assert.deepEqual(await aval(`askAct({do: [{action: "go_to", bar: "2", beat: "2.5"}]})`), {final: "cursor at 2.2.5"});
   assert.equal(await aval(`askAct({do: [{action: "undo", steps: "2"}]})`), "nothing to undo");
+});
+
+// ---- open_song (docs/ai-parity.md §4, batch 2 of §5): the lookup never guesses, the switch waits for the landing, the handoff and the follow-on land in the new chat
+function installOpenSongWorld() { // an editable composition open (installActSong), a catalog with a same-named song, and a Graveyard draft on this device
+  installActSong();
+  run(`
+    CATALOG["FF1"] = [["Graveyard", "albums/ff1/graveyard.mid"], ["Ambush", "albums/ff1/ambush.mid"]];
+    localStorage.setItem(draftStoreKey("local/graveyard.mid"), JSON.stringify({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], dirty: false,
+      tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920, d: 480, p: 64, v: 80}]}]}));
+    localStorage.setItem(draftStoreKey("local/night-rain.mid"), JSON.stringify({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], dirty: false, tracks: [{name: "pulse1", notes: []}]}));
+    askSwitch = null; askCarry = null; askHopKey = null; albumRun = null; songLoading = false; askGeneral = false; askTerminal = false;
+  `);
+}
+function uninstallOpenSongWorld() {
+  run(`
+    delete CATALOG["FF1"];
+    for (const k of ["local/graveyard.mid", "local/night-rain.mid"]) { localStorage.removeItem(draftStoreKey(k)); localStorage.removeItem("ff1roll-ask-" + k); localStorage.removeItem("ff1roll-askdraft-ff1roll-ask-" + k); }
+    askSwitch = null; askCarry = null; askHopKey = null; albumRun = null;
+  `);
+}
+test("open_song lookup: askSongPath sees the catalog AND this device's drafts; an exact title/file/path match wins; an ambiguous name is an error naming every candidate and where it lives — never a guess", () => {
+  installOpenSongWorld();
+  try {
+    assert.equal(val(`askSongPath("Night Rain")`), "local/night-rain.mid", "a local draft, by its title");
+    assert.equal(val(`askSongPath("night-rain")`), "local/night-rain.mid", "by its file name");
+    assert.equal(val(`askSongPath("ambush")`), "albums/ff1/ambush.mid");
+    assert.equal(val(`askSongPath("albums/ff1/graveyard")`), "albums/ff1/graveyard.mid", "a path, extension optional, beats the same-named draft");
+    assert.throws(() => val(`askSongPath("graveyard")`), /which one\? Graveyard \(FF1\) or Graveyard \([^)]*on this device\) — say the title and album, or the path/, "two songs share the name: both listed, nothing picked");
+    assert.equal(val(`askSongPath("night")`), "local/night-rain.mid", "a title containing the word, when it is the only one");
+    assert.deepEqual(val(`askSongMatches("graveyard").map(s => s.path)`), ["albums/ff1/graveyard.mid", "local/graveyard.mid"]);
+    assert.throws(() => val(`askSongPath("")`), /which song\?/);
+    assert.throws(() => val(`askSongPath("nothing-here")`), /no song named "nothing-here" — list_songs/);
+  } finally { uninstallOpenSongWorld(); }
+});
+
+test("open_song queues the switch and opens nothing itself: quiet one-line reply, the song unchanged until the reply lands; anything after it in the call, a second act call, or a song tool in the same reply refuses; already open / still loading / the Terminal tab / a carried-over hop all refuse or answer without a switch; offered in the general chat", async () => {
+  installOpenSongWorld();
+  try {
+    const before = val(`songKey`);
+    const r = await aval(`askAct({do: [{action: "open_song", song: "Night Rain", then: "play it from bar 9"}]})`);
+    assert.deepEqual(r, {final: "opening Night Rain · then: play it from bar 9"});
+    assert.equal(val(`songKey`), before, "nothing opened inside the exchange");
+    const sw = val(`askSwitch`);
+    assert.equal(sw.path, "local/night-rain.mid"); assert.equal(sw.title, "Night Rain"); assert.equal(sw.then, "play it from bar 9");
+    assert.equal(sw.from, "ff1roll-ask-" + before); assert.match(sw.fromTitle, /Act Test|act-test/i);
+    // the same reply: nothing more may touch the song being left
+    await assert.rejects(run(`askAct({do: [{action: "go_to", bar: 2}]})`), /the song is changing — ask again in Night Rain's chat/);
+    await assert.rejects(run(`askRunTool("write_notes", {track: "pulse1", notes: []})`), /the song is changing — ask again in Night Rain's chat/);
+    await assert.rejects(run(`askRunTool("read_bars", {from_bar: 1})`), /the song is changing/);
+    assert.equal(await run(`askRunTool("list_songs", {}).then(l => Array.isArray(l))`), true, "reading the catalog is not touching the song");
+    run(`askSwitch = null;`);
+    // open_song must be last: an item after it fails at that step, the switch stays queued from the item that ran
+    await assert.rejects(run(`askAct({do: [{action: "open_song", song: "Night Rain"}, {action: "play"}]})`), /step 2 \(play\) failed: the song is changing — ask again in Night Rain's chat\ndone before it: 1\. opening Night Rain/);
+    assert.equal(val(`askSwitch.path`), "local/night-rain.mid");
+    run(`askSwitch = null;`);
+    // ambiguity rides through act with the spec attached
+    await assert.rejects(run(`askAct({do: [{action: "open_song", song: "graveyard"}]})`), /which one\? Graveyard \(FF1\) or Graveyard \([\s\S]*open_song \{song, then\?\}/);
+    assert.equal(val(`askSwitch`), null, "an ambiguous name queues nothing");
+    // already open: a sentence, no switch — unless there is a follow-on to send here
+    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: ${JSON.stringify(before)}}]})`), {final: "Act Test is already open"});
+    assert.equal(val(`askSwitch`), null);
+    // still loading, the Terminal tab, a carried-over request's one hop
+    run(`songLoading = true;`);
+    await assert.rejects(run(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), /still opening the last song/);
+    run(`songLoading = false; askHopKey = askStoreKey();`);
+    await assert.rejects(run(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), /a carried-over request can't open another song/);
+    run(`askHopKey = null;`);
+    assert.equal(val(`askSwitch`), null);
+    // the general chat offers it (song: false) and queues the same switch
+    run(`askGeneral = true;`);
+    assert.ok(val(`askActTool(true).function.description`).split("\n").some(l => l.startsWith("open_song song then?")), "in the general chat's index");
+    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), {final: "opening Night Rain"});
+    assert.equal(val(`askSwitch.from`), "ff1roll-ask-general"); assert.equal(val(`askSwitch.fromTitle`), "the general chat");
+    run(`askGeneral = false; askSwitch = null;`);
+    // an album run ends, and unpublished edits are said to be kept
+    run(`albumRun = {album: "FF1", list: [], idx: 0, passes: 1, gen: 0}; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, savedStamp: 5, tracks: []}));`);
+    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), {final: "opening Night Rain — the album run ends; Act Test's changes are kept on this device (not published)"});
+    run(`albumRun = null; askSwitch = null; localStorage.setItem(draftStoreKey(songKey), "{}");`);
+    for (const t of [r.final]) assert.doesNotMatch(t, /\b(key|chord|meter|major|minor)\b/i, "facts only");
+  } finally { uninstallOpenSongWorld(); }
+});
+
+test("open_song landing: askLanded on the asking chat runs the switch after the reply (not a failed one) — the song opens the Open Recent way (a local copy wins, the album run ends), the ↪ line quoting the request lands in the NEW chat only, the follow-on is sent there as the user's words with the one-hop mark; an unsent draft there turns the follow-on into a chip; a load that fails hands nothing off", async () => {
+  installOpenSongWorld();
+  run(`globalThis.__sentCarried = []; globalThis.__realSend = askSend;`);
+  try {
+    run(`askSend = async text => { globalThis.__sentCarried.push({text, key: askStoreKey(), hop: askHopKey}); };`);
+    const from = val(`askStoreKey()`);
+    run(`{ const m = askStore(askStoreKey()).msgs; m.push({role: "user", content: "open night rain and play it from bar 9", t: 1, pending: "j1", mode: "learning"}); askSave(m); }`);
+    run(`albumRun = {album: "FF1", list: [], idx: 0, passes: 1, gen: 0};`);
+    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: "Night Rain", then: "play it from bar 9"}]})`), {final: "opening Night Rain — the album run ends · then: play it from bar 9"});
+    assert.equal(val(`askSwitch.said`), "open night rain and play it from bar 9");
+    // a reply that failed (stopped, error): the switch is dropped, nothing opens
+    run(`askLanded(${JSON.stringify(from)}, true);`);
+    app.tick(5); await new Promise(r => setTimeout(r, 0));
+    assert.equal(val(`askSwitch`), null); assert.notEqual(val(`songKey`), "local/night-rain.mid");
+    // the real thing: queue again, land the reply
+    await aval(`askAct({do: [{action: "open_song", song: "Night Rain", then: "play it from bar 9"}]})`);
+    run(`askLanded(${JSON.stringify(from)}, false);`);
+    assert.equal(val(`askSwitch`), null, "taken at the landing");
+    assert.notEqual(val(`songKey`), "local/night-rain.mid", "but not before the exchange's own finally has run (a timer)");
+    for (let i = 0; i < 20 && val(`songKey`) !== "local/night-rain.mid"; i++) { app.tick(300); await new Promise(r => setTimeout(r, 5)); }
+    assert.equal(val(`songKey`), "local/night-rain.mid", "the song opened");
+    assert.equal(val(`albumRun`), null, "picking a song by hand ends the album run");
+    assert.equal(val(`song.tracks[0].name`), "pulse1");
+    for (let i = 0; i < 20 && !val(`globalThis.__sentCarried.length`); i++) { app.tick(300); await new Promise(r => setTimeout(r, 5)); }
+    const newKey = "ff1roll-ask-local/night-rain.mid";
+    assert.deepEqual(val(`globalThis.__sentCarried`), [{text: "play it from bar 9", key: newKey, hop: newKey}], "the follow-on went out in the NEW chat, as the user's words, marked as the one hop");
+    const notes = val(`askStore(${JSON.stringify(newKey)}).msgs`);
+    assert.equal(notes.length, 1);
+    assert.equal(notes[0].role, "note"); assert.equal(notes[0].m, "handoff");
+    assert.match(notes[0].content, /^↪ from (Act Test|act-test): open night rain and play it from bar 9$/i);
+    assert.equal(val(`askNoteLabel("handoff")`), "", "no ✉ envelope on a handoff line");
+    assert.ok(!val(`askStore(${JSON.stringify(from)}).msgs`).some(m => m.m === "handoff"), "nothing added to the chat that was left");
+    assert.equal(val(`askStoreKey()`), newKey, "the ♪ tab is the new song's chat");
+    // a carried-over request can't open another song (one hop): the hop mark refuses it
+    await assert.rejects(run(`askAct({do: [{action: "open_song", song: "Ambush"}]})`), /carried-over request can't open another song/);
+    run(`askHopKey = null;`);
+    // an unsent draft in the destination chat: the follow-on waits as a chip, the draft is untouched
+    run(`globalThis.__sentCarried = []; localStorage.setItem("ff1roll-askdraft-ff1roll-ask-local/graveyard.mid", JSON.stringify({text: "half-typed thought", shots: []}));`);
+    await aval(`askAct({do: [{action: "open_song", song: "local/graveyard.mid", then: "loop bars 1 to 2"}]})`);
+    run(`askLanded(${JSON.stringify(newKey)}, false);`);
+    for (let i = 0; i < 20 && val(`songKey`) !== "local/graveyard.mid"; i++) { app.tick(300); await new Promise(r => setTimeout(r, 5)); }
+    assert.equal(val(`songKey`), "local/graveyard.mid");
+    app.tick(300); await new Promise(r => setTimeout(r, 5));
+    assert.deepEqual(val(`globalThis.__sentCarried`), [], "not sent: it would have wiped the draft");
+    assert.deepEqual(val(`askCarry`), {key: "ff1roll-ask-local/graveyard.mid", text: "loop bars 1 to 2"});
+    assert.equal(val(`askDraftText("ff1roll-ask-local/graveyard.mid")`), "half-typed thought", "the draft is still there");
+    run(`asksheet.classList.add("on"); askRender();`);
+    assert.equal(val(`asklog.children.filter(c => c.className === "askcarry").length`), 1, "the chip is drawn in that chat");
+    assert.match(val(`asklog.children.find(c => c.className === "askcarry").textContent`), /Send carried-over request: “loop bars 1 to 2”/);
+    run(`asklog.children.find(c => c.className === "askcarry").click();`);
+    await new Promise(r => setTimeout(r, 5));
+    assert.deepEqual(val(`globalThis.__sentCarried`), [{text: "loop bars 1 to 2", key: "ff1roll-ask-local/graveyard.mid", hop: "ff1roll-ask-local/graveyard.mid"}], "one tap sends it");
+    assert.equal(val(`askCarry`), null);
+    run(`asksheet.classList.remove("on"); askHopKey = null; globalThis.__sentCarried = [];`);
+    // a song that cannot load (no network in tests, no draft): the switch stops, no handoff, no follow-on, the chat stays
+    await aval(`askAct({do: [{action: "open_song", song: "Ambush", then: "play"}]})`);
+    run(`askLanded("ff1roll-ask-local/graveyard.mid", false);`);
+    for (let i = 0; i < 10; i++) { app.tick(300); await new Promise(r => setTimeout(r, 5)); }
+    assert.notEqual(val(`songKey`), "albums/ff1/ambush.mid", "the load failed (fetch rejects here) — nothing opened");
+    assert.deepEqual(val(`globalThis.__sentCarried`), [], "no follow-on");
+    assert.ok(!val(`askStore("ff1roll-ask-albums/ff1/ambush.mid").msgs`).some(m => m.m === "handoff"), "no handoff line");
+    assert.match(val(`infoFull || ""`), /couldn't open Ambush/, "loadSong said why");
+  } finally {
+    run(`askSend = globalThis.__realSend;`);
+    uninstallOpenSongWorld();
+    run(`localStorage.removeItem("ff1roll-ask-albums/ff1/ambush.mid"); infoFull = ""; askHopKey = null;`);
+  }
 });
 
 test("act: the Help sheet's AI commands rows are generated from the registry (node tools/build_ask_help.mjs) and the file matches it; every action and every standalone tool has a row with an example phrase", () => {

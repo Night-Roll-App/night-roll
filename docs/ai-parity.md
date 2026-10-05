@@ -352,6 +352,7 @@ never guesses.
 - "Undo that." / "Undo the last three." / "Redo." — act: undo (says what each step was)
 - "Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2." — act: drummer
 - "What can you do?" / "Help with drummer." — act: help
+- "Open Graveyard." / "Open Graveyard and play it from bar 9." — act: open_song (batch 2, 2026-10-05): the switch waits for the reply to land, the ↪ line and the carried-over request land in Graveyard's chat (§4)
 - Help → AI → **AI commands** lists every one of these with a phrase, generated from the registry.
 
 ### Coming (proposed in §1; all of these are `act` actions)
@@ -359,7 +360,6 @@ never guesses.
 In build order (§5): the tedious things first, the one-tap things
 (play, stop, go to a bar, show a panel) last.
 
-- "Open Graveyard." / "Open Graveyard and play it from bar 9." — open_song
 - "Back to the start." — to_start (today: "go to bar 1")
 - "Slow it to 70 percent." / "Volume 80." — set_playback
 - "Metronome on, count me in." — set_playback
@@ -400,6 +400,11 @@ In build order (§5): the tedious things first, the one-tap things
   (src/session/song.js, near the end).
 - So the chat switch comes for free once the song switches. The work is
   in **when** to switch and **what to carry over**.
+
+**Shipped 2026-10-05 (batch 2)** as written below, with Q13's default:
+the follow-on sends itself; the chip appears only when the new chat holds
+an unsent draft. Code map in NIGHT-ROLL.md "open_song — switching songs
+and chats".
 
 ### Why the switch must wait until the reply lands
 
@@ -497,7 +502,7 @@ typical request (quiet = 1, edits and questions = 2).
 |---|---|---|---|---|---|---|---|
 | 0 | Drummer | `drummer` | — | — | — | — | **done 2026-10-05** — landed as a tool (~370 tokens), folded into `act` as an action the same day (Josh #449). |
 | 1 | The `act` tool (foundation) | registry, index builder, `help`, quiet `{final}` results, `undo` | src/ask/tools.js (registry, `act` runner), src/ask/bridge.js (`askToolsNow`), vendor/ai/web/backends.js + client.js (`{final}` ends the exchange — library change, made in Night-Roll-App/claude-bridge and synced) | menu byte-identical across two messages; menu size printed and pinned; a list runs in order, stops at the first failure; a bad call's error carries the spec; an all-quiet call = exactly one request to the fake server; undo reports what it undid | measured **3,276** (act alone 325) | 1–2 | **done 2026-10-05 (Fable)** — src/ask/actions.js; also go_to/play/stop/select from batch 9, `drummer` folded in, 7 tolerance tests for local models (#443), `runActions` with no model (§7), Help → AI commands generated from the registry (#451); library commit dfef7e7 awaits a tag + `ai-sync --ref` |
-| 2 | Open a song + chat handoff | `open_song` (§4) | src/ask/tools.js, src/ask/client.js (`askLanded` runs the switch), src/ask/sheet.js (↪ line, carried-over chip), src/ask/context.js (one prompt line) | switch only after landing; nothing after `open_song` runs; ambiguous name lists matches; local drafts found; unsent draft → chip, not send; album run cleared; load failure → no handoff; one hop only | ~3,210 | 1 | **TRICKY — Fable** |
+| 2 | Open a song + chat handoff | `open_song` (§4) | src/ask/tools.js, src/ask/client.js (`askLanded` runs the switch), src/ask/sheet.js (↪ line, carried-over chip), src/ask/context.js (one prompt line) | switch only after landing; nothing after `open_song` runs; ambiguous name lists matches; local drafts found; unsent draft → chip, not send; album run cleared; load failure → no handoff; one hop only | measured **3,297** (act alone 346, 8 actions) | 1 | **done 2026-10-05 (Fable)** — `askOpenSongQueue` (src/ask/actions.js), `askSwitchRun`/`askSend(text)` (src/ask/client.js), `askCarryChip`/`askDraftText` (src/ask/sheet.js), `askSongMatches` (src/ask/tools.js), `openRecentSong` async; Q13's default (the follow-on sends itself; a chip only when the new chat holds a draft) |
 | 3 | Fold the old tools in | the 12 tools of §1 + `meter`/`chop` kinds | src/ask/tools.js, src/ask/bridge.js (`ASK_SONG_ONLY_TOOLS` becomes a per-action flag), src/ask/context.js (prompt text naming old tools) | every existing tool test passes through `act`; their rule texts reachable by `help` and in errors; Learning sweep; menu size drops | **~400** | as today | **TRICKY — Fable** |
 | 4 | Regenerate drums and bass | `drummer` as an action (if needed), `bassist` | src/ask/tools.js (wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; copy the drummer's shape) | says what it replaces; refuses on captures; one undo; reply never names a chord it guessed (Learning sweep) | ~440 | 2 | EASY — Sonnet |
 | 5 | Bulk note edits | `edit_notes` ops delete, quantize, velocity, split, join, divide, dedupe — over bars + tracks | src/ask/tools.js (one `askSelectRange` helper: bars+tracks → selection, then src/model/selection.js) | one undo step per item; refuses on captures; unknown track errors | ~470 | 2 | EASY — Sonnet |

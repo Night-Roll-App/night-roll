@@ -14,6 +14,13 @@ import { askWritableGate } from "./tools.js";
 import { askBarsCount } from "./tools.js";
 import { askDrummer } from "./tools.js";
 import { ASK_TOOLS } from "./tools.js";
+import { askSongPath } from "./tools.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { draftDirtyState } from "../ui/chrome.js";
+import { songTitleOfImpl as songTitleOf } from "./context.js";
+import { askStoreKey } from "./sheet.js";
+import { askStore } from "./bridge.js";
+import { askShotDisplayText } from "./shots.js";
 
 // ---- act: the one Ask tool every app action lives behind (docs/ai-parity.md
 // §2; batch 1 of §5). Josh, #435: the menu sent with every message must not
@@ -110,6 +117,10 @@ export const ASK_ACTIONS = [
    example: "Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2.", say: "Say the bars or one of your section labels, then what you want: energy 1–5 (or busy/hard apart), fills, feel, which parts, what the kick follows; \"that one again, quieter\" works because the reply names the seed.",
    spec: "drummer {from_bar, to_bar | section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed?}: runs the app's own drum generator over those bars (to_bar inclusive) or over ONE of the user's section labels (section = its exact text) and replaces that range's drum hits as one undo step — the way to do ANY drum request, never hand-written notes. energy 1–5 sets busy and hard together (default 3); busy/hard 1–5 apart; fills 0–5 (0 = none, default 3); feel normal|half|double; parts = a list of kick, snare, hats, fills to reroll only those; follow = track names the kick listens to (e.g. [\"pulse1\",\"pulse2\"]), or [\"chords\"] or [\"off\"] (default the bass); seed = same seed, same take (the reply names it). Only when the user asks; own editable songs only (refuses on a locked/capture song).",
    run(a) { return askDrummer(a).note; }},
+  {name: "open_song", args: "song then?", gloss: "open another song — the chat moves there; put it LAST", quiet: true, song: false,
+   example: "Open Graveyard and play it from bar 9.", say: "Name the song (its title, file name or path); whatever you asked for after that is sent again in that song's chat, in your words. If two songs share the name it asks which.",
+   spec: "open_song {song, then?}: opens that song — song is a title, file name or path from the catalog or this device's drafts; an ambiguous name is an error listing the matches, never a guess — the way File → Open Recent does, AFTER this reply has landed; the chat then moves to that song's own history with a ↪ line naming where it came from. then = the rest of the user's request in THEIR words (\"play it from bar 9\"), sent as their next message in the new song's chat, where its notes are in view. It must be the LAST item of the call: nothing after it runs, and nothing else in this reply may touch the song being left. Opening is not editing — a locked or capture song opens fine (its edits refuse there as usual).",
+   run(a) { return askOpenSongQueue(a); }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",
    spec: "help {name?}: without name, the index of every action available in this chat; with one, that action's full text (args, rules, what it answers).",
@@ -191,6 +202,32 @@ export function askActItems(input) { // → [{action, args}], or throws naming t
     return {action, args};
   });
 }
+// ---- open_song's first half (docs/ai-parity.md §4): find the song, remember
+// the switch, answer — and open NOTHING here. The AI library runs tool rounds
+// inside one exchange and stores the whole reply under the chat it started
+// in; a switch mid-reply would read the new song's context into the old
+// song's chat. askLanded (src/ask/client.js) runs the second half once the
+// reply has landed. The lookup is askSongPath's (catalog + this device's
+// drafts, an ambiguous name errors with the candidates — never a guess).
+export function askOpenSongQueue(a) {
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — open_song only opens songs from this Night Roll's own list");
+  if (S.askTerminal) throw new Error("the Terminal tab goes to Claude Code on the Mac — nothing opens from here");
+  if (S.songLoading) throw new Error("still opening the last song — ask again when it's in");
+  if (S.askHopKey && S.askHopKey === askStoreKey()) throw new Error("a carried-over request can't open another song — ask for that yourself in this chat");
+  if (S.askSwitch) throw new Error("the song is changing — ask again in " + S.askSwitch.title + "'s chat");
+  const path = askSongPath([a.song, a.path, a.title, a.name].find(askActGiven));
+  const title = songTitleOf(path);
+  const then = askActGiven(a.then) ? String(a.then).trim() : "";
+  if (path === S.songKey && !S.askGeneral && !then) return title + " is already open";
+  const from = askStoreKey();
+  const inFlight = askStore(from).msgs.filter(m => m.role === "user" && m.pending).pop(); // the message that asked, as the user typed it — the ↪ line quotes it
+  S.askSwitch = {path, title, then, from, fromTitle: S.askGeneral ? "the general chat" : songTitleOf(S.songKey || ""), said: inFlight ? askShotDisplayText(inFlight.content) : "", t: Date.now()};
+  const notes = [];
+  if (path === S.songKey) notes.push("already open");
+  if (S.albumRun && path !== S.songKey) notes.push("the album run ends");
+  if (S.songKey && path !== S.songKey && draftDirtyState(S.songKey)) notes.push(songTitleOf(S.songKey) + "'s changes are kept on this device (not published)");
+  return "opening " + title + (notes.length ? " — " + notes.join("; ") : "") + (then ? " · then: " + then : "");
+}
 export async function runActions(items, general) { // the model-free door: [{action, args}] in order, stopping at the first failure → {lines, quiet, failed}
   const lines = [];
   let quiet = true;
@@ -199,6 +236,7 @@ export async function runActions(items, general) { // the model-free door: [{act
     const def = askActFind(it.action, false);
     const fail = (message, unknown) => ({lines, quiet: false, failed: {step: i + 1, action: String(it.action), message, unknown: !!unknown}});
     if (!def) return fail("no action named \"" + it.action + "\"", true);
+    if (S.askSwitch && def.name !== "open_song") return fail("the song is changing — ask again in " + S.askSwitch.title + "'s chat"); // open_song ran (in this call or earlier in this reply): it is the last thing that happens here (docs/ai-parity.md §4)
     if (def.song !== false && general) return fail("\"" + def.name + "\" works in a song's ♪ chat, not here");
     if (def.song !== false && !S.song) return fail("no song open");
     try { lines.push(String(await def.run(it.args || {}))); } catch (err) { return fail(String(err && err.message || err)); }
