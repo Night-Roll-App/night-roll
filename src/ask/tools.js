@@ -95,6 +95,31 @@ import { albumNext } from "../session/album.js";
 import { albumPrev } from "../session/album.js";
 import { albumLeave } from "../session/album.js";
 import { albumEffectiveOrder } from "../model/album-order.js";
+// ---- batch 8 (docs/ai-parity.md §5 row 8, 2026-10-05): song files and
+// device prefs. song_file reuses the File menu's own entry points
+// (createComposition/saveSongAs, forkCurrentSong, renameImportDraft/
+// renameRepoTitle, pushVersion/readVersions, shareLinkFor) — never a
+// parallel path; set_pref reuses the Settings sheet's own setters
+// (setAlbumOrderPref, settingsPersist) or, where none exists yet
+// (octave_numbers), the #octbtn handler's own two lines, verbatim.
+import { createComposition } from "../session/files.js";
+import { saveSongAs } from "../session/files.js";
+import { forkCurrentSong } from "../session/files.js";
+import { isUnsaved } from "../model/provenance.js";
+import { slugify } from "../model/provenance.js";
+import { folderFromInput } from "../model/provenance.js";
+import { renameImportDraft } from "../import/capture.js";
+import { renameRepoTitle } from "../sync/publish.js";
+import { shareLinkFor } from "../sync/publish.js";
+import { catalogHas } from "../model/catalog.js";
+import { draftStoreKey } from "../platform/storage.js";
+import { readVersions } from "../model/versions.js";
+import { pushVersion } from "../model/versions.js";
+import { filesMirror } from "../model/versions.js";
+import { stop } from "../audio/transport.js";
+import { setAlbumOrderPref } from "../model/album-order.js";
+import { refreshSelInfo } from "../ui/note-editor.js";
+import { settingsPersist } from "../ui/sheets.js";
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -1102,4 +1127,131 @@ export async function askAlbum(a) {
   if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
   albumStart(album, idx).catch(() => {}); // not awaited, like the play action — the result line is the intent, loadSong's own status lines cover the rest
   return {ok: true, note: "▶ playing " + album + " from " + list[idx][0] + " (" + (idx + 1) + "/" + list.length + ")"};
+}
+// ---- song_file (docs/ai-parity.md §5 batch 8, 2026-10-05): new, save
+// version, versions (list), save as, rename, share link. Every sub-action
+// is the File menu's own function — never a parallel path. No native
+// dialogs: a name collision that would otherwise pop appConfirm() (Save As
+// of an Untitled song) is checked BEFORE calling it, so the action errors
+// instead of hanging on a tap that will never come; Versions… RESTORE and
+// the export/download sheets need a real tap and are the not-yet-built
+// `show` action's job (docs/ai-parity.md §1), not song_file's.
+const SONG_FILE_ACTIONS = ["new", "save_version", "versions", "save_as", "rename", "share_link"];
+export async function askSongFile(a) {
+  a = a || {};
+  const action = String(a.action || "").trim().toLowerCase();
+  if (!SONG_FILE_ACTIONS.includes(action)) throw new Error("action must be one of " + SONG_FILE_ACTIONS.join(", "));
+  if (action === "new") {
+    const title = String(a.title || "").trim();
+    if (!title) throw new Error("say a title for the new song");
+    const folder = askActGiven(a.folder) ? folderFromInput(String(a.folder)) : (localStorage.getItem("ff1roll-lastfolder") || "my-covers");
+    if (!folder) throw new Error("\"" + a.folder + "\" isn't a usable folder name — pick another");
+    const newKey = "albums/" + folder + "/" + slugify(title) + ".mid";
+    if (localStorage.getItem(draftStoreKey(newKey)) !== null) throw new Error("a local copy named \"" + title + "\" already exists in " + folder + " — pick a different title (saveSongAs would ask to replace it, a tap this can't make)");
+    if (S.playing) stop();
+    createComposition(120, 4, 4); // the form's own defaults — bpm/meter aren't in this action's args
+    const ok = await saveSongAs(folder, title);
+    if (!ok) throw new Error("could not save the new song — try again");
+    return {ok: true, note: "new song \"" + title + "\" in " + folder + " — Edit → Pencil to write; Publish sends it"};
+  }
+  if (action === "save_version") {
+    if (!S.song || !S.songKey) throw new Error("no song open");
+    if (isUnsaved(S.songKey)) throw new Error("name this song first — song_file {action:\"new\"} or {action:\"save_as\"}");
+    if (!isComposition()) throw new Error("Save Version works on your own songs — this one is a capture; save_as forks it");
+    if (S.cmp && S.cmp.showing === "repo") throw new Error("you're hearing the published copy — swap back to your version first");
+    saveDraft(false); // the working copy is what gets versioned; make sure it's current first
+    const label = askActGiven(a.label) ? String(a.label).trim() : "Version " + (readVersions(S.songKey).length + 1);
+    pushVersion(S.songKey, label);
+    await filesMirror(); // best-effort, like Save Version itself — the iPad's Files copy follows
+    return {ok: true, note: "Version saved: " + label + " — only on this device"};
+  }
+  if (action === "versions") {
+    if (!S.song || !S.songKey) throw new Error("no song open");
+    const list = readVersions(S.songKey).slice().reverse(); // newest first, as the sheet shows them
+    if (!list.length) return {ok: true, note: "no saved versions for this song yet"};
+    return {ok: true, note: list.map((v, i) => (i + 1) + ". " + v.label + " — " + new Date(v.at).toLocaleString()).join("\n")};
+  }
+  if (action === "save_as") {
+    const title = String(a.title || "").trim();
+    if (!title) throw new Error("say a title for the copy");
+    if (!S.song || !S.songKey) throw new Error("no song open");
+    let folder;
+    if (askActGiven(a.folder)) { folder = folderFromInput(String(a.folder)); if (!folder) throw new Error("\"" + a.folder + "\" isn't a usable folder name — pick another"); }
+    if (S.playing) stop();
+    forkCurrentSong(title, folder); // folder undefined: forkCurrentSong's own default (the last-used folder)
+    return {ok: true, note: "saved a copy as \"" + title + "\"" + (folder ? " in " + folder : "") + " — fully editable; Publish sends it"};
+  }
+  if (action === "rename") {
+    const title = String(a.title || "").trim();
+    if (!title) throw new Error("say the new name");
+    if (!S.song || !S.songKey) throw new Error("no song open");
+    const hasDraft = localStorage.getItem(draftStoreKey(S.songKey)) !== null;
+    if (hasDraft && !(S.song && S.song.savedStamp)) { // never committed: renames the file itself, like the File menu's own form
+      const newKey = renameImportDraft(S.songKey, title);
+      if (newKey === null) throw new Error("a draft named \"" + slugify(title) + "\" already exists");
+      updateSongBtn();
+      return {ok: true, note: "renamed to \"" + title + "\" (a local draft — the name commits with it)"};
+    }
+    const token = writeToken(); // a repo song: a title override in album.json/the manifest, filename untouched
+    if (!token) throw new Error("no GitHub token stored yet — add one in File → Settings first");
+    await renameRepoTitle(S.songKey, title, ghHeaders(token));
+    try { await initCatalog(); } catch (err) { /* CDN lag; the next boot catches up */ }
+    for (const songs of Object.values(S.CATALOG)) { const hit = songs.find(([, p]) => p === S.songKey); if (hit) hit[0] = title; } // the refetch can be CDN-stale for ~10 min — patch the in-memory catalog now
+    updateSongBtn();
+    return {ok: true, note: "renamed to \"" + title + "\" everywhere the dropdown shows it"};
+  }
+  // share_link
+  if (!S.song || !S.songKey) throw new Error("no song open");
+  if (!catalogHas(S.songKey)) return {ok: true, note: "this song only lives on this device — Publish it first, then ask again"};
+  return {ok: true, note: "Share link: " + shareLinkFor(S.songKey)};
+}
+// ---- set_pref (docs/ai-parity.md §5 batch 8, 2026-10-05): device prefs —
+// localStorage, same layer the Settings sheet's own checkboxes/selects use
+// (CLAUDE.md: device-local UI toggles, never song state). Learning mode is
+// deliberately NOT on the whitelist (CLAUDE.md "Learning mode is the law"
+// — Ask must never switch Josh into Normal; that switch is what keeps
+// answers his); the check runs before the whitelist lookup so a model that
+// guesses a learning-flavored name gets the real reason, not a generic one.
+const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size"];
+export function askSetPref(a) {
+  a = a || {};
+  const name = String(a.name || "").trim().toLowerCase();
+  if (/learn/.test(name)) throw new Error("Learning mode is a setting only Josh can flip himself (Settings → Learning mode, or the View menu) — never through Ask");
+  if (!SET_PREF_NAMES.includes(name)) throw new Error("name must be one of " + SET_PREF_NAMES.join(", "));
+  if (!askActGiven(a.value)) throw new Error("say the value");
+  const value = a.value;
+  if (name === "album_order") {
+    const v = String(value).trim().toLowerCase();
+    if (!["game", "az", "a-z", "alphabetical"].includes(v)) throw new Error("album_order must be game or az");
+    const mode = v === "game" ? "game" : "az";
+    setAlbumOrderPref(mode);
+    return {ok: true, note: "album order set to " + (mode === "az" ? "A–Z" : "game order")};
+  }
+  if (name === "octave_numbers") {
+    const on = askActTruthy(value);
+    S.selOctaves = on; // #octbtn's own two lines, verbatim — no dedicated setter exists yet
+    try { localStorage.setItem("ff1roll-seloct", on ? "1" : "0"); } catch (err) { /* private mode */ }
+    refreshSelInfo();
+    return {ok: true, note: "8va octave numbers " + (on ? "on" : "off")};
+  }
+  if (name === "debug_log") {
+    document.getElementById("cfgdebuglog").checked = askActTruthy(value);
+    settingsPersist("cfgdebuglog"); // the Settings sheet's own dispatcher — reads the checkbox it just set
+    return {ok: true, note: "debug log " + (askActTruthy(value) ? "on" : "off")};
+  }
+  if (name === "chip_stream") {
+    const v = String(value).trim().toLowerCase();
+    if (!["on", "off", "auto"].includes(v)) throw new Error("chip_stream must be on, off, or auto");
+    document.getElementById("cfgchipstream").value = v;
+    settingsPersist("cfgchipstream");
+    return {ok: true, note: "chip audio streaming set to " + v};
+  }
+  // text_size
+  const TS = {small: "0.9", default: "1", normal: "1", large: "1.15", larger: "1.3"};
+  const raw = String(value).trim().toLowerCase();
+  const v = ["0.9", "1", "1.15", "1.3"].includes(raw) ? raw : TS[raw];
+  if (!v) throw new Error("text_size must be small, default, large or larger (or 0.9, 1, 1.15, 1.3)");
+  document.getElementById("cfgtextsize").value = v;
+  settingsPersist("cfgtextsize");
+  return {ok: true, note: "text size set to " + v};
 }

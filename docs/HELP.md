@@ -482,8 +482,14 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: ruler selection; ▶ loops it unless cycle: false**
 **“Loop bars 5 to 12.”** Say the first and last bar; "select" instead of "loop", or "no cycle", marks them without looping; "clear the selection" drops it. (act: select from_bar to_bar? cycle? clear?)
 
+**Ask: a device preference: album_order, octave_numbers, debug_log, chip_stream, or text_size**
+**“Turn the debug log on.”** Say the name and the value: album_order (game or az), octave_numbers (on/off), debug_log (on/off), chip_stream (on/off/auto), or text_size (small/default/large/larger). (act: set_pref name value)
+
 **Ask: mute, solo, hide, volume, pan, voice, color, rename or octave-shift a track (one undo)**
 **“Mute the noise channel.”** Say the track and what to change: mute/solo/hide (true/false), volume (0–1.5), pan (-1 left to 1 right), voice (a name from the voice menu — unknown names list the choices), color (a hex code), name (rename it), or octave (1 or -1). (act: set_track track mute? solo? hide? volume? pan? voice? color? name? octave?)
+
+**Ask: new, save_version, versions, save_as, rename, or share_link**
+**“Save a version called before drums.”** Say the action: new (a title, and a folder if you want one besides the default), save_version (a label, else "Version N"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link. (act: song_file action title? folder? label?)
 
 **Ask: stop playback**
 **“Stop.”** Just that. (act: stop)

@@ -33,6 +33,8 @@ import { askAddTrack } from "./tools.js";
 import { askDeleteTrack } from "./tools.js";
 import { askKeepThat } from "./tools.js";
 import { askAlbum } from "./tools.js";
+import { askSongFile } from "./tools.js";
+import { askSetPref } from "./tools.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { draftDirtyState } from "../ui/chrome.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
@@ -231,6 +233,19 @@ export const ASK_ACTIONS = [
    example: "Play the FF1 album.", say: "Name the action: play (name the album, and a song in it to start from), next, prev, or leave.",
    spec: "album {action, album?, song?}: action is play (starts an album run — album names it, from the catalog; an ambiguous name lists the matches; song optionally picks where in it to start, in the album's own shown order — game order or A–Z, whichever is in effect), next, prev (move within the running album), or leave (ends the run; this song keeps playing on its own). next/prev/leave refuse when no album is running. Sound must have been unlocked by one tap on Play this session, same as play.",
    async run(a) { return (await askAlbum(a)).note; }},
+  // ---- song_file / set_pref (docs/ai-parity.md §5 batch 8, 2026-10-05):
+  // song files and device prefs. Both reuse the File menu's / Settings
+  // sheet's own functions — never a parallel path, no native dialogs (a
+  // name collision that would otherwise pop appConfirm() is checked first
+  // and errors instead of waiting on a tap that will never come).
+  {name: "song_file", args: "action title? folder? label?", gloss: "new, save_version, versions, save_as, rename, or share_link", song: false,
+   example: "Save a version called before drums.", say: "Say the action: new (a title, and a folder if you want one besides the default), save_version (a label, else \"Version N\"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link.",
+   spec: "song_file {action, title?, folder?, label?}: action new creates a fresh song (the File menu's ＋ New song, 120bpm/4-4 — bpm and meter aren't settable here) and immediately names it with title (and folder, else the last-used one) — errors instead of asking to replace when a local copy of that name already exists (the one case the real form would need a tap for). save_version snapshots this device's working copy + annotations, dated, under label (default \"Version N\"); own compositions only, and only once the song has a name (not an Untitled song — song_file new or save_as first). versions lists every saved version, newest first (restoring one needs your tap — not this action). save_as makes an editable copy of whatever is open (own songs, captures, anything) under title in folder (default the last-used one). rename changes the song's name — an uncommitted local draft renames its file; anything already saved gets a title override everywhere the dropdown shows it (needs a GitHub token). share_link gives the link your own song already has, once it's been published — a song that only lives on this device says so instead of a dead link. Only when the user explicitly asks.",
+   async run(a) { return (await askSongFile(a)).note; }},
+  {name: "set_pref", args: "name value", gloss: "a device preference: album_order, octave_numbers, debug_log, chip_stream, or text_size", quiet: true, song: false,
+   example: "Turn the debug log on.", say: "Say the name and the value: album_order (game or az), octave_numbers (on/off), debug_log (on/off), chip_stream (on/off/auto), or text_size (small/default/large/larger).",
+   spec: "set_pref {name, value}: changes one device-local preference, same as the matching Settings-sheet control — never song state. name is album_order (game or az — the album strip's own order switch), octave_numbers (true/false — the 8va ‹›  readout), debug_log (true/false), chip_stream (on/off/auto), or text_size (small/default/large/larger, or 0.9/1/1.15/1.3). Learning mode is NOT on this list and never will be — it is a setting only the user flips himself, never through Ask. An unknown name errors listing the choices.",
+   run(a) { return askSetPref(a).note; }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",
    spec: "help {name?}: without name, the index of every action available in this chat; with one, that action's full text (args, rules, what it answers).",

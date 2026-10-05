@@ -2814,6 +2814,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
     "to pulse 2, an octave down", // act: edit_notes transpose/move/copy/to_track (docs/ai-parity.md §5 batch 6)
     "Mute the noise channel", // act: set_track/add_track/delete_track/keep_that/album (docs/ai-parity.md §5 batch 7)
+    "Turn the debug log on", // act: song_file/set_pref (docs/ai-parity.md §5 batch 8)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6871,7 +6872,7 @@ test("act: one tool, one index line per registered action in name order, byte-id
   assert.ok(expected.includes("go_to") && expected.includes("play") && expected.includes("stop") && expected.includes("select") && expected.includes("undo") && expected.includes("drummer") && expected.includes("help"));
   // the general chat: only what needs no song (help); the song-only tools are gone as before
   run(`askGeneral = true;`);
-  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song"]); // what needs no open song: help, the read-another-song three (batch 3), open_song (§4)
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song", "set_pref", "song_file"]); // what needs no open song: help, the read-another-song three (batch 3), open_song (§4), set_pref/song_file (batch 8 — a device pref and a brand-new song both work with nothing open)
   assert.ok(val(`askToolsNow().some(t => t.function.name === "act")`) && !val(`askActOffered("write_notes")`));
   run(`askGeneral = false;`);
   // the cost, measured the way the bridge pastes it (toolInstructions: "- name: description\n  schema: {…}"), printed so every batch shows its number, capped so a long-winded entry fails here
@@ -7213,6 +7214,173 @@ test("set_track / add_track / delete_track / keep_that / album: reached through 
   }
 });
 
+// ---- song_file / set_pref (docs/ai-parity.md §5 batch 8, 2026-10-05): song
+// files and device prefs, over the File menu's / Settings sheet's own functions.
+test("song_file new: creates a fresh composition and immediately names/folders it (the File menu's +New song then Save As, one call); a title already taken in that folder errors instead of popping the native-dialog-equivalent appConfirm; a missing title or an unusable folder errors", async () => {
+  installActSong();
+  const r = await aval(`askSongFile({action: "new", title: "My New Song", folder: "my-covers"})`);
+  assert.match(r.note, /^new song "My New Song" in my-covers — Edit → Pencil to write; Publish sends it$/);
+  assert.equal(val(`songKey`), "albums/my-covers/my-new-song.mid");
+  assert.equal(val(`song.tracks.map(t => t.name).join()`), "pulse1,pulse2,triangle", "createComposition's own default tracks");
+  assert.equal(val(`isUnsaved(songKey)`), false, "named and foldered — no longer Untitled");
+  await assert.rejects(run(`askSongFile({action: "new", title: "My New Song", folder: "my-covers"})`), /a local copy named "My New Song" already exists in my-covers/);
+  await assert.rejects(run(`askSongFile({action: "new"})`), /say a title for the new song/);
+  await assert.rejects(run(`askSongFile({action: "new", title: "x", folder: "albums"})`), /isn't a usable folder name/, "a reserved folder word");
+  run(`localStorage.removeItem(draftStoreKey("albums/my-covers/my-new-song.mid"));`);
+});
+test("song_file save_version / versions: own compositions only, and only once named (not an Untitled song); a default or custom label; versions lists them newest first; a locked capture refuses", async () => {
+  installActSong();
+  const r1 = await aval(`askSongFile({action: "save_version"})`);
+  assert.equal(r1.note, "Version saved: Version 1 — only on this device");
+  const r2 = await aval(`askSongFile({action: "save_version", label: "before drums"})`);
+  assert.equal(r2.note, "Version saved: before drums — only on this device");
+  const v = await aval(`askSongFile({action: "versions"})`);
+  assert.match(v.note, /^1\. before drums — /);
+  assert.match(v.note, /\n2\. Version 1 — /);
+  run(`createComposition(120, 4, 4);`); // a fresh Untitled song
+  await assert.rejects(run(`askSongFile({action: "save_version"})`), /name this song first/);
+  const vEmpty = await aval(`askSongFile({action: "versions"})`); // versions itself works on any open song, even an Untitled one — nothing saved yet
+  assert.equal(vEmpty.note, "no saved versions for this song yet");
+  installActSong();
+  run(`songKey = "albums/nes/mega-man-2/svs-capture-test.mid"; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []})); finalizeNotes();`);
+  await assert.rejects(run(`askSongFile({action: "save_version"})`), /Save Version works on your own songs/);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+});
+test("song_file save_as: works on anything open — your own song or a locked capture — under a title and folder, or the default folder when omitted; a missing title or no open song errors", async () => {
+  installActSong();
+  const before = val(`songKey`);
+  const r = await aval(`askSongFile({action: "save_as", title: "Copy One", folder: "my-covers"})`);
+  assert.equal(r.note, "saved a copy as \"Copy One\" in my-covers — fully editable; Publish sends it");
+  assert.equal(val(`songKey`), "albums/my-covers/copy-one.mid");
+  assert.notEqual(val(`songKey`), before);
+  await assert.rejects(run(`askSongFile({action: "save_as"})`), /say a title for the copy/);
+  run(`songKey = null; song = null;`);
+  await assert.rejects(run(`askSongFile({action: "save_as", title: "x"})`), /no song open/);
+  installActSong();
+  run(`songKey = "albums/nes/mega-man-2/save-as-capture-test.mid"; rollnotesOrigin = null; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []})); finalizeNotes();`); // rollnotesOrigin cleared: the earlier save_as call in THIS test left a stale {kind:"copy"} that originOf's own first check would otherwise trust over the fresh capture stub
+  assert.equal(val(`editableSong()`), false, "sanity: this source is locked");
+  const r2 = await aval(`askSongFile({action: "save_as", title: "Capture Copy", folder: "my-covers"})`);
+  assert.match(r2.note, /^saved a copy as "Capture Copy" in my-covers/);
+  assert.equal(val(`songKey`), "albums/my-covers/capture-copy.mid");
+  assert.equal(val(`editableSong()`), true, "the copy is editable even though the source was locked — Save As's whole point");
+  for (const k of ["albums/my-covers/copy-one.mid", "albums/my-covers/capture-copy.mid", "albums/nes/mega-man-2/save-as-capture-test.mid"]) run(`localStorage.removeItem(draftStoreKey(${JSON.stringify(k)}));`);
+});
+test("song_file rename: an uncommitted local draft renames its own file; a saved/repo song needs a GitHub token, then gets a title override everywhere the catalog shows it; a missing name or no open song errors", async () => {
+  installActSong();
+  assert.equal(val(`song.savedStamp === undefined`), true, "sanity: no savedStamp — the uncommitted-draft branch");
+  const r = await aval(`askSongFile({action: "rename", title: "Renamed Song"})`);
+  assert.equal(r.note, "renamed to \"Renamed Song\" (a local draft — the name commits with it)");
+  assert.equal(val(`songKey`), "albums/compositions/nightroll/renamed-song.mid");
+  await assert.rejects(run(`askSongFile({action: "rename"})`), /say the new name/);
+  run(`songKey = null; song = null;`);
+  await assert.rejects(run(`askSongFile({action: "rename", title: "x"})`), /no song open/);
+  installActSong();
+  run(`song.savedStamp = Date.now(); localStorage.removeItem("ff1roll-ghtoken");`);
+  await assert.rejects(run(`askSongFile({action: "rename", title: "x"})`), /no GitHub token stored yet/);
+  run(`
+    localStorage.setItem("ff1roll-ghtoken", "t");
+    globalThis.__realRenameRepoTitle = renameRepoTitle;
+    globalThis.__renameCalls = [];
+    renameRepoTitle = async (key, title) => { globalThis.__renameCalls.push([key, title]); };
+    globalThis.__realInitCatalog = initCatalog;
+    initCatalog = async () => {};
+    CATALOG["Test Rename Album"] = [["Old Title", songKey]];
+  `);
+  const r2 = await aval(`askSongFile({action: "rename", title: "New Title"})`);
+  assert.equal(r2.note, "renamed to \"New Title\" everywhere the dropdown shows it");
+  assert.deepEqual(val(`globalThis.__renameCalls`), [[val(`songKey`), "New Title"]]);
+  assert.equal(val(`CATALOG["Test Rename Album"][0][0]`), "New Title", "the in-memory catalog is patched right away (the manifest refetch can be CDN-stale for ~10 min)");
+  run(`
+    renameRepoTitle = globalThis.__realRenameRepoTitle; initCatalog = globalThis.__realInitCatalog;
+    delete globalThis.__realRenameRepoTitle; delete globalThis.__renameCalls; delete globalThis.__realInitCatalog;
+    delete CATALOG["Test Rename Album"]; localStorage.removeItem("ff1roll-ghtoken");
+  `);
+});
+test("song_file share_link: your own published song gets the real link; a song that only lives on this device (not in the catalog) says so instead of a dead link; no open song errors", async () => {
+  installActSong();
+  const r = await aval(`askSongFile({action: "share_link"})`);
+  assert.equal(r.note, "this song only lives on this device — Publish it first, then ask again");
+  run(`CATALOG["FF1"] = [["Act Test", songKey]];`);
+  const r2 = await aval(`askSongFile({action: "share_link"})`);
+  assert.match(r2.note, /^Share link: https?:\/\//);
+  run(`delete CATALOG["FF1"];`);
+  run(`songKey = null; song = null;`);
+  await assert.rejects(run(`askSongFile({action: "share_link"})`), /no song open/);
+});
+test("song_file: an unknown action errors listing the choices; needs no open song itself (its own sub-actions each check)", async () => {
+  await assert.rejects(run(`askSongFile({action: "nonsense"})`), /action must be one of new, save_version, versions, save_as, rename, share_link/);
+  run(`askGeneral = true;`);
+  assert.ok(val(`askActOffered("song_file")`));
+  assert.ok(val(`askActOffered("set_pref")`));
+  run(`askGeneral = false;`);
+});
+test("set_pref: album_order, octave_numbers, debug_log, chip_stream, text_size each set the SAME real pref the album strip / Settings sheet does; an unknown name, a missing value, and any learning-flavored name all refuse — Learning mode is never touched", () => {
+  installActSong();
+  try {
+    const r1 = val(`askSetPref({name: "album_order", value: "az"})`);
+    assert.equal(r1.note, "album order set to A–Z");
+    assert.equal(val(`albumOrderPref`), "az");
+    assert.equal(val(`localStorage.getItem("ff1roll-albumorder")`), "az");
+    val(`askSetPref({name: "album_order", value: "game"})`);
+    assert.equal(val(`albumOrderPref`), "game");
+    assert.throws(() => run(`askSetPref({name: "album_order", value: "random"})`), /album_order must be game or az/);
+
+    const r2 = val(`askSetPref({name: "octave_numbers", value: false})`);
+    assert.equal(r2.note, "8va octave numbers off");
+    assert.equal(val(`selOctaves`), false);
+    assert.equal(val(`localStorage.getItem("ff1roll-seloct")`), "0");
+    val(`askSetPref({name: "octave_numbers", value: true})`);
+    assert.equal(val(`selOctaves`), true);
+    assert.equal(val(`localStorage.getItem("ff1roll-seloct")`), "1");
+
+    const r3 = val(`askSetPref({name: "debug_log", value: true})`);
+    assert.equal(r3.note, "debug log on");
+    assert.equal(val(`localStorage.getItem("ff1roll-debuglog")`), "1");
+    val(`askSetPref({name: "debug_log", value: false})`);
+    assert.equal(val(`localStorage.getItem("ff1roll-debuglog") === null`), true);
+
+    const r4 = val(`askSetPref({name: "chip_stream", value: "on"})`);
+    assert.equal(r4.note, "chip audio streaming set to on");
+    assert.equal(val(`localStorage.getItem("ff1roll-chipstream")`), "on");
+    assert.throws(() => run(`askSetPref({name: "chip_stream", value: "loud"})`), /chip_stream must be on, off, or auto/);
+
+    const r5 = val(`askSetPref({name: "text_size", value: "large"})`);
+    assert.equal(r5.note, "text size set to 1.15");
+    assert.equal(val(`localStorage.getItem("ff1roll-textsize")`), "1.15");
+    val(`askSetPref({name: "text_size", value: "1"})`);
+    assert.equal(val(`localStorage.getItem("ff1roll-textsize")`), "1");
+    assert.throws(() => run(`askSetPref({name: "text_size", value: "huge"})`), /text_size must be/);
+
+    assert.throws(() => run(`askSetPref({name: "something_else", value: 1})`), /name must be one of album_order, octave_numbers, debug_log, chip_stream, text_size/);
+    assert.throws(() => run(`askSetPref({name: "album_order"})`), /say the value/);
+    for (const n of ["learning_mode", "learning", "cfglearning", "LEARNING"]) assert.throws(() => run(`askSetPref({name: ${JSON.stringify(n)}, value: true})`), /only Josh can flip himself/, n);
+    assert.equal(val(`appMode()`), "learning", "sanity: set_pref never touched the real mode");
+  } finally {
+    run(`
+      localStorage.removeItem("ff1roll-albumorder"); localStorage.removeItem("ff1roll-seloct");
+      localStorage.removeItem("ff1roll-debuglog"); localStorage.removeItem("ff1roll-chipstream"); localStorage.removeItem("ff1roll-textsize");
+      albumOrderPref = "game"; selOctaves = true;
+    `);
+  }
+});
+test("song_file / set_pref: reached through act — quiet for set_pref (ends the exchange), answered for song_file; song_file's own sub-action arg collides with the item's act-level discriminator (both named \"action\") so a model must send it under the args wrapper; both offered in the general chat; listed in the index", async () => {
+  installActSong();
+  const r1 = await aval(`askAct({do: [{action: "set_pref", name: "text_size", value: "default"}]})`);
+  assert.deepEqual(r1, {final: "text size set to 1"});
+  // song_file's own sub-action arg is named "action" too — the args wrapper
+  // (askActItems' tolerance) keeps it distinct from the item's own
+  // act-level "action" (same shape album's test uses, batch 7)
+  const r2 = await aval(`askAct({do: [{action: "song_file", args: {action: "versions"}}]})`);
+  assert.equal(typeof r2, "string");
+  run(`askGeneral = true;`);
+  const r3 = await aval(`askAct({do: [{action: "set_pref", name: "text_size", value: "default"}]})`);
+  assert.deepEqual(r3, {final: "text size set to 1"}, "set_pref needs no open song");
+  run(`askGeneral = false;`);
+  const idx = val(`askActIndex(false)`);
+  for (const name of ["song_file", "set_pref"]) assert.match(idx, new RegExp("\\n" + name + " "), name);
+  run(`localStorage.removeItem("ff1roll-textsize");`);
+});
+
 // ---- open_song (docs/ai-parity.md §4, batch 2 of §5): the lookup never guesses, the switch waits for the landing, the handoff and the follow-on land in the new chat
 function installOpenSongWorld() { // an editable composition open (installActSong), a catalog with a same-named song, and a Graveyard draft on this device
   installActSong();
@@ -7371,7 +7539,7 @@ test("batch 3: the menu is act alone (ASK_TOOLS empty, every former tool one ind
   const index = val(`askActTool(false).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]);
   for (const n of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "list_songs", "read_song", "read_notes", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars", "drummer", "open_song", "help"]) assert.ok(index.includes(n), n + " is in the song chat's index");
   run(`askGeneral = true;`);
-  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song"], "the general chat: reading another song, opening one, help — nothing about THE open song");
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help", "list_songs", "open_song", "read_notes", "read_song", "set_pref", "song_file"], "the general chat: reading another song, opening one, help, a device pref, a brand-new song — nothing about THE open song");
   for (const n of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"]) assert.ok(!val(`askActOffered(${JSON.stringify(n)})`), n + " hidden in the general chat");
   run(`askGeneral = false;`);
   const menuOf = tools => tools.map(t => `- ${t.function.name}: ${t.function.description}\n  schema: ${JSON.stringify(t.function.parameters || {})}`).join("\n");

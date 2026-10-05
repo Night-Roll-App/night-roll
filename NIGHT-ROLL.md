@@ -5144,6 +5144,80 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     the audio-unlock gate), and one through `act` covering all five
     (quiet for `album`, the general chat's refusal, the index). Help: the
     regenerated AI commands rows; drift keyword "Mute the noise channel".
+- **song_file / set_pref — batch 8 (2026-10-05; docs/ai-parity.md §5 row 8,
+  Sonnet).** Two more `ASK_ACTIONS` entries, both `song: false` (their own
+  sub-actions check for an open song where they need one), over the File
+  menu's / Settings sheet's own functions — never a parallel path, no
+  native dialogs (a name collision that would otherwise pop `appConfirm()`
+  is checked BEFORE calling the real function, so the action errors instead
+  of waiting on a tap that will never come).
+  - `song_file` {action, title?, folder?, label?}: `new` calls
+    `createComposition(120, 4, 4)` (the form's own defaults — bpm/meter
+    aren't args here) then immediately `saveSongAs(folder, title)` — the
+    two-step real flow (＋ New song, then the first Save Version names it)
+    done in one call; the title-collision check (`localStorage.getItem(
+    draftStoreKey(newKey))`) runs first, matching `saveSongAs`'s own key
+    formula, so a repeat call errors cleanly instead of hitting its
+    "replace it?" `appConfirm()`. `save_version` replicates `saveVersion`'s
+    three gates with real messages (own compositions only; refuses an
+    Untitled song by name — "name this song first"; refuses mid-compare)
+    then calls `saveDraft(false)` + `pushVersion(key, label)` (default
+    "Version N", `readVersions(key).length + 1`, same as the File menu) +
+    `filesMirror()`. `versions` is `readVersions(key)` reversed (newest
+    first) as numbered lines — restoring one needs a tap, the not-yet-built
+    `show` action's job, not this one's. `save_as` is `forkCurrentSong(
+    title, folder)` verbatim — **works on anything open, captures
+    included** (its whole point, the same as "✎ Edit"'s own call into it;
+    the row's "your songs" in docs/ai-parity.md §1 was this feature's own
+    paraphrase, not a real gate — checked directly: neither
+    `forkCurrentSong` nor the rename handlers below ever call
+    `isComposition()`/`editableSong()`). `rename` mirrors the File menu's
+    own two-branch dispatch byte for byte: an uncommitted local draft (a
+    draft exists, no `savedStamp`) renames the FILE itself
+    (`renameImportDraft`, a collision errors); anything already saved gets
+    a title override in album.json/the manifest (`renameRepoTitle`, needs a
+    GitHub token — refuses by name otherwise) and the in-memory `S.CATALOG`
+    is patched immediately (the manifest refetch can be CDN-stale ~10 min,
+    the same `initCatalog().catch()` + loop the File menu's own handler
+    uses). `share_link` is `shareLinkFor(key)`, gated on `catalogHas(key)` —
+    **not** the real Share-link sheet's own looser `/^albums\//` test (a
+    brand-new, not-yet-published composition already lives under
+    `albums/…` and would pass that test while its link still 404s); a
+    local-only song answers plainly instead of handing back a dead link.
+  - `set_pref` {name, value}: a whitelist of five device prefs, each routed
+    through the real setter — `album_order` → `setAlbumOrderPref` (model/
+    album-order.js); `octave_numbers` → the `#octbtn` handler's own two
+    lines (`S.selOctaves` + `localStorage["ff1roll-seloct"]` +
+    `refreshSelInfo()`), copied verbatim since no standalone setter exists;
+    `debug_log`/`chip_stream`/`text_size` set the matching Settings-sheet
+    DOM element's `.checked`/`.value` (always present in the static markup,
+    never conditionally rendered) and call `settingsPersist(id)` — the
+    SAME dispatcher every real checkbox/select in that sheet already runs
+    through, so this never duplicates the Settings sheet's own
+    localStorage-write logic. **Learning mode is checked by name BEFORE the
+    whitelist lookup** (`/learn/` against the lowercased name), not just
+    left off the list — a model guessing `"learning_mode"`/`"cfglearning"`
+    gets "a setting only Josh can flip himself," the real reason, not a
+    generic "name must be one of…" (CLAUDE.md "Learning mode is the law").
+  - **Measured** (chars ÷ 3.7, the vm test prints it): 2,680 chars (~724
+    tokens, 22 actions, batch 6's own count — batch 7 is quoted inline
+    above) → 3,115 (~842, 27 actions) after batch 7 → **3,325 chars (~899
+    tokens, 29 actions)** after batch 8.
+  - Tests: tests/night-roll.test.mjs "song_file new: …", "song_file
+    save_version / versions: …", "song_file save_as: …" (a locked capture
+    source included), "song_file rename: …" (×2 branches — the repo one
+    stubs `renameRepoTitle`/`initCatalog` the same way an existing
+    publish_song test stubs `publishSong`, never real network), "song_file
+    share_link: …", "song_file: an unknown action…", "set_pref: …" (every
+    name, the Learning-mode refusal swept across several spellings, the
+    real mode never touched), one through `act` covering both (`song_file`'s
+    own sub-action arg is ALSO named `action` — the same collision
+    `album`'s has, same fix: the model sends it under `args`). Two
+    pre-existing batch-1/batch-3 tests that pinned the general chat's
+    exact action list needed updating (`set_pref`/`song_file` are now in
+    it) — not a regression, the expected effect of adding two more
+    `song: false` actions. Help: the regenerated AI commands rows; drift
+    keyword "Turn the debug log on".
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

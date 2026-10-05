@@ -11,6 +11,43 @@ Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)
 may reject it. Fix in the AI library: map note → user with a label. Untested
 against a real local server.
 
+## AI parity batch 8 — song_file, set_pref — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5 row 8)
+
+Built by a Sonnet builder, its own commit on its branch. Two `ASK_ACTIONS`
+entries, src/ask/tools.js, both `song: false`, over the File menu's /
+Settings sheet's own functions — never a parallel path, no native dialogs
+(a name collision that would otherwise pop `appConfirm()` is checked
+first, so the action errors instead of waiting on a tap that can't come).
+`song_file` {action, title?, folder?, label?}: `new` chains
+`createComposition` + `saveSongAs` (the real ＋ New song then first Save
+Version, one call); `save_version` mirrors `saveVersion`'s three gates
+with real messages, then `saveDraft`+`pushVersion`+`filesMirror`;
+`versions` lists `readVersions` newest-first; `save_as` is
+`forkCurrentSong` verbatim — **works on anything open, captures included**
+(checked directly: neither it nor the rename handlers ever gate on
+isComposition()/editableSong(), contrary to this row's own "your songs"
+paraphrase); `rename` mirrors the File menu's uncommitted-draft vs
+saved/repo branches exactly (`renameImportDraft` / `renameRepoTitle` +
+an in-memory `S.CATALOG` patch); `share_link` is `shareLinkFor`, gated on
+`catalogHas` (stricter than the real Share-link sheet's own `/^albums\//`
+test — a local-only song answers plainly instead of a dead link).
+`set_pref` {name, value}: album_order/octave_numbers/debug_log/
+chip_stream/text_size, each through the real setter or `settingsPersist`;
+**Learning mode is checked by name before the whitelist lookup**, not just
+absent from the list — a model guessing a learning-flavored name gets the
+real reason.
+Measured: menu 3,115 chars (~842 tokens, 27 actions) before this batch →
+3,325 (~899, 29 actions) after. Tests: tests/night-roll.test.mjs
+"song_file new/save_version/versions/save_as/rename/share_link/unknown: …"
+(the repo-rename branch stubs `renameRepoTitle`/`initCatalog`, same
+pattern an existing publish_song test uses — never real network),
+"set_pref: …", one through `act` covering both. Two pre-existing
+batch-1/3 tests pinning the general chat's exact action list needed
+updating (expected — two more `song: false` actions joined it). **Main
+session, at merge:** browser-verify Help → AI's rows and one call of each
+("new song called Night Rain"; "save a version called before drums";
+"turn the debug log on") before pushing.
+
 ## AI parity batch 7 — set_track, add_track, delete_track, keep_that, album — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5 row 7)
 
 Built by a Sonnet builder, its own commit on its branch. Five `ASK_ACTIONS`
