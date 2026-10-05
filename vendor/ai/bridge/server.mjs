@@ -316,7 +316,7 @@ function safeJSON(s) { try { return JSON.parse(s || "{}"); } catch (err) { retur
 function parseToolCall(text) { // the whole reply is one JSON line → a tool call; anything else is prose
   const t = (text || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
   if (!t.startsWith("{") || !t.includes("tool_call")) return null;
-  for (const cand of [t, closeJSON(t)]) {
+  for (const cand of [t, firstJSONObject(t), closeJSON(t)]) {
     try { const j = JSON.parse(cand); if (j && j.tool_call && j.tool_call.name) return {name: String(j.tool_call.name), arguments: j.tool_call.arguments || {}}; } catch (err) { /* prose */ }
   }
   return null;
@@ -324,6 +324,20 @@ function parseToolCall(text) { // the whole reply is one JSON line → a tool ca
 // a long tool call (a large write) can come back one "}" short and fall
 // through as prose — the client showed raw JSON and ran nothing. Close
 // whatever brackets are still open (outside strings), in order.
+// a model can write the call right and then trail junk after it (Josh,
+// 2026-10-05: "</parameter></invoke>" after a write_notes call) — the first
+// balanced object is the call; whatever follows it is ignored
+function firstJSONObject(t) {
+  let depth = 0, inStr = false, esc = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}" && --depth === 0) return t.slice(0, i + 1);
+  }
+  return null;
+}
 function closeJSON(t) {
   const open = []; let inStr = false, esc = false;
   for (const ch of t) {
@@ -593,6 +607,8 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   // chat text and ran nothing — the current line stays back while it could
   // still be a trailing tool call
   const flushProse = () => {
+    const call = pend.search(/(^|\n)[ \t]*\{\s*"tool_call"/); // a tool-call line already seen stays back to the end, junk after it included
+    if (call >= 0) { const at = pend[call] === "\n" ? call + 1 : call; if (at) jobPush(job, {content: pend.slice(0, at)}); pend = pend.slice(at); return; }
     const cur = pend.slice(pend.lastIndexOf("\n") + 1), lead = cur.trimStart();
     const keep = !lead.length || lead.startsWith("{") || lead.startsWith("`") ? cur : "";
     const out = pend.slice(0, pend.length - keep.length);
