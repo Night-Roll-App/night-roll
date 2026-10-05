@@ -1,3 +1,10 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "chaos-temple", "origin": {"kind":"capture"}, "notes": [
-  {"at":[1,1],"type":"key","key":"Em"}
+{ "format": "night-roll-annotations", "version": 2, "song": "chaos-temple", "origin": {"kind":"capture"}, "stamp": 1791167898774, "notes": [
+  {"at":[1,1],"type":"key","key":"Em"},
+  {"at":[1,1],"type":"timesig","timesig":"4/4"},
+  {"at":[1,1],"to":[1,4],"type":"chord","chord":"Em"},
+  {"at":[2,1],"to":[2,4],"type":"chord","chord":"D"},
+  {"at":[3,1],"to":[4,2],"type":"chord","chord":"C"},
+  {"at":[4,3],"to":[4,4],"type":"chord","chord":"D"},
+  {"at":[5,1],"to":[5,4],"type":"chord","chord":"Em"},
+  {"at":[6,1],"to":[6,4],"type":"chord","chord":"D"}
 ] }
