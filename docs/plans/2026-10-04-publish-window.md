@@ -88,3 +88,64 @@ Decisions:
 - D5 (nothing lost): the count and the sections change what is SHOWN and
   what one button covers; nothing stops being publishable and nothing is
   deleted. Learning mode untouched (no verdicts, no song content).
+
+## Review (Fable, 2026-10-04) — addendum, against the code
+
+What the three single-song paths do today:
+
+- A song row's **Publish** (sheets.js ~1058): `publishAllJobStart(fn, [key])`
+  → `syncSheetRelease()` → `openPubJobSheet(job)`. So the floating Publish
+  window closes AT LAUNCH, not at success — on failure there is nothing left
+  to "stay open" but the job dialog, and the dialog has no Retry (Retry lives
+  only in the Jobs list, and `JOB_KINDS.publishall.retry` re-runs
+  `publishAllJobStart(setInfo)` with NO keys = Publish all of everything
+  pending, not the one song). The dialog closes on its own 10 s after
+  success — not because anything closes it: `jobsAutoClear` dismisses the
+  done job, `renderPubJob` finds no job and drops `on`. That 10 s is what
+  Josh is waiting through.
+- **File ▾ → Publish…** opens the Publish window (`openSyncSheet`); it is
+  not a publish of its own. **⇪ Publish song** (`#ghsave`) is not a job:
+  the analyzed-song branch writes "Published ✓ …" to `#syncstatus` and
+  900 ms later `syncSheetRelease()` (+ back to the notes list when it came
+  from there); the composition branch (`publishOpenComposition`) writes the
+  result line and leaves the window open — the two branches already
+  disagree.
+- Stacking: `#pubjobsheet` sits BEFORE `#syncsheet` in index.html; both are
+  `.overlay` z-index 10, so with both floating the Publish window would
+  paint over the job dialog, and the Esc handler (wm.js ~951, "topmost" =
+  last in DOM) would close the Publish window under the dialog first.
+
+Decisions (D6–D9):
+
+- D6 (what "both" means, and the docked rule): a one-song job (a row's
+  Publish; a one-key retry of it) no longer releases the Publish window at
+  launch — the dialog opens over it. On SUCCESS the dialog closes and the
+  window goes through `syncSheetRelease()`: floating, it closes (it was a
+  step); docked, it stays (a place, not a step — its list already
+  re-rendered without the song). The app status line gets
+  "Published <song> ✓" (`setInfo`), since the window's own `#syncstatus` is
+  gone with it; docked, `#syncstatus` says the same. On FAILURE both stay:
+  the row's ⚠ + error in the dialog, and **Retry** beside Close.
+- D7 (Retry): the dialog gets `#pubjobretry`, shown when the job is over
+  and not done (failed/interrupted/cancelled — the Jobs list's rule) and
+  its kind has a retry. Jobs keep their selection: `publishAllJobStart`
+  stores `keys` on the job, and `publishall.retry` re-runs those keys (what
+  is still pending of them), the whole list only when the job had none —
+  so a one-song retry is one song, and re-arms the one-motion close.
+- D8 (Publish all / Publish chats): unchanged — release at launch, dialog
+  stays up (several outcomes to read), auto-clear as today. The in-window
+  summary for a one-item job says "Published <song> ✓" instead of
+  "Published 1 ✓".
+- D9 (⇪ Publish song): both branches end alike — "Published <song> ✓" on
+  the status line, then the 900 ms close (floating only) the analyzed-song
+  branch already does; the composition branch gains the close it lacked.
+  Its result line is still readable: the status line keeps it (and the
+  Status reader has the full text).
+- Stacking: `#pubjobsheet-home` moves after `#syncsheet-home` in
+  index.html — the dialog paints over the window and Esc closes it first,
+  with no z-index rule. Nothing else keys on the position.
+- Not done: no auto-close for a floating Publish all; no change to the
+  job list, auto-clear, or `jobsAutoClear`'s 10 s; no new pref.
+- Help (files tab): the "Publish dialog" and "Publish" entries say the
+  one-motion rule; General chat / Terminal tab still said "(Publish all
+  includes it)" — stale since D2, fixed in passing.
