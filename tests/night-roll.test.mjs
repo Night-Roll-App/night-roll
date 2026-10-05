@@ -3996,6 +3996,60 @@ test("Drummer parts: scoped reroll touches only its piece group", () => {
   run(`songKey = null; rollnotes = [];`);
 });
 
+// ---- Drummer fills: the snare-only fills are frozen (docs/plans/2026-10-05-drum-generation-review.md B1) ----
+// run / negative / flam are the fills Josh keeps. These goldens lock their
+// hits byte-for-byte (4/4 and 3/4, ppq 480) and prove they draw NO random
+// numbers — so every later change to the vocabulary leaves them untouched.
+const DR_SNARE_GOLDEN = {
+  run: {
+    4: [{off: 960, p: 38, v: 70, d: 50}, {off: 1080, p: 38, v: 76, d: 50}, {off: 1200, p: 38, v: 83, d: 50}, {off: 1320, p: 38, v: 89, d: 50},
+        {off: 1440, p: 38, v: 96, d: 50}, {off: 1560, p: 38, v: 102, d: 50}, {off: 1680, p: 38, v: 109, d: 50}, {off: 1800, p: 38, v: 115, d: 50}],
+    3: [{off: 480, p: 38, v: 70, d: 50}, {off: 600, p: 38, v: 76, d: 50}, {off: 720, p: 38, v: 83, d: 50}, {off: 840, p: 38, v: 89, d: 50},
+        {off: 960, p: 38, v: 96, d: 50}, {off: 1080, p: 38, v: 102, d: 50}, {off: 1200, p: 38, v: 109, d: 50}, {off: 1320, p: 38, v: 115, d: 50}],
+  },
+  negative: {4: [{off: 1440, p: 38, v: 102, d: 60}], 3: [{off: 960, p: 38, v: 102, d: 60}]},
+  flam: {4: [{off: 1770, p: 38, v: 96, d: 40}, {off: 1800, p: 38, v: 112, d: 50}],
+         3: [{off: 1290, p: 38, v: 96, d: 40}, {off: 1320, p: 38, v: 112, d: 50}]},
+};
+test("Drummer golden: run / negative / flam are byte-identical and draw no rng", () => {
+  installSong();
+  run(`song.ppq = 480;`);
+  for (const name of ["run", "negative", "flam"]) {
+    const f = val(`(() => { const f = DR_FILLS.find(f => f.name === "${name}"); return {len: f.len, minE: f.minE, maxE: f.maxE}; })()`);
+    assert.deepEqual(f, {run: {len: 2, minE: 2, maxE: 5}, negative: {len: 2, minE: 1, maxE: 2}, flam: {len: 1, minE: 1, maxE: 3}}[name], name + " keeps its window and knob range");
+    for (const beats of [4, 3]) {
+      const hits = val(`DR_FILLS.find(f => f.name === "${name}").hits(() => { throw new Error("${name} drew an rng number"); }, 480, ${beats}, {bs: 0, onsets: []})`);
+      assert.deepEqual(hits, DR_SNARE_GOLDEN[name][beats], `${name} in ${beats}/4 is frozen`);
+    }
+  }
+  // and in a real take: when the run fires before a boundary it is EXACTLY the
+  // golden eight snares, alone in its window (skeleton + hats yield), crash on the 1
+  run(`
+    songKey = "albums/compositions/nightroll/golden-run.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [{name: "pulse1", notes: [{t: 0, d: 7680, p: 72, v: 80}]}, {name: "triangle", notes: [{t: 0, d: 7680, p: 45, v: 90}]}]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null;
+    rollnotes = deriveNoteTypes([{b1: 3, q1: 1, b2: 4, q2: 4, text: "section: B", added: true}]).map(resolveNote);
+    finalizeNotes(); computeSongEnd();
+  `);
+  const want = DR_SNARE_GOLDEN.run[4].map(h => (1920 + h.off) + ":" + h.v);
+  let seen = 0;
+  for (let seed = 1; seed <= 80 && seen < 2; seed++) {
+    const take = val(`(() => {
+      drGenerate(${seed}, {busy: 3, hard: 3, fillAmt: 3, follow: "off", fromBar: 1, toBar: 4});
+      const di = song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+      return song.tracks[di].notes.filter(n => !n.gone && n.t >= 1920 + 960 && n.t < 3840).map(n => ({t: n.t, p: n.p, v: n.v}));
+    })()`);
+    const snares = take.filter(h => h.p === 38).map(h => h.t + ":" + h.v);
+    if (snares.length !== 8 || snares[0] !== want[0]) continue; // some other fill, or none — not this seed
+    seen++;
+    assert.deepEqual(snares, want, "seed " + seed + ": the run is the golden run");
+    assert.ok(!take.some(h => h.p !== 38), "seed " + seed + ": the run owns its window (no hats, no kicks)");
+  }
+  assert.ok(seen >= 1, "the run fires at fills 3 within 80 seeds");
+  run(`songKey = null; rollnotes = [];`);
+});
+
 test("Bassist: chord-driven, monophonic, one undo; melody-only infers", () => {
   installSong();
   run(`
