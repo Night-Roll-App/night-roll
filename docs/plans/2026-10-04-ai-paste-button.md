@@ -1,0 +1,6 @@
+# Plan: 📋 Paste button in the AI box (Josh, Terminal #113–114)
+
+Status: draft → Fable review → Fable build.
+Why: Superwhisper on iPad is only a keyboard (no URL scheme/shortcut another app can call); its Control Center control most likely records in its app and leaves text on the clipboard. Josh's hands hurt and the keyboard covers half the screen — a one-tap Paste beside 🎤 gets dictated text into the message box without summoning the keyboard.
+Build: a 📋 button in the AI window's input row (beside 🎤; setControl; icon from the app's icon set), tap → read the clipboard (Capacitor Clipboard plugin on the iPad if available in the shell, else navigator.clipboard.readText — iOS shows its own Paste confirmation bubble, which is fine) → insert at the caret / append to #askinput with a space, WITHOUT focusing the input (no keyboard), update the draft (askDraft persistence) and grow; empty clipboard / permission denied → a one-line status, no native dialog. Also in the Terminal tab (same box). Never auto-send.
+Tests: vm — paste appends, draft saved, input not focused, empty/denied paths; help entry (AI tab), build_help, drift keyword, NIGHT-ROLL.md. Check whether the iPad shell (~/work/ff/night-roll-app) already has @capacitor/clipboard; if not, use navigator.clipboard (don't add native plugins without saying so in the report).
