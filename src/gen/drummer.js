@@ -314,14 +314,20 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
   const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section).map(n => n.start));
   // same label = same drums (the app's own same-label-same-color convention,
-  // extended; advisor 2026-08-22): the GROOVE substream keys on (label hash +
-  // bar offset within the section) so identically-labeled sections restate
-  // bar-for-bar. EXACT label match — no stemming, that would be inference.
+  // extended; advisor 2026-08-22): the GROOVE substream keys on the label
+  // hash, so identically-labeled sections restate bar-for-bar. EXACT label
+  // match — no stemming, that would be inference. The groove REPEATS (B6,
+  // 2026-10-05): within a section the stream keys on the bar's place in a
+  // 4-bar cycle — A B A C — a 2-bar loop with a turnaround bar, the way a
+  // drummer holds a pattern instead of wandering (bass-following kicks still
+  // read the actual bass each bar). Unsectioned bars use one constant base.
   // Fills and arrival crashes stay keyed on absolute bars: a fill is
   // commentary on what comes NEXT, and varied fills between identical grooves
-  // is what a human drummer does. Bars outside any section keep absolute-bar
-  // keying — unsectioned songs are bit-identical to the old engine.
-  const grooveLane = bar => sectionLane(bar);
+  // is what a human drummer does. Revert B6 alone: grooveLane = sectionLane.
+  const grooveLane = bar => {
+    const {base, k} = drSectionPos(bar);
+    return (base + [0, 1, 0, 3][(k - 1) % 4]) >>> 0;
+  };
   const bass = bassTi >= 0 ? S.song.tracks[bassTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1) : [];
   const melodic = S.song.tracks.filter((mtr, ti) => ti !== di && !trackIsDrums(ti) && mtr.kind !== "audio");
   const onsetsIn = (a, b) => { // sorted unique note starts of every non-drum track in [a, b) — what a stabs fill hits with

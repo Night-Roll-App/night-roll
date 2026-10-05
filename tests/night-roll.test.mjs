@@ -2780,7 +2780,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -4243,6 +4243,29 @@ test("Drummer ghosts: busy 3-5 only, soft, beside the backbeat, never in a fill 
     if (win.some(h => h.p === 42)) continue; // hats still playing: no 2-beat fill fired this seed
     assert.ok(!win.some(h => h.p === 38 && h.v < 60), "seed " + seed + ": no ghost inside the fill window");
   }
+  run(`songKey = null; rollnotes = [];`);
+});
+
+test("Drummer groove cycle: bars 1 & 3 alike, 2 their answer, 4 the turnaround; same label still restates (B6)", () => {
+  installSong();
+  drScratch(8);
+  let turnaroundDiffers = 0, answerDiffers = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const take = drTake(seed, `{busy: 3, hard: 3, fillAmt: 0, follow: "off", fromBar: 1, toBar: 8}`);
+    const b = n => drBar(take, n);
+    assert.deepEqual(b(3), b(1)); assert.deepEqual(b(5), b(1)); assert.deepEqual(b(7), b(1));
+    assert.deepEqual(b(6), b(2)); assert.deepEqual(b(8), b(4));
+    if (b(4).join() !== b(2).join()) turnaroundDiffers++;
+    if (b(2).join() !== b(1).join()) answerDiffers++;
+  }
+  assert.ok(turnaroundDiffers >= 1, "bar 4 differs from bar 2 in some seed");
+  assert.ok(answerDiffers >= 1, "bar 2 differs from bar 1 in some seed");
+  // the cycle counts from each section's first bar: a section starting at
+  // bar 3 makes bars 3 and 5 alike; two sections with one label restate
+  drScratch(10, [{b1: 3, q1: 1, b2: 6, q2: 4, text: "section: A1", added: true}, {b1: 7, q1: 1, b2: 10, q2: 4, text: "section: A1", added: true}]);
+  const take = drTake(7, `{busy: 4, hard: 3, fillAmt: 0, follow: "off", fromBar: 3, toBar: 10}`).filter(h => h.p !== 49); // arrival crashes stay absolute-keyed
+  assert.deepEqual(drBar(take, 5), drBar(take, 3));
+  for (let i = 0; i < 4; i++) assert.deepEqual(drBar(take, 7 + i), drBar(take, 3 + i), "same label restates bar " + (3 + i));
   run(`songKey = null; rollnotes = [];`);
 });
 

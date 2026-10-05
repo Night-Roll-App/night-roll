@@ -2584,10 +2584,16 @@ Consistency (advisor round 2, 2026-08-22): the GROOVE substream keys on
 (fnv1a32(section label) + bar offset in section) for the deepest section
 containing the bar's downbeat — sections with an EXACT matching label
 restate bar-for-bar (no stemming: "A repeat" != "A1"; renaming is the
-manual signal, and it also merges their ruler colors). Bars outside any
-section key on the absolute bar — unsectioned songs are bit-identical
-to the old engine. Fill + arrival-crash substreams stay absolute-keyed
-on purpose (fills are commentary on what comes NEXT).
+manual signal, and it also merges their ruler colors). Groove cycle (B6,
+2026-10-05): `grooveLane(bar)` = `drSectionPos(bar).base + [0,1,0,3][(k-1)%4]`
+— within a section bars 1 & 3 share a stream, bar 2 is the answer, bar 4
+the turnaround (A B A C: a 2-bar loop that varies the fourth); unsectioned
+bars use the constant base 0x2545F491 (an unsectioned song is NO LONGER
+bit-identical to the pre-2026-10-05 engine). Ghosts share the lane, so
+they repeat with it; bass-following kicks read each bar's actual bass.
+Reverting B6 alone = `grooveLane = sectionLane` (`sectionLane` itself is
+unchanged — the Bassist keys on it). Fill + arrival-crash substreams stay
+absolute-keyed on purpose (fills are commentary on what comes NEXT).
 
 Fills (docs/plans/2026-10-05-drum-generation-review.md, built 2026-10-05):
 `hits(frng, qt, beats, ctx)` → `[{off, p, v, d}]`, off in ticks from the
