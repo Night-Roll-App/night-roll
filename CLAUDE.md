@@ -20,9 +20,11 @@ before touching the player.
    appear in the help-sheet region; the suite fails otherwise).
 5. **Ask tool** (Josh, 2026-10-05, "any features going forward must also
    be integrated with the AI"): every new user-facing feature ships with
-   its Ask tool in src/ask/tools.js, plus a line in the how-to-ask list,
-   or an explicit "not applicable: <reason>" in the commit message. The
-   inventory is docs/ai-parity.md.
+   an action in src/ask/actions.js's registry (the one `act` tool — never
+   a new tool schema), then `node tools/build_ask_help.mjs && node
+   tools/build_help.mjs` (Help → AI commands is generated), or an explicit
+   "not applicable: <reason>" in the commit message. The inventory is
+   docs/ai-parity.md; NIGHT-ROLL.md has the add-an-action steps.
 6. **Doc sweep — ask of every change:**
    - `NIGHT-ROLL.md` — new subsystem, convention, or tool? Document it.
    - `WEB-SESSION.md` — does it change what an analysis session should
