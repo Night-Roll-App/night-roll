@@ -101,6 +101,7 @@ document.getElementById("notesguide").addEventListener("click", () => { closeDro
 document.getElementById("notelistSync").addEventListener("click", () => {
 document.getElementById("notelistAdd").addEventListener("click", () => {
 document.getElementById("helptabs").addEventListener("click", e => {
+document.getElementById("helpsheet").addEventListener("click", e => {
 document.getElementById("filehelp").addEventListener("click", () => {
 document.getElementById("fileabout").addEventListener("click", () => {
 findsel.addEventListener("focus", refreshFindSel);
