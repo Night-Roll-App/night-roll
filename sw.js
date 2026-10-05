@@ -35,7 +35,7 @@
 // from cache when the network failed or timed out.
 
 const SW_VERSION = "nr-v42"; // bumped: src/ask/annotate.js joins APP_MODULES (✦ Annotate this song…); nr-v41 = src/ui/vellane.js (the velocity lane, DAW F4) joins APP_MODULES; nr-v40 = vendor/ai/web/window.js joins AI_MODULES (AI library step 6); nr-v39 = client.js (step 5); nr-v38 = store/ctx-cache/bridge-client/attach (step 4); nr-v37 = backends.js (step 3, docs/ai-library-plan.md §4); nr-v36 = src/theory/facts/* and src/theory/harmony/* join APP_MODULES (docs/theory-toolkit.md); nr-v35 = quiz/ + privacy.html bypass the worker; nr-v34 = help/help.html
-const AI_LIB = "5b745d9"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
+const AI_LIB = "8248868"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
 const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's

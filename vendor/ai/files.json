@@ -4,7 +4,7 @@
   "bridge/launchd/README.md": "934c801a84d4cf37412422c5111dbad0d1745725bf1531d078f997edb86173f5",
   "bridge/launchd/install.sh": "9e7db4671b25dfba831643ddd0b6c2c36fd6e52cdd2fcfd2e1291706e0517a89",
   "bridge/launchd/template.plist": "aed13dab1da5dc5067b780df4ba57b65a8b7591d503693a8717c7885bf084ad3",
-  "bridge/server.mjs": "14ad6257ad2fe38f61a7e084cca04bdac5e7a80e1690d00038b4cd75359d7a43",
+  "bridge/server.mjs": "abfeb9a30fb68c1b5ed48bba474ea0c063ee7d9fe393d5f7c9e8d8757e39ce5a",
   "web/attach.js": "aaa86704bebf9d4e0a6f1e260267e3f0c6cada438559ac7e4d334dd7730f4c44",
   "web/backends.js": "abff35b03a0d449fda527b5e80e0b507a02b8aa82449db521a5fee9195cf1eb2",
   "web/bridge-client.js": "69dae1968731912fa94ab0961f6cc88d815fbecad7013fb50dd50248c70e19b5",

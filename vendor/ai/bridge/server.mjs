@@ -583,11 +583,21 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands");
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
-  let buf = "", err = "", sawText = false, held = "", holding = true, turnUsage = null, lastAssistantUsage = null, apiCalls = 0;
+  let buf = "", err = "", sawText = false, held = "", holding = true, pend = "", turnUsage = null, lastAssistantUsage = null, apiCalls = 0;
   const text = t => { // hold the first characters back: a one-line tool call must not stream as prose
-    if (!holding) return jobPush(job, {content: t});
+    if (!holding) { pend += t; return flushProse(); }
     held += t; const lead = held.trimStart();
-    if (lead.length && !lead.startsWith("{") && !lead.startsWith("`")) { holding = false; jobPush(job, {content: held}); held = ""; }
+    if (lead.length && !lead.startsWith("{") && !lead.startsWith("`")) { holding = false; pend = held; held = ""; flushProse(); }
+  };
+  // a sentence before the JSON line (Josh, 2026-10-05) streamed the call as
+  // chat text and ran nothing — the current line stays back while it could
+  // still be a trailing tool call
+  const flushProse = () => {
+    const cur = pend.slice(pend.lastIndexOf("\n") + 1), lead = cur.trimStart();
+    const keep = !lead.length || lead.startsWith("{") || lead.startsWith("`") ? cur : "";
+    const out = pend.slice(0, pend.length - keep.length);
+    if (out) jobPush(job, {content: out});
+    pend = keep;
   };
   const timer = setTimeout(() => { if (job.status === "running") { child.kill("SIGKILL"); jobEnd(job, new Error("claude took longer than " + TURN_MS / 60000 + " min")); } }, TURN_MS);
   child.stdout.on("data", d => {
@@ -649,10 +659,11 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
       ring,
     });
     const full = held || (holding ? "" : null);
-    const call = parseToolCall(holding ? held : job.text);
+    const call = parseToolCall(holding ? held : pend);
     if (call) jobPush(job, {tool_calls: [{index: 0, id: "call_" + job.id, type: "function", function: {name: call.name, arguments: JSON.stringify(call.arguments)}}]}, "tool_calls");
     else {
       if (holding && held) jobPush(job, {content: held});
+      if (!holding && pend) jobPush(job, {content: pend});
       // a turn that ended without words (a hung command, a cut-off) used to
       // land as an empty reply — say what happened and where it stopped
       if (!job.text.trim()) { const last = job.notes.filter(n => n && n !== "session restarted").pop(); jobPush(job, {content: "⚠ Claude finished without answering" + (last ? " — last step: " + last.replace(/…\s*$/, "") : "") + ". Ask again, or say \"continue\"."}); }
