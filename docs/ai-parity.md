@@ -524,3 +524,15 @@ most care with the Learning law — worth building when you want them.
 3. "Open Graveyard and play from bar 9": should the follow-on send
    itself in Graveyard's chat (as designed in §4), or always wait for
    your tap?
+
+## 7. Idea on file: a cheap dispatcher model (Josh, via Ask #446, 2026-10-05)
+
+Josh's idea, to weigh rather than a directive: a cheap model (Haiku, or a
+local LM Studio model) holds the full action list and turns Ask's plain
+request ("go to bar 13 and play") into actions, so Ask itself carries one
+tiny tool. Ask's read: `act` is the same front door, so a dispatcher can sit
+behind it later without changing Ask's side. The gain is small while Core
+stays around 590 cached tokens. Precise work (write_notes, bar ranges) should
+keep going direct. Decision: not in batches 1–3. Revisit after measuring
+Core in use. Keep act's registry callable without a model, so a dispatcher
+can be added later.
