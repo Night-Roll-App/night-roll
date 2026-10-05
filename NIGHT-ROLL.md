@@ -2694,6 +2694,30 @@ gets "no declared key" rows). On demand only, and in a session with Josh
 only when he asks for that reading — it is a reading of HIS declarations,
 and it says so.
 
+## Analysis guide (Help → Analysis, 2026-10-05)
+
+Step S0 of docs/plans/2026-10-05-analysis-sheet.md: a ninth help tab
+(`data-hs="analysis"`, body `help/help.html`'s `data-hsec="analysis"`),
+reached via **Help → Analysis** or **☰ Notes ▴ → Analysis guide**
+(`#notesguide`, `openHelp("analysis")` in `src/ui/notes.js`'s
+`initNotes2`). It is the reference text Josh asked for (Terminal #133):
+not a checklist he fills in, just "here's all the things that analysis
+needs" so he can mentally check his own annotations against it — the
+sixteen things a full analysis covers, grouped Form/Harmony/Melody/
+Texture & rhythm/Summary, each with what to find, how to find it in
+Night Roll, how to write it down, and common mistakes, plus a getting-
+better ladder and one invented worked example. Generic on purpose —
+Learning mode's law — so it names no key, chord, or reading of any real
+song; a test (`tests/night-roll.test.mjs`, "Analysis guide (Learning
+net)") checks the fragment against every multi-word title in
+`albums/manifest.json` plus "Final Fantasy"/"FF1" literally. The later
+Analysis SHEET (S2+ in the same plan) clones this text under each of its
+own prompt's "What to look for ▸" fold — one source, never duplicated.
+`tools/build_help.mjs`'s dd-matching regex was `<dd>` only (no
+attributes); the guide's `data-topic="form"` etc. (so S2+ can clone one
+group's text) needed it widened to `<dd[^>]*>`, or every attributed dd's
+body silently vanished from docs/HELP.md.
+
 ## Shipping checklist (every user-facing feature, Josh's standing rule)
 
 1. **Help dialog**: add/update the entry in `help/help.html` (the

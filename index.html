@@ -362,6 +362,10 @@
 <div id="notesmenu" class="dropup">
   <button class="fitem" id="notebtn">+ New note</button>
   <button class="fitem" id="notesall"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>All notes</button>
+  <!-- Analysis guide (docs/plans/2026-10-05-analysis-sheet.md §0): one tap to
+       the generic reference text — what a full analysis covers, how to find
+       each part in Night Roll, how to write it down. Reuses openHelp(). -->
+  <button class="fitem" id="notesguide">Analysis guide</button>
   <!-- the strip above the footer, one tap from the notes it shows (Josh,
        2026-10-02: "we used to have a button … show the notes or hide the
        notes"; it moved to View ▾ → Panels and was hard to find) -->
@@ -894,6 +898,7 @@
       <button data-hs="annot" role="tab" aria-selected="false">Annotations</button>
       <button data-hs="files" role="tab" aria-selected="false">Files &amp; Sync</button>
       <button data-hs="ask" role="tab" aria-selected="false">AI</button>
+      <button data-hs="analysis" role="tab" aria-selected="false">Analysis</button>
     </div>
 
     <!-- The eight help sections live in help/help.html (a fragment, 110 KB — half

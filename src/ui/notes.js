@@ -611,6 +611,7 @@ export function initNotes2() {
   });
   document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
   document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
+  document.getElementById("notesguide").addEventListener("click", () => { closeDropUp(); openHelp("analysis"); });
   document.getElementById("notelistSync").addEventListener("click", () => {
     notelistSheet.classList.remove("on");
     document.getElementById("syncbtn").click();

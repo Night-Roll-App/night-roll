@@ -2807,6 +2807,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
     "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
+    "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -4236,7 +4237,7 @@ test("help body lives in help/help.html: one section per tab button, none left i
   const tabs = [...frame.matchAll(/<button data-hs="(\w+)"/g)].map(m => m[1]);
   const body = helpBody();
   const secs = [...body.matchAll(/<div class="hsec" data-hsec="(\w+)">/g)].map(m => m[1]);
-  assert.equal(tabs.length, 8);
+  assert.equal(tabs.length, 9); // docs/plans/2026-10-05-analysis-sheet.md §0 added "Analysis"
   assert.deepEqual([...secs].sort(), [...tabs].sort(), "every tab has its section and vice versa");
   assert.equal(secs.length, new Set(secs).size, "no section twice");
   assert.ok(!/class="hsec"/.test(html), "no help section left in index.html — they live in help/help.html");
@@ -4244,7 +4245,34 @@ test("help body lives in help/help.html: one section per tab button, none left i
   assert.match(frame, /Loading help…/, "a loading line until the fetch lands");
   // build_help.mjs closes each section on the four-space-indented </div>:
   // every section must end that way or docs/HELP.md silently loses a tab
-  assert.equal([...body.matchAll(/\n    <\/div>/g)].length, 8, "each section ends with its indented </div>");
+  assert.equal([...body.matchAll(/\n    <\/div>/g)].length, 9, "each section ends with its indented </div>");
+});
+
+test("Analysis guide (Learning net, docs/plans/2026-10-05-analysis-sheet.md §0): generic text, no real song or FF title named", () => {
+  const body = helpBody();
+  const m = body.match(/<div class="hsec" data-hsec="analysis">([\s\S]*?)\n    <\/div>/);
+  assert.ok(m, "the analysis .hsec exists");
+  const text = m[1].replace(/<[^>]+>/g, " ").toLowerCase();
+  // the franchise itself — this is the FF1 repo, the one real-song risk
+  // every builder on this feature was warned about
+  assert.ok(!text.includes("final fantasy") && !/\bff1\b/.test(text), "no FF title in the generic guide");
+  // every real song title in the repo's manifest — only multi-word titles
+  // are checked (a single common word like "theme" or "tension" is also a
+  // real song title somewhere in this 3000-song library, so single words
+  // would false-positive on ordinary music-theory prose; a literal, exact,
+  // multi-word title landing in generic reference text is the actual risk
+  // this net is for)
+  const manifest = JSON.parse(readFileSync(new URL("../albums/manifest.json", import.meta.url), "utf8"));
+  const hits = [];
+  for (const album of manifest) {
+    for (const song of album.songs || []) {
+      const t = song.title.toLowerCase();
+      if (!/\s/.test(t)) continue; // single word — too generic to check
+      const esc = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp("(^|[^a-z0-9])" + esc + "($|[^a-z0-9])").test(text)) hits.push(album.title + " — " + song.title); // whole words: "the ending" is not the title "The End"
+    }
+  }
+  assert.deepEqual(hits, [], "the guide names a real song: " + hits.join(", "));
 });
 
 test("openHelp: the sheet opens at once, help/help.html is fetched once and injected, a failed load shows the manual link and retries next time", async () => {

@@ -396,6 +396,19 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   tritone away (D♭7 for G7): they share the 3rd and 7th, so the
   resolution survives and the bass moves by half step. — `encountered`
   2026-09-22. Anchor: *(none yet)*. FF: *(find one)*.
+- **Roman numeral** — a chord named by its JOB in the key (I home, V
+  pulls home, IV leans away) rather than its letter name, so the same
+  job reads the same in any key. — `encountered` 2026-10-05 (the
+  Analysis guide, Help → Analysis). Anchor: *(none yet)*. FF: *(find
+  one)*.
+- **Cadence types (authentic / half / plagal / deceptive)** — where a
+  phrase comes to rest, and the kind of rest: authentic (V to I/i)
+  closes fully, half (ends on V) stops open, plagal (IV to I) is the
+  softer "amen" close, deceptive sets up V and lands elsewhere (often
+  vi). Distinct from **Phrygian cadence** and **Deceptive resolution**
+  above, which are specific colorings of two of these. — `encountered`
+  2026-10-05 (the Analysis guide). Anchor: *(none yet)*. FF: *(find
+  one)*.
 
 ## Form
 
@@ -409,6 +422,15 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   cycles; the seam placement is a composition decision. — arguably
   **`demonstrated`** 2026-08-18: Cool Bmaj's loop lands where the drums
   enter (2.4), built unprompted. FF: every capture in the corpus.
+- **Period (antecedent / consequent)** — two phrases paired as question
+  and answer: an antecedent ending open, a consequent ending closed. —
+  `encountered` 2026-10-05 (the Analysis guide, Help → Analysis).
+  Anchor: *(none yet)*. FF: *(find one)*.
+- **Sentence (phrase structure)** — a short idea stated, immediately
+  repeated, then pushed on into a new, often faster continuation; the
+  other common phrase-pairing besides the period. — `encountered`
+  2026-10-05 (the Analysis guide). Anchor: *(none yet)*. FF: *(find
+  one)*.
 
 ## Dotted-eighth cross-rhythm (4 : 3) — encountered 2026-08-24
 Four equal notes across three beats: each is a dotted eighth (3/4 beat),

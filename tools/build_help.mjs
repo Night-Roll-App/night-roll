@@ -41,7 +41,10 @@ export function buildHelp(html, helpHtml) {
     "\nEverything here is also in the app: File → Help.\n";
   for (const [, key, body] of secs) {
     out += `\n## ${tabs[key] || key}\n`;
-    for (const m of body.matchAll(/<h3>([\s\S]*?)<\/h3>|<dt>([\s\S]*?)<\/dt>|<dd>([\s\S]*?)<\/dd>/g)) {
+    // <dd[^>]*> (2026-10-05, the analysis guide's data-topic="form" etc. —
+    // docs/plans/2026-10-05-analysis-sheet.md §0): a bare <dd> requirement
+    // silently dropped every attributed dd's body from this output.
+    for (const m of body.matchAll(/<h3>([\s\S]*?)<\/h3>|<dt>([\s\S]*?)<\/dt>|<dd[^>]*>([\s\S]*?)<\/dd>/g)) {
       if (m[1] !== undefined) out += `\n### ${inline(m[1])}\n`;
       else if (m[2] !== undefined) out += `\n**${inline(m[2])}**\n`;
       else out += `${inline(m[3])}\n`;
