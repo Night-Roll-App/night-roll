@@ -4,6 +4,25 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Ask tool for the Drummer — BUILT 2026-10-05 on a worktree branch, awaiting Josh (from Josh, via Ask on ambush; docs/plans/2026-10-05-ask-drummer-tool.md)
+
+Josh wants to SPEAK drum requests to Ask and have Ask run the real Drummer
+("rerun the A part with slightly less energy settings than the maximum I
+used for the entire thing"; "redo the intro, probably to match pulse one
+and pulse two rather than following the triangle"). Built: the `drummer`
+Ask tool (`askDrummer`, src/ask/tools.js) — bars or a section label,
+energy (or busy/hard apart), fills, feel, parts, follow = chosen tracks /
+chords / off, optional seed — one `drGenerate` call, one undo, own
+editable songs only, refuses locked/capture songs; the generator gained
+`followTis` (a SET of followed tracks, merged by onset; absent = the old
+path byte for byte). Help (AI entry), HELP.md, NIGHT-ROLL.md ✦ Ask tools.
+Nothing touched on ambush. His two requests, as Ask would call them:
+`drummer({section: "A", energy: 4})` (one notch under the 5 he used) and
+`drummer({section: "Intro", follow: ["pulse1", "pulse2"]})`.
+Open: the schema is short on purpose (tool schemas ride with every Ask
+message); a later AI-parity pass may fold the tools into one
+registry-backed action tool — askDrummer is a plain function ready for it.
+
 ## Drummer fills + ghosts — BUILT 2026-10-05 on a worktree branch, awaiting Josh's ear (Terminal #139–141; docs/plans/2026-10-05-drum-generation-review.md §6)
 
 B1–B7 built as specified: golden tests freeze run/negative/flam (B1, its

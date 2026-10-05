@@ -2808,6 +2808,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
+    "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6136,6 +6137,148 @@ test("delete_bars: bad ranges error with nothing changed; refuses on a locked ca
   run(`askGeneral = true;`);
   assert.ok(!val(`askToolsNow().some(t => t.function.name === "delete_bars")`), "delete_bars hidden in the general chat");
   run(`askGeneral = false;`);
+});
+
+// drummer Ask tool (2026-10-05, open-items "Ask tool for the Drummer" — Josh
+// via Ask on ambush: "rerun the A part with slightly less energy", "redo the
+// intro … to match pulse one and pulse two rather than following the
+// triangle"). The tool validates, then makes ONE drGenerate call — the same
+// generator the Drummer sheet runs. Scratch song only (never his music):
+// 8 bars of 4/4, two pulses with offbeat onsets in bars 2–3 (one of them
+// shared), a triangle on every downbeat, and a kit with hand hits in and out
+// of the range.
+function installAskDrummerSong() {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/askdrummer-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // the local copy: editable
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [
+          {t: 0, d: 15360, p: 72, v: 80},     // sounds everywhere: no bar is a break
+          {t: 2160, d: 240, p: 74, v: 80},    // bar 2, the "and" of 1 — SHARED with pulse2
+          {t: 3120, d: 240, p: 76, v: 80},    // bar 2, beat 3.5
+          {t: 4560, d: 240, p: 77, v: 80}]},  // bar 3, beat 2.5
+        {name: "pulse2", notes: [
+          {t: 0, d: 15360, p: 67, v: 80},
+          {t: 2160, d: 480, p: 69, v: 80},    // the shared tick, longer than pulse1's
+          {t: 5040, d: 240, p: 71, v: 80}]},  // bar 3, beat 3.5
+        {name: "triangle", notes: [0, 1, 2, 3, 4, 5, 6, 7].map(b => ({t: b * 1920, d: 1920, p: 45, v: 90}))}, // downbeats only
+        {name: "drums", notes: [
+          {t: 0, d: 60, p: 36, v: 77},        // bar 1 — out of range, kept
+          {t: 2400, d: 60, p: 51, v: 77},     // bar 2 — in range, replaced
+          {t: 5760, d: 60, p: 49, v: 77}]},   // bar 4 — out of range, kept
+      ]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null; drTakes = []; drActive = -1;
+    rollnotes = deriveNoteTypes([{b1: 1, q1: 1, text: "chord: Am", added: true}]).map(resolveNote);
+    declaredTs = null; keyRegions = []; previewSf = null;
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const askDrSnap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v, n.d]))`);
+const askDrKit = () => val(`song.tracks[3].notes.filter(n => !n.gone).map(n => ({t: n.t, p: n.p, v: n.v}))`);
+
+test("drummer: runs the generator on bars 2–3 — hits land only there, out-of-range drums, every other track and the annotations untouched; energy E is the legacy call; ONE undo restores every track exactly", () => {
+  installAskDrummerSong();
+  const before = askDrSnap();
+  const annoBefore = val(`rollnotes.map(n => [n.start, n.text])`);
+  const r = val(`askDrummer({from_bar: 2, to_bar: 3, energy: 2, seed: 777})`);
+  assert.match(r.note, /^Drummer: \d+ hits in bars 2–3 · busy 2 · hard 2 · fills 3 · following triangle · seed 777 \(one undo/);
+  const kit = askDrKit();
+  const inRange = kit.filter(h => h.t >= 1920 && h.t < 5760), outRange = kit.filter(h => h.t < 1920 || h.t >= 5760);
+  assert.ok(inRange.length > 4, "hits landed in the range");
+  assert.ok(!inRange.some(h => h.p === 51), "the hand hit inside the range was replaced");
+  assert.deepEqual(outRange, [{t: 0, p: 36, v: 77}, {t: 5760, p: 49, v: 77}], "out-of-range drums untouched");
+  const after = askDrSnap();
+  assert.deepEqual(after.slice(0, 3), before.slice(0, 3), "no non-drum track changed");
+  assert.deepEqual(val(`rollnotes.map(n => [n.start, n.text])`), annoBefore, "annotations untouched");
+  assert.equal(val(`editUndo.length`), 1, "ONE undo step");
+  assert.equal(val(`drTakes.length`), 1, "the take chip exists for the sheet");
+  assert.equal(val(`drTakes[0].seed`), 777);
+  // energy 2 is the generator's legacy positional call, bit for bit
+  run(`editUndoPop();`);
+  assert.deepEqual(askDrSnap(), before, "undo restored every track exactly");
+  run(`drGenerate(777, 2, 2, 3);`);
+  assert.deepEqual(askDrKit(), kit, "energy E == drGenerate(seed, E, from, to)");
+  run(`editUndoPop(); drTakes = [];`);
+  assert.deepEqual(askDrSnap(), before);
+});
+
+test("drummer: follow picks the tracks the kick listens to — pulse1+pulse2 kick the pulses' offbeat onsets (one kick per shared tick); the triangle default has none; followTis of one track equals followTi", () => {
+  installAskDrummerSong();
+  const PULSE_OFFBEATS = [2160, 3120, 4560, 5040];
+  const offbeatKicks = kit => kit.filter(h => h.p === 36 && h.t >= 1920 && h.t < 5760 && h.t % 1920 !== 0).map(h => h.t);
+  let pulseKicks = 0, sharedKicks = 0;
+  for (let seed = 1; seed <= 24; seed++) {
+    const r = val(`askDrummer({from_bar: 2, to_bar: 3, fills: 0, busy: 5, seed: ${seed}, follow: ["pulse1", "pulse2"]})`);
+    assert.match(r.note, /following pulse1\+pulse2/);
+    const kit = askDrKit(), ks = offbeatKicks(kit);
+    assert.ok(ks.every(t => PULSE_OFFBEATS.includes(t)), "seed " + seed + ": every extra kick sits on a pulse onset (" + ks.join(",") + ")");
+    assert.equal(kit.filter(h => h.t === 2160 && h.p === 36).length <= 1, true, "seed " + seed + ": the shared tick is one kick, not two");
+    pulseKicks += ks.length;
+    sharedKicks += ks.filter(t => t === 2160).length;
+    const tri = offbeatKicks((val(`askDrummer({from_bar: 2, to_bar: 3, fills: 0, busy: 5, seed: ${seed}})`), askDrKit()));
+    assert.deepEqual(tri, [], "seed " + seed + ": following the triangle (downbeats only) adds no offbeat kick");
+  }
+  assert.ok(pulseKicks > 0 && sharedKicks > 0, "the pulses' onsets got kicks across 24 seeds (" + pulseKicks + "/" + sharedKicks + ")");
+  // the single-track set is the existing followTi path, bit for bit
+  const one = val(`(() => { drGenerate(9, {busy: 4, hard: 3, fillAmt: 0, follow: "bass", followTis: [0], fromBar: 2, toBar: 3}); return song.tracks[3].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v]); })()`);
+  const legacy = val(`(() => { drGenerate(9, {busy: 4, hard: 3, fillAmt: 0, follow: "bass", followTi: 0, fromBar: 2, toBar: 3}); return song.tracks[3].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v]); })()`);
+  assert.deepEqual(one, legacy);
+  run(`editUndo = []; drTakes = [];`);
+});
+
+test("drummer: a section label resolves to its bars (a point section is one bar); an ambiguous or unknown label, a bad knob, an unknown follow track, a drum follow track and a meter change all error with nothing changed", () => {
+  installAskDrummerSong();
+  run(`rollnotes = deriveNoteTypes([
+      {b1: 1, q1: 1, b2: 2, q2: 4, text: "section: Intro", added: true},
+      {b1: 3, q1: 1, b2: 4, q2: 4, text: "section: A", added: true},
+      {b1: 5, q1: 1, b2: 6, q2: 4, text: "section: A", added: true},
+      {b1: 7, q1: 1, text: "section: B", added: true},
+    ]).map(resolveNote); finalizeNotes();`);
+  assert.deepEqual(val(`askDrummerRange({section: "intro"})`), {fromBar: 1, toBar: 2});
+  assert.deepEqual(val(`askDrummerRange({section: "B"})`), {fromBar: 7, toBar: 7});
+  assert.throws(() => run(`askDrummerRange({section: "A"})`), /"A" labels 2 spans \(bars 3–4, bars 5–6\) — say which bars/);
+  assert.throws(() => run(`askDrummerRange({section: "Z"})`), /no section labeled "Z" — this song's sections: .*Intro/);
+  const r = val(`askDrummer({section: "Intro", fills: 0, seed: 3})`);
+  assert.match(r.note, /in bars 1–2 /);
+  run(`editUndoPop(); drTakes = [];`);
+  const s0 = askDrSnap();
+  assert.throws(() => run(`askDrummer({})`), /say the bars/);
+  assert.throws(() => run(`askDrummer({from_bar: 3, to_bar: 2})`), /to_bar must be ≥ from_bar/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 999})`), /don't all exist/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, energy: 9})`), /energy must be 1–5/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, fills: 7})`), /fills must be 0–5/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, feel: "swing"})`), /feel must be normal, half or double/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, parts: ["toms"]})`), /parts: toms/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, follow: ["bogus"]})`), /no track named "bogus"/);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, follow: ["drums"]})`), /can't follow themselves/);
+  run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 3, q1: 1, text: "timesig: 3/4", added: true}])[0])); finalizeNotes();`);
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, seed: 1})`), /cross a meter change/);
+  assert.deepEqual(askDrSnap(), s0, "nothing changed after any rejected call");
+  assert.equal(val(`editUndo.length`), 0, "no undo entry from a rejected call");
+  assert.equal(val(`drTakes.length`), 0, "no take chip from a rejected call");
+  run(`rollnotes = []; declaredTs = null; finalizeNotes();`);
+});
+
+test("drummer: refuses on a locked capture with nothing changed; hidden from the general (no-song) chat; listed as a song-only tool", () => {
+  installAskDrummerSong();
+  const s0 = askDrSnap();
+  run(`
+    songKey = "albums/nes/mega-man-2/drummer-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, seed: 1})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.deepEqual(askDrSnap(), s0, "nothing changed on a locked song");
+  assert.equal(val(`editUndo.length`), 0);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+  assert.ok(val(`ASK_TOOLS.some(t => t.function.name === "drummer")`), "registered");
+  run(`askGeneral = true;`);
+  assert.ok(!val(`askToolsNow().some(t => t.function.name === "drummer")`), "drummer hidden in the general chat");
+  run(`askGeneral = false;`);
+  assert.ok(val(`JSON.stringify(ASK_TOOLS.find(t => t.function.name === "drummer")).length`) < 1600, "the schema stays short — it rides along with every Ask message");
 });
 
 test("Ask: backend selection from cfg; browser backend forces the 4k budget tier", () => {

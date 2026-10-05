@@ -146,7 +146,7 @@ export function askLogMarkdown(msgs) { return aiLogMarkdown(msgs, {user: "Josh",
 // turn's context carries, since the leak lives in the session, not the
 // turn. A different mode is a different session, period.
 export function askSessionName() { return (S.askGeneral ? "general" : String(S.songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
-export const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"];
+export const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars", "drummer"];
 // no open song in the general chat (these are all about THE open song, unlike read_song/read_notes, which name another one)
 export function askToolsNow() { return S.askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 export function askInboxSeenKey() { return askHost().keys.inboxSeen; }

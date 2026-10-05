@@ -4626,6 +4626,60 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     bad ranges error with nothing changed; refuses on a locked
     capture; hidden from the general (no-song) chat". Drift keyword
     "Delete bars" (FEATURES).
+- **drummer (2026-10-05, open-items "Ask tool for the Drummer") — Josh
+  via Ask on ambush: "rerun the A part with slightly less energy
+  settings than the maximum I used for the entire thing"; "redo the
+  intro, probably to match pulse one and pulse two rather than
+  following the triangle".** Plan: docs/plans/2026-10-05-ask-drummer-tool.md.
+  `drummer({from_bar, to_bar | section, energy, busy, hard, fills,
+  feel, parts, follow, seed})` (`askDrummer`, src/ask/tools.js) runs
+  the SAME `drGenerate` the Drummer sheet runs — Ask never hand-writes
+  hits. `section` is the exact text of ONE of the user's section
+  labels, resolved to its bar span the way the sheet prefills it (a
+  point section is one bar; a label on two spans, or none, errors
+  naming them — never a guess). `energy` is the generator's legacy
+  mapping (busy = hard = energy, bit-identical to the positional call);
+  `busy`/`hard` override it apart; `fills` 0–5, `feel`, `parts` as the
+  sheet's knobs; `follow` = track names (`["pulse1","pulse2"]`, matched
+  like write_notes' track — never the selected track), `["chords"]` or
+  `["off"]`, default the detected bass; `seed` optional (omitted =
+  random, the reply names it so "that one again, quieter" replays).
+  Everything is validated BEFORE the one call — including the meter-
+  change refusal drGenerate would otherwise report through setInfo
+  with a 0 return — so a rejected call changes nothing and pushes no
+  undo. drGenerate makes the kit track when none (folded into its
+  undo), erases only kit notes in the range, pushes exactly one group
+  undo, saves and redraws; non-drum tracks and annotations are only
+  read. The take is pushed onto `S.drTakes` (from/to as the sheet's
+  own exclusive-end fields), so the Drummer sheet's chips show and
+  replay it. Gate = `askWritableGate()`; in `ASK_SONG_ONLY_TOOLS`;
+  schema kept short on purpose (tool schemas ride with every Ask
+  message — a test caps it; the logic is a plain function so a later
+  registry-backed action tool can call it). Reply: `"Drummer: 61 hits
+  in bars 5–12 · busy 2 · hard 2 · fills 3 · following pulse1+pulse2 ·
+  seed 123 (one undo restores what was there)"`.
+  - **Generator: `followTis` (src/gen/drummer.js).** `follow` used to
+    be one track (`followTi`, else `drBassTrack()`). `followTis: [ti,
+    …]` is a SET: one entry is the `followTi` path exactly; two or more
+    merge the tracks' notes into one follow line — one candidate per
+    onset tick (the longest note there: both pulses striking together
+    is one kick, not two), in time order — and every followed track
+    counts as "the bass" for break detection (`followSet`). Absent (the
+    sheet, legacy calls), the code path is byte-identical to before: the
+    golden tests and the hard/legacy bit-identity test pin it. The
+    sheet's take-chip replay passes `followTis` through and shows the
+    first followed track in the picker.
+  - Tests: "drummer: runs the generator on bars 2–3 — hits land only
+    there, out-of-range drums, every other track and the annotations
+    untouched; energy E is the legacy call; ONE undo restores every
+    track exactly", "drummer: follow picks the tracks the kick listens
+    to — pulse1+pulse2 kick the pulses' offbeat onsets (one kick per
+    shared tick); the triangle default has none; followTis of one track
+    equals followTi", "drummer: a section label resolves to its bars …
+    all error with nothing changed", "drummer: refuses on a locked
+    capture with nothing changed; hidden from the general (no-song)
+    chat; listed as a song-only tool". Help: AI entry; drift keyword
+    "run the Drummer" (FEATURES). Ask system prompt: thirteen tools.
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

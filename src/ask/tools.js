@@ -52,6 +52,8 @@ import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { saveDraft } from "../model/versions.js";
 import { deleteTime } from "../model/selection.js";
+import { drGenerate } from "../gen/drummer.js";
+import { drBassTrack } from "../gen/drummer.js";
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -155,6 +157,21 @@ export const ASK_TOOLS = [
       from_bar: {type: "integer", minimum: 1, description: "first bar to delete"},
       count: {type: "integer", minimum: 1, description: "how many bars to delete"}},
       required: ["from_bar", "count"]}}},
+  // drummer (2026-10-05, open-items "Ask tool for the Drummer"): schema kept
+  // SHORT on purpose — tool schemas ride along with every Ask message. The
+  // logic is askDrummer(a), a plain function, so a later registry-backed
+  // action tool can call it without this entry.
+  {type: "function", function: {name: "drummer", description: "Run the app's Drummer (its real drum generator) over a bar range or one of the user's section labels: replaces that range's drum hits as ONE undo step. Use it for ANY drum request, never write_notes. Only when the user explicitly asks; own editable songs only (refuses on a locked/capture song).",
+    parameters: {type: "object", properties: {
+      from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1, description: "inclusive"},
+      section: {type: "string", description: "instead of bars: the exact text of one section label"},
+      energy: {type: "integer", minimum: 1, maximum: 5, description: "busy and hard together (default 3)"},
+      busy: {type: "integer", minimum: 1, maximum: 5, description: "density"}, hard: {type: "integer", minimum: 1, maximum: 5, description: "loudness"},
+      fills: {type: "integer", minimum: 0, maximum: 5, description: "0 = none (default 3)"},
+      feel: {type: "string", enum: ["normal", "half", "double"]},
+      parts: {type: "array", items: {type: "string", enum: ["kick", "snare", "hats", "fills"]}, description: "reroll only these (default all)"},
+      follow: {type: "array", items: {type: "string"}, description: "track names the kick listens to, e.g. [\"pulse1\",\"pulse2\"], or [\"chords\"] or [\"off\"]; default the bass"},
+      seed: {type: "integer", minimum: 0, description: "same seed = same take (the reply names it)"}}}}},
 ];
 // edit_annotation/delete_annotation (2026-10-01, open-items): targeting for
 // an EXISTING annotation, robust the way the issue asked — by id (this
@@ -496,6 +513,7 @@ export async function askRunTool(name, a) {
   if (name === "copy_bars") return askCopyBars(a || {});
   if (name === "insert_bars") return askInsertBars(a || {});
   if (name === "delete_bars") return askDeleteBars(a || {});
+  if (name === "drummer") return askDrummer(a || {});
   throw new Error("unknown tool " + name);
 }
 export function askWriteNotes(a) {
@@ -589,4 +607,88 @@ export function askDeleteBars(a) { // {from_bar, count}: removes bars — same g
   const where = count > 1 ? ("bars " + fromBar + "–" + toBar) : ("bar " + fromBar);
   return {ok: true, note: where + " removed — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " earlier" +
     (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")};
+}
+// drummer (2026-10-05, open-items "Ask tool for the Drummer") — Josh via Ask
+// on ambush: "rerun the A part with slightly less energy settings", "redo the
+// intro, probably to match pulse one and pulse two rather than following the
+// triangle". Ask speaks the request; the app runs the SAME drGenerate the
+// Drummer sheet runs — never hand-written hits. Everything is validated before
+// the one call: drGenerate itself makes the kit track when there is none
+// (folded into its undo), erases only kit notes inside the range, and pushes
+// exactly one group undo. Plan: docs/plans/2026-10-05-ask-drummer-tool.md.
+export function askDrummerRange(a) { // → {fromBar, toBar}: whole bars, or ONE declared section label's span
+  const bt = barTicks(), nBars = askBarsCount();
+  if (a.section !== undefined && a.section !== null && String(a.section).trim()) {
+    const want = String(a.section).trim().toLowerCase();
+    const secs = visibleNotes().filter(n => n.section && String(n.text || "").trim().toLowerCase() === want); // visibleNotes: no Learning-hidden ✦ AI section
+    const span = n => { // the Drummer sheet's own prefill convention: a point section is one bar, a ranged one ends where its last beat ends
+      const from = Math.floor(n.start / bt) + 1, e = n.end || n.start + bt;
+      return {fromBar: from, toBar: Math.max(from, Math.ceil(e / bt))};
+    };
+    if (secs.length === 1) return span(secs[0]);
+    if (secs.length > 1) throw new Error("\"" + a.section + "\" labels " + secs.length + " spans (" + secs.map(n => { const r = span(n); return "bars " + r.fromBar + "–" + r.toBar; }).join(", ") + ") — say which bars");
+    const labels = [...new Set(visibleNotes().filter(n => n.section).map(n => n.text))];
+    throw new Error("no section labeled \"" + a.section + "\"" + (labels.length ? " — this song's sections: " + labels.join(", ") : " — this song has no section labels; say the bars"));
+  }
+  const fromBar = Math.round(+a.from_bar || 0), toBar = Math.round(+(a.to_bar !== undefined && a.to_bar !== null ? a.to_bar : a.from_bar) || 0);
+  if (!(fromBar >= 1)) throw new Error("say the bars (from_bar, to_bar) or a section label");
+  if (!(toBar >= fromBar)) throw new Error("to_bar must be ≥ from_bar");
+  if (toBar > nBars) throw new Error("bars " + fromBar + "–" + toBar + " don't all exist — this song has " + nBars + " bar" + (nBars === 1 ? "" : "s"));
+  return {fromBar, toBar};
+}
+export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, hard, fills, feel, parts, follow, seed}
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const {fromBar, toBar} = askDrummerRange(a);
+  const knob = (v, lo, hi, name, def) => {
+    if (v === undefined || v === null || v === "") return def;
+    const n = Math.round(+v);
+    if (!(n >= lo && n <= hi)) throw new Error(name + " must be " + lo + "–" + hi);
+    return n;
+  };
+  const energy = knob(a.energy, 1, 5, "energy", 3); // the generator's own legacy mapping: energy → busy = hard
+  const busy = knob(a.busy, 1, 5, "busy", energy), hard = knob(a.hard, 1, 5, "hard", energy);
+  const fillAmt = knob(a.fills, 0, 5, "fills", 3);
+  const feel = a.feel === undefined || a.feel === null || a.feel === "" ? "normal" : String(a.feel).trim().toLowerCase();
+  if (!["normal", "half", "double"].includes(feel)) throw new Error("feel must be normal, half or double");
+  let parts = "all";
+  if (Array.isArray(a.parts) && a.parts.length) {
+    parts = [...new Set(a.parts.map(x => String(x).trim().toLowerCase()))];
+    const bad = parts.filter(x => !["kick", "snare", "hats", "fills"].includes(x));
+    if (bad.length) throw new Error("parts: " + bad.join(", ") + " — the parts are kick, snare, hats, fills");
+  }
+  const trackName = ti => S.song.tracks[ti].name || "track " + (ti + 1);
+  let follow = "bass", followTis, followTxt;
+  let f = a.follow;
+  if (typeof f === "string") f = f.trim() ? [f] : [];
+  if (Array.isArray(f) && f.length) {
+    const lower = f.map(x => String(x).trim().toLowerCase());
+    if (lower.length === 1 && (lower[0] === "chords" || lower[0] === "off")) {
+      follow = lower[0];
+      followTxt = follow === "off" ? "following nothing" : "following chords";
+    } else {
+      followTis = [...new Set(f.map(name => askFindTrackIndex(name)))]; // an unknown name errors naming the song's tracks, nothing changed
+      const drum = followTis.find(ti => trackIsDrums(ti));
+      if (drum !== undefined) throw new Error("\"" + trackName(drum) + "\" is a drum/noise track — the drums can't follow themselves");
+      followTxt = "following " + followTis.map(trackName).join("+");
+    }
+  } else {
+    const bti = drBassTrack();
+    followTxt = bti >= 0 ? "following " + trackName(bti) : "following nothing";
+  }
+  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) // drGenerate's own refusal, raised BEFORE it erases anything
+    throw new Error("bars " + fromBar + "–" + toBar + " cross a meter change — generate each meter's bars separately");
+  const seed = a.seed !== undefined && a.seed !== null && a.seed !== "" ? (Math.round(+a.seed) >>> 0) : (Math.random() * 0xFFFFFFFF) >>> 0; // the ONLY nondeterminism, same as the sheet's Generate
+  const opts = {busy, hard, fillAmt, feel, parts, follow, followTis, fromBar, toBar};
+  const k = drGenerate(seed, opts);
+  S.drTakes.push({seed, ...opts, from: fromBar, to: toBar + 1, q: [1, 1]}); // the sheet's take chips show and replay it (to = exclusive bar, as the sheet's own fields)
+  if (S.drTakes.length > 8) S.drTakes.shift();
+  S.drActive = S.drTakes.length - 1;
+  const where = fromBar === toBar ? "bar " + fromBar : "bars " + fromBar + "–" + toBar;
+  const recipe = "busy " + busy + " · hard " + hard + " · fills " + fillAmt + (feel !== "normal" ? " · " + feel : "") +
+    (parts !== "all" ? " · " + parts.join("+") + " only" : "") + " · " + followTxt + " · seed " + seed;
+  if (!k) return {ok: true, note: "Drummer: no hits in " + where + " — every bar there is a break (only the followed track plays, or a section labeled break) · " + recipe + " (one undo restores what was there)"};
+  return {ok: true, note: "Drummer: " + k + " hit" + (k === 1 ? "" : "s") + " in " + where + " · " + recipe + " (one undo restores what was there)"};
 }
