@@ -234,6 +234,14 @@ Q10. (ASK before deploying the Tetris repair, 2026-10-04) Game Boy › Tetris:
     local notes or edits) would attach to the new song. Did you write
     anything on it locally? If yes, say so and I move it with the file.
 
+Q11. (AI parity, docs/ai-parity.md §6, 2026-10-05) Which tier for Ask's
+    feature access? Minimal ≈470 tokens/round, Core ≈590, Full ≈780 (today's
+    menu is ≈2,950). Advisor recommends Core. Default if no answer: Core.
+Q12. A no-model fast path for "play"/"stop" (instant, no AI round), or keep
+    every request going through the model? Default: no fast path for now.
+Q13. "Open Graveyard and play from bar 9": after switching songs, does the
+    follow-on ("play from bar 9") send itself, or wait for your tap?
+    Default: sends itself.
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
 wash" using the hardware NOISE generator as a texture, not a drum — but
