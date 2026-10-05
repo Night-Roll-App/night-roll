@@ -13028,7 +13028,7 @@ test("playhead strip tap while rolling plays from exactly there — inside the c
   run(`stop();`);
 });
 
-test("⏮ goes to the ruler selection's start — armed or parked — and scrolls the view there, not to bar 1 (Josh, 2026-10-04)", async () => {
+test("⏮ goes to an armed ruler selection's start and scrolls the view there (Josh, 2026-10-04); a switched-off span is ignored — bar 1 (Josh, 2026-10-05, #470)", async () => {
   const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
        songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 64; keyRegions = []; playCursor = 0; viewMode = "roll"; view.x = 0;
@@ -13037,7 +13037,7 @@ test("⏮ goes to the ruler selection's start — armed or parked — and scroll
   assert.equal(val(`playCursor`), 1920 * 40, "armed: the cycle's start");
   assert.ok(val(`view.x`) > 0, "the view follows, it doesn't jump to bar 1");
   run(`playCursor = 1920 * 50; view.x = 0; rangeSel.off = true; document.getElementById("rwbtn").dispatchEvent(new Event("click"));`);
-  assert.equal(val(`playCursor`), 1920 * 40, "parked: still the selection's start");
+  assert.deepEqual([val(`playCursor`), val(`view.x`)], [0, 0], "switched off: bar 1, as if there were no span (#470: was bars 25–27, cursor 26)");
   run(`rangeSel = null; document.getElementById("rwbtn").dispatchEvent(new Event("click"));`);
   assert.deepEqual([val(`playCursor`), val(`view.x`)], [0, 0], "no selection: bar 1");
 });

@@ -1749,10 +1749,11 @@ export function initChrome5() {
   });
   document.getElementById("rwbtn").addEventListener("click", () => {
     const startX = S.viewMode === "score" ? -SCORE_INTRO_W : 0;
-    // a ruler selection — armed or parked — owns ⏮: back to ITS start, and the
-    // view goes with it (Josh, 2026-10-04: it used to scroll to bar 1, so it
-    // looked like the song start)
-    const home = S.rangeSel && S.rangeSel.b > S.rangeSel.a ? S.rangeSel.a : 0;
+    // an ARMED ruler selection owns ⏮: back to ITS start, and the view goes
+    // with it (Josh, 2026-10-04: it used to scroll to bar 1, so it looked like
+    // the song start). A span switched off is out of the way — ⏮ is bar 1
+    // again (Josh, 2026-10-05, #470)
+    const home = S.rangeSel && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a ? S.rangeSel.a : 0;
     const reveal = () => {
       if (!home) { S.view.x = startX; return; }
       const sx = S.viewMode === "score" ? scoreTickToX(home) : S.RULER_W + home * pxPerTick() - S.view.x;
