@@ -2780,7 +2780,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3836,9 +3836,10 @@ test("Drummer v2: hard bit-identity, follow modes, feel tables", () => {
   // follow chords: deterministic kick on the declared off-downbeat chord start (1.3 = 960)
   const ch = gen(`{busy: 1, hard: 3, fillAmt: 0, follow: "chords", fromBar: 1, toBar: 2}`);
   assert.ok(ch.some(h => h.p === 36 && h.t === 960));
-  // half feel: exactly one snare per bar, on beat 3 in 4/4
+  // half feel: exactly one BACKBEAT snare per bar, on beat 3 in 4/4 (busy 3's
+  // soft ghosts are snares too — the ghost test owns their rules)
   const half = gen(`{busy: 3, hard: 3, fillAmt: 0, follow: "off", feel: "half", fromBar: 1, toBar: 2}`);
-  const halfSnares = half.filter(h => h.p === 38);
+  const halfSnares = half.filter(h => h.p === 38 && h.v >= 60);
   assert.equal(halfSnares.length, 2);
   assert.ok(halfSnares.every(h => h.t % 1920 === 960));
   // double feel: kick on every beat, snare on every offbeat 8th
@@ -4047,6 +4048,201 @@ test("Drummer golden: run / negative / flam are byte-identical and draw no rng",
     assert.ok(!take.some(h => h.p !== 38), "seed " + seed + ": the run owns its window (no hats, no kicks)");
   }
   assert.ok(seen >= 1, "the run fires at fills 3 within 80 seeds");
+  run(`songKey = null; rollnotes = [];`);
+});
+
+// a 4/4 scratch song for the fill tests: 16 bars, melody + bass, no labels
+// unless a test adds them (albums/compositions/ is never touched — songKey is
+// a name under it only so editableSong() says yes)
+function drScratch(bars, sections) {
+  run(`
+    songKey = "albums/compositions/nightroll/dr-scratch.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [{name: "pulse1", notes: [{t: 0, d: ${bars} * 1920, p: 72, v: 80}]},
+               {name: "triangle", notes: [{t: 0, d: ${bars} * 1920, p: 45, v: 90}]}]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null;
+    rollnotes = deriveNoteTypes(${JSON.stringify(sections || [])}).map(resolveNote);
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const drTake = (seed, opts) => val(`(() => {
+  drGenerate(${seed}, ${opts});
+  const di = song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+  return song.tracks[di].notes.filter(n => !n.gone).map(n => ({t: n.t, p: n.p, v: n.v}));
+})()`);
+const drBar = (take, bar) => take.filter(h => h.t >= (bar - 1) * 1920 && h.t < bar * 1920).map(h => (h.t - (bar - 1) * 1920) + ":" + h.p + ":" + h.v);
+
+test("Drummer fills: 16th grid, one direction, stabs follow the band (B2/B3)", () => {
+  installSong();
+  run(`song.ppq = 480;`);
+  const names = val(`DR_FILLS.map(f => f.name)`);
+  assert.ok(!names.includes("tomdrop") && !names.includes("buildup"), "tomdrop and buildup are gone");
+  for (const n of ["run", "negative", "flam", "tomdescent", "threes", "accel", "stabs", "tomrun", "kitfall", "doublekick"]) assert.ok(names.includes(n), n);
+  const hitsOf = (list, name, rngExpr, ctx) => val(`${list}.find(f => f.name === "${name}").hits(${rngExpr}, 480, 4, ${JSON.stringify(ctx || {bs: 0, onsets: []})})`);
+  // grid: every hit of every non-flam fill sits on a 16th, inside its own window
+  const all = [...names.map(n => ["DR_FILLS", n]), ["DR_SMALL_FILLS", "pickup"], ["DR_SMALL_FILLS", "tomlick"]];
+  for (const [list, name] of all) {
+    if (name === "flam") continue;
+    const f = val(`(() => { const f = ${list}.find(f => f.name === "${name}"); return {len: f.len}; })()`);
+    const w = (4 - Math.min(f.len, 4)) * 480;
+    for (const r of ["drumRng(1, 1)", "drumRng(2, 2)"]) {
+      for (const h of hitsOf(list, name, r)) {
+        assert.equal(h.off % 120, 0, `${name}: off ${h.off} is on the 16th grid`);
+        assert.ok(h.off >= w && h.off < 1920, `${name}: off ${h.off} inside its window from ${w}`);
+      }
+    }
+  }
+  // shape: run, tomdescent and accel only ever get louder (the snare/tom line —
+  // tomdescent's kick under the floor tom is a second voice, not a dip)
+  const mono = hits => hits.filter(h => h.p !== 36).sort((a, b) => a.off - b.off).every((h, i, a) => !i || h.v >= a[i - 1].v);
+  for (const name of ["run", "tomdescent", "accel"]) assert.ok(mono(hitsOf("DR_FILLS", name, "drumRng(3, 3)")), name + " never gets softer");
+  // tomdescent: snare snare, then two per tom down the kit, kick under the last — one rng draw picks the floor
+  const td = hitsOf("DR_FILLS", "tomdescent", "() => 0.9");
+  assert.deepEqual(td.map(h => h.p), [38, 38, 48, 48, 47, 47, 43, 43, 36]);
+  assert.deepEqual(td.map(h => h.off), [960, 1080, 1200, 1320, 1440, 1560, 1680, 1800, 1800]);
+  assert.deepEqual(hitsOf("DR_FILLS", "tomdescent", "() => 0.1").map(h => h.p), [38, 38, 48, 48, 47, 47, 41, 41, 36]);
+  // threes: 3+3+2, accents on each group's snare, the last one loudest
+  const th = hitsOf("DR_FILLS", "threes", "() => { throw new Error('threes drew'); }");
+  assert.deepEqual(th.map(h => h.p), [38, 48, 36, 38, 45, 36, 38, 38]);
+  assert.deepEqual(th.map(h => h.v), [112, 86, 86, 112, 86, 86, 112, 118]);
+  // accel: quarters, 8ths, 16ths; kicks only under the 8th-grid snares (none on the 1 — the skeleton owns it)
+  const ac = hitsOf("DR_FILLS", "accel", "() => { throw new Error('accel drew'); }");
+  assert.deepEqual(ac.filter(h => h.p === 38).map(h => h.off), [0, 480, 960, 1200, 1440, 1560, 1680, 1800]);
+  assert.deepEqual(ac.filter(h => h.p === 36).map(h => h.off), [480, 960, 1200, 1440, 1680]);
+  assert.equal(ac[ac.length - 1].v, 120);
+  // stabs: kick+snare together on the band's on-grid onsets in the window; 2-6 of them, else the default pair
+  const pairs = hits => { const by = {}; for (const h of hits) (by[h.off] = by[h.off] || []).push(h.p); return Object.entries(by).map(([o, ps]) => o + ":" + ps.sort().join("+")); };
+  assert.deepEqual(pairs(hitsOf("DR_FILLS", "stabs", "() => 0", {bs: 0, onsets: [1200, 1443, 1680]})), ["1200:36+38", "1440:36+38", "1680:36+38"], "three onsets (one 3 ticks late) → three stabs");
+  assert.deepEqual(pairs(hitsOf("DR_FILLS", "stabs", "() => 0", {bs: 0, onsets: []})), ["1200:36+38", "1440:36+38"], "no onsets → and-of-3 and 4");
+  assert.deepEqual(pairs(hitsOf("DR_FILLS", "stabs", "() => 0", {bs: 0, onsets: [1250, 1500]})), ["1200:36+38", "1440:36+38"], "off-grid onsets are not hits");
+  assert.deepEqual(pairs(hitsOf("DR_FILLS", "stabs", "() => 0", {bs: 0, onsets: [960, 1080, 1200, 1320, 1440, 1560, 1680]})), ["1200:36+38", "1440:36+38"], "seven onsets is a wall, not a stab");
+  // small fills
+  assert.deepEqual(hitsOf("DR_SMALL_FILLS", "pickup", "() => 0").map(h => h.off + ":" + h.v), ["1440:100", "1800:112"]);
+  assert.deepEqual(hitsOf("DR_SMALL_FILLS", "tomlick", "() => 0").map(h => h.p + "@" + h.off), ["48@1440", "48@1560", "45@1680", "45@1800"]);
+  assert.ok(val(`DR_SMALL_FILLS[0] === DR_FILLS.find(f => f.name === "flam") && DR_SMALL_FILLS[1] === DR_FILLS.find(f => f.name === "negative")`), "flam/negative are the same objects, not copies");
+});
+
+test("Drummer drPickFill: weights at the top of the knob, even below, never the same fill twice running (B4)", () => {
+  installSong();
+  const w = val(`Object.fromEntries(DR_FILLS.map(f => [f.name, f.weight]))`);
+  assert.deepEqual(w, {run: 2, tomdescent: 2, threes: 2, accel: 2, stabs: 1, negative: 1, flam: 1, tomrun: 2, kitfall: 2, doublekick: 1});
+  for (const fills of [3, 5]) {
+    const names = val(`(() => {
+      const pool = DR_FILLS.filter(f => ${fills} >= f.minE && ${fills} <= f.maxE), out = [];
+      for (let seed = 1; seed <= 50; seed++) {
+        let prev = null;
+        for (let b = 1; b <= 3; b++) { const f = drPickFill(drumRng(seed, b * 7919 + 13), ${fills}, pool, prev); out.push(f.name); prev = f.name; }
+        out.push("|");
+      }
+      return out;
+    })()`);
+    for (let i = 1; i < names.length; i++) if (names[i] !== "|" && names[i - 1] !== "|") assert.notEqual(names[i], names[i - 1], "fills " + fills + ": two in a row");
+    if (fills === 3) assert.ok(names.every(n => n === "|" || ["run", "tomdescent", "threes", "stabs", "flam"].includes(n)), "fills 3 draws only its band");
+  }
+  assert.equal(val(`drPickFill(drumRng(1, 1), 5, [], null)`), null);
+});
+
+test("Drummer phrase fills: 8th bar at fills 3, 4th bar at fills 4-5, none at fills 1, never a crash (B5)", () => {
+  installSong();
+  drScratch(16);
+  const bars = [...Array(16)].map((_, i) => i + 1);
+  const seen = {1: new Set(), 3: new Set(), 4: new Set()};
+  for (let seed = 1; seed <= 20; seed++) {
+    const plain = drTake(seed, `{busy: 3, hard: 3, fillAmt: 0, follow: "off", fromBar: 1, toBar: 16}`);
+    assert.ok(!plain.some(h => h.p === 49), "no boundaries → no crash");
+    for (const fills of [1, 3, 4]) {
+      const take = drTake(seed, `{busy: 3, hard: 3, fillAmt: ${fills}, follow: "off", fromBar: 1, toBar: 16}`);
+      assert.ok(!take.some(h => h.p === 49), "a phrase fill never crashes");
+      for (const b of bars) if (drBar(take, b).join() !== drBar(plain, b).join()) seen[fills].add(b);
+    }
+  }
+  assert.deepEqual([...seen[1]], [], "fills 1: nothing inside the section changes");
+  assert.ok(seen[3].has(8), "fills 3: bar 8 got a small fill in some seed");
+  assert.ok([...seen[3]].every(b => b % 8 === 0), "fills 3: only 8th bars (" + [...seen[3]] + ")");
+  assert.ok(seen[4].has(4), "fills 4: bar 4 can fill");
+  assert.ok([...seen[4]].every(b => b % 4 === 0), "fills 4: only 4th bars (" + [...seen[4]] + ")");
+  // phrase position counts from the SECTION start: a section starting at bar 3 fills at its bar 8 (= bar 10), and bar 8 is plain
+  drScratch(16, [{b1: 3, q1: 1, b2: 16, q2: 4, text: "section: A", added: true}]);
+  const where = new Set();
+  for (let seed = 1; seed <= 20; seed++) {
+    const plain = drTake(seed, `{busy: 3, hard: 3, fillAmt: 0, follow: "off", fromBar: 3, toBar: 16}`);
+    const take = drTake(seed, `{busy: 3, hard: 3, fillAmt: 3, follow: "off", fromBar: 3, toBar: 16}`);
+    for (const b of bars) if (drBar(take, b).join() !== drBar(plain, b).join()) where.add(b);
+  }
+  assert.ok(where.has(10) && !where.has(8), "phrase bars count from the section's own first bar (" + [...where] + ")");
+  // a fills-only de-fill strips a phrase fill too: phrase bars are fill scope regardless of the knob
+  drScratch(16);
+  const seedWithFill = (() => { for (let seed = 1; seed <= 40; seed++) {
+    const plain = drTake(seed, `{busy: 3, hard: 3, fillAmt: 0, follow: "off", fromBar: 1, toBar: 16}`);
+    const take = drTake(seed, `{busy: 3, hard: 3, fillAmt: 4, follow: "off", fromBar: 1, toBar: 16}`);
+    if (drBar(take, 8).join() !== drBar(plain, 8).join()) return seed;
+  } })();
+  assert.ok(seedWithFill, "some seed fills bar 8 at fills 4");
+  const filled = drTake(seedWithFill, `{busy: 3, hard: 3, fillAmt: 4, follow: "off", fromBar: 1, toBar: 16}`);
+  const defilled = drTake(seedWithFill + 1000, `{busy: 3, hard: 3, fillAmt: 0, follow: "off", parts: ["fills"], fromBar: 1, toBar: 16}`);
+  assert.notDeepEqual(drBar(defilled, 8), drBar(filled, 8), "bar 8 was rewritten by the de-fill");
+  assert.deepEqual(drBar(defilled, 7), drBar(filled, 7), "bar 7 (not a phrase bar) was kept byte-for-byte");
+  assert.ok(!defilled.filter(h => h.t >= 7 * 1920 && h.t < 8 * 1920 && h.t % 1920 >= 1440).some(h => [48, 47, 45, 43, 41].includes(h.p)), "no toms left in bar 8's last beat");
+  run(`songKey = null; rollnotes = [];`);
+});
+
+test("Drummer section fills: crash + kick land on the next 1, every hit on the 16th grid, no fill twice running (B3/B4)", () => {
+  installSong();
+  drScratch(16, [
+    {b1: 1, q1: 1, b2: 4, q2: 4, text: "section: A", added: true}, {b1: 5, q1: 1, b2: 8, q2: 4, text: "section: B", added: true},
+    {b1: 9, q1: 1, b2: 12, q2: 4, text: "section: C", added: true}, {b1: 13, q1: 1, b2: 16, q2: 4, text: "section: D", added: true}]);
+  run(`globalThis.drSpy = []; DR_FILLS.forEach(f => { f.hits0 = f.hits; f.hits = (...a) => { drSpy.push(f.name); return f.hits0(...a); }; });`);
+  const toms = new Set(), kinds = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    run(`drSpy = [];`);
+    const take = drTake(seed, `{busy: 3, hard: 3, fillAmt: 5, follow: "off", fromBar: 1, toBar: 16}`);
+    for (const b of [5, 9, 13]) {
+      assert.ok(take.some(h => h.t === (b - 1) * 1920 && h.p === 49), `seed ${seed}: crash on bar ${b}'s 1`);
+      assert.ok(take.some(h => h.t === (b - 1) * 1920 && h.p === 36), `seed ${seed}: kick on bar ${b}'s 1`);
+    }
+    for (const h of take) assert.ok(h.t % 120 === 0 || h.t % 1920 === 1770, `seed ${seed}: ${h.t}:${h.p} on the 16th grid (or the flam's grace)`);
+    const names = val(`drSpy`);
+    for (let i = 1; i < names.length; i++) assert.notEqual(names[i], names[i - 1], `seed ${seed}: ${names.join(",")} repeats a fill`);
+    names.forEach(n => kinds.add(n));
+    take.filter(h => [48, 47, 45, 43, 41].includes(h.p)).forEach(h => toms.add(h.t));
+  }
+  assert.ok(toms.size > 10, "the top of the knob still produces toms");
+  for (const n of ["run", "tomdescent", "threes", "accel"]) assert.ok(kinds.has(n), n + " fired within 30 seeds (" + [...kinds] + ")");
+  run(`DR_FILLS.forEach(f => { f.hits = f.hits0; delete f.hits0; }); delete globalThis.drSpy; songKey = null; rollnotes = [];`);
+});
+
+test("Drummer ghosts: busy 3-5 only, soft, beside the backbeat, never in a fill window or under double, floored under hard 1 (B7)", () => {
+  installSong();
+  drScratch(8);
+  const ghostsOf = take => take.filter(h => h.p === 38 && h.v < 60);
+  const slots = new Set([360, 600, 1320, 1560]); // a 16th either side of beats 2 and 4
+  let any = 0;
+  for (let seed = 1; seed <= 10; seed++) {
+    for (const busy of [3, 4, 5]) {
+      const take = drTake(seed, `{busy: ${busy}, hard: 3, fillAmt: 0, follow: "off", fromBar: 1, toBar: 8}`);
+      const g = ghostsOf(take);
+      any += g.length;
+      for (const h of g) {
+        assert.ok(slots.has(h.t % 1920), `busy ${busy}: ghost at ${h.t % 1920} sits beside a backbeat`);
+        assert.ok(h.v >= 28 && h.v <= 40, `ghost velocity ${h.v}`);
+      }
+      for (let b = 1; b <= 8; b++) assert.ok(g.filter(h => h.t >= (b - 1) * 1920 && h.t < b * 1920).length <= [0, 0, 1, 2, 3][busy - 1], `busy ${busy}: cap per bar`);
+      assert.ok(take.filter(h => h.p === 38 && h.v >= 60).every(h => [480, 1440].includes(h.t % 1920)), "backbeats untouched");
+    }
+    assert.equal(ghostsOf(drTake(seed, `{busy: 2, hard: 3, fillAmt: 0, follow: "off", fromBar: 1, toBar: 8}`)).length, 0, "busy 2: none");
+    assert.equal(ghostsOf(drTake(seed, `{busy: 5, hard: 3, fillAmt: 0, follow: "off", feel: "double", fromBar: 1, toBar: 8}`)).length, 0, "double: none");
+    const soft = ghostsOf(drTake(seed, `{busy: 5, hard: 1, fillAmt: 0, follow: "off", fromBar: 1, toBar: 8}`));
+    assert.ok(soft.every(h => h.v >= 18), "hard 1 floors ghosts at 18, not silence");
+  }
+  assert.ok(any > 20, "busy 3-5 produce ghosts (" + any + ")");
+  // a fill window has no ghosts: a run before a boundary owns beats 3-4
+  drScratch(4, [{b1: 3, q1: 1, b2: 4, q2: 4, text: "section: B", added: true}]);
+  for (let seed = 1; seed <= 20; seed++) {
+    const take = drTake(seed, `{busy: 5, hard: 3, fillAmt: 5, follow: "off", fromBar: 1, toBar: 4}`);
+    const win = take.filter(h => h.t >= 1920 + 960 && h.t < 3840); // bar 2, beats 3-4
+    if (win.some(h => h.p === 42)) continue; // hats still playing: no 2-beat fill fired this seed
+    assert.ok(!win.some(h => h.p === 38 && h.v < 60), "seed " + seed + ": no ghost inside the fill window");
+  }
   run(`songKey = null; rollnotes = [];`);
 });
 

@@ -4,6 +4,29 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Drummer fills + ghosts — BUILT 2026-10-05 on a worktree branch, awaiting Josh's ear (Terminal #139–141; docs/plans/2026-10-05-drum-generation-review.md §6)
+
+B1–B7 built as specified: golden tests freeze run/negative/flam (B1, its
+own commit, first); tomdrop → tomdescent on 16ths (B2); threes, accel
+(replaces buildup), stabs (B3); drPickFill weights + no repeat (B4);
+phrase fills on 8th/4th bars + pickup/tomlick (B5); ghost notes (B7);
+the 4-bar groove cycle (B6) is its OWN commit so it reverts alone.
+Ear-test (Josh, scratch song or an FF1 copy): fills 2, 3, 5 on a 16-bar
+section — (a) the run still sounds like the run, (b) bar 8 gets a small
+lift, (c) tom fills land cleanly, (d) the groove sits in one place
+(B6), (e) ghosts at busy 4 add motion without mud.
+
+Queued, NOT definite wins — ask Josh first (review §4 "Later"):
+- L1 `follow` off: a ranked kick table instead of "kick on 1 only"
+  (busy 1: 1; 2: 1+3; 3: +"and of 3"; 4: +"and of 2"; 5: +"and of 4") —
+  changes what "off" means.
+- L2 Open hat on the "and" of 4 in the variation bar.
+- L3 Swing (8th/16th, one 3-step chip) — an earlier advisor held it back
+  for chip music.
+- L4 Phrase-fill crash option ("crash every 8 bars") — Logic does this at
+  high Fills.
+- L5 Real-16th versions of run for 6/8 — only with Josh's ear; run is his.
+
 ## Tailscale drops on the iPad — PARKED 2026-10-05 (Terminal #120–121; Josh: "maybe we'll deal with it later if it keeps happening I'll bring it back up")
 
 The iPad lost Tailscale about 3 times in one hour. The Mac side checked fine:
