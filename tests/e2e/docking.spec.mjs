@@ -13,7 +13,9 @@ import { openApp } from "./helpers.mjs";
 // moresheet was a real window too (footer v2 tweaks, 2026-09-30) — back to a
 // drop-up, never dockable (chrome density pass, 2026-10-01, Josh: "a whole
 // window popping up and it's just unnecessary"), so it's OUT of this list.
-const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet"];
+// pubjobsheet (the publish job dialog) left it 2026-10-04 (Terminal #111:
+// "a very temporary window"); syncsheet (the Publish window) joined.
+const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "syncsheet"];
 
 test.use({ viewport: { width: 1366, height: 1024 } });
 

@@ -61,12 +61,11 @@ import { askNoteLabel } from "../ask/sheet.js";
 import { askStripContext } from "../ask/context.js";
 import { askPartial } from "../ask/sheet.js";
 import { pendingSongs } from "./chrome.js";
-import { ASK_GENERAL_LOG } from "../ask/bridge.js";
-import { ASK_TERMINAL_LOG } from "../ask/bridge.js";
+import { pendingChats } from "./chrome.js";
+import { pendingChatLabel } from "../sync/publish.js";
+import { wmWhereIs } from "./wm.js";
 import { takeToken } from "../sync/publish.js";
 import { ghHeaders } from "../audio/chip.js";
-import { ASK_GENERAL_KEY } from "../ask/bridge.js";
-import { ASK_TERMINAL_KEY } from "../ask/bridge.js";
 import { draftDirtyState } from "./chrome.js";
 import { aiSay } from "../ask/backend.js";
 import { jobListeners } from "../model/jobs.js";
@@ -1035,35 +1034,9 @@ export function renderSyncPending() {
   // the list shrinks when the check below finishes: say so, or it reads as a
   // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
   if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
-  for (const key of pendingSongs()) {
+  const songs = pendingSongs(), chats = pendingChats();
+  for (const key of songs) {
     const block = document.createElement("div");
-    if (key === "general" || key === "terminal") { // the general and terminal chats ship by themselves: one tap, no song involved
-      const term = key === "terminal";
-      const chatKey = term ? ASK_TERMINAL_KEY : ASK_GENERAL_KEY, chatLog = term ? ASK_TERMINAL_LOG : ASK_GENERAL_LOG;
-      const chatName = term ? "Terminal chat" : "General chat";
-      block.className = "psong";
-      const title = document.createElement("div");
-      title.className = "ptitle";
-      const tspan = document.createElement("span"); tspan.textContent = (term ? "⌨ " : "✦ ") + chatName;
-      const b = document.createElement("button");
-      b.textContent = "Publish chat";
-      b.title = "Append the unsaved " + chatName.toLowerCase() + " to " + chatLog;
-      b.addEventListener("click", async () => {
-        const status = document.getElementById("syncstatus");
-        const token = folderActive() ? "folder" : takeToken(status);
-        if (!token) return;
-        b.disabled = true; status.textContent = "Publishing the " + chatName.toLowerCase() + "…";
-        try { await askCommitLog(folderActive() ? null : ghHeaders(token), chatKey); status.textContent = chatName + " published ✓"; }
-        catch (err) { status.textContent = "⚠ " + chatName.toLowerCase() + ": " + err.message; }
-        b.disabled = false; updateSyncBtn(); renderSyncPending();
-      });
-      title.append(tspan, b);
-      block.appendChild(title);
-      const n = askUnsavedCount(chatKey);
-      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
-      box.appendChild(block);
-      continue;
-    }
     block.className = "psong" + (key === S.songKey ? " open" : "");
     const title = document.createElement("div");
     title.className = "ptitle";
@@ -1089,7 +1062,7 @@ export function renderSyncPending() {
       if (!takeToken(status)) return; // same gate as Publish all
       const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
       if (!job) return;
-      document.getElementById("syncsheet").classList.remove("on");
+      syncSheetRelease();
       openPubJobSheet(job);
     });
     title.appendChild(pb);
@@ -1130,20 +1103,91 @@ export function renderSyncPending() {
       });
     }
     const chat = askUnsavedCount("ff1roll-ask-" + key);
-    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved");
+    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved — ships with the song");
     box.appendChild(block);
   }
-  if (!box.childElementCount) {
+  if (chats.length) box.appendChild(renderSyncChats(chats, line));
+  if (!box.children.length) {
     const e = document.createElement("div");
     e.className = "pempty";
     e.textContent = "Nothing pending on this device.";
     box.appendChild(e);
   }
   const all = document.getElementById("ghsaveall");
-  const n = pendingSongs().length;
+  const n = songs.length;
   all.textContent = "Publish all (" + n + ")";
+  all.title = "Publish every pending song (a job — Jobs shows it). Songs only — chats have their own button under Chats";
   all.style.display = n > 1 ? "" : "none";
 }
+// The Chats section (Terminal #111, 2026-10-04): the general and terminal
+// chats and any chat-only song, after the songs and folded by default — Josh
+// opens Publish for songs; the chats are there when he wants them. The fold
+// is a device-local UI pref (which songs/chats are pending is never stored).
+export const PUBCHATS_OPEN_KEY = "ff1roll-pubchats-open";
+export function pubChatsOpen() { try { return localStorage.getItem(PUBCHATS_OPEN_KEY) === "1"; } catch (err) { return false; } }
+export function renderSyncChats(chats, line) {
+  const open = pubChatsOpen();
+  const sec = document.createElement("div");
+  sec.className = "pchats" + (open ? " open" : "");
+  const head = document.createElement("div");
+  head.className = "ptitle";
+  const tog = document.createElement("button");
+  tog.className = "pchatstoggle";
+  tog.textContent = (open ? "▾" : "▸") + " Chats (" + chats.length + ")";
+  tog.setAttribute("aria-expanded", open ? "true" : "false");
+  tog.title = open ? "Fold the chats away" : "Show the chats with unsaved messages";
+  tog.addEventListener("click", () => {
+    try { if (open) localStorage.removeItem(PUBCHATS_OPEN_KEY); else localStorage.setItem(PUBCHATS_OPEN_KEY, "1"); } catch (err) { /* private mode: the fold just won't stick */ }
+    renderSyncPending();
+  });
+  head.appendChild(tog);
+  if (chats.length > 1) { // one tap for all of them — the chats' own Publish all; the footer's covers songs only
+    const pc = document.createElement("button");
+    pc.textContent = "Publish chats (" + chats.length + ")";
+    pc.title = "Append every unsaved chat to its log (a job — Jobs shows it); Publish all covers songs only";
+    pc.addEventListener("click", () => {
+      const status = document.getElementById("syncstatus");
+      if (!takeToken(status)) return;
+      const job = publishAllJobStart(t => { status.textContent = t; }, chats);
+      if (!job) return;
+      syncSheetRelease();
+      openPubJobSheet(job);
+    });
+    head.appendChild(pc);
+  }
+  sec.appendChild(head);
+  if (!open) return sec;
+  for (const key of chats) {
+    const chatKey = "ff1roll-ask-" + key, chatName = pendingChatLabel(key);
+    const block = document.createElement("div");
+    block.className = "psong pchat";
+    const title = document.createElement("div");
+    title.className = "ptitle";
+    const tspan = document.createElement("span"); tspan.textContent = (key === "terminal" ? "⌨ " : "✦ ") + chatName;
+    const b = document.createElement("button");
+    b.textContent = "Publish chat";
+    b.title = "Append the unsaved " + chatName.toLowerCase() + " to " + askLogPath(chatKey);
+    b.addEventListener("click", async () => {
+      const status = document.getElementById("syncstatus");
+      const token = folderActive() ? "folder" : takeToken(status);
+      if (!token) return;
+      b.disabled = true; status.textContent = "Publishing the " + chatName.toLowerCase() + "…";
+      try { await askCommitLog(folderActive() ? null : ghHeaders(token), chatKey); status.textContent = chatName + " published ✓"; }
+      catch (err) { status.textContent = "⚠ " + chatName.toLowerCase() + ": " + err.message; }
+      b.disabled = false; updateSyncBtn(); renderSyncPending();
+    });
+    title.append(tspan, b);
+    block.appendChild(title);
+    const n = askUnsavedCount(chatKey);
+    line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
+    sec.appendChild(block);
+  }
+  return sec;
+}
+// A publish started from the Publish window: floating, it closes and the job
+// dialog takes over (as before); docked, it stays — closing a docked window
+// collapses its dock mid-job, and the list re-renders as the job runs.
+export function syncSheetRelease() { if (!wmWhereIs(S.wm, "syncsheet")) syncsheet.classList.remove("on"); }
 
 export function openInsertBars() {
   const bt = barTicks(), qt = beatTicks();
@@ -2001,8 +2045,8 @@ export function initSheets7() {
       await publishSong(S.songKey, ghHeaders(token), m => status.textContent = m); // annotations only: publishSong's own hisMusic check skips the .mid
       status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + "."
                                           : "Published ✓ (GitHub Pages takes ~1 min to serve the new file.)";
-      setTimeout(() => { // done — close, and return to the notes list if that's where we came from
-        syncsheet.classList.remove("on");
+      setTimeout(() => { // done — close (a docked window stays), and return to the notes list if that's where we came from
+        syncSheetRelease();
         if (S.syncReturnToList) { renderNoteList(); notelistSheet.classList.add("on"); }
       }, 900);
     } catch (err) { status.textContent = "Publish failed: " + err.message; }
@@ -2017,7 +2061,7 @@ export function initSheets8() {
     if (!token) return;
     const job = publishAllJobStart(s => { status.textContent = s; });
     if (!job) return;
-    document.getElementById("syncsheet").classList.remove("on");
+    syncSheetRelease();
     openPubJobSheet(job);
   });
 }

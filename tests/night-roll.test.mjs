@@ -2804,6 +2804,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
     "Keep that</b>", "Velocity lane</dt>",
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
+    "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2871,6 +2872,9 @@ test("Import hub (docs/import-hub-design.md): the File menu opens it, all ten se
   // the drop target and the non-dockable window registration
   assert.match(html, /document\.getElementById\("importhub"\)\.addEventListener\("drop"/);
   assert.match(html, /makeWindow\("importhub", \{dockable: false\}\)/);
+  // Terminal #111 (2026-10-04): the Publish window docks, the publish job dialog does not
+  assert.match(html, /makeWindow\("syncsheet", \{dockable: true\}\)/);
+  assert.match(html, /makeWindow\("pubjobsheet", \{dockable: false\}\)/);
 });
 
 test("tempo: directives rebuild the map from the song's base; removal restores", () => {
@@ -4412,7 +4416,8 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
   assert.match(val(`askLogHeader()`), /^# ✦ AI log — general/);
   run(`{ const g = askLoad(); g.push({role: "user", content: "hello general", t: 1}); askSave(g); }`);
-  assert.ok(val(`JSON.stringify(pendingSongs())`).includes('"general"'), "unsaved general chat shows in the Publish list");
+  assert.ok(val(`JSON.stringify(pendingChats())`).includes('"general"'), "unsaved general chat shows in the Publish list's Chats section");
+  assert.ok(!val(`JSON.stringify(pendingSongs())`).includes('"general"'), "…but is never a song (Terminal #111: chats stay out of the Publish (N) count)");
   assert.equal(val(`askLogPath("ff1roll-ask-" + songKey)`), "albums/compositions/nightroll/ask-cap.ask.md", "a song's log path is untouched by the mode");
   run(`askSetMode(false); localStorage.removeItem("ff1roll-ask-general");`);
   assert.equal(val(`askStoreKey()`), "ff1roll-ask-albums/compositions/nightroll/ask-cap.mid");
@@ -4435,24 +4440,84 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   run(`for (const k of ["${KEY}", "ff1roll-ask-a/clean.mid", "ff1roll-ask-a/dirty.mid"]) localStorage.removeItem(k); songKey = null;`);
 });
 
-test("Save & Commit: pendingSongs unions music edits, unsynced annotations and unsaved chat, open song first", () => {
+// Terminal #111 (Josh, 2026-10-04: "don't want chat to show up in the count
+// of the songs that need to be published"): songs and chats are two lists.
+test("Publish lists: pendingSongs is music edits + unsynced annotations only (open song first, the Publish (N) count); pendingChats is the shared chats + chat-only songs; a song with edits AND chat is one song entry; pendingAll is songs then chats", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/p-open.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-music.mid", JSON.stringify({savedStamp: 5, dirty: true, notes: []}));
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-clean.mid", JSON.stringify({savedStamp: 5, dirty: false, notes: []}));
        localStorage.setItem("ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", JSON.stringify([{b1: 1, q1: 1, text: "x", added: true}]));
        localStorage.setItem("ff1roll-ask-albums/compositions/nightroll/p-open.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}, {role: "assistant", content: "a"}]}));
+       localStorage.setItem("ff1roll-ask-albums/compositions/nightroll/p-music.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}]}));
        localStorage.setItem("ff1roll-ask-albums/compositions/nightroll/p-saved.mid", JSON.stringify({saved: 2, msgs: [{role: "user", content: "q"}, {role: "assistant", content: "a"}]}));
-       localStorage.setItem("ff1roll-ask-local/p.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}]}));`);
-  const all = JSON.parse(val(`JSON.stringify(pendingSongs())`)); // earlier tests leave their own dirty drafts behind: look only at ours
-  assert.equal(all[0], "albums/compositions/nightroll/p-open.mid", "the open song comes first");
-  const got = all.filter(k => /\/p-[a-z]+\.mid$/.test(k));
-  assert.deepEqual(got, ["albums/compositions/nightroll/p-open.mid", "albums/compositions/nightroll/p-music.mid", "albums/nes/final-fantasy-i/songs/p-notes.mid"]);
+       localStorage.setItem("ff1roll-ask-local/p.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}]}));
+       localStorage.setItem("ff1roll-ask-general", JSON.stringify({saved: 0, msgs: [{role: "user", content: "hi"}]}));`);
+  const ours = k => /\/p-[a-z]+\.mid$/.test(k) || k === "general" || k === "terminal"; // earlier tests leave their own dirty drafts behind: look only at ours
+  const songs = JSON.parse(val(`JSON.stringify(pendingSongs())`)).filter(ours);
+  assert.deepEqual(songs, ["albums/compositions/nightroll/p-music.mid", "albums/nes/final-fantasy-i/songs/p-notes.mid"], "songs: a dirty draft and unsynced notes; the open song's unsaved chat alone does not make it a song");
+  const chats = JSON.parse(val(`JSON.stringify(pendingChats())`)).filter(ours);
+  assert.deepEqual(chats, ["general", "albums/compositions/nightroll/p-open.mid"], "chats: the shared chat first, then the chat-only song (the open one); p-music's chat ships with the song, p-saved is saved, local/ never syncs");
+  assert.deepEqual(JSON.parse(val(`JSON.stringify(pendingAll())`)).filter(ours), [...songs, ...chats], "pendingAll: songs then chats");
   assert.equal(val(`draftDirtyState("albums/compositions/nightroll/p-music.mid")`), "edited");
   assert.equal(val(`draftDirtyState("albums/compositions/nightroll/p-clean.mid")`), null);
-  run(`for (const k of ["ff1roll-draft-albums/compositions/nightroll/p-music.mid", "ff1roll-draft-albums/compositions/nightroll/p-clean.mid",
-       "ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", "ff1roll-ask-albums/compositions/nightroll/p-open.mid",
-       "ff1roll-ask-albums/compositions/nightroll/p-saved.mid", "ff1roll-ask-local/p.mid"]) localStorage.removeItem(k); songKey = null;`);
+  // the footer's count is the songs — a connected device with only chats pending says plain "Publish"
+  run(`globalThis.__realToken = localStorage.getItem("ff1roll-ghtoken"); localStorage.setItem("ff1roll-ghtoken", "t");
+       globalThis.__realPending = pendingSongs; pendingSongs = () => []; updateSyncBtn();`);
+  assert.equal(val(`document.getElementById("syncbtn").textContent`), "Publish", "chats alone: no number on the button");
+  run(`pendingSongs = () => ["a", "b", "c"]; updateSyncBtn();`);
+  assert.equal(val(`document.getElementById("syncbtn").textContent`), "Publish (3)");
+  run(`pendingSongs = globalThis.__realPending; delete globalThis.__realPending;
+       if (globalThis.__realToken) localStorage.setItem("ff1roll-ghtoken", globalThis.__realToken); else localStorage.removeItem("ff1roll-ghtoken"); delete globalThis.__realToken;
+       for (const k of ["ff1roll-draft-albums/compositions/nightroll/p-music.mid", "ff1roll-draft-albums/compositions/nightroll/p-clean.mid",
+       "ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", "ff1roll-ask-albums/compositions/nightroll/p-open.mid", "ff1roll-ask-albums/compositions/nightroll/p-music.mid",
+       "ff1roll-ask-albums/compositions/nightroll/p-saved.mid", "ff1roll-ask-local/p.mid", "ff1roll-ask-general", "ff1roll-draft-" + songKey]) localStorage.removeItem(k); songKey = null; updateSyncBtn();`);
+});
+
+test("Publish window: songs first, then a Chats section folded by default (its count in the fold row); the fold is a device-local pref; open, each chat has its own Publish chat and the section its Publish chats (N); a song with edits and chat keeps its chat line, not a Chats row; Publish all counts songs only", () => {
+  const E = "albums/compositions/nightroll/pw-edits.mid", F = "albums/compositions/nightroll/pw-edits-chat.mid", G = "albums/compositions/nightroll/pw-chat-only.mid";
+  run(`localStorage.removeItem(PUBCHATS_OPEN_KEY);
+       localStorage.setItem(draftStoreKey("${E}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
+       localStorage.setItem(draftStoreKey("${F}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
+       localStorage.setItem("ff1roll-ask-${F}", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}]}));
+       localStorage.setItem("ff1roll-ask-${G}", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}, {role: "assistant", content: "a"}]}));
+       localStorage.setItem("ff1roll-ask-general", JSON.stringify({saved: 0, msgs: [{role: "user", content: "hi"}]}));
+       renderSyncPending();`);
+  const tE = val(`songTitleOf("${E}")`), tF = val(`songTitleOf("${F}")`), tG = val(`songTitleOf("${G}")`);
+  // the harness DOM has no querySelector: walk #syncpending's children (song blocks are .psong; the Chats section is .pchats, its head row first, then a .pchat block per chat when open)
+  run(`globalThis.__songRows = () => [...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong"));
+       globalThis.__chats = () => [...document.getElementById("syncpending").children].find(b => b.className.startsWith("pchats")) || null;
+       globalThis.__chatRows = () => { const s = __chats(); return s ? [...s.children].slice(1) : []; };`);
+  const titles = () => val(`__songRows().map(b => b.children[0].children[0].textContent)`);
+  assert.deepEqual(titles().filter(t => t.startsWith(tE) || t.startsWith(tG)).sort(), [tE, tF].sort(), "song rows: the two with edits; the chat-only song is not a song row");
+  assert.ok(val(`__songRows().filter(b => b.children[0].children[0].textContent === "${tF}").map(b => [...b.children].slice(1).map(l => l.children[0] && l.children[0].textContent).join("|"))[0]`).includes("1 chat message unsaved — ships with the song"));
+  assert.equal(val(`__chats() !== null`), true, "a Chats section");
+  assert.equal(val(`__chats().className`), "pchats", "folded by default"); // className, not classList: the harness stub keeps them apart
+  const chatN = val(`pendingChats().length`);
+  assert.equal(val(`__chats().children[0].children[0].textContent`), "▸ Chats (" + chatN + ")");
+  assert.equal(val(`__chats().children[0].children[0].getAttribute("aria-expanded")`), "false");
+  assert.equal(val(`__chatRows().length`), 0, "folded: no chat rows rendered");
+  assert.equal(val(`__chats().children[0].children[1].textContent`), "Publish chats (" + chatN + ")", "more than one chat: the section's own Publish chats button, folded or not");
+  assert.ok(val(`document.getElementById("ghsaveall").title`).includes("Songs only"), "Publish all says it skips chats");
+  assert.equal(val(`document.getElementById("ghsaveall").textContent`), "Publish all (" + val(`pendingSongs().length`) + ")");
+  // unfold: a device-local pref, re-rendered open with a row per chat
+  run(`__chats().children[0].children[0].click()`);
+  assert.equal(val(`localStorage.getItem(PUBCHATS_OPEN_KEY)`), "1", "the fold is remembered on this device");
+  assert.equal(val(`__chats().className`), "pchats open");
+  assert.equal(val(`__chats().children[0].children[0].getAttribute("aria-expanded")`), "true");
+  assert.equal(val(`__chats().children[0].children[0].textContent`), "▾ Chats (" + chatN + ")");
+  const rows = val(`__chatRows().map(b => [b.className, b.children[0].children[0].textContent, b.children[0].children[1].textContent, b.children[1].children[0].textContent])`);
+  assert.ok(rows.every(r => r[0] === "psong pchat"));
+  assert.ok(rows.some(r => r[1] === "✦ General chat" && r[2] === "Publish chat" && r[3] === "✦ 1 chat message unsaved"), "the general chat row: " + JSON.stringify(rows));
+  assert.ok(rows.some(r => r[1] === "✦ " + tG + " chat" && r[2] === "Publish chat" && r[3] === "✦ 2 chat messages unsaved"), "the chat-only song's row, named as a chat: " + JSON.stringify(rows));
+  assert.ok(!rows.some(r => r[1].includes(tF)), "a song with edits is not listed under Chats");
+  // fold again → pref cleared
+  run(`__chats().children[0].children[0].click()`);
+  assert.equal(val(`localStorage.getItem(PUBCHATS_OPEN_KEY)`), null);
+  assert.equal(val(`__chatRows().length`), 0);
+  run(`delete globalThis.__songRows; delete globalThis.__chats; delete globalThis.__chatRows;`);
+  run(`for (const k of ["${E}", "${F}", "${G}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ask-"]) localStorage.removeItem(pre + k);
+       localStorage.removeItem("ff1roll-ask-general"); localStorage.removeItem(PUBCHATS_OPEN_KEY); renderSyncPending();`);
 });
 
 // docs/plans/2026-10-04-repo-tidy.md U1: the ⌨ Terminal chat's log went to
@@ -4475,14 +4540,17 @@ test("Terminal chat: logs to ask/terminal.ask.md, is never a song for Publish al
   // unsaved terminal chat → pending as "terminal", and syncable() never sees it
   run(`globalThis.__syncCalls = []; globalThis.__realSyncable = syncable; syncable = k => { __syncCalls.push(k); return __realSyncable(k); };
        localStorage.setItem(ASK_TERMINAL_KEY, JSON.stringify({lastUsed: 1, saved: 0, msgs: [{role: "user", content: "pull and build please", t: 1758000000000}, {role: "note", content: "built 5fc6e79", m: "terminal", t: 1758000060000}]}));`);
-  const pending = JSON.parse(val(`JSON.stringify(pendingSongs())`));
-  assert.ok(pending.includes("terminal"), "unsaved terminal chat shows in the Publish list");
+  const pending = JSON.parse(val(`JSON.stringify(pendingChats())`));
+  assert.ok(pending.includes("terminal"), "unsaved terminal chat shows in the Publish list's Chats section");
+  assert.ok(!val(`pendingSongs()`).includes("terminal"), "never a song (Terminal #111: out of the Publish (N) count)");
   assert.ok(!val(`__syncCalls`).includes("terminal"), "\"terminal\" is never asked syncable()");
-  // the PUBLISH sheet: its own block with the one-tap button, no song row
-  run(`renderSyncPending();`);
-  const blocks = val(`[...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong")).map(b => b.children[0].children[0].textContent)`);
-  assert.ok(blocks.includes("⌨ Terminal chat"), "a Terminal chat block: " + JSON.stringify(blocks));
-  assert.ok(!blocks.some(t => /^terminal/i.test(t) || t.includes("terminal · open")), "no song-style row for it");
+  // the PUBLISH sheet: its own block under Chats with the one-tap button, no song row
+  run(`localStorage.setItem(PUBCHATS_OPEN_KEY, "1"); renderSyncPending();`);
+  const blocks = val(`[...([...document.getElementById("syncpending").children].find(b => b.className.startsWith("pchats")) || {children: []}).children].slice(1).map(b => b.children[0].children[0].textContent)`);
+  assert.ok(blocks.includes("⌨ Terminal chat"), "a Terminal chat block under Chats: " + JSON.stringify(blocks));
+  const songRows = val(`[...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong")).map(b => b.children[0].children[0].textContent)`);
+  assert.ok(!songRows.some(t => /terminal/i.test(t)), "no song-style row for it");
+  run(`localStorage.removeItem(PUBCHATS_OPEN_KEY);`);
   // Publish all (this row only): exactly one PUT, to ask/terminal.ask.md; no *.rollnotes.json, no .mid
   run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
        globalThis.__puts = []; globalThis.__realFetch = globalThis.fetch; globalThis.__realWriteToken = writeToken;
@@ -4889,7 +4957,7 @@ test("Window manager: dock left, and beside-the-roll (inner) mode narrows only t
 test("Window manager: a window docks in at most one place — right then bottom clears the right slot; two windows split the bottom dock", () => {
   run(`window.innerWidth = 1200;
        document.getElementById("jobssheet").classList.add("on");
-       document.getElementById("pubjobsheet").classList.add("on");
+       document.getElementById("syncsheet").classList.add("on");
        wm = {}; wmLayoutAll();`);
   run(`wmDockSide("jobssheet", "right")`);
   assert.deepEqual(val(`wm.right.ids`), ["jobssheet"]);
@@ -4900,8 +4968,8 @@ test("Window manager: a window docks in at most one place — right then bottom 
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), false);
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("split")`), false, "one window: not split");
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--db-h")`), "240px");
-  run(`wmDockBottomWindow("pubjobsheet")`); // the second slot
-  assert.deepEqual(val(`wm.bottom.ids`), ["jobssheet", "pubjobsheet"]);
+  run(`wmDockBottomWindow("syncsheet")`); // the second slot
+  assert.deepEqual(val(`wm.bottom.ids`), ["jobssheet", "syncsheet"]);
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), true);
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("split")`), true);
   // closing one frees its space — its own slot collapses, not its sibling's
@@ -4909,7 +4977,48 @@ test("Window manager: a window docks in at most one place — right then bottom 
   assert.equal(val(`document.getElementById("dockbottom0").classList.contains("shown")`), false, "closed: its slot collapses");
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), true, "the open one keeps its space");
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("occupied")`), true, "still parked (closed, not floated) — the height divider stays reachable");
-  run(`document.getElementById("pubjobsheet").classList.remove("on"); document.getElementById("jobssheet").classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
+  run(`document.getElementById("syncsheet").classList.remove("on"); document.getElementById("jobssheet").classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
+});
+
+// Terminal #111 (Josh, 2026-10-04): the Publish window docks; the publish job
+// dialog — "a very temporary window" — no longer does.
+test("Window manager: the Publish window (syncsheet) is dockable — Dock control, right/left/bottom round trip, floats back home, the pref persists; the publish job dialog (pubjobsheet) is registered but has no Dock control; wmPurgeId drops a stale dock for it", () => {
+  assert.deepEqual(val(`WM_WINDOWS.syncsheet`), {dockable: true});
+  assert.deepEqual(val(`WM_WINDOWS.pubjobsheet`), {dockable: false});
+  assert.equal(val(`!!document.getElementById("syncsheet-h2")._wmDockBtn`), true, "the Publish window's title carries the Dock control");
+  assert.equal(val(`!!document.getElementById("pubjobsheet-h2")._wmDockBtn`), false, "the job dialog's does not");
+  run(`window.innerWidth = 1200; syncsheet.classList.add("on"); wm = {}; wmLayoutAll();`);
+  assert.equal(val(`document.getElementById("syncsheet-h2")._wmDockBtn.textContent`), "Dock");
+  run(`wmDockSide("syncsheet", "right", "full")`);
+  assert.deepEqual(val(`wm.right.ids`), ["syncsheet"]);
+  assert.equal(val(`syncsheet.classList.contains("docked")`), true);
+  assert.equal(val(`syncsheet._parent.id`), "dockright", "parked in the right dock's cell");
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "380px");
+  assert.equal(val(`document.getElementById("syncsheet-h2")._wmDockBtn.textContent`), "Docked: Right");
+  assert.deepEqual(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.ids`), ["syncsheet"], "persisted in the shared wm pref — no pref of its own");
+  run(`wmDockSide("syncsheet", "left", "inner")`);
+  assert.equal(val(`!!wm.right`), false, "one place at a time");
+  assert.deepEqual(val(`wm.left.ids`), ["syncsheet"]);
+  assert.equal(val(`wm.left.mode`), "inner");
+  run(`wmDockBottomWindow("syncsheet")`);
+  assert.equal(val(`!!wm.left`), false);
+  assert.deepEqual(val(`wm.bottom.ids`), ["syncsheet"]);
+  assert.equal(val(`syncsheet._parent.id`), "dockbottom0", "the bottom dock's first slot");
+  run(`wmFloat("syncsheet")`);
+  assert.equal(val(`!!wmWhereIs(wm, "syncsheet")`), false);
+  assert.equal(val(`syncsheet.classList.contains("docked")`), false);
+  assert.equal(val(`syncsheet._parent.id`), "syncsheet-home", "floated: back in its home wrapper");
+  // a docked Publish window stays open when a publish starts from it; floating, it closes (the job dialog takes over)
+  run(`wmDockSide("syncsheet", "right"); syncSheetRelease();`);
+  assert.equal(val(`syncsheet.classList.contains("on")`), true, "docked: a row's Publish / Publish all leave the window where it is");
+  run(`wmFloat("syncsheet"); syncSheetRelease();`);
+  assert.equal(val(`syncsheet.classList.contains("on")`), false, "floating: closes as before");
+  // a device that had the job dialog docked before this change: the dead id is purged (pure helper, run once by initWm1)
+  assert.deepEqual(val(`wmPurgeId({right: {ids: ["asksheet", "pubjobsheet"], active: "pubjobsheet", w: 380, mode: "full"}, bottom: {ids: ["pubjobsheet", "jobssheet"], h: 240, split: 0.5}}, "pubjobsheet")`),
+                   {right: {ids: ["asksheet"], active: "asksheet", w: 380, mode: "full"}, bottom: {ids: ["jobssheet"], h: 240, split: 0.5}});
+  assert.deepEqual(val(`wmPurgeId({left: {ids: ["pubjobsheet"], active: "pubjobsheet", w: 300, mode: "inner"}}, "pubjobsheet")`), {}, "a group of one goes away entirely");
+  assert.deepEqual(val(`wmPurgeId({right: {ids: ["asksheet"], active: "asksheet", w: 380, mode: "full"}}, "pubjobsheet")`), {right: {ids: ["asksheet"], active: "asksheet", w: 380, mode: "full"}}, "absent: unchanged");
+  run(`wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
 test("Window manager: phone width refuses on every side — the Dock control hides and docking has no effect; a saved dock is kept but not applied until the window widens again", () => {
@@ -4966,9 +5075,9 @@ test("Window manager: the left dock's divider widens on a rightward drag (the op
 
 test("Window manager: the bottom dock's height and split dividers drag and clamp, double-tap resets the height, and persist only on release", () => {
   run(`window.innerWidth = 1000; window.innerHeight = 1000;
-       wm = {bottom: {ids: ["jobssheet", "pubjobsheet"], h: 240, split: 0.5}};
+       wm = {bottom: {ids: ["jobssheet", "syncsheet"], h: 240, split: 0.5}};
        document.getElementById("jobssheet").classList.add("on");
-       document.getElementById("pubjobsheet").classList.add("on");
+       document.getElementById("syncsheet").classList.add("on");
        wmLayoutAll();`);
   app.dispatch("wmdivider-bottomh", {type: "pointerdown", clientY: 500, pointerId: 9, button: 0});
   app.docDispatch({type: "pointermove", clientY: 400, pointerId: 9}); // dragged up 100 — the dock GROWS by 100 (its divider is on the top edge)
@@ -4996,7 +5105,7 @@ test("Window manager: the bottom dock's height and split dividers drag and clamp
   assert.equal(val(`wm.bottom.split`), 0.8, "clamped");
   app.docDispatch({type: "pointerup", pointerId: 10});
   assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).bottom.split`), 0.8, "saved on release");
-  run(`document.getElementById("jobssheet").classList.remove("on"); document.getElementById("pubjobsheet").classList.remove("on");
+  run(`document.getElementById("jobssheet").classList.remove("on"); document.getElementById("syncsheet").classList.remove("on");
        wm = {}; wmLayoutAll(); window.innerWidth = undefined; window.innerHeight = undefined;`);
 });
 
@@ -6858,31 +6967,45 @@ test("jobs list Open on a publish job opens the publish dialog — not the old j
   run(`document.getElementById("pubjobsheet").classList.remove("on"); jobs = [];`);
 });
 
-test("Publish all: creates a job with one item per pending song (general chat included), one at a time", async () => {
+test("Publish all: creates a job with one item per pending SONG (chats excluded — Terminal #111), one at a time; named chat keys ride a job of their own (Publish chats / one chat)", async () => {
   run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
-       globalThis.__realPending = pendingSongs;
+       globalThis.__realPending = pendingSongs; globalThis.__realPendingChats = pendingChats;
        globalThis.__realWriteToken = writeToken;
        writeToken = () => null; // no token: the runner fails before touching any song — keeps this test off the network
-       pendingSongs = () => [];`);
-  assert.equal(val(`publishAllJobStart(() => {})`), null, "nothing pending: no job");
-  run(`pendingSongs = () => ["general", "albums/compositions/nightroll/pa-one.mid", "albums/nes/final-fantasy-i/songs/pa-two.mid"];
+       pendingSongs = () => []; pendingChats = () => ["general", "terminal", "albums/compositions/nightroll/pa-chat.mid"];`);
+  assert.equal(val(`publishAllJobStart(() => {})`), null, "nothing pending as a SONG: no job, though chats are");
+  run(`pendingSongs = () => ["albums/compositions/nightroll/pa-one.mid", "albums/nes/final-fantasy-i/songs/pa-two.mid"];
        globalThis.__job = publishAllJobStart(() => {});`);
   assert.equal(val(`__job.kind`), "publishall");
   assert.equal(val(`__job.title`), "Publish all");
   const label2 = val(`songTitleOf("albums/compositions/nightroll/pa-one.mid")`);
   const label3 = val(`songTitleOf("albums/nes/final-fantasy-i/songs/pa-two.mid")`);
   assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key, st: i.st}))`), [
-    {label: "General chat", key: "general", st: "queued"},
     {label: label2, key: "albums/compositions/nightroll/pa-one.mid", st: "queued"},
     {label: label3, key: "albums/nes/final-fantasy-i/songs/pa-two.mid", st: "queued"},
-  ]);
+  ], "songs only — no chat item");
   assert.equal(val(`publishAllJobStart(() => {})`), null, "one Publish-all job at a time");
   await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
   assert.equal(val(`__job.state`), "failed");
   assert.match(val(`__job.err`), /No GitHub token/);
-  run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken;
+  run(`jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");`);
+  // the Chats section's button: every pending chat, labelled as a chat, titled "Publish chats"
+  run(`globalThis.__job = publishAllJobStart(() => {}, pendingChats());`);
+  assert.equal(val(`__job.title`), "Publish chats");
+  assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key}))`), [
+    {label: "General chat", key: "general"},
+    {label: "Terminal chat", key: "terminal"},
+    {label: val(`songTitleOf("albums/compositions/nightroll/pa-chat.mid")`) + " chat", key: "albums/compositions/nightroll/pa-chat.mid"},
+  ]);
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  run(`jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");`);
+  // one chat row's key alone
+  run(`globalThis.__job = publishAllJobStart(() => {}, ["general"]);`);
+  assert.equal(val(`__job.title`), "Publish General chat");
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  run(`pendingSongs = globalThis.__realPending; pendingChats = globalThis.__realPendingChats; writeToken = globalThis.__realWriteToken;
        jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");
-       delete globalThis.__job; delete globalThis.__realPending; delete globalThis.__realWriteToken;`);
+       delete globalThis.__job; delete globalThis.__realPending; delete globalThis.__realPendingChats; delete globalThis.__realWriteToken;`);
 });
 
 test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is a one-song job; Revert drops this device's copy (not on a never-published song)", async () => {
@@ -6919,13 +7042,14 @@ test("Revert drops EVERYTHING unpublished for a song, chat included (Josh, 2026-
        localStorage.setItem("${chatC}", JSON.stringify({lastUsed: 1, saved: 0, msgs: [{role: "user", content: "q1"}, {role: "assistant", content: "a1"}], trimmed: false}));`);
   // chat-only: no draft, no notes — exactly the reported bug (nothing else pending, only the chat)
   assert.equal(val(`askUnsavedCount("${chatC}")`), 2);
-  assert.ok(val(`pendingSongs()`).includes(C), "the unsaved chat alone makes it pending");
+  assert.ok(val(`pendingChats()`).includes(C), "the unsaved chat alone makes it pending — as a chat (Terminal #111), not a song");
+  assert.ok(!val(`pendingSongs()`).includes(C));
   await run(`revertSongToRepo("${C}")`);
   assert.equal(val(`__confirmArgs.ok`), "Revert — drops 2 chat messages", "the button names the chat count when that's the only thing pending");
   assert.match(val(`__confirmArgs.b`), /2 chat messages/);
   assert.equal(val(`askUnsavedCount("${chatC}")`), 0, "the unsaved chat is gone");
   assert.equal(val(`JSON.parse(localStorage.getItem("${chatC}")).msgs.length`), 0, "no published chat to fall back to: revert clears it, like Clear chat");
-  assert.ok(!val(`pendingSongs()`).includes(C), "no longer in the pending list");
+  assert.ok(!val(`pendingAll()`).includes(C), "no longer in the pending list");
   // edits + chat: both drop, and the confirm names both
   run(`localStorage.setItem(draftStoreKey("${D}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
        localStorage.setItem("${chatD}", JSON.stringify({lastUsed: 1, saved: 1, msgs: [{role: "user", content: "q1"}, {role: "assistant", content: "a1"}, {role: "user", content: "q2"}], trimmed: false}));`);

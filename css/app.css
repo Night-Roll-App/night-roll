@@ -818,6 +818,13 @@
   #syncpending .pline.note { padding-left: 14px; }
   #syncpending .pline button { min-width: 36px; min-height: 30px; padding: 2px 6px; flex: none; }
   #syncpending .pempty { color: var(--dim); }
+  /* the Chats section (Terminal #111): one fold row after the songs, its
+     own rows indented under it when open — chats are not songs and never
+     count as them */
+  #syncpending .pchats { border-top: 1px solid var(--line, rgba(255,255,255,0.08)); padding-top: 8px; }
+  #syncpending .pchats .pchatstoggle { background: none; border: 0; color: var(--dim); font: inherit; font-weight: 600; letter-spacing: inherit; padding: 2px 4px 2px 0; min-height: 32px; flex: none; }
+  #syncpending .pchats.open .pchatstoggle { color: var(--text); }
+  #syncpending .pchats .pchat { border-top: 0; margin-left: 10px; padding-top: 4px; }
   .sheet.help { max-height: 82dvh; overflow-y: auto; -webkit-user-select: text; user-select: text; }
   .sheet.help h3 {
     font-family: var(--mono);
@@ -1008,7 +1015,7 @@
     rows keep their natural size; the one designated scrolling body per window (below) is flex:1 + min-height:0, so
     IT shrinks and scrolls while the header and the input/button rows stay put. */
   #asksheet.docked #asklog, #instsheet.docked #instrows, #notelistsheet.docked #notelistrows,
-  #jobssheet.docked #jobslist, #pubjobsheet.docked #pubjoblist, #infosheet.docked #infosheettext {
+  #jobssheet.docked #jobslist, #syncsheet.docked #syncpending, #infosheet.docked #infosheettext {
     flex: 1; min-height: 0; overflow-y: auto;
   }
   /* (a one-row sideways-scrolling footer beside a full-height dock clipped its

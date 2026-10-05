@@ -640,17 +640,30 @@ export function keyNameShownAt(tick) { // keyNameAt (declared), else the Normal 
   return null;
 }
 export const nmic = document.getElementById("nmic");
-export function pendingSongs() { // every song with anything to ship, the open one first
+// Songs and chats are two lists (Josh, 2026-10-04, Terminal #111: "don't
+// want chat to show up in the count of the songs that need to be
+// published"). pendingSongs() is the Publish (N) count: music or annotations
+// to ship. pendingChats() is the general and terminal chats, plus a song
+// whose ONLY pending item is chat — a song with edits AND unsaved chat is one
+// song entry, its chat ships with the song (publishSong → askCommitLog).
+export function pendingOrder(keys) { return keys.sort((a, b) => (a === S.songKey ? -1 : b === S.songKey ? 1 : 0) || a.localeCompare(b)); } // the open song first, then by path
+export function pendingSongs() { // every song with music or annotations to ship, the open one first
   const set = new Set(dirtySongs());
   for (const k of draftKeys()) if (syncable(k) && draftDirtyState(k)) set.add(k);
+  return pendingOrder([...set]);
+}
+export function pendingChats() { // the shared chats first (never syncable() — no song behind them), then chat-only songs
+  const songs = new Set(pendingSongs());
+  const shared = [], own = [];
   for (const k of Object.keys(localStorage)) {
     if (!k.startsWith("ff1roll-ask-")) continue;
     const key = k.slice("ff1roll-ask-".length);
-    if (key === "general" || key === "terminal") { if (askUnsavedCount(k) > 0) set.add(key); continue; } // the general and terminal chats: no song, their own blocks — never syncable()
-    if (key !== "local" && syncable(key) && askUnsavedCount(k) > 0) set.add(key);
+    if (key === "general" || key === "terminal") { if (askUnsavedCount(k) > 0) shared.push(key); continue; }
+    if (key !== "local" && !songs.has(key) && syncable(key) && askUnsavedCount(k) > 0) own.push(key);
   }
-  return [...set].sort((a, b) => (a === S.songKey ? -1 : b === S.songKey ? 1 : 0) || a.localeCompare(b));
+  return [...shared.sort(), ...pendingOrder(own)];
 }
+export function pendingAll() { return [...pendingSongs(), ...pendingChats()]; } // everything a publish could ship — one job's key space
 
 // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function dirtySongs() { // songs with unsynced local notes on this device

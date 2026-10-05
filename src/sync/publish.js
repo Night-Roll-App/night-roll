@@ -60,8 +60,8 @@ import { fileStatus } from "../ui/chrome.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { ghHeaders } from "../audio/chip.js";
 import { pendingSongs } from "../ui/chrome.js";
-import { ASK_GENERAL_KEY } from "../ask/bridge.js";
-import { ASK_TERMINAL_KEY } from "../ask/bridge.js";
+import { pendingChats } from "../ui/chrome.js";
+import { pendingAll } from "../ui/chrome.js";
 import { draftKeys } from "../model/versions.js";
 import { syncable } from "../ui/chrome.js";
 import { pubCheck } from "../ui/sheets.js";
@@ -596,16 +596,19 @@ export async function publishUnsavedSong(folder, name) {
 // sync every song with unsynced local notes, not just the loaded one — a key
 // sweep touches many songs in one sitting and shouldn't strand work per-song.
 // Publish all as a job (Josh's ask 4, 2026-09-29): one item per pending song
-// (the general chat rides along as its own item, same as before) — the exact
-// same per-song flow, just wrapped so it reports progress and can be
-// cancelled between songs; the publish dialog is the same one folder
-// publishes use. One Publish-all job at a time.
-export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish — the same flow for just those songs
-  const pending = onlyKeys ? pendingSongs().filter(k => onlyKeys.includes(k)) : pendingSongs();
+// — the exact same per-song flow, just wrapped so it reports progress and
+// can be cancelled between songs; the publish dialog is the same one folder
+// publishes use. One Publish-all job at a time. Publish all is SONGS only
+// (Terminal #111, 2026-10-04): chats ride a job only when named in
+// onlyKeys — the Chats section's "Publish chats" button, or one chat row.
+export function pendingChatLabel(key) { return key === "general" ? "General chat" : key === "terminal" ? "Terminal chat" : songTitleOf(key) + " chat"; } // a chat item's name in the job dialog and the Chats section
+export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish, or the chats — the same flow for just those keys
+  const chats = pendingChats();
+  const pending = onlyKeys ? pendingAll().filter(k => onlyKeys.includes(k)) : pendingSongs();
   if (!pending.length) { statusFn && statusFn("Nothing pending on this device."); return null; }
   if (jobsFind("publishall", null, true)) { statusFn && statusFn("A publish is already running — tap ⏳"); return null; }
-  const items = pending.map(key => ({label: key === "general" ? "General chat" : key === "terminal" ? "Terminal chat" : songTitleOf(key), key}));
-  const jobTitle = onlyKeys && pending.length === 1 ? "Publish " + items[0].label : "Publish all";
+  const items = pending.map(key => ({label: chats.includes(key) ? pendingChatLabel(key) : songTitleOf(key), key}));
+  const jobTitle = onlyKeys && pending.length === 1 ? "Publish " + items[0].label : onlyKeys && pending.every(k => chats.includes(k)) ? "Publish chats" : "Publish all";
   return jobStart("publishall", jobTitle, items, async api => {
     const token = writeToken();
     if (!token) throw new Error("No GitHub token stored yet — add one in File → Settings.");
@@ -617,8 +620,7 @@ export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's 
       api.update(i, {st: "running", pct: 0});
       api.note("Publishing " + short + "…");
       try {
-        if (key === "general") await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); // the general chat rides Publish all too — no song, so the one publish function doesn't apply
-        else if (key === "terminal") await askCommitLog(ghHeaders(token), ASK_TERMINAL_KEY); // same for the terminal chat: a log, never a song (publishSong on it wrote terminal.rollnotes.json)
+        if (chats.includes(key)) await askCommitLog(h, key); // a chat: the log only, never publishSong — general/terminal have no song (publishSong on "terminal" once wrote terminal.rollnotes.json), and a chat-only song has no music or annotations to write
         else { await publishSong(key, h, m => api.note(short + ": " + m)); anyPublished = true; }
         api.update(i, {st: "done", pct: 1});
       } catch (err) {

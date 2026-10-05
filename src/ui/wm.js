@@ -188,6 +188,11 @@ export function wmSetBottomSplit(state, split) { // pure
   if (!state.bottom) return state;
   return Object.assign({}, state, {bottom: Object.assign({}, state.bottom, {split: wmClampSplit(split)})});
 }
+export function wmPurgeId(state, id) { // pure: drops `id` from every dock — for a window that stopped being dockable (moresheet, pubjobsheet) so a saved pref never strands a dead id
+  let next = wmRemoveSideTab(wmRemoveSideTab(state, "left", id), "right", id);
+  if (next.bottom && next.bottom.ids && next.bottom.ids.includes(id)) next = wmClearBottom(next, id);
+  return next;
+}
 export function wmWhereIs(state, id) { // pure: which dock (if any) currently claims `id` (any tab in a side's group counts, active or not), and a side dock's mode
   if (state.left && state.left.ids && state.left.ids.includes(id)) return {dock: "left", mode: state.left.mode || "full"};
   if (state.right && state.right.ids && state.right.ids.includes(id)) return {dock: "right", mode: state.right.mode || "full"};
@@ -735,8 +740,9 @@ export function initWm1() {
   // it; makeWindow() is never called for it either). Purge it once, here,
   // before any layout runs — pure (wmRemoveSideTab/wmClearBottom take no
   // DOM), so it's safe at module-eval time in the vm harness too.
-  for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[side].ids.includes("moresheet")) S.wm = wmRemoveSideTab(S.wm, side, "moresheet");
-  if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
+  // pubjobsheet (the publish job dialog) stopped being dockable 2026-10-04
+  // (Terminal #111: "a very temporary window") — same purge, same reason.
+  S.wm = wmPurgeId(wmPurgeId(S.wm, "moresheet"), "pubjobsheet");
   wmSave(S.wm);
   try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }  // Applies wm[side] to the DOM: parks EVERY member of the tab group (full or
   if (typeof document !== "undefined" && document.body) { // real browser only — dismissing the menu is not unit tested (see comment above)
@@ -758,8 +764,12 @@ export function initWm1() {
   makeWindow("notelistsheet", {dockable: true});
   makeWindow("instsheet", {dockable: true});
   makeWindow("jobssheet", {dockable: true});
-  makeWindow("pubjobsheet", {dockable: true});
+  makeWindow("syncsheet", {dockable: true}); // the Publish window (Terminal #111, 2026-10-04): a list worth keeping beside the roll while working
   makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
+  // the publish job dialog was dockable until 2026-10-04 (Terminal #111: "a
+  // very temporary window") — registered, floating only; initWm1 above
+  // purges a saved dock for it
+  makeWindow("pubjobsheet", {dockable: false});
   // ⋯ More was briefly the seventh window (footer v2 tweaks, 2026-09-30),
   // then a drop-up (2026-10-01), then removed entirely (chrome density
   // follow-up, 2026-10-01 pm) — its tools are in View ▾ and the footer now;

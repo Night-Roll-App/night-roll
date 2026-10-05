@@ -4116,8 +4116,8 @@ status line is the job's `note`), one per folder at a time; Open opens
 the publish dialog (below); ↻ re-publishes the drafts still there
 (`impCommitLive` is gone). **publishall** — `publishAllJobStart(statusFn)`
 wraps the Publish sheet's "Publish all": one item per `pendingSongs()`
-(the general chat rides along as its own item, key `"general"`), same
-per-song flow as before (`commitCompositionNow` for the open
+— SONGS only since Terminal #111 (2026-10-04; see "Publish window:
+songs vs chats" below) — same per-song flow as before (`commitCompositionNow` for the open
 composition, `publishDraftSong` for another edited one, annotations +
 `askCommitLog` otherwise) — just checked against `api.aborted` between
 songs so ✕ stops it before the next one; one Publish-all job at a time
@@ -4141,6 +4141,43 @@ log, like Clear chat. Not jobs: Download audio (an offline
 bounce, faster than real time — see "Audio export" below — or its
 real-time fallback), chip renders (already off-thread; a row per song
 open would spam the list). Later: captures in the worker.
+
+**Publish window: songs vs chats** (Terminal #111, Josh 2026-10-04:
+"don't want chat to show up in the count of the songs that need to be
+published"; docs/plans/2026-10-04-publish-window.md). Two lists in
+src/ui/chrome.js: `pendingSongs()` — songs with a dirty draft or
+unsynced `ff1roll-notes-` — is the footer's **Publish (N)** and the
+song rows; `pendingChats()` — `general`, `terminal`, then any song
+whose ONLY pending item is chat — is the **Chats** section;
+`pendingAll()` is songs then chats. A song with edits AND unsaved chat
+is one song row (its "✦ N chat messages unsaved — ships with the song"
+line; `publishSong` → `askCommitLog`), never listed twice.
+`renderSyncPending` draws the songs, then `renderSyncChats`: a
+`.pchats` block with a fold row (`.pchatstoggle`, "▸/▾ Chats (M)",
+`aria-expanded`), a **Publish chats (M)** button at M > 1, and — only
+when open — a `.psong.pchat` row per chat with its own **Publish
+chat** (`askCommitLog(h, "ff1roll-ask-" + key)`). The fold is the
+device-local pref `ff1roll-pubchats-open` (`PUBCHATS_OPEN_KEY`; absent
+= folded — a UI toggle, never song state). **Publish all (N)** is
+songs only (its `title` says so); `publishAllJobStart(statusFn,
+onlyKeys)` filters `pendingAll()` when keys are named, so Publish
+chats / one chat row run the same job — a chat key goes through
+`askCommitLog`, never `publishSong` (a chat-only song has no
+.rollnotes to write; "terminal" once got a terminal.rollnotes.json
+that way). Labels: `pendingChatLabel` ("General chat", "Terminal
+chat", "<title> chat"); a job of chats only is titled "Publish chats".
+`#syncsheet` is a dockable window now (`makeWindow("syncsheet",
+{dockable: true})`, `#syncsheet-h2`, `#syncsheet-home`,
+`#syncsheet.docked #syncpending` scrolls); `#pubjobsheet` (the job
+dialog) is registered `{dockable: false}` and `initWm1` purges a saved
+dock for it (`wmPurgeId`, the moresheet purge generalized). A publish
+started from the Publish window goes through `syncSheetRelease()`:
+floating, it closes and the job dialog takes over; docked, it stays
+(closing would collapse the dock mid-job) and re-renders as the job
+runs. Tests: "Publish lists: …", "Publish window: songs first…",
+"Publish all: …", "Window manager: the Publish window (syncsheet) is
+dockable…" in tests/night-roll.test.mjs; tests/e2e/docking.spec.mjs
+WINDOWS (syncsheet in, pubjobsheet out).
 
 Auto-clear (2026-09-29): a job that ends `done` or `cancelled` calls
 `jobsAutoClear(id)` from `jobApi`'s `finish()`, which `setTimeout`s
@@ -5637,7 +5674,13 @@ song] below it from the outer context." No top dock.
   reveal for a truncated status line isn't a panel worth pinning open while
   working the roll; it's still registered with `makeWindow` (so it's a known
   window) but `{dockable: false}`, same as the import hub, so it gets no Dock
-  control. Five windows are actually dockable now.
+  control. Five windows are actually dockable now. **2026-10-04 (Terminal
+  #111):** `#pubjobsheet` (the publish job dialog, "a very temporary
+  window") went `{dockable: false}` the same way — `initWm1` purges a saved
+  dock for it via `wmPurgeId` — and `#syncsheet` (the Publish window) was
+  migrated dockable (`#syncsheet-h2`, `#syncsheet-home`, its `.docked`
+  scrolling body is `#syncpending`). Dockable now: AI, Notes, Instruments,
+  Jobs, Publish, Mixer.
 - **Not yet migrated** (keep working exactly as before, via the generic ✕/
   drag/grip loops, with no Dock control): `#songsheet`, `#noteeditor`,
   `#aboutsheet`, `#drumsheet`, `#trsheet`, `#insbarsheet`, `#gridsheet`,
@@ -5724,7 +5767,8 @@ scrolls while docked, it's exactly the dock's height — and each migrated
 window's ONE scrolling body element gets `flex: 1; min-height: 0;
 overflow-y: auto` scoped to `.docked` (`#asksheet.docked #asklog`,
 `#instsheet.docked #instrows`, `#notelistsheet.docked #notelistrows`,
-`#jobssheet.docked #jobslist`, `#pubjobsheet.docked #pubjoblist`,
+`#jobssheet.docked #jobslist`, `#syncsheet.docked #syncpending` (the
+Publish window, 2026-10-04 — `#pubjobsheet` no longer docks),
 `#infosheet.docked #infosheettext`). Every other row (the header `<h2>`,
 chip rows, the input row, the button row) keeps its natural size as an
 ordinary flex child of `.sheet`'s existing `display: flex; flex-direction:

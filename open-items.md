@@ -4,6 +4,25 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Publish window tweaks — DONE 2026-10-04 (Terminal #111; Josh: "Don't
+want chat to show up in the count of the songs that need to be
+published… the main publish window is actually potentially useful to be
+docked" — docs/plans/2026-10-04-publish-window.md, Fable review +
+build on a worktree branch, not merged/pushed). Publish (N) counts
+songs only (`pendingSongs`: dirty draft or unsynced notes); chats —
+general, terminal, and a song whose only pending item is chat — are
+`pendingChats`, shown in a Chats section under the songs, folded by
+default (device-local pref `ff1roll-pubchats-open`), each with Publish
+chat and a Publish chats (M) button; Publish all = songs only (its
+title says so). The Publish window (#syncsheet) docks like AI/Notes and
+stays open when a publish starts from it docked; the publish job dialog
+(#pubjobsheet) no longer docks (a saved dock for it is purged at boot).
+Help (files tab Publish entry, Dock, Publish dialog), HELP.md, drift
+keywords, NIGHT-ROLL.md ("Publish window: songs vs chats"), boot-order
+snapshot, docking.spec WINDOWS. To eyeball: dock the Publish window
+left/right/bottom and at phone width (no Dock button), the folded Chats
+row and its open state, a song row's Publish popup with no Dock button.
+
 ## Theory FACTS toolkit — BUILT 2026-10-04, not wired in (Josh: "make sure they're tested… just tell me where it would be integrated")
 
 `src/theory/facts/*.js` + `tools/theory.mjs` + tests/theory.test.mjs
