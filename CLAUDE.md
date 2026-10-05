@@ -18,7 +18,12 @@ before touching the player.
 3. **docs/HELP.md**: `node tools/build_help.mjs` — NEVER hand-edit it.
 4. **Drift keyword** in tests/night-roll.test.mjs FEATURES list (must
    appear in the help-sheet region; the suite fails otherwise).
-5. **Doc sweep — ask of every change:**
+5. **Ask tool** (Josh, 2026-10-05, "any features going forward must also
+   be integrated with the AI"): every new user-facing feature ships with
+   its Ask tool in src/ask/tools.js, plus a line in the how-to-ask list,
+   or an explicit "not applicable: <reason>" in the commit message. The
+   inventory is docs/ai-parity.md.
+6. **Doc sweep — ask of every change:**
    - `NIGHT-ROLL.md` — new subsystem, convention, or tool? Document it.
    - `WEB-SESSION.md` — does it change what an analysis session should
      read or run? (The query tools were missed here once. Don't repeat.)
@@ -26,7 +31,7 @@ before touching the player.
    - `docs/learning/glossary.md` — did a new music-theory term come up? Add it
      (encountered vs demonstrated — promote only with evidence).
    - `open-items.md` — new queued work, closed items, design decisions.
-6. Browser-verify via claude-in-chrome, commit, push with hash check
+7. Browser-verify via claude-in-chrome, commit, push with hash check
    (`git rev-parse HEAD origin/main` must match). Pushes auto-deploy
    Pages; do NOT manually kick builds (collisions email Josh failures) —
    only kick if a build visibly hangs.
