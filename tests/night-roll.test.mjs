@@ -11047,6 +11047,15 @@ test("⏮ goes to the ruler selection's start — armed or parked — and scroll
   assert.deepEqual([val(`playCursor`), val(`view.x`)], [0, 0], "no selection: bar 1");
 });
 
+test("one-song publish: a song-list (README) warning stays on screen — status line + window left open (Terminal #112 follow-up)", () => {
+  installSong();
+  run(`globalThis.__info = null; setInfo = m => { __info = m; }; globalThis.__rel = 0; syncSheetRelease = () => { __rel++; };`);
+  run(`syncPublishedOne("Published ✓ — song and annotations together (Pages takes ~1 min). (the repo's song list didn't update: HTTP 409)")`);
+  assert.match(val(`__info`), /didn't update: HTTP 409/);
+  run(`syncPublishedOne("Published ✓ — song and annotations together (Pages takes ~1 min).")`);
+  assert.match(val(`__info`), /^Published .* ✓$/);
+});
+
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
   const a = await createApp();
   a.run(`

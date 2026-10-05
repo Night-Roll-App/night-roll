@@ -1211,7 +1211,10 @@ export function pubJobOneMotion(job) {
 // ⇪ Publish song, done (both of its branches): the status line keeps
 // "Published <song> ✓" past the window, then the window goes (a docked one
 // stays) — back to the notes list when that is where it came from.
-export function syncPublishedOne() {
+export function syncPublishedOne(result = "") {
+  // the song shipped either way, but a song-list (README) warning must stay
+  // readable: it goes to the status line and the window stays open
+  if (/didn't update/.test(result)) { setInfo(result); return; }
   setInfo("Published " + songTitleOf(S.songKey) + " ✓");
   setTimeout(() => {
     syncSheetRelease();
@@ -2063,7 +2066,7 @@ export function initSheets7() {
         const token = writeToken();
         if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
         status.textContent = await publishOpenComposition(ghHeaders(token), m => status.textContent = m);
-        syncPublishedOne();
+        syncPublishedOne(status.textContent);
       } catch (err) { status.textContent = "Publish failed: " + err.message; }
       finally { btn.disabled = false; }
       return;
