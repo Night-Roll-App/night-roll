@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "chaos-temple", "origin": {"kind":"capture"}, "stamp": 1791167898774, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "chaos-temple", "origin": {"kind":"capture"}, "stamp": 1791174421258, "notes": [
   {"at":[1,1],"type":"key","key":"Em"},
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"to":[1,4],"type":"chord","chord":"Em"},
@@ -6,5 +6,16 @@
   {"at":[3,1],"to":[4,2],"type":"chord","chord":"C"},
   {"at":[4,3],"to":[4,4],"type":"chord","chord":"D"},
   {"at":[5,1],"to":[5,4],"type":"chord","chord":"Em"},
-  {"at":[6,1],"to":[6,4],"type":"chord","chord":"D"}
+  {"at":[6,1],"to":[6,4],"type":"chord","chord":"D"},
+  {"at":[7,1],"to":[7,4],"type":"chord","chord":"C#m7","note":"No 5th. Passing chord on the descending bass E-D-C#-C; also borrowed from E major."},
+  {"at":[8,1],"to":[8,4],"type":"chord","chord":"Cmaj7"},
+  {"at":[9,1],"to":[9,4],"type":"chord","chord":"G"},
+  {"at":[10,1],"to":[10,4],"type":"chord","chord":"D"},
+  {"at":[11,1],"to":[11,4],"type":"chord","chord":"Em"},
+  {"at":[12,1],"to":[12,4],"type":"chord","chord":"Bm"},
+  {"at":[13,1],"to":[13,4],"type":"chord","chord":"C"},
+  {"at":[14,1],"to":[14,4],"type":"chord","chord":"F","note":"F is not in the key and this chord certainly sounds unique"},
+  {"at":[14,1],"to":[16],"type":"section","label":"Turn","note":"Neapolitan from Phrygian. Goes to Dsus4, not the dominant. No B in bars 15 and 16. Melody rises F G A, then steps back down G, F#, E into bar 1. Tension fades by step instead of releasing."},
+  {"at":[15,1],"to":[15,4],"type":"chord","chord":"Dsus47","note":"Maybe just a sus 4 but that c note is long"},
+  {"at":[16,1],"to":[16,4],"type":"chord","chord":"D9/A","note":"You could argue that this is just D major over A. But the C note and the E note are long."}
 ] }
