@@ -278,6 +278,18 @@ the menu's character count (song chat and general chat), so every later
 batch shows its cost in the test output, and §2's table gets the real
 numbers.
 
+**Measured after batch 1 (2026-10-05, the same `toolInstructions` shape,
+chars ÷ 3.7):** the `act` tool is 1,202 chars ≈ **325 tokens for 7
+actions** (go_to, play, stop, select, undo, drummer, help) — about 70
+chars per index line plus a ~700-char fixed header, footer and schema.
+The whole song-chat menu is 12,122 chars ≈ 3,276 tokens: 12 tools +
+act, against 12,286 (13 tools, the standalone drummer) just before and
+10,919 (12 tools) before the drummer existed. So the drummer costs ~60
+chars as an action instead of ~1,370 as a tool, and batch 3 (folding the
+12 in) is where the big drop is. The general chat's act lists only
+`help`. The vm test "act: one tool, one index line per registered action…"
+prints both numbers every run and caps act's at 650 + 110 × actions.
+
 ### Actions (the registry)
 
 "quiet" = ends without a second model round. "edits" = goes through
@@ -334,6 +346,13 @@ never guesses.
 - "Compare this to Ambush." / "What did I write in Graveyard's notes?" — read another song
 - "Publish." — publish the open song
 - "Tell the terminal the drummer fills are too busy." — note to the terminal
+- "Go to bar 13." / "Go to bar 13 and play." — act: go_to (+ play), one reply (batch 1, 2026-10-05)
+- "Play from bar 17." / "Stop." — act: play / stop
+- "Loop bars 5 to 12." / "Select bars 5 to 12, no cycle." / "Clear the selection." — act: select
+- "Undo that." / "Undo the last three." / "Redo." — act: undo (says what each step was)
+- "Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2." — act: drummer
+- "What can you do?" / "Help with drummer." — act: help
+- Help → AI → **AI commands** lists every one of these with a phrase, generated from the registry.
 
 ### Coming (proposed in §1; all of these are `act` actions)
 
@@ -341,15 +360,13 @@ In build order (§5): the tedious things first, the one-tap things
 (play, stop, go to a bar, show a panel) last.
 
 - "Open Graveyard." / "Open Graveyard and play it from bar 9." — open_song
-- "Play from bar 17." / "Stop." / "Back to the start." — playback
-- "Loop bars 5 to 12." — select + cycle
+- "Back to the start." — to_start (today: "go to bar 1")
 - "Slow it to 70 percent." / "Volume 80." — set_playback
 - "Metronome on, count me in." — set_playback
 - "Play the FF1 album." / "Next song." / "Leave the album." — album
 - "Mute the noise channel." / "Solo the triangle." / "Pan pulse 1 left a bit." — set_track
 - "Make pulse 2 a square lead voice." / "Rename track 4 to bass." — set_track
 - "Add a track called pad." / "Delete the empty track." — add/delete track
-- "Undo that." / "Undo the last three." / "Redo." — undo
 - "Delete the notes on pulse 1 in bars 5 and 6." — edit_notes delete
 - "Move bars 9 to 12 on pulse 2 up an octave." / "…up a step in the key." — transpose
 - "Copy the pulse 1 line in bar 3 to pulse 2, an octave down." — copy
@@ -357,7 +374,6 @@ In build order (§5): the tedious things first, the one-tap things
 - "Make bar 4's notes on pulse 1 softer — velocity 60." — velocity
 - "Split the long note at bar 7 at beat 3." / "Divide it into three." — split / divide
 - "Keep that on pulse 1." — keep_that
-- "Drums for bars 5 to 12, less energy than the A' part." — drummer (in progress)
 - "Bass line for bars 1 to 16, busy 2, follow the drums." — bassist
 - "Show the score." / "Open the mixer." / "Show the circle of fifths." — show
 - "Light up every B flat." / "find off." — find_pitch
@@ -466,7 +482,11 @@ section, and §3 of this file moves its phrases from "coming" to "works
 today". Tests are vm tests (`npm test`) in tests/night-roll.test.mjs; the
 write_notes/copy_bars tests are the template (gate refusal, one undo
 step, an unknown track name is an error, Learning sweep). New actions are
-registry entries in src/ask/tools.js, never new entries in `ASK_TOOLS`.
+registry entries in src/ask/actions.js (`ASK_ACTIONS`), never new entries
+in `ASK_TOOLS` — the procedure is NIGHT-ROLL.md "act — the action
+registry": one entry, `node tools/build_ask_help.mjs && node
+tools/build_help.mjs` (the Help sheet's AI commands rows are generated
+from the registry), one vm test.
 
 "Menu after" = the always-sent tool text per round once the batch lands
 (today ~2,950 tokens). Estimates; batch 1's test pins the real count and
@@ -475,8 +495,8 @@ typical request (quiet = 1, edits and questions = 2).
 
 | # | batch | actions | files touched | tests | menu after | rounds | builder |
 |---|---|---|---|---|---|---|---|
-| 0 | Drummer | `drummer` | — | — | — | — | **in progress.** If it lands as its own tool (~300 tokens), batch 4 turns it into an action. |
-| 1 | The `act` tool (foundation) | registry, index builder, `help`, quiet `{final}` results, `undo` | src/ask/tools.js (registry, `act` runner), src/ask/bridge.js (`askToolsNow`), vendor/ai/web/backends.js + client.js (`{final}` ends the exchange — library change, made in Night-Roll-App/claude-bridge and synced) | menu byte-identical across two messages; menu size printed and pinned; a list runs in order, stops at the first failure; a bad call's error carries the spec; an all-quiet call = exactly one request to the fake server; undo reports what it undid | ~3,200 | 2 | **TRICKY — Fable** |
+| 0 | Drummer | `drummer` | — | — | — | — | **done 2026-10-05** — landed as a tool (~370 tokens), folded into `act` as an action the same day (Josh #449). |
+| 1 | The `act` tool (foundation) | registry, index builder, `help`, quiet `{final}` results, `undo` | src/ask/tools.js (registry, `act` runner), src/ask/bridge.js (`askToolsNow`), vendor/ai/web/backends.js + client.js (`{final}` ends the exchange — library change, made in Night-Roll-App/claude-bridge and synced) | menu byte-identical across two messages; menu size printed and pinned; a list runs in order, stops at the first failure; a bad call's error carries the spec; an all-quiet call = exactly one request to the fake server; undo reports what it undid | measured **3,276** (act alone 325) | 1–2 | **done 2026-10-05 (Fable)** — src/ask/actions.js; also go_to/play/stop/select from batch 9, `drummer` folded in, 7 tolerance tests for local models (#443), `runActions` with no model (§7), Help → AI commands generated from the registry (#451); library commit dfef7e7 awaits a tag + `ai-sync --ref` |
 | 2 | Open a song + chat handoff | `open_song` (§4) | src/ask/tools.js, src/ask/client.js (`askLanded` runs the switch), src/ask/sheet.js (↪ line, carried-over chip), src/ask/context.js (one prompt line) | switch only after landing; nothing after `open_song` runs; ambiguous name lists matches; local drafts found; unsent draft → chip, not send; album run cleared; load failure → no handoff; one hop only | ~3,210 | 1 | **TRICKY — Fable** |
 | 3 | Fold the old tools in | the 12 tools of §1 + `meter`/`chop` kinds | src/ask/tools.js, src/ask/bridge.js (`ASK_SONG_ONLY_TOOLS` becomes a per-action flag), src/ask/context.js (prompt text naming old tools) | every existing tool test passes through `act`; their rule texts reachable by `help` and in errors; Learning sweep; menu size drops | **~400** | as today | **TRICKY — Fable** |
 | 4 | Regenerate drums and bass | `drummer` as an action (if needed), `bassist` | src/ask/tools.js (wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; copy the drummer's shape) | says what it replaces; refuses on captures; one undo; reply never names a chord it guessed (Learning sweep) | ~440 | 2 | EASY — Sonnet |

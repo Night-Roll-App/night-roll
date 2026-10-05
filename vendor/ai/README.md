@@ -89,7 +89,7 @@ a native shell's capture plugin are the app's.
 `web/client.js` — the exchange. The library never sees what the context
 says or which tools exist; the host builds and runs all of it:
 - `systemPrompt()`, `context(scope, budget)`, `terminalContext()`, `budget()`, `estimate(system, messages)`, `buildMessages(msgs, text, ctx, budget)` (history selection is the app's — e.g. which earlier turns may enter this request)
-- `tools()`, `runTool(name, args)`, `modelName()`, `messageMeta()` → fields merged into every message the library stores (an app's own tags)
+- `tools()`, `runTool(name, args)`, `modelName()`, `messageMeta()` → fields merged into every message the library stores (an app's own tags). A `runTool` result of the shape `{final: "text"}` ends the exchange: the text (after any words the model said before the call) is the reply and the model gets no further round — for tools whose one result line is the whole answer (`aiToolFinal`/`aiFinalText` in backends.js; both the live loop and `aiResume` honour it; a round where only some results are final goes back to the model as usual)
 - `backend()` (default `aiPickBackend`), `jobsSupported()` (default `aiJobsSupported`) — overridable so an app's tests can stub one name
 - `keys.terminal`, `canResume()`, `resumeScope()`
 - `bubble(role, text, meta)` → an element-like `{textContent, dataset, classList}`; `showThinking(live, raw)`; `fillBubble(live, text)`; `liveBubble(jobId)`

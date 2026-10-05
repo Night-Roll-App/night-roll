@@ -82,6 +82,7 @@ import * as inputRecord from "./input/record.js";
 import * as inputKeyboard from "./input/keyboard.js";
 import * as askBackend from "./ask/backend.js";
 import * as askTools from "./ask/tools.js";
+import * as askActions from "./ask/actions.js";
 import * as askContext from "./ask/context.js";
 import * as askBridge from "./ask/bridge.js";
 import * as askShots from "./ask/shots.js";
@@ -126,7 +127,7 @@ export function exposeGlobals() {
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord, inputKeyboard,
-                     askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost, askAnnotate,
+                     askBackend, askTools, askActions, askContext, askBridge, askShots, askSheet, askClient, askHost, askAnnotate,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiStudySheet, uiSheets, uiWm, uiVellane,
                      sessionSong, sessionAlbum, sessionFiles, sessionBoot, uiPerf, platformSw,
                      hooks, wire };

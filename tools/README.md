@@ -28,6 +28,7 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | Script | Does |
 |---|---|
 | `build_help.mjs` | Generates `docs/HELP.md` from `help/help.html` + the help tabs in index.html. Never edit the output. |
+| `build_ask_help.mjs` | Writes Help → AI's "AI commands" rows into `help/help.html` (between the ask-commands markers) from the act registry (src/ask/actions.js); run it after adding an action, then `build_help.mjs`. A vm test fails while the rows are stale. |
 | `build_manifest.mjs` | Builds `albums/manifest.json` by scanning `albums/*/` (titles from filenames + each `album.json`). |
 | `dump_notes.mjs [dir ...]` | Writes `<song>.notes.txt` beside every .mid — plain-text dumps analysis sessions can read. |
 | `album-order.mjs [--write]` | Orders an album's songs by the game's own track order instead of alphabetically. |

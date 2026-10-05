@@ -35,6 +35,16 @@ export function aiHostKindOf(url) { // "local" never prompts; everything else as
   try { host = new URL(url).hostname; } catch (err) { return "bad"; }
   return host === "localhost" || host === "127.0.0.1" || host === "[::1]" ? "local" : "other";
 }
+// A tool result of the shape {final: "text"} ends the exchange: that text is
+// the reply (after any words the model said before the call), and the model
+// gets no further round — the host decides which of its tools end this way
+// (navigation and the like, where a second round would only echo the line).
+// Anything else goes back to the model as a tool message. Both loops honour
+// it: the live one in aiRemoteBackend.chat and the resumed one in client.js
+// (aiResume). A round where only some results are final is not final: those
+// texts travel back as plain tool messages like any other result.
+export function aiToolFinal(result) { return result && typeof result === "object" && typeof result.final === "string" ? result.final : null; }
+export function aiFinalText(words, finals) { const w = (words || "").trim(); return (w ? w + "\n" : "") + finals.join("\n"); }
 export function aiRemoteBackend(host) { // OpenAI-compatible SSE; the bridge adds jobs + sessions on top of the same wire
   const url = aiUrlOf(host);
   return {
@@ -91,14 +101,18 @@ export function aiRemoteBackend(host) { // OpenAI-compatible SSE; the bridge add
         if (!calls.length && !out.trim() && round === 0 && !retried) { retried = true; round--; continue; } // a thinking-only turn (Qwen, first request after a load): one silent retry
         if (!calls.length || !onTool) return out;
         convo.push({role: "assistant", content: out || "", tool_calls: calls.map((t, i) => ({id: t.id || "call_" + round + "_" + i, type: "function", function: {name: t.name, arguments: t.args || "{}"}}))});
+        const finals = [];
         for (const [i, t] of calls.entries()) {
           let args = {};
           try { args = JSON.parse(t.args || "{}"); } catch (err) { args = {_parse_error: String(err.message)}; }
           if (onStatus) onStatus("⚙ " + t.name + "…");
           let result;
           try { result = await onTool(t.name, args); } catch (err) { result = {error: String(err && err.message || err)}; }
-          convo.push({role: "tool", tool_call_id: t.id || "call_" + round + "_" + i, content: typeof result === "string" ? result : JSON.stringify(result)});
+          const fin = aiToolFinal(result);
+          if (fin !== null) finals.push(fin);
+          convo.push({role: "tool", tool_call_id: t.id || "call_" + round + "_" + i, content: fin !== null ? fin : typeof result === "string" ? result : JSON.stringify(result)});
         }
+        if (finals.length === calls.length) return aiFinalText(out, finals); // every tool of the round ended the exchange itself (aiToolFinal): no further request
         onDelta(out ? out + "\n\n…" : "…"); // the words so far stay; the next round continues them
       }
       throw new Error("the model kept calling tools without answering — try again");

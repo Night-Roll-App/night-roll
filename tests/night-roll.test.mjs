@@ -2810,6 +2810,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
     "Analysis sheet", "Check coverage", "What to look for", // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
+    "go to bar 13 and play", "AI commands", "(act: go_to", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6275,11 +6276,216 @@ test("drummer: refuses on a locked capture with nothing changed; hidden from the
   assert.deepEqual(askDrSnap(), s0, "nothing changed on a locked song");
   assert.equal(val(`editUndo.length`), 0);
   run(`localStorage.removeItem(draftStoreKey(songKey));`);
-  assert.ok(val(`ASK_TOOLS.some(t => t.function.name === "drummer")`), "registered");
+  // registered as an ACTION of the act tool (docs/ai-parity.md §2; Josh via Ask #449: the standalone schema cost ~350 tokens a message) — never a tool of its own
+  assert.ok(!val(`ASK_TOOLS.some(t => t.function.name === "drummer")`), "no standalone drummer tool");
+  assert.ok(val(`ASK_ACTIONS.some(d => d.name === "drummer")`), "registered as an action");
+  assert.match(val(`askActTool(false).function.description`), /\ndrummer from_bar to_bar\|section [^\n]* — run the Drummer/, "one index line in the song chat's act tool");
   run(`askGeneral = true;`);
-  assert.ok(!val(`askToolsNow().some(t => t.function.name === "drummer")`), "drummer hidden in the general chat");
+  assert.doesNotMatch(val(`askActTool(true).function.description`), /drummer/, "drummer hidden in the general chat (needs the open song)");
   run(`askGeneral = false;`);
-  assert.ok(val(`JSON.stringify(ASK_TOOLS.find(t => t.function.name === "drummer")).length`) < 1600, "the schema stays short — it rides along with every Ask message");
+});
+
+// ---- act (docs/ai-parity.md §2, batch 1 of §5; src/ask/actions.js): the
+// one tool every app action lives behind — a fixed index that is byte-
+// identical every message, help on demand, the spec in every rejection, lists
+// that run in order and stop at the first failure, quiet results that end the
+// exchange ({final}, vendor/ai/web/backends.js), the registry callable with
+// no model (runActions), and the tolerances a sloppy local model needs (Josh
+// via Ask #443 — one test per tolerance).
+const aval = async code => JSON.parse(JSON.stringify(await run(code))); // an awaited tool result, localized out of the vm realm (same reason as val)
+function installActSong() { // an editable composition, 8 bars, a pitched track and an empty kit track
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/act-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // the local copy: editable
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], // sec: stop() maps the clock back through secToTick
+      tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 7 * 1920, d: 480, p: 62, v: 80}]}, {name: "drums", notes: []}]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null; drTakes = []; drActive = -1;
+    rollnotes = []; declaredTs = null; keyRegions = []; previewSf = null; rangeSel = null; playCursor = 0; askGeneral = false;
+    if (playing) stop();
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+
+test("act: one tool, one index line per registered action in name order, byte-identical across messages and songs; two variants (song / general); its cost is printed and capped", () => {
+  installActSong();
+  const names = val(`askToolsNow().map(t => t.function.name)`);
+  assert.ok(names.includes("act"), "act is offered in the song chat");
+  assert.ok(!val(`ASK_TOOLS.some(t => t.function.name === "act")`), "ASK_TOOLS stays pure data: askToolsNow appends act");
+  const menu1 = run(`JSON.stringify(askToolsNow())`);
+  run(`playCursor = 3 * barTicks(); rangeSel = {a: 0, b: barTicks(), cycle: true}; songKey = "albums/compositions/nightroll/act-other.mid"; rollnotes = deriveNoteTypes([{b1: 1, q1: 1, text: "section: A", added: true}]).map(resolveNote); finalizeNotes();`);
+  assert.equal(run(`JSON.stringify(askToolsNow())`), menu1, "byte-identical: nothing per-message in the menu");
+  installActSong();
+  const lines = val(`askActTool(false).function.description`).split("\n");
+  const index = lines.slice(1, -1);
+  const expected = val(`ASK_ACTIONS.map(d => d.name).sort()`);
+  assert.deepEqual(index.map(l => l.split(" ")[0]), expected, "one line per registered action, in name order");
+  for (const l of index) assert.match(l, /^[a-z_]+( [^—]*)? — .+$/, "name args — gloss: " + l);
+  assert.ok(expected.includes("go_to") && expected.includes("play") && expected.includes("stop") && expected.includes("select") && expected.includes("undo") && expected.includes("drummer") && expected.includes("help"));
+  // the general chat: only what needs no song (help); the song-only tools are gone as before
+  run(`askGeneral = true;`);
+  assert.deepEqual(val(`askActTool(true).function.description`).split("\n").slice(1, -1).map(l => l.split(" ")[0]), ["help"]);
+  assert.ok(val(`askToolsNow().some(t => t.function.name === "act")`) && !val(`askToolsNow().some(t => t.function.name === "write_notes")`));
+  run(`askGeneral = false;`);
+  // the cost, measured the way the bridge pastes it (toolInstructions: "- name: description\n  schema: {…}"), printed so every batch shows its number, capped so a long-winded entry fails here
+  const menuOf = tools => tools.map(t => `- ${t.function.name}: ${t.function.description}\n  schema: ${JSON.stringify(t.function.parameters || {})}`).join("\n");
+  const act = menuOf([val(`askActTool(false)`)]).length, all = menuOf(val(`askToolsNow()`)).length;
+  console.log(`act menu: ${act} chars (~${Math.round(act / 3.7)} tokens) for ${expected.length} actions; whole song-chat menu: ${all} chars (~${Math.round(all / 3.7)} tokens)`);
+  assert.ok(act < 650 + 110 * expected.length, "act's text stays near ~100 chars per action plus a fixed header: " + act);
+});
+
+test("act: a list runs in order and stops at the first failure — the error names the step, what ran before it and the failed action's full text; an unknown action's error carries the index; a bad arg runs nothing; no song open refuses song actions, help still answers", async () => {
+  installActSong();
+  await assert.rejects(run(`askAct({do: [{action: "go_to", bar: 3}, {action: "go_to", bar: 99}, {action: "select", from_bar: 2, to_bar: 4}]})`), e => {
+    assert.match(e.message, /^step 2 \(go_to\) failed: bar must be a whole number 1–24 \(this song has 8 bars\)/); // 8 bars + the 16 to write in (jumpBarCap: editable)
+    assert.match(e.message, /done before it: 1\. cursor at 3\.1/);
+    assert.match(e.message, /go_to \{bar, beat\?\}: moves the cursor/, "the rejected action's full text rides in the error");
+    return true;
+  });
+  assert.equal(val(`playCursor`), 2 * 1920, "step 1 ran");
+  assert.equal(val(`rangeSel`), null, "step 3 never ran");
+  await assert.rejects(run(`askAct({do: [{action: "teleport", bar: 3}]})`), e => { assert.match(e.message, /no action named "teleport"/); assert.match(e.message, /actions:\n[\s\S]*go_to bar beat\? — /); return true; });
+  await assert.rejects(run(`askAct({do: [{action: "go_to", bar: 2, beat: 9}]})`), /beat must be ≥ 1 and < 5 \(4 beats per bar\)/);
+  assert.equal(val(`playCursor`), 2 * 1920, "a bad arg: nothing moved");
+  run(`song = null;`);
+  await assert.rejects(run(`askAct({do: [{action: "stop"}]})`), /no song open/);
+  assert.match(await aval(`askAct({do: [{action: "help"}]})`), /go_to bar beat\? — move the cursor/);
+  assert.match(await aval(`askAct({do: [{action: "help", name: "select"}]})`), /^select \{from_bar, to_bar\?, cycle\?, clear\?\}: selects whole bars/);
+  installActSong();
+});
+
+test("act: quiet actions (go_to, select, play, stop) end the exchange — the result is {final: lines}; one answered item makes it a plain string; play before sound is unlocked asks for the tap; the lines are facts", async () => {
+  installActSong();
+  const q = await aval(`askAct({do: [{action: "go_to", bar: 2, beat: 3}, {action: "select", from_bar: 2, to_bar: 5}]})`);
+  assert.deepEqual(q, {final: "1. cursor at 2.3\n2. selected bars 2–5 — ▶ loops them"});
+  assert.equal(val(`playCursor`), 1920 + 2 * 480);
+  assert.deepEqual(val(`rangeSel`), {a: 1920, b: 5 * 1920, cycle: true});
+  assert.match(val(`localStorage.getItem(rangeSelKey(songKey))`), /"cycle":true/, "persisted per song, as a ruler drag is");
+  assert.deepEqual(await aval(`askAct({do: [{action: "select", from_bar: 4, cycle: false}]})`), {final: "selected bar 4"});
+  assert.deepEqual(val(`rangeSel`), {a: 3 * 1920, b: 4 * 1920, cycle: false});
+  assert.deepEqual(await aval(`askAct({action: "select", clear: true})`), {final: "selection cleared"});
+  assert.equal(val(`rangeSel`), null);
+  // play: locked until a tap made the audio context; then it really starts the transport, and stop stops it
+  run(`S.audio = null;`);
+  await assert.rejects(run(`askAct({do: [{action: "play", from_bar: 3}]})`), /tap Play once, then ask again/);
+  assert.equal(val(`playing`), false);
+  run(`ensureAudio();`);
+  assert.deepEqual(await aval(`askAct({do: [{action: "play", from_bar: 3}]})`), {final: "▶ playing from 3.1"});
+  app.tick(2000); await new Promise(r => setTimeout(r, 0)); // play() waits on the fake clock (sampled voices' short wait) before it flips playing
+  assert.equal(val(`playing`), true, "the transport really started");
+  const s = await aval(`askAct({do: [{action: "stop"}]})`);
+  assert.match(s.final, /^■ stopped at \d+(\.\d+)?$/);
+  assert.equal(val(`playing`), false);
+  assert.match((await aval(`askAct({do: [{action: "stop"}]})`)).final, /^already stopped — cursor at \d+(\.\d+)?$/);
+  // one answered item in the list: a plain string the model words (no {final})
+  const mixed = await aval(`askAct({do: [{action: "go_to", bar: 1}, {action: "help", name: "stop"}]})`);
+  assert.equal(typeof mixed, "string");
+  assert.match(mixed, /^1\. cursor at 1\.1\n2\. stop \{\}: stops playback/);
+  for (const t of [q.final, s.final, mixed]) assert.doesNotMatch(t, /\b(key|chord|meter|major|minor)\b/i, "facts only");
+});
+
+test("act: undo reports what it undid, one step per editing action; redo; nothing to undo; drummer as an action keeps its gate, its one undo step and its reply; a locked capture refuses both with the spec; the general chat refuses song actions; runActions runs without a model", async () => {
+  installActSong();
+  const d = await aval(`askAct({do: [{action: "drummer", from_bar: 2, to_bar: 3, energy: 2, seed: 777}]})`);
+  assert.equal(typeof d, "string", "edits are answered, never quiet");
+  assert.match(d, /^Drummer: \d+ hits in bars 2–3 · busy 2 · hard 2 · fills 3 · following \w+ · seed 777 \(one undo/);
+  assert.equal(val(`editUndo.length`), 1, "ONE undo step");
+  const hits = val(`song.tracks[1].notes.filter(n => !n.gone).length`);
+  assert.ok(hits > 0);
+  const u = await aval(`askAct({do: [{action: "undo"}]})`);
+  assert.match(u, /^undid: \d+ notes added$/);
+  assert.equal(val(`song.tracks[1].notes.filter(n => !n.gone).length`), 0, "the take is gone");
+  assert.match(await aval(`askAct({do: [{action: "undo", redo: true}]})`), /^redid: \d+ notes added$/);
+  assert.equal(val(`song.tracks[1].notes.filter(n => !n.gone).length`), hits, "and back");
+  assert.match(await aval(`askAct({do: [{action: "undo", steps: 3}]})`), /^undid: \d+ notes added \(the history ended there\)$/);
+  assert.equal(await aval(`askAct({do: [{action: "undo"}]})`), "nothing to undo");
+  // a locked capture: the writable gate refuses both, nothing changes, the action's full text rides along
+  const s0 = val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).length)`);
+  run(`
+    songKey = "albums/nes/mega-man-2/act-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+    editUndo = [{kind: "add", ti: 0, ni: 0}];
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  await assert.rejects(run(`askAct({do: [{action: "drummer", from_bar: 2, to_bar: 3, seed: 1}]})`), /locked here \(a capture or starter\) — ✎ Edit[\s\S]*drummer \{from_bar, to_bar \| section/);
+  await assert.rejects(run(`askAct({do: [{action: "undo"}]})`), /locked here/);
+  assert.deepEqual(val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).length)`), s0, "nothing changed on a locked song");
+  assert.equal(val(`editUndo.length`), 1, "nothing popped on a locked song");
+  run(`localStorage.removeItem(draftStoreKey(songKey)); editUndo = [];`);
+  installActSong();
+  // the general chat: song actions are not offered, and refuse by name if called anyway
+  run(`askGeneral = true;`);
+  await assert.rejects(run(`askAct({do: [{action: "drummer", from_bar: 2, to_bar: 3}]})`), /works in a song's ♪ chat, not here/);
+  run(`askGeneral = false;`);
+  // the registry without a model (docs/ai-parity.md §7): the same door, the plain outcome
+  assert.deepEqual(await aval(`runActions([{action: "go_to", args: {bar: 2}}, {action: "stop", args: {}}], false)`), {lines: ["cursor at 2.1", "already stopped — cursor at 2.1"], quiet: true, failed: null});
+  const f = await aval(`runActions([{action: "go_to", args: {bar: 0}}], false)`);
+  assert.deepEqual(f.lines, []); assert.equal(f.quiet, false); assert.equal(f.failed.step, 1); assert.match(f.failed.message, /bar must be/);
+});
+
+test("act tolerance 1: args given as a JSON string are parsed", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", args: '{"bar": 3}'}]})`), {final: "cursor at 3.1"});
+});
+test("act tolerance 2: `do` — or the whole call — given as a JSON string is parsed", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: '[{"action":"go_to","bar":4}]'})`), {final: "cursor at 4.1"});
+  assert.deepEqual(await aval(`askAct('{"do":[{"action":"go_to","bar":5}]}')`), {final: "cursor at 5.1"});
+});
+test("act tolerance 3: a single action object where a list is expected (under do, or as the whole call), and a bare action name", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: {action: "go_to", bar: 2}})`), {final: "cursor at 2.1"});
+  assert.deepEqual(await aval(`askAct({action: "go_to", bar: 3})`), {final: "cursor at 3.1"});
+  assert.deepEqual(await aval(`askAct({do: "stop"})`), {final: "already stopped — cursor at 3.1"});
+  assert.deepEqual(await aval(`askAct({do: ["stop", {action: "go_to", bar: 1}]})`), {final: "1. already stopped — cursor at 3.1\n2. cursor at 1.1"});
+});
+test("act tolerance 4: a list where a single object is expected — items nested one deep, args as a one-item list", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: [[{action: "go_to", bar: 2}], [{action: "stop"}]]})`), {final: "1. cursor at 2.1\n2. already stopped — cursor at 2.1"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", args: [{bar: 6}]}]})`), {final: "cursor at 6.1"});
+});
+test("act tolerance 5: args under arguments / params / parameters / input, or beside action; the action under name or tool", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", arguments: {bar: 2}}]})`), {final: "cursor at 2.1"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", params: {bar: 3}}]})`), {final: "cursor at 3.1"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", parameters: {bar: 4}}]})`), {final: "cursor at 4.1"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", input: {bar: 5}}]})`), {final: "cursor at 5.1"});
+  assert.deepEqual(await aval(`askAct({do: [{name: "go_to", bar: 6}]})`), {final: "cursor at 6.1"});
+  assert.deepEqual(await aval(`askAct({do: [{tool: "stop"}]})`), {final: "already stopped — cursor at 6.1"});
+});
+test("act tolerance 6: arguments that were not valid JSON at all (the library hands {_parse_error}) → an error that shows the shape wanted and the index, so the model can retry", async () => {
+  installActSong();
+  await assert.rejects(run(`askAct({_parse_error: "Unexpected end of JSON input"})`), e => {
+    assert.match(e.message, /weren't valid JSON \(Unexpected end of JSON input\) — send \{"do": \[\{"action": "<name>", \.\.\.its args\}\]\}/);
+    assert.match(e.message, /actions:\n[\s\S]*stop — stop playback/);
+    return true;
+  });
+  await assert.rejects(run(`askAct({})`), /nothing to do[\s\S]*actions:\n/);
+  await assert.rejects(run(`askAct({do: [{bar: 3}]})`), /item 1 names no action/);
+});
+test("act tolerance 7: numbers and booleans sent as strings", async () => {
+  installActSong();
+  assert.deepEqual(await aval(`askAct({do: [{action: "select", from_bar: "2", to_bar: "3", cycle: "false"}]})`), {final: "selected bars 2–3"});
+  assert.deepEqual(val(`rangeSel`), {a: 1920, b: 3 * 1920, cycle: false});
+  assert.deepEqual(await aval(`askAct({do: [{action: "select", from_bar: "5", cycle: "yes"}]})`), {final: "selected bar 5 — ▶ loops them"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "select", clear: "true"}]})`), {final: "selection cleared"});
+  assert.deepEqual(await aval(`askAct({do: [{action: "go_to", bar: "2", beat: "2.5"}]})`), {final: "cursor at 2.2.5"});
+  assert.equal(await aval(`askAct({do: [{action: "undo", steps: "2"}]})`), "nothing to undo");
+});
+
+test("act: the Help sheet's AI commands rows are generated from the registry (node tools/build_ask_help.mjs) and the file matches it; every action and every standalone tool has a row with an example phrase", () => {
+  const html = helpSource();
+  const m = html.match(/<!-- ask-commands:begin[^>]*-->\n\s*([\s\S]*?)\n\s*<!-- ask-commands:end -->/);
+  assert.ok(m, "help/help.html carries the ask-commands markers");
+  const norm = s => s.trim().replace(/\n\s+/g, "\n");
+  assert.equal(norm(m[1]), norm(run(`askHelpCommandsHTML()`)), "stale rows — run: node tools/build_ask_help.mjs && node tools/build_help.mjs");
+  for (const d of val(`ASK_ACTIONS`)) {
+    assert.ok(m[1].includes("(act: " + d.name), d.name + " has a Help row");
+    assert.ok(d.example && d.say && d.gloss && d.spec && d.args !== undefined, d.name + ": example, say, gloss, spec and args are all set");
+  }
+  for (const name of val(`ASK_TOOLS.map(t => t.function.name)`)) assert.ok(m[1].includes("(tool: " + name + ")"), name + " has a Help row (ASK_TOOL_PHRASES, until batch 3 folds it into an action)");
+  assert.ok(readFileSync(new URL("../docs/HELP.md", import.meta.url), "utf8").includes("(act: go_to bar beat?)"), "docs/HELP.md was rebuilt after the rows (node tools/build_help.mjs)");
 });
 
 test("Ask: backend selection from cfg; browser backend forces the 4k budget tier", () => {

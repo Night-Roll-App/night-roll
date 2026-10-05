@@ -4,6 +4,32 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## AI parity batch 1 — the `act` tool — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
+
+Built by a Fable builder on branch `worktree-agent-ae7c4048101970432`:
+src/ask/actions.js (the registry, 7 actions: go_to, play, stop, select,
+undo, drummer, help), the one `act` tool appended by `askToolsNow`, help
+on demand, the spec in every rejection, lists that stop at the first
+failure, quiet results that end the exchange, seven tolerances for local
+models, `runActions` callable with no model, Help → AI → **AI commands**
+generated from the registry (`node tools/build_ask_help.mjs`), the
+standalone drummer tool folded in (its schema, prompt sentence and
+song-only line removed). The convention is NIGHT-ROLL.md "act — the
+action registry". Measured: act 325 tokens for 7 actions; menu 3,276
+(was 3,321 with the standalone drummer).
+**Main session, at merge:** (1) the library change (`{final}`,
+claude-bridge commit `dfef7e7`, local only) needs a tag (v0.7.0) and
+`node tools/ai-sync.mjs --ref v0.7.0` — the branch vendored it with
+`--from`, so vendor/ai/VERSION reads "dirty" and tests/modules.test.mjs's
+`ai-sync --check` case fails by design until then; (2) CLAUDE.md shipping
+step 5 still says "its Ask tool in src/ask/tools.js" — it should read "an
+action in src/ask/actions.js's registry (the `act` tool), then `node
+tools/build_ask_help.mjs && node tools/build_help.mjs`" (the builder left
+CLAUDE.md alone); (3) browser-verify Help → AI's new rows and one quiet
+call ("go to bar 13 and play") on the bridge before pushing. Next: batch
+2 (`open_song`, §4), then batch 3 (fold the 12 tools in — the menu drops
+to ~400 tokens).
+
 ## Ask tool for the Drummer — SHIPPED 2026-10-05 (from Josh, via Ask on ambush; docs/plans/2026-10-05-ask-drummer-tool.md)
 
 Josh wants to SPEAK drum requests to Ask and have Ask run the real Drummer
@@ -19,9 +45,9 @@ path byte for byte). Help (AI entry), HELP.md, NIGHT-ROLL.md ✦ Ask tools.
 Nothing touched on ambush. His two requests, as Ask would call them:
 `drummer({section: "A", energy: 4})` (one notch under the 5 he used) and
 `drummer({section: "Intro", follow: ["pulse1", "pulse2"]})`.
-Open: the schema is short on purpose (tool schemas ride with every Ask
-message); a later AI-parity pass may fold the tools into one
-registry-backed action tool — askDrummer is a plain function ready for it.
+Folded the same day (Josh #449, the schema cost ~350 tokens a message):
+`drummer` is now an action of the `act` tool (src/ask/actions.js) calling
+the same askDrummer — see the AI parity batch 1 entry above.
 
 ## Drummer fills + ghosts — BUILT 2026-10-05 on a worktree branch, awaiting Josh's ear (Terminal #139–141; docs/plans/2026-10-05-drum-generation-review.md §6)
 

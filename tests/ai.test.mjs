@@ -191,6 +191,36 @@ test("Night Roll bridge wire format: x-nr-job/x-nr-song headers, and a streamed 
   } finally { await srv.close(); }
 });
 
+test("act: a call made only of quiet actions ends the exchange on the tool's own line — exactly ONE request to the server, the line is the stored reply (docs/ai-parity.md §2 'quiet actions'; the library's {final} protocol)", async () => {
+  const srv = await startServer((req, res, rec) => {
+    if (rec.method === "GET" && rec.path === "/v1/models") return sendJson(res, 200, { data: [{ id: "claude-code" }] });
+    if (rec.method === "GET" && rec.path === "/v1/jobs") return sendJson(res, 200, { ok: true, running: 0, inbox: true, terminal: true, terminalLive: true, sessions: true });
+    if (rec.method === "POST" && rec.path === "/v1/chat/completions") {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      sse(res, { choices: [{ delta: { tool_calls: [{ index: 0, id: "c1", function: { name: "act", arguments: "{\"do\":[{\"action\":\"go_to\",\"bar\":3},{\"action\":\"select\",\"from_bar\":2,\"to_bar\":3}]}" } }] } }] });
+      sse(res, { choices: [{ delta: {}, finish_reason: "tool_calls" }] });
+      return sseDone(res);
+    }
+    res.writeHead(404); res.end();
+  });
+  const app = await mkApp("learning");
+  try {
+    run(app, `saveCfg({aiUrl: ${JSON.stringify(srv.url)}, aiModel: "claude-code", aiBackend: "remote"}); songKey = "albums/test/act.mid"; rollnotes = []; finalizeNotes(); songEndTick = 8 * 1920; rangeSel = null;`); // songEndTick after finalizeNotes (it recomputes the end from the notes): 8 bars for go_to to land in
+    assert.ok(val(app, `askToolsNow().some(t => t.function.name === "act")`), "act rides in the request's tools");
+    run(app, `askinput.value = "go to bar 3 and loop bars 2 to 3";`);
+    await run(app, `askSend()`);
+    const reqs = srv.requests.filter(r => r.path === "/v1/chat/completions");
+    assert.equal(reqs.length, 1, "one round: the quiet result is the reply, no second model call");
+    assert.ok(reqs[0].json.tools.some(t => t.function.name === "act"));
+    assert.equal(val(app, `playCursor`), 2 * 1920, "the app really moved");
+    assert.deepEqual(val(app, `rangeSel`), {a: 1920, b: 3 * 1920, cycle: true});
+    const last = val(app, `askLoad().slice(-1)[0]`);
+    assert.equal(last.role, "assistant");
+    assert.equal(last.content, "1. cursor at 3.1\n2. selected bars 2–3 — ▶ loops them");
+    assert.equal(val(app, `askLoad().some(m => m.pending)`), false, "the marker is dropped");
+  } finally { await srv.close(); }
+});
+
 test("Learning mode: no key/chord estimate or lasso chord name leaves the device in the wire request; Normal mode sends them", async () => {
   const srv = await startServer((req, res, rec) => {
     if (rec.method === "GET" && rec.path === "/v1/models") return sendJson(res, 200, { data: [{ id: "m" }] });

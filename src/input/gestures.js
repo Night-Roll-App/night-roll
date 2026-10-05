@@ -514,6 +514,15 @@ export function openBarJump() {
   if (typeof inp.focus === "function") inp.focus();
   if (typeof inp.select === "function") inp.select(); // digits replace the old bar
 }
+export function jumpBarCap() { return askBarsCount() + (editableSong() ? PAN_TAIL_BARS : 0); }
+export function jumpToTick(tick) { // Go to bar's tail, shared with Ask's go_to action (src/ask/actions.js): seek (restart there while playing), then bring an off-screen cursor into view
+  seekOrMoveCursor(tick, {fromHere: true, noCountIn: true});
+  // "without scrolling" is the point: bring an off-screen cursor into view a
+  // third of the way in (the transport's own follow rule), and let auto-follow
+  // re-latch if the song is rolling
+  const x = tick * pxPerTick(), W = (canvas.clientWidth || 800) - S.RULER_W;
+  if (x < S.view.x || x > S.view.x + W) { S.view.x = Math.max(0, x - W * 0.3); S.followFree = false; clampView(); draw(); }
+}
 export function barJumpGo() {
   if (!S.song) return false;
   const inp = document.getElementById("bjbar");
@@ -522,16 +531,11 @@ export function barJumpGo() {
   // your own song reaches PAN_TAIL_BARS past its end — the empty bars the roll
   // already pans into to write in (clampView); a song you can only read ends
   // where its music ends
-  const bars = askBarsCount(), cap = bars + (editableSong() ? PAN_TAIL_BARS : 0);
+  const bars = askBarsCount(), cap = jumpBarCap();
   const bar = Math.max(1, Math.min(cap, n));
   const tick = (bar - 1) * barTicks();
   document.getElementById("barjumpsheet").classList.remove("on");
-  seekOrMoveCursor(tick, {fromHere: true, noCountIn: true});
-  // "without scrolling" is the point: bring an off-screen cursor into view a
-  // third of the way in (the transport's own follow rule), and let auto-follow
-  // re-latch if the song is rolling
-  const x = tick * pxPerTick(), W = (canvas.clientWidth || 800) - S.RULER_W;
-  if (x < S.view.x || x > S.view.x + W) { S.view.x = Math.max(0, x - W * 0.3); S.followFree = false; clampView(); draw(); }
+  jumpToTick(tick);
   setInfo(bar === n ? "bar " + bar
         : n > cap ? "bar " + bar + " — the song has " + bars + " bar" + (bars === 1 ? "" : "s") + (cap > bars ? " (+" + PAN_TAIL_BARS + " to write in)" : "")
         : "bar 1");

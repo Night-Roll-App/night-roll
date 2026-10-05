@@ -1701,6 +1701,7 @@ sections are these modules now.
 - **Step 14 partially stales this entry's and `input/gestures.js`'s own blocker lists above, without re-checking either file's actual content (neither is a `ui/*` file, out of this step's scope).** `draw`/`setInfo`/`pushUndo`/`saveDraft`/`renderTrackbar`/`refreshSelInfo`/`setAnchorBQ`/`setEndBQ` are now real exports of `ui/chrome.js`/`ui/trackbar.js`/`ui/note-editor.js`/`model/edits.js`, not bare app.js names — so `recFinish`'s and the gesture state machine's blocker count each drops by however many of their own named reasons just moved, but `saveEdits` (→ `scheduleAnalysisRecompute` → `finalizeNotes`) and `openVoiceMenu`/`saveVoices` (→ `buildVoiceMenu` → `ensureAudio`) remain, unresolved either way. Whether `input/gestures.js`'s state machine or `input/record.js`'s MIDI-in handlers are now fully clean enough to move is a real, live question for a future pass — this builder did not re-check either file's full content line by line, only confirmed the specific named blockers above that this step's own work actually resolved.
 - `ask/backend.js` — ✦ AI transport/providers, step 13 (2026-10-04): `aiUrl`, `aiHeaders`, `aiSSE` (OpenAI-style SSE parser), `aiHostKind`, `aiRemote`, `aiSay`, `aiModelMenu`, `aiPickModel`, `aiTest`/`AI_TEST_MS`, `aiRunTest`, `aiBackendRows`, the WebLLM in-browser path (`AI_BROWSER_MODELS`, `aiBrowserMenu`, `AI_WEBLLM_URL`, `aiWebllmLoad`, `aiEngineFor`, `aiBrowserTest`, `aiBrowser`), `aiProvider` — 20 names, all library-bound per docs/ai-library-plan.md §3 (the future claude-bridge library's `web/sse.js` + `backends.js`). **`aiHostOk` did NOT move** — its one `appConfirm()` call is still bare in app.js (`ui/*` territory, step 14). **`aiSSE` itself left this file, AI library step 1 (2026-10-04, see "AI library (vendor/ai)" above)**: it's now `import`ed from `../../vendor/ai/web/sse.js` and re-exported, not declared here — the first of this file's 20 names to actually reach the library, not just be bound for it.
 - `ask/tools.js` — the tool registry and its pure field helpers, step 13: `ASK_TOOLS` (the OpenAI tool-call schema, pure data), the per-annotation field helpers (`askFindAnnotation`/`askNoteKind`/`askNoteValue`/`askAnnotationStructural`), `askSongPath`, `ASK_READ_BARS_MAX`/`askReadBars` (the read_bars tool body, importing `askKeySpellComment`/`askBarRow`/`askSpanNotesCompact` back from `ask/context.js`), `notesTxtForDoc`/`askAnnotationsText`/`askAnnotationsTextCompact` (the read_song/read_notes text format), the write_notes/bars validators `askNormChip`/`askFindTrackIndex`/`askNoteVel`/`askWriteNotesValidate`/`askWritableGate`/`askBarsCount`/`askBarsValidate`, and `parsePitch` — a general pitch-string parser sitting inside this banner with no other caller, moved here with its one caller rather than given a `theory/` home it doesn't need yet. **Every tool body that actually WRITES — `askAddAnnotation`/`askEditAnnotation`/`askDeleteAnnotation`/`askPublishSong`/`askWriteNotes`/`askInsertBars`/`askCopyBars`/`askDeleteBars` — and the dispatcher `askRunTool` itself did NOT move**: each calls `draw()`/`finalizeNotes()`/`saveEdits()`/`saveDraft()`/`pushUndo()`/`updateSongBtn()`/`updateSyncBtn()`/`publishSong()`/`insertTime()`/`deleteTime()`/`applyTake()` — all still bare in app.js (model/UI-chrome territory, steps 9/14; `draw` permanently, step 11).
+- `ask/actions.js` — the `act` tool's action registry (2026-10-05, docs/ai-parity.md §2, batch 1 of §5): `ASK_ACTIONS` (one entry per action: name/args/gloss/spec/example/say/quiet/song/run), `ASK_TOOL_PHRASES` (the standalone tools' Help rows until batch 3 folds them), the index/declaration builders `askActList`/`askActFind`/`askActIndex`/`askActSpec`/`askActTool`, the forgiving call parser `askActJSON`/`askActItems`, the model-free runner `runActions` and the tool entry `askAct`, the shared validators `askActGiven`/`askActTruthy`/`askActInt`/`askActBarBeat`/`askActBeatText`/`askActPosText`, `askUndoDescribe`, and `askHelpCommandsHTML` (the Help sheet's generated "AI commands" rows). Layer 4 (ask); imports `play`/`stop` (audio/transport.js), `jumpToTick`/`jumpBarCap` (input/gestures.js — Go to bar's tail, extracted so both share it), `editUndoPop`/`editRedoPop` (ui/note-editor.js), `draw`, and the gate/validators/`askDrummer`/`ASK_TOOLS` back from `ask/tools.js` — a cycle inside layer 4 (`tools.js` imports `askAct` for its dispatcher), legal per check.mjs §2.3, nothing touched at module-eval time. The convention for adding an action is in the ✦ Ask section below ("act — the action registry").
 - `ask/context.js` — the system prompt and every context-block line builder, step 13: `askSys`/`ASK_SYS_BASE1`/`ASK_SYS_BASE2`/`RULE_LEARNING`/`RULE_NORMAL` (**Learning mode is the law — moved verbatim, logic untouched**), `ASK_CPT`, the span/bar-cache family (`askSpan`/`askSpanLabel`/`askKeyDeclared`/`askKeySpellComment`/`askSpanNotes`/`askSpanNotesCompact`/`askBarRow`/`askBarFingerprint`/`askSpanNotesCompactCached`/`askSpanCachedBlock`), the per-line builders (`askLegendText`/`askAppState`/`askModeLine`/`askViewCursorLine`/`askOpenSongLine`/`askCapLines`/`askNewSinceLines`), the sent/epoch cache mechanics (`askSentKey`/`Get`/`Stage`/`StageBars`/`ASK_SENT_BARS_CAP`/`Commit`/`Drop`/`Reset`, `askEpochKey`/`Get`/`Set`/`Note`, `askCachedBlock`), `askBudget`/`askStripContext`, `askTerminalContext`, and the message builder `askMsgMode`/`askBuildMessages`/`askEstimate`. **`songTitleOf`/`songWhereLabel` also landed here, unlisted by docs/split-plan.md's §1 table** — a deliberate relocation, not a misfile by default: `askOpenSongLine`/`askTerminalContext` both need them, and they're themselves clean (`S.CATALOG`, `titleCaseSlug` from `model/catalog.js`, `impDisplayTitle` from `import/capture.js`, `LINK_SONGS`/`linkRepoLabel` from `platform/base.js` — all layer ≤4) — but `model/song.js` (the thematically obvious home, layer 2) is ruled out outright: `impDisplayTitle` is layer 4, and layer 2 can never import layer 4 (check.mjs rule 5), the identical wall steps 4/5 hit for `estimateKey`/`trackIsDrums`. `ask/context.js` (layer 4) is the only legal home that unblocks real step-13 content; the dozens of other, non-ask callers left in app.js (breadcrumbs, song lists, share sheets) now import it back downward, which is always legal regardless of which layer-≤4 file it lives in. **`askContext` and `askKeyStateLine` — this step's own two biggest named targets — did NOT move**: `askKeyStateLine` calls `keyLabelState()` (shared with a non-ask UI-chrome caller at app.js's key-select label, no home of its own yet — not ask's row to claim), and `askContext` itself calls `askKeyStateLine`, inheriting the block. Both stay in app.js, importing every line-builder above back.
 - `ask/bridge.js` — seen-cursors, inbox/status polling, session + job bookkeeping, and the chat store/log, step 13: `ASK_LOCAL_SOFT`/`ASK_TOTAL_CAP`/`ASK_GENERAL_KEY`/`ASK_GENERAL_LOG`/`ASK_TERMINAL_KEY`, the seen-cursor family (`askSeenKey`/`Get`/`askMaxErrId`/`askMaxStatusId`/`askSeenMaxKey`/`askSeenMax`/`askSeenSet`/`askSeenAdvance`/`askSeenStage`/`askSeenCommit`/`askSeenDrop`), the chat store (`askStore`/`askLoad`/`askUnsavedCount`/`askRevertToSaved`/`askEvictOthers`/`askModelName`), the markdown log (`askLogKey`/`Song`/`Path`/`Header`/`Markdown`), session identity/render (`askSessionName`/`ASK_SONG_ONLY_TOOLS`/`askToolsNow`/`askInboxSeenKey`/`askInboxAllowed`/`askAgeText`/`askTabsVisible`/`askSessionLine`/`askCompactModelName`/`askSessionRender`/`askSessionRefresh`/`askStatusIdle`/`askStatusLine`/`askStatusRender`/`askStatusRecentShow`/`askStatusToggle`/`askStatusFetchCommits`/`askTermModelsLoad`/`TERM_MODELS`), job bookkeeping (`askPendingAll`/`askJobsSupported`/`askJobId`/`askPendingIndex`/`askBadgeOff`), the bridge "composing" notice (`askComposing`, POSTs `/v1/app-state` — matches docs/ai-library-plan.md §2's future `bridge-client.js`), and the 3 deploy/update-banner helpers with no logging call of their own (`deployButtonTick`/`deployBannerShow`/`deployActive`). **Every function that calls `setInfo()`/`logDebug()`/`appConfirm()`/`updateSongBtn()` directly or transitively — `askSave`/`askCommitLog`/`askInboxPoll`/`askNotesArrived`/`askStatusPoll`/`askTabsApply`/`askInboxStart`/`askFinish`/`askFail`/`askLanded`/`askRun`/`askTerminalSend`/`askSend`/`askResume`/`askResumeSoon`/`askRepending`, `deployBeforeInstall`/`scheduleBackupFlush`/`flushBackupNow`/`deployInstallNow`/`deployHoldNow`/`deployWarn`/`deploySetHeld`/`deployAskTap`, `openAsk`/`askBtnTap` — did NOT move**, matching step 7's `ensureAudio` precedent: logging/status reporting is a permanent UI-chrome concern, not a "not yet split" one.
 - `ask/annotate.js` — "✦ Annotate this song…" (2026-10-04, docs/plans/2026-10-04-annotate-song.md; its own section below): `annotateGate` (Normal only + song/key/lock/pitched-notes), the pure pieces `annotateParse`/`annotateValidate`/`annotateOverlaps`/`annotateWindows`, `annotateWrite`/`annotateClear` (one `pushUndo` each), `annotateRun` (a `jobStart("annotate")` job calling `aiProvider().chat` with `ANNOTATE_SYS` and `tools: []` — never the chat's `askRun`), the `#annotatesheet` handlers and `initAnnotate1` (main.js, right after `initChrome11`). Imports `factsDocFromState` (model/song.js — the theory-toolkit adapter) and the FACTS kinds as grounding.
@@ -2189,6 +2190,22 @@ library does — a stale vendored file can never hide behind an unrelated
 `SW_VERSION` bump. `vendor/ai/web/*.js` is precached cache-first (like
 `vendor/vexflow.js`), unlike `src/` (network-first): a synced file is
 pinned, not live-edited, so there's no staleness risk to guard against.
+
+**The `{final}` tool-result protocol (library, 2026-10-05, for the act
+tool's quiet actions):** a `host.runTool` result of the shape `{final:
+"text"}` ends the exchange — that text (after any words the model said
+before the call) is the reply and no further model round is made. Both of
+the library's tool loops honour it: `aiRemoteBackend.chat` (one POST
+instead of two; `aiToolFinal`/`aiFinalText` in web/backends.js) and
+client.js's `aiResume` (`aiFinish` at once, no new job). A round where
+only some results are final is not final — those texts travel back as
+plain tool messages. Night Roll's only producer is `askAct`
+(src/ask/actions.js). Made in claude-bridge as commit `dfef7e7` (tests in
+its tests/backends.test.mjs and tests/client.test.mjs); the branch that
+built act vendored it with `--from` (VERSION "dirty"), so the main
+session's step is: tag the library (v0.7.0), `node tools/ai-sync.mjs --ref
+v0.7.0`, commit — until then `ai-sync --check` (tests/modules.test.mjs)
+fails on that one point by design.
 
 `src/ask/backend.js` imports `aiSSE` (the OpenAI-SSE stream parser) from
 `vendor/ai/web/sse.js` and re-exports it, so every existing
@@ -4758,6 +4775,99 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     capture with nothing changed; hidden from the general (no-song)
     chat; listed as a song-only tool". Help: AI entry; drift keyword
     "run the Drummer" (FEATURES). Ask system prompt: thirteen tools.
+  - **Folded into `act` the same day (Josh via Ask #449):** the standalone
+    `drummer` schema cost ~350 tokens on every message — exactly what the
+    act design exists to avoid — so its `ASK_TOOLS` entry, its
+    `ASK_SONG_ONLY_TOOLS` line and its sentence in the system prompt went;
+    `drummer` is now an entry in `ASK_ACTIONS` (src/ask/actions.js) whose
+    `run` calls the same `askDrummer(a)` (same args, gate, undo, reply),
+    reached as `act {do: [{action: "drummer", section: "A", energy: 4}]}`.
+    The four drummer tests still call `askDrummer` directly; the
+    general-chat test now checks the action's index line instead of a
+    schema, and "act: undo reports what it undid…" drives it through `act`.
+- **act — the action registry (2026-10-05; docs/ai-parity.md §2, batch 1
+  of §5; Josh #435 "cheap, and it stays cheap", #443 local models too).**
+  One tool, `act`, is appended to `askToolsNow()`'s list (never to
+  `ASK_TOOLS`, which stays pure data); every app action lives behind it as
+  an entry of `ASK_ACTIONS` in src/ask/actions.js. Shipped actions:
+  `go_to`, `play`, `stop`, `select` (quiet), `undo`, `drummer` (edits),
+  `help`. The design, and what every later batch inherits:
+  - **The index is the menu, and it never changes shape per message.**
+    `act`'s description = a fixed header + one line per action, `name args
+    — gloss`, in name order (`askActIndex`) + a fixed footer; its JSON
+    schema is one `do` array of `{action, ...args}` items. Two variants
+    only — song chat, and the general chat (`song: false` actions only:
+    today just `help`) — and a vm test pins that `askToolsNow()` is
+    byte-identical after the cursor, the ruler selection, the song key and
+    the annotations all change. Measured as the bridge pastes it
+    (`toolInstructions`): the act tool is **1,202 chars ≈ 325 tokens for 7
+    actions** (~70 chars/action + a ~700-char fixed header/footer/schema);
+    the whole song-chat menu is 12,122 chars ≈ 3,276 tokens, against
+    12,286 (13 tools) on main the hour before and 10,919 (12 tools) before
+    the drummer. The test prints both numbers every run and caps act's at
+    `650 + 110 × actions`.
+  - **Full text only on demand.** An action's `spec` is sent in exactly
+    two places: `help {name}` and the error of a rejected call ("step 2
+    (go_to) failed: bar must be … \n done before it: 1. cursor at 3.1 \n\n
+    go_to {bar, beat?}: …"). An unknown action's error carries the index
+    instead. So a wrong guess costs the one round help would have.
+  - **Lists run in order and stop at the first failure**, naming the step
+    and what ran before it; every editing action lands its own undo step
+    (so "undo" undoes the last thing, as expected).
+  - **Quiet actions end the exchange** (`quiet: true` — navigation,
+    playback, view). When every item of a call is quiet and succeeds,
+    `askAct` returns `{final: "1. cursor at 13.1\n2. ▶ playing from
+    13.1"}` and the AI library shows that text as the reply and makes
+    **no second model round** (`aiToolFinal`/`aiFinalText`,
+    vendor/ai/web/backends.js — the live loop — and client.js `aiResume`
+    — the resumed one; a mixed round goes back to the model as usual).
+    Anything answered (edits, help) is a plain string the model words.
+    tests/ai.test.mjs proves the one-request path against the fake
+    server; the library's own tests cover both loops.
+  - **Model-neutral, and forgiving (Josh via Ask #443).** Plain text index,
+    plain text help, no Claude-only feature: the same declaration goes to
+    LM Studio/Ollama as an OpenAI `tools` entry and to the Claude Code
+    bridge as pasted prompt text. `askActItems` accepts what sloppy models
+    emit — args as an object or a JSON string, `do` (or the whole call) as
+    a JSON string, one item where a list was meant, a list nested one deep,
+    `args` as a one-item list, args under `args`/`arguments`/`params`/
+    `parameters`/`input` or flat beside `action`, the action under
+    `name`/`tool`, a bare action name, numbers and booleans as strings,
+    `{_parse_error}` from the library when the arguments weren't JSON at
+    all (→ the shape wanted + the index, so it can retry). One vm test per
+    tolerance ("act tolerance 1–7").
+  - **Callable without a model** (docs/ai-parity.md §7): `runActions([{
+    action, args}], general)` → `{lines, quiet, failed}` is the plain door
+    a cheap dispatcher model or a no-model fast path would use; `askAct`
+    is only the wording layer on top.
+  - **Learning mode is the law** for result lines too: facts ("cursor at
+    13.1", "selected bars 2–5 — ▶ loops them", "undid: 22 notes added"),
+    never a key, chord, meter or verdict; the quiet test sweeps them.
+    `play` before the audio context exists (no tap yet this session)
+    answers "tap Play once, then ask again" instead of failing silently;
+    `select` writes `S.rangeSel` exactly as a ruler drag does (cycle on
+    unless `cycle: false`), persisted per song through `draw()`.
+  - **How to add an action (the whole procedure):** push one entry onto
+    `ASK_ACTIONS` — `{name, args: "bar beat?", gloss, spec, example, say,
+    quiet?, song?, run(a) → one line}` (an editing `run` starts with
+    `askWritableGate()` and lands one undo step; throw to reject); then
+    `node tools/build_ask_help.mjs && node tools/build_help.mjs` (the Help
+    sheet's "AI commands" rows and docs/HELP.md are generated from the
+    registry; the vm test "act: the Help sheet's AI commands rows…" fails
+    while they are stale); then a vm test for the action through `askAct`.
+    Nothing else: no schema, no prompt sentence, no `ASK_SONG_ONLY_TOOLS`
+    line — the index, help, errors, the general-chat variant and the
+    stability pin follow from the entry. Standalone tools that still exist
+    (until batch 3 folds them) get their Help row from `ASK_TOOL_PHRASES`.
+  - Help: the AI entry's new sentence ("And it can **act** in the app…"),
+    "Asking it to act", and the generated **AI commands** rows between
+    `<!-- ask-commands:begin/end -->` in help/help.html; drift keywords
+    "go to bar 13 and play", "AI commands", "(act: go_to". Tests:
+    tests/night-roll.test.mjs "act: …" (menu stability + cost, list
+    semantics, quiet/{final}, undo + lock + general chat + runActions,
+    tolerance 1–7, Help rows), tests/ai.test.mjs "act: a call made only of
+    quiet actions…". Next: docs/ai-parity.md §5 batch 2 (`open_song`), then
+    batch 3 (fold the 12 tools in — the menu drops to ~400 tokens).
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

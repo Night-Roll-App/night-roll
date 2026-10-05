@@ -54,6 +54,7 @@ import { saveDraft } from "../model/versions.js";
 import { deleteTime } from "../model/selection.js";
 import { drGenerate } from "../gen/drummer.js";
 import { drBassTrack } from "../gen/drummer.js";
+import { askAct } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -157,21 +158,10 @@ export const ASK_TOOLS = [
       from_bar: {type: "integer", minimum: 1, description: "first bar to delete"},
       count: {type: "integer", minimum: 1, description: "how many bars to delete"}},
       required: ["from_bar", "count"]}}},
-  // drummer (2026-10-05, open-items "Ask tool for the Drummer"): schema kept
-  // SHORT on purpose — tool schemas ride along with every Ask message. The
-  // logic is askDrummer(a), a plain function, so a later registry-backed
-  // action tool can call it without this entry.
-  {type: "function", function: {name: "drummer", description: "Run the app's Drummer (its real drum generator) over a bar range or one of the user's section labels: replaces that range's drum hits as ONE undo step. Use it for ANY drum request, never write_notes. Only when the user explicitly asks; own editable songs only (refuses on a locked/capture song).",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1, description: "inclusive"},
-      section: {type: "string", description: "instead of bars: the exact text of one section label"},
-      energy: {type: "integer", minimum: 1, maximum: 5, description: "busy and hard together (default 3)"},
-      busy: {type: "integer", minimum: 1, maximum: 5, description: "density"}, hard: {type: "integer", minimum: 1, maximum: 5, description: "loudness"},
-      fills: {type: "integer", minimum: 0, maximum: 5, description: "0 = none (default 3)"},
-      feel: {type: "string", enum: ["normal", "half", "double"]},
-      parts: {type: "array", items: {type: "string", enum: ["kick", "snare", "hats", "fills"]}, description: "reroll only these (default all)"},
-      follow: {type: "array", items: {type: "string"}, description: "track names the kick listens to, e.g. [\"pulse1\",\"pulse2\"], or [\"chords\"] or [\"off\"]; default the bass"},
-      seed: {type: "integer", minimum: 0, description: "same seed = same take (the reply names it)"}}}}},
+  // Nothing new goes in this list (docs/ai-parity.md §2, Josh #435): a new
+  // feature is an ACTION in src/ask/actions.js's registry, reached through
+  // the one `act` tool askToolsNow appends — the menu above rides with every
+  // message and must not grow. The drummer went that way first (2026-10-05).
 ];
 // edit_annotation/delete_annotation (2026-10-01, open-items): targeting for
 // an EXISTING annotation, robust the way the issue asked — by id (this
@@ -513,7 +503,7 @@ export async function askRunTool(name, a) {
   if (name === "copy_bars") return askCopyBars(a || {});
   if (name === "insert_bars") return askInsertBars(a || {});
   if (name === "delete_bars") return askDeleteBars(a || {});
-  if (name === "drummer") return askDrummer(a || {});
+  if (name === "act") return askAct(a); // the whole argument object as sent — askActItems tolerates every shape a model emits (a string, one item, nested lists)
   throw new Error("unknown tool " + name);
 }
 export function askWriteNotes(a) {
@@ -616,6 +606,9 @@ export function askDeleteBars(a) { // {from_bar, count}: removes bars — same g
 // the one call: drGenerate itself makes the kit track when there is none
 // (folded into its undo), erases only kit notes inside the range, and pushes
 // exactly one group undo. Plan: docs/plans/2026-10-05-ask-drummer-tool.md.
+// Reached as the `drummer` ACTION of the act tool (src/ask/actions.js) — its
+// own ASK_TOOLS entry went the same day it landed: ~350 tokens on every
+// message (Josh via Ask #449). A plain function either way.
 export function askDrummerRange(a) { // → {fromBar, toBar}: whole bars, or ONE declared section label's span
   const bt = barTicks(), nBars = askBarsCount();
   if (a.section !== undefined && a.section !== null && String(a.section).trim()) {

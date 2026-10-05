@@ -22,7 +22,7 @@
 //   showThinking(live, raw) · fillBubble(live, text) · liveBubble(jobId)
 //   busy(on) · afterSend() · restoreInput(text) · render() · poll() · landed(key, failed)
 //   text(key, ...args) → optional wording override (see AI_TEXT)
-import { aiPickBackend } from "./backends.js";
+import { aiPickBackend, aiToolFinal, aiFinalText } from "./backends.js";
 import { aiStoreGet, aiStoreSave, aiPendingIndex, aiPendingAll, aiJobId, aiSeenCommit, aiSeenDrop, aiChatKey } from "./store.js";
 import { aiSentCommit, aiSentDrop } from "./ctx-cache.js";
 import { aiJobsSupported, aiJobGet, aiTerminalPost } from "./bridge-client.js";
@@ -210,10 +210,19 @@ export async function aiResume(host) {
     const history = msgs.slice(0, i);
     const messages = host.buildMessages(history, pend.content, host.context(scope, budget), budget);
     messages.push({role: "assistant", content: "", tool_calls: calls});
+    const finals = [];
     for (const c of calls) {
-      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
+      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {_parse_error: String(err.message)}; }
       let result; try { result = await host.runTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
-      messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
+      const fin = aiToolFinal(result);
+      if (fin !== null) finals.push(fin);
+      messages.push({role: "tool", tool_call_id: c.id, content: fin !== null ? fin : typeof result === "string" ? result : JSON.stringify(result)});
+    }
+    if (finals.length === calls.length) { // every tool ended the exchange itself (backends.js aiToolFinal): the text is the reply, no further job
+      const text = aiFinalText(j.text, finals);
+      if (live) host.fillBubble(live, text);
+      aiFinish(host, p.jobId, text, p.key);
+      continue;
     }
     const nextId = aiJobId(host);
     aiRepending(host, p.key, p.jobId, nextId);

@@ -336,7 +336,7 @@ Your edits are kept on this device by themselves; **Publish** is the deliberate 
 ## AI
 
 **AI**
-Talk to an AI tutor about what you're looking at. Tap **AI** in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter. Say the word and it will also **add, edit, delete, or publish** an annotation — never on its own; ask it to change or take back the wrong one and it edits or deletes that exact annotation in place (never a duplicate left beside it), and asking it to publish runs the same Publish the footer button does. Ask can also **write notes on your own songs** when you ask it to — spell it out ("a C3 gallop on the triangle in bar 5" means an eighth note plus two sixteenths, not the word "gallop") and it lands at once as one undo step; it never volunteers a note you didn't dictate. Ask can **repeat bars**: "repeat bars 5–6 after bar 6" copies them and moves the rest later, on every track, as one undo step. Ask can also **run the Drummer** on your own song — the same generator as the Drummer button, never hand-written hits: say the bars or one of your section labels and what you want ("redo the intro following pulse1 and pulse2 instead of the triangle", "the A part again with a bit less energy", "bars 9–16, fills off, half feel"). It replaces only that range's drum hits, as one undo step; the reply names the seed, so "that one again, quieter" replays the same take with one knob changed, and the take shows up in the Drummer sheet's take chips. Energy sets busy and hard together; busy, hard, fills, feel, parts and follow (which tracks the kick listens to — any tracks by name, chords, or off) can each be named on their own.
+Talk to an AI tutor about what you're looking at. Tap **AI** in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter. Say the word and it will also **add, edit, delete, or publish** an annotation — never on its own; ask it to change or take back the wrong one and it edits or deletes that exact annotation in place (never a duplicate left beside it), and asking it to publish runs the same Publish the footer button does. Ask can also **write notes on your own songs** when you ask it to — spell it out ("a C3 gallop on the triangle in bar 5" means an eighth note plus two sixteenths, not the word "gallop") and it lands at once as one undo step; it never volunteers a note you didn't dictate. Ask can **repeat bars**: "repeat bars 5–6 after bar 6" copies them and moves the rest later, on every track, as one undo step. Ask can also **run the Drummer** on your own song — the same generator as the Drummer button, never hand-written hits: say the bars or one of your section labels and what you want ("redo the intro following pulse1 and pulse2 instead of the triangle", "the A part again with a bit less energy", "bars 9–16, fills off, half feel"). It replaces only that range's drum hits, as one undo step; the reply names the seed, so "that one again, quieter" replays the same take with one knob changed, and the take shows up in the Drummer sheet's take chips. Energy sets busy and hard together; busy, hard, fills, feel, parts and follow (which tracks the kick listens to — any tracks by name, chords, or off) can each be named on their own. And it can **act** in the app: "go to bar 13 and play", "stop", "loop bars 5 to 12", "undo that" — several in one breath run in order, and a quick one answers with a single line and no further reply. The full list, with a phrase for each, is **AI commands** below.
 
 **✦ Annotate this song…**
 **Normal mode only** — in Learning mode the item does not exist: the analysis is yours to make. Tap **View ▾ → Mode → ✦ Annotate this song…** (no keyboard shortcut) to ask the AI model from Settings for **estimates** of this song's sections, chords and key, read from the notes plus computed facts (which bars repeat, how the bass moves, ranges, rhythm). Tick **Sections**, **Chords** or **Key** to choose what it may write, then **Run** — nothing is written before that tap, and never on its own. Every annotation it writes is tagged **✦ AI** in All notes, so you always know which lines are the model's; your own annotations are never overwritten — an estimate that overlaps one of yours is skipped, and the status line says how many. A run is **one undo**; **Clear AI annotations** removes every tagged one at once (also one undo). A long song goes to the model in bar windows and the answers merge; a reply the app cannot read writes nothing. They are estimates: check them by ear before you keep them. Unsynced until you Publish, like any annotation. Switch back to Learning mode and every **✦ AI** annotation is **hidden, never deleted** — gone from the roll, All notes, the LCD key and the ✦ Ask context until you switch to Normal again.
@@ -408,7 +408,67 @@ File → Settings… → **AI model**. **In this browser**: pick a small model (
 Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.
 
 **Asking it to act**
-"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo.
+"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo. Say it the way you'd say it to a person; if a name is ambiguous it asks which one, never guesses. Every command it knows is listed next, each with a phrase that works.
+
+**AI commands**
+Everything you can tell Ask, one row each — a phrase that works, then how to phrase your own. Several at once run in order ("go to bar 13 and play"); a quick one (go to, play, stop, select) answers with its one line and nothing more. Ask only ever does what you asked in that message. Generated from the app's own action list, so this is exactly what it can do today.
+
+**Ask: run the Drummer over bars or a section label (one undo)**
+**“Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2.”** Say the bars or one of your section labels, then what you want: energy 1–5 (or busy/hard apart), fills, feel, which parts, what the kick follows; "that one again, quieter" works because the reply names the seed. (act: drummer from_bar to_bar|section energy? busy? hard? fills? feel? parts? follow? seed?)
+
+**Ask: move the cursor there, scrolled into view**
+**“Go to bar 13.”** Say the bar, and a beat if you mean one ("bar 13 beat 3"). (act: go_to bar beat?)
+
+**Ask: the action list, or one action's full text**
+**“What can you do?”** That lists them; "help with drummer" gives one action's details. (act: help name?)
+
+**Ask: play from the cursor, or from a bar**
+**“Play from bar 17.”** "Play" alone plays from the cursor; name a bar (and beat) to start there. (act: play from_bar? beat?)
+
+**Ask: ruler selection; ▶ loops it unless cycle: false**
+**“Loop bars 5 to 12.”** Say the first and last bar; "select" instead of "loop", or "no cycle", marks them without looping; "clear the selection" drops it. (act: select from_bar to_bar? cycle? clear?)
+
+**Ask: stop playback**
+**“Stop.”** Just that. (act: stop)
+
+**Ask: undo the last edit(s); redo: true redoes**
+**“Undo that.”** "Undo the last three" for several; "redo" to redo. (act: undo steps? redo?)
+
+**Ask: write one annotation**
+**“Put an F#m chord on bar 21.”** Say the kind (chord, section, key, tempo, loop, note), the text in your words, the bar and beat. (tool: add_annotation)
+
+**Ask: change an annotation**
+**“Change the chord at 14.1 to G7.”** Say which one (its bar and beat, or its text) and the new text or place. (tool: edit_annotation)
+
+**Ask: remove an annotation**
+**“Delete the note at bar 16.”** Say which one — bar and beat, plus its text if two share the spot. (tool: delete_annotation)
+
+**Ask: publish the open song**
+**“Publish.”** Just that; it runs the footer's Publish and reports what happened. (tool: publish_song)
+
+**Ask: list the songs here**
+**“What songs are there?”** It lists albums, titles and paths. (tool: list_songs)
+
+**Ask: read another song's notes**
+**“Compare this to Ambush.”** Name the other song; add bars ("bars 1 to 8 of Ambush") to keep it short. (tool: read_song)
+
+**Ask: read another song's annotations**
+**“What did I write in Graveyard's notes?”** Name the song. (tool: read_notes)
+
+**Ask: read more bars of this song**
+**“What's on the triangle in bars 40 to 48?”** Say the bars, and tracks if you want fewer. (tool: read_bars)
+
+**Ask: write dictated notes**
+**“On pulse 2, write C5 at bar 3 beat 1, an eighth, then D5 on beat 1.5.”** Say the track, then every note: pitch, bar, beat, length (a "gallop" must be spelled out as its three notes). (tool: write_notes)
+
+**Ask: repeat bars**
+**“Repeat bars 5 and 6 right after themselves.”** Say the bars to copy and where the copy lands. (tool: copy_bars)
+
+**Ask: insert empty bars**
+**“Insert two empty bars at bar 9.”** Say where, and how many. (tool: insert_bars)
+
+**Ask: delete bars**
+**“Delete bars 30 to 32.”** Say the first bar and how many (or the last bar). (tool: delete_bars)
 
 ## Analysis
 
