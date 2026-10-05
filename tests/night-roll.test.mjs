@@ -515,7 +515,6 @@ test("chord challenge: evidence report — present/missing/extra vs the label, p
   assert.equal(val(`chordEvidence({text: "Fzzz", start: 0, end: 960}).expected`), null);
   // empty span
   assert.equal(run(`chordEvidence({text: "F7", start: 5000, end: 6000}).err`), "no notes sound in this span");
-  run(`keyRegions = [];`);
 });
 
 test("chord challenge roles: menu's F7 case — guide tones present, root/5th missing, pedal extra", () => {
@@ -2813,6 +2812,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
+    "to pulse 2, an octave down", // act: edit_notes transpose/move/copy/to_track (docs/ai-parity.md §5 batch 6)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6591,6 +6591,243 @@ test("edit_notes: reached through act — a \"do\" list runs it, undo restores e
   run(`askGeneral = true;`);
   await assert.rejects(askActRun(`askAct({do: [{action: "edit_notes", op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"}]})`), /works in a song's/);
   run(`askGeneral = false;`);
+});
+
+// edit_notes batch 6 (docs/ai-parity.md §5 row 6, 2026-10-05): transpose /
+// move / copy / to_track over bars + tracks, through the SAME functions the
+// ⇅ Transpose sheet (nudgeSelection / diatonicShift), the arrow keys
+// (nudgeSelection), Paste to… (copySelection + pasteClipboard) and ⇄ Move to
+// track (moveSelectionToTrack) call. Scratch song only; a declared key is a
+// test fixture here, never a finding.
+function installAskMoveSong(withKey) {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/askmove-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}");
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [
+          {t: 0, d: 480, p: 60, v: 80},        // bar 1 — the song's first note: a move earlier than this must refuse
+          {t: 3840, d: 480, p: 60, v: 80},     // bar 3 beats 1–3: C E G (in C major, every one on the scale)
+          {t: 4320, d: 480, p: 64, v: 80},
+          {t: 4800, d: 480, p: 67, v: 80},
+          {t: 7680, d: 480, p: 61, v: 80}]},   // bar 5 — C#, off the C-major scale: the in-key slide case
+        {name: "pulse2", notes: [
+          {t: 3840, d: 480, p: 72, v: 80}]},   // bar 3 — sounds under the chord band too, so pulse1 alone never covers it
+        {name: "noise", notes: [
+          {t: 11520, d: 240, p: 36, v: 80}]},  // bar 7 — a drum track: transpose refuses it
+      ]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null;
+    multiSel = []; multiSelKey = new Set(); selNote = null; lassoAnno = null; gridDiv = null; mvFromFilter = null;
+    noteClipboard = []; annoClipboard = [];
+    rollnotes = deriveNoteTypes([
+      {b1: 1, q1: 1, b2: 2, q2: 4, text: "section: A", added: true},
+      {b1: 3, q1: 1, b2: 3, q2: 4, text: "chord: C", added: true}]).map(resolveNote);
+    declaredTs = null; previewSf = null; keyRegions = [];
+    ${withKey ? 'rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "key: C", keydir: 0, added: true}));' : ""} // the user's own declaration, from 1.1 on (a fixture on the scratch song)
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const askMoveSnap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v, n.d]))`);
+const askMoveBar3 = () => val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 3840 && n.t < 5760).map(n => n.p)`);
+const askMoveChords = () => val(`rollnotes.filter(n => n.chord).map(n => [n.b1, n.text])`);
+
+test("edit_notes transpose: semitones and octaves are one chromatic nudge (the ⇅ sheet's own), one undo each, exact restore; a shift that would leave the roll refuses with nothing changed; a drum track refuses", () => {
+  installAskMoveSong(false);
+  const before = askMoveSnap();
+  const r = val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 2})`);
+  assert.match(r.note, /^transposed up 2 semitones 3 notes on pulse1 in bar 3 \(one undo/);
+  assert.deepEqual(askMoveBar3(), [62, 66, 69]);
+  assert.equal(val(`song.tracks[1].notes[0].p`), 72, "pulse2 untouched");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  const r2 = val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", octaves: -1, semitones: "+1"})`); // -12 + 1, a string number tolerated
+  assert.match(r2.note, /^transposed down 11 semitones 3 notes/);
+  assert.deepEqual(askMoveBar3(), [49, 53, 56]);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", octaves: 9})`), /would leave the roll/);
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 7, to_bar: 7, tracks: "noise", semitones: 1})`), /"noise" is a drum\/noise track/);
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1"})`), /say how far/);
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 1.5})`), /whole number/);
+  assert.deepEqual(askMoveSnap(), before, "every refusal changed nothing");
+  assert.equal(val(`editUndo.length`), 0);
+});
+
+test("edit_notes transpose: scale_steps with NO declared key errors \"no key declared\" and changes nothing — never estimates one; with the user's declared key it moves in degrees (the ⇅ sheet's in-key move, any count, octaves as 7 steps), an off-scale note slides onto the scale first; one undo; the reply never names the key", () => {
+  installAskMoveSong(false);
+  const before = askMoveSnap();
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 1})`), /no key declared — semitones or octaves only/);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.equal(val(`editUndo.length`), 0);
+  installAskMoveSong(true); // sf 0 declared from 1.1 — a fixture for the scratch song
+  const r = val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 1})`);
+  assert.match(r.note, /^transposed up 1 scale step 3 notes on pulse1 in bar 3 \(one undo/);
+  assert.doesNotMatch(r.note, /\b(key|chord|tonic|major|minor)\b/i, "facts only, no key named: " + r.note);
+  assert.deepEqual(askMoveBar3(), [62, 65, 69], "C E G up a degree is D F A");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: -1})`);
+  assert.deepEqual(askMoveBar3(), [59, 62, 65], "down a degree is B D F");
+  run(`editUndoPop();`);
+  val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 3})`);
+  assert.deepEqual(askMoveBar3(), [65, 69, 72], "three degrees: F A C — the octave carry works past the scale's end");
+  run(`editUndoPop();`);
+  const r4 = val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 1, octaves: 1})`);
+  assert.match(r4.note, /^transposed up 8 scale steps/);
+  assert.deepEqual(askMoveBar3(), [74, 77, 81]);
+  run(`editUndoPop();`);
+  val(`askEditNotes({op: "transpose", from_bar: 5, to_bar: 5, tracks: "pulse1", scale_steps: 2})`); // C# is off the scale: slide to D, then one degree to E
+  assert.equal(val(`song.tracks[0].notes[4].p`), 64);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 1, semitones: 2})`), /scale_steps OR semitones/);
+  run(`rollnotes = rollnotes.filter(n => n.keydir === undefined); rollnotes.push(resolveNote({b1: 5, q1: 1, b2: null, q2: null, text: "key: C", keydir: 0, added: true})); finalizeNotes();`); // declared only from bar 5 on: bar 3 has none
+  assert.throws(() => run(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 1})`), /no key declared/);
+  assert.deepEqual(askMoveSnap(), before);
+  run(`keyRegions = [];`);
+});
+
+test("edit_notes transpose: a rigid shift that covers every sounding note under a chord band carries the label with it (the arrow keys' own band-ride rule), undone together", () => {
+  installAskMoveSong(false);
+  const before = askMoveSnap(), chords = askMoveChords();
+  assert.deepEqual(chords, [[3, "C"]]);
+  val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 2})`); // pulse2's note sounds under the band too — not covered, the label stays
+  assert.deepEqual(askMoveChords(), [[3, "C"]]);
+  run(`editUndoPop();`);
+  val(`askEditNotes({op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1, pulse2", semitones: 2})`);
+  assert.deepEqual(askMoveChords(), [[3, "D"]], "every note under the band moved: the label rides");
+  assert.equal(val(`editUndo.length`), 1, "notes + label are ONE undo step");
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.deepEqual(askMoveChords(), [[3, "C"]]);
+});
+
+test("edit_notes move: bars and/or beats slide the notes in time (the arrow keys' own nudge), negative = earlier, one undo, exact restore; before the song's start refuses with nothing changed", () => {
+  installAskMoveSong(false);
+  const before = askMoveSnap();
+  const r = val(`askEditNotes({op: "move", from_bar: 3, to_bar: 3, tracks: "pulse1", beats: 2})`);
+  assert.match(r.note, /^moved later by 2 beats: 3 notes on pulse1 in bar 3 \(one undo/);
+  assert.deepEqual(val(`song.tracks[0].notes.slice(1, 4).map(n => n.t)`), [4800, 5280, 5760]);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  const r2 = val(`askEditNotes({op: "move", from_bar: 3, to_bar: 3, tracks: "pulse1", bars: -1, beats: "-1"})`);
+  assert.match(r2.note, /^moved earlier by 1 bar 1 beat: 3 notes/);
+  assert.deepEqual(val(`song.tracks[0].notes.slice(1, 4).map(n => n.t)`), [1440, 1920, 2400]);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.throws(() => run(`askEditNotes({op: "move", from_bar: 1, to_bar: 1, tracks: "pulse1", beats: -1})`), /before the song's start/);
+  assert.throws(() => run(`askEditNotes({op: "move", from_bar: 3, to_bar: 3, tracks: "pulse1"})`), /say how far/);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.equal(val(`editUndo.length`), 0);
+});
+
+test("edit_notes copy: Paste to…'s own copy+paste — to a bar (past the end grows the song), to another track shifted by octaves/semitones, the user's clipboard untouched, one undo each, exact restore; the same place with no shift lands nothing", () => {
+  installAskMoveSong(false);
+  run(`noteClipboard = [{dt: 0, p: 1, d: 1, v: 1, ti: 0}]; annoClipboard = [];`);
+  const before = askMoveSnap();
+  const r = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9})`);
+  assert.match(r.note, /^copied 3 notes from pulse1 in bar 3 to 9\.1 — the song now has 9 bars; cursor at the copy's end \(one undo/);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 15360).map(n => [n.t, n.p])`), [[15360, 60], [15840, 64], [16320, 67]]);
+  assert.deepEqual(askMoveBar3(), [60, 64, 67], "the source stays");
+  assert.deepEqual(val(`noteClipboard`), [{dt: 0, p: 1, d: 1, v: 1, ti: 0}], "the clipboard is the user's");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  const r2 = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 3, to_track: "pulse2", octaves: -1})`);
+  assert.match(r2.note, /^copied 3 notes from pulse1 in bar 3 to 3\.1 on pulse2, down 12 semitones/);
+  assert.deepEqual(val(`song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.p]).sort((a, b) => a[0] - b[0] || a[1] - b[1])`), [[3840, 48], [3840, 72], [4320, 52], [4800, 55]]);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  const r3 = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 3, at_beat: 2, to_track: "pulse2"})`); // beat offset: 3.2
+  assert.deepEqual(val(`song.tracks[1].notes.filter(n => !n.gone && n.p === 60).map(n => n.t)`), [4320]);
+  assert.match(r3.note, /to 3\.2 on pulse2/);
+  run(`editUndoPop();`);
+  const r4 = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 3})`); // onto itself, unshifted: every note is already there
+  assert.match(r4.note, /^nothing landed — every note was already there/);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.equal(val(`editUndo.length`), 0, "nothing landed: no undo step");
+  assert.throws(() => run(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1"})`), /say at_bar/);
+  assert.throws(() => run(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 5, to_track: "triangle"})`), /no track named "triangle" — this song's tracks: pulse1, pulse2, noise/);
+  assert.deepEqual(askMoveSnap(), before);
+});
+
+test("edit_notes copy: labels: true brings the chord band over the bars along and transposes its label like Paste to… (the source label stays); without it only notes copy; notes + band are ONE undo", () => {
+  installAskMoveSong(false);
+  const before = askMoveSnap();
+  val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9, semitones: 2})`);
+  assert.deepEqual(askMoveChords(), [[3, "C"]], "no labels asked: the band stays where it was, alone");
+  run(`editUndoPop();`);
+  const r = val(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9, semitones: 2, labels: true})`);
+  assert.match(r.note, /^copied 3 notes \+ 1 annotation from pulse1 in bar 3 to 9\.1, up 2 semitones/);
+  assert.deepEqual(askMoveChords().sort((a, b) => a[0] - b[0]), [[3, "C"], [9, "D"]], "the copy's label is transposed with its notes; the source is untouched");
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 15360).map(n => n.p)`), [62, 66, 69]);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.deepEqual(askMoveChords(), [[3, "C"]], "one undo took the band back with the notes");
+  assert.deepEqual(val(`rollnotes.filter(n => n.section).map(n => n.text)`), ["A"], "the section over bars 1–2 never entered it");
+});
+
+test("edit_notes to_track: ⇄ Move to track's own move — pitches kept, the source track emptied in range, one undo, exact restore; the ⇄ sheet's from-track filter is left alone; an unknown or same target answers plainly", () => {
+  installAskMoveSong(false);
+  run(`mvFromFilter = 1;`); // the sheet's own filter set to something: Ask must neither obey nor clobber it
+  const before = askMoveSnap();
+  const r = val(`askEditNotes({op: "to_track", from_bar: 3, to_bar: 3, tracks: "pulse1", to_track: "pulse2"})`);
+  assert.match(r.note, /^moved 3 notes from pulse1 to pulse2 in bar 3 \(one undo/);
+  assert.deepEqual(askMoveBar3(), [], "pulse1's bar 3 is empty");
+  assert.deepEqual(val(`song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.p]).sort((a, b) => a[0] - b[0] || a[1] - b[1])`), [[3840, 60], [3840, 72], [4320, 64], [4800, 67]]);
+  assert.equal(val(`mvFromFilter`), 1, "the sheet's filter is restored");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  const r2 = val(`askEditNotes({op: "to_track", from_bar: 3, to_bar: 3, tracks: "pulse1", to_track: "pulse1"})`);
+  assert.match(r2.note, /^nothing to move — no note on pulse1 in bar 3 that isn't already on pulse1/);
+  assert.throws(() => run(`askEditNotes({op: "to_track", from_bar: 3, to_bar: 3, tracks: "pulse1", to_track: "triangle"})`), /no track named "triangle"/);
+  assert.throws(() => run(`askEditNotes({op: "to_track", from_bar: 3, to_bar: 3, tracks: "pulse1"})`), /say to_track: pulse1, pulse2, noise/);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.equal(val(`editUndo.length`), 0);
+  run(`mvFromFilter = null;`);
+});
+
+test("edit_notes batch 6: a leftover lasso box never makes Ask's selection take annotations along (delete/copy); the four ops refuse on a locked capture with nothing changed; through act each is one undo and the replies are facts only (Learning mode is the law)", async () => {
+  installAskMoveSong(true);
+  const before = askMoveSnap();
+  run(`lassoAnno = {t0: 0, t1: 99999, y0: 0, y1: 9999};`); // a box from an earlier UI lasso, still in state
+  val(`askEditNotes({op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"})`);
+  assert.deepEqual(askMoveChords(), [[3, "C"]], "the band survived a delete over its bars");
+  run(`editUndoPop();`);
+  assert.deepEqual(askMoveSnap(), before);
+  for (const call of [
+    `askAct({do: [{action: "edit_notes", op: "transpose", from_bar: 3, to_bar: 3, tracks: "pulse1", scale_steps: 2}]})`,
+    `askAct({do: [{action: "edit_notes", op: "move", from_bar: 3, to_bar: 3, tracks: "pulse1", beats: 1}]})`,
+    `askAct({do: [{action: "edit_notes", op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9, to_track: "pulse2", octaves: 1, labels: true}]})`,
+    `askAct({do: [{action: "edit_notes", op: "to_track", from_bar: 3, to_bar: 3, tracks: "pulse1", to_track: "pulse2"}]})`,
+  ]) {
+    const r = await askActRun(call);
+    const text = typeof r === "string" ? r : r.final;
+    assert.match(text, /^(transposed|moved|copied) /, text);
+    assert.doesNotMatch(text, /\b(chord|key|tonic|dominant|subdominant|cadence|roman|numeral|major|minor)\b/i, "facts only: " + text);
+    assert.equal(val(`editUndo.length`), 1, "one undo step: " + text);
+    await askActRun(`askAct({do: [{action: "undo"}]})`);
+    assert.deepEqual(askMoveSnap(), before, "undo restored exactly after: " + text);
+    assert.deepEqual(askMoveChords(), [[3, "C"]]);
+    run(`editUndo = []; editRedo = [];`);
+  }
+  run(`
+    songKey = "albums/nes/mega-man-2/move-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false);
+  for (const op of ["transpose", "move", "copy", "to_track"]) assert.throws(() => run(`askEditNotes({op: ${JSON.stringify(op)}, from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 1, beats: 1, at_bar: 9, to_track: "pulse2"})`), /locked here \(a capture or starter\) — ✎ Edit/, op);
+  assert.deepEqual(askMoveSnap(), before);
+  assert.equal(val(`editUndo.length`), 0);
+  run(`localStorage.removeItem(draftStoreKey(songKey)); lassoAnno = null;`);
+  assert.match(val(`askActTool(false).function.description`), /\nedit_notes op from_bar to_bar\|section [^\n]* — bulk-edit[^\n]*transpose move copy to_track/, "the index line names the four ops (no help round needed to find them)");
 });
 
 // ---- act (docs/ai-parity.md §2, batch 1 of §5; src/ask/actions.js): the

@@ -434,8 +434,8 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: change an existing annotation's text or place**
 **“Change the chord at 14.1 to G7.”** Say which one (its bar and beat, or its text) and the new text or place. (act: edit_annotation id|bar beat match_text? text comment? new_bar? new_beat? new_end_bar? new_end_beat?)
 
-**Ask: bulk-edit existing notes over bars + tracks (one undo)**
-**“Delete the notes on pulse 1 in bars 5 and 6.”** Say the op (delete, quantize, velocity, split, join, divide, dedupe), the bars (or a section label) and the track(s) by name; quantize takes grid ("1/16") and strength (default a hard snap); velocity takes vel: 80 (absolute) or +10/-10 (relative); split takes at_bar/at_beat to cut there (else every note splits in half); divide takes into: how many equal parts. (act: edit_notes op from_bar to_bar|section tracks + op's own)
+**Ask: bulk-edit existing notes over bars + tracks (one undo): delete quantize velocity split join divide dedupe transpose move copy to_track**
+**“Delete the notes on pulse 1 in bars 5 and 6.”** Say the op, the bars (or a section label) and the track(s) by name. Delete, quantize (grid "1/16", strength — default a hard snap), velocity (vel: 80, or +10/-10), split (at_bar/at_beat, else in half), join, divide (into: N), dedupe; "move bars 9 to 12 on pulse 2 up an octave" (transpose: semitones and/or octaves, or scale_steps in your declared key — no key declared, no in-key move); "move it two beats later" (move: bars/beats, negative = earlier); "copy the pulse 1 line in bar 3 to pulse 2, an octave down" (copy: at_bar, at_beat, to_track, semitones/octaves; labels: true brings the chord, section and text annotations over those bars along, chord labels shifted with the notes, as Paste to… does); to_track (move them onto another track). (act: edit_notes op from_bar to_bar|section tracks + op's own)
 
 **Ask: move the cursor there, scrolled into view**
 **“Go to bar 13.”** Say the bar, and a beat if you mean one ("bar 13 beat 3"). (act: go_to bar beat?)

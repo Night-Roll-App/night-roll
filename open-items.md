@@ -24,14 +24,26 @@ bars/section + named tracks, via a new `askSelectRange` helper (bars+tracks
 → `S.multiSel`) and the SAME src/model/selection.js functions the Edit
 menu calls; `removeDuplicateNotes` grew an optional range+track `scope`,
 and `setSelectionVelocity` is new (both thin wrappers, no reimplemented
-undo). `transpose`/`move`/`copy`/`to_track` are still batch 6, not built.
+undo). Batch 6 (Fable, 2026-10-05, its own worktree branch): `transpose`
+(semitones/octaves via `nudgeSelection`, `scale_steps` via `diatonicShift`
+— the DECLARED key only, else "no key declared" and nothing changed),
+`move` (bars/beats, `nudgeSelection`), `copy` (`at_bar`/`at_beat`/`to_track`/
+shift, `labels: true` for the annotations over the bars — `copySelection` +
+`pasteClipboard`, Paste to…'s own) and `to_track` (`moveSelectionToTrack`);
+`diatonicShift` takes any step count, `copySelection` an optional time span
+in place of the lasso box; `askSelectRange` clears `S.lassoAnno` (a leftover
+box could have made a batch-5 delete take annotations along).
 Measured: menu 2,487 chars (~672 tokens, 21 actions) after batch 4, 2,600
-(~703, 22 actions) after batch 5. Tests: tests/night-roll.test.mjs
+(~703, 22 actions) after batch 5, 2,680 (~724, still 22 actions — the op
+list rides on the index line) after batch 6. Tests: tests/night-roll.test.mjs
 "bassist: …" / "edit_notes: …" (14 tests — range/section, undo exactness,
 capture refusal, unknown-track error, the Learning-mode chord/key sweep,
-through `act`). **Main session, at merge:** browser-verify Help → AI's two
-new rows and one call of each ("bass line for bars 1 to 16, busy 2, follow
-the drums"; "delete the notes on pulse 1 in bars 5 and 6") before pushing.
+through `act`) + "edit_notes transpose/move/copy/to_track/batch 6: …" (8
+tests). **Main session, at merge:** browser-verify Help → AI's rows and one
+call of each ("bass line for bars 1 to 16, busy 2, follow the drums";
+"delete the notes on pulse 1 in bars 5 and 6"; "move bars 9 to 12 on pulse
+2 up an octave"; "copy the pulse 1 line in bar 3 to pulse 2, an octave
+down") before pushing.
 
 ## AI parity batch 1 — the `act` tool — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
 

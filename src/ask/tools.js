@@ -69,8 +69,15 @@ import { joinSelection } from "../model/selection.js";
 import { divideSelection } from "../model/selection.js";
 import { removeDuplicateNotes } from "../model/selection.js";
 import { setSelectionVelocity } from "../model/selection.js";
+import { nudgeSelection } from "../model/selection.js";
+import { diatonicShift } from "../model/selection.js";
+import { copySelection } from "../model/selection.js";
+import { pasteClipboard } from "../model/selection.js";
+import { moveSelectionToTrack } from "../model/selection.js";
+import { sfDeclaredAtRaw } from "../model/song.js";
 import { drBassTrack } from "../gen/drummer.js";
-import { askAct } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
+import { askAct } from "./actions.js";
+import { askActTruthy } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -750,9 +757,28 @@ export function askSelectRange(a) { // -> {fromBar, toBar, t0, t1, tis, count}; 
   const sel = [];
   for (const ti of tis) S.song.tracks[ti].notes.forEach((n, ni) => { if (!n.gone && n.t >= t0 && n.t < t1) sel.push({ti, ni}); });
   S.multiSel = sel; S.multiSelKey = new Set(sel.map(({ti, ni}) => ti + ":" + ni)); S.selNote = null;
+  S.lassoAnno = null; // the selection is Ask's now, not a box: a leftover lasso box must not make deleteSelection/copySelection take annotations along
   return {fromBar, toBar, t0, t1, tis, count: sel.length};
 }
-const EDIT_NOTES_OPS = ["delete", "quantize", "velocity", "split", "join", "divide", "dedupe"];
+const EDIT_NOTES_OPS = ["delete", "quantize", "velocity", "split", "join", "divide", "dedupe", "transpose", "move", "copy", "to_track"];
+const askActNum = (v, name) => { // a signed number given as a number or a string ("+2", "-1", "1.5"); undefined when absent
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = +String(v).trim();
+  if (!Number.isFinite(n)) throw new Error(name + " must be a number");
+  return n;
+};
+function askEditNotesShift(a) { // semitones + 12 × octaves -> one chromatic shift (Paste to…'s own ptoct/ptsemi sum), 0 when neither given
+  const semi = askActNum(a.semitones, "semitones"), oct = askActNum(a.octaves, "octaves");
+  if (semi !== undefined && !Number.isInteger(semi)) throw new Error("semitones must be a whole number");
+  if (oct !== undefined && !Number.isInteger(oct)) throw new Error("octaves must be a whole number");
+  return (semi || 0) + 12 * (oct || 0);
+}
+const askShiftText = dP => (dP > 0 ? "up " : "down ") + Math.abs(dP) + " semitone" + (Math.abs(dP) === 1 ? "" : "s");
+function askEditNotesTarget(name) { // to_track -> index; an audio track can't hold notes (moveSelectionToTrack's own refusal, said out loud)
+  const ti = askFindTrackIndex(name); // unknown/ambiguous throws naming the song's own tracks
+  if (S.song.tracks[ti].kind === "audio") throw new Error("\"" + (S.song.tracks[ti].name || "track " + (ti + 1)) + "\" is an audio track — notes can't go there");
+  return ti;
+}
 function askEditNotesGrid(spec) { // "1/16" or "16" -> 16 (S.gridDiv's own unit — moveSnapTicks' "custom grid outranks all")
   const m = String(spec).trim().match(/^1\s*\/\s*(\d+)$/) || String(spec).trim().match(/^(\d+)$/);
   const d = m && parseInt(m[1], 10);
@@ -809,6 +835,65 @@ export function askEditNotes(a) {
     k = divideSelection(n);
     how = "divided into " + n;
   } else if (op === "dedupe") { k = removeDuplicateNotes({t0: sel.t0, t1: sel.t1, tis: sel.tis}); how = "removed"; }
+  // ---- batch 6 (docs/ai-parity.md §5 row 6): moving music — the same
+  // functions the ⇅ Transpose sheet, arrow keys, Paste to… and ⇄ Move to
+  // track call, over Ask's selection. Each is its own ONE undo step.
+  else if (op === "transpose") {
+    const steps = askActNum(a.scale_steps, "scale_steps"), dP = askEditNotesShift(a);
+    if (steps !== undefined && !Number.isInteger(steps)) throw new Error("scale_steps must be a whole number");
+    if (steps === undefined && !dP) throw new Error("say how far: semitones and/or octaves (chromatic), or scale_steps (in the declared key)");
+    if (steps !== undefined && a.semitones !== undefined && a.semitones !== null && a.semitones !== "") throw new Error("say scale_steps OR semitones, not both (octaves may join scale_steps: an octave is 7 steps)");
+    const drum = sel.tis.find(ti => trackIsDrums(ti));
+    if (drum !== undefined) throw new Error("\"" + (S.song.tracks[drum].name || "track " + (drum + 1)) + "\" is a drum/noise track — kit pitches are instruments, not notes; it doesn't transpose");
+    if (!sel.count) k = 0;
+    else if (steps !== undefined) { // in key: the DECLARED key only (Learning mode is the law — nothing estimated, nothing named)
+      const total = steps + 7 * (askActNum(a.octaves, "octaves") || 0);
+      if (S.multiSel.some(({ti, ni}) => sfDeclaredAtRaw(S.song.tracks[ti].notes[ni].t) === null)) throw new Error("no key declared — semitones or octaves only until you declare one (add_annotation kind: key); nothing changed");
+      if (!total) throw new Error("scale_steps must be a non-zero whole number (negative = down)");
+      k = diatonicShift(total) ? sel.count : 0; // one mod undo entry, chord-ride aware, like the ⇅ sheet's in-key buttons (returns selEditApply's true/false, not a count)
+      how = "transposed " + (total > 0 ? "up " : "down ") + Math.abs(total) + " scale step" + (Math.abs(total) === 1 ? "" : "s");
+    } else {
+      if (!nudgeSelection(0, dP)) throw new Error("can't transpose " + askShiftText(dP) + " — a note would leave the roll (" + S.PMIN + "–" + S.PMAX + "); nothing changed");
+      k = sel.count; how = "transposed " + askShiftText(dP);
+    }
+  } else if (op === "move") {
+    const bars = askActNum(a.bars, "bars"), beats = askActNum(a.beats, "beats");
+    if (bars !== undefined && !Number.isInteger(bars)) throw new Error("bars must be a whole number (use beats for less than a bar)");
+    const dT = Math.round((bars || 0) * barTicks() + (beats || 0) * beatTicks());
+    if (!dT) throw new Error("say how far: bars and/or beats (negative = earlier)");
+    if (!sel.count) k = 0;
+    else {
+      if (!nudgeSelection(dT, 0)) throw new Error("can't move that far — a note would land before the song's start; nothing changed");
+      k = sel.count;
+      how = "moved " + (dT > 0 ? "later" : "earlier") + " by " + (bars ? Math.abs(bars) + " bar" + (Math.abs(bars) === 1 ? "" : "s") : "") + (bars && beats ? " " : "") + (beats ? Math.abs(beats) + " beat" + (Math.abs(beats) === 1 ? "" : "s") : "") + ":";
+    }
+  } else if (op === "copy") {
+    const toBar = Math.round(askActNum(a.at_bar, "at_bar") ?? 0), toBeat = askActNum(a.at_beat, "at_beat") ?? 1; // at_bar, as copy_bars names its destination — to_bar is the range's own end
+    if (!(toBar >= 1)) throw new Error("say at_bar (where the copy starts; past the song's end is fine — it grows, as Paste to… does)");
+    if (!(toBeat >= 1)) throw new Error("at_beat must be ≥ 1");
+    const toTi = a.to_track === undefined || a.to_track === null || a.to_track === "" ? undefined : askEditNotesTarget(a.to_track);
+    const dP = askEditNotesShift(a), labels = askActTruthy(a.labels);
+    const at = Math.round((toBar - 1) * barTicks() + (toBeat - 1) * beatTicks());
+    const keep = [S.noteClipboard, S.annoClipboard]; // the user's own clipboard survives, as ⌘D's duplicateSelection keeps it
+    let annos = 0;
+    try {
+      if (sel.count && copySelection(labels ? {t0: sel.t0, t1: sel.t1} : undefined)) { // labels: the chord/section/text annotations spanning the bars ride, chord labels transposed by the shift — Paste to…'s band-ride rule
+        annos = S.annoClipboard.length;
+        k = pasteClipboard(at, {ti: toTi, dP}); // Paste to…'s own call: skips a note already there, drops one shifted off the roll, bands land re-anchored, ONE undo for notes + bands
+      }
+    } finally { [S.noteClipboard, S.annoClipboard] = keep; }
+    if (!k) return {ok: true, note: "nothing landed — " + (sel.count ? "every note was already there or shifted off the roll" : "no note on " + trackLabel + " in " + where) + "; nothing changed"};
+    const notes = Math.max(0, k - annos);
+    return {ok: true, note: "copied " + notes + " note" + (notes === 1 ? "" : "s") + (annos ? " + " + annos + " annotation" + (annos === 1 ? "" : "s") : "") + " from " + trackLabel + " in " + where + " to " + toBar + "." + toBeat + (toTi !== undefined ? " on " + (S.song.tracks[toTi].name || "track " + (toTi + 1)) : "") + (dP ? ", " + askShiftText(dP) : "") + " — the song now has " + askBarsCount() + " bars; cursor at the copy's end (one undo restores what was there)"};
+  } else if (op === "to_track") {
+    if (a.to_track === undefined || a.to_track === null || a.to_track === "") throw new Error("say to_track: " + S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1)).join(", "));
+    const toTi = askEditNotesTarget(a.to_track);
+    const prevFilter = S.mvFromFilter; S.mvFromFilter = null; // the ⇄ sheet's "from this track only" filter is its own; Ask named the tracks already
+    try { k = moveSelectionToTrack(toTi); } finally { S.mvFromFilter = prevFilter; }
+    const toName = S.song.tracks[toTi].name || "track " + (toTi + 1);
+    if (!k) return {ok: true, note: "nothing to move — no note on " + trackLabel + " in " + where + (sel.tis.includes(toTi) ? " that isn't already on " + toName : "") + "; nothing changed"};
+    return {ok: true, note: "moved " + k + " note" + (k === 1 ? "" : "s") + " from " + trackLabel + " to " + toName + " in " + where + " (one undo restores what was there)"};
+  }
   if (!k) return {ok: true, note: "nothing to " + op + " — no note on " + trackLabel + " in " + where + " qualified"};
   return {ok: true, note: how + " " + k + " note" + (k === 1 ? "" : "s") + " on " + trackLabel + " in " + where + " (one undo restores what was there)"};
 }

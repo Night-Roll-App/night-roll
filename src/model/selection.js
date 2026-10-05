@@ -22,6 +22,7 @@ import { editableSong } from "./song.js";
 import { drumStep } from "../hooks.js";
 import { lassoedAnnos } from "../hooks.js";
 import { annoInLasso } from "../hooks.js";
+import { isCopyableAnno } from "./rollnotes.js";
 import { noteToJSON } from "./rollnotes.js";
 import { visibleNotes } from "./rollnotes.js";
 import { ROLLNOTES_LOCK_MSG } from "./rollnotes.js";
@@ -203,7 +204,11 @@ export function resizeSelection(dTicks) { // same delta for every note — a cho
   if (!items.length) return false;
   return selEditApply(items, nn => { nn.d = Math.max(minD, nn.d + dTicks); });
 }
-export function copySelection() { // returns notes + annotations copied (0 = nothing to copy)
+// annoSpan (Ask's edit_notes copy, docs/ai-parity.md §5 batch 6): {t0, t1} —
+// the bars the user named ARE the ruler reach a lasso box would need, so the
+// copyable annotations whose time overlaps that span ride instead of the
+// lane-precise box test; omitted (every UI caller) keeps the lasso rule.
+export function copySelection(annoSpan) { // returns notes + annotations copied (0 = nothing to copy)
   const items = selEditItems();
   const lassoed = lassoedAnnos(); // bands alone are a copy too (Josh, 2026-09-13: ⧉ was gray with only chords lasso'd)
   if (!items.length && !lassoed.length) return 0;
@@ -214,8 +219,9 @@ export function copySelection() { // returns notes + annotations copied (0 = not
   // went over them — the box reached into the ruler and spans them in time.
   // A tap-built selection, or a box that stayed among the notes, copies none.
   const L = S.lassoAnno && S.lassoAnno.t1 > t0 && S.lassoAnno.t0 < tEnd ? S.lassoAnno : null;
-  S.annoClipboard = !L ? [] : visibleNotes() // visibleNotes: a Learning-hidden ✦ AI band cannot be copied out either
-    .filter(n => annoInLasso(n, L))
+  const inSpan = annoSpan ? n => isCopyableAnno(n) && n.start < annoSpan.t1 && (n.b2 ? n.end : n.start + 1) > annoSpan.t0 : null;
+  S.annoClipboard = !L && !inSpan ? [] : visibleNotes() // visibleNotes: a Learning-hidden ✦ AI band cannot be copied out either
+    .filter(n => inSpan ? inSpan(n) : annoInLasso(n, L))
     .map(n => ({dt: n.start - t0, len: n.b2 ? n.end - n.start : null, json: noteToJSON(n), src: n})); // b2 = a real end anchor; point notes get a synthetic end elsewhere
   return S.noteClipboard.length + S.annoClipboard.length;
 }
@@ -619,7 +625,7 @@ export function transposeTrack(ti, dP) { // ±12 per tap from the voice menu
   selEditApply(items, n => { n.p += dP; }); // one undo step, chord-ride aware
   return items.length;
 }
-export function diatonicShift(dir) { // move each note one scale degree in the declared key
+export function diatonicShift(dir) { // move each note dir scale degrees (±1 from the ⇅ sheet; any integer from Ask's edit_notes transpose) in the declared key
   const items = selEditItems();
   if (!items.length) { setInfo("select notes first"); return 0; }
   const MAJ = [0, 2, 4, 5, 7, 9, 11];
@@ -629,14 +635,12 @@ export function diatonicShift(dir) { // move each note one scale degree in the d
     if (sf === null || sf === undefined) { noKey = true; n.p = Math.max(S.PMIN, Math.min(S.PMAX, n.p + dir)); return; }
     const tonic = ((sf * 7) % 12 + 12) % 12;
     const scale = MAJ.map(x => (x + tonic) % 12);
-    const pc = n.p % 12;
-    let i = scale.indexOf(pc);
-    if (i < 0) { n.p = Math.max(S.PMIN, Math.min(S.PMAX, n.p + dir)); return; } // chromatic slide back toward the scale
-    const j = (i + dir + 7) % 7;
-    let d = scale[j] - scale[i];
-    if (dir > 0 && d <= 0) d += 12;
-    if (dir < 0 && d >= 0) d -= 12;
-    n.p = Math.max(S.PMIN, Math.min(S.PMAX, n.p + d));
+    const sgn = dir > 0 ? 1 : -1;
+    let p = n.p, steps = dir, i = scale.indexOf(((p % 12) + 12) % 12);
+    if (i < 0) { p += sgn; steps -= sgn; i = scale.indexOf(((p % 12) + 12) % 12); } // chromatic slide back toward the scale (a major scale's gaps are one semitone wide — this lands on it), then the rest in degrees
+    const k = i + steps, j = ((k % 7) + 7) % 7; // degree arithmetic with octave carry: the old ±1 "if d <= 0 then +12" branches, for any count
+    p += scale[j] - scale[i] + 12 * Math.floor(k / 7);
+    n.p = Math.max(S.PMIN, Math.min(S.PMAX, p));
   });
   if (noKey) setInfo("no key declared at some notes — those moved chromatically");
   return shifted;

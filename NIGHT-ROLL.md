@@ -4967,7 +4967,8 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     reply states only what it replaced and the seed, never a chord or key.
   - `edit_notes` (`askEditNotes`, src/ask/tools.js) is `delete`, `quantize`,
     `velocity`, `split`, `join`, `divide`, `dedupe` over bars/section +
-    named tracks (`transpose`/`move`/`copy`/`to_track` are batch 6).
+    named tracks (`transpose`/`move`/`copy`/`to_track` are batch 6, the
+    next bullet).
     `askSelectRange` is the one new piece: bars + track names → `S.multiSel`
     exactly as a lasso would leave it, then every op calls the SAME
     src/model/selection.js function the Edit menu / selection toolbar call
@@ -4999,6 +5000,62 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     Help: the generated AI commands rows; drift keywords "busy 2, follow
     the drums" and "on pulse 1 in bars 5 and 6" (tests/night-roll.test.mjs
     FEATURES).
+- **edit_notes transpose / move / copy / to_track — batch 6 (2026-10-05;
+  docs/ai-parity.md §5 row 6, Fable).** Four more ops of the same entry,
+  over `askSelectRange`'s selection, each calling the SAME src/model/
+  selection.js function the UI does — nothing reimplemented:
+  - `transpose`: `semitones` and/or `octaves` → `nudgeSelection(0, dP)` (the
+    ⇅ sheet's chromatic buttons and the arrow keys; refused with nothing
+    changed when a note would leave the roll, and on a drum/noise track —
+    `transposeTrack`'s own rule). `scale_steps` (± whole degrees, `octaves`
+    may join as 7 each) → `diatonicShift(steps)`, which now takes any whole
+    count (the sheet still passes ±1; the old "if d ≤ 0 then +12" branches
+    became degree arithmetic with octave carry, an off-scale note slides
+    one semitone onto the scale first, then the rest in degrees). **Learning
+    mode is the law:** before calling it, every selected note must have a
+    DECLARED key (`sfDeclaredAtRaw` — committed declarations only, no
+    key-dial preview, never an estimate); otherwise the op errors "no key
+    declared — semitones or octaves only until you declare one" and does
+    nothing. The reply names the count and the step count, never the key.
+  - `move`: `bars` and/or `beats` (negative = earlier) → `nudgeSelection(dT,
+    0)`; refused when a note would land before the song's start; past the
+    end grows the song, as a drag does. The arrow keys' band-ride rule
+    (`ridealongChordBands`) applies unchanged: a rigid move/transpose that
+    covers every sounding note under a chord band carries the label.
+  - `copy`: `at_bar`/`at_beat` (copy_bars' own destination names — `to_bar`
+    is the range's end), `to_track`, `semitones`/`octaves` → `copySelection`
+    then `pasteClipboard(at, {ti, dP})` — Paste to…'s exact call, so a note
+    already there is skipped, one shifted off the roll is dropped, a
+    destination past the end grows the song, the cursor lands at the copy's
+    end, notes + bands are ONE undo. The user's own clipboard is saved and
+    restored around it (⌘D's `duplicateSelection` precedent). `labels: true`
+    brings the chord/section/text annotations over the bars along, chord
+    labels transposed by the shift (`pasteAnnotations`' band-ride rule):
+    `copySelection(annoSpan)` grew an optional `{t0, t1}` — the bars the user
+    named ARE the ruler reach a lasso box would need, so the copyable
+    annotations overlapping that span ride instead of `annoInLasso`'s
+    lane-precise pixel test (omitted — every UI caller — keeps the lasso
+    rule). Nothing rides without `labels`.
+  - `to_track`: `to_track` → `moveSelectionToTrack(ti)` (the ⇄ sheet's own;
+    an audio track is refused up front). The sheet's `S.mvFromFilter` is
+    nulled for the call and restored — Ask named the source tracks itself.
+  - `askSelectRange` now also clears `S.lassoAnno`: the selection is Ask's,
+    not a box, and a leftover UI lasso box would otherwise have made a
+    batch-5 `delete` (`deleteSelection` → `lassoedAnnos`) or a `copy` take
+    annotations along. Fixed here, tested ("a leftover lasso box never…").
+  - **Measured** (chars ÷ 3.7, the vm test prints it): 2,600 chars (~703
+    tokens) → **2,680 chars (~724 tokens), still 22 actions** — the +80
+    chars are the op list on edit_notes' index line ("… (one undo): delete
+    quantize velocity split join divide dedupe transpose move copy
+    to_track"), so a model finds the four without a help round.
+  - Tests: tests/night-roll.test.mjs "edit_notes transpose: …" (×3:
+    chromatic + refusals, scale_steps with/without a declared key + the
+    off-scale slide + the key never named, the chord-band ride), "edit_notes
+    move: …", "edit_notes copy: …" (×2: bar/track/shift/clipboard/collision,
+    labels), "edit_notes to_track: …", "edit_notes batch 6: …" (the lasso
+    leftover, capture refusal for all four, each through `act` with one undo
+    and the Learning sweep, the index line names the ops). Help: the
+    regenerated AI commands row; drift keyword "to pulse 2, an octave down".
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9
