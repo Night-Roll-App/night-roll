@@ -252,7 +252,7 @@ export function initSheet3() {
       askSessionRender();
     }
   });
-  document.getElementById("asksend").addEventListener("click", askSend);
+  document.getElementById("asksend").addEventListener("click", () => askSend()); // never the click event itself: askSend's argument is carried-over text
   document.getElementById("askstop").addEventListener("click", () => { if (S.askBusy) S.askBusy.abort(); });
   askinput.addEventListener("input", askGrow);
   askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); }); // the draft is saved; a build may go ahead

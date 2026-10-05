@@ -91,6 +91,7 @@ export async function askSwitchRun(sw) {
 export function askRun({msgs, text, sp, messages, jobId, live, key}) { return aiRun(askHost(), {msgs, text, scope: sp, messages, jobId, live, key}); } // one exchange (tool rounds inside); the pending marker outlives a dropped connection
 export function askTerminalSend(text) { return aiTerminalSend(askHost(), text); } // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
 export async function askSend(carried) { // carried: open_song's carried-over request (or its chip), sent as the user's words — the box, its draft and the pending shots are left alone
+  if (typeof carried !== "string") carried = undefined; // a DOM event wired straight in sent "[object PointerEvent]" (Terminal #148)
   const typed = carried !== undefined ? String(carried).trim() : askinput.value.trim();
   if ((!typed && (carried !== undefined || !S.askShotPending.length)) || S.askBusy || !S.song) return;
   if (carried === undefined) { S.askSwitch = null; S.askCarry = null; S.askHopKey = null; } // a typed message: whatever the last one queued is over

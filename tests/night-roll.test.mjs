@@ -13496,3 +13496,11 @@ test("set_track checks every value before changing anything — a bad one leaves
   await run(`askAct({do: [{action: "set_track", track: "pulse1", volume: 1.2}]})`);
   assert.equal(val(`song.tracks[0].vol`), 1.2, "a fader value (≤1.5) is still read as itself");
 });
+
+test("Send's click never becomes the message: askSend ignores a non-string argument (Terminal #148: \"[object PointerEvent]\" reached the terminal)", () => {
+  installSong();
+  const sheet = readFileSync(new URL("../src/ask/sheet.js", import.meta.url), "utf8");
+  assert.doesNotMatch(sheet, /addEventListener\("click", askSend\)/, "the Send button must not hand its event to askSend");
+  const client = readFileSync(new URL("../src/ask/client.js", import.meta.url), "utf8");
+  assert.match(client, /if \(typeof carried !== "string"\) carried = undefined;/);
+});

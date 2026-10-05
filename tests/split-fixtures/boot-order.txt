@@ -316,7 +316,7 @@ document.getElementById("asknowstrip").addEventListener("click", askStatusToggle
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
 document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
 document.getElementById("askclear").addEventListener("click", async () => {
-document.getElementById("asksend").addEventListener("click", askSend);
+document.getElementById("asksend").addEventListener("click", () => askSend());
 document.getElementById("askstop").addEventListener("click", () => { if (S.askBusy) S.askBusy.abort(); });
 askinput.addEventListener("input", askGrow);
 askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); });
