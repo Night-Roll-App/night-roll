@@ -1238,6 +1238,7 @@
   .studyanswerrow { flex-wrap: wrap; gap: 6px; }
   .studyguide { font-size: 0.8125rem; color: var(--dim); line-height: 1.45; margin: 0 0 8px; overflow-wrap: anywhere; }
   @media (max-width: 480px) { .studyauto, .studytext, .studyanswer { margin-left: 0; } .studyacts { max-width: 100%; } }
+  #studysheet #studyStatus { flex: none; overflow-wrap: anywhere; margin: 2px 0 6px; } /* the floating sheet is a flex column: a long Check coverage line was squeezed to one row and spilled over the prompts */
 #progpanel{max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .prow{padding:8px 2px;border-bottom:1px solid #2a2a3a}
 .prow b{color:var(--gold);font-size:0.875rem}

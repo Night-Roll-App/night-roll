@@ -252,19 +252,19 @@ Q10. (ASK before deploying the Tetris repair, 2026-10-04) Game Boy › Tetris:
     to albums/game-boy/tetris/a-type-music-version-1-1.mid (recent list,
     local notes or edits) would attach to the new song. Did you write
     anything on it locally? If yes, say so and I move it with the file.
-Q11. (Analysis sheet, plan §6.1 — shipped with a default) The sixteen prompts
+Q14. (Analysis sheet, plan §6.1 — shipped with a default) The sixteen prompts
     as written in the sheet (Form 3 / Harmony 5 / Melody 3 / Texture 3 /
     Summary 2), or fewer to start? The ids are stored in your files and
     stay; only the wording changes if you want it to. Example: "Phrase
     pairing — question and answer, or a changed ending" could just be
     "Phrase pairing".
-Q12. (Analysis sheet, plan §6.2 — NOT built yet, S3) "File under" chips in
+Q15. (Analysis sheet, plan §6.2 — NOT built yet, S3) "File under" chips in
     the annotation editor, so a bar note can be listed under Cadences /
     Motifs etc.? One more row in the editor you use constantly; without it
     the sheet lists only sections and chords by type and everything else
     goes through the tick + answer box. Default if you say nothing: build
     it after you've used the sheet for a week.
-Q13. (Analysis sheet, plan §6.3 — shipped with a default) The one count the
+Q16. (Analysis sheet, plan §6.3 — shipped with a default) The one count the
     sheet shows unasked is "▸ N chord bands" (your own bands, same number
     ☰ All notes shows). Keep it, or hide every number except inside Check
     coverage? Example: Harmony → Key and chords → "key: …" then "▸ 16
@@ -7438,7 +7438,7 @@ S2 (src/ui/study-sheet.js — `study` stem; "Analysis sheet" is the label) as bu
 - Group chips are bare names (review 6a). The only unasked count is "▸ N chord bands" (his own type count, the ☰ All notes number). Every prompt has a tick + an Answer box (dictation via Speak, no auto-focus); typed prompts list his bands (tap = jump + editor). Help folds per group are folded by default and clone one data-topic <dd> from the guide.
 - Check coverage: on demand, status line, one-shot (cleared on next open / song change), counts ticks + answers + annotation types only; a vm spy test proxies song.tracks and estimateKey.
 - Song switch: setSong's first call commits an open box to the outgoing song; a mismatched Done stashes a device-local draft (ff1roll-study-draft-<song>|<item>) restored on next open. Locked song → lock reason on the status line.
-- NOT built: S3 "File under" chips (located prompts list by type only), S5 Ask writing entries. Open questions: Q11–Q13 below.
+- NOT built: S3 "File under" chips (located prompts list by type only), S5 Ask writing entries. Open questions: Q14–Q16 in QUESTIONS FOR JOSH.
 - The frozen chaos-temple fixture the review asked for was not made (the builder's sandbox refused to read his rollnotes — fine: tests use a scratch fixture with placeholder bodies instead, which the review's 6b preferred anyway).
 Josh's words (speech-to-text, lightly cleaned): "I would like a Fable advisor to consider adding something like an analysis sheet for every song. I don't know where it would be accessed from, or what would be on it. It would probably have some sort of checklist like all the things you mentioned, or different sections where I could fill out all that stuff. We already have the annotations, so maybe you could reference those somehow — they're nice where they are — but having some centralized place where I can have all the analysis would be nice, per song. Every song has its own analysis sheet. This is my idea; Fable should critique it, and if it has better ideas that's fine. If it agrees, the notes you just gave me about what comes in an analysis should be available on the sheet — maybe beefed up with more detail per section. I'm certainly not going to remember everything you said, so I want to be able to refer back to it."
 Josh's ask is a plan + Fable critique (plan -> Fable review -> Fable implement); nothing built yet. Per the Learning-mode law the sheet must be prompts and structure only: never pre-filled answers, keys, chords or verdicts.
