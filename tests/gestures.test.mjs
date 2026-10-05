@@ -1007,3 +1007,34 @@ test("velocity lane: a song that isn't yours draws its stalks but refuses the dr
   assert.match(app.el("noteinfo").textContent, /velocity edits work on your own songs|facts from the capture/);
   app.run(`songKey = __ownKey;`);
 });
+
+// ---- S1 of docs/plans/2026-10-05-analysis-sheet.md (review finding 3): the
+// sheet's song-level entries sit at 1.1 but are not flags — drawRuler lays
+// none down for them, and the ruler's flag-tap search skips them, so they
+// cannot shadow the key marker at 1.1 (whose tap opens the editor).
+test("gesture: Analysis-sheet entries at 1.1 draw no ruler flag, and a tap there still opens the KEY marker's editor", async () => {
+  const app = await boot("vm-gest-study-flag");
+  // the composition's own timesig: directive at 1.1 is a flag of its own and the ruler's first hit there — out of
+  // this test's way, so the only things at 1.1 are the sheet entries and the key marker
+  app.run(`view.pxq = 200; clampView(); rangeSel = null; rollnotes = rollnotes.filter(n => !n.tsdir); finalizeNotes();`);
+  const flagXs = () => JSON.parse(app.run(`(() => {
+    const xs = [], y0 = STRIP_Y - 8; // the flag's first path point (drawRuler)
+    ctx.moveTo = (x, y) => { if (y === y0) xs.push(x); };
+    draw(); delete ctx.moveTo;
+    return JSON.stringify(xs);
+  })()`));
+  const base = flagXs().length;
+  app.run(`putStudyEntry("summary.what", {done: true, text: "<your summary>"}); putStudyEntry("texture.rhythm", {done: true}); finalizeNotes();`);
+  assert.equal(flagXs().length, base, "two sheet entries at 1.1: no flag");
+  app.run(`rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "a bar-1 note", added: true})); finalizeNotes();`);
+  assert.equal(flagXs().length, base + 1, "a plain text note at 1.1 still draws its one flag — the recorder sees flags");
+  app.run(`rollnotes.pop();`);
+  // the key marker goes in AFTER the sheet entries, so the first-hit search would land on an entry if it did not skip them
+  app.run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 1, q1: 1, b2: null, q2: null, text: "key: C", added: true}])[0])); finalizeNotes(); draw();
+           globalThis.__opened = null; openEditor = (n) => { globalThis.__opened = n; };`);
+  const p = JSON.parse(app.run(`JSON.stringify({x: RULER_W + (0 / song.ppq) * view.pxq - view.x + 8, y: 10})`)); // 8 px into the ruler: inside the flag's 14 px hit radius, off the gutter edge
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`__opened && __opened.keydir`), 0, "the tap found the key marker (keydir 0 = C), not a sheet entry");
+  assert.equal(app.run(`__opened.study`), undefined);
+});

@@ -18,6 +18,7 @@ const typeOf = n =>
   n.keydir !== undefined || n.keypartial ? "key" :
   n.tsdir ? "timesig" : n.tempodir !== undefined ? "tempo" :
   n.trackdir ? "track" : n.loopTo !== undefined ? "loop" :
+  n.study ? "analysis" : // the Analysis sheet's entries: item + tick in `text`, his answer in `note`
   /^lane:/.test(n.text) ? "lane" : /^chop:/.test(n.text) ? "chop" : "text";
 const rows = doc.rollnotes.map(n => ({
   type: typeOf(n), at: n.b1 + "." + n.q1, to: n.b2 ? n.b2 + "." + (n.q2 ?? 1) : null,

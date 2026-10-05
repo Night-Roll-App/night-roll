@@ -77,10 +77,12 @@
         },
         "type": {
           "type": "string",
-          "enum": ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane"]
+          "enum": ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis"]
         },
         "text": { "type": "string", "description": "Plain prose note — only when 'type' is absent." },
-        "note": { "type": "string", "description": "Attached comment on any typed directive or a chord (cnote)." },
+        "note": { "type": "string", "description": "Attached comment on any typed directive or a chord (cnote); on type: analysis, the user's own answer." },
+        "item": { "type": "string", "description": "type: analysis — the Analysis sheet prompt this entry answers, e.g. 'summary.what' (docs/plans/2026-10-05-analysis-sheet.md §2). One entry per item." },
+        "done": { "type": "boolean", "description": "type: analysis — the user's own tick. Written only when true." },
         "label": { "type": "string", "description": "type: section — the band's label." },
         "chord": { "type": "string", "description": "type: chord — the symbol (lasso chord-namer vocabulary)." },
         "key": { "type": "string", "description": "type: key — e.g. 'Bb', 'Gm', 'D dorian', or 'Bb?' (tonic-only, partial)." },
@@ -112,7 +114,8 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "$comment": "Strict for what THIS build writes. The app's reader is deliberately looser (docs/annotations-v2.md 'Forward compatibility'): an unknown field, or a whole unknown type, is kept verbatim and written back, never dropped."
     }
   }
 }

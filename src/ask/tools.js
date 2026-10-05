@@ -188,6 +188,7 @@ export function askNoteKind(n) { // the add_annotation "kind" this existing note
   if (n.keydir !== undefined || n.keypartial) return "key";
   if (n.tempodir !== undefined) return "tempo";
   if (n.loopTo !== undefined) return "loop";
+  if (n.study) return "analysis"; // an Analysis-sheet entry (model/rollnotes.js putStudyEntry) — never a plain note to edit_annotation
   return "note";
 }
 export function askNoteValue(n, kind) { // the "text" add_annotation would need to reproduce n's own value — chord/section store the bare symbol/label; key/tempo/loop carry a "kind: " prefix

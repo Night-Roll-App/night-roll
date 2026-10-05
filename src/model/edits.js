@@ -75,7 +75,8 @@ export function saveLocalNotes() {
   const local = S.rollnotes.filter(n => n.added).map(n =>
     ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
       section: n.section || undefined, chord: n.chord || undefined,
-      cnote: n.cnote || undefined, keydir: n.keydir, ai: n.ai || undefined})); // ai: the ✦ AI-estimate tag survives a reload like the rest of the note
+      cnote: n.cnote || undefined, keydir: n.keydir, ai: n.ai || undefined, // ai: the ✦ AI-estimate tag survives a reload like the rest of the note
+      extra: n.extra || undefined})); // extra: a newer build's fields ride the unsynced store too (model/rollnotes.js ROLLNOTES_FIELDS)
   if (local.length) localStorage.setItem(notesStoreKey(), JSON.stringify(local));
   else localStorage.removeItem(notesStoreKey());
   updateSyncBtn();

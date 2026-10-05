@@ -1482,6 +1482,26 @@ sniffing — a v2 file's header settles it outright. The legacy
 `hasProvenanceNote`'s fallback scan for it) still reads forever, for every
 file P4 doesn't touch until it next publishes.
 
+**Analysis-sheet entries (S1, 2026-10-05, docs/plans/2026-10-05-analysis-
+sheet.md §3a):** `{"at":[1,1],"type":"analysis","item":"summary.what",
+"done":true,"note":"<his answer>"}` — one per sheet prompt that has a tick
+or an answer; legacy text `analysis: summary.what done=1` + the answer as
+attached lines. Anchored at 1.1 because a note needs an anchor; never
+drawn (no flag, no subtitle, no flag tap — `isUndrawnAnno`), never moved
+by Insert/Delete bars, chop shifts or a meter change, skipped by
+`hasNotes`. One entry per `item`: `putStudyEntry(item, {done, text})`
+(src/model/rollnotes.js) is the write path — it retires the old entry
+(tombstone if published), drops an unticked empty one instead of writing
+it, and saves the local store; `mergeLocalAdditions` matches these by
+item + body, not by text line; `dedupedNotesWithIndex` keeps the last per
+item. Code uses the `study` stem (`n.study = {item, done}`,
+`studyDirText`, `studyFromText`, `studyEntryFor`) — `analysis*` names in
+src/ are the Normal-only estimate layer. **Forward compatibility (same
+day):** the reader keeps a field it does not know (`n.extra`, written
+back by `noteToJSON`) and a whole type it does not know (`n.opaque`,
+written back verbatim) — a stale build publishing never strips either
+(docs/annotations-v2.md "Forward compatibility").
+
 Source fields only: `at`/`to` are [bar, beat] (beats may be fractional;
 `to` beat omitted = end of bar), `type` + its value field(s), free
 `text` (or `note` attached to a chord). Derived data (ticks, band

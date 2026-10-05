@@ -78,6 +78,7 @@ import { BASE_RULER_H } from "../render/roll.js";
 import { cycleSecDepth } from "../ui/chrome.js";
 import { LANE_H } from "../render/roll.js";
 import { openEditor } from "../ui/note-editor.js";
+import { isUndrawnAnno } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { openAnalyzeSheet } from "../ui/sheets.js";
 import { noteTapMovesCursor } from "../ui/sheets.js";
@@ -865,6 +866,7 @@ export function tap(pos) {
     }
     let hitMark = null;
     for (const n of visibleNotes()) {
+      if (isUndrawnAnno(n)) continue; // no flag was drawn for it, so it can't be what he tapped — and it must not shadow the key marker at 1.1
       if (Math.abs((n.start - tick) * ppt) < 14) { hitMark = n; break; }
     }
     if (hitMark && hitMark.keydir !== undefined && hitMark.added && !S.playing) {

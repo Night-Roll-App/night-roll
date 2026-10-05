@@ -6,6 +6,8 @@ import { beatsPerBarDisp } from "./grid.js";
 import { snapBeat } from "./grid.js";
 import { tombKeyFor } from "./edits.js";
 import { noteIdentity } from "./edits.js";
+import { retireEdited } from "./edits.js";
+import { saveLocalNotes } from "./edits.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { readData } from "../platform/folder.js";
 import { setAnchorBQ } from "../hooks.js";
@@ -60,11 +62,33 @@ export function parseRollnotes(text) {
   if (cur) out.push(cur);
   return deriveNoteTypes(out);
 }
+// Every per-note field this build's writer (noteToJSONBase/noteToJSON) can
+// produce. Anything else on an entry is a field a NEWER build wrote (or an
+// older one spelled differently): jsonToRawNote keeps it on n.extra and
+// noteToJSON writes it back, so a stale client (an iPad bundle not yet
+// rebuilt, a service-worker-cached tab) that publishes never strips it.
+// Same for a whole TYPE this build doesn't know — kept verbatim as
+// n.opaque (docs/annotations-v2.md "Forward compatibility", review of the
+// analysis-sheet plan 2026-10-05: the old default: branch read j.text,
+// got "", and deriveNoteTypes dropped the entry — a silent delete).
+export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
+  "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
+  "item", "done", "ai"]);
+export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis"]);
 export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
   const n = {b1: +at[0] || 1, q1: at[1] !== undefined ? +at[1] : 1,
              b2: j.to ? +j.to[0] : null,
              q2: j.to && j.to[1] !== undefined ? +j.to[1] : null, text: ""};
+  if (typeof j.type === "string" && j.type && !ROLLNOTES_TYPES.has(j.type)) {
+    // a type from a newer build: the whole entry rides along untouched and
+    // is written back as-is (noteToJSONBase); the text is only a label for
+    // All notes — isDirective keeps it off the roll and out of the subtitle
+    n.opaque = JSON.parse(JSON.stringify(j));
+    const v = j[j.type];
+    n.text = j.type + ":" + (typeof v === "string" || typeof v === "number" ? " " + v : "");
+    return n;
+  }
   const att = j.note ? "\n" + j.note : "";
   switch (j.type) {
     case "section": n.text = "section: " + (j.label || "") + att; break;
@@ -77,9 +101,19 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     case "audio": n.text = audioDirText({track: j.track || "", file: j.file || "", offset: j.offset || 0, len: j.len || null, local: !!j.local}) + att; break;
     case "chop": n.text = "chop: " + (j.chop || ""); break;
     case "lane": n.text = "lane: " + j.lane; break;
+    // the Analysis sheet's entry (docs/plans/2026-10-05-analysis-sheet.md §3a):
+    // item + tick, body in `note` — tolerated in `text` too, so an entry
+    // from a build that spelled the body the other way is never read as
+    // empty and dropped
+    case "analysis": n.text = studyDirText({item: j.item || "", done: j.done === true || j.done === 1 || j.done === "1"}) +
+                              (j.note ? att : j.text ? "\n" + j.text : ""); break;
     default: n.text = j.text || "";
   }
   if (j.ai && typeof j.ai === "object") n.ai = {model: String(j.ai.model || ""), at: String(j.ai.at || "")}; // ✦ Annotate this song: the AI-estimate tag rides the file, the local store and the undo snapshot (src/ask/annotate.js)
+  for (const k of Object.keys(j)) {
+    if (ROLLNOTES_FIELDS.has(k)) continue;
+    (n.extra || (n.extra = {}))[k] = JSON.parse(JSON.stringify(j[k])); // a newer build's field (e.g. a future filing tag): carried, written back, never interpreted
+  }
   return n;
 }
 // .rollnotes v2 (docs/annotations-v2.md, P3 2026-10-01): same top-level
@@ -120,7 +154,7 @@ export function deriveNoteTypes(out) {
     // EVERY typed annotation may carry an attached note: first line is the
     // value, remaining lines are the note — where doubt and reasoning live
     // (web-handoff 2026-08-18; generalizes what chords always had)
-    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio):/i.test(n.text);
+    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis):/i.test(n.text);
     if (typed && n.text.includes("\n")) {
       const body = n.text.split("\n");
       n.text = body[0].trim();
@@ -181,8 +215,47 @@ export function deriveNoteTypes(out) {
       n.audiodir = d;
       n.text = audioDirText(d);
     } else delete n.audiodir;
+    const st = studyFromText(n.text);
+    if (st) { n.study = st; n.text = studyDirText(st); } else delete n.study;
   });
   return out.filter(n => n.text);
+}
+// ---- the Analysis sheet's own note type (docs/plans/2026-10-05-analysis-
+// sheet.md §3a; stored as type "analysis", text line "analysis: <item>
+// done=1", body as the attached note). Code names use the `study` stem on
+// purpose: `analysis*` in src/ is the Normal-only ESTIMATE layer
+// (S.analysisOn, analysisAvailable, gen/analysis.js) and these entries are
+// the opposite thing — his own answers, in every mode. One entry per item;
+// anchored at 1.1 only because a note needs an anchor: never drawn, never
+// a subtitle, never moved by bar edits, never counted by hasNotes.
+export function studyDirText(d) { return "analysis: " + d.item + (d.done ? " done=1" : ""); }
+export function studyFromText(text) { // {item, done} or null — the ONE parser (deriveNoteTypes, mergeLocalAdditions)
+  const m = (text || "").match(/^analysis:\s*(\S+)((?:\s+\w+=\S+)*)\s*$/i);
+  if (!m) return null;
+  const d = {item: m[1], done: false};
+  for (const kv of m[2].trim().split(/\s+/).filter(Boolean)) {
+    const [k, v] = kv.split("=");
+    if (k === "done") d.done = v === "1" || v === "true";
+  }
+  return d;
+}
+export function studyEntryFor(item) { return S.rollnotes.find(n => n.study && n.study.item === item) || null; }
+// The sheet's one write path (S2 ticks/answers, S5's Ask kind): replaces
+// this item's entry, RETIRING a synced one with a tombstone — dropping it
+// from S.rollnotes alone brought the old answer back on reload, and
+// mergeLocalAdditions then skipped the new one (review finding 1). An
+// unticked entry with nothing to say is removed, not written as an empty
+// line. Undo is the caller's: snapshot (annoSnapshot) before calling.
+export function putStudyEntry(item, {done = false, text = ""} = {}) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  const body = (text || "").trim();
+  const st = {item, done: !!done};
+  const fresh = {b1: 1, q1: 1, b2: null, q2: null, text: studyDirText(st), study: st, added: true};
+  if (body) fresh.cnote = body;
+  dropSupersededBy(fresh);
+  if (st.done || body) S.rollnotes.push(resolveNote(fresh));
+  saveLocalNotes();
+  return st.done || body ? fresh : null;
 }
 // one PIECE of a recording: anchor = where it starts in the song; offset = where
 // in the file it starts; len = how much of the file it plays (absent = the rest)
@@ -192,15 +265,27 @@ export function audioDirText(d) {
 }
 export function noteToJSON(n) { // enriched-or-stashed note -> schema entry (text prefixes are truth)
   const j = noteToJSONBase(n);
+  if (n.extra) for (const k of Object.keys(n.extra)) if (!(k in j)) j[k] = n.extra[k]; // a newer build's fields, back where they were (jsonToRawNote)
   if (n.ai) j.ai = {model: String(n.ai.model || ""), at: String(n.ai.at || "")}; // the ✦ AI tag on every type alike (jsonToRawNote reads it back)
   return j;
 }
 export function noteToJSONBase(n) {
   const j = {at: n.q1 !== 1 ? [n.b1, n.q1] : [n.b1, 1]};
   if (n.b2) j.to = (n.q2 !== null && n.q2 !== undefined) ? [n.b2, n.q2] : [n.b2];
+  if (n.opaque) { // a type this build doesn't know: the stashed entry verbatim, only the anchors re-read (bar edits may have moved it)
+    const o = {};
+    for (const k of Object.keys(n.opaque)) o[k] = k === "at" ? j.at : k === "to" ? (j.to || n.opaque.to) : n.opaque[k];
+    return o;
+  }
   const t = n.text || "";
   let m;
   const withNote = j2 => { if (n.cnote) j2.note = n.cnote; return j2; };
+  if (n.study || studyFromText(t)) {
+    const st = n.study || studyFromText(t);
+    j.type = "analysis"; j.item = st.item;
+    if (st.done) j.done = true;
+    return withNote(j);
+  }
   if (n.section) { j.type = "section"; j.label = t; return withNote(j); }
   if (n.chord) { j.type = "chord"; j.chord = t; return withNote(j); }
   if ((m = t.match(/^key:\s*(.+)$/is))) { j.type = "key"; j.key = m[1].trim(); return withNote(j); }
@@ -254,9 +339,12 @@ export function resolveNote(n) {
 export function dedupedNotesWithIndex(list) {
   const lastFor = new Map();
   for (const n of list) if (n.trackdir) lastFor.set(n.trackdir.name.toLowerCase(), n);
+  const lastStudy = new Map(); // one Analysis-sheet entry per item, last wins — same safety net as track:
+  for (const n of list) if (n.study) lastStudy.set(n.study.item, n);
   const seenAudio = new Set(); // audio: pieces — many per track; only an exact twin drops
   return list.map((n, i) => ({n, i})).filter(({n}) => {
     if (n.trackdir) return lastFor.get(n.trackdir.name.toLowerCase()) === n;
+    if (n.study) return lastStudy.get(n.study.item) === n;
     if (n.audiodir) { const k = n.b1 + ":" + n.q1 + ":" + n.text; if (seenAudio.has(k)) return false; seenAudio.add(k); }
     return true;
   });
@@ -307,9 +395,14 @@ export function trackDirText(d) {
 }
 
 export function isDirective(n) { // anything that isn't a plain text note
-  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio):/i.test(n.text));
+  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.opaque ||
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis):/i.test(n.text));
 }
+// Song-level entries never draw: no ruler flag (render/roll.js), no flag
+// tap (input/gestures.js — a 1.1 entry otherwise shadowed the key marker's
+// tap there), and no subtitle (isDirective above). One predicate so the two
+// loops can't drift apart.
+export function isUndrawnAnno(n) { return !!(n.study || n.opaque); }
 // {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
 export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
 
@@ -331,10 +424,16 @@ export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote
 //   key   — handled by dropLocalKeyAt (anchor-level).
 // Sections are deliberately left alone: nesting is by containment and he has
 // not asked for a rule there.
+//   analysis — one entry per item (the sheet's prompt id), whatever its
+//           anchor. The old one is RETIRED (tombstoned if synced), not just
+//           filtered: filtering alone resurrected it on reload (review 2026-
+//           10-05 finding 1). putStudyEntry is the write path; this is the
+//           net under any other caller.
 export function dropSupersededBy(fresh) {
   const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
   const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
                                          (n.q2 || null) === (fresh.q2 || null);
+  if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
   if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
   else if (!isDirective(fresh)) {
     const t = (fresh.text || "").trim();
@@ -447,6 +546,20 @@ export function mergeLocalAdditions(notes, key) {
   try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
   catch (err) { /* corrupted local notes */ }
   for (const n of local) {
+    const st = studyFromText(n.text);
+    if (st) {
+      // an Analysis-sheet entry: its text is the SAME for every answer to one
+      // item ("analysis: summary.what done=1"), so the generic text match
+      // below would call a re-dictated answer a duplicate of the published
+      // one and drop it (review 2026-10-05 finding 1). The body counts; and
+      // the local copy is by construction the newer answer, so it replaces
+      // a published entry for the same item instead of standing beside it.
+      const same = r => r.study && r.study.item === st.item;
+      if (notes.some(r => same(r) && r.text === n.text && (r.cnote || "") === (n.cnote || ""))) continue;
+      for (let i = notes.length - 1; i >= 0; i--) if (same(notes[i])) notes.splice(i, 1);
+      notes.push(deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true});
+      continue;
+    }
     if (notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) continue;
     const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
     if (km && n.keydir === undefined) {
@@ -551,7 +664,7 @@ export function annoRestore(str) {
 export function shiftAnchors(deltaTicks) {
   const bt = barTicks(), unit = beatTicks();
   for (const n of S.rollnotes) {
-    if (n.chopdir) continue;
+    if (n.chopdir || n.study) continue; // song-level sheet entries have no place in the music to follow
     const conv = (b, q) => {
       const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
       return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
@@ -573,6 +686,7 @@ export function convertAnchors(oldTs, newTs) {
     return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
   };
   for (const n of S.rollnotes) {
+    if (n.study) continue;
     [n.b1, n.q1] = conv(n.b1, n.q1);
     if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);

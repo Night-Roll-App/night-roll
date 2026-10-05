@@ -10807,14 +10807,14 @@ test("publishSong/annotationsFor (docs/annotations-v2.md P3): refuses to publish
 // ---- P4: .rollnotes v2 writer + stored origin (docs/annotations-v2.md, docs/provenance-plan.md) ----
 test("serializeNotesList (docs/annotations-v2.md P4): writes v2 — format/version, and every note still matches the schema's required shape", () => {
   installSong();
-  run(`rollnotes = parseRollnotes("[1.1 - 4.4]\\nsection: A\\n\\n[5.1]\\nkey: G\\n\\n[3.1]\\ntempo: 90\\n").map(resolveNote);`);
+  run(`rollnotes = parseRollnotes("[1.1 - 4.4]\\nsection: A\\n\\n[5.1]\\nkey: G\\n\\n[3.1]\\ntempo: 90\\n\\n[1.1]\\nanalysis: summary.what done=1\\n<your summary>\\n").map(resolveNote);`);
   const doc = JSON.parse(run(`serializeRollnotesStamped(1700000000000)`));
   assert.equal(doc.format, "night-roll-annotations");
   assert.equal(doc.version, 2);
   assert.equal(typeof doc.song, "string");
   assert.equal(doc.stamp, 1700000000000);
-  assert.ok(Array.isArray(doc.notes) && doc.notes.length === 3);
-  const TYPES = ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane"];
+  assert.ok(Array.isArray(doc.notes) && doc.notes.length === 4);
+  const TYPES = ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis"]; // analysis: S1 of docs/plans/2026-10-05-analysis-sheet.md
   for (const n of doc.notes) { // docs/annotations-v2.schema.json's $defs.note: "at" required, "type" (if present) is one of these
     assert.ok(Array.isArray(n.at) && n.at.length >= 1 && n.at.length <= 2, JSON.stringify(n));
     if (n.type !== undefined) assert.ok(TYPES.includes(n.type), JSON.stringify(n));
@@ -10837,6 +10837,130 @@ test("v2 round-trip (docs/annotations-v2.md P4): parse → serialize (origin inc
   assert.equal(twice, once, "re-serializing an unchanged v2 doc, origin included, is byte-identical — no churn on a no-op publish");
   const doc = JSON.parse(once);
   assert.deepEqual(doc.origin, {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid", at: "2026-10-01T00:00:00.000Z"});
+});
+
+// ---- S1: the Analysis sheet's storage (docs/plans/2026-10-05-analysis-sheet.md
+// §3a + the review's findings 1-3, 10-11, 13-14). Storage only: nothing here
+// reads the music; the bodies are placeholders, never a reading of any song.
+const studyDoc = (notes) => JSON.stringify({format: "night-roll-annotations", version: 2, song: "test", notes});
+
+test("analysis entries (S1): JSON → parse → serialize is byte-identical, n.study derives, and the text grammar yields the same object (format identity)", () => {
+  installSong();
+  const notes = [
+    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>"},
+    {at: [1, 1], type: "analysis", item: "texture.rhythm", note: "<your words>\nsecond line"},
+    {at: [1, 1], type: "analysis", item: "form.sections", done: true},
+    {at: [2, 1], text: "a bar note"},
+  ];
+  const doc = studyDoc(notes);
+  run(`rollnotes = parseRollnotes(${JSON.stringify(doc)}).map(resolveNote);`);
+  const once = run(`serializeRollnotes()`);
+  assert.deepEqual(JSON.parse(once).notes, notes, "item, done (only when true) and note come back as written");
+  run(`rollnotes = parseRollnotes(${JSON.stringify(once)}).map(resolveNote);`);
+  assert.equal(run(`serializeRollnotes()`), once, "a fixed point");
+  assert.deepEqual(val(`rollnotes.filter(n => n.study).map(n => ({text: n.text, study: n.study, cnote: n.cnote || null}))`), [
+    {text: "analysis: summary.what done=1", study: {item: "summary.what", done: true}, cnote: "<your summary>"},
+    {text: "analysis: texture.rhythm", study: {item: "texture.rhythm", done: false}, cnote: "<your words>\nsecond line"},
+    {text: "analysis: form.sections done=1", study: {item: "form.sections", done: true}, cnote: null},
+  ]);
+  const text = "[1.1]\nanalysis: summary.what done=1\n<your summary>\n\n[1.1]\nanalysis: texture.rhythm\n<your words>\nsecond line\n\n[1.1]\nanalysis: form.sections done=1\n\n[2.1]\na bar note\n";
+  assert.deepEqual(val(`parseRollnotes(${JSON.stringify(text)}).map(n => ({...n}))`),
+                   val(`parseRollnotes(${JSON.stringify(doc)}).map(n => ({...n}))`), "legacy text line and JSON entry are the SAME object");
+  assert.equal(run(`studyEntryFor("summary.what").cnote`), "<your summary>");
+  assert.equal(run(`studyEntryFor("nope")`), null);
+  run(`rollnotes = [];`);
+});
+
+test("analysis entries (S1) are never drawn or moved: directive (no subtitle, hasNotes false), not copyable, Ask kind 'analysis', Insert bars / chop shift leave them at 1.1", () => {
+  installSong();
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([
+    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>"},
+    {at: [2, 1], text: "a bar note"},
+  ]))}).map(resolveNote); finalizeNotes();`);
+  assert.equal(run(`isDirective(rollnotes[0])`), true);
+  assert.equal(run(`isUndrawnAnno(rollnotes[0])`), true);
+  assert.equal(run(`isUndrawnAnno(rollnotes[1])`), false);
+  assert.equal(run(`activeNoteAt(0)`), null, "not a subtitle");
+  assert.equal(run(`rollnotes.filter(n => !isDirective(n)).length`), 1, "hasNotes' own test (chrome.js) counts only the bar note");
+  assert.equal(run(`isCopyableAnno(rollnotes[0])`), false, "never lasso'd or pasted");
+  assert.equal(run(`askNoteKind(rollnotes[0])`), "analysis");
+  run(`shiftAnchors(barTicks()); rollnotes.forEach(resolveNote);`); // shiftAnchors rewrites bar/beat; its callers re-resolve
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 3], "a chop shift moves the bar note, not the sheet entry");
+  run(`songKey = "albums/compositions/nightroll/s1-move-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* editable: Insert bars refuses otherwise */
+       song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; trackState = [{muted: false, solo: false}];`);
+  assert.equal(run(`insertTime(0, barTicks())`), 2, "the one note and the bar note moved — the sheet entry is not counted as touched");
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 4], "Insert bars at the top: the bar note slides, the sheet entry stays");
+  run(`localStorage.removeItem("ff1roll-draft-" + songKey); editUndo = []; editRedo = []; rollnotes = []; song.tracks = []; trackState = []; songKey = "midi/test.mid";`);
+});
+
+test("analysis entries (S1): re-dictating a PUBLISHED answer survives a reload — tombstoned old, new merged back exactly once; the same without a tombstone; unticked + empty = removed (review findings 1, 14)", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/s1-reload-test.mid"; localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  const repo = studyDoc([{at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "first answer"}, {at: [2, 1], text: "a bar note"}]);
+  const open = () => run(`rollnotes = parseRollnotes(${JSON.stringify(repo)}).map(resolveNote);`); // as loadNotes leaves a repo copy: synced, no added flag
+  open();
+  run(`putStudyEntry("summary.what", {done: true, text: "second answer"})`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.study).map(n => [n.cnote, !!n.added])`), [["second answer", true]], "one entry: the new answer, unsynced");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-tombs-" + songKey) || "[]").length`), 1, "the published answer is tombstoned, not just filtered");
+  assert.equal(JSON.parse(run(`localStorage.getItem("ff1roll-notes-" + songKey)`)).length, 1, "and the new one is in the unsynced store");
+  // reload = loadNotes' exact sequence: repo copy → minus tombstones → plus this device's unsynced notes
+  const reload = () => val(`mergeLocalAdditions(subtractTombstones(parseRollnotes(${JSON.stringify(repo)}), songKey), songKey).filter(n => n.study).map(n => [n.study.item, n.cnote, n.study.done])`);
+  assert.deepEqual(reload(), [["summary.what", "second answer", true]], "after reload: the new answer, once");
+  run(`localStorage.removeItem("ff1roll-tombs-" + songKey)`);
+  assert.deepEqual(reload(), [["summary.what", "second answer", true]], "even with no tombstone the local answer replaces the published one — never beside it (same text line, different body)");
+  run(`localStorage.setItem("ff1roll-notes-" + songKey, JSON.stringify([{b1: 1, q1: 1, b2: null, q2: null, text: "analysis: summary.what done=1", cnote: "first answer"}]))`);
+  assert.deepEqual(reload(), [["summary.what", "first answer", true]], "an identical local copy merges once, not twice");
+  // unticking with nothing to say removes the entry instead of writing an empty line
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey);`); open();
+  assert.equal(run(`putStudyEntry("summary.what", {done: false, text: "  "})`), null);
+  assert.equal(val(`rollnotes.filter(n => n.study).length`), 0);
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-tombs-" + songKey) || "[]").length`), 1, "the published entry is tombstoned, so it stays gone on reload");
+  assert.deepEqual(reload(), []);
+  // the serializer's net: should two entries for one item ever coexist, the file keeps the last
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([{at: [1, 1], type: "analysis", item: "x", note: "old"}, {at: [1, 1], type: "analysis", item: "x", note: "new"}]))}).map(resolveNote);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes.map(n => n.note), ["new"]);
+  // a locked (newer-Night-Roll) song refuses, like every other write path
+  run(`rollnotesReadOnly = true;`);
+  assert.throws(() => run(`putStudyEntry("summary.what", {done: true})`), /newer Night Roll/);
+  run(`rollnotesReadOnly = false; localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes = []; songKey = "midi/test.mid";`);
+});
+
+test("forward compatibility (S1, review finding 2): an unknown field and an unknown TYPE survive parse → serialize verbatim — through the local store and undo too — and neither reads as an empty note", () => {
+  installSong();
+  const notes = [
+    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>", topic: "harmony.cadences"}, // a field a later build may add
+    {at: [2, 1], text: "a bar note", topic: "harmony.cadences"},
+    {at: [3, 1], to: [4, 4], type: "chord", chord: "G7", note: "c", shade: 2},
+    {at: [5, 1], type: "motif", motif: "x", returns: [[7, 1], [9, 1]]}, // a whole type from a later build
+    {at: [6, 1], type: "cadence", kind: "half"},
+  ];
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc(notes))}).map(resolveNote);`);
+  assert.equal(val(`rollnotes.length`), notes.length, "nothing dropped — the old default: branch read these as empty text notes and lost them");
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "every entry back as written");
+  assert.deepEqual(val(`rollnotes.filter(n => n.opaque).map(n => ({text: n.text, dir: isDirective(n), undrawn: isUndrawnAnno(n), copy: isCopyableAnno(n)}))`),
+    [{text: "motif: x", dir: true, undrawn: true, copy: false}, {text: "cadence:", dir: true, undrawn: true, copy: false}]);
+  assert.deepEqual(val(`rollnotes[1].extra`), {topic: "harmony.cadences"});
+  run(`rollnotes.forEach(n => { n.added = true; }); saveLocalNotes();`);
+  assert.deepEqual(JSON.parse(run(`localStorage.getItem(notesStoreKey())`)).find(n => n.text === "a bar note").extra, {topic: "harmony.cadences"}, "the unsynced store carries the unknown field");
+  run(`const __snap = annoSnapshot(); rollnotes = []; annoRestore(__snap);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "undo restores unknown fields and types verbatim");
+  run(`rollnotes.forEach(n => { n.added = false; }); shiftAnchors(barTicks());`); // an unknown type has a real anchor: it moves with the music; the sheet entry does not
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 3, 4, 6, 7]);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes[3], {at: [6, 1], type: "motif", motif: "x", returns: [[7, 1], [9, 1]]}, "only the anchor changed");
+  run(`localStorage.removeItem(notesStoreKey()); rollnotes = [];`);
+});
+
+test("old-shape tolerance (S1): an analysis entry with its body in `text`, done as 1, or nothing but an item still reads, and comes out in the current shape", () => {
+  installSong();
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([
+    {at: [1, 1], type: "analysis", item: "summary.what", done: 1, text: "body in text"},
+    {at: [1, 1], type: "analysis", item: "texture.scene"},
+  ]))}).map(resolveNote);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, [
+    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "body in text"},
+    {at: [1, 1], type: "analysis", item: "texture.scene"},
+  ]);
+  run(`rollnotes = [];`);
 });
 
 test("originOf (docs/annotations-v2.md P4): the stored header's origin.kind wins outright, even where the legacy path-sniffing derivation would land on something else", () => {

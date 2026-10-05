@@ -62,7 +62,8 @@ export async function loadSong(arg, {dedupe = true} = {}) {
       rollnotes: visibleNotes().map(n => ({text: n.text, note: n.cnote, b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2,
         start: n.start, end: n.end, section: !!n.section, chord: !!n.chord,
         keydir: n.keydir, keypartial: n.keypartial, tsdir: n.tsdir, tempodir: n.tempodir,
-        trackdir: n.trackdir, loopTo: n.loopTo, lane: n.lane})),
+        trackdir: n.trackdir, loopTo: n.loopTo, lane: n.lane,
+        study: n.study})), // {item, done} on an Analysis-sheet entry (tools/annotations.mjs lists it as type "analysis")
     });
   })()`));
   if (dedupe) { // stacked same-start-same-pitch duplicates collapse to the longest

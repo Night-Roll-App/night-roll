@@ -94,6 +94,42 @@ the device's unsynced store (`ff1roll-notes-<key>`) and the undo snapshot
 not AI. Readers that do not know the field ignore it (the schema's note
 object lists it; nothing else about the entry changes).
 
+One note type was added 2026-10-05 (S1 of docs/plans/2026-10-05-analysis-
+sheet.md): `"type": "analysis"` — one line per prompt on the song's
+Analysis sheet that has a tick or an answer, `"item"` the prompt's stored
+id (e.g. `"summary.what"`), `"done": true` the user's own tick (written
+only when true), the answer in `"note"`. Anchored at `[1,1]` only because
+a note needs an anchor: it is never drawn (no ruler flag, no subtitle, no
+flag tap), bar edits never move it, and `tools/annotations.mjs` lists it as
+type `analysis`. Legacy-text form, parsed forever: `analysis: <item>
+done=1` with the answer as the attached lines. One entry per item: a new
+answer for an item RETIRES the old one (`putStudyEntry` in
+src/model/rollnotes.js — a tombstone if the old one was published, so it
+cannot come back on reload), `mergeLocalAdditions` compares the answer
+body (every answer to one item has the same text line), and the writer
+keeps only the last per item. In code these are the `study*` names
+(`n.study`, `studyDirText`, `putStudyEntry`) — `analysis*` in src/ is the
+Normal-only estimate layer, deliberately not reused.
+
+### Forward compatibility (2026-10-05)
+
+A build that publishes a file it does not fully understand must not strip
+what it does not understand — a stale client (an iPad bundle not yet
+rebuilt, a service-worker-cached tab) used to read an unknown `type` as
+an empty text note and drop it on the next publish. So the reader keeps:
+
+- **an unknown field** on a known type (any key outside `ROLLNOTES_FIELDS`
+  in src/model/rollnotes.js — e.g. a filing tag a later build adds) on
+  `n.extra`; `noteToJSON` writes it back after the entry's own fields; the
+  unsynced local store (`saveLocalNotes`) carries it too;
+- **an unknown type** (outside `ROLLNOTES_TYPES`) whole, on `n.opaque`:
+  the entry is written back verbatim (only `at`/`to` re-read, since bar
+  edits may have moved it), it is a directive for the roll (no flag, no
+  subtitle) and shows in All notes under its type name.
+
+The schema stays strict (`additionalProperties: false`) for what THIS
+build writes; the reader is the loose side.
+
 ## Reader (shipped, P3)
 
 `parseRollnotesJSON` (index.html) accepts both transparently:

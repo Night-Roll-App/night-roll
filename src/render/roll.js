@@ -11,6 +11,7 @@ import { appMode } from "../platform/mode.js";
 import { isDirective } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { isCopyableAnno } from "../model/rollnotes.js";
+import { isUndrawnAnno } from "../model/rollnotes.js";
 
 export const DRUM_LABELS = {35: "kick2", 36: "kick", 37: "stick", 38: "snare", 40: "snar2",
   41: "tomF", 42: "hat", 43: "tomL", 44: "hatP", 45: "tom", 46: "hatO",
@@ -486,7 +487,7 @@ export function drawRuler(W, H) {
   // finalizeNotes) — dashed/outlined so it never reads as a real annotation.
   if (S.analysisOn && appMode() === "normal") drawAnalysisLayer(tickX, W);
   for (const n of visibleNotes()) {
-    if (n.section || n.chord || n.chopdir) continue; // chop anchors are raw-space: no flag
+    if (n.section || n.chord || n.chopdir || isUndrawnAnno(n)) continue; // chop anchors are raw-space: no flag; sheet entries and unknown types never draw
     const x = S.RULER_W + n.start * ppt - S.view.x;
     if (x < S.RULER_W - 8 || x > W) continue;
     if (taken(n)) { // lasso'd text note: a ring behind its flag
