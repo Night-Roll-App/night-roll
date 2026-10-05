@@ -2806,6 +2806,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
     "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
     "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry
+    "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -7829,6 +7830,59 @@ test("the unsent AI message survives: saved per chat, back after a relaunch, cle
   run(`askinput.value = ""; askDraftClear(); askDraftSave();`);
   assert.equal(val(`localStorage.getItem("ff1roll-askdraft-ff1roll-ask-albums/test/draft.mid")`), null);
   run(`localStorage.removeItem("ff1roll-askdraft-" + ASK_GENERAL_KEY); askGeneral = false; askDraftKey = null;`);
+});
+
+test("📋 Paste: the clipboard lands in the AI box without focusing it, at the end or the caret, saved as the draft, never sent (Terminal #113–114)", async () => {
+  installSong();
+  run(`songKey = "albums/test/paste.mid"; askGeneral = false; askTerminal = false; askDraftKey = null; askinput.value = ""; askRender(); askstatus.textContent = "";
+       globalThis.__clip = "hello there"; globalThis.__focused = 0; globalThis.__clipPrev = navigator.clipboard; globalThis.__focusPrev = askinput.focus;
+       askinput.focus = () => { globalThis.__focused++; };
+       navigator.clipboard = {readText: async () => { if (globalThis.__clip instanceof Error) throw globalThis.__clip; return globalThis.__clip; }};
+       globalThis.__chatBefore = localStorage.getItem(askStoreKey());`);
+  const draft = () => JSON.parse(val(`localStorage.getItem("ff1roll-askdraft-ff1roll-ask-albums/test/paste.mid")`) || "null");
+  try {
+    await run(`askPaste()`);
+    assert.equal(val(`askinput.value`), "hello there", "an empty box gets the text as is");
+    assert.equal(val(`askstatus.textContent`), "", "nothing to report when it worked");
+    assert.equal(draft().text, "hello there", "the draft is written at once, not after the timer");
+    await run(`askPaste()`);
+    assert.equal(val(`askinput.value`), "hello there hello there", "appended with a space, not glued on");
+    run(`askinput.value = "typed so far ";`);
+    await run(`askPaste()`);
+    assert.equal(val(`askinput.value`), "typed so far hello there", "no doubled space after a trailing one");
+    assert.equal(val(`globalThis.__focused`), 0, "the box was never focused: no keyboard");
+    // the caret counts only when the box already has focus
+    run(`document.activeElement = askinput; askinput.value = "before after"; askinput.selectionStart = askinput.selectionEnd = 6;`);
+    await run(`askPaste()`);
+    assert.equal(val(`askinput.value`), "before hello there after", "inserted at the caret, spaced on both sides");
+    run(`document.activeElement = null;`);
+    assert.equal(val(`globalThis.__focused`), 0);
+    // a live dictation would rebuild the box over the paste: Paste stops it first and keeps the box
+    run(`var _recP = {stopped: false, stop() { this.stopped = true; }, onresult: () => {}, onend: () => {}, onerror: () => {}};
+         micRec = _recP; micBtn = document.getElementById("askmic"); askinput.value = "said so far";`);
+    await run(`askPaste()`);
+    assert.equal(val(`_recP.stopped`), true, "dictation stopped");
+    assert.equal(val(`_recP.onresult`), null, "its late result discarded (it would overwrite the paste)");
+    assert.equal(val(`askinput.value`), "said so far hello there", "the words already in the box stay");
+    // the three ways it can't: one status line each, the box untouched
+    run(`askinput.value = "keep"; globalThis.__clip = "  \\n";`);
+    await run(`askPaste()`);
+    assert.equal(val(`askstatus.textContent`), "nothing on the clipboard");
+    assert.equal(val(`askinput.value`), "keep");
+    run(`globalThis.__clip = Object.assign(new Error("denied"), {name: "NotAllowedError"});`);
+    await run(`askPaste()`);
+    assert.match(val(`askstatus.textContent`), /permission denied/);
+    assert.equal(val(`askinput.value`), "keep");
+    run(`navigator.clipboard = undefined;`);
+    await run(`askPaste()`);
+    assert.match(val(`askstatus.textContent`), /can't read the clipboard/);
+    assert.equal(val(`askinput.value`), "keep");
+    assert.equal(val(`localStorage.getItem(askStoreKey()) === globalThis.__chatBefore`), true, "nothing was sent: the chat log is as it was");
+    assert.equal(val(`globalThis.__focused`), 0);
+  } finally {
+    run(`navigator.clipboard = globalThis.__clipPrev; askinput.focus = globalThis.__focusPrev; document.activeElement = null; micRec = null; micPrev = null; micBtn = null;
+         askinput.value = ""; askDraftClear(); askDraftSave(); askDraftKey = null; askstatus.textContent = "";`);
+  }
 });
 
 test("count-in: ● counts in from any bar and the playhead waits at its start; plain playback mid-song doesn't count in", async () => {

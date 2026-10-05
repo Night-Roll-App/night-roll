@@ -4764,6 +4764,20 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     its system prompt says what the line means. Both the ♪ this song /
     ✦ Ask chat and the ⌨ Terminal tab share this one composer, so 📷/🖼
     work identically in both.
+  - **📋 Paste (2026-10-04, Terminal #113–114; docs/plans/2026-10-04-ai-paste-button.md):**
+    `#askpaste` beside Speak (CONTROLS `askpaste`, ICON `contentPaste`).
+    `askPaste` (src/ask/sheet.js) calls `navigator.clipboard.readText()`
+    first thing in the tap (user activation; iOS shows its own Paste
+    bubble; the shell has no Capacitor clipboard plugin, so this is the one
+    path) and `askPasteInsert` puts the text at the caret when the box
+    already has focus, else at the end, with a space where the join would
+    run words together — it NEVER calls focus() (Superwhisper leaves its
+    transcript on the clipboard; the keyboard would cover half the screen),
+    stops a live 🎤 first (`askMicOff` — the mic's onresult rebuilds the
+    box from its own base and would erase the paste), then `askGrow()` +
+    `askDraftSave()` so the draft is written at once. No API / empty /
+    NotAllowedError / other → one `#askstatus` line, never a dialog; never
+    sends. Test: "📋 Paste".
   - **"Now:" status (2026-09-29, Josh: "I wish I had a way to see what
     Claude Code was working on from here").** `--status "text"` (or POST
     `/v1/status {text}`) sets one current line + keeps the last 10 with

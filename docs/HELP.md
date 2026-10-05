@@ -353,6 +353,9 @@ Every bubble ends with a small **⧉**: tap it to copy that message whole, ready
 **Speak / ■ Stop listening / ■ Stop reply**
 Tap **Speak** to dictate a question; while it listens the same button reads **■ Stop listening** (your words still land in the box). The other stop, **■ Stop reply** beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.
 
+**Paste**
+Tap **Paste** beside Speak to drop whatever is on the clipboard into the message box **without opening the keyboard** — dictate with Superwhisper (or copy anything), then one tap. The text lands at the end of what is in the box (at the cursor if the box is already active), with a space where it needs one; it is kept as your unsent draft and is never sent on its own. The first time, iOS asks with its own small Paste bubble — allow it. If Speak is listening, Paste stops it first and what is already in the box stays. An empty clipboard or a refused permission is one line on the status line, nothing else. Keyboard: **⌘V** in the box does the usual.
+
 **Slow replies**
 Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold **reply** badge appears in the footer, where Messages reports errors, and the info strip says so — tap the badge (or AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.
 

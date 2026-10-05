@@ -316,6 +316,7 @@ document.getElementById("askstop").addEventListener("click", () => { if (S.askBu
 askinput.addEventListener("input", askGrow);
 askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); });
 document.getElementById("askmic").addEventListener("click", () => {
+document.getElementById("askpaste").addEventListener("click", askPaste);
 askinput.addEventListener("keydown", e => {
 document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
 for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));

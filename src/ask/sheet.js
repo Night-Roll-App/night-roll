@@ -119,6 +119,42 @@ export function askMicOff() { // Send clears the box: a late result must not ref
   // or the late transcript lands in the emptied box (Josh, 2026-09-30)
   if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
 }
+// 📋 Paste (Josh, Terminal #113–114; docs/plans/2026-10-04-ai-paste-button.md):
+// Superwhisper on the iPad is only a keyboard, and its Control Center
+// control leaves the transcript on the clipboard — one tap puts it in the
+// box WITHOUT focusing it (the keyboard would take half the screen). The
+// shell has no Capacitor clipboard plugin, so navigator.clipboard is the
+// one path; readText() runs first thing in the tap (user activation — iOS
+// shows its own Paste bubble). Every failure is a status line, never a
+// dialog, and nothing here sends.
+export async function askPaste() {
+  const clip = typeof navigator !== "undefined" && navigator.clipboard;
+  if (!clip || typeof clip.readText !== "function") { askstatus.textContent = "this browser can't read the clipboard — paste with the keyboard"; return; }
+  let text;
+  try { text = await clip.readText(); }
+  catch (err) {
+    askstatus.textContent = err && err.name === "NotAllowedError" ? "clipboard permission denied — allow it, or paste with the keyboard" : "couldn't read the clipboard (" + (err && err.message || err) + ")";
+    return;
+  }
+  if (!text || !text.trim()) { askstatus.textContent = "nothing on the clipboard"; return; }
+  askPasteInsert(text);
+  askstatus.textContent = "";
+}
+export function askPasteInsert(text) { // at the caret when the box already has focus, else at the end; a space wherever the join would run words together; never focus()
+  // a live dictation rebuilds the box from the base it captured at start on
+  // every result — a paste under it would vanish on the next one. Stop it;
+  // the words already in the box stay (same discard Send uses).
+  askMicOff();
+  const v = askinput.value, focused = typeof document !== "undefined" && document.activeElement === askinput;
+  const s = focused && typeof askinput.selectionStart === "number" ? askinput.selectionStart : v.length;
+  const e = focused && typeof askinput.selectionEnd === "number" ? askinput.selectionEnd : s;
+  const before = v.slice(0, s), after = v.slice(e);
+  const lead = before && !/\s$/.test(before) ? " " : "", trail = after && !/^\s/.test(after) ? " " : "";
+  askinput.value = before + lead + text + trail + after;
+  if (focused) { const at = (before + lead + text).length; try { askinput.setSelectionRange(at, at); } catch (err) { /* a box with no selection API */ } }
+  askGrow(); // size, the composing notice, the library's draft timer
+  askDraftSave(); // and the draft now: a relaunch right after the tap must still have it
+}
 export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
 export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
@@ -213,6 +249,7 @@ export function initSheet3() {
     if (!SPEECH) { askstatus.textContent = "no speech recognition in this browser — the keyboard mic still works"; return; }
     micToggle(document.getElementById("askmic"), askinput, s2 => { askstatus.textContent = s2; });
   });
+  document.getElementById("askpaste").addEventListener("click", askPaste);
   askinput.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(); }
   });
