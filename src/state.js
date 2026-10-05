@@ -287,6 +287,8 @@ export const S = {
   askTerminalTimer: null,
   askResumeTimer: null,
   wm: null,
+  wmOpeners: {},
+  wmRestored: false,
   wmSideMembers: {left: [], right: []},
   wmBottomEls: [],
   filesMirrorT: 0,

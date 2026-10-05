@@ -7,6 +7,10 @@ import { teardownMixerMeters } from "./mixer.js";
 import { renderMixer } from "./mixer.js";
 import { ensureMixerMeters } from "./mixer.js";
 import { ensureMixerMeterLoop } from "./mixer.js";
+import { openMixer } from "./mixer.js";
+import { openAsk } from "../ask/host.js";
+import { openNoteList } from "./notes.js";
+import { openSyncSheet } from "./sheets.js";
 
 // ---- Window manager: shell + docks, phase A (open-items.md, "a real
 // windowing system"). Steps 1-2 (REBUILT 2026-09-29 after attempt 1,
@@ -517,6 +521,24 @@ export function wmFloat(id) { // undock `id` from wherever it is (the only way O
 // addGrips), unchanged; a window not yet migrated (not in this list) keeps
 // getting exactly that and nothing else. See NIGHT-ROLL.md "Window manager
 // (shell + docks)" for the not-yet-migrated list.
+// which dockable windows were open, so a relaunch reopens them exactly as left
+// (dock side/width and floating spot are already saved; Josh, 2026-10-04,
+// Terminal #119). Each window's owner registers how it opens
+// (S.wmOpeners[id]) — reopening through the real opener fills its content.
+export const WM_OPEN_KEY = "ff1roll-wm-open";
+export function wmOpenIds() { return Object.keys(WM_WINDOWS).filter(id => WM_WINDOWS[id].dockable && document.getElementById(id) && document.getElementById(id).classList.contains("on")); }
+export function wmSaveOpen() { if (!S.wmRestored) return; try { localStorage.setItem(WM_OPEN_KEY, JSON.stringify(wmOpenIds())); } catch (err) { /* private mode */ } }
+export function wmRestoreOpen() { // once per launch, after the first song is in
+  if (S.wmRestored) return;
+  S.wmRestored = true;
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem(WM_OPEN_KEY) || "[]"); } catch (err) { ids = []; }
+  for (const id of Array.isArray(ids) ? ids : []) {
+    const el = document.getElementById(id), open = S.wmOpeners[id];
+    if (!el || el.classList.contains("on") || typeof open !== "function") continue;
+    try { open(); } catch (err) { /* a window that can't open now just stays closed */ }
+  }
+}
 export function makeWindow(id, opts) {
   WM_WINDOWS[id] = {dockable: !!(opts && opts.dockable)};
   if (!opts || !opts.dockable) return;
@@ -730,6 +752,7 @@ export function initWm1() {
     // overlay turns on — a docked sheet skips this, the dock lays it out instead
     if (typeof MutationObserver === "function") new MutationObserver(muts => {
       for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on") && !el.classList.contains("docked")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
+      if (muts.some(mu => mu.target.id && WM_WINDOWS[mu.target.id] && WM_WINDOWS[mu.target.id].dockable)) wmSaveOpen();
     }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
   })();
                                S.wm = wmLoad();
@@ -850,6 +873,12 @@ export function initWm1() {
 }
 
 export function initWm2() {
+  // how each dockable window opens, for wmRestoreOpen after a relaunch
+  Object.assign(S.wmOpeners, {
+    asksheet: openAsk, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer,
+    instsheet: () => document.getElementById("fileinst").click(),
+    jobssheet: () => document.getElementById("jobsbtn").click(),
+  });
   if (typeof document.querySelectorAll === "function") { // vm harness stubs document
   // A sheet keeps the scroll position it had when it was last closed, so
   // reopening the notes list dropped Josh halfway down it (2026-08-25). Reset on

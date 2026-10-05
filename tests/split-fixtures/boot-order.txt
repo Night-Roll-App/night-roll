@@ -327,6 +327,7 @@ document.getElementById("folderpick").addEventListener("click", () => { chooseFo
 document.getElementById("folderforget").addEventListener("click", () => { forgetFolder(); });
 document.getElementById("folderonly").addEventListener("change", e => {
 document.getElementById("filefolder").addEventListener("click", () => { closeFileMenus(); chooseFolder(); });
+Object.assign(S.wmOpeners, {
 if (typeof document.querySelectorAll === "function") {
 document.getElementById("sharelink").addEventListener("click", async () => {
 document.getElementById("fileshare").addEventListener("click", () => { closeFileMenus(); openShareSheet(); });

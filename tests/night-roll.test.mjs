@@ -2794,7 +2794,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mixer window", "Drag a strip by its name",
     "Text size", "Edit a copy",
     "Analyze ▸",
-    "Annotate this song",
+    "Annotate this song", "comes back after a relaunch",
     "VoiceOver",
     "Chip stream (experimental)",
     "Game order", "more than one chip file",
@@ -11108,6 +11108,19 @@ test("one-song publish: a song-list (README) warning stays on screen — status 
   assert.match(val(`__info`), /didn't update: HTTP 409/);
   run(`syncPublishedOne("Published ✓ — song and annotations together (Pages takes ~1 min).")`);
   assert.match(val(`__info`), /^Published .* ✓$/);
+});
+
+test("windows open at the last launch reopen through their own openers, once, after the first song (Josh, 2026-10-04, Terminal #119)", () => {
+  installSong();
+  assert.deepEqual(val(`Object.keys(wmOpeners)`).sort(), ["asksheet", "instsheet", "jobssheet", "mixersheet", "notelistsheet", "syncsheet"]);
+  run(`globalThis.__opened = []; globalThis.__keep = Object.assign({}, wmOpeners); for (const id of Object.keys(wmOpeners)) wmOpeners[id] = () => __opened.push(id);
+       for (const id of ["asksheet", "mixersheet"]) document.getElementById(id).classList.remove("on"); // earlier tests may have left them open; an open window is skipped
+       wmRestored = false; localStorage.setItem(WM_OPEN_KEY, JSON.stringify(["asksheet", "mixersheet", "nosuchsheet"]));`);
+  run(`wmRestoreOpen(); wmRestoreOpen();`);
+  assert.deepEqual(val(`__opened`), ["asksheet", "mixersheet"], "each saved window once; unknown ids skipped; second call is a no-op");
+  run(`localStorage.setItem(WM_OPEN_KEY, "[]"); wmRestored = false; wmSaveOpen();`);
+  assert.equal(val(`localStorage.getItem(WM_OPEN_KEY)`), "[]", "nothing saved before the restore has run (boot can't wipe the list)");
+  run(`Object.assign(wmOpeners, __keep); wmRestored = true; localStorage.removeItem(WM_OPEN_KEY);`);
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {

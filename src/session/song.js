@@ -5,6 +5,7 @@ import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { saveRecentSongsRaw } from "../platform/base.js";
 import { RECENT_MAX } from "../platform/base.js";
 import { S } from "../state.js";
+import { wmRestoreOpen } from "../ui/wm.js";
 import { prof } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
@@ -423,6 +424,7 @@ export function setSong(parsed, key) {
   // Village" over Termina). By id: boot reaches here before asksheet's const.
   const ask = document.getElementById("asksheet");
   if (ask && ask.classList.contains("on")) { try { askModeButtons(); askRender(); } catch (err) { /* too early in boot: openAsk renders it */ } }
+  if (!S.wmRestored && typeof setTimeout === "function") setTimeout(wmRestoreOpen, 0); // the windows open at last launch come back once the first song is in
 }
 export function fitViewImpl() { // on song load: the whole song flush on screen (= the zoom-out floor) — unless this song has a view of its own to come back to
   if (S.viewMode === "score") { S.view.x = -SCORE_INTRO_W; S.view.y = 0; return; }
