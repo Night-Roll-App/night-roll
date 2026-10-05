@@ -177,7 +177,7 @@ test("velocity slider live-adjusts a selection with one undo step", async ({ pag
   expect((await notes(page)).map(n => n.v)).toEqual([80, 80, 80]);
 });
 
-test("cycle parks on ruler tap, re-arms on tap inside; ⏮ goes to cycle start", async ({ page }) => {
+test("cycle parks on ruler tap, re-arms on tap inside, double-tap deletes it; ⏮ goes to an armed cycle's start, bar 1 when parked", async ({ page }) => {
   const rulerXY = tk => page.evaluate(t => {
     const r = canvas.getBoundingClientRect();
     return { x: r.left + RULER_W + (t / song.ppq) * view.pxq - view.x, y: r.top + 10 };
@@ -191,11 +191,14 @@ test("cycle parks on ruler tap, re-arms on tap inside; ⏮ goes to cycle start",
   await page.mouse.click(away.x, away.y);
   expect(await page.evaluate(() => rangeSel && rangeSel.off)).toBe(true);
   await page.evaluate(() => document.getElementById("rwbtn").click());
-  expect(await page.evaluate(() => playCursor)).toBe(480); // a parked selection still owns ⏮ (Josh, 2026-10-04)
+  expect(await page.evaluate(() => playCursor)).toBe(0); // a switched-off span no longer owns ⏮ — bar 1 (Josh, 2026-10-05, #470)
   const inside = await rulerXY(960); // tap the dimmed span: re-armed, same bounds
   await page.mouse.click(inside.x, inside.y);
   expect(await page.evaluate(() => ({ a: rangeSel.a, b: rangeSel.b, off: !!rangeSel.off })))
     .toEqual({ a: 480, b: 1920, off: false });
+  await page.waitForTimeout(400); // past the double-tap window
+  await page.mouse.dblclick(inside.x, inside.y); // double-tap the span: deleted (Josh, 2026-10-05, #150)
+  expect(await page.evaluate(() => rangeSel)).toBe(null);
 });
 
 test("full-song move drags sections and the loop along (intro-cut workflow)", async ({ page }) => {

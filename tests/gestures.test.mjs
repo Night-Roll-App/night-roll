@@ -1038,3 +1038,22 @@ test("gesture: Analysis-sheet entries at 1.1 draw no ruler flag, and a tap there
   assert.equal(app.run(`__opened && __opened.keydir`), 0, "the tap found the key marker (keydir 0 = C), not a sheet entry");
   assert.equal(app.run(`__opened.study`), undefined);
 });
+
+test("gesture: double-tap the ruler span deletes it, armed or switched off; one tap still just toggles it (Josh, 2026-10-05, #150)", async () => {
+  const app = await boot("vm-gest-span-dbl");
+  app.run(`view.pxq = 600; clampView(); draw();`);
+  const xy = tk => JSON.parse(app.run(`JSON.stringify({x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: 10})`));
+  const tap = p => { app.dispatch("roll", pev("pointerdown", {clientX: p.x, clientY: p.y})); app.dispatch("roll", pev("pointerup", {clientX: p.x, clientY: p.y})); };
+  drag(app, xy(480), xy(1920));
+  tap(xy(960));
+  assert.equal(app.run(`!!(rangeSel && rangeSel.off)`), true, "one tap: switched off, still there");
+  tap(xy(960));
+  assert.equal(app.run(`rangeSel === null`), true, "a second tap within 350 ms: deleted");
+  drag(app, xy(480), xy(1920));
+  app.run(`rangeSel.off = true; spanTapAt = 0;`);
+  tap(xy(960)); app.run(`spanTapAt = Date.now() - 1000;`); // a slow second tap is not a double-tap
+  tap(xy(960));
+  assert.equal(app.run(`!!rangeSel`), true, "two slow taps: re-armed then switched off, never deleted");
+  tap(xy(960));
+  assert.equal(app.run(`rangeSel === null`), true, "dimmed span double-tapped: deleted");
+});

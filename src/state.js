@@ -134,6 +134,7 @@ export const S = {
   pinch: null,
   followFree: false,
   lastTapEnd: 0,
+  spanTapAt: 0, // the last tap inside the ruler span — a second within 350 ms deletes it (Josh #150)
   masterVol: 1,
   clockProbe: null,
   wakeInFlight: false,

@@ -811,6 +811,16 @@ export function tap(pos) {
   if (pos.y < S.RULER_H) { // section tap, marker tap, or seek
     if (S.rangeSel) {
       const {tick: rt} = posToTickPitch(pos);
+      // double-tap the span: gone, armed or dimmed (Josh, 2026-10-05, #472/#150:
+      // switching it off left a dead span with no obvious way to delete it)
+      const inSpan = rt >= S.rangeSel.a && rt < S.rangeSel.b && pos.y < BASE_RULER_H, tapNow = Date.now();
+      if (inSpan && tapNow - S.spanTapAt < 350) {
+        S.rangeSel = null; S.spanTapAt = 0;
+        setInfo("range deleted");
+        draw();
+        return;
+      }
+      S.spanTapAt = inSpan ? tapNow : 0;
       if (S.rangeSel.off && rt >= S.rangeSel.a && rt < S.rangeSel.b && pos.y < BASE_RULER_H) {
         S.rangeSel.off = false; // tap the dimmed span: it re-arms without redrawing it
         setInfo("cycle re-armed: " + "▶ loops the highlighted span again");
