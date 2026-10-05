@@ -416,6 +416,12 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: write one annotation in the user's words**
 **“Put an F#m chord on bar 21.”** Say the kind (chord, section, key, tempo, loop, meter, chop, note), the text in your words, the bar and beat. (act: add_annotation kind text bar beat end_bar? end_beat? comment?)
 
+**Ask: add a track (one undo removes it)**
+**“Add a track called pad.”** Say the name, and a voice if you want one picked now (else it starts auto). (act: add_track name voice?)
+
+**Ask: play|next|prev|leave an album run**
+**“Play the FF1 album.”** Name the action: play (name the album, and a song in it to start from), next, prev, or leave. (act: album action album? song?)
+
 **Ask: run the Bassist over bars or a section label (one undo)**
 **“Bass line for bars 1 to 16, busy 2, follow the drums.”** Say the bars or one of your section labels, then what you want: style (chug, pump, arp, walk, riff), busy 1–5, octave 1–3, what it follows (drums, chords, or a track name); name a track to pick where the bass goes, else it uses your bass track or makes one. "that one again, quieter" works because the reply names the seed. (act: bassist from_bar to_bar|section track? style? busy? octave? follow? seed?)
 
@@ -427,6 +433,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: delete bars; everything later slides left (one undo)**
 **“Delete bars 30 to 32.”** Say the first bar and how many (or the last bar). (act: delete_bars from_bar count)
+
+**Ask: delete a track (one undo brings it back)**
+**“Delete the empty track.”** Say which track. (act: delete_track track)
 
 **Ask: run the Drummer over bars or a section label (one undo)**
 **“Drums for bars 5 to 12, a bit less energy, following pulse1 and pulse2.”** Say the bars or one of your section labels, then what you want: energy 1–5 (or busy/hard apart), fills, feel, which parts, what the kick follows; "that one again, quieter" works because the reply names the seed. (act: drummer from_bar to_bar|section energy? busy? hard? fills? feel? parts? follow? seed?)
@@ -445,6 +454,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: insert empty bars; everything later slides right (one undo)**
 **“Insert two empty bars at bar 9.”** Say where, and how many. (act: insert_bars at_bar count)
+
+**Ask: write the last ~60s you noodled on the keys, at the cursor (one undo)**
+**“Keep that on pulse 1.”** Say which track if it isn't the one already selected. (act: keep_that track?)
 
 **Ask: the songs here: albums, titles, paths**
 **“What songs are there?”** It lists albums, titles and paths — the ones on this device too. (act: list_songs)
@@ -469,6 +481,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: ruler selection; ▶ loops it unless cycle: false**
 **“Loop bars 5 to 12.”** Say the first and last bar; "select" instead of "loop", or "no cycle", marks them without looping; "clear the selection" drops it. (act: select from_bar to_bar? cycle? clear?)
+
+**Ask: mute, solo, hide, volume, pan, voice, color, rename or octave-shift a track (one undo)**
+**“Mute the noise channel.”** Say the track and what to change: mute/solo/hide (true/false), volume (0–1.5), pan (-1 left to 1 right), voice (a name from the voice menu — unknown names list the choices), color (a hex code), name (rename it), or octave (1 or -1). (act: set_track track mute? solo? hide? volume? pan? voice? color? name? octave?)
 
 **Ask: stop playback**
 **“Stop.”** Just that. (act: stop)

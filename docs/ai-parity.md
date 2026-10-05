@@ -323,15 +323,15 @@ and fails if the menu ever grows past half the twelve-tool menu.
 | `select` | from_bar, to_bar, tracks?, from_beat?, to_beat?, cycle?, clear? | quiet |
 | `set_playback` | speed?, volume?, metronome?, met_bpm?, met_follow?, count_in? | quiet |
 | `show` | what (roll, tracks, score, compare, mixer, instrument, notes_strip, velocity_lane, circle, jobs, messages, notes, analysis_guide, help, import, export_score, download, versions, publish), on? | quiet |
-| `album` | play\|next\|prev\|leave, album?, song? | quiet |
+| `album` | play\|next\|prev\|leave, album?, song? | quiet — **done batch 7** |
 | `find_pitch` | pitch \| "off" | quiet, on request only |
 | `set_pref` | name (whitelist: album_order, octave_numbers, debug_log, chip_stream, text_size), value | quiet |
 | `open_song` | song, then? | quiet; ends the reply (§4) |
 | `undo` | steps?, redo? | edits |
 | `edit_notes` | op (**delete, quantize, velocity, split, join, divide, dedupe** batch 5; **transpose, move, copy, to_track** batch 6 — all done), from_bar, to_bar \| section, tracks, + op's own (transpose: semitones/octaves or scale_steps; move: bars/beats; copy: at_bar at_beat? to_track? semitones? octaves? labels?; to_track: to_track) | edits |
-| `set_track` | track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave? | edits (M/S/H are quiet) |
-| `add_track` / `delete_track` | name, voice? / track | edits |
-| `keep_that` | track? | edits |
+| `set_track` | track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave? | edits — **done batch 7** (not conditionally quiet on M/S/H as this row once proposed: `quiet` is a per-ACTION registry flag, not per-call, so a mixed set_track call always goes back to the model, same as every other edit) |
+| `add_track` / `delete_track` | name, voice? / track | edits — **done batch 7** (compositions only — the same gate the ＋ chip / voice menu's ✕ Delete track use; `set_track` works on any editable song) |
+| `keep_that` | track? | edits — **done batch 7** |
 | `bassist` | from_bar, to_bar \| section, track?, style?, busy?, octave?, follow?, seed? | edits — **done batch 4** |
 | `drummer` | from_bar, to_bar \| section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed? | edits — done (batch 0, folded into `act` batch 1) |
 | `song_file` | new\|save_version\|versions\|save_as\|rename\|share_link, title?, label? | answered |
@@ -381,6 +381,10 @@ never guesses.
 - "Split the long note at bar 7 at beat 3." / "Divide it into three." — act: edit_notes split / divide
 - "Join the two notes on pulse 2 in bar 2." — act: edit_notes join
 - "Remove the duplicate notes on pulse 2 in bar 8." — act: edit_notes dedupe
+- "Mute the noise channel." / "Solo the triangle." / "Pan pulse 1 left a bit." / "Make pulse 2 a square lead voice." / "Rename track 4 to bass." / "Shift the bass up an octave." — act: set_track (batch 7, 2026-10-05): every field lands through saveTrackDir, the SAME track: annotation the mixer/voice-menu UI writes; one undo for the whole call
+- "Add a track called pad." / "Delete the empty track." — act: add_track / delete_track (batch 7): compositions only, one undo each; refuses the song's last track
+- "Keep that on pulse 1." — act: keep_that (batch 7): the rolling ~60s capture buffer, written through the SAME captureKeep Record itself uses
+- "Play the FF1 album." / "Next song." / "Leave the album." — act: album (batch 7): albumStart/albumNext/albumPrev/albumLeave, the album strip's own functions; an ambiguous or unknown name errors, never guesses
 - Help → AI → **AI commands** lists every one of these with a phrase, generated from the registry.
 
 ### Coming (proposed in §1; all of these are `act` actions)
@@ -391,15 +395,10 @@ In build order (§5): the tedious things first, the one-tap things
 - "Back to the start." — to_start (today: "go to bar 1")
 - "Slow it to 70 percent." / "Volume 80." — set_playback
 - "Metronome on, count me in." — set_playback
-- "Play the FF1 album." / "Next song." / "Leave the album." — album
-- "Mute the noise channel." / "Solo the triangle." / "Pan pulse 1 left a bit." — set_track
-- "Make pulse 2 a square lead voice." / "Rename track 4 to bass." — set_track
-- "Add a track called pad." / "Delete the empty track." — add/delete track
 - "Move bars 9 to 12 on pulse 2 up an octave." / "…up a step in the key." — act: edit_notes transpose (batch 6, 2026-10-05: `octaves: 1` / `scale_steps: 1` — the second only with YOUR declared key over those bars, else it answers "no key declared" and does nothing)
 - "Move the pulse 1 notes in bar 3 two beats later." — act: edit_notes move (`beats: 2`; `bars: -1` = a bar earlier)
 - "Copy the pulse 1 line in bar 3 to pulse 2, an octave down." — act: edit_notes copy (`at_bar: 3, to_track: "pulse2", octaves: -1`; `labels: true` brings the chord/section/text annotations over those bars, chord labels transposed with the notes, as Paste to… does)
 - "Move the triangle's bars 5 to 8 onto pulse 2." — act: edit_notes to_track
-- "Keep that on pulse 1." — keep_that
 - "Show the score." / "Open the mixer." / "Show the circle of fifths." — show
 - "Light up every B flat." / "find off." — find_pitch
 - "Challenge my chord at bar 14." — check (facts about your label, only on request)
@@ -532,7 +531,7 @@ typical request (quiet = 1, edits and questions = 2).
 | 4 | Regenerate drums and bass | `bassist` | src/ask/tools.js (`askBassist`, wraps `bsGenerate` + `applyTake`, src/gen/bassist.js; the drummer's shape — `askDrummerRange` reused for bars/section, track creation folded into the same undo via `undoTrackAdd`, same as the Drummer's kit) | says what it replaces and the seed; refuses on captures; one undo; reply never names a chord or key it read or inferred (Learning sweep) | measured **672** (act alone, 21 actions; 2,487 chars) | 2 | **done 2026-10-05 (Sonnet)** — bar range or section label, track by name or "new" or omitted (the sheet's own default: the detected bass track when free in range, else a fresh one), style/busy/octave/follow/seed all validated against the sheet's own knobs |
 | 5 | Bulk note edits | `edit_notes` ops delete, quantize, velocity, split, join, divide, dedupe — over bars + tracks | src/ask/tools.js (`askSelectRange`: bars/section + tracks → `S.multiSel`, then the real src/model/selection.js functions read it via `selEditItems()`); src/model/selection.js grew a `scope` param on `removeDuplicateNotes` and a new `setSelectionVelocity`, both thin wrappers over the same undo machinery | one undo step per item; refuses on captures; unknown track errors naming the song's tracks; an empty result answers rather than erroring | measured **703** (act alone, 22 actions; 2,600 chars) | 2 | **done 2026-10-05 (Sonnet)** — grid like "1/16" (temporarily overrides `S.gridDiv`, restored after), strength as a 0–1 or percent, vel absolute or relative (+10/-10), at_bar/at_beat for split else halves, into: N for divide |
 | 6 | Moving music over ranges | `edit_notes` ops transpose, move, copy, to_track | src/ask/tools.js (the four ops over `askSelectRange`'s selection, calling the SAME src/model/selection.js functions the ⇅ Transpose sheet / arrow keys (`nudgeSelection`, `diatonicShift`), Paste to… (`copySelection` + `pasteClipboard`) and ⇄ Move to track (`moveSelectionToTrack`) call); src/model/selection.js: `diatonicShift(dir)` takes any whole step count (±1 from the sheet, unchanged), `copySelection(annoSpan?)` lets the named bars stand in for the lasso box's ruler reach | in-key transpose uses the declared key (`sfDeclaredAtRaw` over every selected note) or errors "no key declared" with nothing changed — never estimated, never named; copied chord labels transpose like Paste to… (`labels: true`); one undo per item; refuses on captures; unknown track names the song's tracks; a destination past the end grows the song as Paste to… does | measured **724** (act alone, 22 actions; 2,680 chars — +80 chars for the op list on the index line, so a model finds transpose/move/copy without a help round) | 2 | **done 2026-10-05 (Fable)** — copy's destination is `at_bar`/`at_beat` (copy_bars' names; `to_bar` is the range's own end — the row above had the clash); `askSelectRange` now also clears `S.lassoAnno`, so a leftover UI lasso box can no longer make a batch-5 delete/copy take annotations along |
-| 7 | Tracks and albums | `set_track`, `add_track`, `delete_track`, `keep_that`, `album` | src/ask/tools.js (`saveTrackDir`, `renameTrack`, `addTrackUndoable`; src/session/album.js) | settings land as `track:` annotations, never localStorage; voice names matched against the menu's list; one undo | ~550 | 1–2 | EASY — Sonnet |
+| 7 | Tracks and albums | `set_track`, `add_track`, `delete_track`, `keep_that`, `album` | src/ask/tools.js (`askSetTrack`/`askAddTrack`/`askDeleteTrack`/`askKeepThat`/`askAlbum`, over `saveTrackDir`/`renameTrack`/`addTrackUndoable`+`undoTrackAdd`/`transposeTrack`/`captureKeep`/`albumStart`/`albumNext`/`albumPrev`/`albumLeave`/`albumEffectiveOrder`) | settings land as `track:` annotations, never localStorage (asserted: no new localStorage key outside the draft/notes layer); voice names matched against the built-in VOICES list, unknown names list every choice; one undo per call (a mixed set_track/add_track call that pushes more than one sub-entry — saveTrackDir's anno snapshot + transposeTrack's note mod, or addTrackUndoable + a voice's own saveTrackDir — folds them into ONE group, `askFoldUndo`); add/delete_track refuse outside `isComposition()` (stricter than `set_track`'s `editableSong()`, matching the real ＋ chip / ✕ Delete track); delete_track refuses the song's last track; album play/next/prev refuse before sound is unlocked, like `play`; an ambiguous album/song name lists every match | measured **3,115 chars (~842 tokens, 27 actions)** | 1–2 | **done 2026-10-05 (Sonnet)** — rename itself pushes no undo (`renameTrack` never did; noted, not "fixed" here); `album`'s own sub-action arg is named `action` too, so a model must send it under the `args` wrapper to avoid colliding with the item's own action name (one of `askActItems`' existing tolerances, not a new one) |
 | 8 | Song files and prefs | `song_file`, `set_pref` | src/ask/tools.js, src/model/versions.js (`pushVersion`), src/ui/sheets.js entry points | Learning mode not settable; a local-only song's share link says so | ~590 | 2 | EASY — Sonnet |
 | 9 | One-tap things (low priority) | `go_to`, `play`/`stop`/`to_start`, `select`, `set_playback`, `show` | src/ask/tools.js | each moves the right state; play before sound is unlocked → "tap Play once"; `show` refuses unknown names listing the valid ones | ~700 | 1 | EASY — Sonnet |
 | 10 | Facts on request | `find_pitch`, `check`, `song_facts` | src/ask/tools.js, an adapter from `S` to the theory/facts `doc` shape (docs/theory-toolkit.md §3.0) | tests/theory.test.mjs's word sweep on every result (no key/chord/numeral/meter words); run only when called | ~780 | 1–2 | **TRICKY — Fable** |

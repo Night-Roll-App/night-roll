@@ -78,6 +78,23 @@ import { sfDeclaredAtRaw } from "../model/song.js";
 import { drBassTrack } from "../gen/drummer.js";
 import { askAct } from "./actions.js";
 import { askActTruthy } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
+import { askActGiven } from "./actions.js";
+// ---- batch 7 (docs/ai-parity.md §5 row 7, 2026-10-05): tracks and albums.
+// set_track/add_track/delete_track persist through the SAME functions the
+// mixer/voice-menu/trackbar UI call (saveTrackDir, renameTrack, the
+// addTrackUndoable/pushUndo({kind:"trackRemove"|"trackInsert"}) pair the ＋
+// chip and the voice menu's ✕ Delete track already use) — never localStorage.
+import { saveTrackDir } from "../ui/trackbar.js";
+import { renameTrack } from "../ui/trackbar.js";
+import { updateTrackGains } from "../audio/engine.js";
+import { transposeTrack } from "../model/selection.js";
+import { VOICES } from "../audio/voices.js";
+import { captureKeep } from "../input/record.js";
+import { albumStart } from "../session/album.js";
+import { albumNext } from "../session/album.js";
+import { albumPrev } from "../session/album.js";
+import { albumLeave } from "../session/album.js";
+import { albumEffectiveOrder } from "../model/album-order.js";
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -897,4 +914,192 @@ export function askEditNotes(a) {
   }
   if (!k) return {ok: true, note: "nothing to " + op + " — no note on " + trackLabel + " in " + where + " qualified"};
   return {ok: true, note: how + " " + k + " note" + (k === 1 ? "" : "s") + " on " + trackLabel + " in " + where + " (one undo restores what was there)"};
+}
+// ---- set_track / add_track / delete_track / keep_that / album (docs/
+// ai-parity.md §5 batch 7, 2026-10-05): tracks and albums. Settings land as
+// the SAME "track:" annotation saveTrackDir already writes for the mixer
+// fader, the M/S/H chips and the voice menu — never localStorage (CLAUDE.md
+// "Annotations + the .mid are the only real state"). A call that touches
+// more than one of {trackdir fields, octave} pushes more than one undo
+// entry (saveTrackDir's own anno snapshot, transposeTrack's note mod) —
+// askFoldUndo folds them into ONE group, the same shape undoTrackAdd uses
+// to fold a generator's own entry into the track-add step.
+function askFoldUndo(undoLen) {
+  if (S.editUndo.length - undoLen > 1) { const entries = S.editUndo.splice(undoLen); S.editUndo.push({kind: "group", entries}); }
+}
+// voice by name from the voice menu's own list (VOICES, audio/voices.js —
+// the built-in NES/waves + sampled families; game:/sf2: library voices need
+// an async vault/font lookup the menu itself does interactively and are out
+// of reach here, same M-effort scope cut as the Drummer's "follow" list).
+export function askVoiceMatch(name) {
+  const want = String(name === undefined || name === null ? "" : name).trim();
+  if (!want) throw new Error("say a voice name");
+  if (/^auto$/i.test(want)) return "auto";
+  const lower = want.toLowerCase();
+  const hit = VOICES.find(([id, label]) => id.toLowerCase() === lower || label.toLowerCase() === lower);
+  if (hit) return hit[0];
+  throw new Error("no voice named \"" + want + "\" — choices: auto, " + VOICES.map(([, label]) => label).join(", "));
+}
+function askVoiceLabel(id) { return id === "auto" ? "auto" : (VOICES.find(([v]) => v === id) || [, id])[1]; }
+export function askSetTrack(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  const tr = S.song.tracks[ti];
+  const trackName = () => tr.name || "track " + (ti + 1);
+  const given = k => askActGiven(a[k]);
+  if (!["mute", "solo", "hide", "volume", "pan", "voice", "color", "name", "octave"].some(given))
+    throw new Error("say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave");
+  const notes = [];
+  const undoLen = S.editUndo.length;
+  if (given("name")) {
+    const err = renameTrack(ti, String(a.name));
+    if (err) throw new Error(err);
+    notes.push("renamed to \"" + String(a.name).trim() + "\"");
+  }
+  const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
+  let touchedDir = false;
+  if (given("mute")) { st.muted = askActTruthy(a.mute); touchedDir = true; notes.push(st.muted ? "muted" : "unmuted"); }
+  if (given("solo")) { st.solo = askActTruthy(a.solo); touchedDir = true; notes.push(st.solo ? "solo" : "solo off"); }
+  if (given("hide")) { st.hidden = askActTruthy(a.hide); touchedDir = true; notes.push(st.hidden ? "hidden" : "unhidden"); }
+  if (given("volume")) {
+    const v = +a.volume;
+    if (!(Number.isFinite(v) && v >= 0 && v <= 1.5)) throw new Error("volume must be 0–1.5 (1 = unity, the mixer fader's own range)");
+    tr.vol = v === 1 ? undefined : v; touchedDir = true; notes.push("volume " + Math.round(v * 100) + "%");
+  }
+  if (given("pan")) {
+    const v = +a.pan;
+    if (!(Number.isFinite(v) && v >= -1 && v <= 1)) throw new Error("pan must be -1 (left) to 1 (right)");
+    tr.pan = Math.round(v * 100) / 100; touchedDir = true;
+    notes.push("pan " + (Math.abs(tr.pan) < 0.025 ? "center" : (tr.pan < 0 ? "L" : "R") + Math.round(Math.abs(tr.pan) * 100)));
+  }
+  if (given("color")) {
+    const c = String(a.color).trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(c)) throw new Error("color must be a hex code like #4488ff (the voice menu's own color picker)");
+    tr.color = c; touchedDir = true; notes.push("color " + c);
+  }
+  if (given("voice")) {
+    const v = askVoiceMatch(a.voice);
+    tr.voice = v === "auto" ? undefined : v; touchedDir = true;
+    notes.push("voice " + askVoiceLabel(v));
+  }
+  if (touchedDir) saveTrackDir(ti);
+  if (given("octave")) {
+    const dir = String(a.octave).trim();
+    if (dir !== "1" && dir !== "+1" && dir !== "-1") throw new Error("octave must be 1 or -1 (up or down one octave)");
+    if (trackIsDrums(ti)) throw new Error("\"" + trackName() + "\" is a drum/noise track — kit pitches are instruments, not notes; it doesn't transpose");
+    const k = transposeTrack(ti, dir === "-1" ? -12 : 12);
+    if (k) notes.push("octave " + (dir === "-1" ? "down" : "up") + " (" + k + " note" + (k === 1 ? "" : "s") + ")");
+    else notes.push("octave unchanged — a note would leave the roll");
+  }
+  askFoldUndo(undoLen);
+  renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+  return {ok: true, note: trackName() + ": " + notes.join(", ") + (S.editUndo.length > undoLen ? " (one undo restores it)" : "")};
+}
+// add_track / delete_track (compositions only — a track structurally
+// growing or shrinking is the same isComposition() gate the ＋ chip and the
+// voice menu's ✕ Delete track use; local drafts of a capture/import can
+// rename and reconfigure a track through set_track but not add or remove
+// one, exactly as those two chips are hidden there today).
+export function askAddTrack(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  if (!isComposition()) throw new Error("adding a track works on your own songs — this is an import or capture; song_file save_as makes an editable copy first");
+  a = a || {};
+  const name = String(a.name || "").trim();
+  if (!name) throw new Error("say a name for the new track");
+  if (S.song.tracks.some(tr => (tr.name || "").toLowerCase() === name.toLowerCase())) throw new Error("a track named \"" + name + "\" already exists");
+  let voice;
+  if (askActGiven(a.voice)) voice = askVoiceMatch(a.voice); // validated before anything is created
+  const undoLen = S.editUndo.length;
+  const ti = addTrackUndoable({name, notes: []});
+  pushUndo({kind: "trackRemove", ti});
+  if (voice !== undefined) { S.song.tracks[ti].voice = voice === "auto" ? undefined : voice; saveTrackDir(ti); }
+  askFoldUndo(undoLen);
+  saveDraft();
+  renderTrackbar(); buildScoreModel(); updateTrackGains(); draw();
+  return {ok: true, note: "added track \"" + name + "\"" + (voice !== undefined ? " — voice " + askVoiceLabel(voice) : "") + " (one undo removes it)"};
+}
+export function askDeleteTrack(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  if (!isComposition()) throw new Error("deleting a track works on your own songs — this is an import or capture");
+  a = a || {};
+  if (S.song.tracks.length <= 1) throw new Error("can't delete the last track — a song needs at least one");
+  const ti = askFindTrackIndex(a.track);
+  const name = S.song.tracks[ti].name || "track " + (ti + 1);
+  const live = S.song.tracks[ti].notes.filter(n => !n.gone).length;
+  pushUndo({kind: "trackInsert", ti, track: S.song.tracks[ti], raw: S.song.rawNotes ? S.song.rawNotes[ti] : null, state: S.trackState[ti]});
+  S.song.tracks.splice(ti, 1);
+  if (S.song.rawNotes) S.song.rawNotes.splice(ti, 1);
+  S.trackState.splice(ti, 1);
+  S.selTrack = Math.max(0, Math.min(S.selTrack, S.song.tracks.length - 1));
+  S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
+  saveDraft();
+  renderTrackbar(); buildScoreModel(); updateTrackGains(); computeSongEnd(); draw();
+  return {ok: true, note: "deleted \"" + name + "\"" + (live ? " (" + live + " note" + (live === 1 ? "" : "s") + ")" : "") + " — one undo brings it back"};
+}
+// keep_that (🎹 Keep that — src/input/record.js's captureKeep, the SAME
+// rolling 60s buffer and recTakeNote/recCommitTake path ● Record itself
+// uses, so a kept phrase is a recording in every way that matters). No args
+// of its own beyond which track; captureKeep always targets S.selTrack.
+export function askKeepThat(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  if (S.recording) throw new Error("Record is already taking this down — ● or ■ stops it first, then ask again");
+  a = a || {};
+  if (askActGiven(a.track)) S.selTrack = askFindTrackIndex(a.track);
+  const tr = S.song.tracks[S.selTrack];
+  if (!tr || tr.kind === "audio") throw new Error("pick a note track to keep the phrase on — say which: " + S.song.tracks.map((t, ti) => t.name || "track " + (ti + 1)).join(", "));
+  const n = captureKeep();
+  if (!n) throw new Error("nothing to keep yet — Josh needs to have played something on the keys (or a MIDI keyboard) in the last minute, with nothing recording");
+  const name = S.song.tracks[S.selTrack].name || "track " + (S.selTrack + 1);
+  return {ok: true, note: "kept " + n + " note" + (n === 1 ? "" : "s") + " on " + name + " at the cursor (one undo restores what was there)"};
+}
+// album (src/session/album.js's own play/next/prev/leave — the SAME
+// albumStart/albumNext/albumPrev/albumLeave the Play-album control and the
+// ◂ ▸ ✕ album strip buttons call). Quiet: like play/select, the result line
+// is the whole reply. next/prev/leave need no album name; play does, and an
+// optional song picks where in it — albumEffectiveOrder, the shown
+// game-or-A–Z order, so the index matches what the strip would show.
+export async function askAlbum(a) {
+  a = a || {};
+  const action = String(a.action || "").trim().toLowerCase();
+  if (!["play", "next", "prev", "leave"].includes(action)) throw new Error("action must be play, next, prev or leave");
+  if (action === "leave") {
+    if (!S.albumRun) return {ok: true, note: "no album is playing"};
+    const album = S.albumRun.album;
+    albumLeave();
+    return {ok: true, note: "left " + album + " — this song loops on its own now"};
+  }
+  if (action === "next" || action === "prev") {
+    if (!S.albumRun) return {ok: true, note: "no album is playing"};
+    if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
+    if (action === "next") albumNext(); else albumPrev();
+    const [title] = S.albumRun.list[S.albumRun.idx];
+    return {ok: true, note: "▶ " + title + " (" + (S.albumRun.idx + 1) + "/" + S.albumRun.list.length + ") — " + S.albumRun.album};
+  }
+  const albumArg = [a.album, a.name].find(askActGiven);
+  if (!albumArg) throw new Error("say which album");
+  const names = Object.keys(S.CATALOG);
+  const want = String(albumArg).trim().toLowerCase();
+  let hits = names.filter(n => n.toLowerCase() === want);
+  if (!hits.length) hits = names.filter(n => n.toLowerCase().includes(want));
+  if (!hits.length) throw new Error("no album named \"" + albumArg + "\" — albums here: " + names.join(", "));
+  if (hits.length > 1) throw new Error("more than one album matches \"" + albumArg + "\": " + hits.join(", ") + " — say which");
+  const album = hits[0];
+  const list = albumEffectiveOrder(album);
+  let idx = 0;
+  if (askActGiven(a.song)) {
+    const sq = String(a.song).trim().toLowerCase();
+    let sHits = list.map((s, i) => i).filter(i => list[i][0].toLowerCase() === sq || list[i][1].toLowerCase().includes(sq));
+    if (!sHits.length) sHits = list.map((s, i) => i).filter(i => list[i][0].toLowerCase().includes(sq));
+    if (!sHits.length) throw new Error("no song named \"" + a.song + "\" in " + album);
+    if (sHits.length > 1) throw new Error("more than one song in " + album + " matches \"" + a.song + "\": " + sHits.map(i => list[i][0]).join(", ") + " — say which");
+    idx = sHits[0];
+  }
+  if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
+  albumStart(album, idx).catch(() => {}); // not awaited, like the play action — the result line is the intent, loadSong's own status lines cover the rest
+  return {ok: true, note: "▶ playing " + album + " from " + list[idx][0] + " (" + (idx + 1) + "/" + list.length + ")"};
 }

@@ -5056,6 +5056,94 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     leftover, capture refusal for all four, each through `act` with one undo
     and the Learning sweep, the index line names the ops). Help: the
     regenerated AI commands row; drift keyword "to pulse 2, an octave down".
+- **set_track / add_track / delete_track / keep_that / album — batch 7
+  (2026-10-05; docs/ai-parity.md §5 row 7, Sonnet).** Five more `ASK_ACTIONS`
+  entries, src/ask/tools.js, over the SAME functions the mixer/voice-menu/
+  trackbar UI and the album strip already call — never a parallel path,
+  never localStorage (CLAUDE.md "Annotations + the .mid are the only real
+  state").
+  - `set_track` {track, mute?, solo?, hide?, volume?, pan?, voice?, color?,
+    name?, octave?}: every field it mutates (mute/solo/hide on
+    `S.trackState[ti]`, volume 0–1.5 on `tr.vol`, pan -1..1 on `tr.pan`,
+    voice, color) lands through ONE call to `saveTrackDir(ti)` (the same
+    "track:" annotation the mixer fader/M-S-H chips/voice menu already
+    write — `askVoiceMatch` matches a name against `VOICES`, audio/
+    voices.js's flat built-in NES-wave + sampled-instrument list; game:/sf2:
+    library voices need an async vault/font lookup the voice menu itself
+    does interactively and are out of reach here, the same scope cut as the
+    Drummer's `follow` list); `name` goes through `renameTrack` (ui/
+    trackbar.js) instead — it pushes NO undo of its own today, unlike every
+    other field (noted, not "fixed" — out of scope); `octave` (1 or -1) goes
+    through `transposeTrack` (model/selection.js, ±12 semitones, refused on
+    a drum/noise track or where a note would leave the roll). A call that
+    touches both the trackdir fields and octave pushes TWO undo entries
+    (saveTrackDir's anno snapshot, transposeTrack's note mod); `askFoldUndo`
+    (a small local helper, the same shape `undoTrackAdd` uses to fold a
+    generator's own entry into a track-add step) splices them into ONE
+    group so "undo" undoes the whole call.
+  - `add_track` {name, voice?} / `delete_track` {track}: the ＋ chip's own
+    `addTrackUndoable` + `pushUndo({kind:"trackRemove"})`, and the voice
+    menu's own ✕ Delete track body (`splice` + `pushUndo({kind:
+    "trackInsert", ...})`) — copied inline since neither was ever a
+    standalone function (see docs/ai-parity.md §5 row 7's own research
+    notes). **Compositions only** (`isComposition()`, stricter than
+    `set_track`'s `editableSong()` — a local draft of an import/capture can
+    rename and reconfigure a track through `set_track` but not grow or
+    shrink the song's track count, exactly as those two chips are hidden
+    there today). `add_track`'s voice, if given, is validated BEFORE the
+    track is created (nothing lands on a bad name) and folds into the same
+    undo as the track-add via `askFoldUndo`. `delete_track` refuses the
+    song's last track outright (the real UI simply never renders the ✕
+    there — Ask needs its own words: "can't delete the last track").
+  - `keep_that` {track?}: `captureKeep` (input/record.js) itself — the
+    rolling ≤60s wall-clock buffer `inputNoteOn`/`inputNoteOff` already
+    fill, written through the SAME `recTakeNote`/`recCommitTake` path
+    Record uses, so a kept phrase is a recording in every way that
+    matters. `captureKeep` always targets `S.selTrack`; the action sets it
+    first when `track` is given (an unknown name errors, `S.selTrack`
+    untouched). `captureKeep`'s own gates (editable song, not mid-Record,
+    not an audio track, buffer non-empty) already `setInfo()` and return 0
+    on refusal — the action re-checks each one itself (not editable via
+    `askWritableGate()`, `S.recording`, the target track's kind) so it can
+    throw instead, and reads a bare `0` back as "buffer was empty" once
+    every other gate has already passed.
+  - `album` {action, album?, song?}: `albumStart`/`albumNext`/`albumPrev`/
+    `albumLeave` (session/album.js) — the Play-album control and the ◂ ▸ ✕
+    strip buttons' own functions. `next`/`prev` read the running album's
+    `idx` synchronously (both functions set it before their first
+    `await`), so the result line is accurate even though the call itself
+    is NOT awaited (fire-and-forget, like `play`: `albumStart(...).catch(()
+    => {})` — the background `loadSong`/chip-render/play chain's own
+    status lines cover the rest). `play`'s song lookup (when given) reads
+    `albumEffectiveOrder(album)` — the album's shown order (game order or
+    A–Z; **A–Z when it has no track data at all**, alphabetical by title,
+    not catalog insertion order — tripped the first draft of this
+    batch's own tests). Album-name and song-name matching follow
+    `askSongMatches`' own rule: an exact match wins outright even when it
+    is also a substring of another name (so "Ask Album" is never
+    ambiguous just because "Ask Album Two" also exists); only a substring
+    match with no exact winner can be ambiguous. `next`/`prev`/`leave`
+    answer "no album is playing" rather than erroring when none is (the
+    `undo`-style "nothing to X" idiom); `play` genuinely errors on an
+    unknown/ambiguous album or missing name. Every variant that reaches
+    `play()` checks `S.audio` first and says "tap Play once" otherwise,
+    like the `play` action itself. `album`'s own sub-action argument is
+    named `action`, same as the item's own act-level discriminator — a
+    model (or a test) sending both must use the `args` wrapper
+    (`{action: "album", args: {action: "play", ...}}`), one of
+    `askActItems`' existing tolerances, not a new one.
+  - **Measured** (chars ÷ 3.7, the vm test prints it): 2,680 chars (~724
+    tokens, 22 actions) → **3,115 chars (~842 tokens, 27 actions)**.
+  - Tests: tests/night-roll.test.mjs "set_track: …" (×3: every field in one
+    call as one folded undo + exact restore + the localStorage assertion,
+    every refusal, rename), "add_track / delete_track: …" (×2: the ＋/✕
+    shape + undo-folded voice + last-track refusal, the `isComposition()`
+    gate vs a local draft and a locked capture), "keep_that: …" (the
+    buffer, an unknown/audio target, mid-Record, empty), "album: …"
+    (lookup/ambiguity, a named song in the shown order, next/prev/leave,
+    the audio-unlock gate), and one through `act` covering all five
+    (quiet for `album`, the general chat's refusal, the index). Help: the
+    regenerated AI commands rows; drift keyword "Mute the noise channel".
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

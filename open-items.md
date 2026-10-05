@@ -11,6 +11,36 @@ Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)
 may reject it. Fix in the AI library: map note → user with a label. Untested
 against a real local server.
 
+## AI parity batch 7 — set_track, add_track, delete_track, keep_that, album — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5 row 7)
+
+Built by a Sonnet builder, its own commit on its branch. Five `ASK_ACTIONS`
+entries, src/ask/tools.js, over the mixer/voice-menu/trackbar/album-strip's
+own functions — never a parallel path, never localStorage. `set_track`
+{track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave?}
+lands every field through ONE `saveTrackDir` call (the same "track:"
+annotation the UI writes; voice matched against `VOICES`, audio/voices.js
+— game:/sf2: library voices are out of reach, same scope cut as the
+Drummer's `follow` list), `name` through `renameTrack` (pushes no undo of
+its own today — noted, not fixed), `octave` through `transposeTrack`; a
+call touching both the trackdir fields and octave folds its two undo
+entries into one (`askFoldUndo`, the same shape `undoTrackAdd` uses).
+`add_track`/`delete_track` are the ＋ chip's/voice menu's own inline bodies
+(no standalone function existed for either), **compositions only**
+(`isComposition()`, stricter than `set_track`'s `editableSong()`);
+`delete_track` refuses the song's last track. `keep_that` is `captureKeep`
+(input/record.js) targeting `S.selTrack`. `album` is `albumStart`/
+`albumNext`/`albumPrev`/`albumLeave` (session/album.js); `next`/`prev` read
+the running album's `idx` synchronously even though the call itself isn't
+awaited; album/song name matching is askSongMatches' own "exact match wins
+outright" rule.
+Measured: menu 2,680 chars (~724 tokens, 22 actions) before this batch →
+3,115 (~842, 27 actions) after. Tests: tests/night-roll.test.mjs
+"set_track: …" (×3), "add_track / delete_track: …" (×2), "keep_that: …",
+"album: …", and one through `act` covering all five. **Main session, at
+merge:** browser-verify Help → AI's rows and one call of each ("mute the
+noise channel"; "add a track called pad"; "keep that on pulse 1"; "play
+the FF1 album") before pushing.
+
 ## AI parity batches 4–5 — bassist, edit_notes — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5)
 
 Built by a Sonnet builder, two separate commits on its branch. Batch 4:

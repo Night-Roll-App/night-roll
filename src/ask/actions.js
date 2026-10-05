@@ -28,6 +28,11 @@ import { askCopyBars } from "./tools.js";
 import { askInsertBars } from "./tools.js";
 import { askDeleteBars } from "./tools.js";
 import { askSongPath } from "./tools.js";
+import { askSetTrack } from "./tools.js";
+import { askAddTrack } from "./tools.js";
+import { askDeleteTrack } from "./tools.js";
+import { askKeepThat } from "./tools.js";
+import { askAlbum } from "./tools.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { draftDirtyState } from "../ui/chrome.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
@@ -199,6 +204,33 @@ export const ASK_ACTIONS = [
    example: "Delete bars 30 to 32.", say: "Say the first bar and how many (or the last bar).",
    spec: "delete_bars {from_bar, count}: removes count bars starting at from_bar on EVERY track — the inverse of insert_bars (Edit ▾ → Delete bars…): a note starting inside is deleted, one sustaining across the cut is clipped there, and everything after slides earlier to close the gap, annotations too; an annotation anchored inside the span moves to the cut point, one straddling it shrinks — none is destroyed. Only when the user explicitly asks to delete or remove bars; one undo step; own editable songs only.",
    run(a) { return askDeleteBars(a).note; }},
+  // ---- set_track / add_track / delete_track / keep_that / album (docs/
+  // ai-parity.md §5 batch 7, 2026-10-05): tracks and albums. set_track lands
+  // every setting through saveTrackDir, the SAME "track:" annotation the
+  // mixer fader, M/S/H chips and voice menu already write — never
+  // localStorage; add/delete_track are the ＋ chip and the voice menu's ✕
+  // Delete track, compositions only (a local draft can reconfigure a track
+  // through set_track but not grow or shrink the song's track count).
+  {name: "set_track", args: "track mute? solo? hide? volume? pan? voice? color? name? octave?", gloss: "mute, solo, hide, volume, pan, voice, color, rename or octave-shift a track (one undo)",
+   example: "Mute the noise channel.", say: "Say the track and what to change: mute/solo/hide (true/false), volume (0–1.5), pan (-1 left to 1 right), voice (a name from the voice menu — unknown names list the choices), color (a hex code), name (rename it), or octave (1 or -1).",
+   spec: "set_track {track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave?}: changes one or more of a track's own settings, by name (never the track selected in the app — an unknown or ambiguous name is an error naming the song's own tracks). mute/solo/hide take true/false. volume is 0–1.5 (1 = unity, the mixer fader's own range). pan is -1 (left) to 1 (right). voice is matched against the voice menu's built-in list (NES waves + sampled instruments) by name — an unknown name errors listing every choice; game/soundfont library voices aren't reachable here, only through the voice menu itself. color is a hex code like #4488ff. name renames the track (your own songs only — captures' names come from the pipeline). octave is 1 or -1, a whole-track octave shift (refused on a drum/noise track, or where a note would leave the roll). Every field given lands as ONE undo step. Only when the user explicitly asks; own editable songs only (refuses on a locked/capture song).",
+   run(a) { return askSetTrack(a).note; }},
+  {name: "add_track", args: "name voice?", gloss: "add a track (one undo removes it)",
+   example: "Add a track called pad.", say: "Say the name, and a voice if you want one picked now (else it starts auto).",
+   spec: "add_track {name, voice?}: adds a new, empty track at the end, named as given (a name already in use is an error) — the SAME ＋ the track bar's own chip adds. voice, if given, is matched against the voice menu's built-in list exactly as set_track's; omitted leaves it auto. Only when the user explicitly asks; one undo step; own compositions only (an import or capture can't grow its track count — song_file save_as makes an editable copy first).",
+   run(a) { return askAddTrack(a).note; }},
+  {name: "delete_track", args: "track", gloss: "delete a track (one undo brings it back)",
+   example: "Delete the empty track.", say: "Say which track.",
+   spec: "delete_track {track}: removes a track by name (never the track selected in the app — an unknown or ambiguous name is an error naming the song's own tracks) — the SAME ✕ Delete track the voice menu offers. Refused when it is the song's last track (a song needs at least one), saying so. Only when the user explicitly asks; one undo step; own compositions only.",
+   run(a) { return askDeleteTrack(a).note; }},
+  {name: "keep_that", args: "track?", gloss: "write the last ~60s you noodled on the keys, at the cursor (one undo)",
+   example: "Keep that on pulse 1.", say: "Say which track if it isn't the one already selected.",
+   spec: "keep_that {track?}: writes whatever was just played on the on-screen keys or a MIDI keyboard — the rolling buffer 🎹 Keep that already keeps, up to the last 60 seconds — onto the named track (or the one already selected, if track is omitted) at the playhead, timed against the song's tempo exactly as the button does. One undo step, exactly like a take from Record. Refused while ● Record is running, on an audio track, or when nothing was played; own editable songs only.",
+   run(a) { return askKeepThat(a).note; }},
+  {name: "album", args: "action album? song?", gloss: "play|next|prev|leave an album run", quiet: true,
+   example: "Play the FF1 album.", say: "Name the action: play (name the album, and a song in it to start from), next, prev, or leave.",
+   spec: "album {action, album?, song?}: action is play (starts an album run — album names it, from the catalog; an ambiguous name lists the matches; song optionally picks where in it to start, in the album's own shown order — game order or A–Z, whichever is in effect), next, prev (move within the running album), or leave (ends the run; this song keeps playing on its own). next/prev/leave refuse when no album is running. Sound must have been unlocked by one tap on Play this session, same as play.",
+   async run(a) { return (await askAlbum(a)).note; }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",
    spec: "help {name?}: without name, the index of every action available in this chat; with one, that action's full text (args, rules, what it answers).",

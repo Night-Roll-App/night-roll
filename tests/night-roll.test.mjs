@@ -2813,6 +2813,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
     "to pulse 2, an octave down", // act: edit_notes transpose/move/copy/to_track (docs/ai-parity.md §5 batch 6)
+    "Mute the noise channel", // act: set_track/add_track/delete_track/keep_that/album (docs/ai-parity.md §5 batch 7)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -7017,6 +7018,199 @@ test("act tolerance 7: numbers and booleans sent as strings", async () => {
   assert.deepEqual(await aval(`askAct({do: [{action: "select", clear: "true"}]})`), {final: "selection cleared"});
   assert.deepEqual(await aval(`askAct({do: [{action: "go_to", bar: "2", beat: "2.5"}]})`), {final: "cursor at 2.2.5"});
   assert.equal(await aval(`askAct({do: [{action: "undo", steps: "2"}]})`), "nothing to undo");
+});
+
+// ---- set_track / add_track / delete_track / keep_that / album (docs/
+// ai-parity.md §5 batch 7, 2026-10-05): tracks and albums.
+function localStorageSnapshot() { return new Set(val(`Object.keys(localStorage)`)); } // the app's own localStorage lives in the vm realm, not this process
+function localStorageNewKeys(before) { return val(`Object.keys(localStorage)`).filter(k => !before.has(k)); }
+test("set_track: mute/solo/hide/volume/pan/voice/color/name/octave each land as the SAME track: annotation saveTrackDir writes — never a new localStorage key — as ONE undo step for the whole call; exact restore", () => {
+  installActSong();
+  const before = localStorageSnapshot();
+  val(`askSetTrack({track: "pulse1", mute: true, volume: 0.5, pan: -1, voice: "triangle", color: "#4488ff", octave: 1})`);
+  assert.deepEqual(localStorageNewKeys(before).filter(k => !/^ff1roll-(notes|draft|ts)-/.test(k)), [], "no new localStorage key outside the annotation/draft layer");
+  assert.equal(val(`trackState[0].muted`), true);
+  assert.equal(val(`song.tracks[0].vol`), 0.5);
+  assert.equal(val(`song.tracks[0].pan`), -1);
+  assert.equal(val(`song.tracks[0].voice`), "triangle");
+  assert.equal(val(`song.tracks[0].color`), "#4488ff");
+  const dir = val(`rollnotes.find(n => n.trackdir && n.trackdir.name === "pulse1")`);
+  assert.ok(dir, "a track: annotation carries every setting");
+  assert.match(dir.text, /^track: pulse1 voice=triangle color=#4488ff vol=0\.5 pan=-1 mute=1/);
+  assert.equal(val(`editUndo.length`), 1, "ONE undo step for the whole call (octave's note-mod entry folded with saveTrackDir's anno entry)");
+  const snapNotes = val(`song.tracks[0].notes.map(n => n.p)`);
+  assert.deepEqual(snapNotes, [72, 74], "the octave shift really moved the notes (+12)");
+  run(`editUndoPop();`);
+  assert.equal(val(`trackState[0].muted`), false);
+  assert.equal(val(`song.tracks[0].vol === undefined`), true, "vol back to unity (undefined, not a stored 1)");
+  assert.equal(val(`song.tracks[0].notes.map(n => n.p).join()`), "60,62", "the octave shift undid too — one step restored both halves");
+  assert.equal(val(`rollnotes.some(n => n.trackdir)`), false);
+});
+test("set_track: solo/hide, an unknown track, an unknown voice (lists the choices), a bad volume/pan/color/octave, no args given, and a drum track refusing octave — all error with nothing changed", () => {
+  installActSong();
+  assert.throws(() => run(`askSetTrack({track: "nope"})`), /no track named "nope" — this song's tracks: pulse1, drums/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1"})`), /say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", voice: "bagpipes"})`), /no voice named "bagpipes" — choices: auto, /);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", volume: 2})`), /volume must be 0–1\.5/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", pan: 2})`), /pan must be -1 \(left\) to 1 \(right\)/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", color: "blue"})`), /color must be a hex code/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", octave: 2})`), /octave must be 1 or -1/);
+  assert.throws(() => run(`askSetTrack({track: "drums", octave: 1})`), /"drums" is a drum\/noise track — kit pitches are instruments/);
+  run(`askSetTrack({track: "drums", solo: true, hide: true});`);
+  assert.equal(val(`trackState[1].solo`), true);
+  assert.equal(val(`trackState[1].hidden`), true);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.equal(val(`editUndo.length`), 0);
+});
+test("set_track: renames through the SAME renameTrack the voice menu's name field calls — not itself undoable (renameTrack pushes no undo step today, unlike every other set_track field); a duplicate name refuses with nothing changed", () => {
+  installActSong();
+  const r = val(`askSetTrack({track: "pulse1", name: "lead"})`);
+  assert.equal(r.note, "lead: renamed to \"lead\"", "no undo parenthetical: name alone pushes nothing to undo");
+  assert.equal(val(`song.tracks[0].name`), "lead");
+  assert.equal(val(`editUndo.length`), 0);
+  assert.throws(() => run(`askSetTrack({track: "lead", name: "drums"})`), /another track is already called that/);
+  assert.equal(val(`song.tracks[0].name`), "lead", "nothing changed on the refusal");
+});
+test("add_track / delete_track: compositions only (the ＋ chip / voice menu's ✕ Delete track), one undo each, exact restore; a duplicate name, a missing name, an unknown target and the last-track refusal all error with nothing changed; nothing lands in localStorage beyond the draft/annotation layer", () => {
+  installActSong();
+  const before = localStorageSnapshot();
+  assert.throws(() => run(`askAddTrack({})`), /say a name for the new track/);
+  assert.throws(() => run(`askAddTrack({name: "pulse1"})`), /a track named "pulse1" already exists/);
+  assert.throws(() => run(`askAddTrack({name: "pad", voice: "bagpipes"})`), /no voice named "bagpipes"/);
+  assert.equal(val(`song.tracks.length`), 2, "nothing created on any of the refusals above");
+  const r = val(`askAddTrack({name: "pad", voice: "triangle"})`);
+  assert.match(r.note, /^added track "pad" — voice triangle \(one undo removes it\)$/);
+  assert.equal(val(`song.tracks.length`), 3);
+  assert.equal(val(`song.tracks[2].voice`), "triangle");
+  assert.equal(val(`editUndo.length`), 1, "the new track AND its voice directive are ONE undo step");
+  assert.deepEqual(localStorageNewKeys(before).filter(k => !/^ff1roll-(notes|draft|ts)-/.test(k)), []);
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks.length`), 2, "one undo removes the whole thing, voice directive included");
+  assert.throws(() => run(`askDeleteTrack({})`), /say which track: pulse1, drums/);
+  assert.throws(() => run(`askDeleteTrack({track: "nope"})`), /no track named "nope"/);
+  const live = val(`song.tracks[0].notes.length`);
+  const d = val(`askDeleteTrack({track: "pulse1"})`);
+  assert.match(d.note, new RegExp("^deleted \"pulse1\" \\(" + live + " notes?\\) — one undo brings it back$"));
+  assert.equal(val(`song.tracks.length`), 1);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks.length`), 2, "the track AND its notes came back");
+  run(`song.tracks = [song.tracks[0]]; trackState = [trackState[0]];`);
+  assert.throws(() => run(`askDeleteTrack({track: "pulse1"})`), /can't delete the last track/);
+});
+test("add_track / delete_track: refuse on a song that isn't a composition (a local draft of an import, or a locked capture) with nothing changed", () => {
+  installActSong();
+  run(`songKey = "local/imported.mid"; localStorage.setItem(draftStoreKey(songKey), "{}"); finalizeNotes();`);
+  assert.equal(val(`isComposition()`), false, "sanity: isLocalDraft, not isComposition");
+  assert.equal(val(`editableSong()`), true, "sanity: still editable — set_track would work here");
+  assert.throws(() => run(`askAddTrack({name: "pad"})`), /adding a track works on your own songs/);
+  assert.throws(() => run(`askDeleteTrack({track: "pulse1"})`), /deleting a track works on your own songs/);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+  installActSong();
+  run(`
+    songKey = "albums/nes/mega-man-2/track-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", mute: true})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.throws(() => run(`askAddTrack({name: "pad"})`), /locked here/);
+  assert.throws(() => run(`askDeleteTrack({track: "pulse1"})`), /locked here/);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+});
+test("keep_that: writes the rolling capture buffer onto the named track (or the one already selected) at the cursor, one undo, exact restore; an unknown track, an audio track, a mid-Record call and an empty buffer all error with nothing changed", () => {
+  installActSong();
+  run(`ensureAudio(); playing = false; recording = false; captureBuf = []; editUndo = []; selTrack = 1;`);
+  assert.throws(() => run(`askKeepThat({})`), /nothing to keep yet/, "sanity: empty buffer on the currently-selected (drums) track");
+  run(`inputNoteOn("k1", 67); inputNoteOff("k1");`);
+  assert.throws(() => run(`askKeepThat({track: "nope"})`), /no track named "nope"/);
+  assert.equal(val(`captureBuf.length`), 1, "a refused call keeps the phrase for the next try");
+  const before = val(`song.tracks[0].notes.filter(n => !n.gone).length`); // pulse1 already holds 2 notes from the fixture
+  const r = val(`askKeepThat({track: "pulse1"})`);
+  assert.match(r.note, /^kept 1 note on pulse1 at the cursor \(one undo restores what was there\)$/);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), before + 1);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), before);
+  run(`inputNoteOn("k2", 64); inputNoteOff("k2"); song.tracks[0].kind = "audio";`);
+  assert.throws(() => run(`askKeepThat({track: "pulse1"})`), /pulse1" holds a recording, not notes|pick a note track/);
+  run(`delete song.tracks[0].kind; captureBuf = [];`);
+  run(`recording = true;`);
+  assert.throws(() => run(`askKeepThat({track: "pulse1"})`), /Record is already taking this down/);
+  run(`recording = false;`);
+});
+test("album: play starts a run (an ambiguous or unknown album, or an unlocked-audio call, errors with nothing changed); a named song picks where in it to start, in the shown order; next/prev move and report; leave ends the run and answers plainly when nothing is running; next/prev likewise answer rather than error when nothing is running", async () => {
+  installActSong();
+  run(`
+    CATALOG["Ask Album"] = [["Song A", "albums/ask-album-test/s1.mid"], ["Song B", "albums/ask-album-test/s2.mid"], ["Song C", "albums/ask-album-test/s3.mid"]];
+    // no album.json track data for this fixture: albumEffectiveOrder falls back to "az" — titles are
+    // already alphabetical (A, B, C) so the shown order matches CATALOG's own insertion order here
+    CATALOG["Ask Album Two"] = [["Other", "albums/ask-album-test2/o1.mid"]];
+    albumRun = null;
+    globalThis.__realLoadSong = loadSong;
+    loadSong = async p => { globalThis.__askAlbumLoaded = p; return true; };
+    S.audio = null;
+  `);
+  try {
+    await assert.rejects(run(`askAlbum({action: "play", album: "Ask Album"})`), /tap Play once, then ask again/);
+    assert.equal(val(`albumRun`), null);
+    run(`ensureAudio();`);
+    await assert.rejects(run(`askAlbum({action: "play", album: "Ask"})`), /more than one album matches "Ask": Ask Album, Ask Album Two — say which/, "a substring with no exact match is ambiguous");
+    await assert.rejects(run(`askAlbum({action: "play"})`), /say which album/);
+    await assert.rejects(run(`askAlbum({action: "play", album: "nothing here"})`), /no album named "nothing here" — albums here:/);
+    const r = await aval(`askAlbum({action: "play", album: "Ask Album Two"})`);
+    assert.equal(r.note, "▶ playing Ask Album Two from Other (1/1)");
+    assert.equal(val(`albumRun.album`), "Ask Album Two");
+    const r2 = await aval(`askAlbum({action: "play", album: "Ask Album", song: "Song B"})`);
+    assert.equal(r2.note, "▶ playing Ask Album from Song B (2/3)");
+    assert.equal(val(`albumRun.idx`), 1);
+    await assert.rejects(run(`askAlbum({action: "play", album: "Ask Album", song: "nope"})`), /no song named "nope" in Ask Album/);
+    const n = await aval(`askAlbum({action: "next"})`);
+    assert.equal(n.note, "▶ Song C (3/3) — Ask Album");
+    assert.equal(val(`albumRun.idx`), 2);
+    const p = await aval(`askAlbum({action: "prev"})`);
+    assert.equal(p.note, "▶ Song B (2/3) — Ask Album");
+    assert.equal(val(`albumRun.idx`), 1);
+    const l = await aval(`askAlbum({action: "leave"})`);
+    assert.equal(l.note, "left Ask Album — this song loops on its own now");
+    assert.equal(val(`albumRun`), null);
+    assert.equal((await aval(`askAlbum({action: "next"})`)).note, "no album is playing");
+    assert.equal((await aval(`askAlbum({action: "prev"})`)).note, "no album is playing");
+    assert.equal((await aval(`askAlbum({action: "leave"})`)).note, "no album is playing");
+    await assert.rejects(run(`askAlbum({action: "nonsense"})`), /action must be play, next, prev or leave/);
+  } finally {
+    run(`delete CATALOG["Ask Album"]; delete CATALOG["Ask Album Two"]; loadSong = globalThis.__realLoadSong; albumRun = null;`);
+  }
+});
+test("set_track / add_track / delete_track / keep_that / album: reached through act — quiet for album (ends the exchange), answered for the rest; the general chat refuses every one of these by name; listed in the index", async () => {
+  installActSong();
+  run(`
+    CATALOG["Ask Album"] = [["Song One", "albums/ask-album-test/s1.mid"]];
+    globalThis.__realLoadSong = loadSong;
+    loadSong = async () => true;
+    ensureAudio();
+  `);
+  try {
+    const t = await aval(`askAct({do: [{action: "set_track", track: "pulse1", mute: true}]})`);
+    assert.match(t, /^pulse1: muted \(one undo restores it\)$/);
+    await askActRun(`askAct({do: [{action: "undo"}]})`);
+    const a = await aval(`askAct({do: [{action: "add_track", name: "pad"}]})`);
+    assert.match(a, /^added track "pad" \(one undo removes it\)$/);
+    await askActRun(`askAct({do: [{action: "undo"}]})`);
+    await assert.rejects(run(`askAct({do: [{action: "keep_that"}]})`), /nothing to keep yet/);
+    // album's own sub-action arg is itself named "action" — the args wrapper
+    // (askActItems' tolerance) keeps it distinct from the item's own
+    // act-level "action" discriminator ("album")
+    const alb = await aval(`askAct({do: [{action: "album", args: {action: "play", album: "Ask Album"}}]})`);
+    assert.deepEqual(alb, {final: "▶ playing Ask Album from Song One (1/1)"});
+    run(`askGeneral = true;`);
+    for (const action of ["set_track", "add_track", "delete_track", "keep_that", "album"])
+      await assert.rejects(run(`askAct({do: [{action: ${JSON.stringify(action)}}]})`), /works in a song's ♪ chat, not here/, action);
+    run(`askGeneral = false;`);
+    const idx = val(`askActIndex(false)`);
+    for (const name of ["set_track", "add_track", "delete_track", "keep_that", "album"]) assert.match(idx, new RegExp("\\n" + name + " "), name);
+  } finally {
+    run(`delete CATALOG["Ask Album"]; loadSong = globalThis.__realLoadSong; albumRun = null; askGeneral = false;`);
+  }
 });
 
 // ---- open_song (docs/ai-parity.md §4, batch 2 of §5): the lookup never guesses, the switch waits for the landing, the handoff and the follow-on land in the new chat
