@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "lotion", "stamp": 1791124333339, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "lotion", "stamp": 1791167440707, "notes": [
   {"at":[1,1],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"key","key":"C locrian"},
   {"at":[1,1],"type":"timesig","timesig":"4/4"}
