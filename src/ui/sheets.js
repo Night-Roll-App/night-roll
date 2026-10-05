@@ -927,12 +927,12 @@ export function drRefresh() {
       segSet("drbusy", busy);
       segSet("drhard", hard);
       segSet("drfills", fillAmt);
-      document.getElementById("drfollow").value = tk.followTi !== undefined ? "t" + tk.followTi : follow;
+      document.getElementById("drfollow").value = tk.followTis ? "t" + tk.followTis[0] : tk.followTi !== undefined ? "t" + tk.followTi : follow; // an Ask take may follow several tracks: the picker shows the first
       segSet("drfeel", feel);
       document.getElementById("drfrom").value = tk.from;
       document.getElementById("drto").value = tk.to;
       if (tk.q) { setBeatPair("drfromq", "drfroms", tk.q[0]); setBeatPair("drtoq", "drtos", tk.q[1]); }
-      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi,
+      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi, followTis: tk.followTis,
         fromBar: tk.fromBar ?? tk.from, toBar: tk.toBar ?? tk.to, t0: tk.t0, t1: tk.t1});
       S.drActive = i;
       drRefresh();

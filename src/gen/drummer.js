@@ -232,6 +232,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
     follow = o.follow ?? "bass"; feel = o.feel ?? "normal";
     parts = o.parts ?? "all";
     if (o.followTi !== undefined) follow = "bass"; // an explicit track uses the bass-follow engine
+    if (Array.isArray(o.followTis) && o.followTis.length) follow = "bass"; // so does a chosen SET of tracks (Ask's drummer tool)
     fillAmt = o.fillAmt ?? 3;
     fromBar = o.fromBar; toBar = o.toBar;
     t0Override = o.t0; t1Override = o.t1;
@@ -274,7 +275,17 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   }
   const tr = S.song.tracks[di], isAdd = !isComposition();
   const oFollowTi = typeof energyOrOpts === "object" && energyOrOpts !== null ? energyOrOpts.followTi : undefined;
-  const bassTi = oFollowTi !== undefined && S.song.tracks[oFollowTi] ? oFollowTi : drBassTrack();
+  // followTis (2026-10-05, Ask's drummer tool: "match pulse one and pulse two
+  // rather than the triangle"): a SET of followed tracks. One entry is the
+  // followTi path exactly; two or more merge — one candidate per onset tick
+  // (the longest note there — both pulses striking together is one kick, not
+  // two), in time order — and every followed track counts as "the bass" for
+  // break detection. Absent (the dialog, legacy calls): byte-identical to before.
+  const oFollowTis = typeof energyOrOpts === "object" && energyOrOpts !== null && Array.isArray(energyOrOpts.followTis)
+    ? energyOrOpts.followTis.filter(ti => S.song.tracks[ti] && !trackIsDrums(ti)) : [];
+  const bassTi = oFollowTis.length === 1 ? oFollowTis[0]
+    : oFollowTi !== undefined && S.song.tracks[oFollowTi] ? oFollowTi : drBassTrack();
+  const followSet = new Set(oFollowTis.length > 1 ? oFollowTis : [bassTi]);
   // context per bar: break = nothing but bass (or nothing at all) SOUNDING there,
   // or a declared section label saying so — a sustained melody note is not a break
   // a break is a DROPOUT: bars where the texture thins to the followed track
@@ -282,7 +293,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   // passage), nothing dropped out — only a labeled "break" section counts.
   let rangeHasOthers = false;
   S.song.tracks.forEach((mtr, ti) => {
-    if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
+    if (ti === di || followSet.has(ti) || trackIsDrums(ti)) return;
     if (mtr.notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0)) rangeHasOthers = true;
   });
   // labeled "break" sections silence EXACTLY their span (a Break ending at
@@ -296,7 +307,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
     if (!rangeHasOthers) return false;
     let melodic = false;
     S.song.tracks.forEach((mtr, ti) => {
-      if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
+      if (ti === di || followSet.has(ti) || trackIsDrums(ti)) return;
       if (mtr.notes.some(n => !n.gone && n.t < be && n.t + n.d > bs)) melodic = true;
     });
     return !melodic;
@@ -328,7 +339,16 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
     const {base, k} = drSectionPos(bar);
     return (base + [0, 1, 0, 3][(k - 1) % 4]) >>> 0;
   };
-  const bass = bassTi >= 0 ? S.song.tracks[bassTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1) : [];
+  let bass;
+  if (oFollowTis.length > 1) { // the merged follow line (see followTis above)
+    const byT = new Map();
+    for (const ti of followSet) for (const n of S.song.tracks[ti].notes) {
+      if (n.gone || n.t < t0 || n.t >= t1) continue;
+      const cur = byT.get(n.t);
+      if (!cur || n.d > cur.d) byT.set(n.t, {t: n.t, d: n.d, p: n.p});
+    }
+    bass = [...byT.values()].sort((a, b) => a.t - b.t);
+  } else bass = bassTi >= 0 ? S.song.tracks[bassTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1) : [];
   const melodic = S.song.tracks.filter((mtr, ti) => ti !== di && !trackIsDrums(ti) && mtr.kind !== "audio");
   const onsetsIn = (a, b) => { // sorted unique note starts of every non-drum track in [a, b) — what a stabs fill hits with
     const set = new Set();
