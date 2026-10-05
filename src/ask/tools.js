@@ -1090,8 +1090,8 @@ export function askKeepThat(a) {
 // game-or-A–Z order, so the index matches what the strip would show.
 export async function askAlbum(a) {
   a = a || {};
-  const action = String(a.action || "").trim().toLowerCase();
-  if (!["play", "next", "prev", "leave"].includes(action)) throw new Error("action must be play, next, prev or leave");
+  const action = String(a.op || a.action || "").trim().toLowerCase(); // op, as edit_notes names it; `action` would collide with act's own item key (still read, for the args wrapper)
+  if (!["play", "next", "prev", "leave"].includes(action)) throw new Error("op must be play, next, prev or leave");
   if (action === "leave") {
     if (!S.albumRun) return {ok: true, note: "no album is playing"};
     const album = S.albumRun.album;
@@ -1139,8 +1139,8 @@ export async function askAlbum(a) {
 const SONG_FILE_ACTIONS = ["new", "save_version", "versions", "save_as", "rename", "share_link"];
 export async function askSongFile(a) {
   a = a || {};
-  const action = String(a.action || "").trim().toLowerCase();
-  if (!SONG_FILE_ACTIONS.includes(action)) throw new Error("action must be one of " + SONG_FILE_ACTIONS.join(", "));
+  const action = String(a.op || a.action || "").trim().toLowerCase(); // op, as edit_notes names it; `action` would collide with act's own item key (still read, for the args wrapper)
+  if (!SONG_FILE_ACTIONS.includes(action)) throw new Error("op must be one of " + SONG_FILE_ACTIONS.join(", "));
   if (action === "new") {
     const title = String(a.title || "").trim();
     if (!title) throw new Error("say a title for the new song");

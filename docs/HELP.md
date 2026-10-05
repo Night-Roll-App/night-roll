@@ -420,7 +420,7 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **“Add a track called pad.”** Say the name, and a voice if you want one picked now (else it starts auto). (act: add_track name voice?)
 
 **Ask: play|next|prev|leave an album run**
-**“Play the FF1 album.”** Name the action: play (name the album, and a song in it to start from), next, prev, or leave. (act: album action album? song?)
+**“Play the FF1 album.”** Name the op: play (name the album, and a song in it to start from), next, prev, or leave. (act: album op album? song?)
 
 **Ask: run the Bassist over bars or a section label (one undo)**
 **“Bass line for bars 1 to 16, busy 2, follow the drums.”** Say the bars or one of your section labels, then what you want: style (chug, pump, arp, walk, riff), busy 1–5, octave 1–3, what it follows (drums, chords, or a track name); name a track to pick where the bass goes, else it uses your bass track or makes one. "that one again, quieter" works because the reply names the seed. (act: bassist from_bar to_bar|section track? style? busy? octave? follow? seed?)
@@ -489,7 +489,7 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **“Mute the noise channel.”** Say the track and what to change: mute/solo/hide (true/false), volume (0–1.5), pan (-1 left to 1 right), voice (a name from the voice menu — unknown names list the choices), color (a hex code), name (rename it), or octave (1 or -1). (act: set_track track mute? solo? hide? volume? pan? voice? color? name? octave?)
 
 **Ask: new, save_version, versions, save_as, rename, or share_link**
-**“Save a version called before drums.”** Say the action: new (a title, and a folder if you want one besides the default), save_version (a label, else "Version N"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link. (act: song_file action title? folder? label?)
+**“Save a version called before drums.”** Say the op: new (a title, and a folder if you want one besides the default), save_version (a label, else "Version N"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link. (act: song_file op title? folder? label?)
 
 **Ask: stop playback**
 **“Stop.”** Just that. (act: stop)

@@ -5127,11 +5127,10 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     `undo`-style "nothing to X" idiom); `play` genuinely errors on an
     unknown/ambiguous album or missing name. Every variant that reaches
     `play()` checks `S.audio` first and says "tap Play once" otherwise,
-    like the `play` action itself. `album`'s own sub-action argument is
-    named `action`, same as the item's own act-level discriminator — a
-    model (or a test) sending both must use the `args` wrapper
-    (`{action: "album", args: {action: "play", ...}}`), one of
-    `askActItems`' existing tolerances, not a new one.
+    like the `play` action itself. `album` and `song_file` take their
+    sub-command as `op` (`{action: "album", op: "play", album: "FF1"}`),
+    as edit_notes does — `action` would collide with the item's own key.
+    The old spelling inside the `args` wrapper is still read.
   - **Measured** (chars ÷ 3.7, the vm test prints it): 2,680 chars (~724
     tokens, 22 actions) → **3,115 chars (~842 tokens, 27 actions)**.
   - Tests: tests/night-roll.test.mjs "set_track: …" (×3: every field in one

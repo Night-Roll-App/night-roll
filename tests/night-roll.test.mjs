@@ -7177,7 +7177,7 @@ test("album: play starts a run (an ambiguous or unknown album, or an unlocked-au
     assert.equal((await aval(`askAlbum({action: "next"})`)).note, "no album is playing");
     assert.equal((await aval(`askAlbum({action: "prev"})`)).note, "no album is playing");
     assert.equal((await aval(`askAlbum({action: "leave"})`)).note, "no album is playing");
-    await assert.rejects(run(`askAlbum({action: "nonsense"})`), /action must be play, next, prev or leave/);
+    await assert.rejects(run(`askAlbum({action: "nonsense"})`), /op must be play, next, prev or leave/);
   } finally {
     run(`delete CATALOG["Ask Album"]; delete CATALOG["Ask Album Two"]; loadSong = globalThis.__realLoadSong; albumRun = null;`);
   }
@@ -7308,7 +7308,7 @@ test("song_file share_link: your own published song gets the real link; a song t
   await assert.rejects(run(`askSongFile({action: "share_link"})`), /no song open/);
 });
 test("song_file: an unknown action errors listing the choices; needs no open song itself (its own sub-actions each check)", async () => {
-  await assert.rejects(run(`askSongFile({action: "nonsense"})`), /action must be one of new, save_version, versions, save_as, rename, share_link/);
+  await assert.rejects(run(`askSongFile({action: "nonsense"})`), /op must be one of new, save_version, versions, save_as, rename, share_link/);
   run(`askGeneral = true;`);
   assert.ok(val(`askActOffered("song_file")`));
   assert.ok(val(`askActOffered("set_pref")`));
@@ -13472,4 +13472,11 @@ test("askBuildMessages: a stored note goes to the model as a labelled user turn 
   ], "next", "ctx", {hist: 100000})`);
   assert.deepEqual(out.map(m => m.role), ["user", "user", "assistant", "user"]);
   assert.equal(out[1].content, "[note from handoff] ↪ from Ambush: open graveyard");
+});
+
+test("album and song_file take their sub-command as `op` (no args wrapper needed); the old `action` spelling inside args still works", async () => {
+  installSong();
+  await assert.rejects(run(`askAct({do: [{action: "album", op: "nonsense"}]})`), /op must be play, next, prev or leave/);
+  await assert.rejects(run(`askAct({do: [{action: "song_file", op: "nonsense"}]})`), /op must be one of/);
+  await assert.rejects(run(`askAct({do: [{action: "album", args: {action: "nonsense"}}]})`), /op must be play/);
 });
