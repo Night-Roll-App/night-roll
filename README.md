@@ -3080,6 +3080,7 @@ nightly; `node tools/split/check.mjs` enforces the module rules.
 - [2 Player Mode: Danger!](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/2-player-mode-danger)
 - [2 Player Mode: Game Over](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/2-player-mode-game-over)
 - [2 Player Mode: Round Over](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/2-player-mode-round-over)
+- [A-Type Music (version 1.0)](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/a-type-music-version-1-0)
 - [A-Type Music (version 1.1)](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/a-type-music-version-1-1)
 - [B-Type Game: Level 9 High 0 Ending](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/b-type-game-level-9-high-0-ending)
 - [B-Type Game: Level 9 High 1 Ending](https://night-roll-app.github.io/night-roll/albums/game-boy/tetris/b-type-game-level-9-high-1-ending)
