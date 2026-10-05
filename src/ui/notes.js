@@ -218,6 +218,12 @@ export function ensureHelpLoaded() {
 // at once with the tab strip live and "Loading help…" in the body, and the
 // chosen section switches on when the body lands. `tab` defaults to the
 // last one read on this device.
+export function showHelpSub(btn) { // one part of a long help tab at a time, inside its own .hsec
+  const sec = btn.closest(".hsec");
+  for (const b of sec.querySelectorAll(".hsubtabs button")) { b.classList.toggle("on", b === btn); b.setAttribute("aria-selected", String(b === btn)); }
+  for (const d of sec.querySelectorAll(".hsub")) d.classList.toggle("on", d.dataset.hsub === btn.dataset.hsub);
+  const body = sec.closest(".sheet"); if (body) body.scrollTop = 0;
+}
 export function openHelp(tab) {
   const name = tab || localStorage.getItem("ff1roll-helptab") || "views";
   showHelpTab(name);
@@ -625,6 +631,12 @@ export function initNotes2() {
   document.getElementById("helptabs").addEventListener("click", e => {
     const b = e.target.closest("button[data-hs]");
     if (b) showHelpTab(b.dataset.hs);
+  });
+  // the analysis guide's parts (help/help.html .hsubtabs): the body is
+  // injected later (ensureHelpLoaded), so listen on the sheet
+  document.getElementById("helpsheet").addEventListener("click", e => {
+    const b = e.target.closest(".hsubtabs button[data-hsub]");
+    if (b) showHelpSub(b);
   });
   document.getElementById("filehelp").addEventListener("click", () => {
     closeFileMenus();

@@ -11423,3 +11423,16 @@ test("the AI window's span / model / gear row stays hidden on the song tab too (
   run(`document.getElementById("askspanrow").style.display = "none"; askGeneral = true; askTerminal = false; askModeButtons(); askGeneral = false; askModeButtons();`);
   assert.equal(run(`String(document.getElementById("askspanrow").style.display)`), "none", "the library's tab switch must not re-show it");
 });
+
+test("the analysis guide reads one part at a time: a tab per part, each part its own block, Overview open first (Josh, 2026-10-05, Terminal #144)", () => {
+  const m = helpBody().match(/<div class="hsec" data-hsec="analysis">([\s\S]*?)\n    <\/div>/);
+  assert.ok(m, "the analysis .hsec exists");
+  const tabs = [...m[1].matchAll(/<button data-hsub="(\w+)"[^>]*>/g)].map(x => x[1]);
+  const parts = [...m[1].matchAll(/<div class="hsub(?: on)?" data-hsub="(\w+)">/g)].map(x => x[1]);
+  assert.deepEqual(tabs, ["overview", "form", "harmony", "melody", "texture", "summary", "better", "example"]);
+  assert.deepEqual(parts, tabs, "every tab has its block, same order");
+  assert.equal((m[1].match(/class="hsub on"/g) || []).length, 1);
+  assert.match(m[1], /<div class="hsub on" data-hsub="overview">/);
+  for (const t of ["form", "harmony", "melody", "texture", "summary"]) assert.match(m[1], new RegExp(`data-topic="${t}"`), "the sheet's per-group text is still there to clone: " + t);
+  assert.match(run(`showHelpSub.toString()`), /hsub/);
+});

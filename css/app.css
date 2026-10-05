@@ -1220,3 +1220,9 @@
 #helptabs button.on{background:var(--gold);color:#151520;border-color:var(--gold);font-weight:600}
 .sheet.help .hsec{display:none}
 .sheet.help .hsec.on{display:block}
+/* the analysis guide's parts, one at a time (Terminal #144: "too long") */
+.hsubtabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.hsubtabs button{min-height:36px;padding:6px 12px;border-radius:8px;background:#242433;color:#cfcfe0;border:1px solid #3a3a4e;font-size:0.8125rem}
+.hsubtabs button.on{background:#3a3a4e;color:#fff;border-color:var(--gold)}
+.sheet.help .hsub{display:none}
+.sheet.help .hsub.on{display:block}
