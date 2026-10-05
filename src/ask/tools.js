@@ -976,9 +976,35 @@ export function askSetTrack(a) {
   const given = k => askActGiven(a[k]);
   if (!["mute", "solo", "hide", "volume", "pan", "voice", "color", "name", "octave"].some(given))
     throw new Error("say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave");
+  // every value is checked before anything changes: a bad one used to land
+  // the earlier settings in S.trackState without their track: annotation,
+  // and the next successful call then wrote them (2026-10-05 browser check)
+  let vol, pan, color, voice, oct;
+  if (given("volume")) {
+    const m = String(a.volume).trim().match(/^(-?[\d.]+)\s*(%?)$/);
+    let v = m ? +m[1] : NaN;
+    if (m && (m[2] || v > 1.5) && v <= 150) v = v / 100; // "70" or "70%" — people say percent
+    if (!(Number.isFinite(v) && v >= 0 && v <= 1.5)) throw new Error("volume must be 0–150% (100% = unity, the mixer fader's own range)");
+    vol = v;
+  }
+  if (given("pan")) {
+    const v = +a.pan;
+    if (!(Number.isFinite(v) && v >= -1 && v <= 1)) throw new Error("pan must be -1 (left) to 1 (right)");
+    pan = Math.round(v * 100) / 100;
+  }
+  if (given("color")) {
+    color = String(a.color).trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("color must be a hex code like #4488ff (the voice menu's own color picker)");
+  }
+  if (given("voice")) voice = askVoiceMatch(a.voice);
+  if (given("octave")) {
+    oct = String(a.octave).trim();
+    if (oct !== "1" && oct !== "+1" && oct !== "-1") throw new Error("octave must be 1 or -1 (up or down one octave)");
+    if (trackIsDrums(ti)) throw new Error("\"" + trackName() + "\" is a drum/noise track — kit pitches are instruments, not notes; it doesn't transpose");
+  }
   const notes = [];
   const undoLen = S.editUndo.length;
-  if (given("name")) {
+  if (given("name")) { // the one step that can still refuse — it runs before anything else lands
     const err = renameTrack(ti, String(a.name));
     if (err) throw new Error(err);
     notes.push("renamed to \"" + String(a.name).trim() + "\"");
@@ -988,34 +1014,17 @@ export function askSetTrack(a) {
   if (given("mute")) { st.muted = askActTruthy(a.mute); touchedDir = true; notes.push(st.muted ? "muted" : "unmuted"); }
   if (given("solo")) { st.solo = askActTruthy(a.solo); touchedDir = true; notes.push(st.solo ? "solo" : "solo off"); }
   if (given("hide")) { st.hidden = askActTruthy(a.hide); touchedDir = true; notes.push(st.hidden ? "hidden" : "unhidden"); }
-  if (given("volume")) {
-    const v = +a.volume;
-    if (!(Number.isFinite(v) && v >= 0 && v <= 1.5)) throw new Error("volume must be 0–1.5 (1 = unity, the mixer fader's own range)");
-    tr.vol = v === 1 ? undefined : v; touchedDir = true; notes.push("volume " + Math.round(v * 100) + "%");
-  }
-  if (given("pan")) {
-    const v = +a.pan;
-    if (!(Number.isFinite(v) && v >= -1 && v <= 1)) throw new Error("pan must be -1 (left) to 1 (right)");
-    tr.pan = Math.round(v * 100) / 100; touchedDir = true;
+  if (vol !== undefined) { tr.vol = vol === 1 ? undefined : vol; touchedDir = true; notes.push("volume " + Math.round(vol * 100) + "%"); }
+  if (pan !== undefined) {
+    tr.pan = pan; touchedDir = true;
     notes.push("pan " + (Math.abs(tr.pan) < 0.025 ? "center" : (tr.pan < 0 ? "L" : "R") + Math.round(Math.abs(tr.pan) * 100)));
   }
-  if (given("color")) {
-    const c = String(a.color).trim();
-    if (!/^#[0-9a-fA-F]{6}$/.test(c)) throw new Error("color must be a hex code like #4488ff (the voice menu's own color picker)");
-    tr.color = c; touchedDir = true; notes.push("color " + c);
-  }
-  if (given("voice")) {
-    const v = askVoiceMatch(a.voice);
-    tr.voice = v === "auto" ? undefined : v; touchedDir = true;
-    notes.push("voice " + askVoiceLabel(v));
-  }
+  if (color !== undefined) { tr.color = color; touchedDir = true; notes.push("color " + color); }
+  if (voice !== undefined) { tr.voice = voice === "auto" ? undefined : voice; touchedDir = true; notes.push("voice " + askVoiceLabel(voice)); }
   if (touchedDir) saveTrackDir(ti);
-  if (given("octave")) {
-    const dir = String(a.octave).trim();
-    if (dir !== "1" && dir !== "+1" && dir !== "-1") throw new Error("octave must be 1 or -1 (up or down one octave)");
-    if (trackIsDrums(ti)) throw new Error("\"" + trackName() + "\" is a drum/noise track — kit pitches are instruments, not notes; it doesn't transpose");
-    const k = transposeTrack(ti, dir === "-1" ? -12 : 12);
-    if (k) notes.push("octave " + (dir === "-1" ? "down" : "up") + " (" + k + " note" + (k === 1 ? "" : "s") + ")");
+  if (oct !== undefined) {
+    const k = transposeTrack(ti, oct === "-1" ? -12 : 12);
+    if (k) notes.push("octave " + (oct === "-1" ? "down" : "up") + " (" + k + " note" + (k === 1 ? "" : "s") + ")");
     else notes.push("octave unchanged — a note would leave the roll");
   }
   askFoldUndo(undoLen);

@@ -7052,7 +7052,7 @@ test("set_track: solo/hide, an unknown track, an unknown voice (lists the choice
   assert.throws(() => run(`askSetTrack({track: "nope"})`), /no track named "nope" — this song's tracks: pulse1, drums/);
   assert.throws(() => run(`askSetTrack({track: "pulse1"})`), /say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", voice: "bagpipes"})`), /no voice named "bagpipes" — choices: auto, /);
-  assert.throws(() => run(`askSetTrack({track: "pulse1", volume: 2})`), /volume must be 0–1\.5/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", volume: 200})`), /volume must be 0–150%/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", pan: 2})`), /pan must be -1 \(left\) to 1 \(right\)/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", color: "blue"})`), /color must be a hex code/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", octave: 2})`), /octave must be 1 or -1/);
@@ -13479,4 +13479,20 @@ test("album and song_file take their sub-command as `op` (no args wrapper needed
   await assert.rejects(run(`askAct({do: [{action: "album", op: "nonsense"}]})`), /op must be play, next, prev or leave/);
   await assert.rejects(run(`askAct({do: [{action: "song_file", op: "nonsense"}]})`), /op must be one of/);
   await assert.rejects(run(`askAct({do: [{action: "album", args: {action: "nonsense"}}]})`), /op must be play/);
+});
+
+test("set_track checks every value before changing anything — a bad one leaves no half-applied setting for the next call to save; volume takes percent (2026-10-05 browser check)", async () => {
+  installActSong();
+  const st = () => val(`JSON.stringify(trackState[0] || {}) + "|" + (song.tracks[0].vol ?? "")`);
+  const before = st();
+  await assert.rejects(run(`askAct({do: [{action: "set_track", track: "pulse1", hide: true, mute: true, volume: 900}]})`), /volume must be 0–150%/);
+  assert.equal(st(), before, "nothing changed in memory either");
+  await assert.rejects(run(`askAct({do: [{action: "set_track", track: "pulse1", hide: true, voice: "kazoo"}]})`), /no voice named/);
+  assert.equal(st(), before);
+  await run(`askAct({do: [{action: "set_track", track: "pulse1", volume: "70%"}]})`);
+  assert.equal(val(`song.tracks[0].vol`), 0.7);
+  await run(`askAct({do: [{action: "set_track", track: "pulse1", volume: 80}]})`);
+  assert.equal(val(`song.tracks[0].vol`), 0.8);
+  await run(`askAct({do: [{action: "set_track", track: "pulse1", volume: 1.2}]})`);
+  assert.equal(val(`song.tracks[0].vol`), 1.2, "a fader value (≤1.5) is still read as itself");
 });
