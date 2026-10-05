@@ -11,20 +11,27 @@ Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)
 may reject it. Fix in the AI library: map note → user with a label. Untested
 against a real local server.
 
-## AI parity batch 4 — bassist — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5)
+## AI parity batches 4–5 — bassist, edit_notes — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5)
 
-Built by a Sonnet builder. `bassist` (`askBassist`, src/ask/tools.js) over
-`bsGenerate`/`applyTake` (src/gen/bassist.js), the drummer tool's shape —
-bar range or section label, track by name/"new"/omitted (the sheet's own
-default), one undo (track creation folded in via `undoTrackAdd` when it
-makes one), Learning mode never names a chord/key it read or inferred.
-Measured: menu 2,487 chars (~672 tokens, 21 actions). Tests:
-tests/night-roll.test.mjs "bassist: …" (5 tests — range/section, undo
-exactness, capture refusal, unknown-track error, the Learning-mode
-chord/key sweep, through `act`). Batch 5 (`edit_notes`) is next, same
-builder, separate commit. **Main session, at merge:** browser-verify
-Help → AI's new row and one call ("bass line for bars 1 to 16, busy 2,
-follow the drums") before pushing.
+Built by a Sonnet builder, two separate commits on its branch. Batch 4:
+`bassist` (`askBassist`, src/ask/tools.js) over `bsGenerate`/`applyTake`
+(src/gen/bassist.js), the drummer tool's shape — bar range or section
+label, track by name/"new"/omitted (the sheet's own default), one undo
+(track creation folded in via `undoTrackAdd` when it makes one), Learning
+mode never names a chord/key it read or inferred. Batch 5: `edit_notes`
+(`askEditNotes`) — delete/quantize/velocity/split/join/divide/dedupe over
+bars/section + named tracks, via a new `askSelectRange` helper (bars+tracks
+→ `S.multiSel`) and the SAME src/model/selection.js functions the Edit
+menu calls; `removeDuplicateNotes` grew an optional range+track `scope`,
+and `setSelectionVelocity` is new (both thin wrappers, no reimplemented
+undo). `transpose`/`move`/`copy`/`to_track` are still batch 6, not built.
+Measured: menu 2,487 chars (~672 tokens, 21 actions) after batch 4, 2,600
+(~703, 22 actions) after batch 5. Tests: tests/night-roll.test.mjs
+"bassist: …" / "edit_notes: …" (14 tests — range/section, undo exactness,
+capture refusal, unknown-track error, the Learning-mode chord/key sweep,
+through `act`). **Main session, at merge:** browser-verify Help → AI's two
+new rows and one call of each ("bass line for bars 1 to 16, busy 2, follow
+the drums"; "delete the notes on pulse 1 in bars 5 and 6") before pushing.
 
 ## AI parity batch 1 — the `act` tool — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
 

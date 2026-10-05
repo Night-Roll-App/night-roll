@@ -645,10 +645,15 @@ export function diatonicShift(dir) { // move each note one scale degree in the d
 // pitch — can only be heard once; the copy is a leftover (2026-10-02: the
 // reload bug doubled untitled-1's triangle). The longer one stays. Goes
 // through deleteSelection, so it is one ⟲ step like any delete.
-export function removeDuplicateNotes() {
+// scope (Ask's edit_notes dedupe, docs/ai-parity.md §5 batch 5): {t0, t1,
+// tis} restricts both which notes count as candidates AND which duplicates
+// get removed to a bar range + named tracks, instead of the whole song —
+// omitted (every existing caller) is the original whole-song sweep.
+export function removeDuplicateNotes(scope) {
+  const inScope = (ti, n) => !scope || ((!scope.tis || scope.tis.includes(ti)) && (scope.t0 === undefined || (n.t >= scope.t0 && n.t < scope.t1)));
   const seen = new Map(), dups = [];
   S.song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
-    if (n.gone) return;
+    if (n.gone || !inScope(ti, n)) return;
     const k = ti + ":" + n.t + ":" + n.p, prev = seen.get(k);
     if (!prev) { seen.set(k, {ti, ni, d: n.d}); return; }
     if (n.d > prev.d) { dups.push({ti: prev.ti, ni: prev.ni}); seen.set(k, {ti, ni, d: n.d}); }
@@ -657,6 +662,19 @@ export function removeDuplicateNotes() {
   if (!dups.length) return 0;
   S.multiSel = dups; S.multiSelKey = new Set(dups.map(x => x.ti + ":" + x.ni));
   return deleteSelection();
+}
+// setSelectionVelocity (Ask's edit_notes velocity, docs/ai-parity.md §5
+// batch 5): the same selEditApply the velocity slider's "change" handler
+// commits (src/ui/note-editor.js initNoteEditor5) — one mod undo entry for
+// the whole selection. toVel is a value (every note set to it) or a
+// function old -> new (relative deltas); clamped to the MIDI range.
+export function setSelectionVelocity(toVel) {
+  if (!editableSong()) return 0;
+  const items = selEditItems();
+  if (!items.length) return 0;
+  const f = typeof toVel === "function" ? toVel : () => toVel;
+  selEditApply(items, n => { n.v = Math.max(1, Math.min(127, Math.round(f(n.v)))); });
+  return items.length;
 }
 
 export function moveSelectionToTrack(target, dT = 0) { // ⇄ / tracks-view retrack: keeps pitch; dT slides time

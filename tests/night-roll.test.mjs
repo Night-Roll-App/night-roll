@@ -2812,6 +2812,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analysis sheet", "Check coverage", "What to look for", // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
+    "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6419,6 +6420,176 @@ test("bassist: reached through act — a \"do\" list runs it, undo restores exac
   run(`editUndo = []; editRedo = []; bsTakes = [];`);
   run(`askGeneral = true;`);
   await assert.rejects(askActRun(`askAct({do: [{action: "bassist", from_bar: 2, to_bar: 4}]})`), /works in a song's/);
+  run(`askGeneral = false;`);
+});
+
+// edit_notes Ask tool (docs/ai-parity.md §5 batch 5, 2026-10-05) — bulk ops
+// over bars + named tracks, through the SAME functions the Edit menu /
+// selection toolbar call (src/model/selection.js): askSelectRange sets
+// S.multiSel to exactly the notes a lasso over that range + those tracks
+// would leave, then delete/quantize/velocity/split/join/divide/dedupe are
+// the real menu functions reading selEditItems(). Scratch song only.
+function installAskEditSong() {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/askedit-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}");
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [
+          {t: 0, d: 480, p: 60, v: 80},        // bar 1 — outside every range below, stays untouched
+          {t: 3850, d: 430, p: 62, v: 80},     // bar 3 — off-grid onset, for quantize
+          {t: 7680, d: 480, p: 64, v: 50},     // bar 5 — for velocity
+          {t: 9600, d: 960, p: 65, v: 80},     // bar 6, beats 1–3 — for split (at beat 2)
+          {t: 11520, d: 960, p: 67, v: 80}]},  // bar 7 — for divide
+        {name: "pulse2", notes: [
+          {t: 1920, d: 480, p: 69, v: 80},     // bar 2 beat 1 — touches the next note, for join
+          {t: 2400, d: 480, p: 69, v: 80},     // bar 2 beat 2
+          {t: 13440, d: 240, p: 71, v: 80},    // bar 8 — a duplicate onset+pitch pair, for dedupe
+          {t: 13440, d: 480, p: 71, v: 80}]},  // (the longer one must survive)
+      ]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null;
+    multiSel = []; multiSelKey = new Set(); selNote = null; gridDiv = null;
+    rollnotes = deriveNoteTypes([{b1: 3, q1: 1, b2: 4, q2: 4, text: "section: A", added: true}]).map(resolveNote);
+    declaredTs = null; keyRegions = []; previewSf = null;
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const askEditSnap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v, n.d]))`);
+
+test("edit_notes: delete — removes only the named track's notes in range, other tracks and out-of-range notes untouched, ONE undo restores exactly", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"})`);
+  assert.match(r.note, /^deleted 1 note on pulse1 in bar 3 \(one undo/);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 4, "one of pulse1's 5 notes is gone");
+  assert.equal(val(`song.tracks[1].notes.filter(n => !n.gone).length`), 4, "pulse2 untouched");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: quantize — snaps the off-grid note's onset to the requested grid, restores the app's own grid setting after, one undo", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "quantize", from_bar: 3, to_bar: 3, tracks: "pulse1", grid: "1/16"})`);
+  assert.match(r.note, /^quantized to 1\/16 1 note on pulse1 in bar 3 \(one undo/);
+  const t = val(`song.tracks[0].notes.find(n => !n.gone && n.p === 62).t`);
+  assert.equal(t % 120, 0, "snapped to a 16th (barTicks 1920 / 16 = 120 ticks) — " + t);
+  assert.equal(val(`gridDiv`), null, "the app's own grid setting is restored after the call");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: velocity — an absolute value, and a relative +/- delta clamped to 1–127, one undo each", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "velocity", from_bar: 5, to_bar: 5, tracks: "pulse1", vel: 100})`);
+  assert.match(r.note, /^set velocity 100 on 1 note on pulse1 in bar 5 \(one undo/);
+  assert.equal(val(`song.tracks[0].notes.find(n => !n.gone && n.p === 64).v`), 100);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+  const r2 = val(`askEditNotes({op: "velocity", from_bar: 5, to_bar: 5, tracks: "pulse1", vel: "+50"})`); // 50 + 50 = 100
+  assert.match(r2.note, /^set velocity \+50 on 1 note/);
+  assert.equal(val(`song.tracks[0].notes.find(n => !n.gone && n.p === 64).v`), 100);
+  run(`editUndoPop();`);
+  const r3 = val(`askEditNotes({op: "velocity", from_bar: 5, to_bar: 5, tracks: "pulse1", vel: "-100"})`); // 50 - 100 clamps to 1
+  assert.equal(val(`song.tracks[0].notes.find(n => !n.gone && n.p === 64).v`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: split — at_bar/at_beat cuts a spanning note there; omitted splits every note in the selection in half; one undo each", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "split", from_bar: 6, to_bar: 6, tracks: "pulse1", at_bar: 6, at_beat: 2})`);
+  assert.match(r.note, /^split at 6\.2 1 note on pulse1 in bar 6 \(one undo/);
+  const pieces = val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 9600 && n.t < 11520)`);
+  assert.equal(pieces.length, 2, "one note became two");
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+  const r2 = val(`askEditNotes({op: "split", from_bar: 6, to_bar: 6, tracks: "pulse1"})`); // no at_bar: splits in half
+  assert.match(r2.note, /^split in half 1 note/);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: join — merges touching same-pitch notes on the named track into one, one undo", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "join", from_bar: 2, to_bar: 2, tracks: "pulse2"})`);
+  assert.match(r.note, /^joined 2 notes on pulse2 in bar 2 \(one undo/);
+  const left = val(`song.tracks[1].notes.filter(n => !n.gone && n.t < 3840)`);
+  assert.equal(left.length, 1, "the two touching notes became one");
+  assert.equal(left[0].d, 960, "spanning both");
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: divide — into: N equal parts, one undo; into < 2 errors with nothing changed", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  assert.throws(() => run(`askEditNotes({op: "divide", from_bar: 7, to_bar: 7, tracks: "pulse1", into: 1})`), /into how many equal parts/);
+  assert.deepEqual(askEditSnap(), before);
+  const r = val(`askEditNotes({op: "divide", from_bar: 7, to_bar: 7, tracks: "pulse1", into: 3})`);
+  assert.match(r.note, /^divided into 3 1 note on pulse1 in bar 7 \(one undo/);
+  const pieces = val(`song.tracks[0].notes.filter(n => !n.gone && n.t >= 11520 && n.t < 12480)`);
+  assert.equal(pieces.length, 3);
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: dedupe — removes the shorter of two identical onsets in range, keeping the longer; scoped to the range + named tracks, one undo", () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = val(`askEditNotes({op: "dedupe", from_bar: 8, to_bar: 8, tracks: "pulse2"})`);
+  assert.match(r.note, /^removed 1 note on pulse2 in bar 8 \(one undo/);
+  const left = val(`song.tracks[1].notes.filter(n => !n.gone && n.t === 13440)`);
+  assert.equal(left.length, 1);
+  assert.equal(left[0].d, 480, "the longer duplicate survived");
+  run(`editUndoPop();`);
+  assert.deepEqual(askEditSnap(), before);
+});
+
+test("edit_notes: refuses on a locked capture with nothing changed; an unknown track names the song's tracks; a bad op errors; an empty-result call answers rather than erroring; hidden from the general (no-song) chat; listed as an action", () => {
+  installAskEditSong();
+  const s0 = askEditSnap();
+  assert.throws(() => run(`askEditNotes({op: "bogus", from_bar: 1, to_bar: 1, tracks: "pulse1"})`), /op must be one of/);
+  assert.throws(() => run(`askEditNotes({op: "delete", from_bar: 1, to_bar: 1, tracks: "triangle"})`), /no track named "triangle" — this song's tracks: pulse1, pulse2/);
+  const r = val(`askEditNotes({op: "delete", from_bar: 1, to_bar: 1, tracks: "pulse2"})`); // pulse2 has nothing in bar 1
+  assert.match(r.note, /^nothing to delete/);
+  assert.deepEqual(askEditSnap(), s0, "an empty-result call changed nothing");
+  run(`
+    songKey = "albums/nes/mega-man-2/edit-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askEditNotes({op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.equal(val(`editUndo.length`), 0);
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+  assert.ok(!val(`ASK_TOOLS.some(t => t.function.name === "edit_notes")`), "no standalone edit_notes tool");
+  assert.ok(val(`ASK_ACTIONS.some(d => d.name === "edit_notes")`), "registered as an action");
+  assert.match(val(`askActTool(false).function.description`), /\nedit_notes op from_bar to_bar\|section [^\n]* — bulk-edit/, "one index line in the song chat's act tool");
+  run(`askGeneral = true;`);
+  assert.doesNotMatch(val(`askActTool(true).function.description`), /edit_notes/, "edit_notes hidden in the general chat (needs the open song)");
+  run(`askGeneral = false;`);
+});
+
+test("edit_notes: reached through act — a \"do\" list runs it, undo restores exactly through act too, the general chat refuses it, and the reply is facts only (Learning mode is the law)", async () => {
+  installAskEditSong();
+  const before = askEditSnap();
+  const r = await askActRun(`askAct({do: [{action: "edit_notes", op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"}]})`);
+  const text = typeof r === "string" ? r : r.final;
+  assert.match(text, /^deleted 1 note/);
+  assert.doesNotMatch(text, /\b(chord|key|tonic|dominant|subdominant|cadence|roman|numeral)\b/i, "facts only: " + text);
+  assert.equal(val(`editUndo.length`), 1);
+  await askActRun(`askAct({do: [{action: "undo"}]})`);
+  assert.deepEqual(askEditSnap(), before);
+  run(`editUndo = []; editRedo = [];`);
+  run(`askGeneral = true;`);
+  await assert.rejects(askActRun(`askAct({do: [{action: "edit_notes", op: "delete", from_bar: 3, to_bar: 3, tracks: "pulse1"}]})`), /works in a song's/);
   run(`askGeneral = false;`);
 });
 

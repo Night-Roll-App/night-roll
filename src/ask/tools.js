@@ -61,6 +61,14 @@ import { drGenerate } from "../gen/drummer.js";
 import { addTrackUndoable } from "../model/edits.js";
 import { undoTrackAdd } from "../model/edits.js";
 import { renderTrackbarImpl as renderTrackbar } from "../ui/trackbar.js"; // same layer as ask/tools.js — direct import, not the hooks.js port (that's for gen/drummer.js's lower-layer upcall)
+import { deleteSelection } from "../model/selection.js";
+import { quantizeSelection } from "../model/selection.js";
+import { splitSelectionAt } from "../model/selection.js";
+import { splitSelectionHalves } from "../model/selection.js";
+import { joinSelection } from "../model/selection.js";
+import { divideSelection } from "../model/selection.js";
+import { removeDuplicateNotes } from "../model/selection.js";
+import { setSelectionVelocity } from "../model/selection.js";
 import { drBassTrack } from "../gen/drummer.js";
 import { askAct } from "./actions.js"; // a cycle inside layer 4 (actions.js imports the gate/validators back) — legal (check.mjs §2.3), and neither side touches the other at module-eval time
 
@@ -725,4 +733,82 @@ export function askBassist(a) {
   if (S.bsTakes.length > 8) S.bsTakes.shift();
   S.bsActive = S.bsTakes.length - 1;
   return {ok: true, note: "Bassist: replaced " + before + " note" + (before === 1 ? "" : "s") + " with " + k + " on " + trackName(targetTi) + " in " + where + (madeTrack ? " (new track)" : "") + " · " + recipe + " (one undo restores what was there)"};
+}
+// ---- edit_notes (docs/ai-parity.md §5 batch 5, 2026-10-05): bulk ops over
+// bars + named tracks, through the SAME functions the Edit menu / selection
+// toolbar call (src/model/selection.js) — askSelectRange is the one new
+// piece: bars+tracks -> S.multiSel, exactly what a lasso or ⌘A would leave,
+// so selEditItems() (every op's own read of "the selection") sees it.
+export function askSelectRange(a) { // -> {fromBar, toBar, t0, t1, tis, count}; throws naming the bad bar, a bad section or an unknown track, nothing changed
+  const {fromBar, toBar} = askDrummerRange(a); // reused as-is: whole bars, or one declared section label's span
+  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  let names = a.tracks;
+  if (typeof names === "string") names = names.split(/\s*,\s*/).filter(Boolean);
+  if (!Array.isArray(names)) names = names === undefined || names === null ? [] : [names];
+  if (!names.length) throw new Error("say which track(s): " + S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1)).join(", "));
+  const tis = [...new Set(names.map(askFindTrackIndex))]; // unknown/ambiguous throws naming the song's own tracks
+  const sel = [];
+  for (const ti of tis) S.song.tracks[ti].notes.forEach((n, ni) => { if (!n.gone && n.t >= t0 && n.t < t1) sel.push({ti, ni}); });
+  S.multiSel = sel; S.multiSelKey = new Set(sel.map(({ti, ni}) => ti + ":" + ni)); S.selNote = null;
+  return {fromBar, toBar, t0, t1, tis, count: sel.length};
+}
+const EDIT_NOTES_OPS = ["delete", "quantize", "velocity", "split", "join", "divide", "dedupe"];
+function askEditNotesGrid(spec) { // "1/16" or "16" -> 16 (S.gridDiv's own unit — moveSnapTicks' "custom grid outranks all")
+  const m = String(spec).trim().match(/^1\s*\/\s*(\d+)$/) || String(spec).trim().match(/^(\d+)$/);
+  const d = m && parseInt(m[1], 10);
+  if (!d || ![1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64].includes(d)) throw new Error("grid must be like \"1/16\" (a power-of-two or triplet denominator)");
+  return d;
+}
+function askEditNotesVel(spec) { // 80 -> every note to 80; "+10"/"-10" -> relative, clamped 1-127
+  const s = String(spec).trim();
+  const m = s.match(/^([+-])(\d+)$/);
+  if (m) { const d = (m[1] === "+" ? 1 : -1) * parseInt(m[2], 10); return v => v + d; }
+  const n = Math.round(+s);
+  if (!(n >= 1 && n <= 127)) throw new Error("vel must be 1–127, or relative like +10 or -10");
+  return () => n;
+}
+export function askEditNotes(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const op = String(a.op || "").trim().toLowerCase();
+  if (!EDIT_NOTES_OPS.includes(op)) throw new Error("op must be one of " + EDIT_NOTES_OPS.join(", "));
+  const sel = askSelectRange(a);
+  const where = sel.fromBar === sel.toBar ? "bar " + sel.fromBar : "bars " + sel.fromBar + "–" + sel.toBar;
+  const trackLabel = sel.tis.map(ti => S.song.tracks[ti].name || "track " + (ti + 1)).join("+");
+  let k = 0, how = op;
+  if (op === "delete") { k = deleteSelection(); how = "deleted"; }
+  else if (op === "quantize") {
+    const hasGrid = a.grid !== undefined && a.grid !== null && a.grid !== "";
+    const prevGrid = S.gridDiv;
+    if (hasGrid) S.gridDiv = askEditNotesGrid(a.grid);
+    let strength = 1;
+    if (a.strength !== undefined && a.strength !== null && a.strength !== "") {
+      const s = String(a.strength).trim();
+      strength = s.endsWith("%") ? +s.slice(0, -1) / 100 : +s;
+      if (!(strength > 0 && strength <= 1)) throw new Error("strength must be between 0 and 1 (or a percent like 75%)");
+    }
+    const ends = a.ends === true || a.ends === 1 || /^(true|yes|on|1)$/i.test(String(a.ends === undefined || a.ends === null ? "" : a.ends).trim());
+    try { k = quantizeSelection(strength, ends); } finally { S.gridDiv = prevGrid; }
+    how = "quantized" + (hasGrid ? " to " + String(a.grid).trim() : "");
+  } else if (op === "velocity") {
+    if (a.vel === undefined || a.vel === null || a.vel === "") throw new Error("say the velocity: an absolute 1–127, or relative like +10 or -10");
+    k = setSelectionVelocity(askEditNotesVel(a.vel));
+    how = "set velocity " + String(a.vel).trim() + " on";
+  } else if (op === "split") {
+    if (a.at_bar !== undefined && a.at_bar !== null && a.at_bar !== "") {
+      const bar = Math.round(+a.at_bar), beat = a.at_beat !== undefined && a.at_beat !== null && a.at_beat !== "" ? +a.at_beat : 1;
+      const tick = Math.round((bar - 1) * barTicks() + (beat - 1) * beatTicks());
+      k = splitSelectionAt(tick);
+      how = "split at " + bar + "." + beat;
+    } else { k = splitSelectionHalves(); how = "split in half"; }
+  } else if (op === "join") { k = joinSelection(); how = "joined"; }
+  else if (op === "divide") {
+    const n = Math.round(+a.into || 0);
+    if (!(n >= 2)) throw new Error("say into how many equal parts (into: 2 or more)");
+    k = divideSelection(n);
+    how = "divided into " + n;
+  } else if (op === "dedupe") { k = removeDuplicateNotes({t0: sel.t0, t1: sel.t1, tis: sel.tis}); how = "removed"; }
+  if (!k) return {ok: true, note: "nothing to " + op + " — no note on " + trackLabel + " in " + where + " qualified"};
+  return {ok: true, note: how + " " + k + " note" + (k === 1 ? "" : "s") + " on " + trackLabel + " in " + where + " (one undo restores what was there)"};
 }

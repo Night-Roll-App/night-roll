@@ -434,6 +434,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: change an existing annotation's text or place**
 **“Change the chord at 14.1 to G7.”** Say which one (its bar and beat, or its text) and the new text or place. (act: edit_annotation id|bar beat match_text? text comment? new_bar? new_beat? new_end_bar? new_end_beat?)
 
+**Ask: bulk-edit existing notes over bars + tracks (one undo)**
+**“Delete the notes on pulse 1 in bars 5 and 6.”** Say the op (delete, quantize, velocity, split, join, divide, dedupe), the bars (or a section label) and the track(s) by name; quantize takes grid ("1/16") and strength (default a hard snap); velocity takes vel: 80 (absolute) or +10/-10 (relative); split takes at_bar/at_beat to cut there (else every note splits in half); divide takes into: how many equal parts. (act: edit_notes op from_bar to_bar|section tracks + op's own)
+
 **Ask: move the cursor there, scrolled into view**
 **“Go to bar 13.”** Say the bar, and a beat if you mean one ("bar 13 beat 3"). (act: go_to bar beat?)
 

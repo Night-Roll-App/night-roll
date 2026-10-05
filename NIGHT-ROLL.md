@@ -4947,33 +4947,58 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   the bodies; tests/annotate.test.mjs reads read_notes through act. The
   Help sheet's AI commands rows are all `(act: …)` now — `ASK_TOOL_PHRASES`
   went with the tools.
-- **bassist (2026-10-05; docs/ai-parity.md §5 batch 4, Sonnet).** An
-  `ASK_ACTIONS` entry over bars (or a section label) on a named track,
-  same gate/undo shape as `drummer`. `bassist` (`askBassist`,
-  src/ask/tools.js) wraps `bsGenerate` + its `applyTake` (src/gen/
-  bassist.js) the way `askDrummer` wraps `drGenerate` — `askDrummerRange`
-  (despite its name, generic bar/section resolution) is reused as-is.
-  `track` picks the target the way the Bassist sheet's own
-  `openBassist`/`bsgen` default does: an explicit name or "new" wins;
-  omitted picks the detected bass track (`drBassTrack`) when nothing of
-  its own already sounds in the range, else a fresh "bass" track —
-  created with `addTrackUndoable` and folded into the SAME undo step via
-  `undoTrackAdd`, exactly as the Drummer's kit track is. `style` defaults
-  to riff when the song has a drum track, else chug (the sheet's own
-  default); `busy`/`octave`/`follow`/`seed` validate like the sheet's
-  knobs. Learning mode is the law for the reply too: bsGenerate's
-  melody-inferred harmony sketch (src/gen/bassist.js's own comment: "never
-  displayed and never written") is never named — the reply states only
-  what it replaced and the seed, never a chord or key. **Measured** (the
-  vm test prints it every run, chars ÷ 3.7): the song-chat menu (act
-  alone, since batch 3) went from 2,355 chars (~636 tokens, 20 actions) to
-  **2,487 (~672 tokens, 21 actions)**. Tests: tests/night-roll.test.mjs
-  "bassist: …" (range/section, the track default and its undo-folded
-  new-track case, every knob and follow/track validator, the
-  locked-capture refusal, hidden from the general chat, through `act`, the
-  Learning-mode chord/key sweep against both the declared-chord and
-  melody-sketch paths). Help: the generated AI commands rows; drift
-  keyword "busy 2, follow the drums" (tests/night-roll.test.mjs FEATURES).
+- **bassist and edit_notes — batches 4 and 5 (2026-10-05; docs/ai-parity.md
+  §5, Sonnet).** Two more `ASK_ACTIONS` entries, both over bars (or a
+  section label) on named tracks, same gate/undo shape as `drummer`.
+  - `bassist` (`askBassist`, src/ask/tools.js) wraps `bsGenerate` + its
+    `applyTake` (src/gen/bassist.js) the way `askDrummer` wraps
+    `drGenerate` — `askDrummerRange` (despite its name, generic bar/section
+    resolution) is reused as-is. `track` picks the target the way the
+    Bassist sheet's own `openBassist`/`bsgen` default does: an explicit
+    name or "new" wins; omitted picks the detected bass track (`drBassTrack`)
+    when nothing of its own already sounds in the range, else a fresh
+    "bass" track — created with `addTrackUndoable` and folded into the
+    SAME undo step via `undoTrackAdd`, exactly as the Drummer's kit track
+    is. `style` defaults to riff when the song has a drum track, else chug
+    (the sheet's own default); `busy`/`octave`/`follow`/`seed` validate
+    like the sheet's knobs. Learning mode is the law for the reply too:
+    bsGenerate's melody-inferred harmony sketch (src/gen/bassist.js's own
+    comment: "never displayed and never written") is never named — the
+    reply states only what it replaced and the seed, never a chord or key.
+  - `edit_notes` (`askEditNotes`, src/ask/tools.js) is `delete`, `quantize`,
+    `velocity`, `split`, `join`, `divide`, `dedupe` over bars/section +
+    named tracks (`transpose`/`move`/`copy`/`to_track` are batch 6).
+    `askSelectRange` is the one new piece: bars + track names → `S.multiSel`
+    exactly as a lasso would leave it, then every op calls the SAME
+    src/model/selection.js function the Edit menu / selection toolbar call
+    (`deleteSelection`, `quantizeSelection`, `splitSelectionAt`/
+    `splitSelectionHalves`, `joinSelection`, `divideSelection`) reading that
+    selection via `selEditItems()` — nothing reimplemented. Two small
+    additions to selection.js, both thin wrappers over the existing undo
+    machinery: `removeDuplicateNotes` grew an optional `scope`
+    ({t0, t1, tis}) so dedupe can be scoped to the call's range instead of
+    sweeping the whole song (omitted — its one existing caller, the Edit
+    menu — keeps the old whole-song behavior); `setSelectionVelocity(toVel)`
+    is `selEditApply` with an absolute value or a relative function, for
+    `vel: 80` vs `vel: "+10"/"-10"`. `quantize`'s `grid` (e.g. "1/16")
+    temporarily overrides `S.gridDiv` for the one call and restores it
+    after — the app's own grid preference is never left changed. An empty
+    result ("nothing on pulse2 in bar 1 to delete") answers rather than
+    erroring; an unknown track names the song's own tracks.
+  - **Measured** (the vm test prints it every run, chars ÷ 3.7): the
+    song-chat menu (act alone, since batch 3) went from 2,355 chars (~636
+    tokens, 20 actions) to 2,487 (~672, +bassist) to **2,600 chars (~703
+    tokens, 22 actions)** after both batches.
+  - Tests: tests/night-roll.test.mjs "bassist: …" (range/section, the
+    track default and its undo-folded new-track case, every knob and
+    follow/track validator, the locked-capture refusal, hidden from the
+    general chat, through `act`, the Learning-mode chord/key sweep against
+    both the declared-chord and melody-sketch paths) and "edit_notes: …"
+    (one test per op, the locked-capture refusal, the unknown-track error,
+    the empty-result answer, hidden from the general chat, through `act`).
+    Help: the generated AI commands rows; drift keywords "busy 2, follow
+    the drums" and "on pulse 1 in bars 5 and 6" (tests/night-roll.test.mjs
+    FEATURES).
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9
