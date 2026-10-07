@@ -888,6 +888,13 @@ export function tap(pos) {
       openEditor(hitMark); // key markers have no subtitle — flag tap opens the editor (Delete lives there)
       return;
     }
+    // any other flag — a text note, a tempo, a meter, a loop — opens on a
+    // double-tap, like a chord or section band (Josh, 2026-10-06, #487: text
+    // notes were the one annotation he couldn't open from the roll)
+    if (hitMark && !S.playing) {
+      if (S.tapBand.n === hitMark && performance.now() - S.tapBand.t < 400) { S.tapBand = {n: null, t: 0}; openEditor(hitMark); return; }
+      S.tapBand = {n: hitMark, t: performance.now()};
+    }
     const target = hitMark ? hitMark.start
                  : Math.max(0, Math.round(tick / cursorTapSnapTicks()) * cursorTapSnapTicks()); // nearest 8th
     seekOrMoveCursor(target);

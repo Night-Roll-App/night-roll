@@ -2808,7 +2808,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
-    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 "ends at bar/beat", // #154 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
+    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 "ends at bar/beat", // #154 "Double-tap a flag to open it", // #487 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)

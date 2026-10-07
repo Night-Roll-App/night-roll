@@ -1057,3 +1057,18 @@ test("gesture: double-tap the ruler span deletes it, armed or switched off; one 
   tap(xy(960));
   assert.equal(app.run(`rangeSel === null`), true, "dimmed span double-tapped: deleted");
 });
+
+test("gesture: double-tap a text-note flag opens it in the editor; one tap just jumps there (Josh, 2026-10-06, #487)", async () => {
+  const app = await boot("vm-gest-flag-dbl");
+  app.run(`view.pxq = 200; clampView(); playing = false;
+    rollnotes = deriveNoteTypes([{b1: 2, q1: 1, b2: null, q2: null, text: "passing chord idea", added: true}]).map(resolveNote); finalizeNotes(); draw();
+    document.getElementById("noteeditor").classList.remove("on");`);
+  const p = JSON.parse(app.run(`JSON.stringify({x: RULER_W + (barTicks() / song.ppq) * view.pxq - view.x, y: 10})`));
+  const tap = () => { app.dispatch("roll", pev("pointerdown", {clientX: p.x, clientY: p.y})); app.dispatch("roll", pev("pointerup", {clientX: p.x, clientY: p.y})); };
+  tap();
+  assert.equal(app.run(`document.getElementById("noteeditor").classList.contains("on")`), false, "one tap: no editor");
+  assert.equal(app.run(`playCursor`), JSON.parse(app.run(`barTicks()`)), "one tap: the cursor jumps to it");
+  tap();
+  assert.equal(app.run(`document.getElementById("noteeditor").classList.contains("on")`), true, "double-tap: the editor opens");
+  assert.equal(app.run(`editingNote && editingNote.text`), "passing chord idea");
+});
