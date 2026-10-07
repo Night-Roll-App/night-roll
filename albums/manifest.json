@@ -1859,6 +1859,10 @@
     "path": "albums/snes/chrono-trigger/quiet-beach.mid"
    },
    {
+    "title": "Quiet Beach (re-capture)",
+    "path": "albums/snes/chrono-trigger/quiet-beach-recapture.mid"
+   },
+   {
     "title": "Rain and Flowing Water",
     "path": "albums/snes/chrono-trigger/rain-and-flowing-water.mid"
    },
@@ -1887,6 +1891,10 @@
     "path": "albums/snes/chrono-trigger/ruined-world.mid"
    },
    {
+    "title": "Ruined World (re-capture)",
+    "path": "albums/snes/chrono-trigger/ruined-world-recapture.mid"
+   },
+   {
     "title": "Schala's Theme",
     "path": "albums/snes/chrono-trigger/schala-s-theme.mid"
    },
@@ -1899,6 +1907,10 @@
     "path": "albums/snes/chrono-trigger/secret-of-the-forest.mid"
    },
    {
+    "title": "Secret of the Forest (re-capture)",
+    "path": "albums/snes/chrono-trigger/secret-of-the-forest-recapture.mid"
+   },
+   {
     "title": "Silent Light",
     "path": "albums/snes/chrono-trigger/silent-light.mid"
    },
@@ -1909,6 +1921,10 @@
    {
     "title": "Strong Wind",
     "path": "albums/snes/chrono-trigger/strong-wind.mid"
+   },
+   {
+    "title": "Strong Wind (re-capture)",
+    "path": "albums/snes/chrono-trigger/strong-wind-recapture.mid"
    },
    {
     "title": "The Day the World Revived",
@@ -1925,6 +1941,10 @@
    {
     "title": "Time Vortex",
     "path": "albums/snes/chrono-trigger/time-vortex.mid"
+   },
+   {
+    "title": "Time Vortex (re-capture)",
+    "path": "albums/snes/chrono-trigger/time-vortex-recapture.mid"
    },
    {
     "title": "To Far Away Times",
@@ -1963,8 +1983,16 @@
     "path": "albums/snes/chrono-trigger/voice-of-lavos.mid"
    },
    {
+    "title": "Voice of Lavos (re-capture)",
+    "path": "albums/snes/chrono-trigger/voice-of-lavos-recapture.mid"
+   },
+   {
     "title": "Wind Scene",
     "path": "albums/snes/chrono-trigger/wind-scene.mid"
+   },
+   {
+    "title": "Wind Scene (re-capture)",
+    "path": "albums/snes/chrono-trigger/wind-scene-recapture.mid"
    },
    {
     "title": "Wings That Cross Time",
@@ -1975,8 +2003,16 @@
     "path": "albums/snes/chrono-trigger/world-revolution.mid"
    },
    {
+    "title": "World Revolution (re-capture)",
+    "path": "albums/snes/chrono-trigger/world-revolution-recapture.mid"
+   },
+   {
     "title": "Zeal Palace",
     "path": "albums/snes/chrono-trigger/zeal-palace.mid"
+   },
+   {
+    "title": "Zeal Palace (re-capture)",
+    "path": "albums/snes/chrono-trigger/zeal-palace-recapture.mid"
    }
   ]
  },

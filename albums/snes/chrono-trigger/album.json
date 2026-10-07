@@ -41,7 +41,16 @@
   "the-day-the-world-revived": "The Day the World Revived",
   "the-hidden-truth-looped": "The Hidden Truth (Looped)",
   "underground-sewer-no-water": "Underground Sewer (No Water)",
-  "voice-of-lavos": "Voice of Lavos"
+  "voice-of-lavos": "Voice of Lavos",
+  "quiet-beach-recapture": "Quiet Beach (re-capture)",
+  "ruined-world-recapture": "Ruined World (re-capture)",
+  "secret-of-the-forest-recapture": "Secret of the Forest (re-capture)",
+  "strong-wind-recapture": "Strong Wind (re-capture)",
+  "time-vortex-recapture": "Time Vortex (re-capture)",
+  "voice-of-lavos-recapture": "Voice of Lavos (re-capture)",
+  "wind-scene-recapture": "Wind Scene (re-capture)",
+  "world-revolution-recapture": "World Revolution (re-capture)",
+  "zeal-palace-recapture": "Zeal Palace (re-capture)"
  },
  "nsf": {
   "vault": "snes/chrono-trigger/",
@@ -50,354 +59,598 @@
     "n": 1,
     "secs": 12,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-shot-of-crisis": {
     "n": 1,
     "secs": 99,
     "track": 25,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-strange-happening": {
     "n": 1,
     "secs": 86,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "at-the-bottom-of-night": {
     "n": 1,
     "secs": 133.99,
     "track": 56,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ayla-s-theme": {
     "n": 1,
     "secs": 69,
     "track": 48,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-1": {
     "n": 1,
     "secs": 91,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-2": {
     "n": 1,
     "secs": 74,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-with-magus": {
     "n": 1,
     "secs": 165,
     "track": 53,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bike-chase": {
     "n": 1,
     "secs": 53,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "black-omen": {
     "n": 1,
     "secs": 166,
     "track": 64,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "blackbird-inside": {
     "n": 1,
     "secs": 12,
-    "track": 71
+    "track": 71,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "blackbird-outside": {
     "n": 1,
     "secs": 12,
-    "track": 72
+    "track": 72,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boss-battle-1": {
     "n": 1,
     "secs": 69,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boss-battle-2": {
     "n": 1,
     "secs": 145,
     "track": 46,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "breath-of-lavos": {
     "n": 1,
     "secs": 12,
-    "track": 73
+    "track": 73,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "brink-of-time": {
     "n": 1,
     "secs": 133,
     "track": 41,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "burn-bobonga": {
     "n": 1,
     "secs": 78,
     "track": 50,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chrono-trigger-looped": {
     "n": 1,
     "secs": 75,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chrono-trigger": {
     "n": 1,
     "secs": 121,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "confusing-melody": {
     "n": 1,
     "secs": 58.99,
     "track": 52,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "corridors-of-time": {
     "n": 1,
     "secs": 164,
     "track": 57,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "courage-and-pride": {
     "n": 1,
     "secs": 193,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "delightful-spekkio": {
     "n": 1,
     "secs": 152,
     "track": 42,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "determination": {
     "n": 1,
     "secs": 53,
     "track": 65,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "earthquake": {
     "n": 1,
     "secs": 12,
-    "track": 74
+    "track": 74,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue-to-good-friends": {
     "n": 1,
     "secs": 118,
     "track": 69,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fall-of-zeal": {
     "n": 1,
     "secs": 73,
-    "track": 75
+    "track": 75,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare-1": {
     "n": 1,
     "secs": 33,
     "track": 21,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare-2": {
     "n": 1,
     "secs": 12,
     "track": 40,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare-3": {
     "n": 1,
     "secs": 12,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "far-off-promise": {
     "n": 1,
     "secs": 96,
     "track": 62,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "first-festival-of-stars": {
     "n": 1,
     "secs": 149,
     "track": 68,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "frog-s-theme": {
     "n": 1,
     "secs": 62,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "gato-s-song": {
     "n": 1,
     "secs": 20,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "goodnight": {
     "n": 1,
     "secs": 12,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "guardia-millennial-fair": {
     "n": 1,
     "secs": 182,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "huh": {
     "n": 1,
     "secs": 12,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kingdom-trial": {
     "n": 1,
     "secs": 206.99,
     "track": 22,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lab-16-s-ruin": {
     "n": 1,
     "secs": 77,
     "track": 28,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "last-battle": {
     "n": 1,
     "secs": 207,
     "track": 67,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lavos-stirs-faster": {
     "n": 1,
     "secs": 12,
-    "track": 76
+    "track": 76,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lavos-stirs": {
     "n": 1,
     "secs": 13,
-    "track": 77
+    "track": 77,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lavos-theme-extended": {
     "n": 1,
     "secs": 289.92,
     "track": 32,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lavos-theme": {
     "n": 1,
     "secs": 81.96000000000001,
     "track": 33,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "leene-s-bell": {
     "n": 1,
     "secs": 13,
-    "track": 78
+    "track": 78,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "magus-castle": {
     "n": 1,
     "secs": 27,
     "track": 51,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "manoria-cathedral": {
     "n": 1,
     "secs": 30,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "memories-of-green": {
     "n": 1,
     "secs": 214,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "morning-sunlight": {
     "n": 1,
     "secs": 38,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mystery-of-the-past": {
     "n": 1,
     "secs": 12,
     "track": 27,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mystic-chanting": {
     "n": 1,
     "secs": 12,
-    "track": 79
+    "track": 79,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ocean-waves": {
     "n": 1,
     "secs": 38,
-    "track": 80
+    "track": 80,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ozzie-laugh": {
     "n": 1,
     "secs": 12,
-    "track": 81
+    "track": 81,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ozzie-scream": {
     "n": 1,
     "secs": 12,
-    "track": 82
+    "track": 82,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "peaceful-days": {
     "n": 1,
     "secs": 152,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "people-without-hope-variant-1": {
     "n": 1,
     "secs": 167,
     "track": 29,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "people-without-hope-variant-2": {
     "n": 1,
     "secs": 167,
     "track": 30,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "people-without-hope": {
     "n": 1,
     "secs": 167,
     "track": 31,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "presentiment": {
     "n": 1,
     "secs": 33,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "primitive-mountain": {
     "n": 1,
     "secs": 171,
     "track": 47,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "prison-tower": {
     "n": 1,
     "secs": 53,
-    "track": 83
+    "track": 83,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "quiet-beach": {
     "n": 1,
@@ -407,36 +660,60 @@
    "rain-and-flowing-water": {
     "n": 1,
     "secs": 12,
-    "track": 85
+    "track": 85,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "rat-a-tat-tat-it-s-mitsuda": {
     "n": 1,
     "secs": 12,
-    "track": 86
+    "track": 86,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "remains-of-the-factory": {
     "n": 1,
     "secs": 172,
     "track": 38,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "rhythm-of-wind-sky-and-earth": {
     "n": 1,
     "secs": 97,
     "track": 49,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "robo-gang-johnny": {
     "n": 1,
     "secs": 78,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "robo-s-theme": {
     "n": 1,
     "secs": 75,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ruined-world": {
     "n": 1,
@@ -448,13 +725,21 @@
     "n": 1,
     "secs": 147,
     "track": 59,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sealed-door": {
     "n": 1,
     "secs": 145,
     "track": 60,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "secret-of-the-forest": {
     "n": 1,
@@ -466,13 +751,21 @@
     "n": 1,
     "secs": 127,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "singing-mountain": {
     "n": 1,
     "secs": 110,
     "track": 54,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "strong-wind": {
     "n": 1,
@@ -483,19 +776,31 @@
     "n": 1,
     "secs": 65,
     "track": 34,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-hidden-truth-looped": {
     "n": 1,
     "secs": 53,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-hidden-truth": {
     "n": 1,
     "secs": 58,
     "track": 24,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "time-vortex": {
     "n": 1,
@@ -506,46 +811,78 @@
     "n": 1,
     "secs": 260,
     "track": 70,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "truce-canyon": {
     "n": 1,
     "secs": 16,
-    "track": 89
+    "track": 89,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tsunami": {
     "n": 1,
     "secs": 9.82,
-    "track": 90
+    "track": 90,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tyran-castle": {
     "n": 1,
     "secs": 213,
     "track": 55,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground-sewer-no-water": {
     "n": 1,
     "secs": 122,
     "track": 44,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground-sewer": {
     "n": 1,
     "secs": 122.49000000000001,
     "track": 45,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "undersea-palace": {
     "n": 1,
     "secs": 181,
     "track": 61,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unknown-fanfare": {
     "n": 1,
     "secs": 16,
-    "track": 91
+    "track": 91,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "voice-of-lavos": {
     "n": 1,
@@ -562,7 +899,11 @@
     "n": 1,
     "secs": 183.85,
     "track": 63,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "world-revolution": {
     "n": 1,
@@ -575,6 +916,92 @@
     "secs": 218,
     "track": 58,
     "disc": 3
+   },
+   "quiet-beach-recapture": {
+    "n": 1,
+    "secs": 41,
+    "track": 84,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "ruined-world-recapture": {
+    "n": 1,
+    "secs": 141,
+    "track": 26,
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "secret-of-the-forest-recapture": {
+    "n": 1,
+    "secs": 268,
+    "track": 12,
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "strong-wind-recapture": {
+    "n": 1,
+    "secs": 29,
+    "track": 87,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "time-vortex-recapture": {
+    "n": 1,
+    "secs": 239,
+    "track": 88,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "voice-of-lavos-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 92,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "wind-scene-recapture": {
+    "n": 1,
+    "secs": 184,
+    "track": 10,
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "world-revolution-recapture": {
+    "n": 1,
+    "secs": 213,
+    "track": 66,
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "zeal-palace-recapture": {
+    "n": 1,
+    "secs": 218,
+    "track": 58,
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
