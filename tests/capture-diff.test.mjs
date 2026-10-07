@@ -7,7 +7,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { readSmf, captureDiff, barOf, loopOfRollnotes } from "../tools/capture-diff.mjs";
-import { planAction, assertWritable, annotationsOf } from "../tools/recapture.mjs";
+import { planAction, assertWritable, annotationsOf, vaultFilesOf } from "../tools/recapture.mjs";
 
 // a format-1 SMF: conductor (tempo, meter) + one MTrk per track
 // track: {name, notes: [{t, d, p, v, ch?}], extra: [{t, bytes}]}
@@ -158,4 +158,9 @@ test("recapture: the write allowlist refuses Josh's songs, annotations and anyth
   assert.throws(() => assertWritable(path.join(R, "albums/manifest.json")), /allowlist/);
   assert.throws(() => assertWritable(path.join(R, "src/main.js")), /allowlist/);
   assert.throws(() => assertWritable(path.join(R, "albums/nes/../../src/x.mid")), /allowlist/);
+});
+
+test("recapture: a per-file \"(re-capture)\" copy (rip: <source base>) fetches no file of its own — it plays its source song's rip", () => {
+  const a = {chip: "spc", meta: {nsf: {vault: "snes/x/", perFile: true, tracks: {"beach": {n: 1}, "beach-recapture": {n: 1, rip: "beach"}}}}};
+  assert.deepEqual(vaultFilesOf(a).map(f => f.vault), ["snes/x/beach.spc"]);
 });

@@ -625,7 +625,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "main-theme-ocean"
    },
    "tranquil-beach-recapture": {
     "n": 1,
@@ -634,7 +635,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "tranquil-beach"
    }
   },
   "chip": "spc",

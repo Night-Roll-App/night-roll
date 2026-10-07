@@ -924,7 +924,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "quiet-beach"
    },
    "ruined-world-recapture": {
     "n": 1,
@@ -934,7 +935,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "ruined-world"
    },
    "secret-of-the-forest-recapture": {
     "n": 1,
@@ -944,7 +946,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "secret-of-the-forest"
    },
    "strong-wind-recapture": {
     "n": 1,
@@ -953,7 +956,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "strong-wind"
    },
    "time-vortex-recapture": {
     "n": 1,
@@ -962,7 +966,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "time-vortex"
    },
    "voice-of-lavos-recapture": {
     "n": 1,
@@ -971,7 +976,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "voice-of-lavos"
    },
    "wind-scene-recapture": {
     "n": 1,
@@ -981,7 +987,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "wind-scene"
    },
    "world-revolution-recapture": {
     "n": 1,
@@ -991,7 +998,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "world-revolution"
    },
    "zeal-palace-recapture": {
     "n": 1,
@@ -1001,7 +1009,8 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
-    }
+    },
+    "rip": "zeal-palace"
    }
   },
   "chip": "spc",

@@ -484,7 +484,8 @@ export async function chipSource() { // {bytes, n, secs} for the current song, o
     console.log("[chip] fetching the console file from the archive…");
     try {
       if (own) { bytes = await vaultFetch(tr.vault); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
-      else if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
+      // tr.rip: a "(re-capture)" copy plays the rip of the song it was captured from (its own base names no archive file)
+      else if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, tr.rip || base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
       else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
     } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
       chip.fail = {key: S.songKey, why: "the console file didn't download (" + err.message + ")"};

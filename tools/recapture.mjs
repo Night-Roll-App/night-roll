@@ -119,6 +119,7 @@ export function vaultFilesOf(a) {
   const nsf = a.meta.nsf, files = [];
   if (PERFILE.has(a.chip)) {
     for (const [base, tr] of Object.entries(nsf.tracks)) {
+      if (tr && tr.rip) continue; // a "(re-capture)" copy plays its source song's file, fetched under that song
       const v = tr && tr.vault ? tr.vault : nsf.vault + base + EXT[a.chip];
       files.push({vault: v, name: base + EXT[a.chip], base, kind: a.chip});
     }
@@ -166,7 +167,7 @@ async function captureGeneric(a, fetched, outDir, log) {
   // the row for each album track: per-file sets by the file itself, one-file
   // kinds by slot inside the file the track names
   C.__want = tracks.map(({base, tr}) => {
-    const f = fetched.find(x => PERFILE.has(a.chip) ? x.base === base : (tr.vault ? x.vault === tr.vault : x.main));
+    const f = fetched.find(x => PERFILE.has(a.chip) ? x.base === (tr.rip || base) : (tr.vault ? x.vault === tr.vault : x.main));
     return {base, n: tr.n, fileName: f ? f.name : null, perFile: PERFILE.has(a.chip),
       len: !PERFILE.has(a.chip) && tr.secs && tr.secs <= 22 ? tr.secs : 0};
   });
@@ -372,7 +373,7 @@ export function applyAlbum(rep, id, log = console.log) {
     const tr = meta.nsf.tracks[s.base];
     if (s.action === "replace") meta.nsf.tracks[s.base] = {...(typeof tr === "number" ? {n: tr} : tr), cap};
     else {
-      meta.nsf.tracks[s.addBase] = {...(typeof tr === "number" ? {n: tr} : tr), cap};
+      meta.nsf.tracks[s.addBase] = {...(typeof tr === "number" ? {n: tr} : tr), cap, rip: s.base}; // a per-file rip is named by the source song, not the copy
       meta.songs = {...(meta.songs || {}), [s.addBase]: s.addTitle};
       if (s.newLoop) log(`  ${s.addBase}: its loop is ${s.newLoop} — add the loop annotation in the app (this tool never writes .rollnotes.json)`);
     }

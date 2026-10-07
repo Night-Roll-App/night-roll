@@ -122,7 +122,7 @@ async function measureAlbum(a, o) {
     const mid = path.join(songDir, base + ".mid");
     if (!tr || !existsSync(mid)) continue;
     const own = !!tr.vault, perFile = !own && (PERFILE.has(kind) || !!nsf.perFile);
-    const vault = own ? tr.vault : perFile ? nsf.vault + base + EXT[kind] : nsf.vault;
+    const vault = own ? tr.vault : perFile ? nsf.vault + (tr.rip || base) + EXT[kind] : nsf.vault; // tr.rip: a "(re-capture)" copy's source song
     const bytes = rips[vault];
     if (!bytes) { out.push({base, error: "rip not available"}); continue; }
     count++;
