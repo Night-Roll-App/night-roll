@@ -1,4 +1,5 @@
 import { canvas } from "../render/roll.js";
+import { tombstone } from "../model/edits.js";
 import { S } from "../state.js";
 import { pxPerTick } from "../render/roll.js";
 import { topRow } from "../render/roll.js";
@@ -728,6 +729,10 @@ export function endPointer(e) {
   }
   else if (S.drag.bandEdge && S.drag.moved) {
     const n = S.drag.bandEdge.n;
+    // a published band edited in place must be RETIRED, or the repo copy comes
+    // back on reload and the edit is dropped as its duplicate (same anchor and
+    // text — Josh, 2026-10-06, #489: chord C dragged out to bar 6 didn't stick)
+    if (!S.drag.bandEdge.orig.added) tombstone(S.drag.bandEdge.orig);
     n.added = true; // edited spans must persist and sync
     pushUndo({kind: "anno", json: S.drag.bandEdge.pre}); // edge drags undo like any edit now
     finalizeNotes();
@@ -1146,7 +1151,7 @@ export function initGestures1() {
         (Math.abs((n.start - tk) * ppt) < 10 || Math.abs((n.end - tk) * ppt) < 10));
       if (band) bandEdge = {n: band,
         side: Math.abs((band.end - tk) * ppt) <= Math.abs((band.start - tk) * ppt) ? "end" : "start",
-        s0: band.start, e0: band.end, pre: annoSnapshot()};
+        s0: band.start, e0: band.end, pre: annoSnapshot(), orig: {...band}}; // orig: the published identity to retire on commit
     }
     let rangeEdge = null; // grab the cycle highlight by an END and stretch it
     if (!lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge &&

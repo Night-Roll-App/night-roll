@@ -1072,3 +1072,18 @@ test("gesture: double-tap a text-note flag opens it in the editor; one tap just 
   assert.equal(app.run(`document.getElementById("noteeditor").classList.contains("on")`), true, "double-tap: the editor opens");
   assert.equal(app.run(`editingNote && editingNote.text`), "passing chord idea");
 });
+
+test("gesture: dragging a PUBLISHED chord band's end survives a reload — the repo copy is retired, not merged back over the edit (Josh, 2026-10-06, #489)", async () => {
+  const app = await boot("vm-gest-band-publ");
+  app.run(`view.pxq = 120; clampView(); playing = false; localStorage.removeItem(tombKey());
+    rollnotes = deriveNoteTypes([{b1: 1, q1: 1, b2: 2, q2: 4, text: "chord: C"}]).map(resolveNote); finalizeNotes(); draw();`); // no "added": as if it came from the published file
+  const bt = JSON.parse(app.run(`barTicks()`));
+  const pt = tk => JSON.parse(app.run(`JSON.stringify({x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: BASE_RULER_H + rollnotes.find(n => n.chord).lane * LANE_H + 4})`));
+  drag(app, pt(2 * bt - 2), pt(5 * bt)); // the end, out to the start of bar 6
+  const live = JSON.parse(app.run(`JSON.stringify((n => ({end: n.end, b2: n.b2, q2: n.q2}))(rollnotes.find(n => n.chord)))`));
+  assert.equal(live.end, 5 * bt, "live: ends at 6.1");
+  // a reload: the published file again, minus this device's tombstones, plus its local changes
+  const after = JSON.parse(app.run(`JSON.stringify(mergeLocalAdditions(subtractTombstones(deriveNoteTypes([{b1: 1, q1: 1, b2: 2, q2: 4, text: "chord: C"}]), songKey), songKey)
+    .filter(n => n.chord).map(n => [n.b1, n.q1, n.b2, n.q2]))`));
+  assert.deepEqual(after, [[1, 1, 5, 4]], "one chord C, through the end of bar 5 — the drag stuck");
+});
