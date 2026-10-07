@@ -4,6 +4,28 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-06 Ask (shop) — text notes can't be tapped/opened like chord annotations (Josh)
+Josh: "I can't actually click a text note, which is annoying — make it possible to click on text notes just like I can click chord annotations." On shop he replaced bars 14, 15, 18 (passing chords) with plain `note:` annotations and can't tap them to open/edit. Queued for the terminal; Ask session does not implement.
+
+## 2026-10-06 Ask (shop) — dragging the chord C span on bar 1 longer may not save (Josh, unverified)
+Josh: he has dragged the bar-1 `chord: C` span out to bar 6 several times and thinks it isn't saving. Live context at 21:02 shows it as [1.1-5.3] (through end of bar 5; bar 6 starts F/C). Unclear if it saved at 5.3 as intended or is snapping back/short. Could relate to the 'ends at' change (793be91) or the 16th-length work. Needs a drag → reload → compare check on a scratch copy, not his song.
+
+## 2026-10-06 Ask (shop) — stop reminding Josh about Publish (Josh)
+Josh, in his words: "You gotta stop telling me about publish. Ask the terminal to put that in the instructions or something into your instructions. I know that it's unpublished, I don't need you to remind me constantly."
+Ask: add a standing line to the Ask session's instructions (the app's own prompt / bridge system prompt): never mention Publish or "stays on your device until Publish" in replies; the tool result lines already say it. Only raise it if he asks or an action fails because of it.
+
+## 2026-10-06 Ask (shop) — song-level notes: general notes not tied to a bar (Josh)
+Josh, in his words: we only have annotations tied to bars or beats. We need a place to put general notes about a song. While studying shop he found a rule (the "sway": long/short note contrast, "long-short-long" sandwich = strongest) that applies in many places; right now it is repeated as a text note at every spot. He wants ONE general song note holding the rule, with a couple of example bars, instead of a note everywhere. Ideally more than one song note per song (a song may have several ideas, and he does not want them as paragraphs inside one note), but he could be convinced otherwise: maybe just one top-level note per song. Open design question for him: many song notes vs one.
+Also needed (his standing rule): an Ask action for it (add/edit/delete a song note), and it must round-trip in the .rollnotes like the other annotations.
+
+## 2026-10-06 Ask (shop) — song-level notes: let an advisor weigh in on many vs one (Josh)
+Josh, in his words: "You said ideally and maybe that's because I said ideally, but I was kind of trying to walk that back. I want an advisor to weigh in on if they think it would be better to put in many top-level notes, or just one with different paragraphs or something like that."
+So #494's choice (several notes per song) is not settled by him: he wants an advisor's independent view on many top-level song notes versus one song note with paragraphs, before it is final. His earlier words: a song may have more than one idea going on and he did not want them as paragraphs in one note, but he could be convinced otherwise. Relayed unsteered: the advisor decides from the design, not from Josh's lean.
+
+## 2026-10-06 Ask (shop) — song-level notes must show up in the annotation sheet and the Analysis sheet (Josh)
+Josh, in his words: "Also please tell him that this would have to be accounted for in the annotation sheet or the analysis sheet. Yeah, we have this analysis sheet now that kind of tracks things for the analysis."
+Ask (for #494): whichever many-vs-one answer wins, song notes must be accounted for in the annotation sheet and in the Analysis sheet, so he can see and reread them there. (The terminal's plan already lists them at the top of Notes and the Analysis sheet; this confirms that is wanted.)
+
 ## DONE 2026-10-05 — role "note" messages may break LM Studio/Ollama (fixed in the app: askBuildMessages sends notes as labelled user turns) (from the act batch 2–3 builder)
 Stored `role: "note"` messages (inbox notes, the ↪ handoff line from open_song)
 go to the model as role "note" because askBuildMessages copies the role. The
@@ -7607,3 +7629,15 @@ LOW-PRIORITY follow-up (queued, not built): pressing Play with the cursor past a
 ## 2026-10-05 — BUG: Back (to start) honors a disabled ruler selection (from Josh, via Ask on ambush) — QUEUED
 
 Josh: "If I have the ruler highlighted and then disabled, like I do right now on bars 25–27, and I hit the back button, it should ignore the ruler selection because it's disabled — it should go all the way back to the beginning of the song." Status log showed "range cleared" just before. Expected: Back with a disabled/cleared selection jumps to bar 1; only an active selection should make Back jump to its start. Add a regression test.
+
+## 2026-10-05 — Ruler selection can only be switched off, never removed (from Josh, via Ask on ambush) — QUEUED
+
+Josh: "I also have no way to completely get rid of the ruler selection." On the iPad the span can be toggled off (status "range cleared", "cycle re-armed" when re-enabled) but not deleted, so a dead span lingers and (see the Back-button item above) can still influence navigation. Wants a way to fully remove it. Related to the Back-button bug.
+
+## 2026-10-06 Ask: session-per-song question (Josh, from matoyas-cave)
+
+Josh asks, in his words: "ask the terminal if I get a brand new Claude session for every single song. Because that reduces context and reduces token usage so I would like a brand new session per song."
+
+Questions for the terminal:
+1. Today, does the bridge give each song its own Claude Code session (resumed on later turns), or does a song reuse/resume an older session? Ask itself could not tell: on matoyas-cave it saw no earlier turns of its own, only app-supplied history and terminal notes.
+2. If it is not strictly one fresh session per song, Josh wants it: a brand new session per song, to keep context small and tokens low. Please say what it does now and what it would take.
