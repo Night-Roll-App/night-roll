@@ -9776,12 +9776,12 @@ test("▶ waits for the song: a percentage while the console voice renders; a ta
   assert.equal(val(`playGate()`), null, "nothing loading: no gate, no flash");
   run(`chip.rendering = songKey; chip.progress = 0.42; playGateKick(); playGateSince -= 1000; playGateTick();`);
   assert.equal(val(`document.getElementById("playbtn").classList.contains("loading")`), true);
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "42%");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "44%", "the render's 42% is 10% + 0.8 × 42% on the one load count (#203)");
   run(`globalThis.__played = 0; globalThis.__realPlay = play; play = async () => { __played++; }; document.getElementById("playbtn").dispatchEvent({type: "click"});`);
   assert.equal(val(`__played`), 0, "a tap while loading doesn't play yet…");
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "42% · will play", "…it queues");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "44% · will play", "…it queues");
   run(`document.getElementById("playbtn").dispatchEvent({type: "click"});`);
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "42%", "a second tap cancels");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "44%", "a second tap cancels");
   run(`document.getElementById("playbtn").dispatchEvent({type: "click"}); chip.rendering = null; playGateTick();`);
   assert.equal(val(`__played`), 1, "loaded: the queued play starts by itself");
   assert.equal(val(`document.getElementById("playbtn").textContent`), "Play");
@@ -14834,4 +14834,16 @@ test("glide playback: a soundfont sample carries on re-pitched by playbackRate; 
   assert.ok(!env.some(c => c[0] === "lin" && c[1] === 0 && c[2] <= 0.5), "no release at the head's end");
   assert.ok(env.some(c => c[0] === "hold" && c[2] === 0.5), "…the continuation holds the envelope where it is (its 10 ms tail is cancelled)");
   ctlSpyOff();
+});
+
+test("play gate (Josh #203): one loading count that never goes backwards — file 5%, console render 10–90%, instruments 90–100%", () => {
+  installSong();
+  run(`songKey = "albums/snes/x/y.mid"; songLoading = false; chip.resolving = {key: songKey}; chip.rendering = null;`);
+  const a = val(`playGate().pct`);
+  run(`chip.resolving = null; chip.rendering = songKey; chip.progress = 0;`);
+  const b = val(`playGate().pct`);
+  run(`chip.progress = 1;`);
+  const c = val(`playGate().pct`);
+  assert.ok(a < b && b < c && c <= 0.9 + 1e-9, [a, b, c].join(" "));
+  run(`chip.rendering = null; chip.progress = 0;`);
 });

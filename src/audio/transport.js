@@ -157,9 +157,12 @@ export function gatePending(tok) { // a promise's state, synchronously, from the
 }
 export function playGate() {
   if (!S.song || !S.songKey) return null;
+  // one count for the whole load, never backwards (Josh #203: Terra read 0%,
+  // 100%, then 0% again as each phase restarted its own count): the file is
+  // 0–10%, the console render 10–90%, instruments 90–100%
   if (S.songLoading) return {pct: 0, what: "the song"};
-  if (chip.rendering === S.songKey) return {pct: chip.progress || 0, what: "the console's voice"};
-  if (chip.resolving && chip.resolving.key === S.songKey) return {pct: 0, what: "the console file"};
+  if (chip.rendering === S.songKey) return {pct: 0.1 + 0.8 * Math.min(1, Math.max(0, chip.progress || 0)), what: "the console's voice"};
+  if (chip.resolving && chip.resolving.key === S.songKey) return {pct: 0.05, what: "the console file"};
   let total = 0, waiting = 0;
   try {
     for (const {voice} of [...gameVoicesInSong(), ...sf2VoicesInSong()]) { total++; if (gatePending(gamePreloadTokens.get(voice))) waiting++; }
@@ -171,7 +174,7 @@ export function playGate() {
     });
     forEachClip(c => { total++; const e = audioBufCache.get(audioCacheKey(c.file)); if (e && e.status === "decoding") waiting++; });
   } catch (err) { return null; } // a half-built song: never block ▶ on our own bookkeeping
-  return waiting ? {pct: (total - waiting) / total, what: "instruments"} : null;
+  return waiting ? {pct: 0.9 + 0.1 * (total - waiting) / total, what: "instruments"} : null;
 }
 export async function playGateWait(capMs) { // album advance: the same gate, awaited
   playGateKick();
