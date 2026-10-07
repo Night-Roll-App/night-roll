@@ -1,3 +1,6 @@
+import { play } from "../audio/transport.js";
+import { playSec } from "../audio/transport.js";
+import { setHearMidi } from "../audio/chip.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
@@ -1270,7 +1273,7 @@ export async function askSongFile(a) {
 // — Ask must never switch Josh into Normal; that switch is what keeps
 // answers his); the check runs before the whitelist lookup so a model that
 // guesses a learning-flavored name gets the real reason, not a generic one.
-const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size"];
+const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound"];
 export function askSetPref(a) {
   a = a || {};
   const name = String(a.name || "").trim().toLowerCase();
@@ -1296,6 +1299,13 @@ export function askSetPref(a) {
     document.getElementById("cfgdebuglog").checked = askActTruthy(value);
     settingsPersist("cfgdebuglog"); // the Settings sheet's own dispatcher — reads the checkbox it just set
     return {ok: true, note: "debug log " + (askActTruthy(value) ? "on" : "off")};
+  }
+  if (name === "sound") { // the View ▾ → Mode "Hear the MIDI" switch (Josh #163): chip = the console voice, midi = the .mid on synth voices
+    const v = String(value).trim().toLowerCase();
+    if (!["chip", "midi"].includes(v)) throw new Error("sound must be chip or midi");
+    setHearMidi(v === "midi");
+    if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}); }
+    return {ok: true, note: v === "midi" ? "hearing the MIDI — every track on synth voices" : "hearing the console voice where the song has one"};
   }
   if (name === "chip_stream") {
     const v = String(value).trim().toLowerCase();

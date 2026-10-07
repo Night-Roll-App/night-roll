@@ -62,6 +62,7 @@ export const CONTROLS = {
   vwAnnotate: {icon: "autoAwesome", cls: "", label: "Annotate this song…", prefix: "   "}, // ✦ AI estimates, Normal only (src/ask/annotate.js)
   vwLearning: {glyph: "🎓", cls: "", label: "  Learning mode", prefix: "   "},
   vwListener: {icon: "radio", cls: "", label: "Listener mode", prefix: "   "},
+  vwHearMidi: {glyph: "🎹", cls: "", label: "  Hear the MIDI (synth voices)", prefix: "   "},
   vwGrid: {icon: "gridOn", cls: "", label: "  Grid…", prefix: "   "},
   // the on-screen keyboard's bar (2026-10-04): only the lock swaps its glyph
   // (🔓 → 🔒), the rest are registered so their wording lives here too

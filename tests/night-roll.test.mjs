@@ -2808,7 +2808,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
-    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 "ends at bar/beat", // #154 "more than two bars opens as a Section", // #160 "Double-tap a flag to open it", // #487 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
+    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 "ends at bar/beat", // #154 "more than two bars opens as a Section", // #160 "Hear the MIDI", // #163 "Double-tap a flag to open it", // #487 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
@@ -13789,4 +13789,19 @@ test("+ Note on a ruler selection: more than two bars opens as a Section even wh
   run(`rangeSel = {a: 0, b: ${2 * bt + 1}, cycle: true}; openEditor(null);`);
   assert.equal(val(`editorType()`), "section", "a hair over two bars: a section");
   run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null; localStorage.removeItem("ff1roll-dragtype");`);
+});
+
+test("Hear the MIDI: a device-local switch makes chipActive() false for every song, so playback uses the synth voices; off by default; the View item and Ask's set_pref sound flip it (Josh, 2026-10-06, #163)", () => {
+  installSong();
+  run(`localStorage.removeItem("ff1roll-hear-midi"); hearMidi.v = undefined;`);
+  assert.equal(val(`hearMidi()`), false, "off by default");
+  run(`chip.key = songKey; chip.pcm = {pulse1: new Float32Array(1)};`);
+  assert.equal(val(`chipActive()`), true);
+  run(`setHearMidi(true);`);
+  assert.equal(val(`chipActive()`), false, "MIDI: the console voice stands down");
+  assert.equal(val(`localStorage.getItem("ff1roll-hear-midi")`), "1");
+  run(`askSetPref({name: "sound", value: "chip"});`);
+  assert.equal(val(`chipActive()`), true, "Ask flips it back");
+  assert.throws(() => run(`askSetPref({name: "sound", value: "loud"})`), /sound must be chip or midi/);
+  run(`chip.pcm = null; chip.key = null; localStorage.removeItem("ff1roll-hear-midi"); hearMidi.v = undefined;`);
 });

@@ -285,7 +285,19 @@ export async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq) {
   chipPreviewCache.set(finalKey, {ctx: S.audio, buf});
   return buf;
 }
-export function chipActive() { return chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream); }
+// "Hear the MIDI" (Josh, 2026-10-06, #163): a device-local listening switch —
+// the console voice stands down and every track plays the .mid on synth
+// voices, so he hears exactly what the file holds. A function with its own
+// cache, not a top-level let (module rules).
+export function hearMidi() {
+  if (hearMidi.v === undefined) { try { hearMidi.v = localStorage.getItem("ff1roll-hear-midi") === "1"; } catch (err) { hearMidi.v = false; } }
+  return hearMidi.v;
+}
+export function setHearMidi(on) {
+  hearMidi.v = !!on;
+  try { localStorage.setItem("ff1roll-hear-midi", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+}
+export function chipActive() { return !hearMidi() && chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream); }
 export function chipHas(name) { // this track name has console audio
   if (chip.stream) return chip.stream.tracks.includes(name) && !chip.stream.silent.has(name); // stream mode (step 3): listed and not reported silent by the idle sweep
   return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name]));

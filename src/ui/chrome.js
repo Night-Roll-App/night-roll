@@ -10,6 +10,8 @@ import { appDebug } from "../model/jobs.js";
 import { debugLogOn } from "../model/jobs.js";
 import { appMode } from "../platform/mode.js";
 import { chip } from "../audio/chip.js";
+import { hearMidi } from "../audio/chip.js";
+import { setHearMidi } from "../audio/chip.js";
 import { setDocTitle } from "../platform/base.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { folderTitle } from "../model/catalog.js";
@@ -541,6 +543,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwRoll: {icon: "gridView", text: "Roll"},
     vwScore: {glyph: "𝄞", text: "Score view"},
     vwListener: {icon: "radio", text: "Listener mode"},
+    vwHearMidi: {glyph: "🎹", text: "Hear the MIDI (synth voices)"},
     vwTracksView: {icon: "tableRows", text: "Tracks view"},
     vwMixer: {icon: "tune", text: "Mixer"},
     vwStudy: {icon: "list", text: "Analysis sheet"},
@@ -606,6 +609,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   if (analysisAvailable()) set("vwAnnotate", false);
   set("vwLearning", appMode() === "learning");
   set("vwListener", S.listenerMode);
+  set("vwHearMidi", hearMidi());
   set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));
   set("vwEdit", !S.editrowHidden, !S.editOn); // dimmed (not disabled) in read-only: the pref still flips
   set("vwFooter", !S.footerHidden);
@@ -1974,6 +1978,12 @@ export function initChrome11() {
     // (the "on" wrapper) so the ▸/▾ + current-view label stay in sync.
     on("vwRoll", () => setViewMode("roll"));
     on("vwScore", () => setViewMode("score"));
+    on("vwHearMidi", () => { // flip what you hear; a playing song picks up from the same spot
+      setHearMidi(!hearMidi());
+      setInfo(hearMidi() ? "hearing the MIDI — every track on synth voices" : "hearing the console voice where the song has one");
+      if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}); }
+      renderViewMenu();
+    });
     on("vwListener", () => {
       S.listenerMode = !S.listenerMode;
       localStorage.setItem("ff1roll-listener", S.listenerMode ? "1" : "0");
