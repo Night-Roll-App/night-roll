@@ -48,332 +48,596 @@
    "athletic-hurry-yoshi": {
     "n": 1,
     "secs": 65,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic-hurry": {
     "n": 1,
     "secs": 65,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic-yoshi": {
     "n": 1,
     "secs": 75,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic": {
     "n": 1,
     "secs": 75,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-game-clear": {
     "n": 1,
     "secs": 12,
-    "track": 42
+    "track": 42,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-game-hurry": {
     "n": 1,
     "secs": 56,
-    "track": 41
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-game": {
     "n": 1,
     "secs": 64,
-    "track": 40
+    "track": 40,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boss-battle-hurry": {
     "n": 1,
     "secs": 80,
-    "track": 44
+    "track": 44,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boss-battle": {
     "n": 1,
     "secs": 96,
-    "track": 43
+    "track": 43,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-defeated": {
     "n": 1,
     "secs": 12,
-    "track": 60
+    "track": 60,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-s-castle-emerges": {
     "n": 1,
     "secs": 12,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-s-last-attack-faster": {
     "n": 1,
     "secs": 70,
-    "track": 56
+    "track": 56,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-s-last-attack": {
     "n": 1,
     "secs": 75,
-    "track": 55
+    "track": 55,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-zoom-out": {
     "n": 1,
     "secs": 12,
-    "track": 58
+    "track": 58,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-zoom": {
     "n": 1,
     "secs": 12,
-    "track": 57
+    "track": 57,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cast-list-looped": {
     "n": 1,
     "secs": 102,
-    "track": 65
+    "track": 65,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cast-list": {
     "n": 1,
     "secs": 140,
-    "track": 64
+    "track": 64,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "course-clear": {
     "n": 1,
     "secs": 12,
-    "track": 47
+    "track": 47,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "egg-is-rescued": {
     "n": 1,
     "secs": 12,
-    "track": 45
+    "track": 45,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fade-out": {
     "n": 1,
     "secs": 12,
-    "track": 48
+    "track": 48,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "forest-of-illusion": {
     "n": 1,
     "secs": 31,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fortress-clear": {
     "n": 1,
     "secs": 12,
-    "track": 50
+    "track": 50,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fortress-hurry": {
     "n": 1,
     "secs": 114,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fortress": {
     "n": 1,
     "secs": 161,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "game-over": {
     "n": 1,
     "secs": 12,
-    "track": 52
+    "track": 52,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "haunted-house-hurry": {
     "n": 1,
     "secs": 109,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "haunted-house": {
     "n": 1,
     "secs": 166,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "invincible-cave-hurry": {
     "n": 1,
     "secs": 12,
-    "track": 39
+    "track": 39,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "invincible-cave": {
     "n": 1,
     "secs": 12,
-    "track": 37
+    "track": 37,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "invincible-hurry": {
     "n": 1,
     "secs": 12,
-    "track": 38
+    "track": 38,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "invincible": {
     "n": 1,
     "secs": 12,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "nintendo-logo": {
     "n": 1,
     "secs": 12,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld-hurry-yoshi": {
     "n": 1,
     "secs": 69,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld-hurry": {
     "n": 1,
     "secs": 69,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld-yoshi": {
     "n": 1,
     "secs": 81,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld": {
     "n": 1,
     "secs": 81,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "p-switch-cave-hurry": {
     "n": 1,
     "secs": 11.97,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "p-switch-cave": {
     "n": 1,
     "secs": 13,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "p-switch-hurry": {
     "n": 1,
     "secs": 12,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "p-switch": {
     "n": 1,
     "secs": 13,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "peach-s-item": {
     "n": 1,
     "secs": 12,
-    "track": 59
+    "track": 59,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "player-down": {
     "n": 1,
     "secs": 12,
-    "track": 51
+    "track": 51,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "princess-peach-is-rescued": {
     "n": 1,
     "secs": 18,
-    "track": 61
+    "track": 61,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "secret-exit": {
     "n": 1,
     "secs": 12,
-    "track": 49
+    "track": 49,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "special-world": {
     "n": 1,
     "secs": 29,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "staff-roll": {
     "n": 1,
     "secs": 96,
-    "track": 62
+    "track": 62,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "star-road": {
     "n": 1,
     "secs": 23,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "super-mario-bros-remix": {
     "n": 1,
     "secs": 172,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "swimming-hurry-yoshi": {
     "n": 1,
     "secs": 80,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "swimming-hurry": {
     "n": 1,
     "secs": 80,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "swimming-yoshi": {
     "n": 1,
     "secs": 96,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "swimming": {
     "n": 1,
     "secs": 96,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-evil-king-bowser-intro": {
     "n": 1,
     "secs": 12,
-    "track": 54
+    "track": 54,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-evil-king-bowser": {
     "n": 1,
     "secs": 93,
-    "track": 53
+    "track": 53,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-yoshis-are-home": {
     "n": 1,
     "secs": 15,
-    "track": 63
+    "track": 63,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "title": {
     "n": 1,
     "secs": 81,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground-hurry": {
     "n": 1,
     "secs": 65,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground-yoshi-hurry": {
     "n": 1,
     "secs": 65,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground-yoshi": {
     "n": 1,
     "secs": 83,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground": {
     "n": 1,
     "secs": 83,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "valley-of-bowser": {
     "n": 1,
     "secs": 20,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "vanilla-dome": {
     "n": 1,
     "secs": 39,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "wandering-the-plains": {
     "n": 1,
     "secs": 28,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "world-clear": {
     "n": 1,
     "secs": 14,
-    "track": 46
+    "track": 46,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "yoshi-s-island": {
     "n": 1,
     "secs": 21,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "yoshi": {
     "n": 1,
     "secs": 12,
-    "track": 66
+    "track": 66,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
