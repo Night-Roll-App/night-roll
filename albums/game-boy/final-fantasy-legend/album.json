@@ -5,26 +5,44 @@
   "eat-the-meat": "Eat the Meat",
   "hurry-up": "Hurry Up!",
   "jingle-01": "Jingle #01",
-  "knights-of-the-demon-world-tower": "Knights of the Demon World Tower"
+  "knights-of-the-demon-world-tower": "Knights of the Demon World Tower",
+  "fierce-battle-recapture": "Fierce Battle (re-capture)",
+  "furious-battle-recapture": "Furious Battle (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/final-fantasy-legend.gbs",
   "tracks": {
    "demon-cave": {
     "n": 5,
-    "secs": 48.68778991699219
+    "secs": 48.68778991699219,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "eat-the-meat": {
     "n": 13,
-    "secs": 16.374366760253906
+    "secs": 16.374366760253906,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue": {
     "n": 4,
-    "secs": 299.9790687561035
+    "secs": 299.9790687561035,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare": {
     "n": 15,
-    "secs": 11.987777709960938
+    "secs": 11.987777709960938,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fierce-battle": {
     "n": 7,
@@ -32,11 +50,19 @@
    },
    "fight": {
     "n": 9,
-    "secs": 35.762420654296875
+    "secs": 35.762420654296875,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "forbidden-tower": {
     "n": 11,
-    "secs": 36.33167266845703
+    "secs": 36.33167266845703,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "furious-battle": {
     "n": 6,
@@ -44,39 +70,91 @@
    },
    "hurry-up": {
     "n": 3,
-    "secs": 34.18860626220703
+    "secs": 34.18860626220703,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "jingle-01": {
     "n": 16,
-    "secs": 13.980159759521484
+    "secs": 13.980159759521484,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "knights-of-the-demon-world-tower": {
     "n": 12,
-    "secs": 37.202293395996094
+    "secs": 37.202293395996094,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "main-theme": {
     "n": 2,
-    "secs": 44.01657485961914
+    "secs": 44.01657485961914,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "prologue": {
     "n": 1,
-    "secs": 64.22502136230469
+    "secs": 64.22502136230469,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "requiem": {
     "n": 14,
-    "secs": 27.49152374267578
+    "secs": 27.49152374267578,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-highest-floor": {
     "n": 17,
-    "secs": 22.66962432861328
+    "secs": 22.66962432861328,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "town-theme": {
     "n": 8,
-    "secs": 47.43208694458008
+    "secs": 47.43208694458008,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "wipe-your-tears-away": {
     "n": 10,
-    "secs": 67.2721939086914
+    "secs": 67.2721939086914,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "fierce-battle-recapture": {
+    "n": 7,
+    "secs": 43.02875518798828,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "furious-battle-recapture": {
+    "n": 6,
+    "secs": 52.371185302734375,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"

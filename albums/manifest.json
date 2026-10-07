@@ -5580,6 +5580,10 @@
     "path": "albums/game-boy/final-fantasy-legend/fierce-battle.mid"
    },
    {
+    "title": "Fierce Battle (re-capture)",
+    "path": "albums/game-boy/final-fantasy-legend/fierce-battle-recapture.mid"
+   },
+   {
     "title": "Fight",
     "path": "albums/game-boy/final-fantasy-legend/fight.mid"
    },
@@ -5590,6 +5594,10 @@
    {
     "title": "Furious Battle",
     "path": "albums/game-boy/final-fantasy-legend/furious-battle.mid"
+   },
+   {
+    "title": "Furious Battle (re-capture)",
+    "path": "albums/game-boy/final-fantasy-legend/furious-battle-recapture.mid"
    },
    {
     "title": "Hurry Up!",
