@@ -135,7 +135,8 @@
     flex-shrink: 0;
   }
   #trackzone { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-start; }
-  #tracktoggle { margin: 8px 0 0 8px; min-height: 36px; padding: 4px 8px; flex: none; }
+  /* the ◂ hide arrow is retired (Josh #193): hiding the whole track row is View ▾ → Panels → Tracks; the button stays in the DOM because that menu item drives it */
+  #tracktoggle { display: none; }
   #trackslide {
     display: flex;
     align-items: flex-start;
@@ -147,6 +148,7 @@
     transition: max-width 0.22s ease, opacity 0.22s ease;
   }
   #trackslide.off { max-width: 0; opacity: 0; flex: none; }
+  #trackrow.stacked #trackzone:has(#trackslide.off) { display: none; } /* hidden from View ▾ → Tracks: no empty 52px strip left behind (Josh #193) */
   #trackmore { margin: 8px 4px 0 0; min-height: 36px; padding: 4px 9px; flex: none; }
   #transport { display: flex; align-items: center; gap: 8px; flex: none; margin-top: 6px; }
   /* chips that don't fit beside the transport get the whole row below it
@@ -155,8 +157,14 @@
   /* stacked: transport + time controls share the top row (right-aligned, as
      one group — moving only #transport left #timectl stranded under the
      chips, Josh 2026-10-03), the chips get the whole row below */
+  /* stacked: the top row is only transport + time controls — centered (Josh
+     #194/#195: right-justified only made sense with chips beside them); the
+     chips get the full width below, ▾ pinned at the right end (#193) */
   #trackrow.stacked #transport { margin-left: auto; }
+  #trackrow.stacked #timectl { margin-right: auto; }
   #trackrow.stacked #trackzone { order: 1; flex: 1 1 100%; }
+  #trackrow.stacked #trackslide { flex: 1 1 auto; }
+  #trackrow.stacked #trackbar { flex: 1 1 auto; }
   #albumstrip { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(91,120,232,.14);
     border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); font: 12px var(--mono); color: var(--text); }
   #albumtext { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
