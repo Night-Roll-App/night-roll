@@ -208,7 +208,9 @@ export function captureDiff(oldSmf, newSmf, opts = {}) {
   if (verdict === "ADDED-TRACK") reasons.push(addedTracks.length + " track(s) appended: " + addedTracks.map(t => "tr" + t.track + " " + t.name + " (" + t.notes + " notes)").join(", "));
   reasons.push(...moved, ...soft);
   if (verdict === "ADDED-TRACK" && firstBar === null) firstBar = barOf(newSmf, Math.min(...addedTracks.map(t => newSmf.tracks[t.track - 1].notes[0].t)));
-  return {verdict, reasons, firstBar, bars: {old: barCount(oldSmf), new: barCount(newSmf)}, tracks, gained, lost};
+  // loopOnly: every note, track, tempo and meter matches — only the loop point differs
+  const loopOnly = moved.length > 0 && moved.every(m => m.startsWith("loop point"));
+  return {verdict, reasons, loopOnly, firstBar, bars: {old: barCount(oldSmf), new: barCount(newSmf)}, tracks, gained, lost};
 }
 
 export function diffFiles(oldPath, newPath, opts = {}) {

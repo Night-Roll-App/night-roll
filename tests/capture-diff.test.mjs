@@ -107,6 +107,8 @@ test("capture-diff: MOVED — the loop point, when either side states one", () =
   assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: "14.3>2.3"}).verdict, "SAME");
   assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: "14.4>2.4"}).verdict, "MOVED");
   assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: null}).verdict, "MOVED");
+  assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: "14.4>2.4"}).loopOnly, true, "notes identical: only the loop moved");
+  assert.equal(diff(base(), {...base(), ts: [{tick: 0, num: 3, den: 4}]}, {oldLoop: "14.3>2.3", newLoop: "14.4>2.4"}).loopOnly, false, "a meter change moves bars too");
 });
 
 test("capture-diff: bars follow the old file's meter, through a meter change", () => {
@@ -131,6 +133,8 @@ test("recapture: planned action per verdict and annotations", () => {
   assert.equal(planAction("MOVED", 0, "4.1>2.1", "4.2>2.2"), "hold-loop-changed");
   assert.equal(planAction("MOVED", 3, null, null), "keep-old+add-new");
   assert.equal(planAction(null, 0, null, null), "none");
+  assert.equal(planAction("MOVED", 18, "17.1>1.1", "17.2>1.2", true), "replace", "loop point alone moved: the notes are identical, the song keeps its own loop annotation — no second song");
+  assert.equal(planAction("MOVED", 0, "61.1>1.1", null, true), "replace");
 });
 
 test("recapture: annotations exclude the capture's own loop line", () => {
