@@ -231,3 +231,35 @@ That moves everything about the F into the F's own note and leaves Turn describi
 **AI (claude-code-sonnet):** Both edits are in. The F chord in bar 14 now carries your original line, then "Neapolitan from Phrygian. Goes to Dsus4, not the dominant. Melody rises F G A." The Turn section over bars 15 and 16 now says "No B in bars 15 and 16. Melody holds G, then F#, stepping down into E at bar 1. Tension fades by step instead of releasing."
 
 Both changes are on this device only until you Publish.
+
+### 2026-10-05 00:36 · bars 7–16 (in view)
+
+**Josh:** Can you publish it
+
+**AI (claude-code-sonnet):** Published. Your annotations for chaos-temple went to GitHub, and Pages should serve them in about a minute. Only the annotations were sent. The song file is a locked capture, so it wasn't changed.
+
+### 2026-10-05 00:42 · bars 1–16 (in view)
+
+**Josh:** What's in a typical analysis of a song and what things am I missing from that I need to improve my analysis skills and to do that I need to know these things I need to know what. A professional analyst. Would put into an analysis
+
+**AI (claude-code-sonnet):** A professional analysis usually layers several views of the same piece. Here's the full set, with the parts I think you're not yet doing.
+
+Form comes first: sections, how many bars each phrase runs, and how phrases pair up. That might be a question and answer, or a statement and its repeat with a changed ending. You're already doing sections, and phrase lengths and pairings are the next step.
+
+The harmony comes next. Chord names are the surface. An analyst also writes Roman numerals, so each chord is labelled by its job in the key, not its name. They mark cadences, the places where a phrase comes to rest or stops, and they say what kind each is. They also trace the bass line as its own melody, which you already do. Tracking where tension builds and where it releases ties this all together, and your turn reading was exactly that.
+
+The melody gets its own pass. That means the scale degrees it lands on, its shape (rising, falling, leaping, stepping), and the short motifs that return changed. Analysts also write down the texture: which voice carries the tune, which one outlines the harmony, and which one holds the bass. They add rhythm, and in a game score they often add what the music is doing in the scene.
+
+Last comes a short summary in plain words of what the piece does and why it works. Analysts also compare it with other pieces by the same composer.
+
+From what's in your annotations, I'd say Roman numerals, cadence labels and motif tracking are your biggest gaps. Want to pick one and try it on a few bars of this song, with me only hinting?
+
+### 2026-10-05 00:47 · bars 1–9 (in view)
+
+**Josh:** I would like a fable advisor to. Consider adding something like an analysis sheet for every song. I don't know where it would be accessed from. Or. Well much of anything else really what would be on it etc. but it would probably have some sort of checklist like all the things you mentioned there or different sections where I could fill out all that stuff. I mean we already have we have the annotations right. Maybe you could reference those somehow because those are nice where they are but. Having some centralized place where I can have all the analysis would be nice. And that would be again per song. So every song would have its own analysis sheet. Or something like that this is my idea to fable it is. Expected that I would that it would. Critique my idea and. If it has better ideas as to what we could do then that's fine. But if you agrees with it then those notes that you just gave me about what comes in an analysis should be available on the sheet or maybe you want to. I don't know beef them up or you know it provide more detail about each section of the analysis or whatever I don't know but. I'm certainly not gonna remember everything you just said so I want to be able to refer back to it
+
+**AI (claude-code-sonnet):** I've passed your idea to the terminal. I wrote it into open-items.md in your words, along with the full list of what an analysis covers, so nothing I said gets lost. I also sent a note through the bridge.
+
+The terminal is where the Fable advisor runs. It will critique the idea, say where the sheet should live, and say how it should link to your annotations. Its notes will show up here and in the app. The sheet is meant to hold prompts and structure only, with no answers filled in for you.
+
+**Mac (ask):** Ask: Josh wants a Fable advisor on a per-song analysis sheet (checklist of what a pro analysis covers, links to his annotations, reference notes on each section). Full request + the reference content in open-items.md (2026-10-05, 'Per-song analysis sheet').
