@@ -364,7 +364,9 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
              : presetType ? presetType // a group's + button pre-picks its type
              // a drag before + Note means "label this span" — as whichever of
              // section/chord was dragged last (chord runs stay in chord mode)
-             : S.rangeSel ? (localStorage.getItem("ff1roll-dragtype") || "section")
+             // more than two bars is a section, not a chord (Josh, 2026-10-06, #160:
+             // 22 bars opened as a chord); shorter spans keep the last-dragged type
+             : S.rangeSel ? (S.rangeSel.b - S.rangeSel.a > 2 * barTicks() ? "section" : (localStorage.getItem("ff1roll-dragtype") || "section"))
              : "note";
   document.getElementById("ntype").value = type;
   if (S.ntypeGuess) clearTimeout(S.ntypeGuess.timer);
