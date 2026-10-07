@@ -46,7 +46,11 @@
     "n": 1,
     "secs": 126.66768,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "another-arni-village": {
     "n": 1,
@@ -76,19 +80,31 @@
     "n": 1,
     "secs": 1349.771596,
     "track": 66,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cave-ambience-2": {
     "n": 1,
     "secs": 2314.037024,
     "track": 68,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cave-ambience": {
     "n": 1,
     "secs": 3769.424893166667,
     "track": 67,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chrono-main-theme": {
     "n": 1,
@@ -118,7 +134,11 @@
     "n": 1,
     "secs": 97.91891385416666,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "death-volcano": {
     "n": 1,
@@ -130,7 +150,11 @@
     "n": 1,
     "secs": 85.556625,
     "track": 60,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dragon-s-prayer": {
     "n": 1,
@@ -190,7 +214,11 @@
     "n": 1,
     "secs": 94.090332,
     "track": 52,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "frozen-flame": {
     "n": 1,
@@ -208,13 +236,21 @@
     "n": 1,
     "secs": 93.02046945833332,
     "track": 42,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "garden-of-the-gods": {
     "n": 1,
     "secs": 81.84365154166666,
     "track": 50,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "he-sang-of-feeling": {
     "n": 1,
@@ -226,7 +262,11 @@
     "n": 1,
     "secs": 113.848556,
     "track": 28,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "home-marbule": {
     "n": 1,
@@ -262,7 +302,11 @@
     "n": 1,
     "secs": 2314.037024,
     "track": 61,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "isle-of-the-damned": {
     "n": 1,
@@ -418,19 +462,31 @@
     "n": 1,
     "secs": 22.540772958333335,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "victory-summer-s-cry": {
     "n": 1,
     "secs": 21.992269708333332,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "viper-manor": {
     "n": 1,
     "secs": 84.20944,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "voyage-another-world": {
     "n": 1,
