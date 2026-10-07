@@ -8,6 +8,7 @@ import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { askBarsCount } from "../ask/tools.js";
 import { beatTicks } from "../model/grid.js";
+import { posText } from "../model/grid.js";
 import { pitchName } from "../theory/chords.js";
 import { sfAt } from "../model/song.js";
 import { renderMeasure } from "../render/score.js";
@@ -166,21 +167,11 @@ export function armNoteEdit(pe) { // a grab became real: NOW selection may chang
   }
 }
 
-export function beatLabel(beat) {
-  const base = Math.floor(beat + 0.03);
-  const frac = beat - base;
-  const SYL = [[0, ""], [0.25, "e"], [0.5, "&"], [0.75, "a"]];
-  for (const [f, s] of SYL) if (Math.abs(frac - f) < 0.06) return base + s;
-  return beat.toFixed(2);
-}
 export function noteLabel(ti, ni) {
   const n = S.song.tracks[ti].notes[ni];
-  const bt = barTicks();
-  const bar = Math.floor(n.t / bt) + 1;
-  const beat = (n.t % bt) / beatTicks() + 1;
   const name = pitchName(n.p, sfAt(n.t));
   const tname = S.song.tracks[ti].name || "tr" + (ti+1);
-  return name + " · bar " + bar + " beat " + beatLabel(beat) + " · " +
+  return name + " · " + posText(n.t) + " · " +
          (n.d / S.song.ppq).toFixed(2) + "q · vel " + n.v + " · " + tname + (n.added ? " · added" : "");
 }
 

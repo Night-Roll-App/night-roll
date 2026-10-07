@@ -96,3 +96,36 @@ export function trackIsDrums(ti) {
 }
 
 export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
+// Position words — one formatter for every readout (LCD, note status line,
+// clip/Drummer/Bassist messages, annotation list), option B of
+// docs/plans/2026-10-07-cursor-position-readout.md: bar, the counted beat
+// ("2" "2e" "2&" "2a") and, only off that 16th grid, "+NN%" of the way into
+// the 16th. Beat = beatTicks() (the meter's denominator), so 6/8's & is a 16th.
+// Display only: stored anchors and file formats never change.
+export const POS_SYL = ["", "e", "&", "a"];
+export function posCount(u, perBar) { // u = 16ths since the song start; perBar = 16ths per bar
+  let n = Math.floor(u + 1e-9), pct = Math.round((u - n) * 100);
+  if (pct >= 100) { n++; pct = 0; }
+  const k = n % perBar;
+  return {bar: Math.floor(n / perBar) + 1, beat: Math.floor(k / 4) + 1, syl: POS_SYL[k % 4], pct};
+}
+export function posParts(t) {
+  // per-file ppq: a 16th may be a fractional tick count; a captured note one
+  // tick off the grid still reads on it (never "1a +99%")
+  const sx = beatTicks() / 4, tol = Math.min(1, sx / 8);
+  let u = Math.max(0, Math.round(t)) / sx;
+  const near = Math.round(u);
+  if (Math.abs(u - near) * sx <= tol + 1e-9) u = near;
+  return posCount(u, 4 * effTs()[0]);
+}
+export function posAnchor(b, q) { return posCount(Math.max(0, (b - 1) * 4 * effTs()[0] + ((q || 1) - 1) * 4), 4 * effTs()[0]); }
+export function posBeatWord(p) { return p.beat + p.syl + (p.pct ? " +" + p.pct + "%" : ""); }
+export function posText(t) { const p = posParts(t); return "bar " + p.bar + " beat " + posBeatWord(p); }
+export function posShort(p) { return "bar " + p.bar + (p.beat === 1 && !p.syl && !p.pct ? "" : " beat " + posBeatWord(p)); }
+export function posAnchorText(n) { // an annotation's b1/q1(–b2/q2) — q2 is the inclusive end beat, absent = the whole bar
+  const head = posShort(posAnchor(n.b1, n.q1));
+  if (!n.b2) return head;
+  if (n.q2 === null || n.q2 === undefined) return head + "–" + n.b2;
+  const e = posAnchor(n.b2, n.q2);
+  return head + "–" + e.bar + " beat " + posBeatWord(e);
+}

@@ -25,7 +25,7 @@ import { bakesTempo } from "../model/provenance.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { computeSongEnd } from "../model/song.js";
 import { SF_MAJOR } from "../theory/chords.js";
-import { beatsPerBarDisp } from "../model/grid.js";
+import { posAnchorText } from "../model/grid.js";
 import { keyLabelState } from "./chrome.js";
 import { secDepthCap } from "../model/grid.js";
 import { TRACK_COLORS } from "../render/roll.js";
@@ -462,8 +462,7 @@ export function renderNoteList() {
       row.setAttribute("role", "button");
       const where = document.createElement("span");
       where.className = "where";
-      where.textContent = (n.b2 ? n.b1 + "." + n.q1 + "–" + n.b2 + "." + (n.q2 || beatsPerBarDisp())
-                               : "bar " + n.b1 + (n.q1 !== 1 ? "." + n.q1 : "")) +
+      where.textContent = posAnchorText(n) +
                           (n.chopdir ? " raw" : ""); // chop anchors are pre-chop capture coordinates
       const body = document.createElement("span");
       body.className = "body";

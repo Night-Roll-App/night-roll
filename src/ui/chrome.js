@@ -71,6 +71,7 @@ import { kitLaneTop } from "../render/roll.js";
 import { drawRangeTints } from "../render/roll.js";
 import { beatTicks } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
+import { posParts } from "../model/grid.js";
 import { gridAnchorTick } from "../model/grid.js";
 import { trackShown } from "../render/roll.js";
 import { trackColor } from "../render/roll.js";
@@ -1134,9 +1135,11 @@ export function toggleHl() {
 export function updateLCD() {
   if (!S.song) return;
   const t = curTick();
-  const bt = barTicks(), tb = beatTicks();
-  const bar = Math.floor(t / bt) + 1;
-  const beat = Math.floor((t % bt) / tb) + 1;
+  // counted beat ("2&"); the off-grid "+NN%" takes the BEAT label's line —
+  // no new cell on the iPad row — and stays hidden while playing (it would
+  // flicker every frame; the syllable alone counts along)
+  const pos = posParts(t);
+  const bar = pos.bar, beat = pos.beat + pos.syl, pct = S.playing ? 0 : pos.pct;
   let usq = S.song.tempos[0].usq;
   for (const tp of S.song.tempos) { if (tp.tick <= t) usq = tp.usq; else break; }
   const bpm = Math.round(6e7 / usq * S.playRate);
@@ -1148,11 +1151,14 @@ export function updateLCD() {
   // reaches the estimate branch (appMode() gates it before estimateKey() runs).
   const est = !keyNameAt(t) && !partial && appMode() === "normal" ? estimateKey() : null;
   const key = keyNameAt(t) || (partial ? partial.keypartial + "?" : est ? est.name + "~" : "C?");
-  const s = bar + "|" + beat + "|" + bpm + "|" + meter + "|" + key;
+  const s = bar + "|" + beat + "|" + pct + "|" + bpm + "|" + meter + "|" + key;
   if (s === S.lcdCache) return;
   S.lcdCache = s;
   document.getElementById("lcdbar").textContent = String(bar);
-  document.getElementById("lcdbeat").textContent = String(beat);
+  document.getElementById("lcdbeat").textContent = beat;
+  const lbl = document.getElementById("lcdbeatlbl");
+  lbl.textContent = pct ? "+" + pct + "%" : "beat";
+  lbl.classList.toggle("off", !!pct);
   document.getElementById("lcdtempo").textContent = String(bpm);
   document.getElementById("lcdmeter").textContent = meter;
   document.getElementById("lcdkey").textContent = key;

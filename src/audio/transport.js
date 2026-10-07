@@ -404,7 +404,9 @@ export function stop() {
   // same text the LCD just wrote (updateSubtitle -> updateLCD, above) — never
   // recomputed independently, so Learning mode's "nothing spoken the screen
   // doesn't already show" holds for the bar.beat readout too
-  srAnnounce("Stopped at bar " + document.getElementById("lcdbar").textContent + " beat " + document.getElementById("lcdbeat").textContent);
+  const offLbl = document.getElementById("lcdbeatlbl");
+  srAnnounce("Stopped at bar " + document.getElementById("lcdbar").textContent + " beat " + document.getElementById("lcdbeat").textContent +
+    (offLbl && offLbl.classList.contains("off") ? " " + offLbl.textContent : ""));
   draw();
 }
 export function playGateKick() {

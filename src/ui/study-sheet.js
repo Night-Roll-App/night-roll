@@ -8,7 +8,7 @@ import { isDirective } from "../model/rollnotes.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { pushUndo } from "../model/edits.js";
 import { annoSnapshot } from "../model/edits.js";
-import { beatsPerBarDisp } from "../model/grid.js";
+import { posAnchorText } from "../model/grid.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
@@ -216,7 +216,7 @@ export function studyJumpTo(n) { // tap a listed annotation: cursor to its bar, 
   openEditor(n);
 }
 function studyWhere(n) {
-  return n.b2 ? n.b1 + "." + n.q1 + "–" + n.b2 + "." + (n.q2 || beatsPerBarDisp()) : "bar " + n.b1 + (n.q1 !== 1 ? "." + n.q1 : "");
+  return posAnchorText(n);
 }
 function studyAnnoRow(n) { // the same row ☰ All notes draws — his text, his ✱ note, nothing added
   const row = document.createElement("div");

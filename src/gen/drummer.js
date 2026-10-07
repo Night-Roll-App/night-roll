@@ -3,6 +3,8 @@ import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { trackIsDrums } from "../model/grid.js";
 import { beatTicks } from "../model/grid.js";
+import { posParts } from "../model/grid.js";
+import { posShort } from "../model/grid.js";
 import { setInfo } from "../hooks.js";
 import { editableSong } from "../model/song.js";
 import { beatsPerBarDisp } from "../model/grid.js";
@@ -214,11 +216,7 @@ export function drBackbeats(beats) { // explicit meter table, not "adapted"
   if (beats === 6) return [4];
   return [beats]; // anything else: last beat of the bar
 }
-export function fmtBarBeat(t) {
-  const bt = barTicks(), qt = beatTicks();
-  const q = Math.round(((t % bt) / qt + 1) * 100) / 100;
-  return (Math.floor(t / bt) + 1) + (q !== 1 ? "." + q : "");
-}
+export function fmtBarBeat(t) { return posShort(posParts(t)); } // the shared position words (model/grid.js)
 
 export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Override, fillAmt) {
   // v2 (advisor spec): busy = density, hard = velocity, follow = what the kick

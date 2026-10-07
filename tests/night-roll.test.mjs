@@ -363,13 +363,67 @@ test("sfAt: open keys, ranged keys revert, preview overrides", () => {
   run(`previewSf = null;`);
 });
 
-test("beatLabel: 1e&a counting with fractional fallback", () => {
-  const label = (b) => run(`beatLabel(${b})`);
-  assert.equal(label(1), "1");
-  assert.equal(label(2.25), "2e");
-  assert.equal(label(3.5), "3&");
-  assert.equal(label(4.75), "4a");
-  assert.equal(label(1.33), "1.33");
+test("posParts/posText: one position formatter — counted 1e&a, +NN% off the 16th grid, beat = the meter's denominator, any ppq (Q17 option B)", () => {
+  installSong();
+  run(`declaredTs = null;`);
+  const at = (t) => run(`posText(${t})`);
+  const bar4 = 3 * 1920;
+  assert.equal(at(bar4), "bar 4 beat 1", "downbeat");
+  assert.equal(at(bar4 + 480 + 120), "bar 4 beat 2e");
+  assert.equal(at(bar4 + 480 + 240), "bar 4 beat 2&", "the & of beat 2 in bar 4");
+  assert.equal(at(bar4 + 480 + 360), "bar 4 beat 2a");
+  assert.equal(at(bar4 + 480 + 160), "bar 4 beat 2e +33%", "2nd note of an 8th-note triplet");
+  assert.equal(at(bar4 + 480 + 320), "bar 4 beat 2& +67%", "3rd note of an 8th-note triplet");
+  assert.equal(at(bar4 + 480 + 239), "bar 4 beat 2&", "a captured note one tick early still reads on the grid");
+  assert.equal(at(bar4 - 1), "bar 4 beat 1", "one tick early rolls into the next bar, never '3a +99%'");
+  assert.equal(at(bar4 + 480 + 240.4), "bar 4 beat 2&", "a playback float rounds to the tick first");
+  assert.deepEqual(val(`posParts(${bar4 + 480 + 160})`), {bar: 4, beat: 2, syl: "e", pct: 33});
+  // 6/8: the beat is the eighth (beatTicks = 240), so & is a 16th, e/a 32nds
+  run(`declaredTs = [6, 8];`);
+  assert.equal(at(1440), "bar 2 beat 1", "6/8 bar = 1440 ticks");
+  assert.equal(at(1440 + 240 + 120), "bar 2 beat 2&");
+  assert.equal(at(1440 + 240 + 60), "bar 2 beat 2e");
+  assert.equal(at(1440 + 5 * 240 + 180), "bar 2 beat 6a");
+  // odd ppq: 96 (a 16th = 24) and 90 (a 16th = 22.5 ticks — fractional)
+  run(`declaredTs = null; song.ppq = 96;`);
+  assert.equal(at(384 + 96 + 48), "bar 2 beat 2&");
+  assert.equal(at(384 + 96 + 32), "bar 2 beat 2e +33%");
+  run(`song.ppq = 90;`);
+  assert.equal(at(360 + 90 + 45), "bar 2 beat 2&");
+  assert.equal(at(360 + 90 + 68), "bar 2 beat 2a", "67.5 ticks = the a; 68 is within a tick");
+  assert.equal(at(360 + 90 + 30), "bar 2 beat 2e +33%");
+  // annotation anchors (b/q): the same words, display only
+  run(`song.ppq = 480;`);
+  assert.equal(run(`posAnchorText({b1: 4, q1: 2.5, b2: null})`), "bar 4 beat 2&");
+  assert.equal(run(`posAnchorText({b1: 4, q1: 1, b2: null})`), "bar 4");
+  assert.equal(run(`posAnchorText({b1: 4, q1: 1, b2: 8, q2: null})`), "bar 4–8");
+  assert.equal(run(`posAnchorText({b1: 4, q1: 2.25, b2: 8, q2: 3})`), "bar 4 beat 2e–8 beat 3");
+  // fmtBarBeat (clip/Drummer/Bassist messages) speaks the same words
+  assert.equal(run(`fmtBarBeat(${bar4 + 480 + 240})`), "bar 4 beat 2&");
+  assert.equal(run(`fmtBarBeat(${bar4})`), "bar 4");
+  // the note-tap status line
+  run(`song.tracks = [{name: "lead", notes: [{t: ${bar4 + 480 + 240}, d: 240, p: 60, v: 80}, {t: ${bar4 + 480 + 160}, d: 160, p: 62, v: 80}]}];`);
+  assert.match(run(`noteLabel(0, 0)`), / · bar 4 beat 2& · /);
+  assert.match(run(`noteLabel(0, 1)`), / · bar 4 beat 2e \+33% · /);
+  run(`song.tracks = []; declaredTs = null;`);
+});
+
+test("LCD: the beat cell counts (\"2&\"), \"+33%\" takes the beat label's line off the grid, hidden while playing", () => {
+  installSong();
+  run(`declaredTs = null; song.tracks = []; lcdCache = null; playing = false;`);
+  const bar4 = 3 * 1920;
+  const lcd = () => [app.el("lcdbar").textContent, app.el("lcdbeat").textContent, app.el("lcdbeatlbl").textContent, app.el("lcdbeatlbl").classList.contains("off")];
+  run(`playCursor = ${bar4 + 480 + 240}; updateLCD();`);
+  assert.deepEqual(lcd(), ["4", "2&", "beat", false]);
+  run(`playCursor = ${bar4 + 480 + 160}; updateLCD();`);
+  assert.deepEqual(lcd(), ["4", "2e", "+33%", true]);
+  // playing: curTick() reads the audio clock — a stand-in clock parked on the same tick
+  run(`globalThis.__keepAudio = audio; audio = {currentTime: 0}; playT0 = 0; loopSeg = null;
+       playOffset = tickToSec(song, ${bar4 + 480 + 160}); playing = true; lcdCache = null; updateLCD();`);
+  try { assert.deepEqual(lcd(), ["4", "2e", "beat", false], "while playing the count alone ticks along"); }
+  finally { run(`playing = false; audio = globalThis.__keepAudio; playOffset = 0;`); }
+  run(`playCursor = 0; lcdCache = null; updateLCD();`);
+  assert.deepEqual(lcd(), ["1", "1", "beat", false]);
 });
 
 test("loop directive: anchor past target = jump point; else song end; whole song without one", () => {
@@ -2786,7 +2840,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
     "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
-    "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
+    "Tap a note", "nothing to double", "The beat cell counts the 16ths", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -11870,8 +11924,8 @@ test("VoiceOver: play() announces \"Playing\"; stop() announces the bar.beat it 
   assert.equal(a.el("srlive").textContent, "Playing");
   a.tick(500);
   r(`stop()`);
-  const lcdBar = a.el("lcdbar").textContent, lcdBeat = a.el("lcdbeat").textContent;
-  assert.equal(a.el("srlive").textContent, "Stopped at bar " + lcdBar + " beat " + lcdBeat);
+  const lcdBar = a.el("lcdbar").textContent, lcdBeat = a.el("lcdbeat").textContent, lbl = a.el("lcdbeatlbl");
+  assert.equal(a.el("srlive").textContent, "Stopped at bar " + lcdBar + " beat " + lcdBeat + (lbl.classList.contains("off") ? " " + lbl.textContent : ""));
 });
 
 test("VoiceOver, Learning mode: the live region never names a key/chord the screen doesn't show (lasso over C E G)", async () => {
