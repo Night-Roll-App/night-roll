@@ -2,7 +2,7 @@
 
 What "a console is supported" means, learned from NES → Game Boy → SNES →
 PS1 → N64 (2026-08 … 2026-09). Each step names where the existing
-consoles did it. Genesis (VGM) is the next one: its capture exists
+consoles did it. Genesis (VGM) is the next one (still parked, Josh 2026-10-06): its capture exists
 (tools/vgm/, CHIPS.vgm), everything after step 3 does not — PARKED by
 Josh 2026-09-28; do Genesis first when a console is next added.
 
@@ -21,6 +21,24 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    the MIDI writer names tracks the renderer will match; warnings name what
    is not supported ("expansion sound chip …", "a driver Night Roll cannot
    read yet"). Real-rip tests guarded on the rip dir; synthetic tests.
+   **What the .mid must carry (capture v2, docs/plans/2026-10-06-capture-
+   fidelity-audit.md):** the console voice replays the rip, but the .mid is
+   what the roll, the synth voices ("Hear the MIDI") and Josh's edits use,
+   so a capture writes everything the driver does that can be written as
+   standard MIDI:
+   - loudness inside a held note — a per-note shape (poly aftertouch inside
+     the note, docs/plans/2026-10-06-in-note-dynamics.md), not split notes;
+   - slides as SEPARATE notes, start and target pitch both visible (Josh,
+     2026-10-06: "I like that they show up as separate notes"), heard as a
+     slide on the console voice; small vibrato/detune as pitch bend;
+   - which instrument plays each note (program change), moving pan (CC10
+     events, not one pan per track), channel volume (CC7), reverb/echo
+     send (CC91) even before the synth plays it;
+   - a sample/drum channel (NES DPCM and its equivalents) as its own last
+     track — only on songs that use it, so no existing track number moves.
+   Every one of these must survive Night Roll's own draft → publish path
+   (parse → draft → write re-encodes every song; add a round-trip test over
+   the console's whole catalog before importing).
 4. **Chip audio.** A renderer (tools/<console>/…-render.mjs) giving one
    buffer per track (stereo pair `{l, r}` when the hardware pans), the
    console's own samples/synthesis, envelopes, volume under held notes,
@@ -37,7 +55,12 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    regions + tuning + exact envelope, or synth presets for chips without
    samples), verified against the renderer, named; SF2/SFZ export follows.
 7. **Terminal import.** tools/import-set.mjs handles the format; import the
-   test sets, publish one game per push.
+   test sets, publish one game per push. Stamp the capture version on each
+   album.json track. A later re-capture runs through the capture diff
+   (SAME / VELOCITY / ADDED-TRACK / MOVED): a song whose bars move is never
+   replaced in place — if it has published annotations, keep the old song
+   and add the re-capture as a new one so Josh can move his annotations
+   over (Josh, 2026-10-06).
 8. **The listening pass.** Josh's ear on every song of 3+ games (the
    release gate in open-items). Ear reports are failing tests.
 9. **Docs.** NIGHT-ROLL.md section, tools/<console>/INTEGRATION.md, help

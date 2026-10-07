@@ -342,3 +342,20 @@ What Josh must ear-check (each one, one pass):
   the synth later? *Default: yes, store CC91 in v2; playback is a
   follow-up.*
 - **Q6.** Genesis: skip until you import a Genesis game? *Default: skip.*
+
+
+## 8. Josh's answers (2026-10-06, Terminal #166)
+
+1. DPCM first — yes (being built).
+2. A DPCM/drum track only on albums whose games use it — not FF1 (the
+   question was worded badly; this is what it meant).
+3. A re-capture that would move bars on a song with published
+   annotations: keep the old song AND add the new one; Josh moves his
+   annotations over by hand, the old one is deleted later. He expects this
+   to be rare (annotated: FF1, a Mega Man song, a couple of FF4 songs).
+4. PS1/PS2/N64 slides stay as separate notes (he wants to see start and
+   target pitch, and still hear the slide on the console voice).
+5. Reverb/echo in the files: re-asked in plain words (bridge #529) —
+   pending; default yes.
+6. Genesis: skip — but docs/adding-a-console.md updated now with the
+   capture-v2 rules (done).
