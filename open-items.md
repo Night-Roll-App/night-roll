@@ -4,6 +4,13 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-07 Console loudness — the song gain (Q18, Josh #183/#186/#187) — BUILT on a worktree branch, awaiting merge
+docs/plans/2026-10-07-console-loudness.md §4A; NIGHT-ROLL.md "Audio gain stages". MASTER_VOL 0.22 is gone: each song plays at one gain to −16 LUFS (peak ≤ −1 dBFS); synth = same gain + match; clips at unity; limiter as safety net; bounce matches; stored master > 100% resets to 100% once; top-bar 🔊 hidden by default (View › Display › Volume slider; Ask set_pref volume_slider).
+TO DO after merge, one album per push: `node tools/measure-loudness.mjs --apply --album <console>/<slug>` for each capture album (writes only album.json nsf.tracks[base].loud; unmeasured songs measure on the device the first time they play, cached by rip hash).
+EAR CHECK (plan §4 "before it ships"): FF1 Battle, Terra, Cry of the Planet, SM64 Slider at 100% — console vs Hear the MIDI back to back, iPad speaker + headphones; pass = no jump on the toggle, no reach for the volume. Also: the limiter must not pump at normal levels.
+OPEN: NES/GB's full-scale synth match (−10.5 / −6.0 dB) leaves "Hear the MIDI" ~2.6 / ~1.8 dB quieter than measured medians (−7.9 / −4.2) on songs without a stored loud.synth — gone once an album is --applied.
+FOUND: the "(re-capture)" copies' rips 404 (tools/measure-loudness.mjs dry run: snes/chrono-trigger/quiet-beach-recapture.spc etc.) — a copy's nsf.tracks entry points its vault at "<base>-recapture.spc", which the archive doesn't have, so those songs play synth only in the app too.
+
 ## 2026-10-07 RE-CAPTURE EVERYTHING (Josh #170/#171) — DONE except FFX (held for his ear)
 tools/recapture.mjs (dry run → /tmp/recap*; --apply --album c/slug, one album per push) + tools/capture-diff.mjs. --apply never deletes, never writes a .rollnotes.json; annotated songs whose bars move get "<title> (re-capture)" beside the old; MOVED by the loop point alone → replaced, keeping the song's own loop line (FF1 Overworld, FF4 Cry in Sorrow pt 2). CAPTURE_VERSION 2.
 v1 dry run, all consoles (/tmp/recap/report.md): NES 501 songs (SAME 197 · VEL 295 · MOVED 9), GB 333 (304 · 15 · 14), SNES 865 (701 · 152 · 12), PS1 471 (469 · 0 · 1; chrono-cross drowning-valley.psf 404 in the archive), PS2 151 (59 · 78 · 14 — all FFX), N64 924 all SAME.

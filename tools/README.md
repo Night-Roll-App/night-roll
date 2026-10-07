@@ -50,6 +50,8 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `chip-worker.mjs` | The console render OFF the main thread: the Web Worker the app runs chip audio in (NES / Game Boy / SNES / PS1 / PS2 / N64). |
 | `chip-bench.mjs <kind> <file>` | Runs that same per-chip pipeline in plain Node for one song and prints timings and peaks. |
 | `note-preview.mjs` | One held note through a sequence chip's own renderer (the tap preview). |
+| `measure-loudness.mjs [--console C] [--album A] [--limit N]` | Measures each published capture song's console render (BS.1770 LUFS + peak) and its synth render, and prints before/after levels; `--apply --album <c>/<slug>` writes `nsf.tracks[base].loud` into that album.json only (the song gain, NIGHT-ROLL.md "Audio gain stages"). |
+| `loudness-synth.mjs` | The sample-level model of the app's default synth path that `measure-loudness.mjs` measures "Hear the MIDI" with. |
 
 ## The AI bridge
 

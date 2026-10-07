@@ -444,6 +444,89 @@ test("View › Display \"Beat subdivisions\" (Josh #189): off by default — the
   run(`try { localStorage.removeItem("ff1roll-beat-sub"); } catch (e) {} showBeatSub.v = undefined; playCursor = 0;`);
 });
 
+// ---- loudness (docs/plans/2026-10-07-console-loudness.md; Josh #183/#186/#187)
+test("song gain: a captured song's console voice plays at the gain that lands it at −16 LUFS; the synth on the same song gets the same gain plus the console's match; a song with no console voice plays synth at SYNTH_LEVEL", () => {
+  installSong();
+  run(`song.tracks = [{name: "pulse1", notes: []}, {name: "triangle", voice: "square", notes: []}, {name: "take", kind: "audio", clips: [], notes: []}];
+       trackState = song.tracks.map(() => ({muted: false, solo: false})); chip.key = null; chip.loud = null; chip.stream = null; chip.pcm = null; chip.buffers = null;`);
+  const none = val(`(() => { const L = applyLevels(); return {c: L.console, s: L.synth, n: L.chipTracks.size}; })()`);
+  assert.deepEqual(none, {c: 1, s: val(`SYNTH_LEVEL`), n: 0}, "no measurement: synth at SYNTH_LEVEL, nothing on the console level");
+  // FF1 Battle's stored measurement, chip rendered, Hear the MIDI off
+  run(`setHearMidi(false); chip.key = songKey; chip.kind = "nsf"; chip.loud = {lufs: -17.6, peak: -5.8, synth: -10.3, src: "album"};
+       chip.pcm = {pulse1: new Float32Array(4), triangle: new Float32Array(4)};`);
+  const L = val(`(() => { const L = applyLevels(); return {c: L.console, s: L.synth, chip: [...L.chipTracks]}; })()`);
+  const g = -16 - -17.6;
+  assert.ok(Math.abs(20 * Math.log10(L.c) - g) < 1e-9, "console at the song gain");
+  assert.ok(Math.abs(20 * Math.log10(L.s) - (g + (-17.6 - -10.3))) < 1e-9, "synth at the song gain + (console − synth loudness): equal loudness");
+  assert.deepEqual(L.chip, [0], "only the track the console voice sounds on (the triangle's explicit voice keeps it on synth)");
+  assert.ok(Math.abs(val(`trackLevelVal(0)`) - L.c) < 1e-12);
+  assert.ok(Math.abs(val(`trackLevelVal(1)`) - L.s) < 1e-12);
+  assert.equal(val(`trackLevelVal(2)`), 1, "a recorded clip plays at unity, whatever the song gain");
+  // Hear the MIDI: every track on synth, same gain + match
+  run(`setHearMidi(true)`);
+  const H = val(`(() => { const L = applyLevels(); return {s: L.synth, chip: [...L.chipTracks]}; })()`);
+  assert.deepEqual(H.chip, []);
+  assert.ok(Math.abs(H.s - L.s) < 1e-12);
+  // no stored synth loudness: the console's constant
+  run(`setHearMidi(false); chip.loud = {lufs: -17.6, peak: -5.8, src: "cache"};`);
+  assert.ok(Math.abs(20 * Math.log10(val(`applyLevels().synth`)) - (g + val(`SYNTH_MATCH_DB.nsf`))) < 1e-9);
+  run(`chip.key = null; chip.loud = null; chip.pcm = null; levels = null; setHearMidi(false); trackGains = []; trackPanners = []; song.tracks = []; trackState = [];`);
+});
+
+test("gain stages: the master is the user's volume at 0 dB (no fixed 0.22), then a safety-net limiter; each track's level node sits after its fader and pan, and clips stay at unity", () => {
+  installSong();
+  run(`audio = null; master = null; masterVol = 1; levels = {console: 2.5, synth: 0.4, chipTracks: new Set([0])};
+       song.tracks = [{name: "pulse1", notes: []}, {name: "lead", notes: []}, {name: "take", kind: "audio", clips: [], notes: []}];
+       trackState = song.tracks.map(() => ({muted: false, solo: false}));
+       ensureAudio();`);
+  assert.equal(val(`master.gain.value`), 1, "100% = 0 dB");
+  assert.equal(val(`limiter.threshold.value`), -1);
+  assert.equal(val(`limiter.ratio.value`), 20);
+  assert.deepEqual(val(`[0, 1, 2].map(ti => trackGain(ti)._level.gain.value)`), [2.5, 0.4, 1], "console, synth, clip");
+  assert.equal(val(`trackGain(1).gain.value`), 1, "the fader itself is untouched (unity at 1)");
+  run(`levels = null; trackGains = []; trackPanners = []; song.tracks = []; trackState = [];`);
+});
+
+test("master volume: a stored 200% resets to 100% once when the song gain ships; a later choice is kept", () => {
+  run(`localStorage.setItem("ff1roll-mastervol", "2"); localStorage.removeItem("ff1roll-mastervol-v2");`);
+  assert.equal(val(`masterVolStored()`), 1);
+  assert.equal(run(`localStorage.getItem("ff1roll-mastervol")`), "1");
+  run(`localStorage.setItem("ff1roll-mastervol", "1.5")`);
+  assert.equal(val(`masterVolStored()`), 1.5, "once only: his own later 150% stays");
+  run(`localStorage.setItem("ff1roll-mastervol", "1");`);
+});
+
+test("console loudness fallback: album.json's measurement first, else this device's cache by the rip's hash, else measured from the render (and cached)", () => {
+  const pcm = `{pulse1: (() => { const x = new Float32Array(44100 * 3); for (let i = 0; i < x.length; i++) x[i] = 0.2 * Math.sin(2 * Math.PI * 997 * i / 44100); return x; })()}`;
+  run(`try { localStorage.removeItem(loudCacheSlot("abc:1")); } catch (e) {}`);
+  assert.equal(val(`loudForRender({loud: {v: 1, lufs: -20, peak: -9}, cacheKey: "abc:1"}, null, 44100, 0).src`), "album");
+  assert.equal(val(`loudForRender({loud: {v: 0, lufs: -20, peak: -9}, cacheKey: "abc:1"}, null, 44100, 0)`), null, "an old measurement version is not used");
+  const m = val(`loudForRender({loud: null, cacheKey: "abc:1"}, ${pcm}, 44100, 0)`);
+  assert.equal(m.src, "measured");
+  assert.ok(Math.abs(m.lufs - (20 * Math.log10(0.2 * Math.SQRT1_2))) < 0.3, "a mono track centred like the app plays it: " + m.lufs);
+  assert.deepEqual(val(`loudCacheGet("abc:1")`), {lufs: m.lufs, peak: m.peak}, "cached on this device");
+  assert.equal(val(`loudForRender({loud: null, cacheKey: "abc:1"}, null, 44100, 0).src`), "cache");
+  run(`localStorage.removeItem(loudCacheSlot("abc:1"))`);
+});
+
+test("View › Display \"Volume slider\" (Josh #187): the top bar's 🔊 is hidden by default; the switch shows it, persists per device, and Ask set_pref volume_slider flips it; the Mixer's master strip is not touched", () => {
+  run(`try { localStorage.removeItem("ff1roll-show-volume"); } catch (e) {} volBtnShown.v = undefined; applyVolBtnShown();`);
+  assert.equal(run(`volBtnShown()`), false, "off by default");
+  assert.equal(app.el("volbtn").style.display, "none");
+  run(`setVolBtnShown(true); renderViewMenu();`);
+  assert.equal(app.el("volbtn").style.display, "");
+  assert.match(app.el("vwVolume").textContent, /^✓/);
+  run(`volBtnShown.v = undefined`); // a reload reads the stored pref back
+  assert.equal(run(`volBtnShown()`), true);
+  app.el("volpop").style.display = "flex";
+  const r = val(`askSetPref({name: "volume_slider", value: false})`);
+  assert.equal(r.ok, true);
+  assert.equal(app.el("volbtn").style.display, "none");
+  assert.equal(app.el("volpop").style.display, "none", "an open slider closes with its button");
+  assert.doesNotMatch(app.el("vwVolume").textContent, /^✓/);
+  run(`try { localStorage.removeItem("ff1roll-show-volume"); } catch (e) {} volBtnShown.v = undefined; applyVolBtnShown();`);
+});
+
 test("loop directive: anchor past target = jump point; else song end; whole song without one", () => {
   installSong();
   run(`rollnotes = parseRollnotes("[25.1]\\nloop: 2.1\\n").map(resolveNote); finalizeNotes();`);
@@ -2850,7 +2933,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "speedometer icon",
     "their own full-width row under it",
     "swipe sideways on the strips",
-    "Beat subdivisions",
+    "Beat subdivisions", "Volume slider", "song gain",
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
@@ -10567,7 +10650,7 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   for (const id of ["vwRoll", "vwTracksView", "vwScore"]) assert.ok(livesIn("vwViewTypeRow", id), id + " lives inside #vwViewTypeRow");
   for (const id of ["vwInst", "vwSub", "vwMixer", "vwTracks"]) assert.ok(livesIn("vwPanelsRow", id), id + " lives inside #vwPanelsRow");
   for (const id of ["octbtn", "findsel", "cofbtn"]) assert.ok(livesIn("vwToolsRow", id), id + " lives inside #vwToolsRow");
-  for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwBeatSub", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
+  for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwBeatSub", "vwVolume", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
   for (const id of ["vwJobs", "vwMessages"]) assert.ok(livesIn("vwBackgroundRow", id), id + " lives inside #vwBackgroundRow");
   for (const id of ["vwAnalyze", "vwAnnotate", "vwCompare", "vwLearning", "vwListener"]) assert.ok(livesIn("vwModeRow", id), id + " lives inside #vwModeRow");
 
@@ -14274,6 +14357,7 @@ function ctlSpy(ctl, voice = "square") {
        trackGains = []; trackPanners = []; reverbBus = new WeakMap();
        if (!globalThis._ctlReal) globalThis._ctlReal = {g: audio.createGain.bind(audio), p: audio.createStereoPanner.bind(audio), o: audio.createOscillator.bind(audio), b: audio.createBufferSource.bind(audio), c: audio.createConvolver.bind(audio)};
        _ctlLog = []; _ctlNodes = {}; _ctlN = 0;
+       globalThis._tkIds = () => trackGains.flatMap(g => g ? [g._id, g._level && g._level._id] : []).concat(trackPanners.map(p => p && p._id)); // the track's own fader, level and panner
        const wrap = (kind, mk, params) => () => {
          const n = mk(), id = kind + (++_ctlN);
          n._id = id; n._conn = []; n._stops = [];
@@ -14303,7 +14387,7 @@ test("MIDI playback: CC7 × CC11 ramp the note's gain at the event time (never a
   const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
   ctlSpy([]);
   run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
-  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => k !== "g1" && k !== "p2").map(k => k[0]).sort(), ["g", "o"], "no controllers: one gain, one oscillator — the old graph");
+  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => !val(`_tkIds()`).includes(k)).map(k => k[0]).sort(), ["g", "o"], "no controllers: one gain, one oscillator — the old graph");
   ctlSpyOff();
   ctlSpy([{t: 0, ch: 0, c: 7, v: 100}, {t: 0, ch: 0, c: 11, v: 127}, {t: 480, ch: 0, c: 7, v: 50}, {t: 0, ch: 0, c: 10, v: 0}, {t: 480, ch: 0, c: 10, v: 127}]);
   run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
@@ -14404,7 +14488,7 @@ test("MIDI playback: never double-applied — a game instrument voice ignores th
   run(`(() => { gameLibSync.set("ctltest", {lib: {instruments: [{id: "inst1"}]}, samples: {}}); const ipS = instPlaySync; instPlaySync = {playNote: () => new Float32Array(64)};
        try { scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1); }
        finally { instPlaySync = ipS; gameLibSync.delete("ctltest"); gameNoteCache.clear(); } })()`);
-  assert.deepEqual(val(`Object.keys(_ctlNodes).filter(k => k !== "g1" && k !== "p2").map(k => k[0])`), ["b"], "one buffer source straight to the track — no controller gain, panner, LFO or reverb");
+  assert.deepEqual(val(`Object.keys(_ctlNodes).filter(k => !_tkIds().includes(k)).map(k => k[0])`), ["b"], "one buffer source straight to the track — no controller gain, panner, LFO or reverb");
   assert.equal(ctlCalls(c => c[1] === "detune" || c[1] === "pan").length, 0, "no bend, no pan events");
   ctlSpyOff();
   const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
@@ -14416,7 +14500,7 @@ test("MIDI playback: never double-applied — a game instrument voice ignores th
   // a preview (a tap) plays plain
   ctlSpy(CTL);
   run(`scheduleNote(0, {p: 60, v: 90, ch: 0, _preview: true}, ${W}, 0.3)`);
-  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k !== "g1" && k !== "p2").length`), 2, "a tap: one gain, one oscillator");
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => !_tkIds().includes(k)).length`), 2, "a tap: one gain, one oscillator");
   ctlSpyOff();
 });
 
@@ -14522,7 +14606,7 @@ test("patches playback: ADSR on its own gain (release past the note-off), delaye
   // no patch: the plain chip wave's graph, untouched
   ctlSpy([]);
   run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
-  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => k !== "g1" && k !== "p2").map(k => k[0]).sort(), ["g", "o"], "one gain, one oscillator — as before");
+  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => !val(`_tkIds()`).includes(k)).map(k => k[0]).sort(), ["g", "o"], "one gain, one oscillator — as before");
   assert.deepEqual(ctlCalls(c => c[1] === "gain" && c[0] !== "g1").map(c => c[2]), ["set", "lin", "set", "lin"], "the old attack/hold/release");
   ctlSpyOff();
 });

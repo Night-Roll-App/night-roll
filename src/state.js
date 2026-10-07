@@ -139,6 +139,8 @@ export const S = {
   ntypeGuess: null, // {timer, from: the text a guess moved out of the text box}
   spanTapAt: 0, // the last tap inside the ruler span — a second within 350 ms deletes it (Josh #150)
   masterVol: 1,
+  levels: null, // audio/levels.js applyLevels: {console, synth, chipTracks: Set of ti} — linear gains for the song playing (null: no song gain yet, synth at SYNTH_LEVEL)
+  limiter: null, // the master's safety-net DynamicsCompressor (engine.js masterChain)
   clockProbe: null,
   wakeInFlight: false,
   sfOfflineCtx: null,

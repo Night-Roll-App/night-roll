@@ -13,9 +13,9 @@ import { stretchCache } from "./clips.js";
 import { stretchKey } from "./clips.js";
 import { stop } from "./transport.js";
 import { tickToSec } from "../midi/parse.js";
-import { MASTER_VOL } from "./engine.js";
+import { masterChain } from "./engine.js";
+import { applyLevels } from "./levels.js";
 import { buildSchedule } from "./transport.js";
-import { updateTrackGains } from "./engine.js";
 import { trackGain } from "./engine.js";
 import { chipActive } from "./chip.js";
 import { chipStart } from "./chip.js";
@@ -136,13 +136,11 @@ export async function renderSongOffline() {
   // on every context rebuild), gain/panner nodes belong to one graph, and
   // chip.buffers is cached per context (chipBuffers). Nothing here is
   // awaited until startRendering(), so nothing else can see the swap.
-  const saved = {audio: S.audio, master: S.master, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+  const saved = {audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
                  chipBuffers: chip.buffers, chipBuffersCtx: chip.buffersCtx,
                  playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs};
   S.audio = oac;
-  S.master = oac.createGain();
-  S.master.gain.value = MASTER_VOL * S.masterVol;
-  S.master.connect(oac.destination);
+  ({master: S.master, limiter: S.limiter} = masterChain(oac)); // the same gain stages as playback, so the file sounds like the app
   S.trackGains = []; S.trackPanners = [];
   S.pulse25 = null; S.pulse12 = null; S.organWave = null;
   // chip.buffers/buffersCtx are deliberately left as they are: chipBuffers()
@@ -161,7 +159,7 @@ export async function renderSongOffline() {
   let renderedBuffer = null, renderErr = null;
   try {
     buildSchedule();
-    updateTrackGains();
+    applyLevels(); // the song gain, as play() sets it (then updateTrackGains)
     S.song.tracks.forEach((_, ti) => trackGain(ti));
     if (chipActive()) chipStart(0);
     for (const e of S.schedEvents) {
@@ -173,7 +171,7 @@ export async function renderSongOffline() {
   // put the live globals back BEFORE the (seconds-long) render: the nodes are
   // already wired into the offline graph, and a note preview, a ▶ tap or the
   // playhead during the render must see the live context, not this one
-  ({audio: S.audio, master: S.master, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+  ({audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
     playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs} = saved);
   chip.buffers = saved.chipBuffers; chip.buffersCtx = saved.chipBuffersCtx;
   if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }

@@ -14,13 +14,16 @@ import { idbNsfPut } from "../platform/storage.js";
 import { logErr } from "../hooks.js";
 import { logDebug } from "../hooks.js";
 import { songTitleOf } from "../hooks.js";
+import { loudForRender } from "./levels.js";
+import { loudFileHash } from "./loudness.js";
 
 // ---------------------------------------------------- authentic chip audio
 // The captured APU register log rendered through the 2A03's real DSP
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-export const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null};
+export const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null};
+// kind/loud: the render's chip and its loudness ({lufs, peak, synth?, src}) for the song gain (audio/levels.js); pendingLoud: {key, loud, cacheKey} from chipSource, until the render publishes
 // no toggle: chip audio is automatic wherever a source resolves
 // stream: non-null only in stream mode (docs/streamed-render-plan.md step 3,
 // chipStreamOpen) — {key, gen, rate, chunkFrames, overlap, tracks, seconds,
@@ -497,7 +500,14 @@ export async function chipSource() { // {bytes, n, secs} for the current song, o
       if (Object.keys(libs).length) idbNsfPut(slug, null, {}, kind, libs);
     } catch (err) { chip.fail = {key: S.songKey, why: "the console's sound library didn't download (" + err.message + ")"}; return null; }
   }
-  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
+  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}, loud: (metaTr && typeof metaTr === "object" && metaTr.loud) || null}; // loud: album.json's measurement (tools/measure-loudness.mjs)
+}
+// what the song gain will be measured from, noted before the render starts:
+// album.json's stored measurement, and the device-cache key (the rip's hash +
+// its track) for when there is none
+export function chipLoudPending(forKey, src) {
+  chip.pendingLoud = {key: forKey, loud: src.loud || null, cacheKey: src.bytes ? loudFileHash(src.bytes) + ":" + src.n : null};
+  return chip.pendingLoud;
 }
 export function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; }
 // A one-file-per-album kind whose rip ships MORE than one file (Zophar's GB
@@ -855,6 +865,7 @@ export async function chipRender() {
   const kind = src.chip || "nsf";
   const secs = Math.ceil(src.secs + 1);
   const rate = CHIPS[kind].renderRate || (S.audio ? S.audio.sampleRate : 44100);
+  chipLoudPending(forKey, src);
   chip.progress = 0;
   // A failure past this point (module load, emulation, render, or the memory
   // budget refusing) must not poison the NEXT song's render (Josh's iPad,
@@ -975,6 +986,9 @@ export function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) 
     const mismatch = debug.tracks !== debug.groups ? " (estimated " + debug.tracks + ")" : "";
     logDebug(songTitleOf(forKey) + ": console audio held " + mb(debug.keptBytes) + " MB (render peak " + mb(debug.peakBytes) + " MB, " + debug.groups + " tracks" + mismatch + ", " + Math.round(sampleRate / 1000) + " kHz, " + mono + ")");
   }
+  const pend = chip.pendingLoud && chip.pendingLoud.key === forKey ? chip.pendingLoud : null;
+  chip.loud = loudForRender(pend, pcm, sampleRate, leadSec); // before chipPcmToBuffers frees the Float32 copies
+  chip.kind = kind;
   chipPcmToBuffers();
   chip.lead = leadSec;
   chip.key = forKey;

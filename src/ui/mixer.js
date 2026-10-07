@@ -1,5 +1,4 @@
 import { S } from "../state.js";
-import { MASTER_VOL } from "../audio/engine.js";
 import { setVolBtn } from "./controls.js";
 import { trackGain } from "../audio/engine.js";
 import { editableSong } from "../model/song.js";
@@ -75,7 +74,7 @@ export function mixerMasterStripEl() {
     S.masterVol = (+fader.value) / 100;
     vlbl.textContent = fader.value + "%";
     localStorage.setItem("ff1roll-mastervol", String(S.masterVol));
-    if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
+    if (S.audio && S.master) S.master.gain.setValueAtTime(S.masterVol, S.audio.currentTime);
     const volsl = document.getElementById("volsl"), vollbl = document.getElementById("vollbl"), volbtn = document.getElementById("volbtn");
     if (volsl) volsl.value = fader.value;
     if (vollbl) vollbl.textContent = fader.value + "%";

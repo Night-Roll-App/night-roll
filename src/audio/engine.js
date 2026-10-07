@@ -5,14 +5,53 @@ import { logErr } from "../hooks.js";
 import { setInfo } from "../hooks.js";
 import { met } from "./metronome.js";
 import { sfPreloadForSong } from "./voices.js";
+import { SYNTH_LEVEL } from "./loudness.js";
+import { AUDITION_LEVEL } from "./loudness.js";
 
 export function trackAudible(ti) { // what you HEAR: mute and solo (they never hide notes — DAW habit, 2026-09-29)
   const anySolo = S.trackState.some(s => s.solo);
   return anySolo ? S.trackState[ti].solo : !S.trackState[ti].muted;
 }
 // ---------------------------------------------------------------- audio (NES-ish voices)
-export const MASTER_VOL = 0.22;
-// user's master multiplier (🔊 button), device pref
+// Gain stages (NIGHT-ROLL.md "Audio gain stages"): source → track fader →
+// pan → track LEVEL (the song gain: console voice, synth voice, or unity for
+// a recorded clip — audio/levels.js) → master (S.masterVol, 100% = 0 dB) →
+// limiter → speakers. The level sits after the fader, so faders, mute/solo
+// and the Mixer's track meters (tapped after the fader) keep their meaning.
+// The master was a fixed 0.22 (−13 dB) until 2026-10-07; the song gain
+// replaced it (docs/plans/2026-10-07-console-loudness.md).
+export function masterChain(ctx) { // master gain → safety-net limiter → destination; the caller assigns S.master/S.limiter
+  const master = ctx.createGain();
+  master.gain.value = S.masterVol;
+  let limiter = null;
+  if (ctx.createDynamicsCompressor) { // a safety net only: a measured song already peaks at −1 dBFS or lower before it
+    limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -1; limiter.knee.value = 0; limiter.ratio.value = 20;
+    limiter.attack.value = 0.001; limiter.release.value = 0.1;
+    master.connect(limiter); limiter.connect(ctx.destination);
+  } else master.connect(ctx.destination);
+  return {master, limiter};
+}
+// the level a track's sound leaves its panner at: a recorded clip at unity (a
+// take is not the song's mix), a track the console voice plays at the song
+// gain, everything else (synth, sampled and game voices) at the synth level
+export function trackLevelVal(ti) {
+  const tr = S.song && S.song.tracks[ti];
+  if (tr && tr.kind === "audio") return 1;
+  const L = S.levels;
+  if (!L) return SYNTH_LEVEL;
+  return L.chipTracks && L.chipTracks.has(ti) ? L.console : L.synth;
+}
+export function synthLevelNow() { return S.levels ? S.levels.synth : SYNTH_LEVEL; }
+// a one-shot output for a preview that plays outside any track: the synth
+// level (the instrument panel's keys) or the audition level (a game-voice /
+// sf2 sample normalised to 0.9 peak); the node goes when its source does
+export function previewOut(kind) {
+  const g = S.audio.createGain();
+  g.gain.value = kind === "audition" ? AUDITION_LEVEL : synthLevelNow();
+  g.connect(S.master);
+  return g;
+}
 export function warmContext() { // one silent sample: absorbs the fresh context's glitchy first quantum
   const src = S.audio.createBufferSource();
   src.buffer = S.audio.createBuffer(1, 1, S.audio.sampleRate);
@@ -49,18 +88,22 @@ export function openMaster() { // declick: ramp the master up instead of snappin
   const t = S.audio.currentTime;
   S.master.gain.cancelScheduledValues(t);
   S.master.gain.setValueAtTime(S.master.gain.value, t);
-  S.master.gain.linearRampToValueAtTime(MASTER_VOL * S.masterVol, t + 0.03);
+  S.master.gain.linearRampToValueAtTime(S.masterVol, t + 0.03);
 }
 export function trackGain(ti) {
   if (!S.trackGains[ti]) {
     S.trackGains[ti] = S.audio.createGain();
     S.trackGains[ti].gain.value = trackAudible(ti) ? trackVol(ti) : 0; // faders survive the stop/play rebuild
-    if (S.audio.createStereoPanner) { // gain → panner → master; a chip track's stereo render passes through a centred panner unchanged
+    const lv = S.audio.createGain(); // rides on the gain node (like _send), so a track reorder carries it along
+    lv.gain.value = trackLevelVal(ti);
+    lv.connect(S.master);
+    S.trackGains[ti]._level = lv;
+    if (S.audio.createStereoPanner) { // gain → panner → level → master; a chip track's stereo render passes through a centred panner unchanged
       S.trackPanners[ti] = S.audio.createStereoPanner();
       S.trackPanners[ti].pan.value = trackPan(ti);
       S.trackGains[ti].connect(S.trackPanners[ti]);
-      S.trackPanners[ti].connect(S.master);
-    } else S.trackGains[ti].connect(S.master);
+      S.trackPanners[ti].connect(lv);
+    } else S.trackGains[ti].connect(lv);
   }
   return S.trackGains[ti];
 }
@@ -91,9 +134,10 @@ export function reverbIn() {
   const cv = S.audio.createConvolver();
   cv.buffer = reverbImpulse(S.audio);
   const ret = S.audio.createGain();
-  ret.gain.value = REVERB_RETURN;
+  ret.gain.value = REVERB_RETURN * synthLevelNow(); // only synth notes send (CC91): the return rides the synth level
   cv.connect(ret);
   ret.connect(S.master);
+  cv._ret = ret;
   S.reverbBus.set(S.master, cv);
   return cv;
 }
@@ -117,7 +161,10 @@ export function updateTrackGains() {
     if (S.trackGains[ti]) S.trackGains[ti].gain.setValueAtTime(trackAudible(ti) ? trackVol(ti) : 0, S.audio.currentTime);
     if (S.trackGains[ti] && S.trackGains[ti]._send) S.trackGains[ti]._send.gain.setValueAtTime(trackAudible(ti) ? trackVol(ti) : 0, S.audio.currentTime);
     if (S.trackPanners[ti]) S.trackPanners[ti].pan.setValueAtTime(trackPan(ti), S.audio.currentTime);
+    if (S.trackGains[ti] && S.trackGains[ti]._level) S.trackGains[ti]._level.gain.setValueAtTime(trackLevelVal(ti), S.audio.currentTime);
   });
+  const rv = S.master && S.reverbBus.get(S.master);
+  if (rv && rv._ret) rv._ret.gain.setValueAtTime(REVERB_RETURN * synthLevelNow(), S.audio.currentTime);
 }
 updateTrackGains = prof("updateTrackGains", updateTrackGains); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function dutyWave(duty) {
@@ -287,9 +334,7 @@ export function ensureAudio() { // one context for the app's lifetime — iOS Sa
   audioSessionType("ambient");
   S.audio = new (window.AudioContext || window.webkitAudioContext)();
   S.audio.onstatechange = () => { logDebug("audio state: " + (S.audio && S.audio.state) + (document.hidden ? " (app hidden)" : "")); if (S.audio && S.audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
-  S.master = S.audio.createGain();
-  S.master.gain.value = MASTER_VOL * S.masterVol;
-  S.master.connect(S.audio.destination);
+  ({master: S.master, limiter: S.limiter} = masterChain(S.audio));
   S.trackGains = []; S.trackPanners = [];
   warmContext();
 }

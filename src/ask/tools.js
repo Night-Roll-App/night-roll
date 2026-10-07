@@ -28,6 +28,7 @@ import { drawImpl as draw } from "../ui/chrome.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
 import { setBeatSub, renderViewMenu } from "../ui/chrome.js";
+import { setVolBtnShown } from "../ui/chrome.js";
 import { dropLocalKeyAt } from "../model/rollnotes.js";
 import { retireEdited } from "../model/edits.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
@@ -1377,7 +1378,7 @@ export async function askSongFile(a) {
 // — Ask must never switch Josh into Normal; that switch is what keeps
 // answers his); the check runs before the whitelist lookup so a model that
 // guesses a learning-flavored name gets the real reason, not a generic one.
-const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound", "beat_subdivisions"];
+const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound", "beat_subdivisions", "volume_slider"];
 export function askSetPref(a) {
   a = a || {};
   const name = String(a.name || "").trim().toLowerCase();
@@ -1409,6 +1410,12 @@ export function askSetPref(a) {
     setBeatSub(on);
     renderViewMenu();
     return {ok: true, note: "beat subdivisions " + (on ? "shown" : "hidden") + " on the counter"};
+  }
+  if (name === "volume_slider") { // View › Display "Volume slider" (Josh #187): the top bar's 🔊, hidden by default
+    const on = askActTruthy(value);
+    setVolBtnShown(on);
+    renderViewMenu();
+    return {ok: true, note: "volume slider " + (on ? "shown in" : "hidden from") + " the top bar"};
   }
   if (name === "sound") { // the View ▾ → Mode "Hear the MIDI" switch (Josh #163): chip = the console voice, midi = the .mid on synth voices
     const v = String(value).trim().toLowerCase();

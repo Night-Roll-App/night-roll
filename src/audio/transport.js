@@ -30,7 +30,7 @@ import { secToTick } from "../midi/parse.js";
 import { beatTicks } from "../model/grid.js";
 import { metClick } from "./metronome.js";
 import { recOpenEnded } from "../model/song.js";
-import { updateTrackGains } from "./engine.js";
+import { applyLevels } from "./levels.js";
 import { trackGain } from "./engine.js";
 import { chipActive } from "./chip.js";
 import { chipStreamStart } from "./chip-stream.js";
@@ -271,7 +271,7 @@ export async function play(fromSec = 0, opts = {}) {
     // moved on (Josh, 2026-09-29). Real loops keep their OST-CD convention.
     S.albumEndAbs = albumEndSec(S.loopSeg, tickToSec(S.song, S.songEndTick), hasMaterial && !!S.loopSeg.looped, S.albumRun.passes) - S.playOffset;
   }
-  updateTrackGains();
+  applyLevels(); // the song gain for what is about to sound (console / synth / clip), then every fader — audio/levels.js
   S.song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
   if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport
   S.schedIdx = S.schedEvents.findIndex(e => e.sec >= fromSec);
@@ -398,7 +398,7 @@ export function stop() {
     S.master.gain.linearRampToValueAtTime(0, t + 0.03);
     const old = S.trackGains;
     S.trackGains = []; S.trackPanners = [];
-    setTimeout(() => old.forEach(g => { if (g) { g.disconnect(); if (g._send) g._send.disconnect(); } }), 400);
+    setTimeout(() => old.forEach(g => { if (g) { g.disconnect(); if (g._send) g._send.disconnect(); if (g._level) g._level.disconnect(); } }), 400);
   }
   updateSubtitle();
   // same text the LCD just wrote (updateSubtitle -> updateLCD, above) — never

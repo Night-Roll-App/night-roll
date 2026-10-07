@@ -12,6 +12,7 @@ import { appMode } from "../platform/mode.js";
 import { chip } from "../audio/chip.js";
 import { hearMidi } from "../audio/chip.js";
 import { setHearMidi } from "../audio/chip.js";
+import { migrateMasterVol } from "../audio/loudness.js";
 import { setDocTitle } from "../platform/base.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { folderTitle } from "../model/catalog.js";
@@ -167,7 +168,6 @@ import { askCopyText } from "./sheets.js";
 import { playGateTick } from "../audio/transport.js";
 import { scoreTickToX } from "../render/score.js";
 import { setVolBtn } from "./controls.js";
-import { MASTER_VOL } from "../audio/engine.js";
 import { trackIsDrums } from "../model/grid.js";
 import { toggleMixer } from "./mixer.js";
 import { studyIsOpen, toggleStudySheet } from "./study-sheet.js";
@@ -552,6 +552,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwEdit: {icon: "construction", text: "Edit toolbar"},
     vwAdded: {glyph: "┄", text: "Outline new notes"},
     vwBeatSub: {glyph: "&", text: "Beat subdivisions"},
+    vwVolume: {icon: "volumeUp", text: "Volume slider"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
     vwInst: {icon: "piano", text: "Instrument panel"},
     vwSub: {glyph: "💬", text: "Notes strip"},
@@ -617,6 +618,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwFooter", !S.footerHidden);
   set("vwAdded", showAddedOutline());
   set("vwBeatSub", showBeatSub());
+  set("vwVolume", volBtnShown());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
   set("vwSub", S.subOn);
   set("vwVel", S.vwVel);
@@ -1667,7 +1669,7 @@ export function initChrome1() {
   applySpeed = pct => { _applySpeedInner(pct); document.getElementById("speedsl").value = pct; document.getElementById("speedbtnpct").textContent = pct === 100 ? "" : " " + pct + "%"; };
 }
 
-// master volume: device pref, multiplies MASTER_VOL everywhere it lands
+// master volume: device pref, 100% = 0 dB over the song gain (audio/levels.js)
 export const volsl = document.getElementById("volsl");
 export const vollbl = document.getElementById("vollbl");
 export const volbtn = document.getElementById("volbtn");
@@ -1827,8 +1829,34 @@ export function initChrome5() {
   }
 }
 
+// the stored master volume, after the one-time reset of anything above 100%
+// (audio/loudness.js migrateMasterVol: the song gain made 100% a normal level)
+export function masterVolStored() {
+  try { if (migrateMasterVol(k => localStorage.getItem(k), (k, v) => localStorage.setItem(k, v))) logDebug("master volume reset to 100% once: songs now play at a normal level (song gain)"); } catch (err) { /* private mode: nothing stored to migrate */ }
+  const v = +(localStorage.getItem("ff1roll-mastervol") || 1);
+  return v > 0 ? v : 1;
+}
+// the top bar's 🔊 button: a device-local View › Display switch, off by
+// default (Josh #187). With the song gain, 100% is a normal level and the
+// device's own volume sets how loud; the Mixer's master strip stays.
+export function volBtnShown() {
+  if (volBtnShown.v === undefined) {
+    try { volBtnShown.v = localStorage.getItem("ff1roll-show-volume") === "1"; } catch (err) { volBtnShown.v = false; }
+  }
+  return volBtnShown.v;
+}
+export function setVolBtnShown(on) {
+  volBtnShown.v = !!on;
+  try { localStorage.setItem("ff1roll-show-volume", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+  applyVolBtnShown();
+}
+export function applyVolBtnShown() {
+  volbtn.style.display = volBtnShown() ? "" : "none";
+  if (!volBtnShown()) document.getElementById("volpop").style.display = "none";
+}
 export function initChrome6() {
-  S.masterVol = +(localStorage.getItem("ff1roll-mastervol") || 1);
+  S.masterVol = masterVolStored();
+  applyVolBtnShown();
   volsl.value = String(Math.round(S.masterVol * 100));
   vollbl.textContent = Math.round(S.masterVol * 100) + "%";
   setVolBtn(Math.round(S.masterVol * 100));
@@ -1837,7 +1865,7 @@ export function initChrome6() {
     vollbl.textContent = volsl.value + "%";
     setVolBtn(+volsl.value);
     localStorage.setItem("ff1roll-mastervol", String(S.masterVol));
-    if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
+    if (S.audio && S.master) S.master.gain.setValueAtTime(S.masterVol, S.audio.currentTime);
   });
 }
 
@@ -2033,6 +2061,7 @@ export function initChrome11() {
     on("vwTracks", () => document.getElementById("tracktoggle").click());
     on("vwEdit", () => { S.editrowHidden = !S.editrowHidden; applyChrome(); });
     on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
+    on("vwVolume", () => setVolBtnShown(!volBtnShown())); // the top bar's 🔊 (Josh #187: hidden by default)
     on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());

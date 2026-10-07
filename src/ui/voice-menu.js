@@ -41,6 +41,7 @@ import { gameInstUsedBySong } from "./sheets.js";
 import { sf2Registry } from "./sheets.js";
 import { resumeAudio } from "../audio/engine.js";
 import { openMaster } from "../audio/engine.js";
+import { previewOut } from "../audio/engine.js";
 import { instPlayer } from "../audio/voices.js";
 import { instKeys } from "./sheets.js";
 import { sf2VoiceId } from "../audio/voices.js";
@@ -494,7 +495,7 @@ export async function sf2AuditionPreset(font, preset) { // instAudition's own sh
     if (peak > 0.9) for (let i = 0; i < pcm.length; i++) pcm[i] *= 0.9 / peak; // an audition never clips, whatever the driver's own scale
     const buf = S.audio.createBuffer(1, pcm.length, S.audio.sampleRate);
     buf.copyToChannel(pcm, 0);
-    const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(S.master); src.start(t);
+    const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(previewOut("audition")); src.start(t);
     t += 0.38;
   }
 }

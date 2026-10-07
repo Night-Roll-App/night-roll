@@ -13,6 +13,10 @@ import { chipRenderBudget } from "./chip.js";
 import { logDebug } from "../hooks.js";
 import { songTitleOf } from "../hooks.js";
 import { chipRender } from "./chip.js";
+import { chipLoudPending } from "./chip.js";
+import { loudStreamChunk } from "./levels.js";
+import { loudCacheGet } from "./levels.js";
+import { LOUD_VERSION } from "./loudness.js";
 
 // -------------------------------------------- chip stream mode (step 3) ---
 // docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
@@ -162,6 +166,7 @@ export function chipStreamOnChunk(c) {
     buffers[name] = buf;
   }
   st.cache.set(c.idx, {buffers, bytes, pinned: st.pinnedIdx.has(c.idx)});
+  loudStreamChunk(c.idx, buffers, st.rate); // an unmeasured song: its first chunks stand in for the whole (audio/levels.js)
   st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
   st.peakBytes = Math.max(st.peakBytes, st.bytes);
   const waiters = st.waiters.get(c.idx);
@@ -432,6 +437,12 @@ export async function chipStreamOpen(auto) {
   chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;
   const fromSec = (typeof S.song !== "undefined" && S.song && typeof S.playCursor !== "undefined" && S.playCursor > 0) ? tickToSec(S.song, S.playCursor) : 0;
   const idx0 = chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate);
+  // the song gain's measurement: album.json's, else this device's cache, else
+  // the chunks as they arrive in order from here (loudStreamChunk)
+  const pend = chipLoudPending(forKey, src), cached = loudCacheGet(pend.cacheKey);
+  chip.kind = kind;
+  chip.loud = pend.loud && pend.loud.v === LOUD_VERSION ? {...pend.loud, src: "album"} : cached ? {...cached, src: "cache"} : null;
+  chip.stream.loudAcc = chip.loud ? null : {next: idx0, parts: [], secs: 0, cacheKey: pend.cacheKey};
   chipStreamRequestRange(idx0, idx0 + 1);
   await chipStreamWaitFor(idx0);
   if (S.songKey !== forKey || !chip.stream || chip.stream.key !== forKey) return false; // superseded while waiting

@@ -59,8 +59,9 @@ speedsl.addEventListener("input", () => { speedlbl.textContent = speedsl.value +
 speedsl.addEventListener("change", () => applySpeed(+speedsl.value));
 speedreset.addEventListener("click", () => {
 {
-applySpeed = pct => { _applySpeedInner(pct); speedbtn.textContent = pct + "%"; };
-S.masterVol = +(localStorage.getItem("ff1roll-mastervol") || 1);
+applySpeed = pct => { _applySpeedInner(pct); document.getElementById("speedsl").value = pct; document.getElementById("speedbtnpct").textContent = pct === 100 ? "" : " " + pct + "%"; };
+S.masterVol = masterVolStored();
+applyVolBtnShown();
 volsl.value = String(Math.round(S.masterVol * 100));
 vollbl.textContent = Math.round(S.masterVol * 100) + "%";
 setVolBtn(Math.round(S.masterVol * 100));

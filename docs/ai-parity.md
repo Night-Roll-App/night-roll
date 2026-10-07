@@ -95,6 +95,7 @@ Effort: **S** = an afternoon (wraps one existing function), **M** = a day
 | Play / Stop / Back to start | — | yes (see note on iPad sound below) | `playback {action:"play"\|"stop"\|"start", from_bar?, beat?}` | S |
 | Cycle a range (ruler selection) | — | yes | `select {from_bar, to_bar, cycle:true}` | S |
 | Speed slider, master volume | — | yes | `set_playback {speed?, volume?}` | S |
+| View › Display › Volume slider (show the top bar's 🔊, 2026-10-07; the level itself is automatic — the song gain) | — | yes (a device pref) | `set_pref {name:"volume_slider", value}` | S |
 | ⏱ Metronome on/off, bpm, follow song, count-in | — | yes | `set_playback {metronome?, met_bpm?, met_follow?, count_in?}` | M |
 | Play album, next/previous, leave the album | — | yes | `album {action:"play"\|"next"\|"prev"\|"leave", album?, song?}` | S |
 | Game order / A–Z | — | yes (a device pref) | `set_pref {name:"album_order", value}` | S |

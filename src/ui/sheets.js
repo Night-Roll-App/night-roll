@@ -122,6 +122,7 @@ import { instAlbums } from "../audio/voices.js";
 import { ensureAudio } from "../audio/engine.js";
 import { resumeAudio } from "../audio/engine.js";
 import { openMaster } from "../audio/engine.js";
+import { previewOut } from "../audio/engine.js";
 import { instPlayer } from "../audio/voices.js";
 import { instSamples } from "../audio/voices.js";
 import { FOLDER_NAMES } from "../model/catalog.js";
@@ -618,7 +619,7 @@ export async function instAudition(vault, lib, inst) {
     if (peak > 0.9) for (let i = 0; i < pcm.length; i++) pcm[i] *= 0.9 / peak; // a driver's own scale can run hot; an audition never clips
     const buf = S.audio.createBuffer(1, pcm.length, S.audio.sampleRate);
     buf.copyToChannel(pcm, 0);
-    const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(S.master); src.start(t);
+    const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(previewOut("audition")); src.start(t);
     t += 0.38;
   }
 }

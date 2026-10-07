@@ -5,6 +5,7 @@ import { ensureAudio } from "../audio/engine.js";
 import { resumeAudio } from "../audio/engine.js";
 import { openMaster } from "../audio/engine.js";
 import { makeOsc } from "../audio/engine.js";
+import { previewOut } from "../audio/engine.js";
 import { S } from "../state.js";
 import { instCanvas } from "../render/instrument.js";
 import { instWrap } from "../render/instrument.js";
@@ -54,7 +55,7 @@ export async function instPlay(p, ticket) {
   g.gain.setValueAtTime(0, when);
   g.gain.linearRampToValueAtTime(0.35, when + 0.008);
   o.connect(g);
-  g.connect(S.master); // master, not a track gain: mutes never silence the panel
+  g.connect(previewOut("synth")); // past the tracks (mutes never silence the panel), at the synth level of the song open
   o.start(when);
   if (S.instSustain) {
     instReleaseHeld(p);
