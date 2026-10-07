@@ -14068,6 +14068,8 @@ test("AI window: the tab you had survives a relaunch — before the bridge says 
   run(`askSetMode("song"); askTabsApply();`);
   assert.equal(val(`askTerminal`), false, "a tap on the song tab is a real choice");
   assert.equal(val(`localStorage.getItem("ff1roll-ask-mode")`), "song");
+});
+
 // ---- MIDI playback v2 (NIGHT-ROLL.md "MIDI support"): tr.ctl = the channel
 // controllers a normal MIDI player follows — pitch bend (+ RPN 0 range), CC7,
 // CC11, CC64, CC1, CC91, CC10 events, program change — owned per track,
