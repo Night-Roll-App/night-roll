@@ -135,283 +135,471 @@
     "n": 1,
     "secs": 78,
     "track": 54,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-flash-of-memory": {
     "n": 1,
     "secs": 38,
     "track": 65,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-good-buddy": {
     "n": 1,
     "secs": 11.91,
     "track": 18,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-good-night-s-rest": {
     "n": 1,
     "secs": 12,
     "track": 36,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "alien-invasion-1": {
     "n": 1,
     "secs": 72.93,
     "track": 12,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "alien-invasion-2": {
     "n": 1,
     "secs": 51.94,
     "track": 13,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ambush": {
     "n": 1,
     "secs": 12,
     "track": 40,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "apple-kid-s-theme": {
     "n": 1,
     "secs": 62.93,
     "track": 67,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bad-morning-to-you": {
     "n": 1,
     "secs": 22.95,
     "track": 109,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-a-machine": {
     "n": 1,
     "secs": 96,
     "track": 129,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-a-mobile-opponent": {
     "n": 1,
     "secs": 64,
     "track": 43,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-a-weak-opponent": {
     "n": 1,
     "secs": 59,
     "track": 41,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-a-weird-opponent": {
     "n": 1,
     "secs": 76,
     "track": 42,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-an-unsettling-opponent": {
     "n": 1,
     "secs": 117,
     "track": 49,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-against-belch": {
     "n": 1,
     "secs": 87,
     "track": 97,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bazaar": {
     "n": 1,
     "secs": 128,
     "track": 120,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "because-i-love-you": {
     "n": 1,
     "secs": 223,
     "track": 177,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bed-and-breakfast": {
     "n": 1,
     "secs": 30,
     "track": 37,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "belch-s-factory": {
     "n": 1,
     "secs": 123.96000000000001,
     "track": 96,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boris-cocktail": {
     "n": 1,
     "secs": 89,
     "track": 107,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boy-meets-girl": {
     "n": 1,
     "secs": 129.96,
     "track": 66,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "burp": {
     "n": 1,
     "secs": 12,
     "track": 206,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "buy-somethin-will-ya": {
     "n": 1,
     "secs": 64,
     "track": 34,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "buzz-buzz-s-demise": {
     "n": 1,
     "secs": 12,
     "track": 201,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "buzz-buzz-s-prophecy": {
     "n": 1,
     "secs": 88.89,
     "track": 19,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "caverns-of-winters": {
     "n": 1,
     "secs": 78.96000000000001,
     "track": 87,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "choose-a-file": {
     "n": 1,
     "secs": 61,
     "track": 5,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dangerous-caves": {
     "n": 1,
     "secs": 65.93,
     "track": 50,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dead-end-chaos-theatre": {
     "n": 1,
     "secs": 110,
     "track": 74,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "deeper-into-ness-subconscious": {
     "n": 1,
     "secs": 87,
     "track": 156,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dr-andonuts-lab": {
     "n": 1,
     "secs": 79,
     "track": 88,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "drilling": {
     "n": 1,
     "secs": 31,
     "track": 203,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "eight-melodies": {
     "n": 1,
     "secs": 131.96,
     "track": 152,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "enjoy-your-stay": {
     "n": 1,
     "secs": 27.95,
     "track": 35,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "escargo-express-at-your-service": {
     "n": 1,
     "secs": 29,
     "track": 92,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "evil-mani-mani-statue": {
     "n": 1,
     "secs": 12,
     "track": 190,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "falling-underground": {
     "n": 1,
     "secs": 12,
     "track": 131,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "flowing-water": {
     "n": 1,
     "secs": 34.93,
     "track": 71,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "franky": {
     "n": 1,
     "secs": 68,
     "track": 48,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "friendly-neighbors": {
     "n": 1,
     "secs": 25.97,
     "track": 33,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "get-on-the-bus": {
     "n": 1,
     "secs": 89,
     "track": 100,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-disintegrates": {
     "n": 1,
     "secs": 19,
     "track": 173,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-intimidation": {
     "n": 1,
     "secs": 60,
     "track": 169,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-intro": {
     "n": 1,
     "secs": 124,
     "track": 166,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-is-fatally-wounded": {
     "n": 1,
     "secs": 19,
     "track": 172,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-is-wounded": {
     "n": 1,
     "secs": 41.88,
     "track": 171,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-lair": {
     "n": 1,
     "secs": 45.910000000000004,
     "track": 165,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giygas-static": {
     "n": 1,
@@ -423,949 +611,1581 @@
     "n": 1,
     "secs": 40,
     "track": 168,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "going-down": {
     "n": 1,
     "secs": 12,
     "track": 90,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "good-friends-bad-friends": {
     "n": 1,
     "secs": 232,
     "track": 178,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "happy-happy-is-blue": {
     "n": 1,
     "secs": 144.95000000000002,
     "track": 72,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "heartless-hotel": {
     "n": 1,
     "secs": 49,
     "track": 79,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hi-hi-hi": {
     "n": 1,
     "secs": 83.97,
     "track": 95,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hidden-track": {
     "n": 1,
     "secs": 72,
     "track": 180,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "home-sweet-home": {
     "n": 1,
     "secs": 105,
     "track": 32,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hospital": {
     "n": 1,
     "secs": 112.97,
     "track": 38,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "in-dalaam-there-is-a-warrior": {
     "n": 1,
     "secs": 46.980000000000004,
     "track": 113,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "in-winters-there-is-a-genius": {
     "n": 1,
     "secs": 171.95000000000002,
     "track": 81,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "inside-the-dungeon": {
     "n": 1,
     "secs": 44.94,
     "track": 124,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "key-item-fanfare": {
     "n": 1,
     "secs": 12,
     "track": 186,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kraken-of-the-sea": {
     "n": 1,
     "secs": 164,
     "track": 119,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lava-springs": {
     "n": 1,
     "secs": 63,
     "track": 133,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "magic-butterfly": {
     "n": 1,
     "secs": 12,
     "track": 191,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "master-of-the-stars": {
     "n": 1,
     "secs": 12,
     "track": 192,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mechanical-tinkering": {
     "n": 1,
     "secs": 19,
     "track": 202,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "megaton-walk": {
     "n": 1,
     "secs": 25,
     "track": 125,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "moonside-swing": {
     "n": 1,
     "secs": 28.94,
     "track": 108,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "morning-in-the-desert": {
     "n": 1,
     "secs": 21,
     "track": 121,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mu-training": {
     "n": 1,
     "secs": 28,
     "track": 115,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mysterious-crash": {
     "n": 1,
     "secs": 11.96,
     "track": 184,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ness-awakens-from-the-nightmare": {
     "n": 1,
     "secs": 40,
     "track": 159,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ness-bike": {
     "n": 1,
     "secs": 77,
     "track": 68,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "now-let-s-go": {
     "n": 1,
     "secs": 12,
     "track": 8,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ok-ssuka": {
     "n": 1,
     "secs": 12,
     "track": 205,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "oncoming-boss": {
     "n": 1,
     "secs": 12,
     "track": 52,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "oncoming-foe": {
     "n": 1,
     "secs": 12,
     "track": 39,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "one-fateful-night": {
     "n": 1,
     "secs": 38,
     "track": 9,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-buzz-buzz-1": {
     "n": 1,
     "secs": 76,
     "track": 23,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-buzz-buzz-2": {
     "n": 1,
     "secs": 39,
     "track": 24,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-buzz-buzz-3": {
     "n": 1,
     "secs": 198,
     "track": 25,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-night-1": {
     "n": 1,
     "secs": 74,
     "track": 20,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-night-2": {
     "n": 1,
     "secs": 77,
     "track": 21,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-night-3": {
     "n": 1,
     "secs": 38,
     "track": 22,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-s-arcade": {
     "n": 1,
     "secs": 21,
     "track": 47,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-s-trumpet-player": {
     "n": 1,
     "secs": 12,
     "track": 185,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "onett-theme": {
     "n": 1,
     "secs": 135.97,
     "track": 30,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "opening-credits": {
     "n": 1,
     "secs": 74,
     "track": 4,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "otherworldly-foe": {
     "n": 1,
     "secs": 99,
     "track": 26,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "paula-s-theme": {
     "n": 1,
     "secs": 64,
     "track": 69,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "peaceful-rest-valley": {
     "n": 1,
     "secs": 68.94,
     "track": 70,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "phase-distorter-failed": {
     "n": 1,
     "secs": 12,
     "track": 161,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "phase-distorter-success": {
     "n": 1,
     "secs": 11.93,
     "track": 162,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "phone": {
     "n": 1,
     "secs": 12,
     "track": 204,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pink-cloud-shrine": {
     "n": 1,
     "secs": 85.96000000000001,
     "track": 116,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pokey-means-business": {
     "n": 1,
     "secs": 212,
     "track": 167,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pokey-s-house-buzz-buzz": {
     "n": 1,
     "secs": 41,
     "track": 28,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pokey-s-house": {
     "n": 1,
     "secs": 41,
     "track": 27,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pokey": {
     "n": 1,
     "secs": 39,
     "track": 17,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "prayer-for-safety": {
     "n": 1,
     "secs": 111,
     "track": 170,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pyramid": {
     "n": 1,
     "secs": 95.94,
     "track": 123,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "rough-landing": {
     "n": 1,
     "secs": 12,
     "track": 91,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "rude-awakening": {
     "n": 1,
     "secs": 65,
     "track": 11,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "runaway-five-left-the-building": {
     "n": 1,
     "secs": 66,
     "track": 76,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "runaway-five-on-the-move": {
     "n": 1,
     "secs": 78,
     "track": 77,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "runaway-five-s-final-performance": {
     "n": 1,
     "secs": 71,
     "track": 104,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "runaway-five-the-daily-show": {
     "n": 1,
     "secs": 61,
     "track": 75,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "runaway-five-to-the-rescue": {
     "n": 1,
     "secs": 17,
     "track": 111,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sailing-to-scaraba": {
     "n": 1,
     "secs": 66,
     "track": 117,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sanctuary-guardian-s-challenge": {
     "n": 1,
     "secs": 13,
     "track": 51,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sanctuary-guardian": {
     "n": 1,
     "secs": 133,
     "track": 53,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "saturn-valley-caverns": {
     "n": 1,
     "secs": 44.94,
     "track": 94,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "save-the-miners": {
     "n": 1,
     "secs": 136.91,
     "track": 106,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sea-of-eden": {
     "n": 1,
     "secs": 94,
     "track": 157,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "secret-passage": {
     "n": 1,
     "secs": 12,
     "track": 188,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "smiles-and-tears": {
     "n": 1,
     "secs": 300,
     "track": 179,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "snowman": {
     "n": 1,
     "secs": 136,
     "track": 82,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "someone-s-knocking-at-the-door": {
     "n": 1,
     "secs": 34.87,
     "track": 14,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-fire-spring-complete": {
     "n": 1,
     "secs": 12,
     "track": 150,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-fire-spring": {
     "n": 1,
     "secs": 12,
     "track": 141,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-giant-step-complete": {
     "n": 1,
     "secs": 12,
     "track": 143,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-giant-step": {
     "n": 1,
     "secs": 12,
     "track": 134,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-lilliput-steps-complete": {
     "n": 1,
     "secs": 12,
     "track": 144,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-lilliput-steps": {
     "n": 1,
     "secs": 12,
     "track": 135,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-lumine-hall-complete": {
     "n": 1,
     "secs": 12,
     "track": 149,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-lumine-hall": {
     "n": 1,
     "secs": 12,
     "track": 140,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-magnet-hill-complete": {
     "n": 1,
     "secs": 12,
     "track": 147,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-magnet-hill": {
     "n": 1,
     "secs": 12,
     "track": 138,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-milky-well-complete": {
     "n": 1,
     "secs": 12,
     "track": 145,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-milky-well": {
     "n": 1,
     "secs": 12,
     "track": 136,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-no-sounds-complete": {
     "n": 1,
     "secs": 12,
     "track": 151,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-no-sounds": {
     "n": 1,
     "secs": 12,
     "track": 142,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-pink-cloud-complete": {
     "n": 1,
     "secs": 12,
     "track": 148,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-pink-cloud": {
     "n": 1,
     "secs": 12,
     "track": 139,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-rainy-circle-complete": {
     "n": 1,
     "secs": 12,
     "track": 146,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sound-stone-rainy-circle": {
     "n": 1,
     "secs": 12,
     "track": 137,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "spacetoneer": {
     "n": 1,
     "secs": 18,
     "track": 160,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "spell-learned": {
     "n": 1,
     "secs": 12,
     "track": 187,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "spooky": {
     "n": 1,
     "secs": 12,
     "track": 189,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "stonehenge-base-shuts-down": {
     "n": 1,
     "secs": 21,
     "track": 130,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "summers-eternal-tourist-trap": {
     "n": 1,
     "secs": 79.96000000000001,
     "track": 112,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sunrise-onett-theme": {
     "n": 1,
     "secs": 143,
     "track": 29,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "super-dry-dance": {
     "n": 1,
     "secs": 100,
     "track": 101,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "teleportation-end": {
     "n": 1,
     "secs": 11.97,
     "track": 200,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "teleportation": {
     "n": 1,
     "secs": 12,
     "track": 199,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tessie-has-been-sighted": {
     "n": 1,
     "secs": 21,
     "track": 85,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tessie": {
     "n": 1,
     "secs": 86.94,
     "track": 86,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "that-was-easy": {
     "n": 1,
     "secs": 12,
     "track": 45,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-cliff-that-time-forgot": {
     "n": 1,
     "secs": 18.97,
     "track": 163,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-deep-darkness": {
     "n": 1,
     "secs": 145,
     "track": 127,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-evil-giygas-attacks-part-1": {
     "n": 1,
     "secs": 29,
     "track": 1,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-evil-giygas-attacks-part-2": {
     "n": 1,
     "secs": 15,
     "track": 2,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-floating-kingdom-of-dalaam": {
     "n": 1,
     "secs": 133.95,
     "track": 114,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-heroes-return-part-1": {
     "n": 1,
     "secs": 91,
     "track": 175,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-heroes-return-part-2": {
     "n": 1,
     "secs": 119,
     "track": 176,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-jolly-flying-man": {
     "n": 1,
     "secs": 41,
     "track": 155,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-lost-underworld": {
     "n": 1,
     "secs": 179.95000000000002,
     "track": 132,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-metropolis-of-fourside": {
     "n": 1,
     "secs": 195,
     "track": 102,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-monkeys-maze": {
     "n": 1,
     "secs": 50.97,
     "track": 110,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-nightmare-begins": {
     "n": 1,
     "secs": 13,
     "track": 153,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-place": {
     "n": 1,
     "secs": 59,
     "track": 164,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-power": {
     "n": 1,
     "secs": 62,
     "track": 158,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sky-runner": {
     "n": 1,
     "secs": 117,
     "track": 89,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-1": {
     "n": 1,
     "secs": 12,
     "track": 193,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-2": {
     "n": 1,
     "secs": 12,
     "track": 194,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-3": {
     "n": 1,
     "secs": 12,
     "track": 195,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-4": {
     "n": 1,
     "secs": 12,
     "track": 196,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-5": {
     "n": 1,
     "secs": 12,
     "track": 197,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-sphinx-s-puzzle-solved": {
     "n": 1,
     "secs": 12,
     "track": 198,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-submarine": {
     "n": 1,
     "secs": 59,
     "track": 126,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-tendas-cave": {
     "n": 1,
     "secs": 103.95,
     "track": 128,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-unforgiving-desert": {
     "n": 1,
     "secs": 128,
     "track": 122,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-voyage-continues": {
     "n": 1,
     "secs": 42,
     "track": 118,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "threed-free-at-last": {
     "n": 1,
     "secs": 186.97,
     "track": 99,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "threed-zombie-central": {
     "n": 1,
     "secs": 75.95,
     "track": 78,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "title-screen": {
     "n": 1,
     "secs": 15,
     "track": 3,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "topolla-theatre-home-to-the-one-only-venus": {
     "n": 1,
     "secs": 99,
     "track": 103,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unidentified-falling-object": {
     "n": 1,
     "secs": 20,
     "track": 10,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unknown-jingle-1": {
     "n": 1,
     "secs": 12,
     "track": 182,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unknown-jingle-2": {
     "n": 1,
     "secs": 12,
     "track": 183,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unused-pokey-jingle": {
     "n": 1,
     "secs": 11.93,
     "track": 181,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "venus-live": {
     "n": 1,
     "secs": 132,
     "track": 105,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "welcome-home": {
     "n": 1,
     "secs": 174,
     "track": 154,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "welcome-to-your-sanctuary": {
     "n": 1,
     "secs": 42.94,
     "track": 56,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "what-a-great-picture": {
     "n": 1,
     "secs": 31,
     "track": 31,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "what-an-annoying-knock": {
     "n": 1,
     "secs": 35,
     "track": 15,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "whoa": {
     "n": 1,
     "secs": 12,
     "track": 16,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "whoops": {
     "n": 1,
     "secs": 12,
     "track": 80,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "winters-wake-up-call": {
     "n": 1,
     "secs": 18,
     "track": 84,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "winters-white": {
     "n": 1,
     "secs": 136.92000000000002,
     "track": 83,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "you-defeated-the-boss": {
     "n": 1,
     "secs": 11.98,
     "track": 55,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "you-gained-a-level": {
     "n": 1,
     "secs": 15,
     "track": 46,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "you-ve-come-far-ness": {
     "n": 1,
     "secs": 129,
     "track": 98,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "you-ve-got-a-new-friend": {
     "n": 1,
     "secs": 11.63,
     "track": 73,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "you-win": {
     "n": 1,
     "secs": 19,
     "track": 44,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-name-please-noiseless": {
     "n": 1,
     "secs": 182,
     "track": 7,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-name-please": {
     "n": 1,
     "secs": 182,
     "track": 6,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-fire-spring": {
     "n": 1,
     "secs": 12,
     "track": 64,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-giant-step": {
     "n": 1,
     "secs": 12,
     "track": 57,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-lilliput-steps": {
     "n": 1,
     "secs": 12,
     "track": 58,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-lumine-hall": {
     "n": 1,
     "secs": 12,
     "track": 63,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-magnet-hill": {
     "n": 1,
     "secs": 12,
     "track": 61,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-milky-well": {
     "n": 1,
     "secs": 12,
     "track": 59,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-pink-cloud": {
     "n": 1,
     "secs": 12,
     "track": 62,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "your-sanctuary-rainy-circle": {
     "n": 1,
     "secs": 12,
     "track": 60,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "zombie-paper": {
     "n": 1,
     "secs": 45,
     "track": 93,
-    "disc": 0
+    "disc": 0,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
