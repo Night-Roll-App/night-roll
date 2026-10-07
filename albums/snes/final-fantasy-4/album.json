@@ -34,7 +34,9 @@
   "theme-of-love": "Theme of Love",
   "tower-of-zot": "Tower of Zot",
   "welcome-to-our-town": "Welcome to Our Town!",
-  "within-the-giant": "Within the Giant"
+  "within-the-giant": "Within the Giant",
+  "main-theme-ocean-recapture": "Main Theme (Ocean) (re-capture)",
+  "tranquil-beach-recapture": "Tranquil Beach (re-capture)"
  },
  "nsf": {
   "vault": "snes/final-fantasy-4/",
@@ -42,157 +44,281 @@
    "another-moon": {
     "n": 1,
     "secs": 112,
-    "track": 43
+    "track": 43,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "castle-damcyan": {
     "n": 1,
     "secs": 67,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chocobo-chocobo": {
     "n": 1,
     "secs": 54,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chocobo-forest": {
     "n": 1,
     "secs": 17,
-    "track": 50
+    "track": 50,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "crickets": {
     "n": 1,
     "secs": 12,
-    "track": 51
+    "track": 51,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cry-in-sorrow-part-1": {
     "n": 1,
     "secs": 12,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cry-in-sorrow-part-2": {
     "n": 1,
     "secs": 111,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dancing-calcobrina": {
     "n": 1,
     "secs": 54,
-    "track": 39
+    "track": 39,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dancing-girls": {
     "n": 1,
     "secs": 13,
-    "track": 52
+    "track": 52,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "down-the-well": {
     "n": 1,
     "secs": 12,
-    "track": 53
+    "track": 53,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue-part-1": {
     "n": 1,
     "secs": 300,
-    "track": 47
+    "track": 47,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue-part-2": {
     "n": 1,
     "secs": 268,
-    "track": 48
+    "track": 48,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue-part-3": {
     "n": 1,
     "secs": 213,
-    "track": 49
+    "track": 49,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fabul": {
     "n": 1,
     "secs": 112,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare": {
     "n": 1,
     "secs": 32,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fight-1": {
     "n": 1,
     "secs": 99,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fight-2": {
     "n": 1,
     "secs": 127,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "giott-the-great-king": {
     "n": 1,
     "secs": 65,
-    "track": 38
+    "track": 38,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "golbez-clad-in-dark": {
     "n": 1,
     "secs": 108,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "good-night": {
     "n": 1,
     "secs": 12,
-    "track": 54
+    "track": 54,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "gysahl-s-whistle": {
     "n": 1,
     "secs": 12,
-    "track": 55
+    "track": 55,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hello-big-chocobo": {
     "n": 1,
     "secs": 49,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hey-cid": {
     "n": 1,
     "secs": 63,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hummingway-s-tune": {
     "n": 1,
     "secs": 12,
-    "track": 56
+    "track": 56,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "illusionary-world": {
     "n": 1,
     "secs": 84.99,
-    "track": 41
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "into-the-darkness": {
     "n": 1,
     "secs": 102,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "join-the-party": {
     "n": 1,
     "secs": 12,
-    "track": 57
+    "track": 57,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kingdom-baron": {
     "n": 1,
     "secs": 83,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "land-of-dwarves": {
     "n": 1,
     "secs": 103.99000000000001,
-    "track": 37
+    "track": 37,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "long-way-to-go": {
     "n": 1,
     "secs": 128,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lunar-subterrane": {
     "n": 1,
     "secs": 117,
-    "track": 58
+    "track": 58,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "main-theme-ocean": {
     "n": 1,
@@ -202,152 +328,272 @@
    "main-theme": {
     "n": 1,
     "secs": 154.99,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "melody-of-lute-night": {
     "n": 1,
     "secs": 87,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "melody-of-lute": {
     "n": 1,
     "secs": 87,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mt-ordeals": {
     "n": 1,
     "secs": 95,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mystic-mysidia": {
     "n": 1,
     "secs": 86.99,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "palom-and-porom": {
     "n": 1,
     "secs": 39,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "prologue": {
     "n": 1,
     "secs": 108.98,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "red-wings": {
     "n": 1,
     "secs": 127,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ring-of-bomb": {
     "n": 1,
     "secs": 89,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "run": {
     "n": 1,
     "secs": 24,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "rydia": {
     "n": 1,
     "secs": 121,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "samba-de-chocobo": {
     "n": 1,
     "secs": 59,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "serpent-road": {
     "n": 1,
     "secs": 29,
-    "track": 59
+    "track": 59,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ship-ahoy": {
     "n": 1,
     "secs": 12,
-    "track": 60
+    "track": 60,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "somewhere-in-the-world": {
     "n": 1,
     "secs": 48,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "surprise": {
     "n": 1,
     "secs": 12,
-    "track": 61
+    "track": 61,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "suspicion": {
     "n": 1,
     "secs": 53,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-airship": {
     "n": 1,
     "secs": 46,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-big-whale": {
     "n": 1,
     "secs": 62,
-    "track": 42
+    "track": 42,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-dreadful-fight": {
     "n": 1,
     "secs": 177,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-final-battle": {
     "n": 1,
     "secs": 148,
-    "track": 46
+    "track": 46,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-lunarians": {
     "n": 1,
     "secs": 125,
-    "track": 44
+    "track": 44,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-package-opens": {
     "n": 1,
     "secs": 12,
-    "track": 62
+    "track": 62,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-paladin": {
     "n": 1,
     "secs": 22,
-    "track": 63
+    "track": 63,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-porno-magazine": {
     "n": 1,
     "secs": 12,
-    "track": 64
+    "track": 64,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-prelude": {
     "n": 1,
     "secs": 119,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-tower-of-babel": {
     "n": 1,
     "secs": 109.98,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "theme-of-love": {
     "n": 1,
     "secs": 127.99000000000001,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "toroian-beauty": {
     "n": 1,
     "secs": 94,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tower-of-zot": {
     "n": 1,
     "secs": 81,
-    "track": 40
+    "track": 40,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tranquil-beach": {
     "n": 1,
@@ -357,12 +603,38 @@
    "welcome-to-our-town": {
     "n": 1,
     "secs": 77,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "within-the-giant": {
     "n": 1,
     "secs": 124,
-    "track": 45
+    "track": 45,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "main-theme-ocean-recapture": {
+    "n": 1,
+    "secs": 154,
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "tranquil-beach-recapture": {
+    "n": 1,
+    "secs": 16,
+    "track": 65,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",

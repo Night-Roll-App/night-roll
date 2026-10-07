@@ -5026,6 +5026,10 @@
     "path": "albums/snes/final-fantasy-4/main-theme-ocean.mid"
    },
    {
+    "title": "Main Theme (Ocean) (re-capture)",
+    "path": "albums/snes/final-fantasy-4/main-theme-ocean-recapture.mid"
+   },
+   {
     "title": "Melody of Lute",
     "path": "albums/snes/final-fantasy-4/melody-of-lute.mid"
    },
@@ -5144,6 +5148,10 @@
    {
     "title": "Tranquil Beach",
     "path": "albums/snes/final-fantasy-4/tranquil-beach.mid"
+   },
+   {
+    "title": "Tranquil Beach (re-capture)",
+    "path": "albums/snes/final-fantasy-4/tranquil-beach-recapture.mid"
    },
    {
     "title": "Welcome to Our Town!",
