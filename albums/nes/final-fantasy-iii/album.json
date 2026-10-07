@@ -57,32 +57,56 @@
    "added-companion": {
     "n": 55,
     "secs": 4.816474,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "applause-sound-effect": {
     "n": 62,
     "secs": 3.0332120000000002,
-    "track": 63
+    "track": 63,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bahamut-flies-about-sound-effect": {
     "n": 64,
     "secs": 6.766396,
-    "track": 65
+    "track": 65,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "battle-1": {
     "n": 33,
     "secs": 43.298268,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "battle-2": {
     "n": 43,
     "secs": 46.548138,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "beneath-the-horizon-undersea-shrine": {
     "n": 16,
     "secs": 39.531752,
-    "track": 45
+    "track": 45,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "big-chocobo-fat-chocobo-discovered": {
     "n": 26,
@@ -92,12 +116,20 @@
    "boo-sound-effect": {
     "n": 63,
     "secs": 2.933216,
-    "track": 64
+    "track": 64,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "castle-of-hain": {
     "n": 45,
     "secs": 48.898044,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "chocobo-forest": {
     "n": 46,
@@ -107,7 +139,11 @@
    "chocobos-chocobo-theme": {
     "n": 9,
     "secs": 27.882218,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "crystal-cave-into-the-crystal-cave": {
     "n": 3,
@@ -117,62 +153,110 @@
    "crystal-room": {
     "n": 65,
     "secs": 20.215858,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cute-little-tozas-village-of-little-people-tozas": {
     "n": 12,
     "secs": 30.315454,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dancer-s-dance": {
     "n": 29,
     "secs": 13.549458,
-    "track": 38
+    "track": 38,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "danger-sound-effect": {
     "n": 60,
     "secs": 9.349626,
-    "track": 61
+    "track": 61,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "deep-under-the-water-submarine-nautilus": {
     "n": 22,
     "secs": 51.931256,
-    "track": 44
+    "track": 44,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "elia-the-maiden-of-water": {
     "n": 4,
     "secs": 47.848086,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "eternal-wind": {
     "n": 31,
     "secs": 67.99728,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fall-sound-effect": {
     "n": 59,
     "secs": 3.549858,
-    "track": 60
+    "track": 60,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fanfare-victory-fanfare": {
     "n": 8,
     "secs": 17.33264,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "forbidden-land-forbidden-land-eureka": {
     "n": 40,
     "secs": 27.83222,
-    "track": 50
+    "track": 50,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "garuda-defeat": {
     "n": 25,
     "secs": 6.699732,
-    "track": 40
+    "track": 40,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "go-above-the-clouds-the-enterprise-flies-through-the-sky": {
     "n": 11,
     "secs": 26.6656,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "good-morning-une-s-morning-exercise": {
     "n": 28,
@@ -182,17 +266,29 @@
    "good-ol-fellows-four-old-men-s-theme": {
     "n": 10,
     "secs": 22.782422,
-    "track": 41
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "hazardous-short-music-1": {
     "n": 50,
     "secs": 12.799488,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "hazardous-short-music-2": {
     "n": 56,
     "secs": 12.632828,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "hazardous-short-music-3": {
     "n": 15,
@@ -202,22 +298,38 @@
    "in-the-covert-town-hidden-village-of-falgabard": {
     "n": 19,
     "secs": 52.714558000000004,
-    "track": 42
+    "track": 42,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "item-get": {
     "n": 24,
     "secs": 4.8998040000000005,
-    "track": 39
+    "track": 39,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "jinn-the-fire-jinn-s-curse": {
     "n": 13,
     "secs": 34.298628,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "let-me-know-the-truth-house-of-doga-and-une": {
     "n": 39,
     "secs": 38.565124,
-    "track": 46
+    "track": 46,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "let-s-play-the-piano-again-piano-practice-2": {
     "n": 47,
@@ -232,22 +344,38 @@
    "living-forest": {
     "n": 14,
     "secs": 27.198912,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "lute-of-noah": {
     "n": 5,
     "secs": 21.232484,
-    "track": 47
+    "track": 47,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "my-home-town-hometown-of-ur": {
     "n": 32,
     "secs": 69.480554,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "opening-theme": {
     "n": 21,
     "secs": 64.197432,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "parting-with-a-companion": {
     "n": 54,
@@ -257,7 +385,11 @@
    "resting-at-the-inn": {
     "n": 1,
     "secs": 7.099716,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "return-of-the-warrior": {
     "n": 6,
@@ -267,22 +399,38 @@
    "sailing-enterprise-the-enterprise-goes-out-to-the-sea": {
     "n": 35,
     "secs": 34.49862,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "salonia-megalopolis-of-salonia": {
     "n": 57,
     "secs": 46.231484,
-    "track": 43
+    "track": 43,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "shattering-sound-effect": {
     "n": 61,
     "secs": 2.99988,
-    "track": 62
+    "track": 62,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "shrine-of-nept": {
     "n": 23,
     "secs": 34.565284,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "swift-twist": {
     "n": 27,
@@ -292,87 +440,155 @@
    "the-boundless-ocean": {
     "n": 58,
     "secs": 52.364572,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-crystal-tower": {
     "n": 38,
     "secs": 33.332,
-    "track": 51
+    "track": 51,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-dark-crystals": {
     "n": 42,
     "secs": 47.99808,
-    "track": 52
+    "track": 52,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-dungeon-dungeon": {
     "n": 30,
     "secs": 32.83202,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-everlasting-world-ending-theme-1": {
     "n": 49,
     "secs": 83.796648,
-    "track": 56
+    "track": 56,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-everlasting-world-ending-theme-2": {
     "n": 44,
     "secs": 81.113422,
-    "track": 57
+    "track": 57,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-everlasting-world-ending-theme-3": {
     "n": 48,
     "secs": 249.49002000000002,
-    "track": 58
+    "track": 58,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-invincible-giant-battleship-invincible": {
     "n": 36,
     "secs": 38.715118000000004,
-    "track": 49
+    "track": 49,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-prelude-prelude": {
     "n": 2,
     "secs": 41.098356,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-requiem-requiem": {
     "n": 20,
     "secs": 30.348786,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-way-to-the-top-the-road-to-the-mountain-top": {
     "n": 34,
     "secs": 19.899204,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "this-is-the-last-battle-last-battle-1": {
     "n": 51,
     "secs": 13.74945,
-    "track": 53
+    "track": 53,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "this-is-the-last-battle-last-battle-2": {
     "n": 52,
     "secs": 8.033012,
-    "track": 54
+    "track": 54,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "this-is-the-last-battle-last-battle-3": {
     "n": 41,
     "secs": 35.348586,
-    "track": 55
+    "track": 55,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "time-remains-village-of-the-ancients": {
     "n": 17,
     "secs": 48.281402,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "tower-of-owen": {
     "n": 37,
     "secs": 35.881898,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "town-of-water-town-of-alm": {
     "n": 7,
     "secs": 56.814394,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "vegies-of-geasal-geasal-s-vegetables": {
     "n": 18,
