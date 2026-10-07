@@ -420,7 +420,7 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
    Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
-Q18. (Terminal #183/#184, 2026-10-07) Loudness — docs/plans/2026-10-07-console-loudness.md. Game sound is 13–22 dB under a normal soundtrack level (a fixed 0.22 master, no loudness step). Fix: each song gets one measured gain so 100% sounds right; synth and console match. Then the volume control:
+Q18. ANSWERED (Terminal #187): build the fix; top-bar volume hidden by default, toggle in View › Display. (Terminal #183/#184, 2026-10-07) Loudness — docs/plans/2026-10-07-console-loudness.md. Game sound is 13–22 dB under a normal soundtrack level (a fixed 0.22 master, no loudness step). Fix: each song gets one measured gain so 100% sounds right; synth and console match. Then the volume control:
     1. remove the top-bar button, keep the Mixer master (advisor's pick)  2. remove both  3. keep both
 Q17. ANSWERED B (Terminal #179) — SHIPPED 2026-10-07 (LCD "4 | 2&", +NN% off-grid; one formatter posParts). (Terminal #175, 2026-10-07) Cursor position readout — docs/plans/2026-10-07-cursor-position-readout.md.
     Which way? At bar 4, the "&" of beat 2:
