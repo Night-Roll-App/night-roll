@@ -19,182 +19,326 @@
    "big-boss-confrontation-1": {
     "n": 1,
     "secs": 65,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "big-boss-confrontation-2": {
     "n": 1,
     "secs": 53,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "brinstar-overgrown-with-vegetation-area": {
     "n": 1,
     "secs": 213,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "brinstar-red-soil-swampy-area": {
     "n": 1,
     "secs": 238,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chozo-statue-awakens": {
     "n": 1,
     "secs": 63.940000000000005,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "continue": {
     "n": 1,
     "secs": 14.950000000000001,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "crateria-rainstorm": {
     "n": 1,
     "secs": 35,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "crateria-the-space-pirates-appear": {
     "n": 1,
     "secs": 209,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "crateria-underground": {
     "n": 1,
     "secs": 153,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ending": {
     "n": 1,
     "secs": 202.97,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "escape": {
     "n": 1,
     "secs": 59,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "item-acquisition-fanfare": {
     "n": 1,
     "secs": 12,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "item-room": {
     "n": 1,
     "secs": 42,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "maridia-drifting-sand-underwater-area": {
     "n": 1,
     "secs": 227.07,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "maridia-rocky-underwater-area": {
     "n": 1,
     "secs": 167.03,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mini-boss-confrontation": {
     "n": 1,
     "secs": 124,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mother-brain": {
     "n": 1,
     "secs": 129.98,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mysterious-statue-chamber": {
     "n": 1,
     "secs": 89,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "norfair-ancient-ruins-area": {
     "n": 1,
     "secs": 277,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "norfair-hot-lava-area": {
     "n": 1,
     "secs": 132,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "opening-destruction-of-the-space-colony": {
     "n": 1,
     "secs": 91.88,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "planet-zebes-arrival-on-crateria": {
     "n": 1,
     "secs": 153,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "planet-zebes-explodes": {
     "n": 1,
     "secs": 24,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "samus-aran-s-appearance-fanfare": {
     "n": 1,
     "secs": 12,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "samus-aran-s-final-cry": {
     "n": 1,
     "secs": 12,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "space-colony": {
     "n": 1,
     "secs": 19,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "space-ship": {
     "n": 1,
     "secs": 12.93,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tension": {
     "n": 1,
     "secs": 64,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-space-colony-explodes-to-planet-zebes": {
     "n": 1,
     "secs": 27,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-space-colony-explodes": {
     "n": 1,
     "secs": 12,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "theme-of-samus-aran-galactic-warrior": {
     "n": 1,
     "secs": 239.06,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "theme-of-super-metroid": {
     "n": 1,
     "secs": 192.86,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tourian": {
     "n": 1,
     "secs": 222,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unused-jingle": {
     "n": 1,
     "secs": 12,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "wrecked-ship-activated": {
     "n": 1,
     "secs": 271,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "wrecked-ship": {
     "n": 1,
     "secs": 267.84000000000003,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
