@@ -34,182 +34,326 @@
    "anger-of-the-guardians": {
     "n": 1,
     "secs": 26,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "beginning-of-the-journey": {
     "n": 1,
     "secs": 48,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "black-mist-storm": {
     "n": 1,
     "secs": 99,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "black-mist": {
     "n": 1,
     "secs": 98.92,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dank-dungeons": {
     "n": 1,
     "secs": 40,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dark-golden-land": {
     "n": 1,
     "secs": 120,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dungeon-of-shadows": {
     "n": 1,
     "secs": 96,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "epilogue-beautiful-hyrule": {
     "n": 1,
     "secs": 229.86,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "forest-of-mystery": {
     "n": 1,
     "secs": 41,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fortune-teller": {
     "n": 1,
     "secs": 39,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ganon-s-message": {
     "n": 1,
     "secs": 63,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "great-victory": {
     "n": 1,
     "secs": 12,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "guessing-game-house": {
     "n": 1,
     "secs": 43,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hyrule-field-main-theme": {
     "n": 1,
     "secs": 78,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kakariko-village": {
     "n": 1,
     "secs": 186,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lost-ancient-ruins": {
     "n": 1,
     "secs": 114,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "majestic-castle-storm": {
     "n": 1,
     "secs": 169,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "majestic-castle": {
     "n": 1,
     "secs": 169,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "meeting-the-maidens": {
     "n": 1,
     "secs": 63,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "power-of-the-gods": {
     "n": 1,
     "secs": 83,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "priest-of-the-dark-order": {
     "n": 1,
     "secs": 59,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "princess-zelda-s-rescue": {
     "n": 1,
     "secs": 91,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "release-of-ganon": {
     "n": 1,
     "secs": 12,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "safety-in-the-sanctuary": {
     "n": 1,
     "secs": 62,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "seal-of-seven-maidens": {
     "n": 1,
     "secs": 109,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "soldiers-of-kakariko-village": {
     "n": 1,
     "secs": 19.92,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "staff-roll": {
     "n": 1,
     "secs": 234,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-goddess-appears": {
     "n": 1,
     "secs": 51,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-prince-of-darkness": {
     "n": 1,
     "secs": 65,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-silly-pink-rabbit-storm": {
     "n": 1,
     "secs": 51,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-silly-pink-rabbit": {
     "n": 1,
     "secs": 51,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "time-of-the-falling-rain-storm": {
     "n": 1,
     "secs": 48,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "time-of-the-falling-rain": {
     "n": 1,
     "secs": 48,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "title-link-to-the-past": {
     "n": 1,
     "secs": 17,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unsealing-the-master-sword": {
     "n": 1,
     "secs": 12,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unused-sound": {
     "n": 1,
     "secs": 12,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
