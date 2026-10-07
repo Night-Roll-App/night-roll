@@ -14,92 +14,164 @@
    "ancient-castle": {
     "n": 13,
     "secs": 21.182486,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "battle-scene-1": {
     "n": 19,
     "secs": 42.398304,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "battle-scene-2": {
     "n": 20,
     "secs": 67.297308,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "castle-pandemonium": {
     "n": 12,
     "secs": 27.432236,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "chocobo-theme": {
     "n": 3,
     "secs": 6.866392,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dead-music": {
     "n": 23,
     "secs": 19.799208,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dungeon": {
     "n": 16,
     "secs": 47.99808,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "escape": {
     "n": 27,
     "secs": 5.649774,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fanfare": {
     "n": 8,
     "secs": 4.83314,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "finale": {
     "n": 6,
     "secs": 189.342426,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "imperial-army-theme": {
     "n": 15,
     "secs": 40.381718,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "joining-the-team": {
     "n": 11,
     "secs": 4.966468,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "magician-s-tower": {
     "n": 14,
     "secs": 37.99848,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "main-theme": {
     "n": 4,
     "secs": 39.848406,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "rebel-army-theme": {
     "n": 18,
     "secs": 31.99872,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "reunion": {
     "n": 26,
     "secs": 9.41629,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "revivification": {
     "n": 25,
     "secs": 6.633068,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "temptation-of-the-princess": {
     "n": 24,
     "secs": 10.91623,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-emperor-s-revival": {
     "n": 5,
@@ -109,22 +181,38 @@
    "the-prelude": {
     "n": 1,
     "secs": 38.448462,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "town": {
     "n": 17,
     "secs": 48.598056,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "victory": {
     "n": 22,
     "secs": 17.265976000000002,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "waltz": {
     "n": 28,
     "secs": 16.366012,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
