@@ -196,6 +196,48 @@ export function renderMixer() {
     wrap.appendChild(strip);
   });
   wrap.appendChild(mixerMasterStripEl());
+  mixerScrollWire();
+  requestAnimationFrame(mixerScrollSync);
+}
+// the Mixer's scroll bar (Josh #191): thumb width = the visible share of the
+// strips, position = scrollLeft; hidden when everything fits. Wired once, on
+// first render (no top-level side effects).
+export function mixerScrollSync() {
+  const wrap = document.getElementById("mixerstrips"), bar = document.getElementById("mixerscroll"), thumb = document.getElementById("mixerthumb");
+  if (!wrap || !bar || !thumb) return;
+  const max = wrap.scrollWidth - wrap.clientWidth;
+  bar.style.display = max > 1 ? "" : "none";
+  if (max <= 1) return;
+  const tw = bar.clientWidth, w = Math.max(44, tw * wrap.clientWidth / wrap.scrollWidth);
+  thumb.style.width = w + "px";
+  thumb.style.transform = "translateX(" + ((tw - w) * wrap.scrollLeft / max) + "px)";
+}
+export function mixerScrollWire() {
+  const wrap = document.getElementById("mixerstrips"), bar = document.getElementById("mixerscroll"), thumb = document.getElementById("mixerthumb");
+  if (!wrap || !bar || !thumb || bar.dataset.wired) return;
+  bar.dataset.wired = "1";
+  wrap.addEventListener("scroll", mixerScrollSync, {passive: true});
+  window.addEventListener("resize", mixerScrollSync);
+  const to = x => { // thumb's left edge at x (bar coordinates) → scrollLeft
+    const tw = bar.clientWidth, w = thumb.offsetWidth, max = wrap.scrollWidth - wrap.clientWidth;
+    wrap.scrollLeft = Math.max(0, Math.min(1, x / Math.max(1, tw - w))) * max;
+  };
+  bar.addEventListener("pointerdown", e => {
+    const r = bar.getBoundingClientRect(), tr = thumb.getBoundingClientRect();
+    const onThumb = e.clientX >= tr.left && e.clientX <= tr.right;
+    const grab = onThumb ? e.clientX - tr.left : tr.width / 2; // a tap on the track centers the thumb there
+    S.mixerSbDrag = {id: e.pointerId, grab};
+    to(e.clientX - r.left - grab);
+    try { bar.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  bar.addEventListener("pointermove", e => {
+    if (!S.mixerSbDrag || e.pointerId !== S.mixerSbDrag.id) return;
+    to(e.clientX - bar.getBoundingClientRect().left - S.mixerSbDrag.grab);
+  });
+  const end = e => { if (S.mixerSbDrag && e.pointerId === S.mixerSbDrag.id) S.mixerSbDrag = null; };
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
 }
 export function mixerStripEl(tr, ti, canReorder) {
   const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});

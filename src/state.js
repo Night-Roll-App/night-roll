@@ -60,6 +60,7 @@ export const S = {
   mixerMeterLastT: 0,
   mixerStripEls: [],
   mixerDrag: null,
+  mixerSbDrag: null, // the Mixer's own scroll bar: {id, grab} while its thumb is held (Josh #191)
   songEndTick: 0,
   rollnotes: [],
   rollnotesReadOnly: false,

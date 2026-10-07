@@ -2847,6 +2847,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "swipe sideways on the strips",
     "Beat subdivisions",
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "makes room", "Edit patch…", "Patches ›",
@@ -12307,7 +12308,14 @@ test("✎ Edit: opens the 'Edit a copy' sheet (name defaults to the title, folde
   // tapping ✎ Edit opens the sheet, not an immediate fork — name defaults to
   // the title, folder to my-covers (nothing's been saved there yet, so
   // folderChoices() alone wouldn't offer it — the sheet still must)
+  // touch (pointer: coarse): the name is NOT focused, so no on-screen keyboard (Josh #192)
+  a.run(`globalThis.__fsFocus = 0; document.getElementById("fsname").focus = () => { globalThis.__fsFocus++; };
+         globalThis.__keepMM = [globalThis.matchMedia, window.matchMedia]; globalThis.matchMedia = window.matchMedia = q => ({matches: false, media: q});`);
   a.run(`document.getElementById("makeitminebtn").click();`);
+  assert.equal(a.run(`globalThis.__fsFocus`), 0, "touch: Edit never raises the keyboard");
+  a.run(`globalThis.matchMedia = window.matchMedia = q => ({matches: /pointer: fine/.test(q), media: q}); openSaveForm("editcopy");`);
+  assert.equal(a.run(`globalThis.__fsFocus`), 1, "mouse/trackpad: the name is focused for typing");
+  a.run(`globalThis.matchMedia = globalThis.__keepMM[0]; window.matchMedia = globalThis.__keepMM[1]; delete document.getElementById("fsname").focus;`);
   assert.equal(a.run(`document.getElementById("filesaveasform").style.display`), "", "the sheet is showing, not an immediate fork");
   assert.equal(a.run(`document.getElementById("filesaveasform").dataset.mode`), "editcopy");
   assert.equal(a.run(`document.getElementById("fstitle").textContent`), "Edit a copy");
@@ -14593,4 +14601,15 @@ test("convertAnchors: a span with no end beat ends on the old meter's last beat 
   run(`rollnotes = [{b1: 1, q1: 1, b2: 2, q2: null, text: "open end"}]; convertAnchors([4, 4], [2, 4]);`);
   assert.deepEqual(val(`[rollnotes[0].b2, rollnotes[0].q2]`), [4, 2], "4/4 bar 2 beat 4 = 2/4 bar 4 beat 2");
   run(`rollnotes = [];`);
+});
+
+test("Mixer scroll bar (Josh #191): wired once on first render, hidden when every strip fits, thumb follows scrollLeft; strips swipe sideways (touch-action pan-x)", () => {
+  installSong();
+  run(`song.tracks = [{name: "a", notes: []}, {name: "b", notes: []}]; trackState = [{muted: false, solo: false}, {muted: false, solo: false}]; renderMixer();`);
+  assert.equal(app.el("mixerscroll").dataset.wired, "1");
+  run(`mixerScrollSync();`);
+  assert.equal(app.el("mixerscroll").style.display, "none", "nothing to scroll: no bar");
+  const css = readFileSync(new URL("../css/app.css", import.meta.url), "utf8");
+  assert.match(css, /\.mixerstrip \{[^}]*touch-action: pan-x;/, "a sideways swipe on a strip scrolls the row");
+  run(`song.tracks = []; trackState = []; renderMixer();`);
 });

@@ -856,8 +856,16 @@
     overflow-x: auto; overflow-y: hidden; padding: 4px 2px 8px; -webkit-overflow-scrolling: touch; }
   .mixerstrip { display: flex; flex-direction: column; align-items: center; gap: 6px;
     flex: 0 0 88px; width: 88px; padding: 8px 6px; border: 1px solid var(--grid); /* inner 74px = the M/S/H row (3 × 22px + 2 gaps) */
-    border-radius: 10px; background: var(--panel2); touch-action: pan-y; }
+    border-radius: 10px; background: var(--panel2); touch-action: pan-x; } /* a sideways swipe scrolls the strips; faders/pan take their own drags (Josh #191) */
   .mixerstrip.selected { border-color: var(--gold); }
+  /* the strips' own scroll bar (Josh #191: the native one was a hairline): a
+     44px-min thumb on a 28px track — drag it, or tap the track to jump */
+  #mixerstrips { scrollbar-width: none; }
+  #mixerstrips::-webkit-scrollbar { display: none; }
+  #mixerscroll { position: relative; height: 28px; margin: 6px 2px 2px; border-radius: 14px;
+    background: var(--bg); border: 1px solid var(--grid); touch-action: none; cursor: pointer; }
+  #mixerthumb { position: absolute; top: 3px; bottom: 3px; left: 0; min-width: 44px; border-radius: 11px;
+    background: var(--accent); opacity: 0.85; }
   .mixerstrip.dragging { opacity: 0.5; }
   .mixerstrip.dropbefore { box-shadow: -3px 0 0 var(--gold) inset; }
   .mixerstrip.dropafter { box-shadow: 3px 0 0 var(--gold) inset; }

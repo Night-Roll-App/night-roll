@@ -162,8 +162,16 @@ export function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" 
   // Publish below) changes nothing, same as any other cancelled sheet.
   title.textContent = mode === "editcopy" ? "Edit a copy" : mode === "publish" ? "Name it, then Publish — closing this changes nothing" : "";
   titleRow.style.display = title.textContent ? "" : "none";
-  inp.focus();
-  if (mode === "editcopy") inp.select?.(); // select-all: retyping the defaulted title is one keystroke, not a manual clear first
+  // touch screens never get the name focused on open: focus raises the on-screen
+  // keyboard over half the iPad (Josh #192, "I hate when touching anything by
+  // default brings up the keyboard") — tap the name to rename. A mouse/trackpad
+  // keeps focus + select-all, so retyping the defaulted title is one keystroke.
+  let fine = false;
+  try { fine = !!(window.matchMedia && matchMedia("(pointer: fine)").matches); } catch (err) { /* old engines: treat as touch */ }
+  if (fine) {
+    inp.focus();
+    if (mode === "editcopy") inp.select?.();
+  }
 }
 export function localFolders() { // folder → this device's copies (draft keys), sorted
   const m = {};
