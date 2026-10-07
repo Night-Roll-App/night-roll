@@ -1297,6 +1297,10 @@
     "path": "albums/nes/castlevania-ii/dwelling-of-doom-mansion-bgm.mid"
    },
    {
+    "title": "Dwelling of Doom (Mansion BGM) (re-capture)",
+    "path": "albums/nes/castlevania-ii/dwelling-of-doom-mansion-bgm-recapture.mid"
+   },
+   {
     "title": "Game Over (Game Over)",
     "path": "albums/nes/castlevania-ii/game-over-game-over.mid"
    },
@@ -1311,6 +1315,10 @@
    {
     "title": "Monster Dance (Night BGM)",
     "path": "albums/nes/castlevania-ii/monster-dance-night-bgm.mid"
+   },
+   {
+    "title": "Monster Dance (Night BGM) (re-capture)",
+    "path": "albums/nes/castlevania-ii/monster-dance-night-bgm-recapture.mid"
    },
    {
     "title": "The Silence of The Daylight (Town Stage BGM)",

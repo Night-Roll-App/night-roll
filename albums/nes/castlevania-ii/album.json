@@ -10,7 +10,9 @@
   "message-of-darkness-naming-bgm": "Message of Darkness (Naming BGM)",
   "monster-dance-night-bgm": "Monster Dance (Night BGM)",
   "the-silence-of-the-daylight-town-stage-bgm": "The Silence of The Daylight (Town Stage BGM)",
-  "within-these-castle-walls-castle-bgm": "Within These Castle Walls (Castle BGM)"
+  "within-these-castle-walls-castle-bgm": "Within These Castle Walls (Castle BGM)",
+  "dwelling-of-doom-mansion-bgm-recapture": "Dwelling of Doom (Mansion BGM) (re-capture)",
+  "monster-dance-night-bgm-recapture": "Monster Dance (Night BGM) (re-capture)"
  },
  "nsf": {
   "vault": "nes/castlevania-ii.nsf",
@@ -18,12 +20,20 @@
    "a-requiem-ending": {
     "n": 9,
     "secs": 91.063024,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bloody-tears-street-day-time-bgm": {
     "n": 2,
     "secs": 37.33184,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dwelling-of-doom-mansion-bgm": {
     "n": 4,
@@ -33,17 +43,29 @@
    "game-over-game-over": {
     "n": 7,
     "secs": 5.066464,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "last-boss-last-boss-bgm": {
     "n": 6,
     "secs": 8.532992,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "message-of-darkness-naming-bgm": {
     "n": 8,
     "secs": 15.99936,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "monster-dance-night-bgm": {
     "n": 3,
@@ -53,12 +75,38 @@
    "the-silence-of-the-daylight-town-stage-bgm": {
     "n": 1,
     "secs": 34.131968,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "within-these-castle-walls-castle-bgm": {
     "n": 5,
     "secs": 19.199232000000002,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "dwelling-of-doom-mansion-bgm-recapture": {
+    "n": 4,
+    "secs": 25.432316,
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "monster-dance-night-bgm-recapture": {
+    "n": 3,
+    "secs": 23.599056,
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
