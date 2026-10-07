@@ -426,6 +426,9 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
    song only where the whole render would've had to downgrade or refuse, so
    Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
+## 2026-10-07 LOUDNESS SHIPPED (8259613f) — store the measurements next
+Each song measures itself on first play (device cache) until album.json carries it. Storing: `node tools/measure-loudness.mjs --apply --album <console>/<slug>`, one album per push — renders every song, so run it while Josh isn't using the Mac (CPU). Josh's ear check owed: FF1 Battle, FF6 Terra, Cry of the Planet, SM64 Slider at 100%, console vs Hear the MIDI.
+
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q19. (capture audit 2, 2026-10-07 — docs/plans/2026-10-07-capture-audit-2-and-glide.md) NES triangle notes run long (Zelda: 439 of 511). Shorten them to where the game stops them? Starts, pitches and bars don't move. Default: yes.
 Q20. (same) SNES phantom notes: ~8% of sampled SNES notes are ghosts the game never played, stacked on real notes (mostly Mega Man X, Street Fighter II). Remove them? Annotated songs keep the old version + a "(re-capture)" copy. Default: yes.
