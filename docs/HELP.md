@@ -60,7 +60,7 @@ Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — nev
 Back to bar 1 — or, while a ruler selection is cycling, back to the selection's start, with the view scrolled there. A span you've switched off is ignored. **Return** does the same.
 
 **Speed slider**
-Always out in the top row, beside a **speedometer icon**: 25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.
+Tap the **speedometer icon** in the top row to open it (the button shows the % when you're off 100): 25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.
 
 **Scroll while playing**
 Scrolling away suspends the auto-follow camera so you can study any spot; it latches back on when the playhead reaches what you're looking at.

@@ -163,8 +163,11 @@
   #trackrow.stacked #transport { margin-left: auto; }
   #trackrow.stacked #timectl { margin-right: auto; }
   #trackrow.stacked #trackzone { order: 1; flex: 1 1 100%; }
-  #trackrow.stacked #trackslide { flex: 1 1 auto; }
-  #trackrow.stacked #trackbar { flex: 1 1 auto; }
+  /* explicit full width, not content-sized growth: the iPad still hugged the
+     chips with flex 1 1 auto (Josh #201 — two chips, ▾ two-thirds across) */
+  #trackrow.stacked #trackslide { flex: 1 1 100%; width: 100%; max-width: none; }
+  #trackrow.stacked #trackslide.off { max-width: 0; }
+  #trackrow.stacked #trackbar { flex: 1 1 0; width: 0; min-width: 0; }
   #albumstrip { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(91,120,232,.14);
     border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); font: 12px var(--mono); color: var(--text); }
   #albumtext { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -200,9 +203,9 @@
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   /* the metronome and its ⚙ read as one control (Josh #198) */
   .metgroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--grid); border-radius: 10px; }
-  .speedico { display: inline-flex; align-items: center; color: var(--dim); }
-  .speedico .ico { width: 20px; height: 20px; fill: currentColor; }
-  #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
+  /* ⏱ and ⚙ the same size (Josh #200): both SVG icons in equal boxes */
+  #timectl #metbtn, #timectl #metcfg { min-height: 34px; min-width: 38px; padding: 4px 8px; margin-left: 0; font-size: inherit; }
+  #timectl #metbtn .ico, #timectl #metcfg .ico, #speedbtn .ico { width: 20px; height: 20px; }
   /* Chrome density pass (2026-10-01): the always-visible "Claude Code is
      doing…" header chip crowded the crumb (Josh, screenshot 2026-10-01
      14:37) and is gone — the full status still lives in the AI window's
@@ -214,7 +217,6 @@
      with no visual. */
   .overlay > .sheet:focus { outline: none; } /* focused for VoiceOver on open, not a control */
   #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
-  #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 0.75rem; }
   select:focus-visible, button:focus-visible,
   input:focus-visible, textarea:focus-visible, a:focus-visible,
   [tabindex]:focus-visible, [role="button"]:focus-visible,

@@ -1664,7 +1664,7 @@ export function applySpeed(pct) {
 export const speedbtn = document.getElementById("speedbtn");
 export const _applySpeedInner = applySpeed;
 export function initChrome1() {
-  applySpeed = pct => { _applySpeedInner(pct); document.getElementById("speedsl").value = pct; };
+  applySpeed = pct => { _applySpeedInner(pct); document.getElementById("speedsl").value = pct; document.getElementById("speedbtnpct").textContent = pct === 100 ? "" : " " + pct + "%"; };
 }
 
 // master volume: device pref, multiplies MASTER_VOL everywhere it lands
@@ -1802,13 +1802,14 @@ export function initChrome5() {
   speedsl.addEventListener("change", () => applySpeed(+speedsl.value)); // on release, not per drag-tick
   speedreset.addEventListener("click", () => {
     applySpeed(100);
+    document.getElementById("speedpop").style.display = "none"; // reset means done — fold immediately
   });
-  // volume lives behind a BUTTON (Josh, 2026-08-22: a slider "takes too much
-  // space... if I click it, it opens up the slider") — tap toggles the popover
-  // open; tapping anywhere else folds it back. Speed is always out since the
-  // transport got its own row (Josh #196/#197).
+  // speed + volume live behind BUTTONS (Josh, 2026-08-22: the slider "takes too
+  // much space... if I click it, it opens up the slider"; #200 kept speed behind
+  // its speedometer button) — tap toggles the popover open; tapping anywhere
+  // else folds it back to a button
   {
-    const pops = [["volbtn", "volpop"]];
+    const pops = [["speedbtn", "speedpop"], ["volbtn", "volpop"]];
     for (const [bid, pid] of pops) {
       document.getElementById(bid).addEventListener("click", () => {
         for (const [b2, p2] of pops) // one open at a time
