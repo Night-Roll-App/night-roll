@@ -18,147 +18,263 @@
    "aquatic-ambiance": {
     "n": 1,
     "secs": 199,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bad-boss-boogie": {
     "n": 1,
     "secs": 139,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-lose": {
     "n": 1,
     "secs": 12,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-room-blitz": {
     "n": 1,
     "secs": 56,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-room-opened": {
     "n": 1,
     "secs": 12,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-win": {
     "n": 1,
     "secs": 12,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "candy-s-love-song": {
     "n": 1,
     "secs": 125,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cave-dweller-concert": {
     "n": 1,
     "secs": 300,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cranky-s-theme": {
     "n": 1,
     "secs": 109,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dk-island-swing": {
     "n": 1,
     "secs": 300,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "extra-life-balloon": {
     "n": 1,
     "secs": 12,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare": {
     "n": 1,
     "secs": 12,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fear-factory": {
     "n": 1,
     "secs": 230,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "forest-frenzy": {
     "n": 1,
     "secs": 120,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "funky-s-fugue": {
     "n": 1,
     "secs": 124,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "gang-plank-galleon": {
     "n": 1,
     "secs": 181,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ice-cave-chant": {
     "n": 1,
     "secs": 196,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "k-rool-s-cacophony": {
     "n": 1,
     "secs": 21,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "level-goal": {
     "n": 1,
     "secs": 12,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "life-in-the-mines": {
     "n": 1,
     "secs": 263,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lost-life": {
     "n": 1,
     "secs": 12,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mine-cart-madness": {
     "n": 1,
     "secs": 183,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "misty-menace": {
     "n": 1,
     "secs": 257,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "northern-hemispheres": {
     "n": 1,
     "secs": 241,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "simian-segue": {
     "n": 1,
     "secs": 146,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-credits-concerto": {
     "n": 1,
     "secs": 108,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "theme": {
     "n": 1,
     "secs": 114,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "treetop-rock": {
     "n": 1,
     "secs": 169,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "voices-of-the-temple": {
     "n": 1,
     "secs": 177,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
