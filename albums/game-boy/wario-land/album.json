@@ -25,242 +25,530 @@
    "bonus-menu": {
     "n": 12,
     "secs": 15.00146484375,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -2.4,
+     "synth": -15.2
+    }
    },
    "bonus-results": {
     "n": 5,
     "secs": 4.8218994140625,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -15.2,
+     "peak": -2.8,
+     "synth": -9.5
+    }
    },
    "bonus-select": {
     "n": 42,
     "secs": 4.2191619873046875,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -15.2,
+     "peak": -2.5,
+     "synth": -11.2
+    }
    },
    "boss-almost-defeated": {
     "n": 7,
     "secs": 5.357666015625,
-    "track": 18
+    "track": 18,
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -4.4,
+     "synth": -14.4
+    }
    },
    "boss-battle": {
     "n": 17,
     "secs": 26.62090301513672,
-    "track": 17
+    "track": 17,
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -3.7,
+     "synth": -10.6
+    }
    },
    "boss-defeated": {
     "n": 18,
     "secs": 5.0228118896484375,
-    "track": 19
+    "track": 19,
+    "loud": {
+     "v": 1,
+     "lufs": -12.7,
+     "peak": -3,
+     "synth": -8.2
+    }
    },
    "end-credits": {
     "n": 41,
     "secs": 255.4936981201172,
-    "track": 45
+    "track": 45,
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": -4,
+     "synth": -8.7
+    }
    },
    "file-select": {
     "n": 38,
     "secs": 6.42919921875,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -8.8,
+     "synth": -20.6
+    }
    },
    "game-over": {
     "n": 36,
     "secs": 4.2191619873046875,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -27.8,
+     "peak": -10.4,
+     "synth": -25.3
+    }
    },
    "huntering-with-bomb": {
     "n": 24,
     "secs": 12.8583984375,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -5.7,
+     "synth": -14.3
+    }
    },
    "intro": {
     "n": 32,
     "secs": 28.897911071777344,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -6,
+     "synth": -10
+    }
    },
    "invincible-wario": {
     "n": 6,
     "secs": 13.461135864257812,
-    "track": 23
+    "track": 23,
+    "loud": {
+     "v": 1,
+     "lufs": -15.1,
+     "peak": -4.6,
+     "synth": -11.9
+    }
    },
    "kitchen-island": {
     "n": 2,
     "secs": 34.2890625,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -18.5,
+     "peak": -3.5,
+     "synth": -13
+    }
    },
    "last-fight": {
     "n": 40,
     "secs": 39.613243103027344,
-    "track": 42
+    "track": 42,
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -0.6,
+     "synth": -11.6
+    }
    },
    "last-stage": {
     "n": 30,
     "secs": 51.43359375,
-    "track": 40
+    "track": 40,
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -3.9,
+     "synth": -14.6
+    }
    },
    "level-selected": {
     "n": 43,
     "secs": 2.1095809936523438,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": -6.2,
+     "synth": -7
+    }
    },
    "lose-a-life": {
     "n": 8,
     "secs": 3.6666526794433594,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -4.4,
+     "synth": -14.2
+    }
    },
    "mt-teapot": {
     "n": 19,
     "secs": 19.8233642578125,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -6.1,
+     "synth": -12.1
+    }
    },
    "mystery-theme": {
     "n": 45,
     "secs": 2.14306640625,
-    "track": 29
+    "track": 29,
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -11.3,
+     "synth": -12.3
+    }
    },
    "parsley-woods": {
     "n": 31,
     "secs": 19.28759765625,
-    "track": 31
+    "track": 31,
+    "loud": {
+     "v": 1,
+     "lufs": -27.7,
+     "peak": -18.7,
+     "synth": -23.9
+    }
    },
    "princess-toadstool-s-statue-found": {
     "n": 47,
     "secs": 19.73965072631836,
-    "track": 43
+    "track": 43,
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -13.4,
+     "synth": -6.9
+    }
    },
    "rice-beach": {
     "n": 21,
     "secs": 8.30438232421875,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -7.4,
+     "synth": -18.7
+    }
    },
    "secret-room-found": {
     "n": 15,
     "secs": 3.1141433715820312,
-    "track": 35
+    "track": 35,
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -10,
+     "synth": -16.3
+    }
    },
    "sherbet-land": {
     "n": 20,
     "secs": 51.43359375,
-    "track": 21
+    "track": 21,
+    "loud": {
+     "v": 1,
+     "lufs": -28.8,
+     "peak": -12.6,
+     "synth": -24.6
+    }
    },
    "ss-tea-cup": {
     "n": 35,
     "secs": 30.120128631591797,
-    "track": 27
+    "track": 27,
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -10.5,
+     "synth": -16.3
+    }
    },
    "stage-clear": {
     "n": 13,
     "secs": 3.0136871337890625,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -13.3,
+     "peak": -7.1,
+     "synth": -7.9
+    }
    },
    "stage-theme-i": {
     "n": 4,
     "secs": 97.2751235961914,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -3.2,
+     "synth": -10.9
+    }
    },
    "stage-theme-ii": {
     "n": 10,
     "secs": 51.567535400390625,
-    "track": 16
+    "track": 16,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -11.9,
+     "synth": -15.8
+    }
    },
    "stage-theme-iii": {
     "n": 3,
     "secs": 45.138336181640625,
-    "track": 22
+    "track": 22,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -8.7,
+     "synth": -12.1
+    }
    },
    "stage-theme-iv": {
     "n": 14,
     "secs": 68.20978546142578,
-    "track": 24
+    "track": 24,
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -7.9,
+     "synth": -17.6
+    }
    },
    "stage-theme-ix": {
     "n": 34,
     "secs": 33.7532958984375,
-    "track": 34
+    "track": 34,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.3,
+     "synth": -16.1
+    }
    },
    "stage-theme-v": {
     "n": 39,
     "secs": 30.136871337890625,
-    "track": 26
+    "track": 26,
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -6,
+     "synth": -18.3
+    }
    },
    "stage-theme-vi": {
     "n": 27,
     "secs": 8.84014892578125,
-    "track": 28
+    "track": 28,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -12,
+     "synth": -6.7
+    }
    },
    "stage-theme-vii": {
     "n": 22,
     "secs": 28.964881896972656,
-    "track": 30
+    "track": 30,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -6.5,
+     "synth": -14.9
+    }
    },
    "stage-theme-viii": {
     "n": 9,
     "secs": 26.235820770263672,
-    "track": 32
+    "track": 32,
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -5,
+     "synth": -25.1
+    }
    },
    "stage-theme-x": {
     "n": 11,
     "secs": 25.716796875,
-    "track": 37
+    "track": 37,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -5.9,
+     "synth": -12.7
+    }
    },
    "stage-theme-xi": {
     "n": 23,
     "secs": 75.00732421875,
-    "track": 39
+    "track": 39,
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -3.8,
+     "synth": -10.3
+    }
    },
    "stove-canyon": {
     "n": 33,
     "secs": 47.06374740600586,
-    "track": 25
+    "track": 25,
+    "loud": {
+     "v": 1,
+     "lufs": -26.1,
+     "peak": -5.4,
+     "synth": -22.8
+    }
    },
    "summoning-the-genie": {
     "n": 25,
     "secs": 26.97249984741211,
-    "track": 41
+    "track": 41,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -9.8,
+     "synth": -13.3
+    }
    },
    "switch-activated": {
     "n": 44,
     "secs": 2.41094970703125,
-    "track": 20
+    "track": 20,
+    "loud": {
+     "v": 1,
+     "lufs": -27.4,
+     "peak": -25.9,
+     "synth": -19.4
+    }
    },
    "syrup-castle": {
     "n": 29,
     "secs": 15.118663787841797,
-    "track": 38
+    "track": 38,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -10.3,
+     "synth": -12.4
+    }
    },
    "that-s-not-what-i-call-a-castle": {
     "n": 46,
     "secs": 4.2191619873046875,
-    "track": 44
+    "track": 44,
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -5.1,
+     "synth": -10.6
+    }
    },
    "title": {
     "n": 1,
     "secs": 7.500732421875,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -6.9,
+     "synth": -11
+    }
    },
    "treasure-found": {
     "n": 28,
     "secs": 3.6833953857421875,
-    "track": 36
+    "track": 36,
+    "loud": {
+     "v": 1,
+     "lufs": -12.7,
+     "peak": -6.6,
+     "synth": -8.2
+    }
    },
    "unknown-jingle": {
     "n": 37,
     "secs": 2.7458038330078125,
-    "track": 48
+    "track": 48,
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -7.1,
+     "synth": -12.7
+    }
    },
    "unknown-song-1": {
     "n": 16,
     "secs": 58.01347732543945,
-    "track": 46
+    "track": 46,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -8.3,
+     "synth": -16.5
+    }
    },
    "unknown-song-2": {
     "n": 48,
     "secs": 3.214599609375,
-    "track": 47
+    "track": 47,
+    "loud": {
+     "v": 1,
+     "lufs": -27.1,
+     "peak": -14.5,
+     "synth": -29.7
+    }
    },
    "world-cleared": {
     "n": 26,
     "secs": 2.5951194763183594,
-    "track": 33
+    "track": 33,
+    "loud": {
+     "v": 1,
+     "lufs": -17,
+     "peak": -10.1,
+     "synth": -13.2
+    }
    },
    "summoning-the-genie-recapture": {
     "n": 25,
@@ -269,6 +557,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -9.8,
+     "synth": -15.1
     }
    }
   },
