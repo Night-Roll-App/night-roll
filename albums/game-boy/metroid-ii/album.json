@@ -14,7 +14,8 @@
   "missile-expansion": "Missile expansion",
   "omega-metroid-area": "Omega Metroid area",
   "samus-aran-arrives": "Samus Aran arrives",
-  "upgrade-found": "Upgrade found"
+  "upgrade-found": "Upgrade found",
+  "caverns-4-recapture": "Caverns 4 (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/metroid-ii.gbs",
@@ -113,6 +114,15 @@
     "n": 9,
     "secs": 7.1658782958984375,
     "track": 8
+   },
+   "caverns-4-recapture": {
+    "n": 8,
+    "secs": 140.00251007080078,
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"
