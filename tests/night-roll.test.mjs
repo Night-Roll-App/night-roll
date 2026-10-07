@@ -2770,7 +2770,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -14013,4 +14013,39 @@ test("volume shape lane: with one shaped note selected its points are handles; a
   assert.deepEqual(val(`song.tracks[0].notes[3].env.map(q => [q.t, Math.round(q.r * song.tracks[0].notes[3].v)])`), [[959, 127]], "clamped inside the note, level absolute 0–127 stored relative");
   run(`selEditApply([{ti: 0, ni: 3, n: song.tracks[0].notes[3]}], () => {}, [{ti: 0, ni: 3, t: 9600, d: 960, p: 65, v: 80, env: [{t: 240, r: 0.5}], ve: null}]); editUndoPop();`);
   assert.deepEqual(val(`song.tracks[0].notes[3].env`), [{t: 240, r: 0.5}], "undo puts the point back");
+// Capture fidelity audit step 1: the NES sample channel (DPCM) plays in the
+// console voice. No capture writes a dpcm track yet, so its part plays
+// through the noise track (else the triangle) — and it counts toward the
+// render's memory plan only for a song whose log uses the channel.
+test("console voice: the dpcm part rides the noise track, else the triangle; a real dpcm track wins; planned only when used", async () => {
+  installSong();
+  run(`song.tracks = [{name: "pulse1", notes: []}, {name: "triangle", notes: []}, {name: "noise", notes: []}]`);
+  assert.equal(val(`chipPartTrack("dpcm")`), 2, "noise hosts it");
+  assert.equal(val(`chipPartTrack("pulse1")`), 0, "a named part keeps its own track");
+  run(`song.tracks = [{name: "pulse1", notes: []}, {name: "triangle", notes: []}]`);
+  assert.equal(val(`chipPartTrack("dpcm")`), 1, "no noise track (noise never played): the triangle hosts it");
+  run(`song.tracks = [{name: "noise", notes: []}, {name: "dpcm", notes: []}]`);
+  assert.equal(val(`chipPartTrack("dpcm")`), 1, "a re-capture's own dpcm track wins");
+  run(`song.tracks = [{name: "pulse1", notes: []}]`);
+  assert.equal(val(`chipPartTrack("dpcm")`), -1, "no host: not played");
+
+  const { dmcUsed } = await import("../tools/nsf/apu-render.mjs");
+  app.context.__M = {dmcUsed};
+  assert.deepEqual(val(`CHIPS.nsf.channels`), ["pulse1", "pulse2", "triangle", "noise", "dpcm"]);
+  assert.equal(val(`chipEstimateTracks("nsf", {apuLog: [{addr: 0x4015, value: 0x0F}]}, __M)`), 4, "FF1-like: four parts, the plan unchanged");
+  assert.equal(val(`chipEstimateTracks("nsf", {apuLog: [{addr: 0x4015, value: 0x1F}]}, __M)`), 5, "a sample started: five");
+
+  // chipStart wires the dpcm buffer into the host track's gain
+  run(`song.tracks = [{name: "pulse1", notes: []}, {name: "triangle", notes: []}, {name: "noise", notes: []}];
+       trackState = song.tracks.map(() => ({muted: false, solo: false}));
+       songKey = "albums/nes/super-mario-bros-3/track-01.mid";
+       ensureAudio();
+       chip.key = songKey; chip.lead = 0; chip.pcm = null; chip.stream = null;
+       chip.buffers = {pulse1: {duration: 10}, dpcm: {duration: 10}}; chip.buffersCtx = audio;
+       playT0 = 0; playRate = 1; loopSeg = null; albumEndAbs = null;
+       globalThis.__gainsSeen = [];
+       { const _tg = trackGain; trackGain = ti => { globalThis.__gainsSeen.push(ti); return _tg(ti); };
+         chipStart(0); trackGain = _tg; }`);
+  assert.deepEqual(JSON.parse(run(`JSON.stringify(__gainsSeen)`)), [0, 2], "pulse1 -> its own track, dpcm -> noise");
+  run(`chipStopSrcs(); chip.buffers = null; chip.buffersCtx = null; chip.key = null;`);
 });

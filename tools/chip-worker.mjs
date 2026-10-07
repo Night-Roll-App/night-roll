@@ -122,8 +122,8 @@ export function planChipRender({tracks, seconds, sampleRate, channels, budget, c
 // analyses. Falls back to the channel-count guess if M/channelGroups isn't
 // there (register chips: fixed.length above already returned) or throws.
 export function chipEstimateTracksW(R, res, M) {
-  const fixed = R.channels;
-  if (fixed && fixed.length) return fixed.length;
+  const fixed = R.channels, opt = R.optional || {};
+  if (fixed && fixed.length) return fixed.filter(name => !opt[name] || opt[name](M, res)).length;
   if (M && M.channelGroups && res && res.result) {
     try { return Math.max(1, M.channelGroups(res.result, {tsNum: 4, tsDen: 4}).length); } catch (err) { /* fall through to the cheaper guess */ }
   }
@@ -289,8 +289,9 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
     parse: M => b => M.parseNSF(b),
     run: (M, parsed, n, secs, prog) => M.runNSFAsync(parsed, n, secs, prog),
     lead: (M, res) => { const ev = M.reconstruct(res.apuLog, res.frames, res.frameSec); return (ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0) * res.frameSec; },
-    render: (M, res, o) => M.renderApu(res.apuLog, res.frames, res.frameSec, o),
-    channels: ["pulse1", "pulse2", "triangle", "noise"],
+    render: (M, res, o) => M.renderApu(res.apuLog, res.frames, res.frameSec, {...o, prg: res.prg}), // prg: the program image DPCM samples are read from
+    channels: ["pulse1", "pulse2", "triangle", "noise", "dpcm"],
+    optional: {dpcm: (M, res) => !!(M && M.dmcUsed && res && res.apuLog && M.dmcUsed(res.apuLog))}, // only a song that uses the sample channel renders one
   },
   gbs: {
     parse: M => b => M.parseGBS(b),

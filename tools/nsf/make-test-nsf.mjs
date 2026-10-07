@@ -183,3 +183,42 @@ export function makeTestNSFVibratoPad() {
   out.set(code, 0x80);
   return out;
 }
+
+// DPCM: a banked NSF whose init maps bank 2 into $C000 ($5FFC) and starts the
+// longest sample (4081 bytes, ~1 s) there — bytes $FF,$00 alternating, so the delta counter
+// climbs 8 steps and falls 8: a 16-bit cycle at rate 15 (54 CPU cycles a
+// bit) = 1789773 / 864 ≈ 2071 Hz. The header maps bank 1 (all zeros) at
+// $C000, so a render that ignored the bank switch would play a falling
+// ramp, then nothing. Play does nothing. Our own bytes, no ROM data.
+export function makeTestNSFDpcm() {
+  const LOAD = 0x8000, BANK = 0x1000;
+  const code = [
+    0xA9, 0x02, 0x8D, 0xFC, 0x5F, // LDA #2 / STA $5FFC: bank 2 at $C000
+    0xA9, 0x0F, 0x8D, 0x10, 0x40, // $4010 = rate 15, no loop
+    0xA9, 0x40, 0x8D, 0x11, 0x40, // $4011 = 64
+    0xA9, 0x00, 0x8D, 0x12, 0x40, // $4012 = 0 -> $C000
+    0xA9, 0xFF, 0x8D, 0x13, 0x40, // $4013 = 255 -> 4081 bytes, inside the 4 KB bank
+    0xA9, 0x1F, 0x8D, 0x15, 0x40, // $4015 = all five channels
+    0x60,                         // RTS
+  ];
+  const playOff = code.length;
+  code.push(0x60);
+  const data = new Uint8Array(3 * BANK);
+  data.set(code, 0);
+  for (let i = 0; i < BANK; i++) data[2 * BANK + i] = (i & 1) ? 0x00 : 0xFF;
+  const header = new Uint8Array(0x80);
+  const magic = "NESM\x1a";
+  for (let i = 0; i < 5; i++) header[i] = magic.charCodeAt(i);
+  header[5] = 1; header[6] = 1; header[7] = 1;
+  header[0x08] = LOAD & 0xFF; header[0x09] = LOAD >> 8;
+  header[0x0A] = LOAD & 0xFF; header[0x0B] = LOAD >> 8;
+  header[0x0C] = (LOAD + playOff) & 0xFF; header[0x0D] = (LOAD + playOff) >> 8;
+  const name = "Night Roll DPCM test";
+  for (let i = 0; i < name.length; i++) header[0x0E + i] = name.charCodeAt(i);
+  header[0x6E] = 16639 & 0xFF; header[0x6F] = 16639 >> 8;
+  header.set([0, 0, 0, 0, 1, 1, 1, 1], 0x70); // $8000-$BFFF bank 0 (code), $C000-$FFFF bank 1 (zeros)
+  const out = new Uint8Array(0x80 + data.length);
+  out.set(header, 0);
+  out.set(data, 0x80);
+  return out;
+}

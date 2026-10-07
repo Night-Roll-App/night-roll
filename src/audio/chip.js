@@ -353,10 +353,24 @@ export function chipStopSrcs() {
     chip.stream.live = false;
   }
 }
+// A console part with no roll track of its own plays through the first of
+// these tracks the song has: its fader, mute, solo and pan. The NES sample
+// channel (DPCM) has no notes in any capture yet (a later re-capture writes a
+// "dpcm" track, and then the exact name wins); its hits are the kit, so it
+// rides with the noise drums, else the triangle (the chip mixes all three
+// together); a capture whose noise played nothing has no noise track (36 of
+// Super Mario Bros. 3's 60).
+export const CHIP_PART_HOST = {dpcm: ["noise", "triangle"]};
+export function chipPartTrack(name) {
+  const at = nm => S.song.tracks.findIndex(tr => (tr.name || "") === nm);
+  let ti = at(name);
+  for (const host of CHIP_PART_HOST[name] || []) { if (ti >= 0) break; ti = at(host); }
+  return ti;
+}
 export function chipStart(fromSec) {
   chipStopSrcs();
   for (const [name, buffer] of Object.entries(chipBuffers())) {
-    const ti = S.song.tracks.findIndex(tr => (tr.name || "") === name);
+    const ti = chipPartTrack(name);
     if (ti < 0) continue;
     const vv = S.song.tracks[ti].voice;
     if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track
@@ -403,8 +417,8 @@ export const PSX_SOUNDING_ON = false;
 // memoizes it), so calling it here AND again inside the render below costs
 // one extra O(notes) pass, not two full analyses.
 export function chipEstimateTracks(kind, res, M) {
-  const fixed = CHIPS[kind] && CHIPS[kind].channels;
-  if (fixed && fixed.length) return fixed.length;
+  const fixed = CHIPS[kind] && CHIPS[kind].channels, opt = (CHIPS[kind] && CHIPS[kind].optional) || {};
+  if (fixed && fixed.length) return fixed.filter(name => !opt[name] || opt[name](M, res)).length;
   if (M && M.channelGroups && res && res.result) {
     try { return Math.max(1, M.channelGroups(res.result, {tsNum: 4, tsDen: 4}).length); } catch (err) { /* fall through to the cheaper guess */ }
   }
@@ -515,7 +529,9 @@ export function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
 // the writer options that make the shared makeMidi speak the chip.
 export const CHIPS = {
   nsf: {magic: b => String.fromCharCode(...b.subarray(0, 5)) === "NESM\x1a", ext: ".nsf", label: "NSF",
-        channels: ["pulse1", "pulse2", "triangle", "noise"],
+        channels: ["pulse1", "pulse2", "triangle", "noise", "dpcm"],
+        // dpcm: the sample channel renders (and counts for the memory plan) only when the song uses it (apu-render.mjs dmcUsed)
+        optional: {dpcm: (M, res) => !!(M && M.dmcUsed && res && res.apuLog && M.dmcUsed(res.apuLog))},
         files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: [],
         parse: M => M.parseNSF, run: M => M.runNSFAsync, midiOpts: () => ({})},
   gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
@@ -891,7 +907,7 @@ export async function chipRender() {
       if (S.songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
       return chipPublish(forKey, kind, out.pcm, out.sampleRate, leadSec, out.pan, {peakBytes: out.peakBytes, keptBytes: out.keptBytes, tracks, groups: out.groups});
     }
-    const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
+    const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, {...o, prg: rr.prg})); // prg: the NES program image DPCM samples are read from (a GB run has none)
     let r;
     try {
       r = await render(M, res, {sampleRate: plan.rate,

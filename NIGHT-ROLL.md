@@ -1350,6 +1350,41 @@ extension), `chipRender` parses/runs through `CHIPS[kind]` and builds one
 buffer per name in `CHIPS[kind].channels` — a Game Boy song gets
 pulse1/pulse2/wave/noise buffers matched to its tracks by name exactly
 like the NES four; missing channels are skipped.
+
+**DPCM — the NES sample channel** (2026-10-06, capture fidelity audit
+step 1, docs/plans/2026-10-06-capture-fidelity-audit.md). SMB3,
+Castlevania II, Contra, Kirby's Adventure and both Ninja Gaidens play
+drums (and some bass hits) as 1-bit delta samples; the console voice
+was silent there. Now `apu-render.mjs` runs the DMC: $4010 rate (the
+NTSC table `DMC_RATES`) and loop flag, $4011 direct load, $4012/$4013
+sample address ($C000 + 64·v) and length (16·v + 1), $4015 bit 4
+start/stop, the 1-byte memory reader (address wraps $FFFF → $8000)
+and the 7-bit delta counter (±2, clamped 0..127). IRQ is not modelled.
+Samples are bytes in PRG, so the render needs the program image the
+capture ran: `runNSF`/`runNSFAsync` return `prg` = {banked, loadAddr,
+data, banks, bankLog} — `bankLog` holds every $5FF8-$5FFF switch with a
+half-step `order`, so a fetch reads the bank that was mapped at that
+moment. The bank switches stay out of `apuLog`: the note reconstructor
+and every log consumer see what they always did. Both render call sites
+(CHIPS default render in src/audio/chip.js, RUNNERS.nsf in
+tools/chip-worker.mjs) pass `{prg: res.prg}`.
+The part is `dpcm`, and it exists only when `dmcUsed(apuLog)` — a $4015
+write with bit 4, or $4011 taking two different levels; otherwise the
+render is byte-for-byte the pre-DPCM one (FF1 is pinned by hash in
+tests/nsf.test.mjs). `CHIPS.nsf.optional.dpcm` / `RUNNERS.nsf.optional`
+keep it out of the memory plan's track count for such songs. Mixing:
+the dpcm buffer is the DMC's share of the Nesdev TND curve,
+tnd(tri, noise, dmc) − tnd(tri, noise, 0), so the parts still sum to the
+chip's joint output (a high DMC level audibly ducks the triangle; that
+dip lands in the dpcm part) and muting it leaves triangle and noise as
+before. No capture writes a dpcm track yet (that is the re-capture step,
+audit §4), so `chipStart` plays a part with no track of its own through
+`CHIP_PART_HOST` — dpcm rides the noise track's fader, mute, solo and pan,
+else the triangle's (36 of SMB3's 60 captures have no noise track); a
+real `dpcm` track wins by name once one exists. Driver timing is still
+per play call: a sample starts on the frame its $4015 write landed in,
+and $4011 raw-PCM streams written many times inside one play call
+collapse to the last value (Castlevania II's "+554 raw PCM writes").
 Chip audio is the DEFAULT wherever a source resolves (Josh: "a million
 times better... always use this if possible"; the chip button is the
 opt-out, preference in ff1roll-chip). Source chain, honoring the
@@ -3870,11 +3905,13 @@ dominant curve ranging −0.72 to 1.0 and mean differences from 0.03 to
 music, not a clustering defect; loosening the 0.97/0.08 bar further
 risks merging genuinely different envelopes together, which is the
 thing this whole feature exists to keep apart. What doesn't fit: NES
-DPCM (a real sample channel) — the
-2A03 capture (`tools/nsf/nsf.mjs`) never logs $4010-$4013 in the first
-place, so no capture this module has seen carries DPCM facts to
-extract; a future capture adding that would need real sample extraction
-like PSX/N64, not this module's synthesis (open-items.md). An NSF using
+DPCM (a real sample channel). The 2A03 capture (`tools/nsf/nsf.mjs`)
+does log $4010-$4013 and $4015 bit 4 (every $4000-$4017 write is in
+the apuLog), but no note reader turns them into notes yet, so no
+capture this module has seen carries DPCM notes to extract; the console
+voice plays the samples (see "DPCM" under Chip audio), and an instrument
+from them would need real sample extraction like PSX/N64, not this
+module's synthesis (open-items.md). An NSF using
 an expansion chip (VRC6/VRC7/FDS/MMC5/N163/5B) is rejected by the
 capture itself (`nsf.mjs`'s documented refusal), same as everywhere else
 in this repo — Gimmick, Just Breed and Lagrange Point in the archive all

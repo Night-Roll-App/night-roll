@@ -89,6 +89,9 @@ Notes move and resize on a 16th grid, or on triplet steps while a **T** duration
 **Hear the MIDI**
 View ▾ → Mode → **Hear the MIDI (synth voices)** switches what you hear: off (the default) plays a game song's own console voice where it has one; on plays the .mid itself on synth voices, every track, so you hear exactly what the file holds (a chip's volume swells inside a note, for example, aren't in the .mid yet). It applies to every song on this device, and a playing song picks up from the same spot. Ask: "hear the MIDI" / "back to the chip".
 
+**NES sample drums (DPCM)**
+Games that play their drums as samples — Super Mario Bros. 3, Castlevania II, Contra, Kirby's Adventure, both Ninja Gaidens — now have those drums in the console voice. Only songs that use the sample channel get them. They have no track of their own yet, so they **play with the noise track** (or the triangle, when a song has no noise track): that track's mute, solo, volume and pan cover the sample drums too. The roll doesn't show them as notes yet.
+
 **Listener mode**
 Phones open as a PLAYER: the roll, the transport, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A **Full app** button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.
 

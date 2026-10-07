@@ -50,6 +50,11 @@ function makeRun(nsf) { // shared machine state for the sync and async runners
   const rom = new Uint8Array(0x8000);         // $8000-$FFFF (non-banked view)
   const bankRegs = new Uint8Array(8);
   const apuLog = [];                          // {frame, order, addr, value}
+  // $5FF8-$5FFF bank switches, for the DPCM render (apu-render.mjs reads its
+  // samples from PRG): kept OUT of apuLog so the note reconstructor and every
+  // log consumer see exactly what they always did. order = the next APU
+  // write's order - 0.5: it sorts between the writes it fell between.
+  const bankLog = [];
   let frame = 0, order = 0;
   // The NSF player, not the driver, enables the channels before INIT ($4015 =
   // $0F per the spec's player-side init). Castlevania's driver never writes
@@ -81,7 +86,7 @@ function makeRun(nsf) { // shared machine state for the sync and async runners
     write(a, v) {
       if (a < 0x2000) { ram[a & 0x7FF] = v; return; }
       if (a >= 0x4000 && a <= 0x4017) { apuLog.push({frame, order: order++, addr: a, value: v}); return; }
-      if (a >= 0x5FF8 && a <= 0x5FFF) { bankRegs[a - 0x5FF8] = v; return; }
+      if (a >= 0x5FF8 && a <= 0x5FFF) { bankRegs[a - 0x5FF8] = v; bankLog.push({frame, order: order - 0.5, addr: a, value: v}); return; }
       if (a >= 0x6000 && a < 0x8000) { sram[a - 0x6000] = v; return; }
       // writes to ROM space ignored
     },
@@ -101,7 +106,9 @@ function makeRun(nsf) { // shared machine state for the sync and async runners
     if (guard >= 2_000_000) throw new Error("runaway subroutine at frame " + frame);
   };
 
-  return {apuLog, callsub, setFrame(f) { frame = f; order = 0; }};
+  // the program image the capture ran — what a DPCM sample fetch reads (plain data: survives structuredClone)
+  const prg = {banked: nsf.banked, loadAddr: nsf.loadAddr, data: nsf.data, banks: [...nsf.banks], bankLog};
+  return {apuLog, prg, callsub, setFrame(f) { frame = f; order = 0; }};
 }
 
 export function runNSF(nsf, songIndex1Based, seconds) {
@@ -112,7 +119,7 @@ export function runNSF(nsf, songIndex1Based, seconds) {
     state.setFrame(f);
     state.callsub(nsf.playAddr, 0, 0);
   }
-  return {apuLog: state.apuLog, frames, frameSec: nsf.playSpeedNTSC / 1_000_000};
+  return {apuLog: state.apuLog, frames, frameSec: nsf.playSpeedNTSC / 1_000_000, prg: state.prg};
 }
 
 // Unthrottled yield: background tabs clamp setTimeout to ~1/sec, which turned
@@ -155,5 +162,5 @@ export async function runNSFAsync(nsf, songIndex1Based, seconds, onProgress, bud
       last = now();
     }
   }
-  return {apuLog: state.apuLog, frames, frameSec: nsf.playSpeedNTSC / 1_000_000};
+  return {apuLog: state.apuLog, frames, frameSec: nsf.playSpeedNTSC / 1_000_000, prg: state.prg};
 }

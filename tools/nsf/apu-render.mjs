@@ -5,11 +5,24 @@
 // the chip's own sound, not an oscillator approximation: a 33ms arpeggio
 // run is ONE pulse wave changing period, exactly as on hardware.
 //
-// renderApu(apuLog, frames, frameSec, {sampleRate, keepFrames, onProgress})
-//   -> {pulse1, pulse2, triangle, noise: Float32Array, sampleRate, seconds}
+// renderApu(apuLog, frames, frameSec, {sampleRate, keepFrames, onProgress, prg})
+//   -> {pulse1, pulse2, triangle, noise[, dpcm]: Float32Array, sampleRate, seconds}
 // Per-channel buffers so the app's mute/solo gain nodes keep working; the
 // cross-channel mixer nonlinearity is approximated per channel (audibly
 // negligible next to timbre/envelope truth).
+//
+// DPCM (the delta-modulation sample channel, $4010-$4013 + $4015 bit 4): its
+// samples are bytes in the cartridge's PRG at $C000-$FFFF, so the render
+// needs the program image the capture ran — `prg` from runNSF/runNSFAsync
+// (the file's data, its header banks and every $5FF8-$5FFF bank switch, so a
+// sample is read from the bank that was mapped when the chip fetched it).
+// `dpcm` exists only when the log uses the channel (a $4015 write with bit 4,
+// or $4011 taking two different levels); a song that never touches it renders
+// exactly as before. Its buffer is the DMC's share of the nonlinear TND mixer:
+// tnd(tri, noise, dmc) - tnd(tri, noise, 0), so the parts still sum to the
+// chip's real triangle+noise+DMC output (a high DMC level quiets the triangle
+// on hardware — that dip lands in the dpcm part) and muting dpcm leaves the
+// triangle and noise exactly as a song without DPCM renders them.
 
 // microYield: shared with ./nsf.mjs (not a local copy — a local MessageChannel
 // with no ref/unref, 2026-09-30, kept tools/chip-bench.mjs hanging after a
@@ -47,6 +60,71 @@ function clockEnvelope(env) { // quarter-frame
 }
 const envOut = env => env.constVol ? env.vol : env.decay;
 
+// DMC output-bit periods in CPU cycles, NTSC, indexed by $4010 & 15 (Nesdev)
+export const DMC_RATES = [428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54];
+// The DMC: memory reader (1-byte buffer, address wraps $FFFF -> $8000) +
+// output unit (8-bit shift register, 7-bit delta counter stepping by 2 and
+// clamped at 0..127). IRQ is not modelled: the capture never interrupts the
+// driver, and a driver waiting on it would have shown up in the log already.
+export function makeDmc(read) {
+  return {read, rate: DMC_RATES[0], loop: false, level: 0, sampleAddr: 0xC000, sampleLen: 1,
+          addr: 0xC000, remaining: 0, buffer: 0, full: false, shift: 0, bits: 8, silence: true, timer: 0};
+}
+function dmcFetch(d) {
+  if (d.full || d.remaining === 0) return;
+  d.buffer = d.read(d.addr); d.full = true;
+  d.addr = d.addr === 0xFFFF ? 0x8000 : d.addr + 1;
+  if (--d.remaining === 0 && d.loop) { d.addr = d.sampleAddr; d.remaining = d.sampleLen; }
+}
+export function dmcWrite(d, addr, v) {
+  if (addr === 0x4010) { d.loop = !!(v & 0x40); d.rate = DMC_RATES[v & 15]; }
+  else if (addr === 0x4011) d.level = v & 0x7F;              // direct load
+  else if (addr === 0x4012) d.sampleAddr = 0xC000 + v * 64;
+  else if (addr === 0x4013) d.sampleLen = v * 16 + 1;
+  else if (addr === 0x4015) {
+    if (!(v & 0x10)) d.remaining = 0;                        // stop after the byte in hand
+    else if (d.remaining === 0) { d.addr = d.sampleAddr; d.remaining = d.sampleLen; dmcFetch(d); } // a playing sample is not restarted
+  }
+}
+function dmcBit(d) { // one output-unit clock
+  if (!d.silence) {
+    if (d.shift & 1) { if (d.level <= 125) d.level += 2; }
+    else if (d.level >= 2) d.level -= 2;
+    d.shift >>= 1;
+  }
+  if (--d.bits === 0) {
+    d.bits = 8;
+    if (d.full) { d.silence = false; d.shift = d.buffer; d.full = false; dmcFetch(d); }
+    else d.silence = true;
+  }
+}
+export function dmcRun(d, cycles) { // advance by CPU cycles (fractional is fine)
+  d.timer += cycles;
+  while (d.timer >= d.rate) { d.timer -= d.rate; dmcBit(d); }
+}
+// CPU reads of $8000-$FFFF through the capture's program image, following
+// its bank switches the way nsf.mjs's bus does
+export function prgReader(prg) {
+  const regs = Uint8Array.from(prg && prg.banks || [0, 0, 0, 0, 0, 0, 0, 0]);
+  if (!prg || !prg.data) return {regs, read: () => 0};
+  const data = prg.data, off = prg.loadAddr & 0xFFF;
+  const read = prg.banked
+    ? a => { const i = regs[(a - 0x8000) >> 12] * 0x1000 + (a & 0xFFF) - off; return i >= 0 && i < data.length ? data[i] : 0; }
+    : a => { const i = a - prg.loadAddr; return i >= 0 && i < data.length ? data[i] : 0; };
+  return {regs, read};
+}
+// the channel is in use: a sample was started, or the level was moved by hand
+export function dmcUsed(apuLog) {
+  let lvl = -1;
+  for (const w of apuLog) {
+    if (w.addr === 0x4015 && (w.value & 0x10)) return true;
+    if (w.addr === 0x4011) { const v = w.value & 0x7F; if (lvl >= 0 && v !== lvl) return true; lvl = v; }
+  }
+  return false;
+}
+// the TND group of the Nesdev mixer: one curve over all three channels
+const tndOut = (t, n, d) => { const x = t / 8227 + n / 12241 + d / 22638; return x ? 159.79 / (1 / x + 100) : 0; };
+
 export function renderApu(apuLog, frames, frameSec, opts = {}) {
   const sampleRate = opts.sampleRate || 44100;
   const keepFrames = opts.keepFrames || frames;
@@ -57,6 +135,9 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
     triangle: new Float32Array(N), noise: new Float32Array(N),
     sampleRate, seconds,
   };
+  const mem = prgReader(opts.prg);
+  const dmc = dmcUsed(apuLog) ? makeDmc(mem.read) : null;
+  if (dmc) out.dpcm = new Float32Array(N);
 
   // ---- channel states
   const p = [0, 1].map(() => ({
@@ -77,10 +158,16 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
   // ---- register writes sorted and indexed by sample position
   const writes = [];
   for (const w of apuLog) if (w.frame <= keepFrames + 2) writes.push(w);
+  // bank switches carry half-step orders (nsf.mjs), so they sort between the APU writes they fell between
+  if (dmc && opts.prg && opts.prg.bankLog) for (const w of opts.prg.bankLog) if (w.frame <= keepFrames + 2) writes.push(w);
   writes.sort((a, b) => a.frame - b.frame || a.order - b.order);
   let wi = 0;
 
   const applyWrite = (addr, v) => {
+    if (dmc) {
+      if (addr >= 0x5FF8 && addr <= 0x5FFF) { mem.regs[addr - 0x5FF8] = v; return; }
+      if ((addr >= 0x4010 && addr <= 0x4013) || addr === 0x4015) dmcWrite(dmc, addr, v);
+    }
     if (addr === 0x4015) {
       p[0].enabled = !!(v & 1); p[1].enabled = !!(v & 2);
       tri.enabled = !!(v & 4); noi.enabled = !!(v & 8);
@@ -171,7 +258,7 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
   const qfSamples = iRate / 240; // quarter-frame cadence
   let nextQF = qfSamples, qfCount = 0;
   const chunk = (opts.chunk || 65536) * OS;
-  const acc = {pulse1: 0, pulse2: 0, triangle: 0, noise: 0};
+  const acc = {pulse1: 0, pulse2: 0, triangle: 0, noise: 0, dpcm: 0};
 
   const run = (from, to) => { // from/to in INTERNAL samples
     for (let s = from; s < to; s++) {
@@ -217,13 +304,19 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
         }
         acc.noise += (noi.lfsr & 1) ? 0 : noiOut(envOut(noi.env)) * 2;
       }
+      if (dmc) {
+        dmcRun(dmc, cpuPerSample);
+        const t = TRI_SEQ[tri.seq], n = (noi.enabled && noi.length > 0 && !(noi.lfsr & 1)) ? envOut(noi.env) : 0;
+        acc.dpcm += (tndOut(t, n, dmc.level) - tndOut(t, n, 0)) * 2;
+      }
       if ((s + 1) % OS === 0) { // decimate: mean of the OS internal samples
         const o = ((s + 1) / OS) - 1;
         if (o < N) {
           out.pulse1[o] = acc.pulse1 / OS; out.pulse2[o] = acc.pulse2 / OS;
           out.triangle[o] = acc.triangle / OS; out.noise[o] = acc.noise / OS;
+          if (dmc) out.dpcm[o] = acc.dpcm / OS;
         }
-        acc.pulse1 = acc.pulse2 = acc.triangle = acc.noise = 0;
+        acc.pulse1 = acc.pulse2 = acc.triangle = acc.noise = acc.dpcm = 0;
       }
     }
   };
@@ -243,7 +336,7 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
       buf[i] = lpOut;
     }
   };
-  const finish = () => { filter(out.pulse1); filter(out.pulse2); filter(out.triangle); filter(out.noise); return out; };
+  const finish = () => { filter(out.pulse1); filter(out.pulse2); filter(out.triangle); filter(out.noise); if (dmc) filter(out.dpcm); return out; };
 
   const Ni = N * OS;
   if (opts.onProgress) { // chunked async

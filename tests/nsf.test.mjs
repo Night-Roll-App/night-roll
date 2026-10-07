@@ -7,12 +7,13 @@ import { existsSync, mkdtempSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad } from "../tools/nsf/make-test-nsf.mjs";
+import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad, makeTestNSFDpcm } from "../tools/nsf/make-test-nsf.mjs";
 import { parseNSF, runNSF } from "../tools/nsf/nsf.mjs";
 import { reconstruct, toNotesTxt, pitchName, backportTiming,
          detectLoop, lastRegisterChangeFrame, trimSustainedTail } from "../tools/nsf/notes.mjs";
 import { makeMidi } from "../tools/nsf/midi-write.mjs";
-import { renderApu } from "../tools/nsf/apu-render.mjs";
+import { renderApu, DMC_RATES, makeDmc, dmcWrite, dmcRun, dmcUsed } from "../tools/nsf/apu-render.mjs";
+import { createHash } from "node:crypto";
 import { gatherFiles, importSet } from "../tools/import-set.mjs";
 import { createApp } from "./harness.mjs";
 
@@ -631,4 +632,129 @@ test("volume shape capture (real rip): FF1 Shop (NSF track 15) — pulse2 bars 2
     assert.equal(b.v, 68, "bar " + b.bar + ": attack at chip volume 8");
     assert.deepEqual(b.env, [[0.78, 127], [0.94, 127], [1.67, 68]], "bar " + b.bar + ": up to 15 by beat 1.78, back to 8 by 2.67");
   }
+});
+// ---- DPCM (the NES sample channel) in the console voice: capture fidelity
+// audit step 1 (docs/plans/2026-10-06-capture-fidelity-audit.md §3/§6).
+// The renderer reads samples from the capture's program image (runNSF's
+// `prg`) and adds a `dpcm` part only for a log that uses the channel.
+
+test("DMC unit: NTSC rate table, $4012/$4013 address and length, $FFFF wraps to $8000", () => {
+  assert.equal(DMC_RATES.length, 16);
+  assert.deepEqual([DMC_RATES[0], DMC_RATES[8], DMC_RATES[15]], [428, 190, 54], "Nesdev NTSC periods");
+  const reads = [];
+  const d = makeDmc(a => { reads.push(a); return 0; });
+  dmcWrite(d, 0x4010, 0x0F); assert.equal(d.rate, 54); assert.equal(d.loop, false);
+  dmcWrite(d, 0x4012, 0xFF); assert.equal(d.sampleAddr, 0xFFC0, "$C000 + 255 * 64");
+  dmcWrite(d, 0x4013, 0x04); assert.equal(d.sampleLen, 65, "4 * 16 + 1 bytes");
+  dmcWrite(d, 0x4015, 0x10);
+  assert.deepEqual(reads, [0xFFC0], "enabling fetches the first byte at once");
+  dmcRun(d, 54 * 8 * 80); // drain every byte
+  assert.equal(reads.length, 65);
+  assert.deepEqual(reads.slice(62), [0xFFFE, 0xFFFF, 0x8000], "the address wraps $FFFF -> $8000");
+  assert.equal(d.remaining, 0, "no loop: the sample ends");
+});
+
+test("DMC unit: the delta counter steps by 2 and clamps at 0..127; $4011 loads it directly", () => {
+  const up = makeDmc(() => 0xFF), down = makeDmc(() => 0x00);
+  for (const d of [up, down]) { dmcWrite(d, 0x4010, 0x0F); dmcWrite(d, 0x4013, 0x0F); } // 241 bytes, plenty of bits
+  dmcWrite(up, 0x4011, 120); dmcWrite(down, 0x4011, 5);
+  assert.equal(up.level, 120);
+  dmcWrite(up, 0x4011, 0xFF); assert.equal(up.level, 127, "7 bits: bit 7 is ignored");
+  dmcWrite(up, 0x4011, 120);
+  dmcWrite(up, 0x4015, 0x10); dmcWrite(down, 0x4015, 0x10);
+  const seen = [];
+  for (let i = 0; i < 40; i++) { dmcRun(up, 54); dmcRun(down, 54); seen.push(up.level); }
+  assert.ok(seen.includes(122) && seen.includes(124) && seen.includes(126), "climbs by 2: " + seen.slice(0, 16).join(","));
+  assert.equal(up.level, 126, "a counter at 126 can't take +2: it stays");
+  assert.ok(Math.max(...seen) <= 127);
+  assert.equal(down.level, 1, "5 -> 3 -> 1, and 1 can't take -2");
+});
+
+test("DMC unit: the loop flag restarts the sample; $4015 bit 4 clear stops it; a playing sample isn't restarted", () => {
+  const reads = [];
+  const d = makeDmc(a => { reads.push(a); return 0x55; });
+  dmcWrite(d, 0x4010, 0x4F); dmcWrite(d, 0x4012, 0x00); dmcWrite(d, 0x4013, 0x00); // loop, 1 byte at $C000
+  dmcWrite(d, 0x4015, 0x10);
+  dmcRun(d, 54 * 8 * 5);
+  assert.ok(reads.length >= 5 && reads.every(a => a === 0xC000), "loops the one byte: " + reads.length + " fetches");
+  const n = reads.length;
+  dmcWrite(d, 0x4015, 0x10); // already playing
+  assert.equal(reads.length, n, "no restart while bytes remain");
+  dmcWrite(d, 0x4015, 0x00);
+  dmcRun(d, 54 * 8 * 5);
+  assert.ok(reads.length <= n + 1, "stopped (at most the byte already due)");
+  const once = makeDmc(() => 0xFF);
+  dmcWrite(once, 0x4010, 0x0F); dmcWrite(once, 0x4013, 0x00); dmcWrite(once, 0x4015, 0x10);
+  dmcRun(once, 54 * 8 * 10);
+  assert.equal(once.level, 16, "one byte of 1s, no loop: 8 steps up from 0, then silence holds the level");
+});
+
+test("DPCM render: a banked NSF's sample plays from the bank its driver switched in, as a dpcm part", () => {
+  const nsf = parseNSF(makeTestNSFDpcm().buffer);
+  assert.equal(nsf.banked, true);
+  const res = runNSF(nsf, 1, 1);
+  assert.ok(!res.apuLog.some(w => w.addr >= 0x5FF8), "bank switches stay out of the APU log the notes are read from");
+  assert.deepEqual(res.prg.bankLog.map(w => [w.frame, w.addr, w.value]), [[0, 0x5FFC, 2]]);
+  const r = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100, prg: res.prg});
+  assert.ok(r.dpcm instanceof Float32Array && r.dpcm.length === r.pulse1.length);
+  const seg = r.dpcm.subarray(11025, 33075);
+  let e = 0, mean = 0; for (const x of seg) { e += x * x; mean += x; }
+  mean /= seg.length;
+  assert.ok(Math.sqrt(e / seg.length) > 0.005, "the sample sounds");
+  let cross = 0; for (let i = 1; i < seg.length; i++) if (seg[i - 1] - mean < 0 && seg[i] - mean >= 0) cross++;
+  const hz = cross * 2; // half-second window
+  assert.ok(Math.abs(hz - 2071) < 40, "rate 15, a 16-bit cycle: ~2071 Hz, got " + hz);
+  // the header's bank (zeros) is what a render blind to the switch would read: no tone
+  const blind = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100, prg: {...res.prg, bankLog: []}});
+  let eb = 0; for (const x of blind.dpcm.subarray(11025, 33075)) eb += x * x;
+  assert.ok(Math.sqrt(eb / 22050) < 1e-4, "bank 1 is zeros: the counter falls to 0 and holds");
+});
+
+test("DPCM render: a log that never uses the channel gets no dpcm part and the same four parts as before", () => {
+  const nsf = parseNSF(makeTestNSF().buffer);
+  const res = runNSF(nsf, 1, 2);
+  const a = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 22050, prg: res.prg});
+  const b = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 22050});
+  assert.equal(a.dpcm, undefined);
+  for (const k of ["pulse1", "pulse2", "triangle", "noise"]) assert.deepEqual(a[k], b[k], k);
+  assert.equal(dmcUsed([{addr: 0x4015, value: 0x0F}, {addr: 0x4011, value: 0}, {addr: 0x4011, value: 0}]), false, "one constant level is not use");
+  assert.equal(dmcUsed([{addr: 0x4011, value: 0}, {addr: 0x4011, value: 0x40}]), true, "the level moved by hand (raw PCM)");
+  assert.equal(dmcUsed([{addr: 0x4015, value: 0x1F}]), true, "a sample started");
+});
+
+// FF1 never touches the DMC: its console voice must render bit for bit as it
+// did before DPCM existed (hashes taken from the pre-DPCM renderer, 12 s at
+// 44.1 kHz). Vault-only file, so CI skips, like the FF1 import test.
+const FF1_NSF_FILE = new URL("../albums/nes/final-fantasy-i/reference/ff1.nsf", import.meta.url);
+test("DPCM render: FF1 renders byte-identical to the pre-DPCM renderer, with no dpcm part",
+     {skip: !existsSync(FF1_NSF_FILE) && "ff1.nsf not present (vault-only)"}, () => {
+  const nsf = parseNSF(readFileSync(FF1_NSF_FILE));
+  const pinned = {
+    3: {pulse1: "67e10beb16", pulse2: "fe28fa693a", triangle: "a17771d7cf", noise: "e0ef40c437"},
+    17: {pulse1: "7f6128dfc6", pulse2: "0b9857b40b", triangle: "0ec47fd2e0", noise: "e0ef40c437"},
+  };
+  for (const [t, want] of Object.entries(pinned)) {
+    const res = runNSF(nsf, +t, 12);
+    const r = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100, prg: res.prg});
+    assert.equal(r.dpcm, undefined, "track " + t + ": no dpcm part");
+    for (const [k, h] of Object.entries(want))
+      assert.equal(createHash("sha1").update(Buffer.from(r[k].buffer)).digest("hex").slice(0, 10), h, "track " + t + " " + k);
+  }
+});
+
+// A real DPCM rip: Super Mario Bros. 3's drums are samples. The archive's rip,
+// fetched by hand to albums/nes/super-mario-bros-3/reference/ (gitignored).
+const SMB3_NSF = new URL("../albums/nes/super-mario-bros-3/reference/super-mario-bros-3.nsf", import.meta.url);
+test("DPCM render: Super Mario Bros. 3 track 1 has a sounding dpcm part read from its own banks",
+     {skip: !existsSync(SMB3_NSF) && "super-mario-bros-3.nsf not present (vault-only)"}, () => {
+  const nsf = parseNSF(readFileSync(SMB3_NSF));
+  const res = runNSF(nsf, 1, 8);
+  assert.ok(res.apuLog.some(w => w.addr === 0x4015 && (w.value & 0x10)), "the driver starts samples");
+  const r = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100, prg: res.prg});
+  let e = 0; for (const x of r.dpcm) e += x * x;
+  const rms = Math.sqrt(e / r.dpcm.length);
+  assert.ok(rms > 0.01, "the drums sound: rms " + rms.toFixed(4));
+  const blind = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100});
+  let eb = 0; for (const x of blind.dpcm) eb += x * x;
+  assert.ok(Math.sqrt(eb / blind.dpcm.length) < rms / 2, "without the program image there are no samples to play");
 });

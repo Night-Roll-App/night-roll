@@ -465,3 +465,14 @@ test("loadM: when BOTH attempts fail, it still throws, naming the module path", 
   const fakeImport = async () => { throw new Error("boom"); };
   await assert.rejects(() => loadM(["psx/psf"], [], [], "?v=1", fakeImport), /couldn't load module tools\/psx\/psf\.mjs/);
 });
+
+test("RUNNERS.nsf: dpcm is a part, planned only for a song whose log uses the sample channel; the render gets the program image", async () => {
+  const { chipEstimateTracksW } = await import("../tools/chip-worker.mjs");
+  const { dmcUsed } = await import("../tools/nsf/apu-render.mjs");
+  assert.deepEqual(RUNNERS.nsf.channels, ["pulse1", "pulse2", "triangle", "noise", "dpcm"]);
+  assert.equal(chipEstimateTracksW(RUNNERS.nsf, {apuLog: [{addr: 0x4015, value: 0x0F}]}, {dmcUsed}), 4);
+  assert.equal(chipEstimateTracksW(RUNNERS.nsf, {apuLog: [{addr: 0x4015, value: 0x1F}]}, {dmcUsed}), 5);
+  let got = null;
+  RUNNERS.nsf.render({renderApu: (log, frames, frameSec, o) => { got = o; return {}; }}, {apuLog: [], frames: 1, frameSec: 1, prg: {banked: false}}, {sampleRate: 44100});
+  assert.deepEqual(got, {sampleRate: 44100, prg: {banked: false}});
+});
