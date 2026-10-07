@@ -10,77 +10,167 @@
    "boss": {
     "n": 8,
     "secs": 18.7518310546875,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 1.2,
+     "synth": -10.1
+    }
    },
    "ending": {
     "n": 5,
     "secs": 45.00439453125,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": 0.5,
+     "synth": -10.2
+    }
    },
    "game-over": {
     "n": 12,
     "secs": 5.474864959716797,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": -2.7,
+     "synth": -8.6
+    }
    },
    "invincible": {
     "n": 10,
     "secs": 5.357666015625,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -1.7,
+     "synth": -9.5
+    }
    },
    "kirby-dance": {
     "n": 13,
     "secs": 6.546398162841797,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": -2.3,
+     "synth": -8.1
+    }
    },
    "lose-life": {
     "n": 14,
     "secs": 3.2480850219726562,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -6.1,
+     "synth": -7
+    }
    },
    "spicy-food-minty-leaf": {
     "n": 9,
     "secs": 13.3941650390625,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -0.3,
+     "synth": -10.8
+    }
    },
    "stage-1": {
     "n": 2,
     "secs": 32.14599609375,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -14.4,
+     "peak": -0.8,
+     "synth": -9.5
+    }
    },
    "stage-2": {
     "n": 6,
     "secs": 45.00439453125,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 0.2,
+     "synth": -9.8
+    }
    },
    "stage-3": {
     "n": 4,
     "secs": 37.503662109375,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": -0.6,
+     "synth": -8.9
+    }
    },
    "stage-4": {
     "n": 3,
     "secs": 43.3970947265625,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": -0.3,
+     "synth": -9
+    }
    },
    "stage-5-selection": {
     "n": 11,
     "secs": 3.7503662109375,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -14,
+     "peak": -1,
+     "synth": -9.4
+    }
    },
    "stage-5": {
     "n": 7,
     "secs": 26.788330078125,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": 1.5,
+     "synth": -9.8
+    }
    },
    "stars": {
     "n": 15,
     "secs": 2.7792892456054688,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -9.2,
+     "synth": -14.4
+    }
    },
    "title": {
     "n": 1,
     "secs": 12.958854675292969,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -14.4,
+     "peak": -0.9,
+     "synth": -9.9
+    }
    }
   },
   "chip": "gbs"
