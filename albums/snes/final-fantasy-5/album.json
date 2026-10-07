@@ -38,403 +38,671 @@
     "n": 1,
     "secs": 300,
     "track": 55,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "a-presentiment": {
     "n": 1,
     "secs": 269,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ahead-on-our-way": {
     "n": 1,
     "secs": 144,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "as-i-feel-you-feel": {
     "n": 1,
     "secs": 124,
     "track": 42,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-with-gilgamesh": {
     "n": 1,
     "secs": 135,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "beyond-the-deep-blue-sea": {
     "n": 1,
     "secs": 93,
     "track": 41,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "critter-tripper-fritter": {
     "n": 1,
     "secs": 72,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "cursed-earths": {
     "n": 1,
     "secs": 101,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "danger": {
     "n": 1,
     "secs": 71,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dear-friends": {
     "n": 1,
     "secs": 300,
     "track": 53,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "deception": {
     "n": 1,
     "secs": 62,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "exdeath-s-castle": {
     "n": 1,
     "secs": 128,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare-1": {
     "n": 1,
     "secs": 12,
     "track": 57,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fanfare-2": {
     "n": 1,
     "secs": 12,
     "track": 58,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fate-in-haze": {
     "n": 1,
     "secs": 135,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "final-fantasy": {
     "n": 1,
     "secs": 212,
     "track": 54,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "four-valiant-hearts": {
     "n": 1,
     "secs": 91,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "go-go-boco": {
     "n": 1,
     "secs": 62,
     "track": 44,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "good-night": {
     "n": 1,
     "secs": 12,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "harvest": {
     "n": 1,
     "secs": 93,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hurry-hurry": {
     "n": 1,
     "secs": 33,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "i-m-a-dancer": {
     "n": 1,
     "secs": 16,
     "track": 59,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "intension-of-the-earth": {
     "n": 1,
     "secs": 133,
     "track": 47,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "lenna-s-theme": {
     "n": 1,
     "secs": 141,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mambo-de-chocobo": {
     "n": 1,
     "secs": 59,
     "track": 30,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "music-box": {
     "n": 1,
     "secs": 111,
     "track": 32,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "musica-machina": {
     "n": 1,
     "secs": 73,
     "track": 27,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "my-home-sweet-home": {
     "n": 1,
     "secs": 139,
     "track": 31,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "nostalgia": {
     "n": 1,
     "secs": 84,
     "track": 24,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-1": {
     "n": 1,
     "secs": 12,
     "track": 60,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-2": {
     "n": 1,
     "secs": 13,
     "track": 61,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-3": {
     "n": 1,
     "secs": 12,
     "track": 62,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-4": {
     "n": 1,
     "secs": 26,
     "track": 63,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-5": {
     "n": 1,
     "secs": 12,
     "track": 64,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-6": {
     "n": 1,
     "secs": 12,
     "track": 65,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-7": {
     "n": 1,
     "secs": 12,
     "track": 66,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "piano-lesson-8": {
     "n": 1,
     "secs": 13,
     "track": 67,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pirates-ahoy": {
     "n": 1,
     "secs": 114,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "reminiscence": {
     "n": 1,
     "secs": 99,
     "track": 26,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "requiem": {
     "n": 1,
     "secs": 26,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "royal-palace": {
     "n": 1,
     "secs": 85.98,
     "track": 21,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "run": {
     "n": 1,
     "secs": 38.86,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sealed-away": {
     "n": 1,
     "secs": 97,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "searching-the-light": {
     "n": 1,
     "secs": 85,
     "track": 49,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "tenderness-in-the-air": {
     "n": 1,
     "secs": 149,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-airship": {
     "n": 1,
     "secs": 109,
     "track": 33,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-ancient-library": {
     "n": 1,
     "secs": 143,
     "track": 25,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-battle": {
     "n": 1,
     "secs": 63,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-book-of-sealings": {
     "n": 1,
     "secs": 85,
     "track": 46,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-castle-of-dawn": {
     "n": 1,
     "secs": 108,
     "track": 40,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-day-will-come": {
     "n": 1,
     "secs": 141.63,
     "track": 28,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-decisive-battle": {
     "n": 1,
     "secs": 300,
     "track": 50,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-dragon-spreads-it-s-wings": {
     "n": 1,
     "secs": 96,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-evil-lord-exdeath": {
     "n": 1,
     "secs": 118,
     "track": 34,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-fierce-battle": {
     "n": 1,
     "secs": 136,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-fire-powered-ship": {
     "n": 1,
     "secs": 86,
     "track": 22,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-four-warriors-of-dawn": {
     "n": 1,
     "secs": 122,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-land-unknown": {
     "n": 1,
     "secs": 120,
     "track": 45,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-last-battle": {
     "n": 1,
     "secs": 201,
     "track": 51,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-prelude-of-empty-skies": {
     "n": 1,
     "secs": 200,
     "track": 48,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-prelude": {
     "n": 1,
     "secs": 126,
     "track": 56,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-silent-beyond": {
     "n": 1,
     "secs": 300,
     "track": 52,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "unknown-lands": {
     "n": 1,
     "secs": 124,
     "track": 38,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "victory-s-fanfare": {
     "n": 1,
     "secs": 32,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "walking-the-snowy-mountains": {
     "n": 1,
     "secs": 99,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "waltz-suomi": {
     "n": 1,
     "secs": 122.93,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "what": {
     "n": 1,
     "secs": 45,
     "track": 29,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
