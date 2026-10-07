@@ -2847,6 +2847,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "speedometer icon",
     "their own full-width row under it",
     "swipe sideways on the strips",
     "Beat subdivisions",
