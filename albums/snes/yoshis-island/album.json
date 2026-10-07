@@ -32,289 +32,481 @@
     "n": 1,
     "secs": 12,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic-fuzzy-2": {
     "n": 1,
     "secs": 36,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic-fuzzy-3": {
     "n": 1,
     "secs": 108,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "athletic": {
     "n": 1,
     "secs": 120,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "big-boss-clear": {
     "n": 1,
     "secs": 12,
     "track": 28,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "big-boss-no-intro": {
     "n": 1,
     "secs": 96,
     "track": 27,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "big-boss": {
     "n": 1,
     "secs": 111,
     "track": 26,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-fanfare": {
     "n": 1,
     "secs": 12,
     "track": 44,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-game": {
     "n": 1,
     "secs": 73,
     "track": 36,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "boss-intro": {
     "n": 1,
     "secs": 12,
     "track": 46,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser-clear": {
     "n": 1,
     "secs": 12,
     "track": 39,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bowser": {
     "n": 1,
     "secs": 156,
     "track": 38,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "castle-fortress": {
     "n": 1,
     "secs": 114,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ending-part-1": {
     "n": 1,
     "secs": 187,
     "track": 41,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ending-part-2": {
     "n": 1,
     "secs": 48,
     "track": 42,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "extra-life": {
     "n": 1,
     "secs": 12,
     "track": 47,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "flower-garden-fuzzy-1": {
     "n": 1,
     "secs": 54,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "flower-garden-fuzzy-2": {
     "n": 1,
     "secs": 27,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "flower-garden": {
     "n": 1,
     "secs": 160,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "game-over": {
     "n": 1,
     "secs": 12,
     "track": 24,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "game-start": {
     "n": 1,
     "secs": 12,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "goal": {
     "n": 1,
     "secs": 12,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kamek-s-theme": {
     "n": 1,
     "secs": 22,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "luigi-is-rescued": {
     "n": 1,
     "secs": 62,
     "track": 40,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-1": {
     "n": 1,
     "secs": 18,
     "track": 29,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-2": {
     "n": 1,
     "secs": 18,
     "track": 30,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-3": {
     "n": 1,
     "secs": 18,
     "track": 31,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-4": {
     "n": 1,
     "secs": 18,
     "track": 32,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-5": {
     "n": 1,
     "secs": 18,
     "track": 33,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-6": {
     "n": 1,
     "secs": 18,
     "track": 34,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "map-part-7": {
     "n": 1,
     "secs": 18,
     "track": 35,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mario-kidnapped": {
     "n": 1,
     "secs": 12,
     "track": 48,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mini-boss": {
     "n": 1,
     "secs": 120,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "nintendo-mark": {
     "n": 1,
     "secs": 12,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld-fuzzy": {
     "n": 1,
     "secs": 108,
     "track": 22,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "overworld": {
     "n": 1,
     "secs": 68,
     "track": 21,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "player-down": {
     "n": 1,
     "secs": 12,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "powerful-infant": {
     "n": 1,
     "secs": 45,
     "track": 37,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "room-before-boss": {
     "n": 1,
     "secs": 48,
     "track": 25,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "score": {
     "n": 1,
     "secs": 50,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "story-music-box": {
     "n": 1,
     "secs": 300,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "training-course": {
     "n": 1,
     "secs": 22,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "transform": {
     "n": 1,
     "secs": 12,
     "track": 45,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "underground": {
     "n": 1,
     "secs": 92,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "world-complete": {
     "n": 1,
     "secs": 12,
     "track": 43,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "yoshi-s-island-world-6": {
     "n": 1,
     "secs": 89,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "yoshi-s-island": {
     "n": 1,
     "secs": 149,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "yoshi-start-demo": {
     "n": 1,
     "secs": 53,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
