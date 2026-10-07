@@ -747,7 +747,7 @@ export function convertAnchors(oldTs, newTs) {
   for (const n of S.rollnotes) {
     if (isSongLevelAnno(n)) continue;
     [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
+    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldTs[0]);
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
     if (lm) {
       const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);

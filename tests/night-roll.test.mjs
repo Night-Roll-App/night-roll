@@ -14517,3 +14517,9 @@ test("patches Ask: set_track patch takes a preset name or key=value changes, one
   const reg = readFileSync(new URL("../src/ask/actions.js", import.meta.url), "utf8");
   assert.match(reg, /name: "set_track", args: "track mute\? solo\? hide\? volume\? pan\? voice\? patch\? color\? name\? octave\?"/);
 });
+
+test("convertAnchors: a span with no end beat ends on the old meter's last beat (was a ReferenceError on oldBpb)", () => {
+  run(`rollnotes = [{b1: 1, q1: 1, b2: 2, q2: null, text: "open end"}]; convertAnchors([4, 4], [2, 4]);`);
+  assert.deepEqual(val(`[rollnotes[0].b2, rollnotes[0].q2]`), [4, 2], "4/4 bar 2 beat 4 = 2/4 bar 4 beat 2");
+  run(`rollnotes = [];`);
+});
