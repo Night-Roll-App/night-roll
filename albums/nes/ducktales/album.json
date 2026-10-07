@@ -11,42 +11,74 @@
    "african-mines": {
     "n": 5,
     "secs": 30.382118000000002,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "amazon": {
     "n": 3,
     "secs": 38.398464000000004,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bless-me-bagpipes": {
     "n": 11,
     "secs": 3.649854,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "boss-battle": {
     "n": 8,
     "secs": 18.649254,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "death": {
     "n": 10,
     "secs": 3.199872,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "gyro-s-flying-machine": {
     "n": 9,
     "secs": 16.782662000000002,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "himalayas": {
     "n": 6,
     "secs": 36.648534,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "opening": {
     "n": 1,
     "secs": 52.797888,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "stage-select": {
     "n": 2,
@@ -56,12 +88,20 @@
    "the-moon": {
     "n": 7,
     "secs": 49.814674000000004,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "transylvania": {
     "n": 4,
     "secs": 43.981574,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
