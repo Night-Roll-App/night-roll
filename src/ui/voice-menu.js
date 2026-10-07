@@ -65,6 +65,14 @@ import { playSec } from "../audio/transport.js";
 import { stop } from "../audio/transport.js";
 import { play } from "../audio/transport.js";
 import { stretchEnsureAll } from "../audio/clips.js";
+import { PATCH_PRESETS } from "../model/patch.js";
+import { PATCH_WAVES } from "../model/patch.js";
+import { PATCH_PARAMS } from "../model/patch.js";
+import { isPatchVoice } from "../model/patch.js";
+import { parsePatchVoice } from "../model/patch.js";
+import { patchVoiceId } from "../model/patch.js";
+import { patchLabel } from "../model/patch.js";
+import { patchNum } from "../model/patch.js";
 
 export function autoVoiceLabel(ti) { // what "auto" actually resolves to for THIS track
   if (chipActive() && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name))
@@ -75,6 +83,7 @@ export function autoVoiceLabel(ti) { // what "auto" actually resolves to for THI
 // null = family list; a title = that family's instruments
 export const GAME_FAMILY = "Game instruments";
 export const SF2_FAMILY = "Soundfonts";
+export const PATCH_FAMILY = "Patches";
 // which game song a game voice was picked from, per device (a UI memory, not
 // song state — the voice id itself stays "game:<vault>:<id>")
 export function gameVoiceFromAll() { try { return JSON.parse(localStorage.getItem("ff1roll-gamevoicefrom") || "{}"); } catch (e) { return {}; } }
@@ -126,7 +135,8 @@ export function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then
   // open straight into the family holding the track's current voice
   const cur = S.song.tracks[ti].voice || "auto";
   const home = VOICE_GROUPS.find(([, vs]) => vs.some(([id]) => id === cur));
-  S.voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : cur.startsWith("sf2:") ? SF2_FAMILY : null;
+  S.voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : cur.startsWith("sf2:") ? SF2_FAMILY : isPatchVoice(cur) ? PATCH_FAMILY : null;
+  S.voiceMenuPatchEdit = false;
   S.voiceMenuGameVault = null; S.voiceMenuGameSub = null; S.voiceMenuGameSys = null; // the games picker always opens at the systems list, not drilled into one — UNLESS the current voice is a game voice, which drills straight back to it (below)
   S.voiceMenuSf2Slug = null; // same: the soundfonts picker always opens at the fonts list
   buildVoiceMenu(ti);
@@ -172,6 +182,7 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
   const curLabel = cur === "auto" ? "auto: " + autoVoiceLabel(ti)
     : cur.startsWith("game:") ? gameVoiceLabel(cur)
     : cur.startsWith("sf2:") ? sf2VoiceLabel(cur)
+    : isPatchVoice(cur) ? patchLabel(cur)
     : (VOICES.find(([id]) => id === cur) || [, cur])[1];
   if (tr.kind === "audio" && tr.clips.length) buildClipControls(ti, menu, tr); // a clip has no instrument: placement instead
   else if (S.voiceMenuGroup === null) { // level 1: the instrument families
@@ -182,6 +193,13 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
       b.textContent = title + "  ›" + (holds ? "   (" + curLabel + ")" : "");
       b.addEventListener("click", () => { S.voiceMenuGroup = title; buildVoiceMenu(ti); });
       menu.appendChild(b);
+      if (title === VOICE_GROUPS[0][0]) { // patches sit beside the waves they are built from
+        const pb = document.createElement("button");
+        pb.className = "fitem";
+        pb.textContent = PATCH_FAMILY + "  ›" + (isPatchVoice(cur) ? "   (" + curLabel + ")" : "");
+        pb.addEventListener("click", () => { S.voiceMenuGroup = PATCH_FAMILY; S.voiceMenuPatchEdit = false; buildVoiceMenu(ti); });
+        menu.appendChild(pb);
+      }
     }
     const gb = document.createElement("button");
     gb.className = "fitem";
@@ -199,6 +217,9 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
     buildGameVoicePicker(ti, menu, tr, cur, renderToken);
   } else if (S.voiceMenuGroup === SF2_FAMILY) { // level 2: a loaded soundfont, then its presets
     buildSf2VoicePicker(ti, menu, tr, cur);
+  } else if (S.voiceMenuGroup === PATCH_FAMILY) { // level 2: the presets; Edit patch… swaps in the sliders
+    if (S.voiceMenuPatchEdit && isPatchVoice(cur)) buildPatchEditor(ti, menu, tr);
+    else buildPatchPicker(ti, menu, tr, cur);
   } else { // level 2: one family's instruments
     const back = document.createElement("button");
     back.className = "fitem";
@@ -475,6 +496,99 @@ export async function sf2AuditionPreset(font, preset) { // instAudition's own sh
     buf.copyToChannel(pcm, 0);
     const src = S.audio.createBufferSource(); src.buffer = buf; src.connect(S.master); src.start(t);
     t += 0.38;
+  }
+}
+// a patch preview: the track's own middle pitch (a bass patch heard as a bass),
+// held long enough for the vibrato's delay and the release to be heard
+export function patchHear(ti) {
+  const ps = S.song.tracks[ti].notes.filter(n => !n.gone).map(n => n.p).sort((a, b) => a - b);
+  previewNote(ti, ps.length ? ps[ps.length >> 1] : 69, undefined, 1.2);
+}
+export function buildPatchPicker(ti, menu, tr, cur) { // PATCH_FAMILY: one tap assigns a preset (one undo) and plays it
+  const back = document.createElement("button");
+  back.className = "fitem";
+  back.style.color = "var(--dim)";
+  back.textContent = "‹ " + PATCH_FAMILY;
+  back.addEventListener("click", () => { S.voiceMenuGroup = null; buildVoiceMenu(ti); });
+  menu.appendChild(back);
+  const curP = parsePatchVoice(cur);
+  for (const pre of PATCH_PRESETS) {
+    const b = document.createElement("button");
+    b.className = "fitem";
+    b.dataset.patch = pre.name;
+    const wave = (PATCH_WAVES.find(([w]) => w === pre.wave) || [, pre.wave])[1];
+    b.textContent = (curP && curP.name === pre.name ? "✓ " : "   ") + pre.label + "  · " + wave + (pre.vx > 0 ? " + vibrato" : "");
+    b.addEventListener("click", () => {
+      tr.voice = patchVoiceId(pre);
+      saveVoices();
+      patchHear(ti);
+      buildVoiceMenu(ti);
+    });
+    menu.appendChild(b);
+  }
+  if (curP) {
+    const ed = document.createElement("button");
+    ed.className = "fitem";
+    ed.id = "vmpatchedit";
+    ed.textContent = "   Edit patch…";
+    ed.addEventListener("click", () => { S.voiceMenuPatchEdit = true; buildVoiceMenu(ti); });
+    menu.appendChild(ed);
+  }
+}
+// Edit patch…: wave + A/D/S/R + vibrato sliders. Dragging changes the sound
+// live (the next note plays it); letting go saves it into the song's track:
+// annotation (one undo) and plays a note.
+export function buildPatchEditor(ti, menu, tr) {
+  const back = document.createElement("button");
+  back.className = "fitem";
+  back.style.color = "var(--dim)";
+  back.textContent = "‹ " + PATCH_FAMILY;
+  back.addEventListener("click", () => { S.voiceMenuPatchEdit = false; buildVoiceMenu(ti); });
+  menu.appendChild(back);
+  const p = parsePatchVoice(tr.voice);
+  const top = document.createElement("div");
+  top.style.cssText = "display:flex;align-items:center;gap:6px;padding:2px 10px";
+  const name = document.createElement("span");
+  name.style.cssText = "font-family:var(--mono);font-size:0.75rem;flex:1";
+  name.textContent = patchLabel(tr.voice);
+  const hear = document.createElement("button");
+  hear.id = "vmpatchhear";
+  hear.style.cssText = "min-height:36px;flex:none";
+  hear.textContent = "▶ Hear";
+  hear.setAttribute("aria-label", "Hear the patch");
+  hear.addEventListener("click", () => patchHear(ti));
+  top.append(name, hear);
+  menu.appendChild(top);
+  const waves = document.createElement("div");
+  waves.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px";
+  for (const [w, label] of PATCH_WAVES) {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.style.cssText = "min-height:34px;padding:2px 8px;flex:none";
+    b.classList.toggle("active", p.wave === w);
+    b.setAttribute("aria-pressed", String(p.wave === w));
+    b.addEventListener("click", () => { p.wave = w; tr.voice = patchVoiceId(p); saveVoices(); patchHear(ti); buildVoiceMenu(ti); });
+    waves.appendChild(b);
+  }
+  menu.appendChild(waves);
+  const unit = k => k === "s" ? "" : k === "vr" ? " Hz" : k === "vx" ? " st" : " s";
+  for (const [k, label, lo, hi, step] of PATCH_PARAMS) {
+    const row = document.createElement("div");
+    row.style.cssText = "padding:4px 10px 0;display:flex;align-items:center;gap:8px";
+    const lbl = document.createElement("span");
+    lbl.style.cssText = "font-family:var(--mono);font-size:0.6875rem;color:var(--dim);flex:none;min-width:118px";
+    const sl = document.createElement("input");
+    sl.type = "range"; sl.min = String(lo); sl.max = String(hi); sl.step = String(step);
+    sl.value = String(p[k]);
+    sl.dataset.param = k;
+    sl.style.cssText = "flex:1";
+    sl.setAttribute("aria-label", "Patch " + label);
+    const show = () => { lbl.textContent = label + " " + patchNum(+sl.value) + unit(k); };
+    show();
+    sl.addEventListener("input", () => { p[k] = +sl.value; tr.voice = patchVoiceId(p); show(); });
+    sl.addEventListener("change", () => { p[k] = +sl.value; tr.voice = patchVoiceId(p); saveVoices(); name.textContent = patchLabel(tr.voice); patchHear(ti); });
+    row.append(lbl, sl);
+    menu.appendChild(row);
   }
 }
 export function buildSf2VoicePicker(ti, menu, tr, cur) { // SF2_FAMILY: renderSf2Nav; a tap assigns + auditions, same contract as buildGameVoicePicker

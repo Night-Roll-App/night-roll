@@ -131,6 +131,20 @@ writer keeps only the last per title. A build older than this reads the
 entry as an unknown type and writes it back verbatim (Forward
 compatibility, below).
 
+A track's `"voice"` may be a **patch** since 2026-10-06 (patches v1,
+NIGHT-ROLL.md "Patches") — no new type and no new field: the patch is
+the voice string itself, so every reader, writer, store and undo path
+that already carries `voice` carries it unchanged:
+`{"at": [1, 1], "type": "track", "track": "lead", "voice":
+"patch:chip-lead:square25:env0.005,0.1,0.75,0.08:vib6,0.25,0.25"}`.
+Grammar: `patch:<name>:<wave>` then tagged segments — `env<A>,<D>,<S>,<R>`
+(seconds, sustain 0..1), `vib<rate Hz>,<depth semitones>,<delay s>`
+(absent = no vibrato). A segment with another tag is a later build's
+(e.g. chip macros) and is written back verbatim. The token never holds
+`=` or whitespace (the legacy `track:` text form splits on both). A build
+older than this keeps the string as an unknown voice and writes it back
+as-is.
+
 ### Forward compatibility (2026-10-05)
 
 A build that publishes a file it does not fully understand must not strip

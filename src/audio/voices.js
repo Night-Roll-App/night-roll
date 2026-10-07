@@ -32,6 +32,10 @@ import { ctlList } from "../midi/parse.js";
 import { ctlAt } from "../midi/parse.js";
 import { ctlNext } from "../midi/parse.js";
 import { trackSend } from "./engine.js";
+import { parsePatchVoice } from "../model/patch.js";
+import { patchEnvPoints } from "../model/patch.js";
+import { PATCH_VIB_FADE } from "../model/patch.js";
+import { originOf } from "../model/provenance.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -363,6 +367,51 @@ export function ctlPitch(cx, srcs, when) {
     else if (bendPts && s.playbackRate) ctlRamp(s.playbackRate, bendPts, when, stop, c => Math.pow(2, c / 1200));
   }
 }
+// ---- patches (src/model/patch.js; NIGHT-ROLL.md "Patches"): the track's own
+// instrument layer on the synth path only. g carries velocity × the note's
+// shape, pg the patch's ADSR, and ctlRoute's CC7 × CC11 sit downstream — the
+// three multiply. The release starts at the key's (or CC64 pedal's) let-go and
+// rings past it. A captured note's `ve` and shape are the chip's own volume
+// envelope, i.e. an instrument envelope already: on a patch they would fade
+// the note twice, so a capture's notes hear the patch alone (the same scoping
+// rule as game/sf2 instruments). Shapes drawn in an own song multiply.
+export function patchShapeApplies() {
+  const memo = patchShapeApplies.memo;
+  if (memo && memo.key === S.songKey) return memo.ok;
+  let ok = true;
+  try { ok = originOf(S.songKey) !== "capture"; } catch (err) { /* no provenance yet: an own song */ }
+  patchShapeApplies.memo = {key: S.songKey, ok};
+  return ok;
+}
+export function playPatchNote(ti, n, when, durSec, patch, cx, g, amp, f0) {
+  const anchor = when + durSec, end = cx ? cx.end : anchor;
+  const o = makeOsc(patch.wave);
+  o.frequency.value = f0;
+  const pg = S.audio.createGain();
+  g.gain.setValueAtTime(amp, when);
+  if (patchShapeApplies()) noteShapeRamp(g.gain, n, amp, anchor, when, end);
+  const pts = patchEnvPoints(patch, end - when);
+  pg.gain.setValueAtTime(0, when);
+  for (const q of pts.slice(1)) pg.gain.linearRampToValueAtTime(q.v, when + q.t);
+  const stopAt = when + pts[pts.length - 1].t + 0.02;
+  o.connect(pg); pg.connect(g);
+  ctlPitch(cx, [o], when);
+  let lg = null;
+  // delayed vibrato: a note let go before the delay stays straight (and costs no LFO)
+  if (patch.vx > 0 && patch.vr > 0 && end - when > patch.vd) {
+    const lfo = S.audio.createOscillator();
+    lfo.frequency.value = patch.vr;
+    lg = S.audio.createGain();
+    lg.gain.setValueAtTime(0, when);
+    lg.gain.setValueAtTime(0, when + patch.vd);
+    lg.gain.linearRampToValueAtTime(patch.vx * 100, when + patch.vd + PATCH_VIB_FADE); // semitones -> cents on detune
+    lfo.connect(lg); lg.connect(o.detune);
+    lfo.start(when); lfo.stop(stopAt);
+  }
+  o.onended = () => { try { g.disconnect(); pg.disconnect(); if (lg) lg.disconnect(); } catch (err) {} ctlFree(cx); };
+  o.start(when);
+  o.stop(stopAt);
+}
 export function ctlFree(cx) { if (cx) for (const x of cx.nodes) { try { x.disconnect(); } catch (err) { /* already gone */ } } }
 // the default NES/sampled voice path — used directly above, and as the
 // fallback (with the track's auto voice) when a game instrument can't render
@@ -372,6 +421,8 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   g.connect(ctlRoute(cx, ti, when));
   const anchor = when + durSec; // the note's own end: shapes anchor here
   const end = cx ? cx.end : anchor; // …and a held sustain pedal may ring past it
+  const patch = parsePatchVoice(v);
+  if (patch) { playPatchNote(ti, n, when, durSec, patch, cx, g, (n.v / 127) * (VOICE_AMP[patch.wave] || 0.5), 440 * Math.pow(2, (n.p - 69) / 12)); return; }
   const file = sfFileFor(v);
   if (file) { // sampled instrument: the exact recorded pitch, gated to the note length
     const buf = sfEnsure(file).buffers[n.p];
@@ -814,7 +865,7 @@ export function scheduleNote(ti, n, when, durSec) {
 }
 scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
-export async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
+export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
   ensureAudio();
   // a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
   // on — the idle "ambient" session silenced taps, Josh 2026-10-02), back to "ambient" 2 s after
@@ -857,5 +908,5 @@ export async function previewNote(ti, pitch, tick) { // tick: the tapped note's 
       return;
     }
   }
-  scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, S.audio.currentTime + 0.01, 0.3);
+  scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, S.audio.currentTime + 0.01, durSec); // a patch's sheet holds the note long enough to hear its vibrato and release
 }

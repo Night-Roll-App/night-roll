@@ -1735,6 +1735,7 @@ sections are these modules now.
 - `model/selection.js` — `selEditItems`, `clipboardHas`, `clipSummary`: the three selection-adjacent reads with no call into unsplit code (step 9, 2026-10-03). **Every actual mutator — `selEditApply`, `nudgeSelection`, `resizeSelection`, quantize/split/join, copy/paste — did NOT move**: all of them bottom out in `selEditApply`, which calls `saveEdits()` (model/edits.js's own SAFETY-blocked function, step 5), `computeSongEnd()` (blocked, above) and `draw()`/`buildScoreModel()` (render, step 11). The plan's own named targets for this file stay in app.js almost entirely.
 - MIDI playback v2 (2026-10-06): `midi/parse.js` also owns the channel-controller helpers (`CTL_CCS`, `ctlBytes`, `ctlCopy`, `ctlIndex`/`ctlList`/`ctlAt`/`ctlNext`); `audio/voices.js` plays them (`noteCtl`/`ctlRoute`/`ctlPitch`/`ctlRamp`/`ctlFree`); `audio/engine.js` holds the reverb bus (`reverbIn`/`reverbImpulse`/`trackSend`). See "MIDI support — what the synth plays".
 - `model/noteshape.js` (2026-10-06) — a note's volume shape (`n.env`): presets, `setSelectionShape` (one undo through `selEditApply`), `shapePoints`/`shapeLevel`/`shapeFactorAt` (read by `audio/voices.js`'s `noteShapeRamp` and `ui/vellane.js`), `shapeSnap`/`shapeRestore` (the undo log). See "Volume shape inside a note".
+- `model/patch.js` (2026-10-06) — patches v1: the `patch:` voice token (`patchVoiceId`/`parsePatchVoice`, forward-compatible `extra` segments), `PATCH_PRESETS`, `PATCH_WAVES`, `PATCH_PARAMS` (slider ranges = clamps), `patchEnvPoints` (the ADSR breakpoints `audio/voices.js`'s `playPatchNote` ramps). Pure, no imports. See "Patches".
 - `model/provenance.js` — the P1 "one origin per song, one rule table" machinery (docs/provenance-plan.md), step 9 (2026-10-03): `isCaptureKey`, `ownFolderPath`, `isComposition`, `isCompositionKey` (unlisted — `publishSong`'s own predicate for a non-open key, `isComposition`'s blocker-free twin), `bakesTempo`/`bakesMeter`, `hasProvenanceNote`, `originOf`/`originFor`/`pendingOrigin(Key)`/`setOrigin`, `RULES`/`rulesFor`, `canEditMusic`, `NR_DIR`/`COMP_DIR`/`PROVENANCE_RE`/`READONLY_DIRS`/`COMP_ALBUMS`/`RESERVED_FOLDERS`, `albumTitleFor`, `slugify`, `untitledKey`, `isUnsaved`, `folderFromInput`, `chosenFolder` — plus `albumMetaCache`/`albumMetaFor` (relocated HERE from `audio/chip.js`, not from app.js — step 8 had put them in chip.js because chip.js's own callers needed them there, flagging the exact risk this step hit: `ownFolderPath` could never import them at layer 3). This one relocation cleared three separate permanent-looking blocks at once — see `model/catalog.js` and `audio/chip.js`'s own entries. **`saveSongAs`/`renameLocalKeys`/`openSaveForm` did NOT move** (each reaches `finalizeNotes`/`draw`/`setInfo`/`updateSongBtn`, none yet split) despite `saveSongAs` being the plan's own named target for this file. See docs/split-plan.md "Deviations (9)".
 - `model/album-order.js` — `setAlbumOrderPref`, `slugOfPath`, `albumTrackMap`, `albumHasTrackData`, `albumOrder`, `albumEffectiveOrder`, `albumOrderControl` (step 9, 2026-10-03): the Game order/A–Z switch, entirely clean — this step's one file whose real content matches the plan's table exactly, nothing left behind.
 - `model/versions.js` — the localStorage version store (Model B), step 9 (2026-10-03): `autosaveOn`, `versionsStoreKey`, `readVersionsRaw`/`writeVersionsRaw`, `migrateVersions`/`readVersions`/`pushVersion`, `songDirtyFlag`/`songUnsaved`, `draftTracks`/`musicSig`/`draftDoc` (the draft fingerprint), `draftKeys`. **`saveVersion`/`saveDraft`/`draftRead`/`draftWrite`/`draftFingerprint`/`pubCompareDraft`/`fingerprintOldDrafts`/`markPublished` all stay in app.js** — `saveVersion` needs `openSaveForm`/`setInfo`/`filesMirror`; `saveDraft` needs `retireOldOverlay`/`logErr`/`setInfo`/`updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` (its `isComposition`/`editableSong` blockers cleared this step, but it stays — see open-items.md's SAFETY re-check). None yet split.
@@ -7262,6 +7263,72 @@ scoping; presets/undo/redo/copy/move/draft→publish; Ask op; lane drag);
 tests/nsf.test.mjs "volume shape capture …" (synthetic swell, decay-only
 unchanged, next-note setup, and the real FF1 Shop rip when ff1.nsf is
 present — `FF1_NSF=<path>` to point at the vault copy).
+
+## Patches — the track's own instrument (patches v1, 2026-10-06)
+
+Josh approved "patches v1" (docs/plans/2026-10-06-envelopes-lfo-review.md
+§4.2): his own instruments for writing chip-style and other songs. A patch
+is the instrument layer — a synth wave + an amplitude ADSR + a delayed
+vibrato — that every note of the track runs by itself; per-note shapes,
+velocity and CC7/CC11 stay the performance layer and multiply on top.
+
+- **Storage: the track's voice token** (src/model/patch.js), so it rides
+  the existing `track:` annotation — undo (saveTrackDir's anno snapshot),
+  the device store, drafts, the file and publish all carry it with no new
+  annotation type:
+  `track: lead voice=patch:chip-lead:square25:env0.005,0.1,0.75,0.08:vib6,0.25,0.25`.
+  Fields: name (a slug), wave (`square` `square25` `square12` `triangle`
+  `sine` `sawtooth` `organ`), `env` A s, D s, S 0..1, R s; `vib` rate Hz,
+  depth semitones, delay s (absent = no vibrato). Readers clamp to the
+  sliders' ranges (`PATCH_PARAMS`). Never `=` or whitespace in the token —
+  the track: parser splits on both, and an older build would truncate it.
+  A segment this build doesn't know (a later build's `arp…`) is kept in
+  `extra` and written back verbatim; an older build reads the whole token
+  as an unknown voice and keeps it as-is (it sounds as a plain sine there).
+  Two tracks on one preset each hold their own copy — editing one never
+  changes the other. Presets (`PATCH_PRESETS`, six, wording Josh's call)
+  live in code; picking one copies its numbers into the song.
+- **Playback — synth path only** (`playPatchNote`, called from
+  playSynthVoice before the sampled/oscillator branches): note gain `g` =
+  velocity × the wave's VOICE_AMP trim (× the note's shape), then `pg` =
+  the ADSR (`patchEnvPoints`: linear ramps; D = 0 rises straight to S; a
+  note let go mid-attack releases from where the rise got to), then
+  ctlRoute's CC7 × CC11. The release starts at the note-off, or at the
+  CC64 lift when the pedal holds it (noteCtl's `end`), and rings past it;
+  the oscillator stops after the release. Vibrato: a sine LFO at `vr` Hz
+  into `detune`, gain 0 until the delay, then a 0.1 s fade to `vx` × 100
+  cents; a note let go before the delay builds no LFO. CC1's vibrato and
+  pitch bend still add (ctlPitch). Bounce inherits it (same scheduleNote).
+- **Scoping (no double fade).** game:/sf2: instruments never read a patch
+  (they don't reach playSynthVoice). The console voice still owns auto
+  tracks; a patch is an explicit voice, so that track plays the synth, as
+  any voice pick does. A captured song's `ve` and `n.env` are the chip's
+  own volume envelope — on a patch they'd fade the note twice — so on a
+  song whose origin is `capture` (`patchShapeApplies`, memoised per
+  songKey) a patch note's gain is velocity alone; in any other song a
+  drawn shape multiplies. `ve` is never applied on a patch.
+- **UI.** Voice & color menu → **Patches ›** (beside NES / waves): the six
+  presets, one tap = assign + one undo + a 1.2 s preview note at the
+  track's middle pitch (`patchHear`). With a patch on the track, **Edit
+  patch…** swaps the list for a wave row and seven sliders (`input` sets
+  the voice live, unsaved; `change` saves = one undo, and plays a note;
+  ▶ Hear any time). `S.voiceMenuPatchEdit` is the menu's own view flag.
+  The label reads "patch Chip lead", "(edited)" once its numbers differ.
+- **Ask.** `set_track … patch` (src/ask/tools.js `askPatchMatch`): a
+  preset name, or `key=value` words (wave, attack, decay, sustain,
+  release, vib_rate, vib_depth, vib_delay, or `env=A,D,S,R` /
+  `vib=rate,depth,delay`) on top of a leading preset word, else the
+  track's current patch; an object of the same keys also works;
+  out-of-range values error; `voice` + `patch` together refuses. One undo.
+- **Not in v1** (open-items): chip macros (vol/arp/pitch/duty sequences),
+  "Save as patch" from a game instrument, filter envelope, CC1 routed to
+  the patch's vibrato depth, an ADSR drawn as one line in the sheet.
+
+Tests: tests/night-roll.test.mjs "patches: …" (token round trip + clamps +
+breakpoints; annotation file/local store/reload/undo), "patches playback:
+…" (spied ADSR/vibrato/CC7/CC64 ramps, short notes straight, no-patch
+graph unchanged, capture shapes skipped, game voices never read it),
+"patches UI: …" and "patches Ask: …".
 
 ## MIDI support — what the synth plays (`tr.ctl`, MIDI playback v2, 2026-10-06)
 

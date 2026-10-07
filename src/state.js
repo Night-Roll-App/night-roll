@@ -154,6 +154,7 @@ export const S = {
   voiceMenuGameSys: null,
   voiceMenuGameSub: null,
   voiceMenuSf2Slug: null,
+  voiceMenuPatchEdit: false, // the Patches family shows Edit patch…'s sliders instead of the presets
   instPlaySync: null,
   exporting: false,
   playGateTimer: null,

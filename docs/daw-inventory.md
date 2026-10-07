@@ -250,7 +250,8 @@ key, meter or chord for him unless asked.
 
 | Logic iPad / others | Night Roll today | Worth it? |
 |---|---|---|
-| Sound browser: patches, loops, samples, presets `[shot]` | HAS instead: NES/GB/SNES/PS1 game instrument libraries, 36 soundfont instruments, song albums in Game order | — |
+| Sound browser: patches, loops, samples, presets `[shot]` | HAS instead: NES/GB/SNES/PS1 game instrument libraries, 36 soundfont instruments, song albums in Game order; since 2026-10-06 six built-in synth patches (Patches ›) | — |
+| Synth patch editing: ADSR, LFO vibrato, filter envelope, mod matrix `[doc]` | PARTIAL (patches v1, 2026-10-06): wave + amplitude ADSR + delayed vibrato per track, Edit patch… sliders, saved in the song; no filter envelope, tremolo, mod-wheel routing or chip macros (vol/arp/pitch/duty) yet | Yes, M — patches v2: chip macros + "Save as patch" from a game instrument |
 | Apple Loops / loop packs | MISSING | No — not the identity |
 | Personal snippet shelf (save a riff, drop it later) `[gk]` | MISSING | Maybe, M — "that B part from Tuesday" without opening the other song |
 

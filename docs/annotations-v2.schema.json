@@ -90,7 +90,7 @@
         "timesig": { "type": "string", "description": "type: timesig — e.g. '6/8'." },
         "bpm": { "type": "number", "exclusiveMinimum": 0, "description": "type: tempo." },
         "track": { "type": "string", "description": "type: track or audio — the track name (or trN index)." },
-        "voice": { "type": "string", "description": "type: track — voice override." },
+        "voice": { "type": "string", "description": "type: track — voice override: a built-in voice id, game:/sf2: instrument, or a patch (patch:<name>:<wave>:envA,D,S,R[:vibRate,Depth,Delay][:later segments], docs/annotations-v2.md)." },
         "color": { "type": "string", "description": "type: track — color override, e.g. '#0aa2c0'." },
         "vol": { "type": "number", "minimum": 0, "maximum": 1.5, "description": "type: track." },
         "pan": { "type": "number", "minimum": -1, "maximum": 1, "description": "type: track." },

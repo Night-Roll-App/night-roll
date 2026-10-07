@@ -100,6 +100,12 @@ import { renameTrack } from "../ui/trackbar.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { transposeTrack } from "../model/selection.js";
 import { VOICES } from "../audio/voices.js";
+import { PATCH_PRESETS } from "../model/patch.js";
+import { PATCH_PARAMS } from "../model/patch.js";
+import { PATCH_WAVES } from "../model/patch.js";
+import { parsePatchVoice } from "../model/patch.js";
+import { patchVoiceId } from "../model/patch.js";
+import { patchLabel } from "../model/patch.js";
 import { captureKeep } from "../input/record.js";
 import { albumStart } from "../session/album.js";
 import { albumNext } from "../session/album.js";
@@ -1049,7 +1055,70 @@ export function askVoiceMatch(name) {
   if (hit) return hit[0];
   throw new Error("no voice named \"" + want + "\" — choices: auto, " + VOICES.map(([, label]) => label).join(", "));
 }
-function askVoiceLabel(id) { return id === "auto" ? "auto" : (VOICES.find(([v]) => v === id) || [, id])[1]; }
+function askVoiceLabel(id) {
+  if (id === "auto") return "auto";
+  const p = parsePatchVoice(id);
+  if (p) return patchLabel(id) + " (" + p.wave + " env " + [p.a, p.d, p.s, p.r].join(",") + (p.vx > 0 ? " vib " + [p.vr, p.vx, p.vd].join(",") : "") + ")";
+  return (VOICES.find(([v]) => v === id) || [, id])[1];
+}
+// set_track's patch (NIGHT-ROLL.md "Patches"): a preset by name ("chip lead"),
+// or changes — "attack=0.02 vib_depth=0.4", "env=A,D,S,R vib=rate,depth,delay",
+// a leading preset word, or an object of the same keys — applied on top of the
+// preset, else the track's current patch, else a flat pulse. Every value is
+// range-checked, never clamped quietly.
+export const ASK_PATCH_KEYS = {wave: "wave", a: "a", attack: "a", d: "d", decay: "d", s: "s", sustain: "s", r: "r", release: "r",
+  vr: "vr", vib_rate: "vr", vibrato_rate: "vr", vx: "vx", vib_depth: "vx", vibrato_depth: "vx", vd: "vd", vib_delay: "vd", vibrato_delay: "vd",
+  preset: "preset", env: "env", vib: "vib"};
+export function askPatchPreset(word) {
+  const slug = x => String(x).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const w = slug(word);
+  return PATCH_PRESETS.find(q => q.name === w || slug(q.label) === w) || null;
+}
+export function askPatchMatch(val, curVoice) {
+  const presets = () => PATCH_PRESETS.map(q => q.label).join(", ");
+  let kv = {};
+  if (val && typeof val === "object") kv = {...val};
+  else {
+    const str = String(val === undefined || val === null ? "" : val).trim();
+    if (!str) throw new Error("say a patch: a preset (" + presets() + ") or changes like attack=0.02 vib_depth=0.4");
+    if (!str.includes("=")) {
+      const pre = askPatchPreset(str);
+      if (!pre) throw new Error("no patch preset named \"" + str + "\" — presets: " + presets());
+      return patchVoiceId(pre);
+    }
+    const words = [];
+    for (const tok of str.split(/\s+/)) { const i = tok.indexOf("="); if (i < 0) words.push(tok); else kv[tok.slice(0, i)] = tok.slice(i + 1); }
+    if (words.length) kv.preset = words.join(" ");
+  }
+  const raw = {};
+  for (const [k0, v] of Object.entries(kv)) {
+    const k = ASK_PATCH_KEYS[k0.toLowerCase()];
+    if (!k) throw new Error("unknown patch setting \"" + k0 + "\" — use preset, wave, attack, decay, sustain, release, vib_rate, vib_depth, vib_delay (or env=A,D,S,R / vib=rate,depth,delay)");
+    if (k === "env") { const q = String(v).split(","); ["a", "d", "s", "r"].forEach((x, i) => { if (q[i] !== undefined && q[i] !== "") raw[x] = q[i]; }); }
+    else if (k === "vib") { const q = String(v).split(","); ["vr", "vx", "vd"].forEach((x, i) => { if (q[i] !== undefined && q[i] !== "") raw[x] = q[i]; }); }
+    else raw[k] = v;
+  }
+  let base = parsePatchVoice(curVoice) || {name: "patch", wave: "square", a: 0.005, d: 0, s: 1, r: 0.03, vr: 0, vx: 0, vd: 0};
+  if (raw.preset !== undefined) {
+    const pre = askPatchPreset(raw.preset);
+    if (!pre) throw new Error("no patch preset named \"" + raw.preset + "\" — presets: " + presets());
+    base = {...pre, extra: []};
+  }
+  const p = {...base};
+  if (raw.wave !== undefined) {
+    const w = String(raw.wave).trim().toLowerCase();
+    const hit = PATCH_WAVES.find(([id, label]) => id === w || label === w || (w === "saw" && id === "sawtooth") || (w === "pulse" && id === "square"));
+    if (!hit) throw new Error("wave must be one of: " + PATCH_WAVES.map(([, l]) => l).join(", "));
+    p.wave = hit[0];
+  }
+  for (const [k, label, lo, hi] of PATCH_PARAMS) {
+    if (raw[k] === undefined) continue;
+    const v = +raw[k];
+    if (!(Number.isFinite(v) && v >= lo && v <= hi)) throw new Error(label + " must be " + lo + "–" + hi + (k === "s" ? " (0..1 of the peak)" : k === "vr" ? " Hz" : k === "vx" ? " semitones" : " seconds"));
+    p[k] = v;
+  }
+  return patchVoiceId(p);
+}
 export function askSetTrack(a) {
   const gate = askWritableGate();
   if (gate) throw new Error(gate);
@@ -1058,8 +1127,9 @@ export function askSetTrack(a) {
   const tr = S.song.tracks[ti];
   const trackName = () => tr.name || "track " + (ti + 1);
   const given = k => askActGiven(a[k]);
-  if (!["mute", "solo", "hide", "volume", "pan", "voice", "color", "name", "octave"].some(given))
-    throw new Error("say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave");
+  if (!["mute", "solo", "hide", "volume", "pan", "voice", "patch", "color", "name", "octave"].some(given))
+    throw new Error("say what to change: mute, solo, hide, volume, pan, voice, patch, color, name, or octave");
+  if (given("voice") && given("patch")) throw new Error("say voice or patch, not both — a patch IS the track's voice");
   // every value is checked before anything changes: a bad one used to land
   // the earlier settings in S.trackState without their track: annotation,
   // and the next successful call then wrote them (2026-10-05 browser check)
@@ -1081,6 +1151,7 @@ export function askSetTrack(a) {
     if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("color must be a hex code like #4488ff (the voice menu's own color picker)");
   }
   if (given("voice")) voice = askVoiceMatch(a.voice);
+  if (given("patch")) voice = askPatchMatch(a.patch, tr.voice);
   if (given("octave")) {
     oct = String(a.octave).trim();
     if (oct !== "1" && oct !== "+1" && oct !== "-1") throw new Error("octave must be 1 or -1 (up or down one octave)");

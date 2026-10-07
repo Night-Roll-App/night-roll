@@ -112,6 +112,7 @@ silently.
 | Mute / Solo / Hide | — | yes | `set_track {track, mute?, solo?, hide?}` | S |
 | Volume, pan (mixer faders) | — | yes — writes the same `track:` annotation the fader does | `set_track {track, volume?, pan?}` | S |
 | Voice (instrument), color | — | yes | `set_track {track, voice?, color?}` — voice by name from the voice menu's list; unknown name = error listing choices | M |
+| Patch (wave + ADSR + delayed vibrato; voice menu → Patches ›, Edit patch…) | — | yes | `set_track {track, patch}` — a preset name or `key=value` changes (2026-10-06, patches v1) | S |
 | Rename track | — | yes, your songs only | `set_track {track, name}` | S |
 | Whole-track octave ▲/▼ | — | yes | `set_track {track, octave:+1\|-1}` | S |
 | Add / delete a track | — | yes, your songs only; delete is one undo step | `add_track {name, voice?}`, `delete_track {track}` | S |

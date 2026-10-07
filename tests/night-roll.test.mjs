@@ -2774,7 +2774,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
-    "What the synth plays from a MIDI file", "makes room",
+    "What the synth plays from a MIDI file", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -7054,7 +7054,7 @@ test("set_track: mute/solo/hide/volume/pan/voice/color/name/octave each land as 
 test("set_track: solo/hide, an unknown track, an unknown voice (lists the choices), a bad volume/pan/color/octave, no args given, and a drum track refusing octave — all error with nothing changed", () => {
   installActSong();
   assert.throws(() => run(`askSetTrack({track: "nope"})`), /no track named "nope" — this song's tracks: pulse1, drums/);
-  assert.throws(() => run(`askSetTrack({track: "pulse1"})`), /say what to change: mute, solo, hide, volume, pan, voice, color, name, or octave/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1"})`), /say what to change: mute, solo, hide, volume, pan, voice, patch, color, name, or octave/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", voice: "bagpipes"})`), /no voice named "bagpipes" — choices: auto, /);
   assert.throws(() => run(`askSetTrack({track: "pulse1", volume: 200})`), /volume must be 0–150%/);
   assert.throws(() => run(`askSetTrack({track: "pulse1", pan: 2})`), /pan must be -1 \(left\) to 1 \(right\)/);
@@ -13941,7 +13941,7 @@ test("volume shape playback: scoped like ve — sampled/struck voices and game/s
   const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
   const game = src.slice(src.indexOf("export function scheduleGameNote"), src.indexOf("\nexport function", src.indexOf("export function scheduleGameNote") + 10));
   assert.ok(game.length > 100 && !/noteShapeRamp|\.env\b|\.ve\b/.test(game), "scheduleGameNote never reads env or ve");
-  assert.equal((src.match(/noteShapeRamp\(/g) || []).length, 2, "one definition, one call (the oscillator path)");
+  assert.equal((src.match(/noteShapeRamp\(/g) || []).length, 3, "one definition, two calls (the oscillator path; a patch, own songs only)");
   void amp;
 });
 
@@ -14354,4 +14354,164 @@ test("Swell / Swell–fade make room: a note too loud to rise starts at 73 so th
   // the Shape chip's status line says so
   const src = readFileSync(new URL("../src/ui/note-editor.js", import.meta.url), "utf8");
   assert.match(src, /velocity dropped to " \+ SHAPE_ROOM_V \+ " to make room/);
+});
+
+// ---- patches v1 (NIGHT-ROLL.md "Patches"; docs/plans/2026-10-06-envelopes-lfo-review.md §4.2):
+// wave + ADSR + delayed vibrato, stored as the track: annotation's voice token
+test("patches: the voice token round-trips exactly (a later build's segment rides along), clamps out-of-range numbers, never holds '=' or whitespace; ADSR breakpoints cover held, short and no-decay notes", () => {
+  const id = val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "chip-lead"))`);
+  assert.equal(id, "patch:chip-lead:square25:env0.005,0.1,0.75,0.08:vib6,0.25,0.25");
+  assert.equal(val(`patchVoiceId(parsePatchVoice(${JSON.stringify(id)}))`), id, "parse → write is a fixed point");
+  const fut = id + ":arp0,4,7";
+  assert.equal(val(`patchVoiceId(parsePatchVoice(${JSON.stringify(fut)}))`), fut, "an unknown segment (a later build's macro) is written back as-is");
+  assert.equal(val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "pluck"))`), "patch:pluck:square:env0.003,0.25,0,0.05", "no vibrato: no vib segment");
+  for (const p of val(`PATCH_PRESETS.map(p => patchVoiceId(p))`)) assert.ok(!/[=\s]/.test(p), p);
+  assert.equal(val(`PATCH_PRESETS.length`), 6);
+  assert.deepEqual(val(`(() => { const p = parsePatchVoice("patch:My Lead:kazoo:env9,-1,2,0.1:vib99,0.5,0"); return [p.name, p.wave, p.a, p.d, p.s, p.vr]; })()`), ["my-lead", "square", 2, 0, 1, 12], "clamped to the sliders' ranges; an unknown wave is pulse 50%");
+  assert.equal(val(`parsePatchVoice("square")`), null);
+  // held 1 s: rise, fall to sustain, hold, release
+  assert.deepEqual(val(`patchEnvPoints(parsePatchVoice(${JSON.stringify(id)}), 1).map(q => [+q.t.toFixed(4), +q.v.toFixed(4)])`),
+    [[0, 0], [0.005, 1], [0.105, 0.75], [1, 0.75], [1.08, 0]]);
+  // let go mid-attack: the release starts from where the rise got to
+  assert.deepEqual(val(`patchEnvPoints({a: 0.4, d: 0.6, s: 0.7, r: 0.6}, 0.2).map(q => [+q.t.toFixed(4), +q.v.toFixed(4)])`), [[0, 0], [0.2, 0.5], [0.8, 0]]);
+  // no decay: straight up to the sustain level
+  assert.deepEqual(val(`patchEnvPoints({a: 0.01, d: 0, s: 1, r: 0.05}, 0.5).map(q => [+q.t.toFixed(4), +q.v.toFixed(4)])`), [[0, 0], [0.01, 1], [0.5, 1], [0.55, 0]]);
+});
+
+test("patches: a patch voice lives in the track: annotation — one undo, file bytes, the local store across a reload, and undo restores the voice before it", async () => {
+  installActSong();
+  run(`globalThis.__prevFetchP = fetch; fetch = () => Promise.reject(new Error("no network"));`);
+  const id = val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "chip-lead"))`) + ":arp0,4,7";
+  run(`song.tracks[0].voice = ${JSON.stringify(id)}; saveTrackDir(0);`);
+  assert.equal(val(`editUndo.length`), 1, "one undo step");
+  assert.equal(val(`rollnotes.find(n => n.trackdir).text`), "track: pulse1 voice=" + id);
+  // the file: serialize → parse → same voice
+  const json = run(`serializeRollnotes()`);
+  const entry = JSON.parse(json).notes.find(n => n.type === "track");
+  assert.equal(entry.voice, id, "the .rollnotes.json entry carries the whole token");
+  assert.equal(val(`parseRollnotesJSON(${JSON.stringify(json)}).find(n => n.trackdir).trackdir.voice`), id, "and reads back whole");
+  // the device store → reload
+  const stored = val(`JSON.parse(localStorage.getItem("ff1roll-notes-" + songKey))`);
+  assert.ok(stored.some(n => n.text === "track: pulse1 voice=" + id), "the local store keeps it");
+  run(`song.tracks[0].voice = undefined; rollnotes = [];`);
+  await run(`loadNotes()`);
+  assert.equal(val(`song.tracks[0].voice`), id, "reload: the track plays its patch again");
+  run(`editUndo = []; song.tracks[0].voice = "triangle"; saveTrackDir(0); song.tracks[0].voice = ${JSON.stringify(id)}; saveTrackDir(0);`);
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks[0].voice`), "triangle", "undo: back to the voice before the patch");
+  run(`fetch = globalThis.__prevFetchP;`);
+});
+
+test("patches playback: ADSR on its own gain (release past the note-off), delayed vibrato on detune, × velocity × CC7; short notes stay straight; no-patch notes unchanged", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  const id = val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "chip-lead"))`);
+  ctlSpy([{t: 0, ch: 0, c: 7, v: 100}], id);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  const amp = +(100 / 127 * 0.5).toFixed(4);
+  const oscs = val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o").map(n => ({id: n._id, f: n.frequency.value, stops: n._stops, to: n._conn.map(c => c._id)}))`);
+  const voiceOsc = oscs.find(o => o.f > 200), lfo = oscs.find(o => o.f === 6);
+  assert.ok(voiceOsc && lfo, "the voice and a 6 Hz LFO: " + JSON.stringify(oscs));
+  const pg = voiceOsc.to[0];
+  const env = ctlCalls(c => c[0] === pg).map(c => [c[2], c[3], +(c[4] - W).toFixed(4)]);
+  assert.deepEqual(env, [["set", 0, 0], ["lin", 1, 0.005], ["lin", 0.75, 0.105], ["lin", 0.75, 1], ["lin", 0, 1.08]], "A 5 ms, D to 0.75, held to the note-off, R 80 ms past it");
+  assert.ok(Math.abs(voiceOsc.stops[0] - (W + 1.1)) < 1e-3, "the oscillator rings through the release");
+  const g = val(`_ctlNodes["${pg}"]._conn[0]._id`);
+  assert.deepEqual(ctlCalls(c => c[0] === g)[0].slice(2), ["set", amp, W], "velocity × the wave's trim on the note's gain");
+  const cg = val(`_ctlNodes["${g}"]._conn[0]._id`);
+  assert.equal(ctlCalls(c => c[0] === cg)[0][3], +(100 / 127).toFixed(4), "…× CC7 downstream");
+  const lg = lfo.to[0];
+  assert.deepEqual(ctlCalls(c => c[0] === lg).map(c => [c[2], c[3], +(c[4] - W).toFixed(4)]), [["set", 0, 0], ["set", 0, 0.25], ["lin", 25, 0.35]], "vibrato waits 0.25 s, then fades in to ±25 cents (0.25 semitone)");
+  assert.equal(val(`_ctlNodes["${lg}"]._conn[0]._id`), voiceOsc.id + ".detune", "LFO → depth → the voice's detune");
+  ctlSpyOff();
+  // a note let go before the vibrato delay: no LFO at all
+  ctlSpy([], id);
+  run(`scheduleNote(0, {t: 0, d: 192, p: 60, v: 100, ch: 0}, ${W}, 0.2)`);
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k[0] === "o").length`), 1, "short note: one oscillator, straight");
+  ctlSpyOff();
+  // CC64: the release waits for the pedal
+  ctlSpy([{t: 0, ch: 0, c: 64, v: 127}, {t: 1440, ch: 0, c: 64, v: 0}], id);
+  run(`scheduleNote(0, {t: 0, d: 480, p: 60, v: 100, ch: 0}, ${W}, 0.5)`);
+  const pg2 = val(`Object.values(_ctlNodes).find(n => n._id[0] === "o" && n.frequency.value > 200)._conn[0]._id`);
+  const last = ctlCalls(c => c[0] === pg2).pop();
+  assert.ok(last[3] === 0 && Math.abs(last[4] - (W + 1.25 + 0.08)) < 1e-3, "release starts at the pedal lift (1.25 s): " + JSON.stringify(last));
+  ctlSpyOff();
+  // no patch: the plain chip wave's graph, untouched
+  ctlSpy([]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => k !== "g1" && k !== "p2").map(k => k[0]).sort(), ["g", "o"], "one gain, one oscillator — as before");
+  assert.deepEqual(ctlCalls(c => c[1] === "gain" && c[0] !== "g1").map(c => c[2]), ["set", "lin", "set", "lin"], "the old attack/hold/release");
+  ctlSpyOff();
+});
+
+test("patches playback: a shape drawn in an own song multiplies; a capture's ve and shape are the chip's own envelope and are NOT applied on a patch (no double fade); game/sf2 voices never read a patch", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  const id = val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "pluck"))`);
+  const amp = 100 / 127 * 0.5;
+  const noteGain = () => { const pg = val(`Object.values(_ctlNodes).find(n => n._id[0] === "o")._conn[0]._id`); return ctlCalls(c => c[0] === val(`_ctlNodes["${pg}"]._conn[0]._id`)); };
+  ctlSpy([], id);
+  run(`patchShapeApplies.memo = null; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0, env: [{t: 480, r: 1.27}]}, ${W}, 1)`);
+  assert.ok(noteGain().some(c => c[2] === "lin" && Math.abs(c[3] - amp * 1.27) < 1e-3 && Math.abs(c[4] - (W + 0.5)) < 1e-3), "own song: the shape's point rides on top of the patch");
+  ctlSpyOff();
+  ctlSpy([], id);
+  run(`songKey = "albums/imports/x/capture.mid"; patchShapeApplies.memo = null; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ve: 20, ch: 0, env: [{t: 480, r: 0.25}]}, ${W}, 1)`);
+  assert.deepEqual(noteGain().map(c => c[2]), ["set"], "capture: the note's gain is velocity alone — the patch's ADSR is the only envelope");
+  ctlSpyOff();
+  run(`patchShapeApplies.memo = null;`);
+  const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
+  const game = src.slice(src.indexOf("export function scheduleGameNote"), src.indexOf("\nexport function", src.indexOf("export function scheduleGameNote") + 10));
+  assert.ok(!/patch/i.test(game), "scheduleGameNote never reads a patch");
+  const sched = src.slice(src.indexOf("export function scheduleNote"), src.indexOf("\nscheduleNote = prof"));
+  assert.ok(sched.indexOf("chipActive()") < sched.indexOf("playSynthVoice("), "the console voice returns before the synth path (a patch is an explicit voice, so the chip mutes only auto tracks)");
+});
+
+test("patches UI: the voice menu's Patches family lists the six presets; one tap assigns (one undo); Edit patch… shows wave buttons + seven sliders that save on release", () => {
+  installActSong();
+  run(`voiceMenuTi = 0; voiceMenuGroup = null; buildVoiceMenu(0);`);
+  const rows = () => val(`[...document.getElementById("voicemenu").children].map(r => r.textContent)`);
+  assert.ok(rows().includes("Patches  ›"), "a Patches family beside the waves: " + JSON.stringify(rows()));
+  run(`[...document.getElementById("voicemenu").children].find(r => r.textContent === "Patches  ›").click();
+       globalThis.__vmAll = () => { const walk = el => [el, ...(el.children || []).flatMap(walk)]; return walk(document.getElementById("voicemenu")); };`);
+  assert.deepEqual(val(`__vmAll().filter(b => b.dataset && b.dataset.patch).map(b => b.dataset.patch)`), ["pluck", "soft-pad", "lead-vib", "bass", "chip-lead", "organ"]);
+  assert.equal(val(`__vmAll().some(b => b.id === "vmpatchedit")`), false, "no Edit patch… until the track has one");
+  run(`editUndo = []; __vmAll().find(b => b.dataset && b.dataset.patch === "chip-lead").click();`);
+  assert.equal(val(`song.tracks[0].voice`), val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "chip-lead"))`));
+  assert.equal(val(`editUndo.length`), 1, "one undo");
+  assert.match(val(`__vmAll().find(b => b.dataset && b.dataset.patch === "chip-lead").textContent`), /^✓ Chip lead/);
+  run(`__vmAll().find(b => b.id === "vmpatchedit").click();`);
+  assert.equal(val(`__vmAll().filter(b => b.dataset && b.dataset.param).length`), 7, "A, D, S, R + vibrato delay, rate, depth");
+  assert.ok(val(`__vmAll().some(b => b.textContent === "pulse 12.5%")`), "wave buttons");
+  run(`(() => { const sl = __vmAll().find(b => b.dataset && b.dataset.param === "a"); sl.value = "0.2"; sl.dispatchEvent({type: "input"}); })();`);
+  assert.match(val(`song.tracks[0].voice`), /:env0\.2,/, "dragging changes the sound live");
+  assert.equal(val(`editUndo.length`), 1, "…but saves nothing until release");
+  run(`__vmAll().find(b => b.dataset && b.dataset.param === "a").dispatchEvent({type: "change"});`);
+  assert.equal(val(`editUndo.length`), 2, "release: saved, one undo");
+  assert.match(val(`rollnotes.find(n => n.trackdir).text`), /voice=patch:chip-lead:square25:env0\.2,0\.1,0\.75,0\.08/);
+  assert.match(val(`patchLabel(song.tracks[0].voice)`), /Chip lead \(edited\)/);
+  run(`editUndoPop();`);
+  assert.match(val(`song.tracks[0].voice`), /:env0\.005,/, "undo restores the preset's attack");
+});
+
+test("patches Ask: set_track patch takes a preset name or key=value changes, one undo, range-checked; voice + patch together refuses; reached through act", async () => {
+  installActSong();
+  const r = val(`askSetTrack({track: "pulse1", patch: "chip lead"})`);
+  assert.match(r.note, /^pulse1: voice patch Chip lead \(square25 env 0\.005,0\.1,0\.75,0\.08 vib 6,0\.25,0\.25\) \(one undo restores it\)$/);
+  assert.equal(val(`editUndo.length`), 1);
+  val(`askSetTrack({track: "pulse1", patch: "attack=0.02 vib_depth=0.4"})`);
+  assert.equal(val(`song.tracks[0].voice`), "patch:chip-lead:square25:env0.02,0.1,0.75,0.08:vib6,0.4,0.25", "changes land on top of the track's current patch");
+  val(`askSetTrack({track: "pulse1", patch: "Lead + vibrato release=0.5 wave=triangle"})`);
+  assert.equal(val(`song.tracks[0].voice`), "patch:lead-vib:triangle:env0.01,0.2,0.8,0.5:vib5.5,0.3,0.3", "a leading preset word, then changes");
+  val(`askSetTrack({track: "pulse1", patch: {env: "0.1,0.2,0.5,0.3", vib: "5,0.5,0.4"}})`);
+  assert.equal(val(`song.tracks[0].voice`), "patch:lead-vib:triangle:env0.1,0.2,0.5,0.3:vib5,0.5,0.4");
+  assert.throws(() => run(`askSetTrack({track: "pulse1", patch: "kazoo"})`), /no patch preset named "kazoo" — presets: Pluck, Soft pad/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", patch: "sustain=2"})`), /sustain must be 0–1/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", patch: "wobble=1"})`), /unknown patch setting "wobble"/);
+  assert.throws(() => run(`askSetTrack({track: "pulse1", patch: "pluck", voice: "triangle"})`), /say voice or patch, not both/);
+  run(`editUndo = [];`);
+  await run(`askAct({do: [{action: "set_track", track: "pulse1", patch: "organ"}]})`);
+  assert.equal(val(`song.tracks[0].voice`), "patch:organ:organ:env0.01,0,1,0.05");
+  assert.equal(val(`editUndo.length`), 1, "one undo through act too");
+  const reg = readFileSync(new URL("../src/ask/actions.js", import.meta.url), "utf8");
+  assert.match(reg, /name: "set_track", args: "track mute\? solo\? hide\? volume\? pan\? voice\? patch\? color\? name\? octave\?"/);
 });
