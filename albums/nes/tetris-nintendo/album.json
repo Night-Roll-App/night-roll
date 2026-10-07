@@ -12,17 +12,29 @@
    "b-type-success": {
     "n": 2,
     "secs": 3.299868,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "ending": {
     "n": 10,
     "secs": 12.799488,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "high-score-tetris-master": {
     "n": 9,
     "secs": 31.99872,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "music-1": {
     "n": 3,
@@ -37,12 +49,20 @@
    "music-3": {
     "n": 5,
     "secs": 24.265696000000002,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "unknown-track-1": {
     "n": 1,
     "secs": 25.798968000000002,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
