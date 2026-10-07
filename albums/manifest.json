@@ -9487,6 +9487,10 @@
     "path": "albums/game-boy/pokemon-red/evolution.mid"
    },
    {
+    "title": "Evolution (re-capture)",
+    "path": "albums/game-boy/pokemon-red/evolution-recapture.mid"
+   },
+   {
     "title": "Guide",
     "path": "albums/game-boy/pokemon-red/guide.mid"
    },

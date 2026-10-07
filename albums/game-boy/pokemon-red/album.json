@@ -28,7 +28,8 @@
   "vermilion-city-s-theme": "Vermilion City's Theme",
   "victory-vs-gym-leader": "Victory (VS Gym Leader)",
   "victory-vs-trainer": "Victory (VS Trainer)",
-  "victory-vs-wild-pokemon": "Victory (VS Wild Pokemon)"
+  "victory-vs-wild-pokemon": "Victory (VS Wild Pokemon)",
+  "evolution-recapture": "Evolution (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/pokemon-red.gbs",
@@ -287,6 +288,15 @@
     "n": 37,
     "secs": 101.2598876953125,
     "track": 13
+   },
+   "evolution-recapture": {
+    "n": 17,
+    "secs": 33.970951080322266,
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"
