@@ -3,13 +3,13 @@
 // reconstruction -> .notes.txt emission.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad, makeTestNSFDpcm } from "../tools/nsf/make-test-nsf.mjs";
+import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad, makeTestNSFDpcm, makeScriptNSF } from "../tools/nsf/make-test-nsf.mjs";
 import { parseNSF, runNSF } from "../tools/nsf/nsf.mjs";
-import { reconstruct, toNotesTxt, pitchName, backportTiming,
+import { reconstruct, toNotesTxt, pitchName, backportTiming, fitBpm, dpcmHits,
          detectLoop, lastRegisterChangeFrame, trimSustainedTail } from "../tools/nsf/notes.mjs";
 import { makeMidi } from "../tools/nsf/midi-write.mjs";
 import { renderApu, DMC_RATES, makeDmc, dmcWrite, dmcRun, dmcUsed } from "../tools/nsf/apu-render.mjs";
@@ -757,4 +757,207 @@ test("DPCM render: Super Mario Bros. 3 track 1 has a sounding dpcm part read fro
   const blind = renderApu(res.apuLog, res.frames, res.frameSec, {sampleRate: 44100});
   let eb = 0; for (const x of blind.dpcm) eb += x * x;
   assert.ok(Math.sqrt(eb / blind.dpcm.length) < rms / 2, "without the program image there are no samples to play");
+});
+
+// ---- NES capture v2 (docs/plans/2026-10-06-capture-fidelity-audit.md §4.1,
+// §8): vibrato as pitch bend, duty changes inside a note as CC70, DPCM hits
+// on a LAST "dpcm" track only when the song uses the channel — and the notes
+// themselves exactly as before. Scripts are register writes replayed by
+// makeScriptNSF's own 6502 play routine, run through the real emulator.
+const capture = (writes, secs = 4) => {
+  const r = runNSF(parseNSF(makeScriptNSF(writes).buffer), 1, secs);
+  return {...r, events: reconstruct(r.apuLog, r.frames, r.frameSec)};
+};
+const strip = events => events.map(e => { const o = {...e}; delete o.bendSeries; delete o.dutySeries; return o; }); // what v1 handed makeMidi
+async function parsedOf(bytes) { // the app's own parser, then its own writer and parser again (the publish hop)
+  const app = await createApp();
+  app.context._v2 = [...bytes];
+  return JSON.parse(app.run(`JSON.stringify((() => {
+    const a = parseMidi(new Uint8Array(_v2).buffer, {trust: true});
+    const b = parseMidi(writeMidi({ppq: a.ppq, timesig: a.timesig, tempos: a.tempos, tracks: a.tracks.map(t => ({...t}))}).buffer, {trust: true});
+    return {a, b, drums: a.tracks.map((t, ti) => { S.song = a; return trackIsDrums(ti); })};
+  })())`));
+}
+const A4 = [[1, 0x4015, 0x01], [1, 0x4000, 0xBF], [1, 0x4002, 0xFD], [1, 0x4003, 0x00]]; // pulse1 A4 (period 253), duty 2, vol 15
+
+test("capture v2: vibrato inside a held note is pitch bend on that note's channel — still one note", async () => {
+  const w = [...A4];
+  const wob = [0xFD, 0xFB, 0xF9, 0xFB, 0xFD, 0xFF]; // period 249…255: +28…−14 cents, inside the 70-cent guard, low byte only (no $4003 retrigger)
+  for (let f = 20, k = 0; f < 100; f += 2, k++) w.push([f, 0x4002, wob[k % wob.length]]);
+  const ev = capture(w, 2).events;
+  assert.equal(ev.length, 1, "one held note");
+  assert.ok(ev[0].bendSeries.some(([, c]) => c > 10) && ev[0].bendSeries.some(([, c]) => c < -10), "the series goes both ways: " + JSON.stringify(ev[0].bendSeries.slice(0, 6)));
+  const p = await parsedOf(makeMidi(ev, {bpm: 120, frameSec: 1 / 60}));
+  for (const s of [p.a, p.b]) {
+    assert.equal(s.tracks.length, 1);
+    assert.equal(s.tracks[0].notes.length, 1, "still one note");
+    const pb = (s.tracks[0].ctl || []).filter(e => e.c === "pb");
+    assert.ok(pb.length >= 4, "bends written: " + pb.length);
+    assert.ok(pb.every(e => e.ch === 0), "on the pulse1 channel");
+    assert.ok(pb.some(e => e.v > 0) && pb.some(e => e.v < 0), "up and down");
+    assert.ok(!(s.tracks[0].ctl || []).some(e => e.c === 101), "under ±2 semitones: no RPN range");
+    assert.ok(pb.every(e => e.t > s.tracks[0].notes[0].t && e.t < s.tracks[0].notes[0].t + s.tracks[0].notes[0].d), "inside the note");
+  }
+});
+
+test("capture v2: a duty change inside a held note is CC70 at the change; the next note's attack duty is unchanged", async () => {
+  const w = [...A4, [40, 0x4000, 0x7F], [80, 0x4000, 0xFF], [120, 0x4002, 0xD5], [120, 0x4003, 0x00], [160, 0x4000, 0x30]];
+  const ev = capture(w, 3).events;
+  assert.deepEqual(ev.map(e => [e.midi, e.duty]), [[69, 2], [72, 3]], "two notes, attack duties as v1 read them");
+  assert.deepEqual(ev[0].dutySeries, [[0, 2], [39, 1], [79, 3]]);
+  const p = await parsedOf(makeMidi(ev, {bpm: 120, frameSec: 1 / 60}));
+  for (const s of [p.a, p.b]) {
+    const [n1, n2] = s.tracks[0].notes;
+    assert.equal(n1.duty, 2);
+    assert.deepEqual(n1.duties.map(q => q.v), [1, 3], "both changes, in order, survive parse and the app's writer");
+    assert.ok(n1.duties.every(q => q.t > 0 && q.t < n1.d));
+    assert.equal(n2.duty, 3);
+    assert.equal(n2.duties, undefined);
+  }
+});
+
+test("capture v2: a CC70 that is the next note's attack is never read as a change inside an overlapping note", async () => {
+  // a 40-tick minimum stretches a short note over its successor's start
+  const bytes = makeMidi([{channel: "pulse1", startFrame: 0, endFrame: 1, midi: 60, vol: 15, duty: 1},
+                          {channel: "pulse1", startFrame: 1, endFrame: 30, midi: 62, vol: 15, duty: 2}], {bpm: 120, frameSec: 1 / 60, snap: false});
+  const p = await parsedOf(bytes);
+  assert.deepEqual(p.a.tracks[0].notes.map(n => [n.duty, n.duties || null]), [[1, null], [2, null]]);
+});
+
+test("capture v2: a slide that lands on a new pitch stays a new note; a 1-frame step into it rides as bend on the target", async () => {
+  // A4 held, one frame of B4, then C5 held — no $4003, so only the period moves
+  const w = [...A4, [40, 0x4002, 0xE1], [41, 0x4002, 0xD5], [80, 0x4000, 0x30]];
+  const ev = capture(w, 2).events.sort((a, b) => a.startFrame - b.startFrame);
+  assert.deepEqual(ev.map(e => pitchName(e.midi)), ["A4", "C5"], "start and target pitch both visible");
+  assert.equal(ev[1].startFrame, 40, "the target absorbs the 1-frame step (v1's rule, unchanged)");
+  assert.ok(ev[1].bendSeries[0][1] < -80, "…and starts bent down a semitone, where the B4 step sounded: " + JSON.stringify(ev[1].bendSeries));
+  const p = await parsedOf(makeMidi(ev, {bpm: 120, frameSec: 1 / 60, snap: false}));
+  const pb = p.a.tracks[0].ctl.filter(e => e.c === "pb");
+  const c5 = p.a.tracks[0].notes[1];
+  assert.equal(p.a.tracks[0].notes.length, 2);
+  assert.ok(pb.some(e => e.t === c5.t && e.v < 0), "bent at the target's own onset");
+  assert.ok(pb.some(e => e.t > c5.t && e.v === 0), "back to centre after the step");
+});
+
+test("capture v2: a no-DPCM, no-wobble tune writes exactly the bytes v1 wrote", () => {
+  const nsf = parseNSF(makeTestNSF().buffer);
+  const r = runNSF(nsf, 1, 3);
+  const ev = reconstruct(r.apuLog, r.frames, r.frameSec);
+  assert.deepEqual(dpcmHits(r.apuLog, r.frames, r.frameSec), [], "no sample channel, no hits");
+  const opts = {bpm: 120, frameSec: r.frameSec};
+  assert.deepEqual([...makeMidi(ev, opts)], [...makeMidi(strip(ev), opts)], "byte-identical");
+});
+
+// the drum script: two samples (kick-ish on the beat, another on the backbeat) under a pulse line
+function dpcmWrites({withDpcm = true} = {}) {
+  const w = [[1, 0x4015, 0x01], [1, 0x4010, 0x0F]];
+  for (let k = 0; k < 8; k++) { // 8 quarter notes at 120 bpm = 30 frames each
+    const f = 10 + k * 30;
+    w.push([f, 0x4000, 0xBF], [f, 0x4002, k % 2 ? 0xD5 : 0xFD], [f, 0x4003, 0x00]);
+    if (!withDpcm) continue;
+    w.push([f, 0x4015, 0x01], [f, 0x4012, k % 2 ? 0x10 : 0x00], [f, 0x4013, k % 2 ? 0x08 : 0x10], [f, 0x4015, 0x11]);
+  }
+  w.push([260, 0x4000, 0x30]);
+  return w;
+}
+test("capture v2: DPCM hits become a LAST 'dpcm' track on the drum channel, one key per distinct sample", async () => {
+  const r = capture(dpcmWrites(), 5);
+  const hits = dpcmHits(r.apuLog, r.frames, r.frameSec);
+  assert.equal(hits.length, 8, "every trigger is a hit");
+  assert.equal(new Set(hits.map(h => h.sample)).size, 2, "two samples (address + length + rate)");
+  assert.ok(hits.every(h => h.endFrame - h.startFrame >= 1 && h.endFrame - h.startFrame <= 5), "a short sample lasts its own length");
+  const p = await parsedOf(makeMidi(r.events.concat(hits), {bpm: 120, frameSec: r.frameSec}));
+  for (const s of [p.a, p.b]) {
+    assert.deepEqual(s.tracks.map(t => t.name), ["pulse1", "dpcm"], "appended after every existing track");
+    const d = s.tracks[1].notes;
+    assert.equal(d.length, 8);
+    assert.ok(d.every(n => n.ch === 9), "channel 10, the drum channel, through the app's writer too");
+    assert.equal(new Set(d.map(n => n.p)).size, 2, "a key per sample");
+    assert.ok(d.every(n => n.p >= 35 && n.p <= 81), "General MIDI percussion keys");
+  }
+  assert.deepEqual(p.drums, [false, true], "the roll treats it as a kit");
+  // the same tune without the sample channel: no dpcm track at all
+  const r0 = capture(dpcmWrites({withDpcm: false}), 5);
+  assert.deepEqual(dpcmHits(r0.apuLog, r0.frames, r0.frameSec), []);
+  assert.deepEqual([...makeMidi(r0.events, {bpm: 120, frameSec: r0.frameSec})], [...makeMidi(r.events, {bpm: 120, frameSec: r.frameSec})],
+    "the pulse track is byte-identical with or without the drums");
+});
+
+test("capture v2: the hardware does not restart a playing sample; bit 4 clear stops it; a 1-byte sample is no hit", () => {
+  const log = [{frame: 0, addr: 0x4015, value: 0x0F}, {frame: 1, addr: 0x4010, value: 0x00}, // slowest rate: 428 cycles a bit
+    {frame: 1, addr: 0x4013, value: 0x10}, {frame: 1, addr: 0x4015, value: 0x1F}, // 257 bytes ≈ 0.49 s ≈ 30 frames
+    {frame: 5, addr: 0x4015, value: 0x1F},                                         // still playing: ignored
+    {frame: 10, addr: 0x4015, value: 0x0F},                                        // stopped at 10
+    {frame: 20, addr: 0x4013, value: 0x00}, {frame: 20, addr: 0x4015, value: 0x1F}]; // 1 byte: a driver's stop
+  const hits = dpcmHits(log, 60, 1 / 60);
+  assert.deepEqual(hits.map(h => [h.startFrame, h.endFrame]), [[1, 10]]);
+});
+
+test("capture v2 in the app's own capture (captureChipTrack): the dpcm track is appended and every other track is what a capture without it writes", async () => {
+  const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  const mods = await Promise.all(["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"].map(f => import(pathToFileURL(path.join(ROOT, "tools", f + ".mjs")).href)));
+  const app = await createApp();
+  const C = app.context;
+  C.setTimeout = setTimeout; C.clearTimeout = clearTimeout;
+  C.__M = Object.assign({}, ...mods);
+  C.__nsf = parseNSF(makeScriptNSF(dpcmWrites()).buffer);
+  const run = async () => {
+    const cap = await app.run("captureChipTrack('nsf', __M, __nsf, 1, 8, null)");
+    C.__b = cap.bytes;
+    return JSON.parse(app.run("JSON.stringify(parseMidi(__b.buffer, {trust: true}).tracks.map(t => ({name: t.name, notes: t.notes.map(n => [n.t, n.d, n.p, n.v])})))"));
+  };
+  const v2 = await run();
+  const hits = app.run("CHIPS.nsf.hits");
+  app.run("CHIPS.nsf.hits = null");
+  const v1 = await run();
+  C.__h = hits; app.run("CHIPS.nsf.hits = __h");
+  assert.deepEqual(v2.map(t => t.name), ["pulse1", "dpcm"]);
+  assert.deepEqual(v1.map(t => t.name), ["pulse1"]);
+  assert.deepEqual(v2[0], v1[0], "pulse1: same ticks, lengths, pitches, velocities");
+  assert.ok(v2[1].notes.length >= 4, "the hits are there: " + v2[1].notes.length);
+});
+
+test("capture v2: every published NES .mid reads exactly as before — no in-note duty changes appear in an old file", async () => {
+  const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  const files = [];
+  const walk = d => { for (const e of readdirSync(d, {withFileTypes: true})) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (e.name.endsWith(".mid")) files.push(f); } };
+  walk(path.join(ROOT, "albums", "nes"));
+  assert.ok(files.length > 100, "the NES catalog is there: " + files.length);
+  const app = await createApp();
+  let duties = 0;
+  for (const f of files) {
+    app.context.__f = new Uint8Array(readFileSync(f));
+    duties += app.run("parseMidi(__f.buffer).tracks.reduce((s, t) => s + t.notes.filter(n => n.duties).length, 0)");
+  }
+  assert.equal(duties, 0);
+});
+
+// real rips (the archive's, cached outside the repo by tools/recapture.mjs or fetched by hand)
+const ripAt = name => [process.env.NES_RIPS && path.join(process.env.NES_RIPS, name), "/tmp/recap/rips/nes/" + name].find(p => p && existsSync(p));
+const SMB3_RIP = ripAt("super-mario-bros-3.nsf") || (existsSync(SMB3_NSF) ? fileURLToPath(SMB3_NSF) : null);
+test("capture v2 (real rip): Super Mario Bros. 3 track 1 gains a dpcm track of several samples; its other tracks are unchanged",
+     {skip: !SMB3_RIP && "super-mario-bros-3.nsf not present (vault-only; NES_RIPS=<dir>)"}, async () => {
+  const r = runNSF(parseNSF(readFileSync(SMB3_RIP)), 1, 30);
+  const ev = reconstruct(r.apuLog, r.frames, r.frameSec);
+  const hits = dpcmHits(r.apuLog, r.frames, r.frameSec);
+  assert.ok(hits.length > 40, "drum hits: " + hits.length);
+  assert.ok(new Set(hits.map(h => h.sample)).size >= 3, "several samples");
+  const bpm = fitBpm(ev, r.frameSec, 120);
+  const a = await parsedOf(makeMidi(strip(ev), {bpm, frameSec: r.frameSec})), b = await parsedOf(makeMidi(ev.concat(hits), {bpm, frameSec: r.frameSec}));
+  const notes = s => s.tracks.map(t => [t.name, t.notes.map(n => [n.t, n.d, n.p, n.v, n.duty])]);
+  assert.deepEqual(b.b.tracks.map(t => t.name), [...a.b.tracks.map(t => t.name), "dpcm"], "one track appended, last");
+  assert.deepEqual(notes(b.b).slice(0, -1), notes(a.b), "every other track's notes as before, through the publish hop");
+  assert.ok(b.b.tracks.some(t => t.notes.some(n => n.duties)), "duty changes inside notes carried");
+});
+const MM2_RIP = ripAt("mega-man-2.nsf");
+test("capture v2 (real rip): Mega Man 2 has no DPCM track, and its held notes carry bends without a note added or lost",
+     {skip: !MM2_RIP && "mega-man-2.nsf not present (vault-only; NES_RIPS=<dir>)"}, async () => {
+  const r = runNSF(parseNSF(readFileSync(MM2_RIP)), 1, 30);
+  const ev = reconstruct(r.apuLog, r.frames, r.frameSec);
+  assert.deepEqual(dpcmHits(r.apuLog, r.frames, r.frameSec), []);
+  const bpm = fitBpm(ev, r.frameSec, 120);
+  const a = await parsedOf(makeMidi(strip(ev), {bpm, frameSec: r.frameSec})), b = await parsedOf(makeMidi(ev, {bpm, frameSec: r.frameSec}));
+  const notes = s => s.tracks.map(t => [t.name, t.notes.map(n => [n.t, n.d, n.p, n.v])]);
+  assert.deepEqual(notes(b.b), notes(a.b), "same notes after the publish hop");
+  assert.ok(b.a.tracks.some(t => (t.ctl || []).some(e => e.c === "pb")), "bends present");
 });

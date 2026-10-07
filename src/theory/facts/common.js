@@ -51,7 +51,7 @@ export function factsIsDrums(track) {
   if (!track) return false;
   if (track.kind === "audio") return false;
   if (track.drums !== undefined) return !!track.drums;
-  return /drum|percussion|kit|noise/i.test(track.name || "") || (track.notes || []).some(n => n.ch === 9);
+  return /drum|percussion|kit|noise|dpcm/i.test(track.name || "") || (track.notes || []).some(n => n.ch === 9);
 }
 
 export function factsEndTick(doc) {

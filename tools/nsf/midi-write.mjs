@@ -4,6 +4,7 @@
 // frames, so raw times sit ±1 frame off the grid — hardware clock jitter,
 // not music. Musical analysis wants notes on the beats they mean. Raw frame
 // data stays intact upstream (events/.notes internals) if ever needed.
+import { guessKit } from "../kit-guess.mjs";
 export const PPQ = 480; // exported: tools/vgm/midi-write.mjs builds on the same track encoder
 
 // snap a beat position to the nearest 16th (k/4) or triplet slot (k/6 —
@@ -43,6 +44,23 @@ export function trackBytes(name, notes, ch, metas = []) {
   const evs = [];
   if (name) evs.push({t: 0, d: [0xFF, 0x03, name.length, ...[...name].map(c => c.charCodeAt(0))]});
   for (const m of metas) evs.push(m);
+  // in-note events (duty changes, bends) stop where the next note starts: a
+  // note stretched to the 40-tick minimum may overlap its successor, and a
+  // CC70 or bend there belongs to the successor
+  const nextAt = new Map();
+  if (notes.some(n => n.bend || n.duties)) {
+    const byT = [...notes].sort((a, b) => a.t - b.t);
+    byT.forEach((n, k) => nextAt.set(n, Math.min(n.t + n.d, k + 1 < byT.length ? byT[k + 1].t : Infinity)));
+    // pitch bend (the chip's vibrato and absorbed slide steps, 14-bit signed
+    // around 0): a note starts from its own first point or from centre
+    let bendNow = 0;
+    for (const n of byT) {
+      const pts = n.bend || [], start = pts.length && pts[0].t === 0 ? pts[0].v : 0;
+      const pb = v => { const x = Math.max(0, Math.min(16383, v + 8192)); return [0xE0 | ch, x & 127, x >> 7]; };
+      if (start !== bendNow) { evs.push({t: n.t, o: 0.75, d: pb(start)}); bendNow = start; }
+      for (const q of pts) if (q.t > 0 && n.t + q.t < nextAt.get(n) && q.v !== bendNow) { evs.push({t: n.t + q.t, o: 1.25, d: pb(q.v)}); bendNow = q.v; }
+    }
+  }
   let lastDuty = null;
   for (const n of notes) {
     // duty (chip timbre) rides as CC70 ahead of the note it changes on —
@@ -51,6 +69,8 @@ export function trackBytes(name, notes, ch, metas = []) {
       evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]});
       lastDuty = n.duty;
     }
+    // …and at each change while the note is held ({t: ticks from its start, v})
+    if (n.duties) for (const q of n.duties) if (q.t > 0 && n.t + q.t < nextAt.get(n) && q.v !== lastDuty) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v]}); lastDuty = q.v; }
     evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p, n.v]});
     // decay target as polyphonic aftertouch right after the on — Night
     // Roll reads it back as the note's end volume; DAWs see key pressure
@@ -80,7 +100,9 @@ function noiseDrum(idx) { return idx < 6 ? 42 : idx < 12 ? 38 : 35; } // hat / s
 // MIDI channels in order of appearance, skipping 9; an event with an
 // explicit `drum` (a GM number) is a percussion hit on channel 9 whatever
 // its channel name — SNES noise voices.
-const NES_CHANS = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9};
+// dpcm (the sample channel, notes.mjs dpcmHits) comes after noise: a song
+// that uses it gains a LAST track, so no existing track number moves
+const NES_CHANS = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9, dpcm: 9};
 
 // A held note's volume series ([[frames from its start, vol]…], tools/nsf/notes.mjs) -> its
 // volume shape [{t, r}] (src/model/noteshape.js): the level sampled every
@@ -121,6 +143,82 @@ export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15) {
   }
   return pts.length ? pts.map(q => ({t: q.t, r: q.l / v})) : undefined;
 }
+// A held note's pitch series ([[frames from its start, cents from its
+// starting frequency]…], tools/nsf/notes.mjs bendSeries) -> bend points
+// [{t, c}] (ticks from the note's start, cents): sampled every frame, thinned
+// to its corners (RDP, 5 cents — under any audible vibrato depth), the
+// note's own first point kept when it is not centre (an absorbed slide starts
+// below or above its target). undefined when the pitch never moved.
+export function bendFromSeries(e, d, ticksPerFrame) {
+  const sr = e.bendSeries, n = e.endFrame - e.startFrame;
+  if (!sr || n < 1 || !sr.some(([, c]) => c !== 0)) return undefined;
+  const cv = [];
+  for (let f = 0, k = 0, cur = sr[0][1]; f < n; f++) {
+    while (k < sr.length && sr[k][0] <= f) cur = sr[k++][1];
+    cv.push(cur);
+  }
+  const keep = new Set([0, n - 1]);
+  const rdp = (a, b) => {
+    let best = -1, bestD = 5;
+    for (let i = a + 1; i < b; i++) {
+      const dv = Math.abs(cv[i] - (cv[a] + (cv[b] - cv[a]) * (i - a) / (b - a)));
+      if (dv > bestD) { best = i; bestD = dv; }
+    }
+    if (best < 0) return;
+    keep.add(best); rdp(a, best); rdp(best, b);
+  };
+  rdp(0, n - 1);
+  const pts = [];
+  for (const i of [...keep].sort((a, b) => a - b)) {
+    const t = Math.round(i * ticksPerFrame);
+    if (t >= d) continue;
+    const last = pts[pts.length - 1];
+    if (last && last.t === t) { last.c = cv[i]; continue; }
+    if ((last ? last.c : 0) === cv[i]) continue;
+    pts.push({t, c: cv[i]});
+  }
+  return pts.length ? pts : undefined;
+}
+// A pulse note's duty series (notes.mjs dutySeries) -> [{t, v}] at each
+// change inside the note, ticks from its start; undefined when it held still
+export function dutiesFromSeries(e, d, ticksPerFrame) {
+  const sr = e.dutySeries;
+  if (!sr || sr.length < 2) return undefined;
+  const pts = [];
+  let cur = e.duty;
+  for (const [f, v] of sr) {
+    const t = Math.round(f * ticksPerFrame);
+    if (f <= 0 || t <= 0 || t >= d) continue;
+    const last = pts[pts.length - 1];
+    if (last && last.t === t) { last.v = v; cur = v; continue; }
+    if (v === cur) continue;
+    pts.push({t, v}); cur = v;
+  }
+  const out = pts.filter((q, k) => q.v !== (k ? pts[k - 1].v : e.duty));
+  return out.length ? out : undefined;
+}
+// DPCM samples -> drum keys, one per distinct sample (notes.mjs dpcmHits'
+// `midi` = its first-use number): General MIDI keys guessed from rhythm
+// (tools/kit-guess.mjs, the rules PS1/N64 drums use — backbeat = snare,
+// downbeat = kick, busiest = hats), then any key two samples share moves to
+// the next free percussion key, so distinct samples never merge.
+const GM_PERC = Array.from({length: 47}, (_, k) => 35 + k); // 35…81
+function dpcmKeys(notes, beatTicks, barBeats) {
+  const by = new Map();
+  for (const n of notes) { if (!by.has(n.sample)) by.set(n.sample, {key: n.sample, notes: []}); by.get(n.sample).notes.push({tick: n.t}); }
+  const voices = guessKit([...by.values()], {beatTicks, barBeats});
+  const taken = new Set(), out = new Map();
+  for (const v of [...voices].sort((a, b) => a.key - b.key)) {
+    let p = v.gm;
+    if (taken.has(p)) p = GM_PERC.find(k => !taken.has(k) && k > v.gm) || GM_PERC.find(k => !taken.has(k));
+    taken.add(p); out.set(v.key, p);
+  }
+  return out;
+}
+// RPN 0 (pitch bend sensitivity) on a channel: ±semis, then RPN null
+function bendRangeMetas(ch, semis) {
+  return [[101, 0], [100, 0], [6, semis], [38, 0], [101, 127], [100, 127]].map(([c, v]) => ({t: 0, o: -0.5, d: [0xB0 | ch, c, v]}));
+}
 export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15}) {
   chans = {...chans, drums: 9};
   const usq = Math.round(6e7 / bpm);
@@ -144,8 +242,27 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const ve = e.volEnd != null && e.vol != null && e.volEnd < e.vol
       ? Math.max(8, Math.round(e.volEnd / volMax * 127)) : undefined;
     const key = e.drum != null ? "drums" : e.channel;
-    const env = e.volSeries ? shapeFromSeries(e, v, d, frameSec / (60 / bpm) * PPQ, volMax) : undefined;
-    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {})});
+    const tpf = frameSec / (60 / bpm) * PPQ;
+    const env = e.volSeries ? shapeFromSeries(e, v, d, tpf, volMax) : undefined;
+    const bend = e.bendSeries ? bendFromSeries(e, d, tpf) : undefined;
+    const duties = e.dutySeries ? dutiesFromSeries(e, d, tpf) : undefined;
+    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
+      ...(e.channel === "dpcm" ? {sample: e.midi} : {})});
+  }
+  if (byCh.dpcm && byCh.dpcm.length) {
+    const keys = dpcmKeys(byCh.dpcm, PPQ * 4 / tsDen, tsNum);
+    for (const n of byCh.dpcm) { n.p = keys.get(n.sample); delete n.sample; }
+  }
+  // bend points in cents -> 14-bit values against the channel's range: ±2
+  // (the GM default, nothing written) unless a slide reaches further, then
+  // RPN 0 at tick 0 says how far (capped at ±24; beyond it clamps)
+  const rangeOf = {};
+  for (const [name, notes] of Object.entries(byCh)) {
+    const most = Math.max(0, ...notes.flatMap(n => (n.bend || []).map(q => Math.abs(q.c))));
+    if (!most) continue;
+    const semis = most > 200 ? Math.min(24, Math.ceil(most / 100)) : 2;
+    rangeOf[name] = semis;
+    for (const n of notes) if (n.bend) n.bend = n.bend.map(q => ({t: q.t, v: Math.max(-8192, Math.min(8191, Math.round(q.c / (semis * 100) * 8192)))}));
   }
   const metas = [
     {t: 0, d: [0xFF, 0x58, 4, tsNum, Math.round(Math.log2(tsDen)), 24, 8]},
@@ -160,7 +277,7 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
       while (nextCh === 9 || used.has(nextCh)) nextCh++;
       chans[name] = nextCh; used.add(nextCh);
     }
-    tracks.push(trackBytes(name, notes, chans[name]));
+    tracks.push(trackBytes(name, notes, chans[name], rangeOf[name] > 2 ? bendRangeMetas(chans[name], rangeOf[name]) : []));
   }
   return fileBytes(tracks);
 }
@@ -198,7 +315,7 @@ function fileBytes(tracks, ppq = PPQ) {
 // tools/fix_keysigs.py) — never invented. Learning mode is the law: Josh's
 // keys are his discoveries, not a tool's.
 const NON_DRUM_CH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]; // 15 melodic channels; 9 stays drums-only whatever the track count (the old ti<9?ti:(ti+1)&15 formula collided past 16 tracks)
-export function isKitTrackName(name) { return /drum|percussion|kit|noise/i.test(name || ""); }
+export function isKitTrackName(name) { return /drum|percussion|kit|noise|dpcm/i.test(name || ""); } // dpcm: the NES sample channel's hits (capture v2)
 function trackChannel(ti, isKit) { return isKit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length]; }
 function textMetaEvent(type, text) {
   const b = Array.from(new TextEncoder().encode(text)); // bytes are UTF-8 — the de-facto choice for MIDI text metas
@@ -290,6 +407,7 @@ export function writeSongMidi(song) {
       // voice number a console capture carries (FFX / PS1, 2026-09-30)
       const ch = n.ch !== undefined && ((n.ch & 15) !== 9 || isKit) ? (n.ch & 15) : ch0;
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
+      if (n.duties) for (const q of n.duties) if (q.t > 0 && q.t < n.d) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v & 3]}); lastDuty = q.v & 3; } // duty changes inside the note (see trackBytes)
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
       if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]}); // volume shape (see trackBytes)

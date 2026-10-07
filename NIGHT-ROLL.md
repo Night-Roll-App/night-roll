@@ -1377,11 +1377,11 @@ the dpcm buffer is the DMC's share of the Nesdev TND curve,
 tnd(tri, noise, dmc) − tnd(tri, noise, 0), so the parts still sum to the
 chip's joint output (a high DMC level audibly ducks the triangle; that
 dip lands in the dpcm part) and muting it leaves triangle and noise as
-before. No capture writes a dpcm track yet (that is the re-capture step,
-audit §4), so `chipStart` plays a part with no track of its own through
+before. Captures made before NES capture v2 have no dpcm track, so
+`chipStart` plays a part with no track of its own through
 `CHIP_PART_HOST` — dpcm rides the noise track's fader, mute, solo and pan,
 else the triangle's (36 of SMB3's 60 captures have no noise track); a
-real `dpcm` track wins by name once one exists. Driver timing is still
+v2 capture's real `dpcm` track wins by name ("NES capture v2" below). Driver timing is still
 per play call: a sample starts on the frame its $4015 write landed in,
 and $4011 raw-PCM streams written many times inside one play call
 collapse to the last value (Castlevania II's "+554 raw PCM writes").
@@ -3909,8 +3909,9 @@ risks merging genuinely different envelopes together, which is the
 thing this whole feature exists to keep apart. What doesn't fit: NES
 DPCM (a real sample channel). The 2A03 capture (`tools/nsf/nsf.mjs`)
 does log $4010-$4013 and $4015 bit 4 (every $4000-$4017 write is in
-the apuLog), but no note reader turns them into notes yet, so no
-capture this module has seen carries DPCM notes to extract; the console
+the apuLog); NES capture v2's `dpcmHits` turns sample starts into notes
+on a "dpcm" kit track, but those are drum hits, not a synthesizable
+instrument, so this module still has nothing to extract there; the console
 voice plays the samples (see "DPCM" under Chip audio), and an instrument
 from them would need real sample extraction like PSX/N64, not this
 module's synthesis (open-items.md). An NSF using
@@ -7263,6 +7264,78 @@ scoping; presets/undo/redo/copy/move/draft→publish; Ask op; lane drag);
 tests/nsf.test.mjs "volume shape capture …" (synthetic swell, decay-only
 unchanged, next-note setup, and the real FF1 Shop rip when ff1.nsf is
 present — `FF1_NSF=<path>` to point at the vault copy).
+
+## NES capture v2 — bends, duty inside a note, DPCM hits (2026-10-07)
+
+Audit §4.1 (docs/plans/2026-10-06-capture-fidelity-audit.md) with Josh's
+§8 answers. What a NES capture now writes on top of v1, all read from the
+register log by hardware rules, nothing per game. The notes themselves —
+start, length, pitch, velocity, track order and names, tempo, loop — are
+exactly v1's: a re-capture can only gain events and, on a song that uses
+the sample channel, one LAST track.
+
+- **Vibrato / detune → pitch bend.** `reconstruct` keeps, per held pulse
+  or triangle note, `bendSeries` [[frames from its start, cents from its
+  starting frequency]…] — every period change the 70-cent vibrato guard
+  keeps inside the note. midi-write's `bendFromSeries` samples it per
+  frame, thins to corners (RDP, 5 cents) and `trackBytes` writes pitch
+  bend (0xE0) on the note's channel: a note starts from centre (or its own
+  first point), points inside the note only and never past the next
+  note's start. Range ±2 (GM default, nothing written) unless a channel
+  bends further — then RPN 0 at tick 0 (CC101/100 0, CC6 = semitones ≤ 24,
+  CC38 0, RPN null). parseMidi puts them in `tr.ctl` like any file's
+  bends; the synth path plays them (MIDI playback v2).
+- **Slides stay separate notes** (Josh, §8.4). A period change past the
+  guard is a new note, as in v1. `collapseSlides` still merges a chain of
+  ≤2-frame steps into the note it lands on (or the ornament's first
+  pitch); v2 keeps the merged steps as the survivor's bend path
+  (`slideBend`), so the roll shows the same notes and a synth voice still
+  hears the scoop. Those are the bends past ±2 (MM2's triangle falls).
+- **Duty inside a note → CC70.** `dutySeries` records $4000/$4004 duty
+  changes after the note's first frame (a first-frame write is setup; the
+  attack duty `n.duty` is v1's). `dutiesFromSeries` → `n.duties = [{t, v}]`
+  (ticks from the start), written as CC70 at the change. parseMidi: a
+  non-foreign CC70 after an open note's own tick is a change inside it
+  (`o.duties`); a CC70 that turns out to precede a note-on at the same
+  tick is that note's attack and is taken back off (a 40-tick minimum can
+  overlap). No published file has one inside a note (test sweeps
+  albums/nes). Every hop that copies `env` copies `duties` (capture and
+  import drafts, Save As, versions); both writers emit it, byte-identical.
+  Playback still picks the wave at the attack — switching mid-note is
+  open-items.
+- **DPCM hits → a last "dpcm" track** (Josh §8.2: only on songs that use
+  it). `dpcmHits(apuLog, frames, frameSec)` in notes.mjs, [] unless
+  `dmcUsed` (the renderer's rule). A $4015 write with bit 4 starts the
+  sample at $4012/$4013 unless one is still playing (hardware), bit 4
+  clear stops it, a non-looping sample ends after len × 8 bits at the
+  $4010 rate, a 1-byte sample is a driver's stop, not a hit. Identity =
+  address + length + rate, numbered in first-use order. makeMidi's
+  `dpcmKeys` gives each its own GM percussion key from rhythm
+  (tools/kit-guess.mjs, as PS1/N64 drums), then moves a shared key to the
+  next free one. Channel 10, neutral velocity 96 ($4011 is a DC level,
+  not loudness). `NES_CHANS.dpcm` sorts after noise, so the track is last.
+  In the app: `CHIPS.nsf.hits` → `captureChipTrack` reads them after t0,
+  the loop scan, the tempo fit and the snap gate are settled (hits before
+  the first note are dropped; the loop backport and cut apply), so no bar
+  moves. "dpcm" is a kit name in every kit test (`isKitTrackName`,
+  writeMidi's `isKit`, `trackIsDrums`, theory facts, query-lib) — the
+  synth plays it through `drumHit`, the writers keep channel 10, and the
+  console voice's `chipPartTrack` routes the dpcm part to it by name.
+- **Not in v2:** $4011 raw-PCM streams (no sample start, so no hit),
+  noise mode/period detail, tempo changes, hardware sweep as bend.
+
+Re-capture verdicts (tools/capture-diff.mjs; scratch trees in /tmp, nothing
+under albums/ written): see open-items "NES capture v2".
+
+Tests: tests/nsf.test.mjs "capture v2 …" — script NSFs
+(`makeScriptNSF(writes)` in make-test-nsf.mjs: a 6502 play routine that
+replays [[frame, addr, value]…]) for vibrato → bend, duty → CC70 through
+parse and the app's writer, the overlap rule, slide → separate notes, a
+no-DPCM tune byte-identical to v1, DPCM → last kit track with a key per
+sample, the hardware's no-restart/stop/1-byte rules, the app's own
+captureChipTrack with and without `CHIPS.nsf.hits` (the other tracks
+identical), the NES catalog sweep; real rips (SMB3, MM2) when present —
+`NES_RIPS=<dir>` or tools/recapture.mjs's /tmp/recap/rips/nes cache.
 
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 

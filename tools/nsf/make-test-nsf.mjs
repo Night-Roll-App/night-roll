@@ -222,3 +222,54 @@ export function makeTestNSFDpcm() {
   out.set(data, 0x80);
   return out;
 }
+
+// A register script as an NSF: writes = [[frame, addr, value], …] (frame ≥ 1,
+// any order), replayed by a hand-assembled play routine — each PLAY call
+// performs every write whose frame equals its own 16-bit frame counter, so
+// runNSF logs them at exactly those frames. Lets a test state the driver
+// behaviour it needs (a vibrato, a duty change, a DPCM trigger) as the
+// register writes themselves. Our own bytes, no ROM data.
+export function makeScriptNSF(writes, name = "Night Roll script test") {
+  const LOAD = 0x8000;
+  const code = [];
+  const emit = (...bytes) => code.push(...bytes);
+  // ---- init: frame counter $00/$01 = 1, table pointer $02/$03 (patched)
+  emit(0xA9, 1, 0x85, 0x00, 0xA9, 0, 0x85, 0x01);
+  const ptrLo = code.length; emit(0xA9, 0x00, 0x85, 0x02);
+  const ptrHi = code.length; emit(0xA9, 0x00, 0x85, 0x03);
+  emit(0x60);
+  const playOff = code.length;
+  // ---- play: while the entry's frame == the counter, STA (addr) value; advance 5
+  const loop = code.length;
+  emit(0xA0, 0x00, 0xB1, 0x02, 0xC5, 0x00);       // LDY #0 / LDA ($02),Y / CMP $00
+  const bne1 = code.length; emit(0xD0, 0x00);
+  emit(0xC8, 0xB1, 0x02, 0xC5, 0x01);             // INY / LDA ($02),Y / CMP $01
+  const bne2 = code.length; emit(0xD0, 0x00);
+  emit(0xC8, 0xB1, 0x02, 0x85, 0x04);             // addr lo -> $04
+  emit(0xC8, 0xB1, 0x02, 0x85, 0x05);             // addr hi -> $05
+  emit(0xC8, 0xB1, 0x02, 0xA0, 0x00, 0x91, 0x04); // value -> STA ($04),Y
+  emit(0x18, 0xA5, 0x02, 0x69, 5, 0x85, 0x02, 0xA5, 0x03, 0x69, 0, 0x85, 0x03); // pointer += 5
+  emit(0x4C, (LOAD + loop) & 0xFF, (LOAD + loop) >> 8); // JMP loop
+  const done = code.length;
+  emit(0xE6, 0x00, 0xD0, 0x02, 0xE6, 0x01, 0x60); // INC $00 / BNE +2 / INC $01 / RTS
+  code[bne1 + 1] = done - (bne1 + 2);
+  code[bne2 + 1] = done - (bne2 + 2);
+  const table = code.length;
+  for (const [f, a, v] of [...writes].sort((x, y) => x[0] - y[0])) emit(f & 0xFF, f >> 8, a & 0xFF, a >> 8, v);
+  emit(0xFF, 0xFF, 0, 0, 0); // a frame the counter never reaches
+  code[ptrLo + 1] = (LOAD + table) & 0xFF;
+  code[ptrHi + 1] = (LOAD + table) >> 8;
+  const header = new Uint8Array(0x80);
+  const magic = "NESM\x1a";
+  for (let i = 0; i < 5; i++) header[i] = magic.charCodeAt(i);
+  header[5] = 1; header[6] = 1; header[7] = 1;
+  header[0x08] = LOAD & 0xFF; header[0x09] = LOAD >> 8;
+  header[0x0A] = LOAD & 0xFF; header[0x0B] = LOAD >> 8;
+  header[0x0C] = (LOAD + playOff) & 0xFF; header[0x0D] = (LOAD + playOff) >> 8;
+  for (let i = 0; i < Math.min(31, name.length); i++) header[0x0E + i] = name.charCodeAt(i);
+  header[0x6E] = 16639 & 0xFF; header[0x6F] = 16639 >> 8;
+  const out = new Uint8Array(0x80 + code.length);
+  out.set(header, 0);
+  out.set(code, 0x80);
+  return out;
+}

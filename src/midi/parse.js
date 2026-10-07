@@ -113,6 +113,9 @@ export function parseMidi(buf, opts = {}) {
           if (st === 0x90 || st === 0x80) {
             const p = d[j], v = d[j+1]; j += 2;
             if (st === 0x90 && v > 0) {
+              // a CC70 at this very tick was this note's attack duty, not a
+              // change inside a note still held (a 40-tick minimum can overlap)
+              for (const k in open) for (const o of open[k]) if (o.duties && o.duties[o.duties.length - 1].t === t - o.t) { o.duties.pop(); if (!o.duties.length) delete o.duties; }
               (open[p] = open[p] || []).push({t, v, duty: curDuty});
             } else if (open[p] && open[p].length) {
               const o = open[p].shift();
@@ -120,6 +123,7 @@ export function parseMidi(buf, opts = {}) {
               if (o.duty !== undefined) n.duty = o.duty; // chip timbre (CC70, our own capture files)
               if (o.ve !== undefined) n.ve = o.ve; // software-envelope decay target
               if (o.env) n.env = o.env; // the note's volume shape (NIGHT-ROLL.md "Volume inside a note")
+              if (o.duties) n.duties = o.duties; // duty changes while held [{t: ticks from the start, v}] (NES capture v2)
               notes.push(n);
             }
           } else if (st === 0xB0) {
@@ -129,7 +133,13 @@ export function parseMidi(buf, opts = {}) {
             // phase 2); kept verbatim as a raw event instead, like any other CC
             const foreignNow = opts.foreign || sawSourceMarker;
             const ctrl = d[j], val = d[j + 1]; j += 2;
-            if (ctrl === 70 && !foreignNow) curDuty = val & 3; // CC70 = pulse duty from the NSF capture
+            if (ctrl === 70 && !foreignNow) { // CC70 = pulse duty from the NSF capture
+              curDuty = val & 3;
+              // inside a held note (after its own tick) it is a duty change
+              // within that note; no file before capture v2 has one there
+              // (its CC70s all precede a note-on at the same tick, undone above)
+              for (const k in open) for (const o of open[k]) if (t > o.t) (o.duties = o.duties || []).push({t: t - o.t, v: val & 3});
+            }
             else if (ctrl === 10 || CTL_CCS.has(ctrl)) ctl.push({t, ch, c: ctrl, v: val}); // owned, foreign or not: one CC10 becomes midiPan below
             else raw.push({t, bytes: [0xB0 | ch, ctrl, val]}); // every other CC (phase 2)
           } else if (st === 0xA0) {

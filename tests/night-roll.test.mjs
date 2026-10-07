@@ -629,9 +629,11 @@ test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree 
     {ppq: 480, timesig: [4, 4], keysig: {sf: -3, minor: true}, tempos: [{tick: 0, usq: 500000}, {tick: 1920, usq: 400000}],
      tracks: [
        {name: "pulse1", midiPan: -0.5, offset: -12,
-        notes: [{t: 0, d: 240, p: 60, v: 100, duty: 1}, {t: 240, d: 240, p: 62, v: 90, duty: 2, ve: 40}]},
+        notes: [{t: 0, d: 240, p: 60, v: 100, duty: 1}, {t: 240, d: 240, p: 62, v: 90, duty: 2, ve: 40, duties: [{t: 60, v: 3}, {t: 180, v: 0}]},
+                {t: 480, d: 240, p: 64, v: 90, duty: 0}]},
        {name: "noise/drums", notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 120, d: 120, p: 38, v: 90, ch: 9}]},
        {name: "lead", midiPan: 1, notes: [{t: 0, d: 480, p: 67, v: 100, ch: 3}]},
+       {name: "dpcm", notes: [{t: 0, d: 60, p: 36, v: 96, ch: 9}, {t: 240, d: 60, p: 38, v: 96, ch: 9}]}, // NES capture v2's sample track: a kit, channel 10
      ]},
     // a >127-byte, non-ASCII name (VLQ length + UTF-8, not the old &255 mask)
     {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],

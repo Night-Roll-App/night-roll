@@ -4,6 +4,12 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-07 NES capture v2 — BUILT on a worktree branch, awaiting merge (audit §4.1 + §8; NIGHT-ROLL.md "NES capture v2")
+Vibrato/detune → pitch bend (RPN range only past ±2, from absorbed slide steps); duty changes inside a note → CC70 (`n.duties`, parsed, carried through every hop, both writers); DPCM hits → a LAST "dpcm" kit track (channel 10, a GM key per sample from rhythm) only on songs whose log uses the channel. Slides stay separate notes. Notes, tracks, tempo, loop identical to v1.
+Re-capture dry run (scratch trees /tmp/nesv2, origin/main vs this branch, both through the app's own import → publish path, diffed with the re-capture branch's capture-diff; albums/ untouched). Main capture vs v2 capture, 136 songs: SAME 51 · VELOCITY 26 · ADDED-TRACK 59 · MOVED 0. Against the published files: main VELOCITY 73 · MOVED 7 · SAME 56 → v2 VELOCITY 48 · MOVED 7 · ADDED-TRACK 55 · SAME 26; the 7 MOVED are the same songs, same reasons, on main (pre-existing drift, not v2). Per album (v2 vs published): FF1 VELOCITY 18 · MOVED 1 (no DPCM, no bends kept — its period moves land on note boundaries); Mega Man 2 VELOCITY 20 · MOVED 2 (bends, no DPCM); SMB3 ADDED-TRACK 26 · VELOCITY 8 · SAME 26; Castlevania II ADDED-TRACK 7 · MOVED 2; Ninja Gaiden ADDED-TRACK 22 · VELOCITY 2 · MOVED 2.
+Josh to hear (after merge + a re-capture he approves): an SMB3 song — a dpcm track appears and the console voice plays it on that track; Mega Man 2 on an instrument voice — vibrato, same notes.
+QUEUED: synth playback switching the pulse wave at an in-note duty change (today the wave is picked at the attack); $4011 raw-PCM streams as hits (no sample start today, so none); CAPTURE_VERSION 2 in tools/recapture.mjs once both branches are on main.
+
 ## 2026-10-06 Ask (shop) — check pulse2 raw chip writes, bars 25-28 — ANSWERED
 
 Josh, in his words: he can feel pulse2 "changing" on beat 3 of each of bars 25-28 when all tracks play, but hears nothing when pulse2 is soloed. He wants to know whether anything is happening in the playback engine or the original NES, e.g. velocity/volume changing, or whether it is just an audio illusion. Facts already read from shop.notes.txt: pulse2 is one held note per bar at v8, pulse1 v15 plays 3 quarter notes per bar (new attack on beat 3). The notes file logs only note volume and pitch, not every register write.

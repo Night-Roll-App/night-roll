@@ -355,8 +355,8 @@ export function chipStopSrcs() {
 }
 // A console part with no roll track of its own plays through the first of
 // these tracks the song has: its fader, mute, solo and pan. The NES sample
-// channel (DPCM) has no notes in any capture yet (a later re-capture writes a
-// "dpcm" track, and then the exact name wins); its hits are the kit, so it
+// channel (DPCM) has no notes in a capture made before NES capture v2 (a v2
+// capture writes a "dpcm" track, and then the exact name wins); its hits are the kit, so it
 // rides with the noise drums, else the triangle (the chip mixes all three
 // together); a capture whose noise played nothing has no noise track (36 of
 // Super Mario Bros. 3's 60).
@@ -533,6 +533,9 @@ export const CHIPS = {
         // dpcm: the sample channel renders (and counts for the memory plan) only when the song uses it (apu-render.mjs dmcUsed)
         optional: {dpcm: (M, res) => !!(M && M.dmcUsed && res && res.apuLog && M.dmcUsed(res.apuLog))},
         files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: [],
+        // hits: the sample channel's notes (DPCM, notes.mjs dpcmHits) — added
+        // after the capture's timing is settled, so they never move a bar
+        hits: M => M.dpcmHits,
         parse: M => M.parseNSF, run: M => M.runNSFAsync, midiOpts: () => ({})},
   gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
         channels: ["pulse1", "pulse2", "wave", "noise"],

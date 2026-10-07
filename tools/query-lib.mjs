@@ -82,7 +82,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
   return doc;
 }
 
-export const isDrumTrack = name => /drum|percussion|kit|noise/i.test(name || "");
+export const isDrumTrack = name => /drum|percussion|kit|noise|dpcm/i.test(name || "");
 export const PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 export const pitchName = p => PC_NAMES[p % 12] + (Math.floor(p / 12) - 1);
 

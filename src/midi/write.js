@@ -21,7 +21,7 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
   const textMeta = (type, text) => { const b = utf8(text); return [0xFF, type, ...vlq(b.length), ...b]; }; // VLQ length: a >127-byte name no longer corrupts the file
   const track = body => [...str("MTrk"), ...u32(body.length), ...body];
   const NON_DRUM_CH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]; // 15 melodic channels; 9 stays drums-only whatever the track count (the old ti<9?ti:(ti+1)&15 formula collided past 16 tracks)
-  const isKit = name => /drum|percussion|kit|noise/i.test(name || "");
+  const isKit = name => /drum|percussion|kit|noise|dpcm/i.test(name || ""); // dpcm: the NES sample channel's hits (capture v2)
   const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
 
   // phase 2 (docs/declared-vs-learner-spec.md "B"): a foreign file's raw
@@ -108,6 +108,8 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
       // duty (chip timbre) rides as CC70 ahead of the note it changes on —
       // parseMidi reads it back; other DAWs just see a sound controller
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
+      // …and at each duty change while the note is held (n.duties [{t, v}], NES capture v2)
+      if (n.duties) for (const q of n.duties) if (q.t > 0 && q.t < n.d) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v & 3]}); lastDuty = q.v & 3; }
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       // decay target as polyphonic aftertouch right after the on — parseMidi
       // reads it back as the note's end volume; DAWs see key pressure

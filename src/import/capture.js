@@ -310,6 +310,18 @@ export async function captureChipTrack(kind, M, nsf, track, seconds, onProgress)
     events = trimmed.events;
     keptFrames = trimmed.frames;
   }
+  // the sample channel's hits (NES DPCM): read from the same log, then given
+  // the timing the notes above settled — shifted by their t0, backported and
+  // cut at their loop or tail — and kept out of t0, the loop scan, the tempo
+  // fit and the snap gate, so a song that gains a dpcm track keeps every bar
+  // and every other track where it was (capture v2, fidelity audit §8)
+  const hitsOf = CHIPS[kind || "nsf"].hits && CHIPS[kind || "nsf"].hits(M);
+  let hits = hitsOf ? hitsOf(apuLog, frames, frameSec).map(h => ({...h, startFrame: h.startFrame - t0, endFrame: h.endFrame - t0})).filter(h => h.startFrame >= 0) : [];
+  if (hits.length) {
+    if (loop) hits = M.backportTiming(hits, loop.period);
+    const until = loop ? loop.onsets - 3 : keptFrames;
+    hits = hits.filter(h => h.startFrame < until).map(h => ({...h, endFrame: Math.min(h.endFrame, keptFrames)})).filter(h => h.endFrame > h.startFrame);
+  }
   const bpm = M.fitBpm(events, frameSec, 120);
   const statedLoop = !loop && res.loopFrame != null && res.loopFrame > t0 ? res.loopFrame - t0 : null; // a log format (VGM) states its loop point; no scan needed
   // snap-residual gate: a through-composed track with a mid-song tempo
@@ -326,7 +338,7 @@ export async function captureChipTrack(kind, M, nsf, track, seconds, onProgress)
     if (Math.min(ph, grid - ph) > 1.6) far++;
   }
   const snap = far / Math.max(1, timed) < 0.12;
-  const bytes = M.makeMidi(events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap, ...CHIPS[kind || "nsf"].midiOpts(M)});
+  const bytes = M.makeMidi(hits.length ? events.concat(hits) : events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap, ...CHIPS[kind || "nsf"].midiOpts(M)});
   const beatSec = 60 / bpm;
   const backBeats = loop ? (loop.keep - loop.period) * frameSec / beatSec : statedLoop != null ? statedLoop * frameSec / beatSec : 0;
   const bq = beats => { // beats-from-zero -> [bar, beat] on the 16th grid (4/4 until re-barred)
@@ -529,6 +541,7 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
           if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre (per-note duty) survives
           if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
           if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
+          if (nt.duties) o.duties = nt.duties.map(q => ({...q})); // duty changes inside the note survive
           return o;
         })}))});
     { // capture-time annotations: the hardware loop point (same rule as the FF1

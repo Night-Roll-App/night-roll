@@ -39,6 +39,13 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    Every one of these must survive Night Roll's own draft → publish path
    (parse → draft → write re-encodes every song; add a round-trip test over
    the console's whole catalog before importing).
+   The NES is the first console on v2 (NIGHT-ROLL.md "NES capture v2"):
+   per-note series kept relative to the note's start in the reconstructor
+   (`bendSeries`, `dutySeries`, `volSeries`), thinned to corners by the
+   writer; the sample channel's hits read AFTER the capture's timing is
+   settled (`CHIPS.<kind>.hits`, called by captureChipTrack after t0, the
+   loop scan and the tempo fit), so they can never move a bar; a drum track
+   named so every kit test (`isKitTrackName`, `trackIsDrums`) knows it.
 4. **Chip audio.** A renderer (tools/<console>/…-render.mjs) giving one
    buffer per track (stereo pair `{l, r}` when the hardware pans), the
    console's own samples/synthesis, envelopes, volume under held notes,

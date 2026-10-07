@@ -5,6 +5,7 @@ import { snapBeat } from "./midi-write.mjs";
 // with no ref/unref, 2026-09-30, kept tools/chip-bench.mjs hanging; nsf.mjs's
 // own copy already carries the Node ref/unref fix this one lacked).
 import { microYield } from "./nsf.mjs";
+import { DMC_RATES, dmcUsed } from "./apu-render.mjs";
 const CLOCK = 1_789_773; // NTSC CPU Hz
 
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -53,6 +54,17 @@ export function reconstruct(apuLog, frames, frameSec) {
     if (isOn && name !== "noise") { freq = freqOf(name, c); midi = midiFromFreq(freq); }
     if (isOn && name === "noise") midi = c.period & 0x0F; // noise "pitch" = period index, not a MIDI note
     const cur = open[name];
+    // bendSeries: the held note's pitch in cents from its starting frequency
+    // at every change ([[frames from its start, cents]…], relative like
+    // volSeries) — the vibrato/detune the guard below keeps inside ONE note;
+    // midi-write turns it into pitch bend. A same-frame change overwrites
+    const bend = () => {
+      const sr = cur.bendSeries, rf = frame - cur.startFrame;
+      if (!sr) return;
+      const c = Math.round(1200 * Math.log2(freq / cur.freq0));
+      const last = sr[sr.length - 1];
+      if (last[0] === rf) last[1] = c; else if (last[1] !== c) sr.push([rf, c]);
+    };
     // vibrato guard (MM2 bug 2026-08-16): drivers wobble the period every
     // frame for vibrato; when the wobble crosses a semitone's rounding
     // boundary a strict midi comparison shredded held notes into 1-frame
@@ -60,8 +72,9 @@ export function reconstruct(apuLog, frames, frameSec) {
     // cents it's the same note singing; a real slide or step exceeds it.
     if (cur && isOn && name !== "noise" && cur.midi !== midi &&
         frame > cur.startFrame && // same-frame changes are note SETUP (vol lands before period), not vibrato
-        cur.freq0 && Math.abs(1200 * Math.log2(freq / cur.freq0)) < 70) return;
+        cur.freq0 && Math.abs(1200 * Math.log2(freq / cur.freq0)) < 70) { bend(); return; }
     if (cur && (!isOn || cur.midi !== midi)) { cur.endFrame = frame; delete open[name]; }
+    else if (cur && isOn && name !== "noise") bend();
     if (isOn && !open[name]) {
       // vol: the 4-bit level at note start — accent data straight from the
       // ROM. Only meaningful in constant-volume mode (else the field is the
@@ -72,8 +85,13 @@ export function reconstruct(apuLog, frames, frameSec) {
       // from the note's start, vol]…] — relative, so the t0 shift and loop
       // backport that move startFrame carry it along; midi-write's
       // shapeFromSeries turns it into the note's volume shape
+      // dutySeries: the pulse's duty at each change while held, after the
+      // note's first frame (a write in that frame is setup — `duty` stays
+      // the attack's timbre, as it always was)
       open[name] = {channel: name, startFrame: frame, endFrame: null, midi, periodValue: c.period, vol, volEnd: vol, duty, freq0: freq,
-        volSeries: vol === null ? null : [[0, vol]]};
+        volSeries: vol === null ? null : [[0, vol]],
+        ...(name !== "noise" ? {bendSeries: [[0, 0]]} : {}),
+        ...(duty !== undefined ? {dutySeries: [[0, duty]]} : {})};
       events.push(open[name]);
     }
   };
@@ -108,6 +126,11 @@ export function reconstruct(apuLog, frames, frameSec) {
           if (sr && c.constVol && c.vol > 0) {
             const last = sr[sr.length - 1], rf = frame - open[name].startFrame;
             if (last[0] === rf) last[1] = c.vol; else if (last[1] !== c.vol) sr.push([rf, c.vol]);
+          }
+          const ds = open[name] && open[name].dutySeries;
+          if (ds && frame > open[name].startFrame) {
+            const last = ds[ds.length - 1], rf = frame - open[name].startFrame;
+            if (last[0] === rf) last[1] = c.duty; else if (last[1] !== c.duty) ds.push([rf, c.duty]);
           }
         }
       } else if (r === 2) {
@@ -157,9 +180,12 @@ export function collapseSlides(events) {
         if (!tiny(list[j])) { // slid into a held note: the target absorbs the ramp
           const early = list[j].startFrame - list[i].startFrame; // its volume series is relative to its start
           if (list[j].volSeries) list[j].volSeries = list[j].volSeries.map(([f, v], k) => [k ? f + early : 0, v]);
+          if (list[j].dutySeries) list[j].dutySeries = list[j].dutySeries.map(([f, v], k) => [k ? f + early : 0, v]);
+          if (list[j].bendSeries) list[j].bendSeries = slideBend(list, i, j, list[j]);
           list[j].startFrame = list[i].startFrame;
           for (let k = i; k < j; k++) dead.add(list[k]);
         } else {              // pure ornament: first pitch, whole span
+          if (list[i].bendSeries) list[i].bendSeries = slideBend(list, i, j, list[i]);
           list[i].endFrame = list[j].endFrame;
           for (let k = i + 1; k <= j; k++) dead.add(list[k]);
         }
@@ -168,6 +194,62 @@ export function collapseSlides(events) {
     }
   }
   return events.filter(e => !dead.has(e) && e.endFrame > e.startFrame);
+}
+// The pitch path of a merged slide chain list[i..j] as the surviving note's
+// bend series, relative to list[i]'s start, in cents from the survivor's own
+// starting frequency: each step's pitch and its own wobble, so the roll keeps
+// one note while a synth voice still hears the slide (the console voice
+// replays the rip and always did). Only events with a bendSeries get here,
+// and those always carry freq0.
+function slideBend(list, i, j, keep) {
+  const out = [];
+  for (let k = i; k <= j; k++) {
+    const e = list[k], at = e.startFrame - list[i].startFrame;
+    const base = 1200 * Math.log2(e.freq0 / keep.freq0);
+    for (const [f, c] of e.bendSeries || [[0, 0]]) {
+      const pt = [at + f, Math.round(base + c)];
+      const last = out[out.length - 1];
+      if (last && last[0] === pt[0]) last[1] = pt[1]; else if (!last || last[1] !== pt[1]) out.push(pt);
+    }
+  }
+  return out.length ? out : [[0, 0]];
+}
+
+// DPCM hits (the delta-modulation sample channel, $4010-$4013 + $4015 bit 4)
+// as note events on a "dpcm" channel. Read from the register log by the
+// hardware's own rules (apu-render.mjs's DMC): a $4015 write with bit 4 set
+// starts the sample at $4012/$4013 unless one is still playing; bit 4 clear
+// stops it; a non-looping sample ends after its length × 8 bits at the
+// $4010 rate. Sample identity = address + length + rate (the same bytes at a
+// different rate sound at a different pitch), numbered in first-use order as
+// `midi` (makeMidi gives each its own drum key). A 1-byte sample (length
+// register 0) is 2 ms of at most ±16 levels — a driver's "stop", not a hit.
+// No velocity: $4011 sets the DC level the deltas start from, not loudness.
+// [] when the song never uses the channel (dmcUsed — the renderer's rule), so
+// a song without DPCM gets no track and every existing track keeps its number.
+export function dpcmHits(apuLog, frames, frameSec) {
+  if (!dmcUsed(apuLog)) return [];
+  let rate = DMC_RATES[0], loop = false, addr = 0xC000, len = 1, cur = null;
+  const hits = [], ids = new Map();
+  const end = (e, f) => { e.endFrame = Math.min(e.endFrame, Math.max(f, e.startFrame)); };
+  for (const w of apuLog) {
+    const {addr: a, value: v, frame} = w;
+    if (a === 0x4010) { loop = !!(v & 0x40); rate = DMC_RATES[v & 15]; }
+    else if (a === 0x4012) addr = 0xC000 + v * 64;
+    else if (a === 0x4013) len = v * 16 + 1;
+    else if (a === 0x4015) {
+      if (!(v & 0x10)) { if (cur) { end(cur, frame); cur = null; } continue; }
+      if (cur && cur.endFrame > frame) continue; // the hardware does not restart a playing sample
+      if (len <= 1) { cur = null; continue; }
+      const key = addr + ":" + len + ":" + rate;
+      if (!ids.has(key)) ids.set(key, ids.size);
+      const secs = len * 8 * rate / CLOCK;
+      cur = {channel: "dpcm", startFrame: frame, endFrame: loop ? frames : Math.min(frames, frame + Math.max(1, Math.ceil(secs / frameSec))),
+             midi: ids.get(key), sample: key, vol: null};
+      hits.push(cur);
+    }
+  }
+  return hits.filter(e => e.endFrame > e.startFrame);
 }
 
 // The chip's true tempo rarely equals the MIDI transcription's round number

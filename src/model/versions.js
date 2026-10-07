@@ -49,6 +49,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
         if (n.duty !== undefined) on.duty = n.duty;
         if (n.ve !== undefined) on.ve = n.ve;
         if (n.env) on.env = n.env.map(q => ({...q})); // volume shape survives
+        if (n.duties) on.duties = n.duties.map(q => ({...q})); // duty changes inside the note survive
         return on;
       })};
     if (tr.midiPan !== undefined) o.midiPan = tr.midiPan; // the .mid's own CC10 (a chip capture's channel) — writeMidi re-emits it

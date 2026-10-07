@@ -91,7 +91,7 @@ export function trackIsDrums(ti) {
   if (tr.kind === "audio") return false; // "drums-di.wav" is a take, not a kit
   if (tr.drums === undefined)
     // "noise" = the NES noise channel — percussion by hardware definition
-    tr.drums = /drum|percussion|kit|noise/i.test(tr.name) || tr.notes.some(x => x.ch === 9);
+    tr.drums = /drum|percussion|kit|noise|dpcm/i.test(tr.name) || tr.notes.some(x => x.ch === 9);
   return tr.drums;
 }
 
