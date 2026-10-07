@@ -10947,6 +10947,10 @@
     "path": "albums/game-boy/super-mario-land/boss.mid"
    },
    {
+    "title": "Boss (re-capture)",
+    "path": "albums/game-boy/super-mario-land/boss-recapture.mid"
+   },
+   {
     "title": "Ending & Credits",
     "path": "albums/game-boy/super-mario-land/ending-credits.mid"
    },
@@ -10967,6 +10971,10 @@
     "path": "albums/game-boy/super-mario-land/last-boss.mid"
    },
    {
+    "title": "Last Boss (re-capture)",
+    "path": "albums/game-boy/super-mario-land/last-boss-recapture.mid"
+   },
+   {
     "title": "Level End",
     "path": "albums/game-boy/super-mario-land/level-end.mid"
    },
@@ -10981,6 +10989,10 @@
    {
     "title": "Pipe Room",
     "path": "albums/game-boy/super-mario-land/pipe-room.mid"
+   },
+   {
+    "title": "Pipe Room (re-capture)",
+    "path": "albums/game-boy/super-mario-land/pipe-room-recapture.mid"
    },
    {
     "title": "Princess Daisy",

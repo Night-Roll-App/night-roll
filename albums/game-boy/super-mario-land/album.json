@@ -4,7 +4,10 @@
  "songs": {
   "ending-credits": "Ending & Credits",
   "invincible-can-can": "Invincible (Can-Can)",
-  "oh-daisy": "Oh! Daisy"
+  "oh-daisy": "Oh! Daisy",
+  "boss-recapture": "Boss (re-capture)",
+  "last-boss-recapture": "Last Boss (re-capture)",
+  "pipe-room-recapture": "Pipe Room (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/super-mario-land.gbs",
@@ -98,6 +101,33 @@
     "n": 5,
     "secs": 50,
     "track": 5
+   },
+   "boss-recapture": {
+    "n": 8,
+    "secs": 3,
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "last-boss-recapture": {
+    "n": 9,
+    "secs": 66,
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "pipe-room-recapture": {
+    "n": 7,
+    "secs": 24.5,
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"
