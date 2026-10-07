@@ -408,9 +408,9 @@ test("posParts/posText: one position formatter — counted 1e&a, +NN% off the 16
   run(`song.tracks = []; declaredTs = null;`);
 });
 
-test("LCD: the beat cell counts (\"2&\"), \"+33%\" takes the beat label's line off the grid, hidden while playing", () => {
+test("LCD: the beat cell counts (\"2&\"), \"+33%\" takes the beat label's line off the grid, hidden while playing (View › Display \"Beat subdivisions\" on)", () => {
   installSong();
-  run(`declaredTs = null; song.tracks = []; lcdCache = null; playing = false;`);
+  run(`declaredTs = null; song.tracks = []; lcdCache = null; playing = false; setBeatSub(true);`);
   const bar4 = 3 * 1920;
   const lcd = () => [app.el("lcdbar").textContent, app.el("lcdbeat").textContent, app.el("lcdbeatlbl").textContent, app.el("lcdbeatlbl").classList.contains("off")];
   run(`playCursor = ${bar4 + 480 + 240}; updateLCD();`);
@@ -423,7 +423,25 @@ test("LCD: the beat cell counts (\"2&\"), \"+33%\" takes the beat label's line o
   try { assert.deepEqual(lcd(), ["4", "2e", "beat", false], "while playing the count alone ticks along"); }
   finally { run(`playing = false; audio = globalThis.__keepAudio; playOffset = 0;`); }
   run(`playCursor = 0; lcdCache = null; updateLCD();`);
-  assert.deepEqual(lcd(), ["1", "1", "beat", false]);
+  assert.deepEqual(lcd(), ["1", "1\u00a0", "beat", false], "the syllable keeps its slot: \"1\" and \"1&\" are the same width (Josh #190)");
+  run(`setBeatSub(false);`);
+});
+
+test("View › Display \"Beat subdivisions\" (Josh #189): off by default — the beat cell shows the bare beat, no +NN%; the switch persists per device; Ask set_pref beat_subdivisions flips it", () => {
+  installSong();
+  run(`try { localStorage.removeItem("ff1roll-beat-sub"); } catch (e) {} showBeatSub.v = undefined; declaredTs = null; song.tracks = []; playing = false;`);
+  assert.equal(run(`showBeatSub()`), false, "off by default");
+  const bar4 = 3 * 1920;
+  run(`playCursor = ${bar4 + 480 + 160}; lcdCache = null; updateLCD();`);
+  assert.deepEqual([app.el("lcdbeat").textContent, app.el("lcdbeatlbl").textContent, app.el("lcdbeatlbl").classList.contains("off")], ["2", "beat", false]);
+  run(`setBeatSub(true);`);
+  assert.equal(app.el("lcdbeat").textContent, "2e", "turning it on redraws the counter at once");
+  run(`showBeatSub.v = undefined`); // a reload reads the stored pref back
+  assert.equal(run(`showBeatSub()`), true);
+  const r = val(`askSetPref({name: "beat_subdivisions", value: false})`);
+  assert.equal(r.ok, true);
+  assert.equal(run(`showBeatSub()`), false);
+  run(`try { localStorage.removeItem("ff1roll-beat-sub"); } catch (e) {} showBeatSub.v = undefined; playCursor = 0;`);
 });
 
 test("loop directive: anchor past target = jump point; else song end; whole song without one", () => {
@@ -2829,6 +2847,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Beat subdivisions",
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
@@ -10545,7 +10564,7 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   for (const id of ["vwRoll", "vwTracksView", "vwScore"]) assert.ok(livesIn("vwViewTypeRow", id), id + " lives inside #vwViewTypeRow");
   for (const id of ["vwInst", "vwSub", "vwMixer", "vwTracks"]) assert.ok(livesIn("vwPanelsRow", id), id + " lives inside #vwPanelsRow");
   for (const id of ["octbtn", "findsel", "cofbtn"]) assert.ok(livesIn("vwToolsRow", id), id + " lives inside #vwToolsRow");
-  for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
+  for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwBeatSub", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
   for (const id of ["vwJobs", "vwMessages"]) assert.ok(livesIn("vwBackgroundRow", id), id + " lives inside #vwBackgroundRow");
   for (const id of ["vwAnalyze", "vwAnnotate", "vwCompare", "vwLearning", "vwListener"]) assert.ok(livesIn("vwModeRow", id), id + " lives inside #vwModeRow");
 

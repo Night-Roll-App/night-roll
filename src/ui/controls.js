@@ -53,6 +53,7 @@ export const CONTROLS = {
   vwTracks: {glyph: "◂", cls: "", label: "  Tracks", prefix: "   "},
   vwEdit: {icon: "construction", cls: "", label: "Edit toolbar", prefix: "   "},
   vwAdded: {glyph: "┄", cls: "", label: "  Outline new notes", prefix: "   "},
+  vwBeatSub: {glyph: "&", cls: "", label: "  Beat subdivisions", prefix: "   "},
   vwFooter: {icon: "viewAgenda", cls: "", label: "Bottom bar", prefix: "   "},
   vwInst: {icon: "piano", cls: "", label: "Instrument panel", prefix: "   "},
   vwSub: {glyph: "💬", cls: "", label: "  Notes strip", prefix: "   "},

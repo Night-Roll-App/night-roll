@@ -405,7 +405,7 @@ export function stop() {
   // recomputed independently, so Learning mode's "nothing spoken the screen
   // doesn't already show" holds for the bar.beat readout too
   const offLbl = document.getElementById("lcdbeatlbl");
-  srAnnounce("Stopped at bar " + document.getElementById("lcdbar").textContent + " beat " + document.getElementById("lcdbeat").textContent +
+  srAnnounce("Stopped at bar " + document.getElementById("lcdbar").textContent + " beat " + document.getElementById("lcdbeat").textContent.trim() +
     (offLbl && offLbl.classList.contains("off") ? " " + offLbl.textContent : ""));
   draw();
 }

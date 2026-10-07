@@ -551,6 +551,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwTracks: {glyph: "◂", text: "Tracks"},
     vwEdit: {icon: "construction", text: "Edit toolbar"},
     vwAdded: {glyph: "┄", text: "Outline new notes"},
+    vwBeatSub: {glyph: "&", text: "Beat subdivisions"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
     vwInst: {icon: "piano", text: "Instrument panel"},
     vwSub: {glyph: "💬", text: "Notes strip"},
@@ -615,6 +616,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwEdit", !S.editrowHidden, !S.editOn); // dimmed (not disabled) in read-only: the pref still flips
   set("vwFooter", !S.footerHidden);
   set("vwAdded", showAddedOutline());
+  set("vwBeatSub", showBeatSub());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
   set("vwSub", S.subOn);
   set("vwVel", S.vwVel);
@@ -1132,6 +1134,22 @@ export function toggleHl() {
   updateSubtitle();
   draw();
 }
+// the LCD's e/&/a syllable and off-grid "+NN%" — a device-local View › Display
+// toggle, off by default (Josh #189: "it moves so fast that it's kind of
+// distracting... sometimes I really might wanna see it"). Off: the beat cell
+// shows the bare beat number. A function, not a top-level let (boot path).
+export function showBeatSub() {
+  if (showBeatSub.v === undefined) {
+    try { showBeatSub.v = localStorage.getItem("ff1roll-beat-sub") === "1"; } catch (err) { showBeatSub.v = false; }
+  }
+  return showBeatSub.v;
+}
+export function setBeatSub(on) {
+  showBeatSub.v = !!on;
+  try { localStorage.setItem("ff1roll-beat-sub", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+  S.lcdCache = "";
+  updateLCD();
+}
 export function updateLCD() {
   if (!S.song) return;
   const t = curTick();
@@ -1139,7 +1157,10 @@ export function updateLCD() {
   // no new cell on the iPad row — and stays hidden while playing (it would
   // flicker every frame; the syllable alone counts along)
   const pos = posParts(t);
-  const bar = pos.bar, beat = pos.beat + pos.syl, pct = S.playing ? 0 : pos.pct;
+  const sub = showBeatSub();
+  // with subdivisions on, the syllable keeps a fixed slot (a no-break space when
+  // there is none) so "1" → "1&" never shifts the beat number (Josh #190; mono LCD)
+  const bar = pos.bar, beat = pos.beat + (sub ? pos.syl || "\u00a0" : ""), pct = S.playing || !sub ? 0 : pos.pct;
   let usq = S.song.tempos[0].usq;
   for (const tp of S.song.tempos) { if (tp.tick <= t) usq = tp.usq; else break; }
   const bpm = Math.round(6e7 / usq * S.playRate);
@@ -2011,6 +2032,7 @@ export function initChrome11() {
     on("vwTracks", () => document.getElementById("tracktoggle").click());
     on("vwEdit", () => { S.editrowHidden = !S.editrowHidden; applyChrome(); });
     on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
+    on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());
     on("vwSub", () => toggleSubtitle());
