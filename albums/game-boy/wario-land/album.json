@@ -16,7 +16,8 @@
   "stage-theme-viii": "Stage Theme VIII",
   "stage-theme-xi": "Stage Theme XI",
   "summoning-the-genie": "Summoning the Genie",
-  "that-s-not-what-i-call-a-castle": "That's Not What I Call a Castle!"
+  "that-s-not-what-i-call-a-castle": "That's Not What I Call a Castle!",
+  "summoning-the-genie-recapture": "Summoning the Genie (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/wario-land.gbs",
@@ -260,6 +261,15 @@
     "n": 26,
     "secs": 2.5951194763183594,
     "track": 33
+   },
+   "summoning-the-genie-recapture": {
+    "n": 25,
+    "secs": 26.97249984741211,
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"
