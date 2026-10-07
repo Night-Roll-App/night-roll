@@ -23,93 +23,201 @@
    "2-player-mode-danger": {
     "n": 6,
     "secs": 10.71533203125,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -5.5,
+     "synth": -7.6
+    }
    },
    "2-player-mode-game-over": {
     "n": 16,
     "secs": 12.925369262695312,
-    "track": 16
+    "track": 16,
+    "loud": {
+     "v": 1,
+     "lufs": -15.1,
+     "peak": -5.5,
+     "synth": -6
+    }
    },
    "2-player-mode-round-over": {
     "n": 5,
     "secs": 6.2282867431640625,
-    "track": 17
+    "track": 17,
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -3.4,
+     "synth": -8.6
+    }
    },
    "a-type-music-version-1-0": {
     "n": 2,
     "secs": 38.5751953125,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -3.9,
+     "synth": -9.4
+    }
    },
    "a-type-music-version-1-1": {
     "n": 2,
     "secs": 38.5751953125,
     "vault": "game-boy/tetris.dmg-tra-1.gbs",
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -4.6,
+     "synth": -8.6
+    }
    },
    "b-type-game-level-9-high-0-ending": {
     "n": 9,
     "secs": 5.0228118896484375,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -5.5,
+     "synth": -16.2
+    }
    },
    "b-type-game-level-9-high-1-ending": {
     "n": 10,
     "secs": 5.0228118896484375,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -5.5,
+     "synth": -6.2
+    }
    },
    "b-type-game-level-9-high-2-ending": {
     "n": 11,
     "secs": 5.0228118896484375,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -5.5,
+     "synth": -5.7
+    }
    },
    "b-type-game-level-9-high-3-ending": {
     "n": 12,
     "secs": 5.0228118896484375,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -13.7,
+     "peak": -4.1,
+     "synth": -6.3
+    }
    },
    "b-type-game-level-9-high-4-5-ending": {
     "n": 14,
     "secs": 12.8583984375,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -3.9,
+     "synth": -6.7
+    }
    },
    "b-type-game-level-9-high-5-ending-part-2-100000-points": {
     "n": 15,
     "secs": 7.333305358886719,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": -5.5,
+     "synth": -6.1
+    }
    },
    "b-type-music": {
     "n": 3,
     "secs": 35.360595703125,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -3.3,
+     "synth": -10.2
+    }
    },
    "c-type-music": {
     "n": 4,
     "secs": 38.5751953125,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -5.5,
+     "synth": -19.4
+    }
    },
    "game-over": {
     "n": 8,
     "secs": 2.6118621826171875,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": -5.5,
+     "synth": -5.8
+    }
    },
    "high-score": {
     "n": 17,
     "secs": 27.525009155273438,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -6.3,
+     "synth": -7.3
+    }
    },
    "stage-clear": {
     "n": 7,
     "secs": 2.1765518188476562,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -6.5,
+     "synth": -7.9
+    }
    },
    "title": {
     "n": 1,
     "secs": 39.57975769042969,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -4.4,
+     "synth": -8.4
+    }
    },
    "unknown-jingle-02": {
     "n": 13,
     "secs": 7.4337615966796875,
-    "track": 18
+    "track": 18,
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -5.5,
+     "synth": -13.1
+    }
    }
   },
   "chip": "gbs"
