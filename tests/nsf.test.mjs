@@ -917,12 +917,22 @@ test("capture v2 in the app's own capture (captureChipTrack): the dpcm track is 
   assert.ok(v2[1].notes.length >= 4, "the hits are there: " + v2[1].notes.length);
 });
 
-test("capture v2: every published NES .mid reads exactly as before — no in-note duty changes appear in an old file", async () => {
+test("capture v2: every published NES .mid not yet re-captured with v2 reads exactly as before — no in-note duty changes appear in an old file", async () => {
   const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const files = [];
-  const walk = d => { for (const e of readdirSync(d, {withFileTypes: true})) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (e.name.endsWith(".mid")) files.push(f); } };
+  // a song re-captured with v2 is stamped in its album.json (nsf.tracks[base].cap.v ≥ 2) and may carry duties
+  const v2 = new Set();
+  const walk = d => {
+    if (existsSync(path.join(d, "album.json"))) {
+      const tracks = JSON.parse(readFileSync(path.join(d, "album.json"), "utf8")).nsf?.tracks || {};
+      for (const [base, t] of Object.entries(tracks)) if (t && t.cap && t.cap.v >= 2) v2.add(path.join(d, base));
+    }
+    for (const e of readdirSync(d, {withFileTypes: true})) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (e.name.endsWith(".mid")) files.push(f); }
+  };
   walk(path.join(ROOT, "albums", "nes"));
+  const old = files.filter(f => ![...v2].some(b => f === b + ".mid" || f === path.join(path.dirname(b), "songs", path.basename(b)) + ".mid"));
   assert.ok(files.length > 100, "the NES catalog is there: " + files.length);
+  files.length = 0; files.push(...old);
   const app = await createApp();
   let duties = 0;
   for (const f of files) {
