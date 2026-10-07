@@ -145,6 +145,7 @@ export const S = {
   pulse25: null,
   pulse12: null,
   organWave: null,
+  reverbBus: new WeakMap(), // master GainNode -> the shared CC91 reverb's input (audio/engine.js reverbIn): one per context's master, made on first use
   pluckCache: {},
   voiceMenuTi: -1,
   voiceMenuRenderToken: 0,

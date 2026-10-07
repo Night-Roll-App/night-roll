@@ -60,6 +60,7 @@ import { JOB_KINDS } from "../model/jobs.js";
 import { jobsOnChange } from "../model/jobs.js";
 import { publishJobStart } from "../sync/publish.js";
 import { fileStatus } from "../ui/chrome.js";
+import { ctlCopy } from "../midi/parse.js";
 
 // "Replace file…" from a clip sheet targets this track
 // Streamed-audio containers Night Roll cannot read as notes, by name only —
@@ -521,6 +522,7 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
       tracks: parsed.tracks.map(tr => ({name: tr.name,
         ...(tr.offset ? {offset: tr.offset} : {}), // tools/sounding.mjs: the roll shows the sounding pitch — carried through so a tap keeps sounding right, and so commitImports' re-serialized .mid keeps it
         ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 — the capture's own channel pan (open-items.md "FORMATS AUDIT" #1: commitImports used to drop this)
+        ...ctlCopy(tr), // bend, CC7/11/64/1/91, pan events, programs (capture audit §3: the publish re-encode used to drop them)
         notes: tr.notes.map(nt => {
           const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
           if (nt.ch !== undefined) o.ch = nt.ch; // noise rides ch 9 — dropping it made drums play as pitched tones

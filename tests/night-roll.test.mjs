@@ -1,7 +1,7 @@
 // Unit tests for Night Roll's pure logic (index.html inline script).
 // Run: node --test tests/
 import test from "node:test";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createApp, appSource, helpSource, helpBody } from "./harness.mjs";
 import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
@@ -837,11 +837,14 @@ test("parseMidi/writeMidi: a foreign file's raw leftovers — markers, lyrics, a
     assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 0x06), label + ": marker at tick 0");
     assert.ok(has(mm.events, e => e.t === 480 && e.bytes[1] === 0x05), label + ": lyric at tick 480");
     assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 0x03), label + ": the extra track-name meta");
-    assert.ok(has(mm.events, e => e.t === 0 && (e.bytes[0] & 0xF0) === 0xC0), label + ": program change at tick 0");
-    assert.ok(has(mm.events, e => e.t === 240 && (e.bytes[0] & 0xF0) === 0xE0), label + ": pitch bend at tick 240");
-    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 7), label + ": CC7 at tick 0");
-    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 11), label + ": CC11 at tick 0");
-    assert.ok(has(mm.events, e => e.t === 480 && e.bytes[1] === 64), label + ": CC64 at tick 480");
+    // MIDI playback v2: program, bend and CC7/11/64 are OWNED now (tr.ctl, played by the synth), not raw
+    const ctl = melody.ctl || [];
+    assert.ok(has(ctl, e => e.t === 0 && e.c === "pg" && e.v === 40 && e.ch === 1), label + ": program change at tick 0");
+    assert.ok(has(ctl, e => e.t === 240 && e.c === "pb" && e.v === (80 << 7) - 8192), label + ": pitch bend at tick 240");
+    assert.ok(has(ctl, e => e.t === 0 && e.c === 7 && e.v === 100), label + ": CC7 at tick 0");
+    assert.ok(has(ctl, e => e.t === 0 && e.c === 11 && e.v === 90), label + ": CC11 at tick 0");
+    assert.ok(has(ctl, e => e.t === 480 && e.c === 64 && e.v === 127), label + ": CC64 at tick 480");
+    assert.ok(!has(mm.events, e => [0xC0, 0xE0].includes(e.bytes[0] & 0xF0) || ((e.bytes[0] & 0xF0) === 0xB0 && [7, 11, 64].includes(e.bytes[1]))), label + ": …and never twice (not also raw)");
     assert.ok(has(mm.events, e => e.t === 0 && e.bytes[0] === 0xF0), label + ": SysEx at tick 0");
     const cond = doc.source.metas.find(m => m.empty);
     assert.ok(cond, label + ": the empty conductor track survives");
@@ -2771,6 +2774,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "What the synth plays from a MIDI file", "makes room",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -13989,7 +13993,8 @@ test("volume shape: Shape presets on the selection are ONE undo, scaled to each 
 test("volume shape Ask: edit_notes op shape — presets and exact points, one undo, the same safety gate", () => {
   installAskEditSong();
   const r = val(`askEditNotes({op: "shape", from_bar: 6, to_bar: 7, tracks: "pulse1", shape: "swell-fade"})`);
-  assert.match(r.note, /^shaped \(Swell–fade\) 2 notes on pulse1 in bars 6–7 \(one undo/);
+  // these notes start above 73, so Swell–fade made room (MIDI playback v2) — said in the reply, same undo step
+  assert.match(r.note, /^shaped \(Swell–fade\) 2 notes on pulse1 in bars 6–7; 2 started too loud to rise, so velocity was lowered to 73 to make room \(one undo/);
   assert.equal(val(`editUndo.length`), 1);
   run(`editUndoPop();`);
   assert.equal(val(`song.tracks[0].notes.some(n => n.env)`), false);
@@ -14063,4 +14068,288 @@ test("AI window: the tab you had survives a relaunch — before the bridge says 
   run(`askSetMode("song"); askTabsApply();`);
   assert.equal(val(`askTerminal`), false, "a tap on the song tab is a real choice");
   assert.equal(val(`localStorage.getItem("ff1roll-ask-mode")`), "song");
+// ---- MIDI playback v2 (NIGHT-ROLL.md "MIDI support"): tr.ctl = the channel
+// controllers a normal MIDI player follows — pitch bend (+ RPN 0 range), CC7,
+// CC11, CC64, CC1, CC91, CC10 events, program change — owned per track,
+// carried through every hop, played on the synth path only.
+const CTL_SONG = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+  tracks: [{name: "lead", notes: [{t: 0, d: 960, p: 60, v: 100, ch: 2}, {t: 960, d: 480, p: 62, v: 90, ch: 2}],
+    ctl: [
+      {t: 0, ch: 2, c: 101, v: 0}, {t: 0, ch: 2, c: 100, v: 0}, {t: 0, ch: 2, c: 6, v: 12}, // RPN 0: bend range ±12
+      {t: 0, ch: 2, c: "pg", v: 41},
+      {t: 0, ch: 2, c: 7, v: 100}, {t: 0, ch: 2, c: 11, v: 127}, {t: 0, ch: 2, c: 10, v: 0},
+      {t: 0, ch: 2, c: 91, v: 40}, {t: 0, ch: 2, c: 1, v: 0},
+      {t: 240, ch: 2, c: "pb", v: 4096}, {t: 360, ch: 2, c: "pb", v: -8192}, {t: 480, ch: 2, c: "pb", v: 0},
+      {t: 480, ch: 2, c: 7, v: 50}, {t: 480, ch: 2, c: 1, v: 127}, {t: 480, ch: 2, c: 10, v: 127}, {t: 480, ch: 2, c: 64, v: 127},
+      {t: 1680, ch: 2, c: 64, v: 0}]},
+    {name: "bass", midiPan: -0.5, notes: [{t: 0, d: 1920, p: 36, v: 80}]}]};
+
+test("MIDI controllers: every event type (bend, RPN 0, CC7/11/64/1/91, pan events, program) parses into tr.ctl, round-trips exactly, both writers agree, a re-write is a fixed point; one CC10 is still midiPan", () => {
+  installSong();
+  app.context._ctlSong = JSON.parse(JSON.stringify(CTL_SONG));
+  const bytes = val(`Array.from(writeMidi(_ctlSong))`);
+  assert.deepEqual(bytes, Array.from(writeSongMidi(CTL_SONG)), "writeMidi and writeSongMidi agree byte-for-byte on controllers");
+  for (const opts of ["{trust: true}", "{trust: true, foreign: true}"]) { // a capture's own parse (publish re-encode) AND a foreign import
+    const back = val(`(() => { const s = parseMidi(new Uint8Array(${JSON.stringify(bytes)}).buffer, ${opts}); return {ctl: s.tracks[0].ctl, pan: s.tracks[0].midiPan, ctl1: s.tracks[1].ctl || null, pan1: s.tracks[1].midiPan, raw: s.source && s.source.metas ? s.source.metas.length : 0}; })()`);
+    assert.deepEqual(back.ctl, CTL_SONG.tracks[0].ctl, opts + ": every controller, same tick, channel, value and order");
+    assert.equal(back.pan, undefined, opts + ": two CC10s are pan EVENTS, not one midiPan");
+    assert.equal(back.ctl1, null, opts + ": a track with one CC10…");
+    assert.ok(Math.abs(back.pan1 - (-0.5)) < 0.02, opts + ": …keeps the single-pan behaviour (midiPan)");
+    assert.equal(back.raw, 0, opts + ": nothing left over as raw — owned, not kept twice");
+  }
+  assert.deepEqual(val(`Array.from(writeMidi(parseMidi(new Uint8Array(${JSON.stringify(bytes)}).buffer, {trust: true})))`), bytes, "parse → write is byte-identical");
+  // the bytes themselves are standard MIDI: E0 bend, C0 program, B0 CCs on the note's channel
+  const has = (st, a, b) => bytes.some((x, i) => x === st && bytes[i + 1] === a && (b === undefined || bytes[i + 2] === b));
+  assert.ok(has(0xE2, 0, 0x60), "pitch bend +4096 = E2 00 60");
+  assert.ok(has(0xE2, 0, 0x00), "pitch bend −8192 = E2 00 00");
+  assert.ok(has(0xC2, 41), "program 41 on channel 3");
+  assert.ok(has(0xB2, 64, 127) && has(0xB2, 91, 40) && has(0xB2, 6, 12), "CC64, CC91, RPN data on channel 3");
+  // the bend-range index: RPN 0 = 12 semitones from tick 0; a file that never sets it is ±2
+  assert.equal(val(`ctlAt(ctlList(ctlIndex(_ctlSong.tracks[0]), 2, "br"), 300, 2)`), 12);
+  assert.equal(val(`ctlAt(ctlList(ctlIndex({ctl: [{t: 0, ch: 0, c: "pb", v: 1}]}), 0, "br"), 300, 2)`), 2);
+});
+
+test("MIDI controllers: existing album .mid files (≥30, every console, read-only) carry none and write back byte-identical; a capture-shaped file that DOES carry them keeps them through the publish re-encode", () => {
+  installSong();
+  const files = [];
+  for (const con of ["nes", "snes", "game-boy", "n64", "ps1", "ps2"]) {
+    const root = new URL("../albums/" + con + "/", import.meta.url);
+    if (!existsSync(root)) continue;
+    // FF1's files come from tools/nsf/dump-all.mjs's older writer and never round-tripped byte-identical (airship.mid: 2329 → 2316 bytes on main before v2) — not a v2 question
+    const games = readdirSync(root, {withFileTypes: true}).filter(d => d.isDirectory() && d.name !== "final-fantasy-i").map(d => d.name).sort();
+    let got = 0;
+    for (const g of games) {
+      for (const sub of ["", "songs/"]) {
+        const dir = new URL(g + "/" + sub, root);
+        if (!existsSync(dir)) continue;
+        const mids = readdirSync(dir).filter(f => /\.mid$/.test(f)).sort();
+        if (mids.length) { files.push("albums/" + con + "/" + g + "/" + sub + mids[0]); got++; break; }
+      }
+      if (got >= 6) break;
+    }
+  }
+  assert.ok(files.length >= 30, "at least 30 sample files across consoles (" + files.length + ")");
+  for (const f of files) {
+    app.context._corpusBytes = [...readFileSync(new URL("../" + f, import.meta.url))]; // read-only: nothing is written back to albums/
+    const r = val(`(() => { const s = parseMidi(new Uint8Array(_corpusBytes).buffer, {trust: true}); const o = Array.from(writeMidi(s));
+      return {same: o.length === _corpusBytes.length && o.every((x, i) => x === _corpusBytes[i]), ctl: s.tracks.filter(t => t.ctl).length}; })()`);
+    assert.equal(r.ctl, 0, f + ": no controllers in a file written before v2");
+    assert.ok(r.same, f + ": parse → write is byte-identical");
+  }
+  // a capture writer's own controllers (tools/nsf/midi-write.mjs makeMidiTracks — N64 programs, CC lists):
+  // the publish path parses WITHOUT {foreign}, which used to drop them into nowhere
+  const cap = val(`(() => { const s = parseMidi(new Uint8Array(${JSON.stringify([...writeSongMidi(CTL_SONG)])}).buffer, {trust: true});
+    const draft = {ppq: s.ppq, timesig: s.timesig, tempos: s.tempos, tracks: draftTracks(s.tracks)};
+    return parseMidi(writeMidi(draft).buffer, {trust: true}).tracks[0].ctl.length; })()`);
+  assert.equal(cap, CTL_SONG.tracks[0].ctl.length, "every controller survives parse → draft → publish re-encode");
+});
+
+test("MIDI controllers: every hop that carries midiPan carries ctl too — draft → reload, Save As, a dropped MIDI file's draft, and a real publish", async () => {
+  // structural: each track-copy site (draft, reopen, Save As, import ×2, capture, publish) copies ctl next to midiPan
+  for (const f of ["src/model/versions.js", "src/session/song.js", "src/session/files.js", "src/import/hub.js", "src/import/capture.js", "src/sync/publish.js"]) {
+    const src = readFileSync(new URL("../" + f, import.meta.url), "utf8");
+    const pans = (src.match(/midiPan: tr\.midiPan|o\.midiPan = tr\.midiPan/g) || []).length;
+    const ctls = (src.match(/ctlCopy\(tr\)/g) || []).length;
+    assert.ok(pans > 0 && ctls === pans, f + ": " + pans + " midiPan copies, " + ctls + " ctl copies");
+  }
+  installAskEditSong();
+  run(`song.tracks[0].ctl = ${JSON.stringify(CTL_SONG.tracks[0].ctl)}; song.tracks[0].ctl.forEach(e => { e.ch = 0; });`);
+  // draft (the device store) → reload
+  run(`draftWrite(songKey, draftDoc(false)); __ctlRd = null; draftRead(songKey).then(d => { __ctlRd = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(val(`__ctlRd.tracks[0].ctl.length`), CTL_SONG.tracks[0].ctl.length, "the draft stores them");
+  run(`openDraftDoc(__ctlRd, songKey);`);
+  assert.equal(val(`song.tracks[0].ctl.length`), CTL_SONG.tracks[0].ctl.length, "reopening the draft keeps them");
+  // Save As
+  run(`forkCurrentSong("Ctl Fork Test", "my-covers");`);
+  assert.equal(val(`song.tracks[0].ctl.length`), CTL_SONG.tracks[0].ctl.length, "Save As keeps them");
+  // a dropped foreign MIDI file → its local draft
+  const fbytes = Array.from(writeSongMidi(CTL_SONG));
+  run(`localMidiOpen(parseMidi(new Uint8Array(${JSON.stringify(fbytes)}).buffer, {trust: true, foreign: true}), "ctl-drop.mid");`);
+  await new Promise(r => setTimeout(r, 30));
+  run(`__ctlDrop = null; draftRead("local/ctl-drop.mid").then(d => { __ctlDrop = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.deepEqual(val(`__ctlDrop.tracks[0].ctl`), CTL_SONG.tracks[0].ctl, "an imported file's controllers land in its draft");
+  // a real publish: the draft's controllers reach the published .mid
+  const KEY = "albums/compositions/nightroll/ctl-pub.mid";
+  const A = await pubApp();
+  useFakeFolder(A, "A");
+  seedDraft(A, KEY, {tracks: [{name: "lead", notes: CTL_SONG.tracks[0].notes, ctl: CTL_SONG.tracks[0].ctl}]});
+  await A.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const mid = await folderBytes(A, KEY);
+  assert.ok(mid, "published");
+  const pub = JSON.parse(A.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...mid])}).buffer, {trust: true}).tracks[0].ctl)`));
+  assert.deepEqual(pub, CTL_SONG.tracks[0].ctl, "the published .mid carries every controller");
+});
+
+// a spy on every node the synth makes: _ctlNodes[id] = node, _ctlLog = [id, param, kind, value, time]
+function ctlSpy(ctl, voice = "square") {
+  run(`ensureAudio(); playing = true; playRate = 1; songKey = "midi/test.mid"; chip.key = null; chip.pcm = null; chip.stream = null;
+       song.tracks = [{name: "lead", voice: ${JSON.stringify(voice)}, notes: [], ctl: ${JSON.stringify(ctl)}}]; trackState = [{muted: false, solo: false}];
+       trackGains = []; trackPanners = []; reverbBus = new WeakMap();
+       if (!globalThis._ctlReal) globalThis._ctlReal = {g: audio.createGain.bind(audio), p: audio.createStereoPanner.bind(audio), o: audio.createOscillator.bind(audio), b: audio.createBufferSource.bind(audio), c: audio.createConvolver.bind(audio)};
+       _ctlLog = []; _ctlNodes = {}; _ctlN = 0;
+       const wrap = (kind, mk, params) => () => {
+         const n = mk(), id = kind + (++_ctlN);
+         n._id = id; n._conn = []; n._stops = [];
+         n.connect = x => { n._conn.push(x); return x; };
+         n.stop = t => { n._stops.push(+t); };
+         for (const pn of params) n[pn] = {_id: id + "." + pn, value: 0, cancelScheduledValues() {},
+           setValueAtTime: (v, t) => { _ctlLog.push([id, pn, "set", +(+v).toFixed(4), +(+t).toFixed(4)]); },
+           linearRampToValueAtTime: (v, t) => { _ctlLog.push([id, pn, "lin", +(+v).toFixed(4), +(+t).toFixed(4)]); },
+           exponentialRampToValueAtTime: (v, t) => { _ctlLog.push([id, pn, "exp", +(+v).toFixed(4), +(+t).toFixed(4)]); }};
+         _ctlNodes[id] = n;
+         return n; };
+       audio.createGain = wrap("g", _ctlReal.g, ["gain"]);
+       audio.createStereoPanner = wrap("p", _ctlReal.p, ["pan"]);
+       audio.createOscillator = wrap("o", _ctlReal.o, ["frequency", "detune"]);
+       audio.createBufferSource = wrap("b", _ctlReal.b, ["playbackRate", "detune"]);
+       audio.createConvolver = wrap("c", _ctlReal.c, []);
+       trackGain(0);`);
+}
+function ctlSpyOff() {
+  run(`Object.assign(audio, {createGain: _ctlReal.g, createStereoPanner: _ctlReal.p, createOscillator: _ctlReal.o, createBufferSource: _ctlReal.b, createConvolver: _ctlReal.c});
+       playing = false; song.tracks = []; trackState = []; trackGains = []; trackPanners = [];`);
+}
+const ctlCalls = (pred) => val(`_ctlLog`).filter(pred);
+
+test("MIDI playback: CC7 × CC11 ramp the note's gain at the event time (never a step); pan events ramp a panner; a song with no controllers schedules exactly as before", () => {
+  installSong(); // 120 bpm to tick 960 (480 ticks = 0.5 s)
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  ctlSpy([]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  assert.deepEqual(Object.keys(val(`_ctlNodes`)).filter(k => k !== "g1" && k !== "p2").map(k => k[0]).sort(), ["g", "o"], "no controllers: one gain, one oscillator — the old graph");
+  ctlSpyOff();
+  ctlSpy([{t: 0, ch: 0, c: 7, v: 100}, {t: 0, ch: 0, c: 11, v: 127}, {t: 480, ch: 0, c: 7, v: 50}, {t: 0, ch: 0, c: 10, v: 0}, {t: 480, ch: 0, c: 10, v: 127}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  const first = ctlCalls(c => c[1] === "gain" && c[2] === "set" && c[3] === +(100 / 127).toFixed(4) && c[4] === W);
+  assert.equal(first.length, 1, "one controller gain node: " + JSON.stringify(val(`_ctlLog`)));
+  const cg = first[0][0];
+  const cgCalls = ctlCalls(c => c[0] === cg);
+  assert.deepEqual(cgCalls[0], [cg, "gain", "set", +(100 / 127).toFixed(4), W], "CC7 100 × CC11 127 at the onset");
+  assert.ok(cgCalls.some(c => c[2] === "lin" && c[3] === +(50 / 127).toFixed(4) && Math.abs(c[4] - (W + 0.5)) < 1e-3), "a ramp landing on CC7 50 at tick 480 (0.5 s)");
+  assert.ok(cgCalls.some(c => c[2] === "set" && Math.abs(c[4] - (W + 0.5 - 0.015)) < 1e-3), "…starting 15 ms before it: ramped, not stepped");
+  const pan = ctlCalls(c => c[1] === "pan" && c[0] !== "p2");
+  assert.equal(pan[0][3], -1, "pan starts hard left (CC10 0)");
+  assert.ok(pan.some(c => c[2] === "lin" && c[3] === 1 && Math.abs(c[4] - (W + 0.5)) < 1e-3), "…and ramps hard right at tick 480");
+  assert.equal(val(`_ctlNodes["${cg}"]._conn[0]._id`), pan[0][0], "gain → panner → track");
+  // a track: directive pan wins over pan events, as over midiPan
+  run(`_ctlLog = []; song.tracks[0].pan = 0.25; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1); delete song.tracks[0].pan;`);
+  assert.equal(ctlCalls(c => c[1] === "pan").length, 0, "the directive's pan: no per-note panner");
+  // controllers on another channel don't touch this note
+  run(`_ctlLog = []; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 5}, ${W}, 1);`);
+  assert.equal(ctlCalls(c => c[1] === "pan").length, 0, "channel 6's note ignores channel 1's controllers");
+  ctlSpyOff();
+});
+
+test("MIDI playback: pitch bend detunes the oscillator (RPN 0 range, ±2 by default); CC1 adds a 5.5 Hz vibrato on detune; a sampled voice bends too", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  ctlSpy([{t: 0, ch: 0, c: 101, v: 0}, {t: 0, ch: 0, c: 100, v: 0}, {t: 0, ch: 0, c: 6, v: 12}, {t: 240, ch: 0, c: "pb", v: 8191}, {t: 480, ch: 0, c: "pb", v: -8192}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  const det = ctlCalls(c => c[1] === "detune");
+  assert.deepEqual(det[0].slice(2), ["set", 0, W], "no bend at the onset");
+  assert.ok(det.some(c => c[2] === "lin" && c[3] === 1200 && Math.abs(c[4] - (W + 0.25)) < 1e-3), "full bend up at tick 240 = +12 semitones (RPN 0 = 12): " + JSON.stringify(det));
+  assert.ok(det.some(c => c[2] === "lin" && c[3] === -1200 && Math.abs(c[4] - (W + 0.5)) < 1e-3), "full bend down at tick 480 = −12 semitones");
+  ctlSpyOff();
+  ctlSpy([{t: 120, ch: 0, c: "pb", v: -8192}, {t: 0, ch: 0, c: 1, v: 127}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  assert.ok(ctlCalls(c => c[1] === "detune").some(c => c[3] === -200), "no RPN: the GM default ±2 semitones");
+  const lfo = val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o" && n.frequency.value === 5.5).map(n => n._id)`);
+  assert.equal(lfo.length, 1, "one 5.5 Hz LFO oscillator");
+  assert.equal(val(`(() => { const lg = _ctlNodes["${lfo[0]}"]._conn[0]; return lg._conn[0]._id.endsWith(".detune"); })()`), true, "LFO → depth → the voice's detune");
+  assert.ok(ctlCalls(c => c[1] === "gain" && c[3] === 50).length >= 1, "mod wheel 127 = ±50 cents of vibrato");
+  ctlSpyOff();
+  // mod wheel at 0 builds no LFO
+  ctlSpy([{t: 0, ch: 0, c: 1, v: 0}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k[0] === "o").length`), 1, "CC1 = 0: no vibrato oscillator");
+  ctlSpyOff();
+  // a sampled voice (FluidR3) bends its buffer source
+  ctlSpy([{t: 240, ch: 0, c: "pb", v: 8191}], "sf-piano");
+  run(`sfBank.acoustic_grand_piano = {raw: null, buffers: {60: audio.createBuffer(1, 10, 44100)}, pending: {}, load: Promise.resolve()}; _ctlLog = [];
+       scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1); delete sfBank.acoustic_grand_piano;`);
+  assert.ok(ctlCalls(c => c[0][0] === "b" && c[1] === "detune").some(c => c[3] === 200), "the sample's detune bends +2 semitones");
+  ctlSpyOff();
+});
+
+test("MIDI playback: CC64 holds a note-off while the pedal is down (until it lifts, capped at 8 s); a pedal pressed after the note ends doesn't", () => {
+  installSong(); // tick 960 = 1.0 s, then 240 bpm: tick 1440 = 1.25 s
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  ctlSpy([{t: 0, ch: 0, c: 64, v: 127}, {t: 1440, ch: 0, c: 64, v: 0}]);
+  run(`scheduleNote(0, {t: 0, d: 480, p: 60, v: 100, ch: 0}, ${W}, 0.5)`);
+  const osc = val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o").map(n => n._stops)`);
+  assert.ok(Math.abs(osc[0][0] - (W + 1.25 + 0.05)) < 1e-3, "rings to the pedal lift at 1.25 s: " + JSON.stringify(osc));
+  const g = ctlCalls(c => c[1] === "gain" && c[3] === 0 && c[2] === "lin");
+  assert.ok(g.some(c => Math.abs(c[4] - (W + 1.25)) < 1e-3), "the release lands at the lift, not the written end");
+  ctlSpyOff();
+  ctlSpy([{t: 0, ch: 0, c: 64, v: 127}]); // never lifted
+  run(`scheduleNote(0, {t: 0, d: 480, p: 60, v: 100, ch: 0}, ${W}, 0.5)`);
+  assert.ok(Math.abs(val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o")[0]._stops[0]`) - (W + 0.5 + 8 + 0.05)) < 1e-3, "a pedal never lifted: capped at 8 s past the note");
+  ctlSpyOff();
+  ctlSpy([{t: 480, ch: 0, c: 64, v: 127}, {t: 1440, ch: 0, c: 64, v: 0}]); // pressed exactly as the note lets go
+  run(`scheduleNote(0, {t: 0, d: 480, p: 60, v: 100, ch: 0}, ${W}, 0.5)`);
+  assert.ok(Math.abs(val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o")[0]._stops[0]`) - (W + 0.5 + 0.05)) < 1e-3, "pedal down at the note's own end: not held");
+  ctlSpyOff();
+});
+
+test("MIDI playback: CC91 sends to ONE shared reverb bus, built lazily only when a send is above 0, post-fader (mute silences it)", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  ctlSpy([{t: 0, ch: 0, c: 91, v: 0}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1)`);
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k[0] === "c").length`), 0, "CC91 = 0: no reverb built");
+  ctlSpyOff();
+  ctlSpy([{t: 0, ch: 0, c: 91, v: 64}]);
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1); scheduleNote(0, {t: 960, d: 480, p: 62, v: 100, ch: 0}, ${W + 1}, 0.25);`);
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k[0] === "c").length`), 1, "two notes, one convolver");
+  assert.equal(val(`!!trackGains[0]._send && trackGains[0]._send._conn[0]._id[0] === "c"`), true, "the track's send feeds the convolver");
+  assert.ok(ctlCalls(c => c[1] === "gain" && c[2] === "set" && c[3] === +(64 / 127).toFixed(4)).length === 2, "each note's send level = CC91 / 127");
+  run(`trackState[0].muted = true; updateTrackGains();`);
+  assert.equal(val(`_ctlLog.filter(c => c[0] === trackGains[0]._send._id && c[2] === "set").pop()[3]`), 0, "muted: the send's fader is 0 too");
+  run(`trackState[0].muted = false;`);
+  ctlSpyOff();
+});
+
+test("MIDI playback: never double-applied — a game instrument voice ignores the controllers; the console voice is untouched; a tap preview plays plain", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  const CTL = [{t: 0, ch: 0, c: 7, v: 40}, {t: 0, ch: 0, c: "pb", v: 4096}, {t: 0, ch: 0, c: 91, v: 100}, {t: 0, ch: 0, c: 1, v: 100}, {t: 0, ch: 0, c: 10, v: 0}, {t: 480, ch: 0, c: 10, v: 127}];
+  ctlSpy(CTL, "game:ctltest:inst1");
+  run(`(() => { gameLibSync.set("ctltest", {lib: {instruments: [{id: "inst1"}]}, samples: {}}); const ipS = instPlaySync; instPlaySync = {playNote: () => new Float32Array(64)};
+       try { scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ch: 0}, ${W}, 1); }
+       finally { instPlaySync = ipS; gameLibSync.delete("ctltest"); gameNoteCache.clear(); } })()`);
+  assert.deepEqual(val(`Object.keys(_ctlNodes).filter(k => k !== "g1" && k !== "p2").map(k => k[0])`), ["b"], "one buffer source straight to the track — no controller gain, panner, LFO or reverb");
+  assert.equal(ctlCalls(c => c[1] === "detune" || c[1] === "pan").length, 0, "no bend, no pan events");
+  ctlSpyOff();
+  const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
+  const game = src.slice(src.indexOf("export function scheduleGameNote"), src.indexOf("\nexport function", src.indexOf("export function scheduleGameNote") + 10));
+  assert.ok(game.length > 100 && !/noteCtl|ctlRoute|ctlPitch|\.ctl\b/.test(game), "scheduleGameNote never reads the controllers");
+  const sched = src.slice(src.indexOf("export function scheduleNote"), src.indexOf("\nscheduleNote = prof"));
+  assert.ok(sched.indexOf("chipActive()") < sched.indexOf("playSynthVoice("), "the console voice returns before the synth path");
+  assert.equal((src.match(/noteCtl\(/g) || []).length, 2, "one definition, one call: playSynthVoice");
+  // a preview (a tap) plays plain
+  ctlSpy(CTL);
+  run(`scheduleNote(0, {p: 60, v: 90, ch: 0, _preview: true}, ${W}, 0.3)`);
+  assert.equal(val(`Object.keys(_ctlNodes).filter(k => k !== "g1" && k !== "p2").length`), 2, "a tap: one gain, one oscillator");
+  ctlSpyOff();
+});
+
+test("Swell / Swell–fade make room: a note too loud to rise starts at 73 so the peak lands on 127 — one undo restores the velocity; quiet notes and Fade are untouched", () => {
+  installAskEditSong();
+  run(`song.tracks[0].notes[3].v = 120; song.tracks[0].notes[2].v = 50; multiSel = [{ti: 0, ni: 2}, {ti: 0, ni: 3}]; multiSelKey = new Set(["0:2", "0:3"]); editUndo = []; editRedo = [];`);
+  run(`__room = {lowered: 0}; setSelectionShape("swell", undefined, null, __room);`);
+  assert.equal(val(`__room.lowered`), 1, "one note needed room");
+  assert.deepEqual(val(`[2, 3].map(i => { const n = song.tracks[0].notes[i]; return [n.v, Math.round(shapeLevel(n, n.env[0]))]; })`), [[50, 88], [73, 127]], "the loud note now starts at 73 and swells to 127; the quiet one keeps its velocity");
+  assert.ok(val(`song.tracks[0].notes[3].env[0].r`) > 1.7, "the shape still rises by the full ratio");
+  assert.equal(val(`editUndo.length`), 1, "one undo step");
+  run(`editUndoPop();`);
+  assert.deepEqual(val(`[song.tracks[0].notes[3].v, song.tracks[0].notes[3].env === undefined]`), [120, true], "undo restores the velocity and clears the shape");
+  run(`__room = {lowered: 0}; setSelectionShape("swell_fade", undefined, null, __room);`);
+  assert.deepEqual(val(`[__room.lowered, song.tracks[0].notes[3].v, Math.round(shapeLevel(song.tracks[0].notes[3], song.tracks[0].notes[3].env[0]))]`), [1, 73, 127], "Swell–fade makes room too");
+  run(`editUndoPop(); __room = {lowered: 0}; setSelectionShape("fade", undefined, null, __room);`);
+  assert.deepEqual(val(`[__room.lowered, song.tracks[0].notes[3].v]`), [0, 120], "Fade never touches velocity");
+  // the Shape chip's status line says so
+  const src = readFileSync(new URL("../src/ui/note-editor.js", import.meta.url), "utf8");
+  assert.match(src, /velocity dropped to " \+ SHAPE_ROOM_V \+ " to make room/);
 });

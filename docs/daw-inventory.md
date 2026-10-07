@@ -224,7 +224,7 @@ key, meter or chord for him unless asked.
 | Legato / fill gaps, humanize `[gk]` | MISSING | Maybe, S (legato); No (humanize — raw takes already keep feel) |
 | Chord insert, progression library | HAS: ♫ chords, 24 emotion-tagged progressions in Roman numerals `[HELP "Insert chord"]` | — (ahead) |
 | Note repeat / duplicate | HAS: ⌘D repeat, copy/paste with bands | — |
-| MIDI CC / pitch bend / aftertouch lanes `[doc]` | PARTIAL: duty (CC70) and envelope decay are stored/written, not editable; a per-note volume shape (poly aftertouch inside the note) is editable since 2026-10-06 (Shape presets + velocity-lane points) | Maybe, M — see Automation |
+| MIDI CC / pitch bend / aftertouch lanes `[doc]` | PARTIAL: duty (CC70) and envelope decay are stored/written, not editable; a per-note volume shape (poly aftertouch inside the note) is editable since 2026-10-06 (Shape presets + velocity-lane points); pitch bend, CC7/11/64/1/91, pan changes and program changes are kept through every save and PLAYED by the synth since 2026-10-06 (MIDI playback v2) — no lane to draw or edit them yet | Maybe, M — see Automation |
 | Score editing on the same data | HAS: engraved score, pencil/erase on staves `[HELP "Score entry"]` | — (ahead; Logic iPad has no score editor) |
 
 ### On-screen instruments
@@ -259,7 +259,7 @@ key, meter or chord for him unless asked.
 | Logic iPad / others | Night Roll today | Worth it? |
 |---|---|---|
 | Mixer: fader, pan, M/S, meters, sends, inserts | HAS: Mixer window with fader, pan, M/S/H, meter, master, reorder `[HELP "Mixer window"]` | — |
-| EQ, compressor, reverb, AUv3 plug-ins | MISSING | No for chip truth; Maybe, M — one room reverb send + master limiter for his compositions |
+| EQ, compressor, reverb, AUv3 plug-ins | PARTIAL: one shared room reverb, fed by a file's CC91 send on the synth path (2026-10-06); no reverb control of its own, no EQ/compressor/plug-ins | No for chip truth; Maybe, M — one room reverb send + master limiter for his compositions |
 | Stereo pan per track | HAS | — |
 
 ### Automation

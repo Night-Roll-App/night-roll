@@ -66,6 +66,7 @@ import { deleteRepoFile } from "../sync/publish.js";
 import { updateManifest } from "../sync/publish.js";
 import { manifestPlace } from "../sync/publish.js";
 import { initCatalog } from "../model/catalog.js";
+import { ctlCopy } from "../midi/parse.js";
 
 // roots the user cannot save into
 export function folderChoices() { // the folders a Save can go to: this device's plus the repo's, own folders only, last used first
@@ -190,6 +191,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
     tempos: S.song.tempos.map(t => ({...t})),
     tracks: S.song.tracks.map((tr, ti) => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // a capture's own CC10 — Save As shouldn't silently strip it
+      ...ctlCopy(tr), // nor its bends, volumes, sustain, reverb sends
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
       notes: (S.song.rawNotes ? S.song.rawNotes[ti] : tr.notes) // raw: chop stays a view

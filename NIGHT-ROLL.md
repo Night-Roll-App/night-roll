@@ -1733,6 +1733,7 @@ sections are these modules now.
 - `audio/transport.js` gained `playSec` this step (unlisted — see chip-stream.js/metronome.js above, both needed it to resolve). Its own step-7 entry's "none yet split" list for `play`/`stop`/the play-gate/album orchestration is now PARTIALLY stale: `chip.*`/`clipLen`/`met.*` are real exports now (chip.js/clips.js/metronome.js, this step), so that specific blocker clause has cleared — but `play`/`stop`/`playGate*`/the album functions remain in app.js regardless, now blocked by `document.getElementById`/`setControl`/`setPlayBtn`/`setInfo`/`loadSong`/`S.CATALOG` (ui/chrome.js step 14, model step 9) instead. No function moved from this cluster this step; see open-items.md's corrected QUEUED entry.
 - `model/song.js` — `editableSong` (the one editability test every "is this mine to edit" check now calls, P1 docs/provenance-plan.md), plus `estimateKey`/`checkKeyVsFile` (+ `keyEstimateSig`/`tonicPcFromName`/`KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`) — the Krumhansl-Schmuckler key estimate and the declared-key-vs-file check, relocated here in step 9 (2026-10-03) after steps 4-5 found they can never reach `theory/key.js` (layer 0 can't import `trackIsDrums`/`barTicks`, genuinely layer 2). **`loadSong`/`loadSongInner`/`setSong`/`computeSongEnd` — this file's whole namesake content — did NOT move**: the first three are saturated with `play`/`stop`/`setInfo`/`fitView`/`renderTrackbar`/`buildScoreModel`/`draw`/ask-panel calls (audio/render/ui/ask, none yet split); `computeSongEnd` alone is blocked by `clipEndTick` (`audio/clips.js`, layer 3 — permanent, clip geometry is genuinely audio-layer). All four stay in app.js bare-name reachable. See docs/split-plan.md "Deviations (9)". **Step 10 (2026-10-03) added `keyNameAt`/`sfDeclaredAt`/`sfDeclaredAtRaw`/`sfShownAt`/`sfAt`** (unlisted by any step's table): "what key/scale-factor does the user's declared annotation say governs this tick, else the Normal estimate" — the same family as `estimateKey`/`checkKeyVsFile` already here, reading `S.keyRegions`/`S.previewSf` directly plus `appMode()` (new import, platform/mode.js, layer 1) and `estimateKey()` (same file). All five were genuinely blocker-free (pure, or blocked only by things this file already has); `gen/bassist.js`'s `bsInferTimeline`/`bsChordTimeline` and `gen/analysis.js`'s `computeAnalysisLayer` needed them. `sfShownAt` was explicitly flagged as destined for `platform/mode.js` back in step 4's Deviations, written when `estimateKey` itself was still unmovable; once step 9 landed `estimateKey` here, `model/song.js` — not `platform/mode.js` — became the only layer-≤2 home that doesn't need an upward import. See docs/split-plan.md "Deviations (10)".
 - `model/selection.js` — `selEditItems`, `clipboardHas`, `clipSummary`: the three selection-adjacent reads with no call into unsplit code (step 9, 2026-10-03). **Every actual mutator — `selEditApply`, `nudgeSelection`, `resizeSelection`, quantize/split/join, copy/paste — did NOT move**: all of them bottom out in `selEditApply`, which calls `saveEdits()` (model/edits.js's own SAFETY-blocked function, step 5), `computeSongEnd()` (blocked, above) and `draw()`/`buildScoreModel()` (render, step 11). The plan's own named targets for this file stay in app.js almost entirely.
+- MIDI playback v2 (2026-10-06): `midi/parse.js` also owns the channel-controller helpers (`CTL_CCS`, `ctlBytes`, `ctlCopy`, `ctlIndex`/`ctlList`/`ctlAt`/`ctlNext`); `audio/voices.js` plays them (`noteCtl`/`ctlRoute`/`ctlPitch`/`ctlRamp`/`ctlFree`); `audio/engine.js` holds the reverb bus (`reverbIn`/`reverbImpulse`/`trackSend`). See "MIDI support — what the synth plays".
 - `model/noteshape.js` (2026-10-06) — a note's volume shape (`n.env`): presets, `setSelectionShape` (one undo through `selEditApply`), `shapePoints`/`shapeLevel`/`shapeFactorAt` (read by `audio/voices.js`'s `noteShapeRamp` and `ui/vellane.js`), `shapeSnap`/`shapeRestore` (the undo log). See "Volume shape inside a note".
 - `model/provenance.js` — the P1 "one origin per song, one rule table" machinery (docs/provenance-plan.md), step 9 (2026-10-03): `isCaptureKey`, `ownFolderPath`, `isComposition`, `isCompositionKey` (unlisted — `publishSong`'s own predicate for a non-open key, `isComposition`'s blocker-free twin), `bakesTempo`/`bakesMeter`, `hasProvenanceNote`, `originOf`/`originFor`/`pendingOrigin(Key)`/`setOrigin`, `RULES`/`rulesFor`, `canEditMusic`, `NR_DIR`/`COMP_DIR`/`PROVENANCE_RE`/`READONLY_DIRS`/`COMP_ALBUMS`/`RESERVED_FOLDERS`, `albumTitleFor`, `slugify`, `untitledKey`, `isUnsaved`, `folderFromInput`, `chosenFolder` — plus `albumMetaCache`/`albumMetaFor` (relocated HERE from `audio/chip.js`, not from app.js — step 8 had put them in chip.js because chip.js's own callers needed them there, flagging the exact risk this step hit: `ownFolderPath` could never import them at layer 3). This one relocation cleared three separate permanent-looking blocks at once — see `model/catalog.js` and `audio/chip.js`'s own entries. **`saveSongAs`/`renameLocalKeys`/`openSaveForm` did NOT move** (each reaches `finalizeNotes`/`draw`/`setInfo`/`updateSongBtn`, none yet split) despite `saveSongAs` being the plan's own named target for this file. See docs/split-plan.md "Deviations (9)".
 - `model/album-order.js` — `setAlbumOrderPref`, `slugOfPath`, `albumTrackMap`, `albumHasTrackData`, `albumOrder`, `albumEffectiveOrder`, `albumOrderControl` (step 9, 2026-10-03): the Game order/A–Z switch, entirely clean — this step's one file whose real content matches the plan's table exactly, nothing left behind.
@@ -7237,7 +7238,13 @@ back to 8 by 2.67, held. `src/model/noteshape.js` (layer 2) is the model.
 - **UI.** ⋯ → Shape (and Edit ▾ → Shape…) opens #shapesheet: Swell
   (1.75× at the end), Fade (¼), Swell–fade (1.75× at 45%, ½ at the end),
   Flat (clears env and ve) — `setSelectionShape`, one undo, scaled to
-  each note's length, the peak capped so the stored level fits 127. The
+  each note's length, the peak capped so the stored level fits 127.
+  Swell / Swell–fade MAKE ROOM (2026-10-06, MIDI playback v2): a note
+  whose velocity is above `SHAPE_ROOM_V` (73 = 127 ÷ 1.75) starts at 73
+  so the full swell still lands on 127; the same undo step restores the
+  velocity, `setSelectionShape(..., out)` reports `out.lowered`, and the
+  status line / Ask reply say how many notes dropped. Fade/Flat never
+  touch velocity. The
   velocity lane draws a shaped note's line across its width; with ONE note
   selected its points get gold handles and a drag moves one in time and
   level (`S.shapeDrag`, one undo through selEditApply). Not yet: tap the
@@ -7255,6 +7262,86 @@ scoping; presets/undo/redo/copy/move/draft→publish; Ask op; lane drag);
 tests/nsf.test.mjs "volume shape capture …" (synthetic swell, decay-only
 unchanged, next-note setup, and the real FF1 Shop rip when ff1.nsf is
 present — `FF1_NSF=<path>` to point at the vault copy).
+
+## MIDI support — what the synth plays (`tr.ctl`, MIDI playback v2, 2026-10-06)
+
+Josh approved "MIDI playback v2": the synth path honours what a normal MIDI
+player does with a file's channel controllers. Before this, parseMidi kept
+bend/CCs/programs only as a foreign file's raw leftovers (phase 2), the synth
+ignored them, and the publish path (parse → draft → write, run WITHOUT
+`{foreign}`) dropped them outright (docs/plans/2026-10-06-capture-fidelity-
+audit.md §2 "publish-path loss" — e.g. N64 programs that `makeMidiTracks`
+writes never reached a published file).
+
+- **Data.** `tr.ctl = [{t, ch, c, v}]`, ticked, per track, in file order
+  (src/midi/parse.js "channel controllers"). `c` is a CC number in
+  `CTL_CCS` (1 mod wheel, 7 volume, 11 expression, 64 sustain, 91 reverb
+  send, 6/38/98/99/100/101 the RPN/NRPN machinery that sets the bend
+  range) or 10 (pan) when a track has MORE than one CC10; `"pb"` = pitch
+  bend, signed −8192…8191; `"pg"` = program change. One CC10 stays
+  `midiPan` exactly as before (written at tick 0). Owned foreign or not;
+  CC70 stays duty for our own files. A track with no notes keeps its
+  controllers as raw phase-2 leftovers (never a Night Roll track).
+- **In the .mid.** Standard events at their ticks (E0 bend, C0 program,
+  B0 CCs) on the event's own channel (the notes' drum-channel rule), sort
+  order 0.75 — after note-offs and duty, before note-ons, after a foreign
+  track's raw leftovers at the same tick. Both writers emit them and stay
+  byte-identical (writeMidi imports `ctlBytes`; writeSongMidi has the same
+  three lines). No album .mid carried any of these events (all 3,251
+  scanned 2026-10-06), so every file reads and writes back as before; a
+  36-file read-only sample across six consoles is pinned by test (FF1's
+  dump-all files never round-tripped byte-identical, before or after).
+- **Every hop carries it** (`ctlCopy(tr)` next to every `midiPan` copy —
+  a test counts them): draftTracks (draft + fingerprint), openDraftDoc,
+  Save As, the dropped-MIDI and import-hub drafts, the capture draft, and
+  publishSong's re-encode. `ctlIndex(tr)` (cached per ctl array) builds
+  per-channel lookups `"ch:c" → [{t, v}]` plus `"ch:br"`, the bend range
+  from RPN 0 (CC101/100 = 0, then CC6 semitones + CC38 cents; ±2 default).
+- **Playback — synth path only** (src/audio/voices.js `noteCtl` /
+  `ctlRoute` / `ctlPitch`, called once, from playSynthVoice). Per NOTE, by
+  the note's channel, so a format-0 file's channels each follow their own:
+  - gain = velocity × shape × CC7/127 × CC11/127 on a per-note gain after
+    the envelope (GM defaults until the file sets them: volume 100,
+    expression 127; a channel with neither gets no node at all);
+  - pitch bend → `detune` (cents) on every oscillator/buffer source of the
+    voice (piano's pair, bell's modulator too); a buffer source without
+    `detune` (old WebKit) bends its `playbackRate`;
+  - CC1 → a 5.5 Hz sine LFO into `detune`, depth CC1/127 × 50 cents; none
+    built while the wheel is at 0;
+  - CC64 → a note that lets go while the pedal is down (value ≥ 64 before
+    its end tick) rings until the next lift, capped at 8 s; a pedal pressed
+    AT the note's end doesn't hold it;
+  - CC91 → a per-note send (post-volume) into the track's send, which
+    hangs off trackGain (`tg._send`, so stop/reorder/bounce take it along;
+    updateTrackGains moves it with the fader and mute) and feeds ONE shared
+    ConvolverNode per master (`S.reverbBus`, a WeakMap keyed by the master
+    gain, so a bounce's offline context gets its own). Made lazily the
+    first time a send is above 0 — a song without CC91 never builds it; no
+    new AudioContext (iOS keeps the one it has); the impulse is generated
+    (stereo noise × a 1.8 s cubic decay), return gain 0.5;
+  - pan events (CC10 ×2+) → a per-note StereoPanner; the `track:`
+    directive's pan wins (no panner), as it does over midiPan.
+  Every change is a 15 ms linear ramp landing ON the event's time (dense
+  events become a straight line between them), never a step. Times come
+  from the tempo map anchored to the note's end, like shapes, so chased
+  notes join at the right value.
+- **Never applied twice.** scheduleGameNote (game: and sf2: instruments)
+  never reads `ctl` (test); the console voice returns before the synth
+  path; a tap preview plays plain. A game voice that falls back to the
+  synth while loading does follow them (it IS the synth then).
+- **Not played (kept in the file only).** Program change (no GM →
+  voice table exists; the track's voice decides — do not invent one),
+  channel pressure (0xD0) and every other CC (raw, foreign only), NRPN
+  data, bank select, CC121/123. Hear the MIDI (View ▾ → Mode) is what
+  makes a capture play this path.
+
+Tests: tests/night-roll.test.mjs "MIDI controllers: …" (each event round
+trip + both writers + fixed point + single-pan; the 36-file corpus; the
+capture-shaped publish re-encode; every hop incl. a real publishSong) and
+"MIDI playback: …" (gain/pan ramps on spied params, bend + RPN range +
+vibrato + sampled bend, sustain hold/cap, reverb bus once/lazy/post-fader,
+no double-apply on a game voice, preview plain), plus "Swell / Swell–fade
+make room".
 
 ## iPad CoreMIDI bridge (2026-09-30)
 

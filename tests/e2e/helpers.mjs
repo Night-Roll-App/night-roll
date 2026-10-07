@@ -21,7 +21,7 @@ export async function openApp(page) {
     const param = () => ({ value: 0, setValueAtTime(v) { this.value = v; }, cancelScheduledValues() {},
       linearRampToValueAtTime(v) { this.value = v; }, exponentialRampToValueAtTime(v) { this.value = v; } });
     const node = () => ({ connect() { return node(); }, disconnect() {}, start() {}, stop() {},
-      gain: param(), frequency: param(), buffer: null, type: "sine", playbackRate: param(), // chipStart/chipStreamScheduleChunk set this on a buffer source
+      gain: param(), frequency: param(), buffer: null, type: "sine", playbackRate: param(), detune: param(), // chipStart/chipStreamScheduleChunk set playbackRate on a buffer source; the synth bends detune (MIDI pitch bend)
       addEventListener() {}, setPeriodicWave() {} });
     class FakeCtx {
       constructor() { this.state = "running"; this.sampleRate = 44100; this.destination = node(); this._t0 = performance.now(); }
@@ -33,6 +33,7 @@ export async function openApp(page) {
       createBufferSource() { return node(); }
       createBuffer(ch, len, sr) { return { getChannelData: () => new Float32Array(len || 1) }; }
       createPeriodicWave() { return {}; }
+      createConvolver() { return node(); } // the CC91 reverb bus (audio/engine.js reverbIn)
       createBiquadFilter() { const n = node(); n.frequency = param(); n.Q = param(); n.detune = param(); return n; }
       createDynamicsCompressor() { const n = node(); n.threshold = param(); n.knee = param(); n.ratio = param(); n.attack = param(); n.release = param(); return n; }
       decodeAudioData(buf) { return Promise.resolve({ getChannelData: () => new Float32Array(1), duration: 0.01, length: 1, sampleRate: 44100 }); }

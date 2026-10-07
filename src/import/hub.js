@@ -94,6 +94,7 @@ import { jobsOnChange } from "../model/jobs.js";
 import { idbDraftDelete } from "../platform/storage.js";
 import { fileStatus } from "../ui/chrome.js";
 import { folderFromInput } from "../model/provenance.js";
+import { ctlCopy } from "../midi/parse.js";
 
 // ---- Import hub (docs/import-hub-design.md): File → Import… opens one screen,
 // one section per format, instead of the old <label for="fileinput"> that just
@@ -428,6 +429,7 @@ export function localMidiOpen(parsed, name) {
     tempos: parsed.tempos,
     tracks: parsed.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 in the dropped file — survives to the republished copy
+      ...ctlCopy(tr), // its bends, volumes, sustain, reverb sends, programs too
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits
       notes: tr.notes.map(nt => {
@@ -683,6 +685,7 @@ export function initHub1() {
         tempos: parsed.tempos,
         tracks: parsed.tracks.map(tr => ({name: tr.name,
           ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+          ...ctlCopy(tr),
           ...(tr.offset ? {offset: tr.offset} : {}),
           ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits
           notes: tr.notes.map(nt => {

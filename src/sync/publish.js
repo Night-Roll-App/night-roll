@@ -71,6 +71,7 @@ import { JOB_KINDS } from "../model/jobs.js";
 import { openPubJobSheet } from "../ui/sheets.js";
 import { pubJobOneMotion } from "../ui/sheets.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
+import { ctlCopy } from "../midi/parse.js";
 
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
   if (folderActive()) { await folderWrite(path, text); return {ok: true, status: 200}; }
@@ -429,6 +430,7 @@ export async function publishSong(key, h, report) {
              ...(bakesMeter(key) ? {timesigs: bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], resolved)} : {}),
              tracks: d.tracks.map(tr => ({name: tr.name,
                ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+               ...ctlCopy(tr),
                ...(tr.offset ? {offset: tr.offset} : {}),
                ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
                notes: tr.notes.map(n => ({...n}))}))};

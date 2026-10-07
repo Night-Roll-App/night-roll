@@ -87,6 +87,7 @@ import { resizeSelection } from "../model/selection.js";
 import { shapeSnap } from "../model/noteshape.js";
 import { shapeRestore } from "../model/noteshape.js";
 import { setSelectionShape } from "../model/noteshape.js";
+import { SHAPE_ROOM_V } from "../model/noteshape.js";
 import { SHAPE_PRESETS } from "../model/noteshape.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
@@ -1090,10 +1091,12 @@ export function initNoteEditor6() {
         b.textContent = label;
         b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
         b.addEventListener("click", () => {
-          const k = setSelectionShape(key);
+          const room = {lowered: 0};
+          const k = setSelectionShape(key, undefined, null, room);
           document.getElementById("shapesheet").classList.remove("on");
           setInfo(!k ? "those notes are too short to shape"
-            : (key === "flat" ? "cleared the shape on " : label + " on ") + k + " note" + (k === 1 ? "" : "s") + " (one undo undoes)");
+            : (key === "flat" ? "cleared the shape on " : label + " on ") + k + " note" + (k === 1 ? "" : "s") +
+              (room.lowered ? " — " + room.lowered + " started too loud to rise, so " + (room.lowered === 1 ? "its" : "their") + " velocity dropped to " + SHAPE_ROOM_V + " to make room" : "") + " (one undo undoes)");
         });
         row.appendChild(b);
       }

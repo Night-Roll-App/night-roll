@@ -27,6 +27,11 @@ import { chipNoteSlice } from "./chip-stream.js";
 import { tickToSec } from "../midi/parse.js";
 import { shapePoints } from "../model/noteshape.js";
 import { shapeFactorAt } from "../model/noteshape.js";
+import { ctlIndex } from "../midi/parse.js";
+import { ctlList } from "../midi/parse.js";
+import { ctlAt } from "../midi/parse.js";
+import { ctlNext } from "../midi/parse.js";
+import { trackSend } from "./engine.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -241,12 +246,132 @@ export function noteShapeRamp(param, n, amp, end, atkEnd, relStart) {
   param.linearRampToValueAtTime(amp * fAt(relStart), relStart);
   return true;
 }
+// ---- channel controllers on the synth path (NIGHT-ROLL.md "MIDI support").
+// What a normal MIDI player does with a track's tr.ctl (src/midi/parse.js):
+// CC7 × CC11 multiply the note's gain, pitch bend detunes it (RPN 0 range,
+// ±2 by default), CC1 adds a 5.5 Hz vibrato, CC64 holds note-offs while the
+// pedal is down, CC91 sends to the shared reverb bus, pan events move a
+// panner. Each change is a short ramp (CTL_RAMP) landing on the event's
+// time, never a step. Per NOTE, keyed by the note's channel, so a format-0
+// file's sixteen channels each follow their own controllers. Scoped like
+// `ve`/shapes on the other side: only playSynthVoice reads them — a game or
+// soundfont instrument (scheduleGameNote) and the console voice play the
+// capture's own levels, and applying them there would count them twice.
+export const CTL_RAMP = 0.015, VIB_HZ = 5.5, VIB_CENTS = 50, SUSTAIN_CAP_SEC = 8;
+// null when the track has no controllers (or a tap preview): the note then
+// schedules exactly as it always did
+export function noteCtl(ti, n, when, durSec) {
+  if (n._preview || !S.song || !(n.d > 0) || n.t === undefined) return null;
+  const tr = S.song.tracks[ti];
+  const ix = ctlIndex(tr);
+  if (!ix) return null;
+  const ch = n.ch !== undefined ? n.ch : ix.ch0;
+  const anchor = when + durSec; // the audio time of the note's end tick (a chased note's durSec is the remainder)
+  const endTick = n.t + n.d, eSec = tickToSec(S.song, endTick);
+  const secOf = tick => anchor + tickToSec(S.song, tick) - eSec;
+  let end = anchor;
+  const ped = ctlList(ix, ch, 64);
+  if (ped && ctlAt(ped, endTick - 1, 0) >= 64) { // the pedal was down before the note let go: it rings until the pedal lifts
+    const up = ped.find(e => e.t >= endTick && e.v < 64);
+    end = Math.min(anchor + SUSTAIN_CAP_SEC, up ? secOf(up.t) : Infinity);
+  }
+  return {tr, ix, ch, t0: n.t, anchor, end, secOf, nodes: []};
+}
+// [{sec, v}]: the value in force at the onset, then each change until the release; null = no such controller
+export function ctlPoints(cx, c, dflt, map) {
+  const L = ctlList(cx.ix, cx.ch, c);
+  if (!L) return null;
+  const pts = [{sec: -Infinity, v: map(ctlAt(L, cx.t0, dflt), cx.t0)}];
+  for (let k = ctlNext(L, cx.t0); k < L.length; k++) {
+    const sec = cx.secOf(L[k].t);
+    if (sec >= cx.end + 0.1) break;
+    pts.push({sec, v: map(L[k].v, L[k].t)});
+  }
+  return pts;
+}
+export function ctlRamp(param, pts, when, stop, conv = x => x) {
+  let k = 0, cur = pts[0].v;
+  while (k + 1 < pts.length && pts[k + 1].sec <= when) cur = pts[++k].v;
+  param.setValueAtTime(conv(cur), when);
+  let last = when;
+  for (k++; k < pts.length && pts[k].sec < stop; k++) {
+    const p = pts[k];
+    if (p.v === cur) continue;
+    param.setValueAtTime(conv(cur), Math.max(last, p.sec - CTL_RAMP));
+    param.linearRampToValueAtTime(conv(p.v), p.sec);
+    cur = p.v; last = p.sec;
+  }
+}
+// the note's way out: g → [CC7×CC11 gain] → [pan events] → trackGain, plus a
+// CC91 send (post-volume, per note — never the track's whole gain, which also
+// carries the console voice) into the track's fader-following reverb send
+export function ctlRoute(cx, ti, when) {
+  if (!cx) return trackGain(ti);
+  const stop = cx.end + 0.1;
+  const L7 = ctlList(cx.ix, cx.ch, 7), L11 = ctlList(cx.ix, cx.ch, 11);
+  const level = tick => (L7 ? ctlAt(L7, tick, 100) : 127) / 127 * (L11 ? ctlAt(L11, tick, 127) : 127) / 127; // GM: volume 100 and expression 127 until the file sets them
+  let volPts = null;
+  if (L7 || L11) {
+    volPts = [{sec: -Infinity, v: level(cx.t0)}];
+    const ticks = [...(L7 || []).slice(ctlNext(L7, cx.t0)), ...(L11 || []).slice(ctlNext(L11, cx.t0))].map(e => e.t).sort((a, b) => a - b);
+    for (const t of ticks) { const sec = cx.secOf(t); if (sec >= stop) break; volPts.push({sec, v: level(t)}); }
+  }
+  const panPts = cx.tr.pan === undefined ? ctlPoints(cx, 10, 64, v => Math.max(-1, Math.min(1, (v - 64) / 63))) : null; // the track: directive's pan wins, as it does over midiPan
+  const sendPts = ctlPoints(cx, 91, 0, v => v / 127);
+  const send = sendPts && sendPts.some(p => p.v > 0 && p.sec < stop);
+  let out = trackGain(ti);
+  if (panPts && S.audio.createStereoPanner) {
+    const p = S.audio.createStereoPanner();
+    ctlRamp(p.pan, panPts, when, stop);
+    p.connect(out); out = p; cx.nodes.push(p);
+  }
+  if (volPts || send) {
+    const cg = S.audio.createGain();
+    if (volPts) ctlRamp(cg.gain, volPts, when, stop); else cg.gain.value = 1;
+    cg.connect(out); out = cg; cx.nodes.push(cg);
+  }
+  if (send) {
+    const bus = trackSend(ti);
+    if (bus) {
+      const sg = S.audio.createGain();
+      ctlRamp(sg.gain, sendPts, when, stop);
+      out.connect(sg); sg.connect(bus); cx.nodes.push(sg);
+    }
+  }
+  return out;
+}
+// bend and mod wheel on the note's sources: detune (cents) where the node has
+// it; an older engine's buffer source without detune bends by playbackRate
+export function ctlPitch(cx, srcs, when) {
+  if (!cx) return;
+  const stop = cx.end + 0.1;
+  const brL = ctlList(cx.ix, cx.ch, "br");
+  const bendPts = ctlPoints(cx, "pb", 0, (v, t) => v / (v >= 0 ? 8191 : 8192) * ctlAt(brL, t, 2) * 100);
+  const modPts = ctlPoints(cx, 1, 0, v => v / 127 * VIB_CENTS);
+  let lg = null;
+  if (modPts && modPts.some(p => p.v > 0 && p.sec < stop)) {
+    const lfo = S.audio.createOscillator();
+    lfo.frequency.value = VIB_HZ;
+    lg = S.audio.createGain();
+    ctlRamp(lg.gain, modPts, when, stop);
+    lfo.connect(lg);
+    lfo.start(when); lfo.stop(stop);
+    cx.nodes.push(lg, lfo);
+  }
+  for (const s of srcs) {
+    if (s.detune) { if (bendPts) ctlRamp(s.detune, bendPts, when, stop); if (lg) lg.connect(s.detune); }
+    else if (bendPts && s.playbackRate) ctlRamp(s.playbackRate, bendPts, when, stop, c => Math.pow(2, c / 1200));
+  }
+}
+export function ctlFree(cx) { if (cx) for (const x of cx.nodes) { try { x.disconnect(); } catch (err) { /* already gone */ } } }
 // the default NES/sampled voice path — used directly above, and as the
 // fallback (with the track's auto voice) when a game instrument can't render
 export function playSynthVoice(ti, n, when, durSec, v) {
+  const cx = noteCtl(ti, n, when, durSec);
   const g = S.audio.createGain();
-  g.connect(trackGain(ti));
-  const end = when + durSec;
+  g.connect(ctlRoute(cx, ti, when));
+  const anchor = when + durSec; // the note's own end: shapes anchor here
+  const end = cx ? cx.end : anchor; // …and a held sustain pedal may ring past it
   const file = sfFileFor(v);
   if (file) { // sampled instrument: the exact recorded pitch, gated to the note length
     const buf = sfEnsure(file).buffers[n.p];
@@ -258,7 +383,8 @@ export function playSynthVoice(ti, n, when, durSec, v) {
       g.gain.setValueAtTime(vel, Math.max(when + 0.01, end - 0.04));
       g.gain.linearRampToValueAtTime(0, end + 0.09); // release past the gate
       src.connect(g);
-      src.onended = () => { try { g.disconnect(); } catch (err) {} }; // free the chain as it dies
+      ctlPitch(cx, [src], when);
+      src.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); }; // free the chain as it dies
       src.start(when);
       src.stop(end + 0.12);
       return;
@@ -280,7 +406,8 @@ export function playSynthVoice(ti, n, when, durSec, v) {
     g.gain.setValueAtTime(amp, Math.max(when + 0.01, end - 0.02));
     g.gain.linearRampToValueAtTime(0, end + 0.03);
     src.connect(g);
-    src.onended = () => { try { g.disconnect(); } catch (err) {} };
+    ctlPitch(cx, [src], when);
+    src.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); };
     src.start(when);
     src.stop(end + 0.06);
     return;
@@ -292,10 +419,11 @@ export function playSynthVoice(ti, n, when, durSec, v) {
     const tau = Math.max(0.35, Math.min(2.4, durSec * 1.2));
     g.gain.setValueAtTime(0, when);
     g.gain.linearRampToValueAtTime(amp, when + 0.006);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.001, amp * Math.exp(-durSec / tau)), end);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.001, amp * Math.exp(-(end - when) / tau)), end);
     g.gain.linearRampToValueAtTime(0, end + 0.05);
     o1.connect(g); o2.connect(g);
-    o2.onended = () => { try { g.disconnect(); } catch (err) {} };
+    ctlPitch(cx, [o1, o2], when);
+    o2.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); };
     o1.start(when); o2.start(when);
     o1.stop(end + 0.1); o2.stop(end + 0.1);
     return;
@@ -318,7 +446,8 @@ export function playSynthVoice(ti, n, when, durSec, v) {
     g.gain.setValueAtTime(amp, Math.max(when + atk, end - 0.06));
     g.gain.linearRampToValueAtTime(0, end + 0.02);
     o.connect(lp); lp.connect(g);
-    o.onended = () => { try { g.disconnect(); lg.disconnect(); } catch (err) {} };
+    ctlPitch(cx, [o], when);
+    o.onended = () => { try { g.disconnect(); lg.disconnect(); } catch (err) {} ctlFree(cx); };
     o.start(when); lfo.start(when);
     o.stop(end + 0.05); lfo.stop(end + 0.05);
     return;
@@ -331,10 +460,11 @@ export function playSynthVoice(ti, n, when, durSec, v) {
     mg.gain.exponentialRampToValueAtTime(f0 * 0.02, when + Math.min(1.2, durSec + 0.4));
     mod.connect(mg); mg.connect(o.frequency);
     g.gain.setValueAtTime(amp, when);
-    g.gain.exponentialRampToValueAtTime(0.001, when + Math.max(0.25, durSec));
+    g.gain.exponentialRampToValueAtTime(0.001, when + Math.max(0.25, end - when));
     g.gain.linearRampToValueAtTime(0, end + 0.08);
     o.connect(g);
-    o.onended = () => { try { g.disconnect(); mg.disconnect(); } catch (err) {} };
+    ctlPitch(cx, [o, mod], when);
+    o.onended = () => { try { g.disconnect(); mg.disconnect(); } catch (err) {} ctlFree(cx); };
     o.start(when); mod.start(when);
     o.stop(end + 0.12); mod.stop(end + 0.12);
     return;
@@ -347,7 +477,7 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   const atk = Math.min(0.008, durSec * 0.15);
   const rel = Math.min(0.03, durSec * 0.25);
   g.gain.setValueAtTime(0, when);
-  if (noteShapeRamp(g.gain, n, amp, end, when + atk, Math.max(when + atk, end - rel))) {
+  if (noteShapeRamp(g.gain, n, amp, anchor, when + atk, Math.max(when + atk, end - rel))) {
     // the volume shape: no decay ramp below (a shape replaces `ve` when it's set)
   } else if (n.ve !== undefined && n.ve < n.v) {
     g.gain.linearRampToValueAtTime(amp, when + atk);
@@ -361,10 +491,11 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   }
   g.gain.linearRampToValueAtTime(0, end);
   o.connect(g);
+  ctlPitch(cx, [o], when);
   // the DEFAULT voice path — the one every no-directive composition plays.
   // The 2026-08-25 cleanup missed it: ~750 leaked gains/min while looping,
   // WebKit never prunes them (the iPad's 120->11fps decay; advisor H1)
-  o.onended = () => { try { g.disconnect(); } catch (err) {} };
+  o.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); };
   o.start(when);
   o.stop(end + 0.05);
 }

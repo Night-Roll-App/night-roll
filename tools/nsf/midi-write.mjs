@@ -177,7 +177,7 @@ function fileBytes(tracks, ppq = PPQ) {
 // `song` object AND every on-device draft (compositions, pre-publish import
 // captures): {ppq, timesig: [num, den], timesigs?: [{tick, num, den}, …],
 // keysig?: {sf, minor}, tempos: [{tick, usq}], tracks: [{name, notes: [{t, d,
-// p, v, gone?, duty?, ve?, ch?}], offset?, midiPan?}]}. open-items.md "FORMATS
+// p, v, gone?, duty?, ve?, ch?, env?}], offset?, midiPan?, ctl?}]}. open-items.md "FORMATS
 // AUDIT" #1-2 (2026-09-29): index.html's OWN writeMidi used to be a separate,
 // partial writer — commitImports re-encoded every capture through it and
 // silently dropped CC10 pan, CC70 duty, the aftertouch envelope and per-note
@@ -273,6 +273,16 @@ export function writeSongMidi(song) {
       evs.push({t: 0, o: -1, d: [0xB0 | ch0, 10, v]});
     }
     for (const ev of (extraByTrack.get(ti) || [])) evs.push(ev); // phase 2: this track's raw leftovers, verbatim
+    // channel controllers tr.ctl [{t, ch, c, v}] (src/midi/parse.js "channel
+    // controllers"): c = CC number, "pb" bend (signed) or "pg" program
+    for (const e of tr.ctl || []) {
+      const ch = e.ch !== undefined && ((e.ch & 15) !== 9 || isKit) ? (e.ch & 15) : ch0;
+      let d;
+      if (e.c === "pb") { const x = Math.max(0, Math.min(16383, Math.round(e.v) + 8192)); d = [0xE0 | ch, x & 127, x >> 7]; }
+      else if (e.c === "pg") d = [0xC0 | ch, e.v & 127];
+      else d = [0xB0 | ch, e.c & 127, Math.max(0, Math.min(127, Math.round(e.v)))];
+      evs.push({t: e.t, o: 0.75, d});
+    }
     let lastDuty = null;
     for (const n of tr.notes || []) {
       if (n.gone) continue;

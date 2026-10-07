@@ -69,10 +69,53 @@ export function trackPan(ti) { // the track: directive's pan, else the .mid's ow
   const tr = S.song.tracks[ti]; if (!tr) return 0;
   return tr.pan !== undefined ? tr.pan : (tr.midiPan !== undefined ? tr.midiPan : 0);
 }
+// ---- the shared reverb bus (CC91, NIGHT-ROLL.md "MIDI support"). ONE
+// ConvolverNode per master (the live context's, or a bounce's offline one),
+// made lazily the first time a synth note has a reverb send above 0 — a song
+// with no CC91 never builds it. No new context (iOS keeps the one it has);
+// the impulse is generated (noise × a 1.8 s exponential decay), not fetched.
+export const REVERB_SEC = 1.8, REVERB_RETURN = 0.5;
+export function reverbImpulse(ctx) {
+  const len = Math.max(1, Math.round(ctx.sampleRate * REVERB_SEC));
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  }
+  return buf;
+}
+export function reverbIn() {
+  if (!S.audio || !S.master || !S.audio.createConvolver) return null;
+  const have = S.reverbBus.get(S.master);
+  if (have) return have;
+  const cv = S.audio.createConvolver();
+  cv.buffer = reverbImpulse(S.audio);
+  const ret = S.audio.createGain();
+  ret.gain.value = REVERB_RETURN;
+  cv.connect(ret);
+  ret.connect(S.master);
+  S.reverbBus.set(S.master, cv);
+  return cv;
+}
+// a track's post-fader send into the bus: hangs off its trackGain node, so a
+// stop/reorder/bounce that swaps S.trackGains takes the send with it; the
+// fader and mute reach it through updateTrackGains
+export function trackSend(ti) {
+  const tg = trackGain(ti);
+  if (tg._send) return tg._send;
+  const inp = reverbIn();
+  if (!inp) return null;
+  const s = S.audio.createGain();
+  s.gain.value = trackAudible(ti) ? trackVol(ti) : 0;
+  s.connect(inp);
+  tg._send = s;
+  return s;
+}
 export function updateTrackGains() {
   if (!S.audio) return;
   S.song.tracks.forEach((_, ti) => {
     if (S.trackGains[ti]) S.trackGains[ti].gain.setValueAtTime(trackAudible(ti) ? trackVol(ti) : 0, S.audio.currentTime);
+    if (S.trackGains[ti] && S.trackGains[ti]._send) S.trackGains[ti]._send.gain.setValueAtTime(trackAudible(ti) ? trackVol(ti) : 0, S.audio.currentTime);
     if (S.trackPanners[ti]) S.trackPanners[ti].pan.setValueAtTime(trackPan(ti), S.audio.currentTime);
   });
 }

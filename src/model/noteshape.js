@@ -52,16 +52,26 @@ export function shapeRestore(nn, it) {
 // Shape ▾ / Ask edit_notes shape: every item gets envFor(n) (a preset by
 // default) — one undo step for all of them. A shape replaces the old decay
 // target (`ve`) so the note says one thing; Flat clears both.
-export function setSelectionShape(name, items = selEditItems(), envFor = null) {
+// Swell / Swell–fade "make room" (Josh, 2026-10-06): a note already near 127
+// has nowhere to rise, so its velocity (the starting level) drops until the
+// peak lands on 127 — the shape still rises by the full preset ratio. The
+// same undo step restores the velocity; out.lowered counts those notes for
+// the status line. Fade/Flat never touch velocity.
+export const SHAPE_ROOM_V = Math.round(127 / SHAPE_PEAK_R); // 73: the loudest start a full Swell fits above
+export function setSelectionShape(name, items = selEditItems(), envFor = null, out = null) {
   if (!editableSong()) return 0;
   items = items.filter(({n}) => n.d >= 2);
   if (!items.length) return 0;
+  const room = !envFor && (name === "swell" || name === "swell_fade");
   const pre = items.map(({ti, ni, n}) => ({ti, ni, t: n.t, d: n.d, p: n.p, v: n.v, ...shapeSnap(n)}));
+  let lowered = 0;
   selEditApply(items, n => {
+    if (room && (n.v || 80) > SHAPE_ROOM_V) { n.v = SHAPE_ROOM_V; lowered++; }
     const env = envFor ? envFor(n) : shapePreset(name, n);
     if (env && env.length) n.env = env; else delete n.env;
     delete n.ve;
   }, pre);
+  if (out) out.lowered = lowered;
   return items.length;
 }
 // one point of one note moved (the velocity lane's drag): level 0..127, t clamped inside the note

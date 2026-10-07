@@ -83,6 +83,7 @@ import { pasteClipboard } from "../model/selection.js";
 import { moveSelectionToTrack } from "../model/selection.js";
 import { selEditItems } from "../model/selection.js";
 import { setSelectionShape } from "../model/noteshape.js";
+import { SHAPE_ROOM_V } from "../model/noteshape.js";
 import { SHAPE_PRESETS } from "../model/noteshape.js";
 import { sfDeclaredAtRaw } from "../model/song.js";
 import { drBassTrack } from "../gen/drummer.js";
@@ -921,7 +922,7 @@ export function askEditNotes(a) {
   const sel = askSelectRange(a);
   const where = sel.fromBar === sel.toBar ? "bar " + sel.fromBar : "bars " + sel.fromBar + "–" + sel.toBar;
   const trackLabel = sel.tis.map(ti => S.song.tracks[ti].name || "track " + (ti + 1)).join("+");
-  let k = 0, how = op;
+  let k = 0, how = op, tail = "";
   if (op === "delete") { k = deleteSelection(); how = "deleted"; }
   else if (op === "quantize") {
     const hasGrid = a.grid !== undefined && a.grid !== null && a.grid !== "";
@@ -1007,8 +1008,10 @@ export function askEditNotes(a) {
     return {ok: true, note: "copied " + notes + " note" + (notes === 1 ? "" : "s") + (annos ? " + " + annos + " annotation" + (annos === 1 ? "" : "s") : "") + " from " + trackLabel + " in " + where + " to " + toBar + "." + toBeat + (toTi !== undefined ? " on " + (S.song.tracks[toTi].name || "track " + (toTi + 1)) : "") + (dP ? ", " + askShiftText(dP) : "") + (askBarsCount() > barsBefore ? " — the song grew to " + askBarsCount() + " bars" : "") + "; cursor at the copy's end (one undo restores what was there)"};
   } else if (op === "shape") {
     const sh = askEditNotesShape(a);
-    k = setSelectionShape(sh.name, selEditItems(), sh.envFor); // the Shape ▾ chip's own call: one undo
+    const room = {lowered: 0};
+    k = setSelectionShape(sh.name, selEditItems(), sh.envFor, room); // the Shape ▾ chip's own call: one undo
     how = sh.name === "flat" ? "cleared the volume shape (Flat) on" : "shaped (" + sh.label + ")";
+    if (room.lowered) tail = "; " + room.lowered + " started too loud to rise, so velocity was lowered to " + SHAPE_ROOM_V + " to make room";
   } else if (op === "to_track") {
     if (a.to_track === undefined || a.to_track === null || a.to_track === "") throw new Error("say to_track: " + S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1)).join(", "));
     const toTi = askEditNotesTarget(a.to_track);
@@ -1019,7 +1022,7 @@ export function askEditNotes(a) {
     return {ok: true, note: "moved " + k + " note" + (k === 1 ? "" : "s") + " from " + trackLabel + " to " + toName + " in " + where + " (one undo restores what was there)"};
   }
   if (!k) return {ok: true, note: "nothing to " + op + " — no note on " + trackLabel + " in " + where + " qualified"};
-  return {ok: true, note: how + " " + k + " note" + (k === 1 ? "" : "s") + " on " + trackLabel + " in " + where + " (one undo restores what was there)"};
+  return {ok: true, note: how + " " + k + " note" + (k === 1 ? "" : "s") + " on " + trackLabel + " in " + where + tail + " (one undo restores what was there)"};
 }
 // ---- set_track / add_track / delete_track / keep_that / album (docs/
 // ai-parity.md §5 batch 7, 2026-10-05): tracks and albums. Settings land as

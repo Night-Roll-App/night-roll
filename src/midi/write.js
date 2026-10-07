@@ -1,3 +1,5 @@
+import { ctlBytes } from "./parse.js";
+
 export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one track per voice.
   // ONE writer, in two forms (open-items.md "FORMATS AUDIT" #1-2): this hand
   // port and tools/nsf/midi-write.mjs's writeSongMidi (the pipeline's own
@@ -91,6 +93,10 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
     // annotation set
     if (tr.midiPan !== undefined) evs.push({t: 0, o: -1, d: [0xB0 | ch0, 10, Math.max(0, Math.min(127, Math.round(tr.midiPan * 63 + 64)))]});
     for (const ev of (extraByTrack.get(ti) || [])) evs.push(ev); // phase 2: this track's raw leftovers, verbatim
+    // channel controllers (bend, volume, expression, sustain, mod, reverb,
+    // pan events, program, RPN), verbatim at their ticks; the drum-channel
+    // rule is the notes' own
+    for (const e of tr.ctl || []) evs.push({t: e.t, o: 0.75, d: ctlBytes(e, e.ch !== undefined && ((e.ch & 15) !== 9 || kit) ? (e.ch & 15) : ch0)});
     let lastDuty = null;
     for (const n of tr.notes) {
       if (n.gone) continue;

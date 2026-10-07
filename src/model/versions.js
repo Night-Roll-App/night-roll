@@ -31,6 +31,7 @@ import { annotationsFor } from "./rollnotes.js";
 import { resolveNoteWith } from "./rollnotes.js";
 import { bakeTempos } from "./rollnotes.js";
 import { bakeMeter } from "./rollnotes.js";
+import { ctlCopy } from "../midi/parse.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -51,6 +52,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
         return on;
       })};
     if (tr.midiPan !== undefined) o.midiPan = tr.midiPan; // the .mid's own CC10 (a chip capture's channel) — writeMidi re-emits it
+    if (tr.ctl && tr.ctl.length) o.ctl = ctlCopy(tr).ctl; // channel controllers (bend, CC7/11/64/1/91, pan events, program)
     if (tr.offset) o.offset = tr.offset; // tools/sounding.mjs
     if (tr.srcIndex !== undefined) o.srcIndex = tr.srcIndex; // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
     return o;

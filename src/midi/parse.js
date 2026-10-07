@@ -41,8 +41,9 @@ export function parseMidi(buf, opts = {}) {
   let sawSourceMarker = false;
   // Phase 2 (docs/declared-vs-learner-spec.md "B"): everything a foreign
   // file carries that Night Roll doesn't model — text/copyright/instrument/
-  // lyric/marker/cue metas, extra track-name metas, program changes,
-  // channel pressure, pitch bend, every CC but 10/70, SysEx — collected per
+  // lyric/marker/cue metas, extra track-name metas, channel pressure, every
+  // CC but 10/70 and CTL_CCS (tr.ctl owns those, bend and program — see
+  // "channel controllers" below), SysEx — collected per
   // ORIGINAL track index (tn, the MTrk scan order) always, cheaply; bundled
   // into source.metas only when this parse turns out foreign (same
   // collect-always/bundle-conditionally shape as srcTimesigs/srcKeysigs
@@ -68,6 +69,7 @@ export function parseMidi(buf, opts = {}) {
     const nextMagic = tn + 1 < magics.length ? magics[tn+1] : d.length;
     const end = Math.min(declaredEnd, nextMagic);
     let j = i + 8, t = 0, running = null, name = "", curDuty, curPan = null; // CC10: where the game put this channel (−1 left … +1 right)
+    const ctl = []; // owned channel controllers [{t, ch, c, v}] (CTL_CCS, "pb" bend, "pg" program) — NIGHT-ROLL.md "MIDI support"
     let offset = 0; // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the written key by this many semitones (a Text meta, "sounding:-12")
     const open = {}, notes = [];
     const raw = []; // phase 2: this track's unmodeled events, [{t, bytes}] — bundled into source.metas only when this parse turns out foreign
@@ -127,8 +129,8 @@ export function parseMidi(buf, opts = {}) {
             // phase 2); kept verbatim as a raw event instead, like any other CC
             const foreignNow = opts.foreign || sawSourceMarker;
             const ctrl = d[j], val = d[j + 1]; j += 2;
-            if (ctrl === 10) curPan = Math.max(-1, Math.min(1, (val - 64) / 63)); // CC10 pan: always owned, foreign or not
-            else if (ctrl === 70 && !foreignNow) curDuty = val & 3; // CC70 = pulse duty from the NSF capture
+            if (ctrl === 70 && !foreignNow) curDuty = val & 3; // CC70 = pulse duty from the NSF capture
+            else if (ctrl === 10 || CTL_CCS.has(ctrl)) ctl.push({t, ch, c: ctrl, v: val}); // owned, foreign or not: one CC10 becomes midiPan below
             else raw.push({t, bytes: [0xB0 | ch, ctrl, val]}); // every other CC (phase 2)
           } else if (st === 0xA0) {
             // polyphonic aftertouch: AT the note-on tick = the capture's decay
@@ -145,8 +147,8 @@ export function parseMidi(buf, opts = {}) {
             if (on && on.t === t) on.ve = val;
             else if (on) (on.env = on.env || []).push({t: t - on.t, r: val / on.v});
             else raw.push({t, bytes: [0xA0 | ch, p, val]});
-          } else if (st === 0xE0) { const lsb = d[j], msb = d[j + 1]; j += 2; raw.push({t, bytes: [0xE0 | ch, lsb, msb]}); } // pitch bend (phase 2)
-          else if (st === 0xC0) { const pgm = d[j]; j += 1; raw.push({t, bytes: [0xC0 | ch, pgm]}); } // program change (phase 2)
+          } else if (st === 0xE0) { const lsb = d[j], msb = d[j + 1]; j += 2; ctl.push({t, ch, c: "pb", v: ((msb & 127) << 7 | (lsb & 127)) - 8192}); } // pitch bend, signed −8192…8191
+          else if (st === 0xC0) { const pgm = d[j]; j += 1; ctl.push({t, ch, c: "pg", v: pgm & 127}); } // program change: stored, never picks a voice
           else if (st === 0xD0) { const pr = d[j]; j += 1; raw.push({t, bytes: [0xD0 | ch, pr]}); } // channel pressure (phase 2)
         }
       }
@@ -159,8 +161,17 @@ export function parseMidi(buf, opts = {}) {
     if (!opts.trust) for (let k = 1; k < notes.length; k++) { // FF7's Main Theme voice 2 rests 41 bars — imports are trusted
       if (notes[k].t - notes[k-1].t > 32 * 4 * ppq) { notes.length = k; break; }
     }
+    // one CC10 is the track's pan (midiPan, written back at tick 0 as always);
+    // two or more are pan EVENTS that stay in ctl and move the synth's panner
+    const pans = ctl.filter(e => e.c === 10);
+    if (pans.length === 1) { curPan = Math.max(-1, Math.min(1, (pans[0].v - 64) / 63)); ctl.splice(ctl.indexOf(pans[0]), 1); }
+    if (!notes.length && ctl.length) { // a track with no notes never becomes a Night Roll track: its controllers stay raw (phase 2) as before
+      for (const e of ctl) if (e.c !== 10) raw.push({t: e.t, bytes: ctlBytes(e, e.ch)});
+      raw.sort((a, b) => a.t - b.t);
+    }
     if (notes.length) {
       const tr = curPan === null ? {name, notes} : {name, notes, midiPan: curPan};
+      if (ctl.length) tr.ctl = ctl;
       if (offset) tr.offset = offset;
       tracks.push(tr);
       trackSrcIndex.push(tn);
@@ -202,6 +213,66 @@ export function parseMidi(buf, opts = {}) {
     source = {timesigs: srcTimesigs, keysigs: srcKeysigs, ...(metas.length ? {metas} : {})};
   }
   return {ppq, tracks, tempos, timesig, keysig, source};
+}
+// ------------------------------------------------ channel controllers (tr.ctl)
+// The controllers a normal MIDI player follows, owned per track as ticked
+// events {t, ch, c, v}: c = a CC number in CTL_CCS (1 mod wheel, 7 volume,
+// 11 expression, 64 sustain, 91 reverb send, 10 pan when a track has more
+// than one, 6/38/98–101 the RPN/NRPN data that sets the bend range), "pb"
+// pitch bend (−8192…8191) or "pg" program change. Written back verbatim at
+// their ticks by both writers; none of the 3,251 album .mid files carried
+// any (2026-10-06 scan), so every file written before this reads the same.
+export const CTL_CCS = new Set([1, 6, 7, 11, 38, 64, 91, 98, 99, 100, 101]);
+export function ctlBytes(e, ch) {
+  if (e.c === "pb") { const x = Math.max(0, Math.min(16383, Math.round(e.v) + 8192)); return [0xE0 | ch, x & 127, x >> 7]; }
+  if (e.c === "pg") return [0xC0 | ch, e.v & 127];
+  return [0xB0 | ch, e.c & 127, Math.max(0, Math.min(127, Math.round(e.v)))];
+}
+export function ctlCopy(tr) { return tr.ctl && tr.ctl.length ? {ctl: tr.ctl.map(e => ({...e}))} : {}; } // every hop (draft, Save As, import, publish) carries ctl like midiPan
+// per-track lookup tables, cached on the ctl array itself (no edit UI changes
+// it in place — a new parse is a new array): "ch:c" -> [{t, v}] (the last
+// value at a tick wins), plus "ch:br" = the bend range in semitones from RPN
+// 0 (default ±2 when a file never sets it)
+const CTL_INDEX = new WeakMap();
+export function ctlIndex(tr) {
+  if (!tr || !tr.ctl || !tr.ctl.length) return null;
+  let ix = CTL_INDEX.get(tr.ctl);
+  if (ix) return ix;
+  ix = {lists: new Map(), ch0: tr.ctl[0].ch};
+  const add = (k, t, v) => {
+    let L = ix.lists.get(k);
+    if (!L) ix.lists.set(k, L = []);
+    if (L.length && L[L.length - 1].t === t) L[L.length - 1].v = v; else L.push({t, v});
+  };
+  const rpn = new Map(); // ch -> {sel: "rpn" | "nrpn", msb, lsb, semis, cents}
+  for (const e of [...tr.ctl].sort((a, b) => a.t - b.t)) {
+    add(e.ch + ":" + e.c, e.t, e.v);
+    if (typeof e.c !== "number") continue;
+    const r = rpn.get(e.ch) || {sel: null, msb: 127, lsb: 127, semis: 2, cents: 0};
+    rpn.set(e.ch, r);
+    if (e.c === 101) { r.sel = "rpn"; r.msb = e.v; }
+    else if (e.c === 100) { r.sel = "rpn"; r.lsb = e.v; }
+    else if (e.c === 98 || e.c === 99) r.sel = "nrpn";
+    else if ((e.c === 6 || e.c === 38) && r.sel === "rpn" && r.msb === 0 && r.lsb === 0) {
+      if (e.c === 6) r.semis = e.v; else r.cents = e.v;
+      add(e.ch + ":br", e.t, r.semis + r.cents / 100);
+    }
+  }
+  CTL_INDEX.set(tr.ctl, ix);
+  return ix;
+}
+export function ctlList(ix, ch, c) { return ix ? ix.lists.get(ch + ":" + c) || null : null; }
+export function ctlAt(L, tick, dflt) { // the value in force at `tick` (the last event at or before it), else dflt
+  if (!L || !L.length || L[0].t > tick) return dflt;
+  let lo = 0, hi = L.length - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (L[m].t <= tick) lo = m; else hi = m - 1; }
+  return L[lo].v;
+}
+export function ctlNext(L, tick) { // the index of the first event after `tick` (L.length when none)
+  if (!L) return 0;
+  let lo = 0, hi = L.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (L[m].t <= tick) lo = m + 1; else hi = m; }
+  return lo;
 }
 // practice-tempo multiplier (chosen bpm / native); 1 = native
 export function tickToSec(song, tick) {

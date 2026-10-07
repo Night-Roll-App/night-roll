@@ -398,7 +398,7 @@ export function stop() {
     S.master.gain.linearRampToValueAtTime(0, t + 0.03);
     const old = S.trackGains;
     S.trackGains = []; S.trackPanners = [];
-    setTimeout(() => old.forEach(g => g && g.disconnect()), 400);
+    setTimeout(() => old.forEach(g => { if (g) { g.disconnect(); if (g._send) g._send.disconnect(); } }), 400);
   }
   updateSubtitle();
   // same text the LCD just wrote (updateSubtitle -> updateLCD, above) — never
