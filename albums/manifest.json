@@ -11951,6 +11951,10 @@
     "path": "albums/game-boy/links-awakening/dream-shrine-intro.mid"
    },
    {
+    "title": "Dream Shrine (intro) (re-capture)",
+    "path": "albums/game-boy/links-awakening/dream-shrine-intro-recapture.mid"
+   },
+   {
     "title": "Eagle's Tower",
     "path": "albums/game-boy/links-awakening/eagle-s-tower.mid"
    },
@@ -11961,6 +11965,10 @@
    {
     "title": "Evil Eagle Intro",
     "path": "albums/game-boy/links-awakening/evil-eagle-intro.mid"
+   },
+   {
+    "title": "Evil Eagle Intro (re-capture)",
+    "path": "albums/game-boy/links-awakening/evil-eagle-intro-recapture.mid"
    },
    {
     "title": "Face Shrine",
@@ -11977,6 +11985,10 @@
    {
     "title": "Flying Rooster Revival",
     "path": "albums/game-boy/links-awakening/flying-rooster-revival.mid"
+   },
+   {
+    "title": "Flying Rooster Revival (re-capture)",
+    "path": "albums/game-boy/links-awakening/flying-rooster-revival-recapture.mid"
    },
    {
     "title": "Game Over",
@@ -12001,6 +12013,10 @@
    {
     "title": "Get Important Item",
     "path": "albums/game-boy/links-awakening/get-important-item.mid"
+   },
+   {
+    "title": "Get Important Item (re-capture)",
+    "path": "albums/game-boy/links-awakening/get-important-item-recapture.mid"
    },
    {
     "title": "Get Instrument",
@@ -12093,6 +12109,10 @@
    {
     "title": "Main Theme",
     "path": "albums/game-boy/links-awakening/main-theme.mid"
+   },
+   {
+    "title": "Main Theme (re-capture)",
+    "path": "albums/game-boy/links-awakening/main-theme-recapture.mid"
    },
    {
     "title": "Main Theme (without intro)",
@@ -12209,6 +12229,10 @@
    {
     "title": "Seashell Sword",
     "path": "albums/game-boy/links-awakening/seashell-sword.mid"
+   },
+   {
+    "title": "Seashell Sword (re-capture)",
+    "path": "albums/game-boy/links-awakening/seashell-sword-recapture.mid"
    },
    {
     "title": "Southern Face Shrine",

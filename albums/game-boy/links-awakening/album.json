@@ -46,7 +46,13 @@
   "trouble-in-mabe-village": "Trouble in Mabe Village",
   "wind-fish-s-egg": "Wind Fish's Egg",
   "witch-s-house-crazy-tracy-s-house": "Witch's House, Crazy Tracy's House",
-  "zelda-theme-remix": "Zelda Theme (remix)"
+  "zelda-theme-remix": "Zelda Theme (remix)",
+  "dream-shrine-intro-recapture": "Dream Shrine (intro) (re-capture)",
+  "evil-eagle-intro-recapture": "Evil Eagle Intro (re-capture)",
+  "flying-rooster-revival-recapture": "Flying Rooster Revival (re-capture)",
+  "get-important-item-recapture": "Get Important Item (re-capture)",
+  "main-theme-recapture": "Main Theme (re-capture)",
+  "seashell-sword-recapture": "Seashell Sword (re-capture)"
  },
  "nsf": {
   "vault": "game-boy/links-awakening.gbs",
@@ -520,6 +526,60 @@
     "n": 96,
     "secs": 17.964923858642578,
     "track": 90
+   },
+   "dream-shrine-intro-recapture": {
+    "n": 36,
+    "secs": 11.987777709960938,
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "evil-eagle-intro-recapture": {
+    "n": 84,
+    "secs": 57.2098274230957,
+    "track": 68,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "flying-rooster-revival-recapture": {
+    "n": 85,
+    "secs": 7.8355865478515625,
+    "track": 64,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "get-important-item-recapture": {
+    "n": 16,
+    "secs": 11.987777709960938,
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "main-theme-recapture": {
+    "n": 1,
+    "secs": 20.693984985351562,
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
+   },
+   "seashell-sword-recapture": {
+    "n": 86,
+    "secs": 41.27077102661133,
+    "track": 73,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "gbs"
