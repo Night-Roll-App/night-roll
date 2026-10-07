@@ -1641,3 +1641,94 @@ If Cry of the Planet plays again after your full restart, that supports the theo
 2. **Small text box:** I can see it in your screenshot. It sits beside the buttons as a narrow box of about five lines. I asked for a full-width row of its own, at least four lines tall, growing to about eight lines before it scrolls.
 
 One thing from the screenshot for you: the usage line reads "214 turns · about 29 million tokens · $2191.40 — long, Compact saves tokens." This chat is very long. The dollar figure is an estimate of what that much usage would cost, not necessarily what you're billed, but the size is real. Tap Compact next to Clear chat to shrink it.
+
+### 2026-09-30 18:58 · bars 13–37 (in view)
+
+**Josh:** What is the terminal temp gone. And also in the file settings dialogue if it's not properly or not sufficiently expanded then the tabs can disappear but the tab should never disappear. I thought for a second we had a bug where the tabs were gone. I can't send a screenshot of that because. I can't have that window open at the same time as the AI window in order to take a screenshot but you're just gonna have to believe me I will take a screenshot however so you can see how they make it mine button is too big for the top row and it hurts the title. Wait a second the screenshot button is gone now what is going on have we had a serious regression. Did we revert. Commits or something
+
+**AI (claude-code-sonnet):** ⚠ the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again
+
+### 2026-09-30 18:59 · bars 13–26 (in view)
+
+**Josh:** What is the terminal temp gone. And also in the file settings dialogue if it's not properly or not sufficiently expanded then the tabs can disappear but the tab should never disappear. I thought for a second we had a bug where the tabs were gone. I can't send a screenshot of that because. I can't have that window open at the same time as the AI window in order to take a screenshot but you're just gonna have to believe me I will take a screenshot however so you can see how they make it mine button is too big for the top row and it hurts the title. Wait a second the screenshot button is gone now what is going on have we had a serious regression. Did we revert. Commits or something
+
+**AI (claude-code-sonnet):** ⚠ claude reported an error
+
+### 2026-09-30 19:01 · bars 13–26 (in view)
+
+**Josh:** Hello
+
+**AI (claude-code-sonnet):** ⚠ claude reported an error
+
+### 2026-09-30 19:54 · bars 1–14 (in view)
+
+**Josh:** Are you there and if so can you ask the terminal what we are waiting for
+
+**AI (claude-code-sonnet):** Yes, I'm here. I asked the terminal, through both the bridge note and a direct message, what it's working on, what is blocked on you, and what's next. It shows as busy, so it will answer when it reaches the message. Its reply will show up at the top of my next turn and in the app. The last thing it told me was that it's working on streaming the console render so big PS2 songs don't need the quality drop.
+
+**Mac (ask):** From Josh via Ask: what are we waiting for? Please list what is in progress, what is blocked on Josh, and what is next.
+
+### 2026-09-30 21:48 · bars 1–15 (in view)
+
+**Josh:** If I speak to you and then you relay something to the terminal and then he relates it back to you and then back to me isn't that costing me more tokens than I really need to spend
+
+**AI (claude-code-sonnet):** Yes, it costs more. Each hop is a separate Claude session reading its own long context, and mine is very long. The terminal's replies already appear in the app on their own, so my turn adds nothing when you just want to hear from it.
+
+The cheaper route is the ⌨ Terminal tab in the AI panel. It goes straight to the terminal and skips me. Use this general chat only for questions that need my answer. If you tap Compact here first, each message to me also gets cheaper.
+
+For the question you asked: the terminal is working on rendering console audio in chunks so big PS2 songs like Aeon Battle stop crashing the app. It's also checking why channel 30 in FFX Challenge has the wrong instrument. It needs your ear on FFX Challenge and the FF7 tapped choir notes. It also needs a yes or no on Q5, the redirect for the bare site address.
+
+### 2026-09-30 22:29 · bars 1–3 (in view)
+
+**Josh:** When I touched notes on the song I'm in cry and sorrow it sounds just like mini nuts or whatever it's not game sounds. When I touch them I would really like it to be the exact game sounds it actually helps me analyze when it's it's not the game sound it really like throws me out of my concentration
+
+**AI (claude-code-sonnet):** Understood. I sent it to the terminal and added it to open-items.md. The request is that tapping a note plays the real game sound on every console, with SNES first. Right now only the PS1 tap has that fix, so SNES taps fall back to the generic synth, which is why Cry in Sorrow sounds like MIDI.
+
+I suggested the terminal play a slice of the track's rendered console audio for the tapped note. Its reply will show up here and in the app.
+
+### 2026-10-01 07:31 · bars 1–2 (in view)
+
+**Josh:** Hello are you there what is the terminal doing
+
+**AI (claude-code-sonnet):** I'm here. The newest commit on the repo is 8 hours old (track colors, 4bd1e1dd), so nothing has landed overnight. I don't know yet whether the terminal is busy or stalled. I asked it for a status and told it to keep working through the queue. That queue is the Game order switch, the view switcher, the Ask tools to edit, delete and publish, and Revert dropping the chat.
+
+I also ran a status command that cleared the "Now" line, which was a slip on my part. The terminal will rewrite it on its next update.
+
+### 2026-10-01 13:20 · bars 1–26 (in view)
+
+**Josh:** Terminal tab is gone again
+
+**AI (claude-code-sonnet):** ⚠ the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again
+
+### 2026-10-01 14:48 · bars 1–30 (in view)
+
+**Josh:** Are you there
+
+**AI (claude-code-sonnet):** Yes, I'm here. The terminal's latest note was at 13:16 with build 99e6643e, which added File → Open Recent. It has shipped a lot since this morning, including the Game order switch, the Ask edit, delete and publish tools, the new bottom-bar drop-up menus, and the SNES drum fixes.
+
+Two things are still waiting on you. Q5 is the redirect for the bare site address, which needs you to run one command in the terminal. Q10 was graveyard-3, which it has since finished.
+
+### 2026-10-01 14:49 · bars 1–21 (in view)
+
+**Josh:** I already ran that command. For the bar side address. What else is it working on what is it to do list
+
+**AI (claude-code-sonnet):** Thanks. open-items.md still lists the redirect as waiting on you, so I told the terminal you ran the command. I asked it to check that the address loads and to mark it done.
+
+Here is what's on its list from open-items.md, with the latest commit being File → Open Recent two hours ago:
+
+- **Waiting on you:** The App Store steps are a TestFlight install, the privacy labels and listing, screenshots, and your go for build 3. The checks are YouTube playing until you press Play, background play with the iPad locked, and a MIDI keyboard for recording.
+- **Waiting on your ear, you said ask later:** Q1, which pitch version of four FFX songs is right. Q2, the archive move, needs your token and a "go".
+- **Parked:** All the PS2-only work, including the instrument on FFX Challenge ch 30 and 31.
+- **Open from earlier:** The DAW review items like quantize and MIDI keyboard polish, the formats audit's remaining items, and the someday ideas such as themes and picture-in-picture.
+
+The terminal has no new build in progress that I can see. I asked it for its own current to-do list, and it will post that here.
+
+### 2026-10-01 15:09 · bars 1–8 (in view)
+
+**Josh:** I sent a few questions to the terminal and it is not answering me
+
+**AI (claude-code-sonnet):** Your two Terminal-tab messages did reach the bridge's queue (#42 and #43). The terminal's last note came before them, and it still shows as busy. It may not have picked them up.
+
+I sent it both directly. The first is to start the PS2 work again and keep a short to-do list just for you, with TestFlight and the other App Store steps for the weekend. The second is that the meter-change button should always set the meter from bar 1 instead of the cursor. Cursor-position changes stay on the Notes button.
+
+The redirect command still hasn't worked on your side. The repo doesn't exist yet, and the command has to be typed in the Mac's Claude Code terminal starting with `!`. You can leave it until the weekend.
