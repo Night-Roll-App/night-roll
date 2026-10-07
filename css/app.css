@@ -855,7 +855,7 @@
   #mixerstrips { display: flex; flex-direction: row; align-items: flex-start; gap: 10px;
     overflow-x: auto; overflow-y: hidden; padding: 4px 2px 8px; -webkit-overflow-scrolling: touch; }
   .mixerstrip { display: flex; flex-direction: column; align-items: center; gap: 6px;
-    flex: 0 0 74px; width: 74px; padding: 8px 6px; border: 1px solid var(--grid);
+    flex: 0 0 88px; width: 88px; padding: 8px 6px; border: 1px solid var(--grid); /* inner 74px = the M/S/H row (3 × 22px + 2 gaps) */
     border-radius: 10px; background: var(--panel2); touch-action: pan-y; }
   .mixerstrip.selected { border-color: var(--gold); }
   .mixerstrip.dragging { opacity: 0.5; }
