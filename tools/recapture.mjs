@@ -32,7 +32,9 @@
 //   annotations → replace · MOVED with annotations → keep the old song and
 //   add the new one as "<title> (re-capture)" (Josh, 2026-10-06, §8.3) ·
 //   a changed loop point on a song without annotations → hold (its loop
-//   line lives in the .rollnotes.json, which this tool never writes).
+//   line lives in the .rollnotes.json, which this tool never writes) ·
+//   MOVED by the loop point alone (every note identical) → replace, the song
+//   keeping its own loop annotation.
 // Annotations = any .rollnotes.json entry other than the capture's loop.
 //
 // Hard allowlist: --apply writes only .mid/.notes.txt/album.json inside
@@ -52,7 +54,7 @@ import { diffFiles, loopOfRollnotes } from "./capture-diff.mjs";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SELF = fileURLToPath(import.meta.url);
 export const CONSOLES = ["nes", "game-boy", "snes", "ps1", "ps2", "n64"]; // capture albums; compositions/starters are Josh's and never listed
-export const CAPTURE_VERSION = 1; // album.json cap.v stamped by --apply; raise with capture v2 (§4)
+export const CAPTURE_VERSION = 2; // album.json cap.v stamped by --apply (2 = NES capture v2: bends, CC70 duty, dpcm track — 888d93e2)
 const ARCHIVE_RAW = "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main/";
 const EXT = {nsf: ".nsf", gbs: ".gbs", spc: ".spc", psf: ".psf", psf2: ".psf2", usf: ".usf", vgm: ".vgm"};
 const MAGIC = {

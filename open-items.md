@@ -4,11 +4,16 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
-## 2026-10-07 NES capture v2 — BUILT on a worktree branch, awaiting merge (audit §4.1 + §8; NIGHT-ROLL.md "NES capture v2")
+## 2026-10-07 RE-CAPTURE EVERYTHING (Josh #170/#171) — tools on main, applying album by album
+tools/recapture.mjs (dry run → /tmp/recap*; --apply --album c/slug, one album per push) + tools/capture-diff.mjs. --apply never deletes, never writes a .rollnotes.json; annotated songs whose bars move get "<title> (re-capture)" beside the old; MOVED by the loop point alone → replaced, keeping the song's own loop line (FF1 Overworld, FF4 Cry in Sorrow pt 2). CAPTURE_VERSION 2.
+v1 dry run, all consoles (/tmp/recap/report.md): NES 501 songs (SAME 197 · VEL 295 · MOVED 9), GB 333 (304 · 15 · 14), SNES 865 (701 · 152 · 12), PS1 471 (469 · 0 · 1; chrono-cross drowning-valley.psf 404 in the archive), PS2 151 (59 · 78 · 14 — all FFX), N64 924 all SAME.
+Order: NES (v2 dry run in /tmp/recap2) → GB → SNES → PS1. HELD: FFX (see "AWAITS JOSH'S EAR: FFX pitches" — still his call), unannotated MOVED songs whose loop changed (hold-loop-changed: 17).
+
+## 2026-10-07 NES capture v2 — MERGED 888d93e2 (audit §4.1 + §8; NIGHT-ROLL.md "NES capture v2")
 Vibrato/detune → pitch bend (RPN range only past ±2, from absorbed slide steps); duty changes inside a note → CC70 (`n.duties`, parsed, carried through every hop, both writers); DPCM hits → a LAST "dpcm" kit track (channel 10, a GM key per sample from rhythm) only on songs whose log uses the channel. Slides stay separate notes. Notes, tracks, tempo, loop identical to v1.
 Re-capture dry run (scratch trees /tmp/nesv2, origin/main vs this branch, both through the app's own import → publish path, diffed with the re-capture branch's capture-diff; albums/ untouched). Main capture vs v2 capture, 136 songs: SAME 51 · VELOCITY 26 · ADDED-TRACK 59 · MOVED 0. Against the published files: main VELOCITY 73 · MOVED 7 · SAME 56 → v2 VELOCITY 48 · MOVED 7 · ADDED-TRACK 55 · SAME 26; the 7 MOVED are the same songs, same reasons, on main (pre-existing drift, not v2). Per album (v2 vs published): FF1 VELOCITY 18 · MOVED 1 (no DPCM, no bends kept — its period moves land on note boundaries); Mega Man 2 VELOCITY 20 · MOVED 2 (bends, no DPCM); SMB3 ADDED-TRACK 26 · VELOCITY 8 · SAME 26; Castlevania II ADDED-TRACK 7 · MOVED 2; Ninja Gaiden ADDED-TRACK 22 · VELOCITY 2 · MOVED 2.
 Josh to hear (after merge + a re-capture he approves): an SMB3 song — a dpcm track appears and the console voice plays it on that track; Mega Man 2 on an instrument voice — vibrato, same notes.
-QUEUED: synth playback switching the pulse wave at an in-note duty change (today the wave is picked at the attack); $4011 raw-PCM streams as hits (no sample start today, so none); CAPTURE_VERSION 2 in tools/recapture.mjs once both branches are on main.
+QUEUED: synth playback switching the pulse wave at an in-note duty change (today the wave is picked at the attack); $4011 raw-PCM streams as hits (no sample start today, so none); CAPTURE_VERSION 2 — done.
 
 ## 2026-10-06 Ask (shop) — check pulse2 raw chip writes, bars 25-28 — ANSWERED
 
