@@ -2808,7 +2808,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
-    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
+    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 "ends at bar/beat", // #154 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
@@ -13523,4 +13523,35 @@ test("+ Note: the type is a row of chips, and a fresh plain note guesses its typ
   run(`document.getElementById("ntext").value = "3/4"; applyNoteTypeGuess();`);
   assert.equal(val(`editorType()`), "note", "after a chip tap, no more guessing");
   run(`document.getElementById("noteeditor").classList.remove("on");`);
+});
+
+test("note dialog: the second row is where the span ENDS — existing annotations round-trip exactly, and a chord can be a 16th long (Josh, 2026-10-06, #154/#156)", () => {
+  installSong();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 8);`); // room for bars 2–5 in the bar pickers
+  const bt = val(`barTicks()`), qt = val(`beatTicks()`);
+  // an existing whole-bar chord on bar 2 (stored "through": to [2, 4])
+  run(`rollnotes = deriveNoteTypes([{b1: 2, q1: 1, b2: 2, q2: 4, text: "chord: C", added: true}]).map(resolveNote); finalizeNotes();`);
+  run(`openEditor(rollnotes.find(n => n.chord));`);
+  assert.deepEqual(val(`[document.getElementById("nb2").value, getBeatPair("nq2", "ns2")]`), ["3", 1], "shown as: ends at bar 3 beat 1");
+  run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  const c = val(`(() => { const n = rollnotes.find(n => n.chord); return {b2: n.b2, q2: n.q2, start: n.start, end: n.end}; })()`);
+  assert.deepEqual([c.b2, c.q2, c.start, c.end], [2, 4, bt, 2 * bt], "saved unchanged: the same span, the same stored to");
+  // a 16th-long chord from a ruler drag at bar 3 beat 2.25
+  const a = 2 * bt + 1.25 * qt;
+  run(`rollnotes = []; finalizeNotes(); rangeSel = {a: ${a}, b: ${a + qt / 4}, cycle: true}; openEditor(null, "chord");`);
+  assert.deepEqual(val(`[document.getElementById("nb2").value, getBeatPair("nq2", "ns2")]`), ["3", 2.5], "ends at 3.2&");
+  run(`setChordWidget("G"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  const g = val(`(() => { const n = rollnotes.find(n => n.chord); return {start: n.start, end: n.end, b2: n.b2, q2: n.q2}; })()`);
+  assert.deepEqual([g.start, g.end], [a, a + qt / 4], "a 16th, exactly");
+  // an end inside a bar's first beat (stored to: [b, q < 1])
+  run(`rollnotes = []; finalizeNotes(); rangeSel = {a: ${3 * bt - qt / 2}, b: ${3 * bt + qt / 4}, cycle: true}; openEditor(null, "chord");`);
+  run(`setChordWidget("D"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  const d = val(`(() => { const n = rollnotes.find(n => n.chord); return {start: n.start, end: n.end, b2: n.b2, q2: n.q2}; })()`);
+  assert.deepEqual([d.start, d.end, d.b2, d.q2], [3 * bt - qt / 2, 3 * bt + qt / 4, 4, 0.25]);
+  assert.deepEqual(val(`noteToJSON(rollnotes.find(n => n.chord)).to`), [4, 0.25], "the file says to: [4, 0.25] and reads back the same");
+  assert.equal(val(`resolveNote(jsonToRawNote(noteToJSON(rollnotes.find(n => n.chord)))).end`), 3 * bt + qt / 4);
+  // the end can't come before the start
+  run(`openEditor(rollnotes.find(n => n.chord)); document.getElementById("nb2").value = "1"; setBeatPair("nq2", "ns2", 1); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.match(val(`document.getElementById("nstatus").textContent`), /end has to come after the start/);
+  run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null;`);
 });

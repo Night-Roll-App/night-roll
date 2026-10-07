@@ -158,7 +158,7 @@ export function fillBarBeatSelects() {
       s.appendChild(o);
     }
   };
-  mkBars("nb1", false, true); mkBars("nb2", true); mkBars("nlb", false);
+  mkBars("nb1", false, true); mkBars("nb2", true, true); mkBars("nlb", false);
   mkBeats("nq1"); mkBeats("nq2"); mkBeats("nlq");
   mkSubs("ns1"); mkSubs("ns2"); mkSubs("nls");
 }
@@ -346,10 +346,9 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   if (!note && S.rangeSel && !(opts && opts.atStart)) { // prefill the from/to fields from the ruler selection
     b1 = Math.floor(S.rangeSel.a / bt) + 1;
     q1 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    const last = S.rangeSel.b - beatTicks(); // inclusive last beat of the selection
-    if (last >= S.rangeSel.a) { // >= so a one-beat selection prefills To = From
-      b2 = Math.floor(last / bt) + 1;
-      q2 = snapBeat((last % bt) / beatTicks() + 1);
+    if (S.rangeSel.b > S.rangeSel.a) { // the span's own end, to the 16th — a 16th-long chord stays a 16th (Josh #154)
+      b2 = Math.floor(S.rangeSel.b / bt) + 1;
+      q2 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
     }
   }
   const type = note ? (note.chord ? "chord" : note.section ? "section"
@@ -385,8 +384,14 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   }
   document.getElementById("nb1").value = String(note ? note.b1 : b1);
   setBeatPair("nq1", "ns1", note ? note.q1 : q1);
-  document.getElementById("nb2").value = note ? (note.b2 ? String(note.b2) : "") : (b2 ? String(b2) : "");
-  setBeatPair("nq2", "ns2", note ? (note.q2 || beatsPerBarDisp()) : (q2 || beatsPerBarDisp()));
+  // the second row is where the span ENDS (Josh, 2026-10-06, #154/#156): the
+  // file still stores "through" (to: [bar, beats-from-the-bar's-start]); only
+  // this row shows and reads it as an end position, so every existing
+  // annotation keeps its exact span and anything down to a 16th can be written
+  if (note && note.b2 && note.end !== null && note.end !== undefined) { b2 = Math.floor(note.end / bt) + 1; q2 = snapBeat((note.end % bt) / beatTicks() + 1); }
+  else if (note) { b2 = ""; q2 = ""; }
+  document.getElementById("nb2").value = b2 ? String(b2) : "";
+  setBeatPair("nq2", "ns2", q2 || 1);
   if (type === "chop" && note) {
     // show the cut in DISPLAYED coordinates (start chop = the current bar 1),
     // overriding the raw-space b1/q1 the directive itself stores
@@ -802,8 +807,14 @@ export function initNoteEditor4() {
     if (type === "note" && !text) { document.getElementById("nstatus").textContent = "Note text is empty."; return; }
     const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
     const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
-    const b2raw = +document.getElementById("nb2").value || 0;
-    const q2raw = document.getElementById("nb2").value === "" ? 0 : getBeatPair("nq2", "ns2");
+    let b2raw = 0, q2raw = 0;
+    if (document.getElementById("nb2").value !== "") { // "ends at" → the stored "through" (to: bar of the last tick, beats from that bar's start)
+      const bt = barTicks(), qt = beatTicks();
+      const endTick = (+document.getElementById("nb2").value - 1) * bt + (getBeatPair("nq2", "ns2") - 1) * qt;
+      if (endTick <= (b1 - 1) * bt + (q1 - 1) * qt) { document.getElementById("nstatus").textContent = "The end has to come after the start."; return; }
+      b2raw = Math.floor((endTick - 1) / bt) + 1;
+      q2raw = Math.round((endTick - (b2raw - 1) * bt) / qt * 10000) / 10000;
+    }
     if (S.editingNote) retireEdited(S.editingNote);
     let fresh;
     if (type === "key") {
