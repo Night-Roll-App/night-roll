@@ -9068,6 +9068,10 @@
     "path": "albums/nes/ninja-gaiden/bloody-malth-cutscene.mid"
    },
    {
+    "title": "Bloody Malth [Cutscene] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/bloody-malth-cutscene-recapture.mid"
+   },
+   {
     "title": "Boss Battle",
     "path": "albums/nes/ninja-gaiden/boss-battle.mid"
    },
@@ -9078,6 +9082,10 @@
    {
     "title": "Depth of Wickedness [5-1, 6-5]",
     "path": "albums/nes/ninja-gaiden/depth-of-wickedness-5-1-6-5.mid"
+   },
+   {
+    "title": "Depth of Wickedness [5-1, 6-5] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/depth-of-wickedness-5-1-6-5-recapture.mid"
    },
    {
     "title": "Devilish Influence [Cutscene, 6-4]",

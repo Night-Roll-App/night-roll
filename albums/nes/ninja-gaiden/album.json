@@ -25,7 +25,9 @@
   "the-duel-opening": "The Duel [Opening]",
   "unbreakable-determination-4-2": "Unbreakable Determination [4-2]",
   "veil-of-uncertainty-cutscene": "Veil of Uncertainty [Cutscene]",
-  "vow-of-revenge-opening-ii": "Vow of Revenge [Opening II]"
+  "vow-of-revenge-opening-ii": "Vow of Revenge [Opening II]",
+  "bloody-malth-cutscene-recapture": "Bloody Malth [Cutscene] (re-capture)",
+  "depth-of-wickedness-5-1-6-5-recapture": "Depth of Wickedness [5-1, 6-5] (re-capture)"
  },
  "nsf": {
   "vault": "nes/ninja-gaiden.nsf",
@@ -33,17 +35,29 @@
    "a-hero-s-end-ending-i": {
     "n": 22,
     "secs": 44.664880000000004,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "aftermath-cutscene": {
     "n": 21,
     "secs": 55.397784,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "apprehensive-moments-cutscene-4-3": {
     "n": 7,
     "secs": 21.315814,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bloody-malth-cutscene": {
     "n": 20,
@@ -53,12 +67,20 @@
    "boss-battle": {
     "n": 5,
     "secs": 35.465248,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "credits-duplicate": {
     "n": 25,
     "secs": 103.595856,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "depth-of-wickedness-5-1-6-5": {
     "n": 19,
@@ -68,97 +90,191 @@
    "devilish-influence-cutscene-6-4": {
     "n": 13,
     "secs": 26.132288,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "evading-the-enemy-2-1-6-1": {
     "n": 8,
     "secs": 299.82134,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "evil-plans-cutscene": {
     "n": 18,
     "secs": 22.399104,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "for-your-love-ending-iii": {
     "n": 24,
     "secs": 53.997840000000004,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "game-over": {
     "n": 26,
     "secs": 4.599816,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "information-and-coercion-cutscene": {
     "n": 14,
     "secs": 41.781662,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "it-s-over-ending-ii": {
     "n": 23,
     "secs": 68.197272,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "jaquio-fortress-cutscene": {
     "n": 16,
     "secs": 20.799168,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "nowhere-to-run-3-2-6-2": {
     "n": 12,
     "secs": 65.49738,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "pushing-onward-1-1-5-2-6-3": {
     "n": 4,
     "secs": 44.898204,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "rugged-terrain-2-2-4-1": {
     "n": 9,
     "secs": 76.79692800000001,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "seeking-truth-cutscene-5-3": {
     "n": 11,
     "secs": 44.91487,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "sfx-next-act": {
     "n": 3,
     "secs": 3.199872,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "spawn-of-evil-cutscene": {
     "n": 17,
     "secs": 46.898124,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "swift-ninja-cutscene-3-1": {
     "n": 10,
     "secs": 5.33312,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-duel-opening": {
     "n": 1,
     "secs": 20.33252,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "unbreakable-determination-4-2": {
     "n": 15,
     "secs": 43.198272,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "veil-of-uncertainty-cutscene": {
     "n": 6,
     "secs": 24.632348,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "vow-of-revenge-opening-ii": {
     "n": 2,
     "secs": 48.99804,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "bloody-malth-cutscene-recapture": {
+    "n": 20,
+    "secs": 16.132688,
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "depth-of-wickedness-5-1-6-5-recapture": {
+    "n": 19,
+    "secs": 27.198912,
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
