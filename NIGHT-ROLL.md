@@ -7418,6 +7418,80 @@ captureChipTrack with and without `CHIPS.nsf.hits` (the other tracks
 identical), the NES catalog sweep; real rips (SMB3, MM2) when present —
 `NES_RIPS=<dir>` or tools/recapture.mjs's /tmp/recap/rips/nes cache.
 
+## SNES capture v2 — shapes, pan, programs, bends, echo send (2026-10-07)
+
+Audit §4 item 2 (docs/plans/2026-10-06-capture-fidelity-audit.md), on the
+NES v2 model. What an SPC capture now writes on top of v1, every value read
+from the DSP registers the same way for every game (no per-game table). The
+notes themselves — start, length, pitch, velocity, `ve`, track order and
+names, tempo, meter — are v1's; the same code serves File → Import
+(chip.js `CHIPS.spc`) and the tools (tools/spc/dump.mjs, recapture.mjs).
+
+- **Where it is read.** `reconstruct` (tools/spc/notes.mjs) gives each note
+  four series keyed by 2 ms ticks from the note's start (relative, like the
+  NES ones): `volSeries` (VOL, the louder of L/R, × dsp-state's envelope
+  `env / ENV_MAX` — ADSR or GAIN — polled every tick while the note is
+  open), `bendSeries` (PITCH moves the 70-cent guard keeps inside the note,
+  in cents from the note's OWN starting PITCH), `panSeries`, `echoSeries`.
+  `srcn` was already on every event. The app's capture rebins 2 ms ticks to
+  10 ms frames; `spcRebin(events, 5)` does it now and re-keys every series
+  (the notes round exactly as the old inline map did).
+- **Loudness → `n.env`.** makeMidi's `shapeFromSeries` with `SPC_SHAPE`
+  (`{falls, tol: 2, floor: 0, attack}`): unlike the NES (rises only), a
+  fall is written too — FF4 holds VOL still and shapes with ADSR, so v1
+  had no `ve` there at all. Thinned to corners (RDP within 2 of 127); a step
+  is two corners (held, then the new level); a slow attack's low first
+  level is written one tick after the onset (the onset tick is `ve`).
+  Velocity stays VOL × the attack peak and `ve` stays the VOL fade, as v1.
+- **L/R → CC10.** `64 + 63·(|R| − |L|)/(|L| + |R|)` (parseMidi's inverse).
+  A move counts only at `PAN_STEP` (4) or more from the pan in force,
+  across notes too — VOL L and R are rounded separately, so a quiet voice's
+  ratio jitters ±3 with no move (FF4 "Another Moon", 40 s: 897 → 174 events).
+  Written unthinned (the synth ramps 15 ms into each event, so dropping a
+  sweep's points would make steps). A still voice writes one CC10 (→
+  `midiPan`, which the console voice's track panner also follows); centre
+  writes none; a moving one stays CC10 events in `tr.ctl`.
+- **SRCN → program.** Program change at tick 0 for the first note, then
+  only where the voice changes sample (sort order before the note-on). Not
+  for noise notes (the noise generator plays no sample). An SRCN past 127
+  gets no program (none of the 13 albums' 42,974 SRCN writes is past 73).
+  Programs are stored, never played (MIDI playback v2).
+- **PITCH wobble → bend.** `bendFromSeries` + trackBytes, as on the NES;
+  a move of 70 cents or more is still a NEW note (Josh §8.4). Never the
+  note's static detune against the estimated root: that "cents" is the
+  root estimate's error as often as the composer's (FF6 Terra's constant
+  −8, tools/spc/INTEGRATION.md), and a bend would play it out of tune.
+  Bends stay under ±2, so no RPN is written. PMON is not read.
+- **Echo → CC91.** The voice's send = EON bit × max(|EVOL L|, |EVOL R|)
+  (−128 clamps to 127), 0 while FLG bit 5 disables echo writes; changes on
+  $4D/$2C/$3C/$6C while a note sounds land inside it. A track that never
+  sends writes nothing. The audit's `echo:` conductor meta (delay,
+  feedback, FIR) is NOT written: parseMidi reads no such meta, so it would
+  only be dropped on publish.
+- **Writer.** tools/nsf/midi-write.mjs: `ccFromSeries`; trackBytes takes
+  per-note `pan`/`rev` ([{t, v}]) and `prog`, one timeline each per track
+  (the first value at tick 0, then changes at a note's start or inside it,
+  never past the next note's start). NES/GB events carry none of these, so
+  their bytes are unchanged. The publish hop keeps all of it (`tr.ctl`,
+  `midiPan`, `n.env` — MIDI playback v2 owns them).
+- **Playback.** Synth path only, as MIDI playback v2 already plays them:
+  `n.env` (noteShapeRamp), CC10 events (per-note panner), CC91 (the shared
+  reverb bus), bend (detune). The console voice replays the rip.
+
+Re-capture verdicts (main's capture vs v2's, tools/capture-diff.mjs;
+scratch trees in /tmp, nothing under albums/ written): open-items "SNES
+capture v2".
+
+Tests: tests/spc.test.mjs "SNES capture v2 …" — hand-built DSP logs for
+each feature (ADSR decay + VOL step → shape; L/R → CC10 with the jitter
+deadband, single pan → midiPan, centre → none; SRCN → program, none on a
+noise kit; wobble → bend, a semitone → new note; EON/EVOL/FLG → CC91), all
+features at once against v1 through capture-diff (VELOCITY, not MOVED)
+and the publish hop, the app's own captureChipTrack on the synthetic SPC
+with v1's adapter swapped in (same notes), and FF4 Main Theme when the rip
+is cached (`SNES_RIPS=<dir>` or /tmp/recap/rips/snes; the guard checks the
+file, so an empty cache directory skips).
+
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
 Josh approved "patches v1" (docs/plans/2026-10-06-envelopes-lfo-review.md

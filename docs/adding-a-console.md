@@ -46,6 +46,13 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    settled (`CHIPS.<kind>.hits`, called by captureChipTrack after t0, the
    loop scan and the tempo fit), so they can never move a bar; a drum track
    named so every kit test (`isKitTrackName`, `trackIsDrums`) knows it.
+   The SNES is the second (NIGHT-ROLL.md "SNES capture v2"): the same
+   relative series (`volSeries` = VOL × the DSP's own envelope, `bendSeries`,
+   plus `panSeries`/`echoSeries` for CC10/CC91 and `srcn` for the program),
+   carried through the app's frame rebin (`spcRebin`) and written by the
+   shared `makeMidi` (`ccFromSeries`, `shape` options) — a new console reuses
+   those writer fields rather than adding its own. Bends are measured from
+   the note's own starting register value, never from an estimated root.
 4. **Chip audio.** A renderer (tools/<console>/…-render.mjs) giving one
    buffer per track (stereo pair `{l, r}` when the hardware pans), the
    console's own samples/synthesis, envelopes, volume under held notes,

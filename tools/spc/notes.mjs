@@ -6,7 +6,7 @@
 // instrument so a corrected root moves every note on it together.
 import { snapBeat } from "../nsf/midi-write.mjs";
 import { pitchName } from "../nsf/notes.mjs";
-import { DspVoices, OFF, ATTACK } from "./dsp-state.mjs";
+import { DspVoices, OFF, ATTACK, ENV_MAX } from "./dsp-state.mjs";
 
 export { pitchName };
 export const SAMPLE_RATE = 32000;
@@ -17,6 +17,10 @@ export const TICK_SEC = 0.002;
 const SAMPLES_PER_TICK = SAMPLE_RATE * TICK_SEC; // 64
 const SILENCE_ENV = 0x20;   // ~-36 dB: a sustain/GAIN fade below this is the note ending
 const VIBRATO_CENTS = 70;   // as in the NSF pipeline: within this of the note's start pitch = the same note singing
+// smallest pan move a capture records, in CC10 units (of 63 per side): FF4
+// "Another Moon"'s quiet lead (VOL 15) reads 74–77 every few ticks from the
+// driver rounding VOL L and R separately while the pan stands still
+export const PAN_STEP = 4;
 
 const DEFAULT_ROOT_MIDI = 72; // the "PITCH $1000 = C5" folklore, used only when estimation fails
 
@@ -200,6 +204,21 @@ function classifyNoiseVoices(events) {
 // PITCH at onset relative to the instrument's root; velocity = VOL level
 // × the envelope's peak (ADSR peaks at full scale; direct GAIN at its
 // level). A PITCH move beyond ±70 cents mid-note splits it (legato).
+//
+// SNES capture v2 (NIGHT-ROLL.md "SNES capture v2"): each note also carries
+// what the DSP did to it while it sounded, as series keyed by 2 ms ticks
+// from the note's start (relative, like the NES series, so a rebin or a
+// timing shift carries them):
+//   volSeries  [[tick, level]]  VOL (louder of L/R) × the DSP's own envelope
+//              (ADSR/GAIN, dsp-state's env ÷ ENV_MAX), 0–127, polled every tick
+//   bendSeries [[tick, cents]]  PITCH moves under the 70-cent guard, in cents
+//              from the note's starting PITCH — never from the estimated
+//              root, so a root estimate's constant error never becomes a bend
+//   panSeries  [[tick, cc10]]   VOL L vs R as a MIDI pan value (64 centre)
+//   echoSeries [[tick, cc91]]   the voice's echo send: EON bit × the louder
+//              EVOL side, 0 while FLG bit 5 disables echo writes
+// The notes themselves (start, end, pitch, velocity) are decided exactly as
+// before; nothing here moves a note.
 export function reconstruct(capture, {roots = {}} = {}) {
   const {dspLog, dsp0, samples, instruments, ram} = capture;
   const insts = resolveRoots(instruments, roots);
@@ -220,6 +239,26 @@ export function reconstruct(capture, {roots = {}} = {}) {
     const start = ram[base] | (ram[(base + 1) & 0xFFFF] << 8);
     return byKey.get(srcn + "@" + start.toString(16)) || null;
   };
+  const panOf = v => { // VOL L/R -> CC10 (parseMidi reads (cc − 64) / 63 back)
+    const l = Math.abs((regs[v * 16] << 24) >> 24), r = Math.abs((regs[v * 16 + 1] << 24) >> 24);
+    return l + r ? Math.max(0, Math.min(127, Math.round(64 + 63 * (r - l) / (l + r)))) : 64;
+  };
+  // the pan a capture records: a move of PAN_STEP or more from the value in
+  // force (VOL L and R are rounded separately, so a quiet voice's ratio
+  // jitters ±3 with no move at all), else that value — across notes too, so a
+  // still voice's next note doesn't restate its pan one step off
+  const lastPan = new Array(8).fill(null);
+  const panNear = (v, ref) => { const p = panOf(v); return ref != null && Math.abs(p - ref) < PAN_STEP ? ref : p; };
+  const echoOf = v => (regs[0x4D] & (1 << v)) && !(regs[0x6C] & 0x20)
+    ? Math.min(127, Math.max(Math.abs((regs[0x2C] << 24) >> 24), Math.abs((regs[0x3C] << 24) >> 24))) : 0;
+  // one series point: a change at an existing point's tick overwrites it (at
+  // tick 0 that is the note's setup), and an unchanged value adds nothing
+  const mark = (sr, tick, val) => {
+    const last = sr[sr.length - 1];
+    if (last[0] === tick) { last[1] = val; if (sr.length > 1 && sr[sr.length - 2][1] === val) sr.pop(); }
+    else if (last[1] !== val) sr.push([tick, val]);
+  };
+  const relTick = (e, sample) => toTick(sample) - toTick(e.startSample);
   const midiOf = (v, pitch) => {
     const inst = instOf(v);
     const root = inst ? inst.root.rootMidi : DEFAULT_ROOT_MIDI;
@@ -252,7 +291,10 @@ export function reconstruct(capture, {roots = {}} = {}) {
       // stays relative to the default root, and this flag lets an import
       // route the voice to the drum channel instead
       unpitched: !!inst && !inst.looped && (inst.root.confidence === "none" || inst.root.confidence === "low"),
+      volSeries: [[0, 0]], panSeries: [[0, panNear(v, lastPan[v])]], echoSeries: [[0, echoOf(v)]],
+      ...(noise ? {} : {bendSeries: [[0, 0]]}),
     };
+    lastPan[v] = e.panSeries[0][1];
     open[v] = e;
     events.push(e);
   };
@@ -270,7 +312,14 @@ export function reconstruct(capture, {roots = {}} = {}) {
         e.pitch = pitch; e.midi = Math.round(exact); e.cents = Math.round((exact - Math.round(exact)) * 100);
       } else if (Math.abs(1200 * Math.log2(pitch / e.pitch)) >= VIBRATO_CENTS) {
         close(v, lastSample); start(v, lastSample, true);
-      }
+      } else mark(e.bendSeries, relTick(e, lastSample), Math.round(1200 * Math.log2(pitch / e.pitch)));
+    } else if (e.bendSeries && e.bendSeries.length > 1) mark(e.bendSeries, relTick(e, lastSample), 0); // back on its starting pitch
+    if (open[v]) { // pan: compared with the value in force before this tick (the voice's last note's, at a note's setup)
+      const sr = open[v].panSeries, tick = relTick(open[v], lastSample), last = sr[sr.length - 1];
+      const before = last[0] !== tick ? last[1] : sr.length > 1 ? sr[sr.length - 2][1] : lastPan[v];
+      const p = panNear(v, before);
+      if (last[0] === tick || p !== last[1]) mark(sr, tick, p);
+      lastPan[v] = sr[sr.length - 1][1];
     }
     const level = Math.round(levelOf(v) * peakOf(v));
     if (level === 0) { close(v, lastSample); return; }
@@ -291,6 +340,7 @@ export function reconstruct(capture, {roots = {}} = {}) {
           const vc = dsp.voices[v];
           if (vc.stage === OFF) close(v, vc.endSample >= 0 ? vc.endSample : dsp.sample);
           else if (vc.stage !== ATTACK && vc.env < SILENCE_ENV && dsp.sample - e.startSample > SAMPLES_PER_TICK) close(v, dsp.sample);
+          else mark(e.volSeries, relTick(e, dsp.sample), Math.round(levelOf(v) * vc.env / ENV_MAX)); // what the voice puts out: VOL × envelope
         }
       }
     }
@@ -311,6 +361,8 @@ export function reconstruct(capture, {roots = {}} = {}) {
     if (reg === 0x5C) { for (let vv = 0; vv < 8; vv++) if (value & (1 << vv)) close(vv, w.sample); continue; }
     if (reg === 0x6C && (value & 0x80)) { for (let vv = 0; vv < 8; vv++) close(vv, w.sample); dsp.write(reg, value); continue; }
     if (reg === 0x7C) { dsp.write(reg, value); continue; }
+    if (reg === 0x4D || reg === 0x2C || reg === 0x3C || reg === 0x6C) // the echo send: EON, EVOL L/R, FLG's echo-write bit
+      for (let vv = 0; vv < 8; vv++) if (open[vv]) mark(open[vv].echoSeries, relTick(open[vv], w.sample), echoOf(vv));
     if (v < 8 && (col <= 3)) pending[v] = true; // VOL L/R, PITCH L/H
   }
   advanceTo(samples);
@@ -328,6 +380,35 @@ export function reconstruct(capture, {roots = {}} = {}) {
     frames: toTick(samples),
     frameSec: TICK_SEC,
   };
+}
+
+// How makeMidi turns an SNES note's volSeries into its shape (n.env): every
+// movement, falls included (FF4 holds VOL still and shapes with ADSR — v1
+// wrote no `ve` at all there), thinned to corners within 2 of 127, levels
+// down to 0, a slow attack's low start kept one tick after the onset.
+export const SPC_SHAPE = {falls: true, tol: 2, floor: 0, attack: true};
+
+// The app's capture rebins the 2 ms ticks to coarser frames (k ticks each:
+// chip.js CHIPS.spc.run, 10 ms, so the NES loop/tempo stages see the frame
+// count they were tuned for). Notes round exactly as they always did; each
+// v2 series is re-keyed to the new frames, still relative to the note's new
+// start, the later value winning when two land in one frame.
+export function spcRebin(events, k) {
+  const rekey = (sr, s0, a) => {
+    const out = [];
+    for (const [f, v] of sr) {
+      const t = Math.max(0, Math.round((s0 + f) / k) - a), last = out[out.length - 1];
+      if (last && last[0] === t) { last[1] = v; if (out.length > 1 && out[out.length - 2][1] === v) out.pop(); }
+      else if (!last || last[1] !== v) out.push([t, v]);
+    }
+    return out;
+  };
+  return events.map(e => {
+    const a = Math.round(e.startFrame / k);
+    const o = {...e, midi: Math.round(e.midi), startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k))};
+    for (const key of ["volSeries", "bendSeries", "panSeries", "echoSeries"]) if (e[key]) o[key] = rekey(e[key], e.startFrame, a);
+    return o;
+  });
 }
 
 export function rootLabel(root) {

@@ -6,7 +6,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI, TEST_TICKS_PER_NOTE, TEST_TICK_TARGET } from "../tools/spc/make-test-spc.mjs";
 import { parseSPC, runSPC, parseXid6, parseTrackName } from "../tools/spc/spc.mjs";
-import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC } from "../tools/spc/notes.mjs";
+import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC, spcRebin, SPC_SHAPE, PAN_STEP } from "../tools/spc/notes.mjs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createApp } from "./harness.mjs";
 import { decodeBRR, encodeBRR } from "../tools/spc/brr.mjs";
 import { SPC700 } from "../tools/spc/cpu-spc700.mjs";
 import { DspVoices, RATE_PERIOD, OFF } from "../tools/spc/dsp-state.mjs";
@@ -350,4 +354,193 @@ test("NON voice classification: too few hits to call a kit, even if short", () =
   const evs = r.events.filter(e => e.voice === 2);
   assert.equal(evs.length, 3);
   assert.ok(evs.every(e => e.drum === undefined), "below DRUM_MIN_HITS — not enough evidence to call it a kit");
+});
+
+// ---- SNES capture v2 (NIGHT-ROLL.md "SNES capture v2"): what the DSP did to
+// a note while it sounded — loudness (VOL × the envelope) as its shape, L/R as
+// pan, SRCN as the program, small PITCH moves as bend, EON × EVOL as the
+// reverb send. Hand-built logs as above: [seconds, register, value] in order.
+const atS = s => Math.round(s * SAMPLE_RATE);
+function dspCapture(writes, secs) {
+  const dspLog = writes.map(([s, addr, value], i) => ({sample: atS(s), addr, value, i}))
+    .sort((a, b) => a.sample - b.sample || a.i - b.i).map(({sample, addr, value}) => ({sample, addr, value}));
+  return {dspLog, dsp0: new Uint8Array(128), samples: atS(secs), instruments: new Map(), ram: new Uint8Array(0x10000)};
+}
+// a voice's registers: VOL L/R, PITCH, SRCN, ADSR (default AR 15, SL 7, SR 0:
+// full level held — no envelope movement unless a test asks for one), GAIN
+const voiceRegs = (v, s, {l = 100, r = 100, pitch = 0x1000, srcn = 0, adsr1 = 0x8F, adsr2 = 0xE0, gain = 0} = {}) =>
+  [[s, v * 16, l & 255], [s, v * 16 + 1, r & 255], [s, v * 16 + 2, pitch & 0xFF], [s, v * 16 + 3, pitch >> 8], [s, v * 16 + 4, srcn], [s, v * 16 + 5, adsr1], [s, v * 16 + 6, adsr2], [s, v * 16 + 7, gain]];
+const kon = (v, s) => [[s, 0x4C, 1 << v]];
+const koff = (v, s) => [[s, 0x5C, 1 << v], [s + 0.001, 0x5C, 0]];
+const appEvents = cap => spcRebin(reconstruct(cap).events, 5); // what CHIPS.spc.run hands captureChipTrack
+const midiOf = ev => makeMidi(ev, {bpm: 120, frameSec: TICK_SEC * 5, snap: true, volMax: 127, shape: SPC_SHAPE});
+const stripV2 = ev => ev.map(e => { const o = {...e}; for (const k of ["volSeries", "bendSeries", "panSeries", "echoSeries", "srcn"]) delete o[k]; return o; }); // what v1 handed makeMidi
+async function publishHop(bytes) { // the app's parser, then its writer and parser again (what a publish re-encodes)
+  const app = await createApp();
+  app.context._b = [...bytes];
+  return JSON.parse(app.run(`JSON.stringify((() => {
+    const a = parseMidi(new Uint8Array(_b).buffer, {trust: true});
+    const b = parseMidi(writeMidi({ppq: a.ppq, timesig: a.timesig, tempos: a.tempos, tracks: a.tracks.map(t => ({...t}))}).buffer, {trust: true});
+    return {a, b};
+  })())`));
+}
+const ctlOf = (tr, c) => (tr.ctl || []).filter(e => e.c === c);
+const noteRows = song => song.tracks.map(t => [t.name, t.notes.map(n => [n.t, n.d, n.p, n.v])]);
+
+test("SNES capture v2: the DSP's own envelope × VOL becomes the note's shape — an ADSR decay, a VOL fade — read from the registers, no per-game table", async () => {
+  const cap = dspCapture([
+    ...voiceRegs(0, 0, {adsr1: 0xAF, adsr2: 0x4A}), ...kon(0, 0.01), ...koff(0, 1.0),       // AR 15, DR 2 to SL 2, then SR 10: an exponential fall
+    ...voiceRegs(1, 0, {adsr1: 0x00, gain: 0x7F}), ...kon(1, 0.01), [0.5, 0x10, 50], [0.5, 0x11, 50], ...koff(1, 1.0), // direct GAIN, VOL halved mid-note
+    ...voiceRegs(2, 0), ...kon(2, 0.01), ...koff(2, 1.0)], 1.2);                           // held flat: no shape
+  const {a, b} = await publishHop(midiOf(appEvents(cap)));
+  const tr = name => b.tracks.find(t => t.name === name);
+  const decay = tr("voice0").notes[0];
+  assert.ok(decay.env && decay.env.length >= 2 && decay.env.length <= 16, "a decay thinned to its corners: " + JSON.stringify(decay.env));
+  assert.ok(decay.env.every((q, k) => k === 0 || q.r <= decay.env[k - 1].r + 1e-9), "never rises");
+  assert.ok(decay.env[decay.env.length - 1].r < 0.4, "falls well below the attack: " + decay.env[decay.env.length - 1].r);
+  const fade = tr("voice1").notes[0];
+  assert.equal(fade.env.length, 2, "a step is two corners — held to the frame before, then the new level (a glide between points would smear it): " + JSON.stringify(fade.env));
+  assert.ok(Math.abs(fade.env[0].r - 1) < 0.01 && Math.abs(fade.env[1].r - 0.5) < 0.03 && Math.abs(fade.env[1].t - 470) <= 12, "half level at the write (0.5 s ≈ tick 470): " + JSON.stringify(fade.env));
+  assert.equal(tr("voice2").notes[0].env, undefined, "a flat note has no shape");
+  assert.deepEqual(noteRows(b), noteRows(a), "the shapes survive the publish hop unchanged in notes");
+  assert.deepEqual(b.tracks.map(t => t.notes.map(n => n.env)), a.tracks.map(t => t.notes.map(n => n.env)), "and in the shapes");
+});
+
+test("SNES capture v2: VOL L vs R is a CC10 pan timeline — only moves, a still voice keeps one pan (midiPan), centre writes none", async () => {
+  const cap = dspCapture([
+    ...voiceRegs(0, 0, {l: 100, r: 20}), ...kon(0, 0.01), [0.5, 0x00, 20], [0.5, 0x01, 100], ...koff(0, 1.0),
+    [0.6, 0x00, 22], ...kon(0, 1.1), ...koff(0, 1.4),                                         // a rounding wobble (pan 104 vs 106): no event
+    ...voiceRegs(1, 0, {l: 100, r: 0}), ...kon(1, 0.01), ...koff(1, 1.0),                      // hard left, still
+    ...voiceRegs(2, 0), ...kon(2, 0.01), ...koff(2, 1.0)], 1.6);                               // centre
+  const ev = appEvents(cap);
+  assert.deepEqual(ev.filter(e => e.voice === 0)[0].panSeries.map(p => p[1]), [22, 106]);
+  const {a, b} = await publishHop(midiOf(ev));
+  const tr = name => b.tracks.find(t => t.name === name);
+  assert.deepEqual(ctlOf(tr("voice0"), 10).map(e => e.v), [22, 106], "start pan, then the move; the second note's wobble under PAN_STEP (" + PAN_STEP + ") adds nothing");
+  assert.ok(ctlOf(tr("voice0"), 10)[1].t > 400 && ctlOf(tr("voice0"), 10)[1].t < 480, "the move lands inside the note");
+  assert.equal(tr("voice1").midiPan, -1, "one CC10 is the track's pan");
+  assert.equal(ctlOf(tr("voice1"), 10).length, 0);
+  assert.equal(tr("voice2").midiPan, undefined, "centre: nothing written");
+  assert.deepEqual(b.tracks.map(t => [t.midiPan, ctlOf(t, 10)]), a.tracks.map(t => [t.midiPan, ctlOf(t, 10)]), "the publish hop keeps them");
+});
+
+test("SNES capture v2: SRCN is the note's program — at tick 0, then only where a voice changes sample; a noise kit gets none", async () => {
+  const cap = dspCapture([
+    ...voiceRegs(0, 0, {srcn: 3}), ...kon(0, 0.01), ...koff(0, 0.4),
+    [0.45, 0x04, 5], ...kon(0, 0.5), ...koff(0, 0.9),
+    ...kon(0, 1.0), ...koff(0, 1.4),
+    ...voiceRegs(1, 0, {srcn: 7}), ...kon(1, 0.01), ...koff(1, 0.4), ...kon(1, 0.5), ...koff(1, 0.9)], 1.6);
+  const {b} = await publishHop(midiOf(appEvents(cap)));
+  const tr = name => b.tracks.find(t => t.name === name);
+  const pg0 = ctlOf(tr("voice0"), "pg");
+  assert.deepEqual(pg0.map(e => e.v), [3, 5]);
+  assert.equal(pg0[0].t, 0);
+  assert.equal(pg0[1].t, tr("voice0").notes[1].t, "the change sits on the note that changed sample");
+  assert.deepEqual(ctlOf(tr("voice1"), "pg").map(e => [e.t, e.v]), [[0, 7]], "one sample: one program, first");
+  const kit = await publishHop(midiOf(appEvents(noiseVoiceCapture(0, 10, Array.from({length: 16}, (_, i) => ({start: i * 0.25, dur: 0.1}))))));
+  assert.equal(kit.b.tracks.length, 1);
+  assert.equal(ctlOf(kit.b.tracks[0], "pg").length, 0, "the noise generator is no sample: no program");
+});
+
+test("SNES capture v2: a PITCH wobble under the 70-cent guard is pitch bend inside the one note; a move past it is still a NEW note", async () => {
+  const up30 = Math.round(0x1000 * 2 ** (30 / 1200)), up100 = Math.round(0x1000 * 2 ** (100 / 1200));
+  const cap = dspCapture([
+    ...voiceRegs(0, 0), ...kon(0, 0.01),
+    [0.3, 0x02, up30 & 0xFF], [0.3, 0x03, up30 >> 8],
+    [0.5, 0x02, 0x00], [0.5, 0x03, 0x10],
+    [0.7, 0x02, up100 & 0xFF], [0.7, 0x03, up100 >> 8], ...koff(0, 1.0)], 1.2);
+  const ev = appEvents(cap);
+  assert.deepEqual(ev.map(e => e.midi), [72, 73], "the step to a new pitch splits the note, as v1 did");
+  assert.deepEqual(ev[0].bendSeries.map(p => p[1]), [0, 30, 0]);
+  const {a, b} = await publishHop(midiOf(ev));
+  const v0 = b.tracks[0];
+  assert.deepEqual(v0.notes.map(n => n.p), [72, 73]);
+  const pb = ctlOf(v0, "pb");
+  assert.deepEqual(pb.map(e => e.v), [Math.round(30 / 200 * 8192), 0], "+30 cents on the default ±2 range, then back to centre");
+  assert.ok(pb[0].t > v0.notes[0].t && pb[1].t < v0.notes[1].t, "inside the first note");
+  assert.equal(ctlOf(v0, 101).length, 0, "no RPN: the default ±2 holds every SNES bend (the guard keeps them under 70 cents)");
+  assert.deepEqual(ctlOf(b.tracks[0], "pb"), ctlOf(a.tracks[0], "pb"), "the publish hop keeps them");
+});
+
+test("SNES capture v2: the echo send (EON bit × the louder EVOL side, 0 while FLG disables echo writes) is a CC91 timeline per track", async () => {
+  const cap = dspCapture([
+    [0, 0x2C, 40], [0, 0x3C, (-60) & 255], [0, 0x4D, 0x01],                                   // EVOL 40 / −60, echo on voice 0 only
+    ...voiceRegs(0, 0), ...kon(0, 0.01), [0.5, 0x6C, 0x20], ...koff(0, 1.0),                  // echo writes disabled mid-note
+    ...voiceRegs(1, 0), ...kon(1, 0.01), ...koff(1, 1.0)], 1.2);
+  const ev = appEvents(cap);
+  assert.deepEqual(ev.find(e => e.voice === 0).echoSeries.map(p => p[1]), [60, 0]);
+  const {a, b} = await publishHop(midiOf(ev));
+  const tr = name => b.tracks.find(t => t.name === name);
+  assert.deepEqual(ctlOf(tr("voice0"), 91).map(e => e.v), [60, 0]);
+  assert.equal(ctlOf(tr("voice0"), 91)[0].t, 0);
+  assert.equal(ctlOf(tr("voice1"), 91).length, 0, "a voice outside EON sends nothing — nothing written");
+  assert.deepEqual(ctlOf(tr("voice0"), 91), ctlOf(a.tracks.find(t => t.name === "voice0"), 91));
+});
+
+test("SNES capture v2 changes no note: every feature at once writes the same notes, tracks, tempo and meter as v1 (capture-diff: not MOVED)", async () => {
+  const { readSmf, captureDiff } = await import("../tools/capture-diff.mjs");
+  const up30 = Math.round(0x1000 * 2 ** (30 / 1200));
+  const cap = dspCapture([
+    [0, 0x2C, 40], [0, 0x3C, 40], [0, 0x4D, 0x03],
+    ...voiceRegs(0, 0, {l: 100, r: 20, srcn: 3, adsr1: 0xAF, adsr2: 0x4A}), ...kon(0, 0.01),
+    [0.3, 0x02, up30 & 0xFF], [0.3, 0x03, up30 >> 8], [0.5, 0x00, 20], [0.5, 0x01, 100], ...koff(0, 1.0),
+    [1.05, 0x04, 4], ...kon(0, 1.1), ...koff(0, 1.4),
+    ...voiceRegs(1, 0, {srcn: 9, adsr1: 0x00, gain: 0x7F}), ...kon(1, 0.01), [0.6, 0x10, 30], [0.6, 0x4D, 0x01], ...koff(1, 1.4)], 1.6);
+  const ev = appEvents(cap);
+  const v1 = midiOf(stripV2(ev)), v2 = midiOf(ev);
+  const d = captureDiff(readSmf(v1), readSmf(v2));
+  assert.equal(d.verdict, "VELOCITY", d.reasons.join("; "));
+  for (const k of ["shape", "cc10", "cc91", "program", "bend"]) assert.ok(d.gained[k] > 0, "gained " + k + ": " + JSON.stringify(d.gained));
+  const A = await publishHop(v1), B = await publishHop(v2);
+  assert.deepEqual(noteRows(B.b), noteRows(A.b), "same notes after the publish hop");
+  assert.deepEqual([B.b.tempos.map(t => t.usq), B.b.timesig], [A.b.tempos.map(t => t.usq), A.b.timesig]);
+});
+
+test("SNES capture v2 in the app's own capture (captureChipTrack on the synthetic SPC): v2 notes are v1's notes", async () => {
+  const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  const load = f => import(pathToFileURL(path.join(ROOT, "tools", f + ".mjs")).href);
+  const parts = await Promise.all(["spc/spc", "spc/notes", "spc/apu-render"].map(load)), shared = await Promise.all(["nsf/notes", "nsf/midi-write"].map(load));
+  const app = await createApp();
+  const C = app.context;
+  C.setTimeout = setTimeout; C.clearTimeout = clearTimeout;
+  C.__M = Object.assign({}, ...parts, ...shared, {reconstruct: parts[1].reconstruct, toNotesTxt: parts[1].toNotesTxt}); // chipModules' merge: the chip's own reconstruct wins
+  C.__spc = parseSPC(makeTestSPC().buffer);
+  const run = async () => {
+    const cap = await app.run("captureChipTrack('spc', __M, __spc, 1, 4, null)");
+    C.__b = cap.bytes;
+    return JSON.parse(app.run("JSON.stringify(parseMidi(__b.buffer, {trust: true}).tracks.map(t => ({name: t.name, notes: t.notes.map(n => [n.t, n.d, n.p, n.v]), ctl: t.ctl || []})))"));
+  };
+  const v2 = await run();
+  C.__v1 = M => async (spc, n, seconds) => { // v1's adapter: the same rebin, no series, no shape options
+    const cap = await M.runSPCAsync(spc, seconds);
+    const r = M.reconstruct(cap, {});
+    const events = r.events.map(e => { const a = Math.round(e.startFrame / 5); return {channel: e.channel, voice: e.voice, midi: Math.round(e.midi), vol: e.vol, volEnd: e.volEnd, drum: e.drum, startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / 5))}; });
+    return {apuLog: cap, frames: Math.round(r.frames / 5), frameSec: r.frameSec * 5, events};
+  };
+  C.__keep = app.run("[CHIPS.spc.run, CHIPS.spc.midiOpts]");
+  app.run("CHIPS.spc.run = __v1; CHIPS.spc.midiOpts = () => ({volMax: 127})");
+  let v1;
+  try { v1 = await run(); } finally { app.run("CHIPS.spc.run = __keep[0]; CHIPS.spc.midiOpts = __keep[1]"); }
+  assert.deepEqual(v2.map(t => [t.name, t.notes]), v1.map(t => [t.name, t.notes]));
+  assert.deepEqual(v2[0].ctl.filter(e => e.c === "pg").map(e => e.v), [0], "SRCN 0 as the program");
+  assert.equal(v1[0].ctl.length, 0);
+});
+
+// real rips: the archive's .spc files, cached outside the repo by
+// tools/recapture.mjs (/tmp/recap/rips/snes/<album>/) or SNES_RIPS=<dir>
+// holding <album>/<file>.spc. Guarded on the FILE: an empty cache dir skips.
+const snesRip = rel => [process.env.SNES_RIPS && path.join(process.env.SNES_RIPS, rel), "/tmp/recap/rips/snes/" + rel]
+  .find(p => p && existsSync(p) && statSync(p).isFile() && statSync(p).size >= 0x10100);
+const FF4_MAIN = snesRip("final-fantasy-4/main-theme.spc");
+test("SNES capture v2 (real rip): FF4 Main Theme — echo on its voices, ADSR shapes, programs; the notes exactly v1's after the publish hop",
+     {skip: !FF4_MAIN && "final-fantasy-4/main-theme.spc not cached (tools/recapture.mjs --album snes/final-fantasy-4, or SNES_RIPS=<dir>)"}, async () => {
+  const cap = runSPC(parseSPC(readFileSync(FF4_MAIN)), 30);
+  const ev = appEvents(cap);
+  const A = await publishHop(midiOf(stripV2(ev))), B = await publishHop(midiOf(ev));
+  assert.deepEqual(noteRows(B.b), noteRows(A.b), "every note where v1 put it");
+  const pitched = B.b.tracks.filter(t => !/drum/.test(t.name));
+  assert.ok(pitched.filter(t => ctlOf(t, 91).some(e => e.v > 0)).length >= 4, "echo send on most voices");
+  assert.ok(pitched.every(t => ctlOf(t, "pg").length >= 1), "every pitched voice names its sample");
+  const shaped = pitched.reduce((s, t) => s + t.notes.filter(n => n.env).length, 0);
+  assert.ok(shaped > 20, "ADSR shapes where v1 wrote no ve: " + shaped);
 });

@@ -7,7 +7,7 @@
 // PITCH=$1000; every note on that instrument moves together.
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseSPC, runSPC } from "./spc.mjs";
-import { reconstruct, toNotesTxt } from "./notes.mjs";
+import { reconstruct, toNotesTxt, SPC_SHAPE } from "./notes.mjs";
 import { makeMidi } from "../nsf/midi-write.mjs";
 
 const args = process.argv.slice(2);
@@ -51,6 +51,6 @@ console.error(`# ${cap.dspLog.length} DSP writes, ${cap.instruments.size} instru
 const snap = !args.includes("--raw");
 process.stdout.write(toNotesTxt(r, {bpm: +opt("bpm"), tsNum, tsDen, title: opt("title", spc.name || file), snap}));
 if (opt("mid")) {
-  writeFileSync(opt("mid"), makeMidi(r.events, {bpm: +opt("bpm"), tsNum, tsDen, frameSec: r.frameSec, snap, volMax: 127}));
+  writeFileSync(opt("mid"), makeMidi(r.events, {bpm: +opt("bpm"), tsNum, tsDen, frameSec: r.frameSec, snap, volMax: 127, shape: SPC_SHAPE}));
   console.error("# wrote " + opt("mid"));
 }

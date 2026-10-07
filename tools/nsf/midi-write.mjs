@@ -48,9 +48,28 @@ export function trackBytes(name, notes, ch, metas = []) {
   // note stretched to the 40-tick minimum may overlap its successor, and a
   // CC70 or bend there belongs to the successor
   const nextAt = new Map();
-  if (notes.some(n => n.bend || n.duties)) {
+  const timed = notes.some(n => n.pan || n.rev || n.prog !== undefined);
+  if (notes.some(n => n.bend || n.duties) || timed) {
     const byT = [...notes].sort((a, b) => a.t - b.t);
     byT.forEach((n, k) => nextAt.set(n, Math.min(n.t + n.d, k + 1 < byT.length ? byT[k + 1].t : Infinity)));
+    // controller timelines (SNES capture v2): per-note [{t: ticks from its
+    // start, v}] for pan (CC10) and the echo send (CC91), and a program per
+    // note. The first note's value opens the track at tick 0; after that only
+    // changes, at a note's start (before its note-on) or inside it, never
+    // past the next note's start. A pan that never leaves centre and a send
+    // that stays 0 write nothing (the defaults).
+    if (timed) {
+      const line = (get, bytes, idle) => {
+        const pts = [];
+        for (const n of byT) for (const q of get(n) || []) if (!q.t || n.t + q.t < nextAt.get(n)) pts.push({t: n.t + q.t, o: q.t ? 1.25 : 0.75, v: q.v});
+        if (!pts.length || pts.every(q => q.v === idle)) return;
+        let cur = null;
+        pts.forEach((q, k) => { if (q.v !== cur) { evs.push({t: k ? q.t : 0, o: k ? q.o : 0.75, d: bytes(q.v)}); cur = q.v; } });
+      };
+      line(n => n.prog !== undefined ? [{t: 0, v: n.prog}] : null, v => [0xC0 | ch, v & 127], null);
+      line(n => n.pan, v => [0xB0 | ch, 10, v], 64);
+      line(n => n.rev, v => [0xB0 | ch, 91, v], 0);
+    }
     // pitch bend (the chip's vibrato and absorbed slide steps, 14-bit signed
     // around 0): a note starts from its own first point or from centre
     let bendNow = 0;
@@ -112,7 +131,13 @@ const NES_CHANS = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9, dpcm: 9};
 // Only for a series that RISES after the attack: a fall alone is still the
 // one-number `ve` it always was, so a decaying capture writes the same bytes
 // as before. Generic: it reads the chip's own volume writes, nothing per game.
-export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15) {
+// opts (SNES capture v2, whose series is the DSP's VOL × envelope on a
+// 0–127 scale): falls — a shape for any movement, not only a rise (the
+// ADSR decay IS the note's loudness curve); tol — the RDP tolerance in
+// series units; floor — the lowest written level; attack — the series' own
+// first level, when it differs from the velocity, is written one tick after
+// the onset (the note-on tick itself is `ve`), so a slow attack starts low.
+export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15, {falls = false, tol = 0.75, floor = 8, attack = false} = {}) {
   const sr = e.volSeries, n = e.endFrame - e.startFrame;
   if (!sr || sr.length < 2 || n < 2 || e.vol == null) return undefined;
   const lv = [];
@@ -120,10 +145,10 @@ export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15) {
     while (k < sr.length && sr[k][0] <= f) cur = sr[k++][1];
     lv.push(cur);
   }
-  if (!lv.some(x => x > e.vol)) return undefined;
+  if (!(falls ? lv.some(x => Math.abs(x - e.vol) > tol) : lv.some(x => x > e.vol))) return undefined;
   const keep = new Set([0, n - 1]);
   const rdp = (a, b) => {
-    let best = -1, bestD = 0.75; // < one 4-bit step
+    let best = -1, bestD = tol; // NES: < one 4-bit step
     for (let i = a + 1; i < b; i++) {
       const dv = Math.abs(lv[i] - (lv[a] + (lv[b] - lv[a]) * (i - a) / (b - a)));
       if (dv > bestD) { best = i; bestD = dv; }
@@ -132,13 +157,14 @@ export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15) {
     keep.add(best); rdp(a, best); rdp(best, b);
   };
   rdp(0, n - 1);
-  const level = vol => Math.max(8, Math.round(vol / volMax * 127)); // the velocity scale
+  const level = vol => Math.max(floor, Math.round(vol / volMax * 127)); // the velocity scale
   const pts = [];
   for (const i of [...keep].sort((a, b) => a - b)) {
-    const t = Math.round(i * ticksPerFrame);
+    const t = i === 0 && attack && level(lv[0]) !== v ? 1 : Math.round(i * ticksPerFrame);
     if (t <= 0 || t >= d) continue;
     const l = level(lv[i]), prev = pts.length ? pts[pts.length - 1].l : v;
     if (l === prev && i === n - 1) continue; // flat to the end: the hold is implied
+    if (pts.length && pts[pts.length - 1].t === t) { pts[pts.length - 1].l = l; continue; } // two corners on one tick: the later level
     pts.push({t, l});
   }
   return pts.length ? pts.map(q => ({t: q.t, r: q.l / v})) : undefined;
@@ -197,6 +223,23 @@ export function dutiesFromSeries(e, d, ticksPerFrame) {
   const out = pts.filter((q, k) => q.v !== (k ? pts[k - 1].v : e.duty));
   return out.length ? out : undefined;
 }
+// A controller series ([[frames from the note's start, value]…], SNES
+// capture v2's panSeries/echoSeries) -> [{t, v}] in ticks from the note's
+// start: the value at the start (t 0), then every change inside the note,
+// unthinned (the synth ramps 15 ms into each event, so dropping the points
+// of a sweep would turn it into steps). undefined without a series.
+export function ccFromSeries(sr, d, ticksPerFrame) {
+  if (!sr || !sr.length) return undefined;
+  const pts = [];
+  for (const [f, v] of sr) {
+    const t = f <= 0 ? 0 : Math.round(f * ticksPerFrame);
+    if (t >= d && t > 0) continue;
+    const last = pts[pts.length - 1];
+    if (last && last.t === t) last.v = v;
+    else if (!last || last.v !== v) pts.push({t, v});
+  }
+  return pts.length ? pts : undefined;
+}
 // DPCM samples -> drum keys, one per distinct sample (notes.mjs dpcmHits'
 // `midi` = its first-use number): General MIDI keys guessed from rhythm
 // (tools/kit-guess.mjs, the rules PS1/N64 drums use — backbeat = snare,
@@ -219,7 +262,7 @@ function dpcmKeys(notes, beatTicks, barBeats) {
 function bendRangeMetas(ch, semis) {
   return [[101, 0], [100, 0], [6, semis], [38, 0], [101, 127], [100, 127]].map(([c, v]) => ({t: 0, o: -0.5, d: [0xB0 | ch, c, v]}));
 }
-export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15}) {
+export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15, shape = undefined}) {
   chans = {...chans, drums: 9};
   const usq = Math.round(6e7 / bpm);
   // snap:false keeps raw hardware timing — for through-composed pieces with
@@ -243,10 +286,17 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
       ? Math.max(8, Math.round(e.volEnd / volMax * 127)) : undefined;
     const key = e.drum != null ? "drums" : e.channel;
     const tpf = frameSec / (60 / bpm) * PPQ;
-    const env = e.volSeries ? shapeFromSeries(e, v, d, tpf, volMax) : undefined;
+    const env = e.volSeries ? shapeFromSeries(e, v, d, tpf, volMax, shape) : undefined;
     const bend = e.bendSeries ? bendFromSeries(e, d, tpf) : undefined;
     const duties = e.dutySeries ? dutiesFromSeries(e, d, tpf) : undefined;
+    // SNES capture v2: pan (VOL L/R), echo send, and the sample (SRCN) as
+    // the program — a noise voice plays the noise generator, not its sample;
+    // an SRCN past 127 has no program number (never folded onto another's)
+    const pan = e.panSeries ? ccFromSeries(e.panSeries, d, tpf) : undefined;
+    const rev = e.echoSeries ? ccFromSeries(e.echoSeries, d, tpf) : undefined;
+    const prog = e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined ? e.srcn : undefined;
     (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
+      ...(pan ? {pan} : {}), ...(rev ? {rev} : {}), ...(prog !== undefined ? {prog} : {}),
       ...(e.channel === "dpcm" ? {sample: e.midi} : {})});
   }
   if (byCh.dpcm && byCh.dpcm.length) {

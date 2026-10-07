@@ -562,11 +562,11 @@ export const CHIPS = {
         run: M => async (spc, n, seconds, onProgress) => {
           const cap = await M.runSPCAsync(spc, seconds, onProgress);
           const r = M.reconstruct(cap, {});
-          const k = 5; // 2 ms ticks → 10 ms frames
-          const events = r.events.map(e => { const a = Math.round(e.startFrame / k); return {...e, midi: Math.round(e.midi), startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k))}; });
+          const k = 5; // 2 ms ticks → 10 ms frames (SNES capture v2's series ride along — spcRebin)
+          const events = M.spcRebin(r.events, k);
           return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events};
         },
-        midiOpts: () => ({volMax: 127})},
+        midiOpts: M => ({volMax: 127, shape: M.SPC_SHAPE})},
   // Sega Genesis / Mega Drive (2026-09-27; Josh: "is it gonna download games
   // to test it with?" — tested on the real Sonic 1 + 2 sets). A VGM is a
   // register LOG, not a program: no emulation, reconstruct reads it straight.
