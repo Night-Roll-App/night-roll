@@ -420,7 +420,7 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
    Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
-Q17. ANSWERED B (Terminal #179) — building. (Terminal #175, 2026-10-07) Cursor position readout — docs/plans/2026-10-07-cursor-position-readout.md.
+Q17. ANSWERED B (Terminal #179) — SHIPPED 2026-10-07 (LCD "4 | 2&", +NN% off-grid; one formatter posParts). (Terminal #175, 2026-10-07) Cursor position readout — docs/plans/2026-10-07-cursor-position-readout.md.
     Which way? At bar 4, the "&" of beat 2:
     A. DAW counter: "4 | 2 | 3" (a third cell for 16ths), "+33%" under it for triplets.
     B. Count it (advisor's pick): "4 | 2&", plus a small "+33%" only off the grid; every readout in the app uses the same words.
