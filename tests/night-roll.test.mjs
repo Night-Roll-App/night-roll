@@ -14051,3 +14051,16 @@ test("console voice: the dpcm part rides the noise track, else the triangle; a r
   assert.deepEqual(JSON.parse(run(`JSON.stringify(__gainsSeen)`)), [0, 2], "pulse1 -> its own track, dpcm -> noise");
   run(`chipStopSrcs(); chip.buffers = null; chip.buffersCtx = null; chip.key = null;`);
 });
+
+test("AI window: the tab you had survives a relaunch — before the bridge says the Terminal tab exists it shows the song tab but keeps your choice, and switches back once it's offered (Josh, 2026-10-06, #174)", () => {
+  installSong();
+  run(`localStorage.setItem("ff1roll-ask-mode", "terminal"); askTerminal = true; askGeneral = true; askCaps = {bridge: false, terminal: false, sessions: false};`);
+  run(`askTabsApply();`);
+  assert.equal(val(`askTerminal`), false, "not offered yet: the song tab shows");
+  assert.equal(val(`localStorage.getItem("ff1roll-ask-mode")`), "terminal", "…but the saved choice is kept");
+  run(`askCaps = {bridge: true, terminal: true, sessions: true}; askTabsApply();`);
+  assert.equal(val(`askTerminal`), true, "offered: back on the Terminal tab");
+  run(`askSetMode("song"); askTabsApply();`);
+  assert.equal(val(`askTerminal`), false, "a tap on the song tab is a real choice");
+  assert.equal(val(`localStorage.getItem("ff1roll-ask-mode")`), "song");
+});

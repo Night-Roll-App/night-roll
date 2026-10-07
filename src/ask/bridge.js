@@ -1,3 +1,4 @@
+import { askModeButtons } from "./sheet.js";
 import { askStoreKey } from "./sheet.js";
 import { appErrors } from "../model/jobs.js";
 import { appDebug } from "../model/jobs.js";
@@ -502,7 +503,19 @@ export function askTabsApply() {
   if (g) g.style.display = v.general ? "" : "none";
   if (t) t.style.display = v.terminal ? "" : "none";
   askTermModelsLoad();
-  if ((S.askTerminal && !v.terminal) || (S.askGeneral && !S.askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
+  // a tab that isn't offered (yet — the bridge's status poll hasn't answered
+  // right after a launch) SHOWS the song tab but keeps the saved choice, and
+  // comes back once it is offered: the Terminal tab used to be overwritten
+  // with "song" on every relaunch (Josh, 2026-10-06, #174)
+  let saved = null;
+  try { saved = localStorage.getItem("ff1roll-ask-mode"); } catch (err) { /* private mode */ }
+  const want = saved === "terminal" && v.terminal ? "terminal" : saved === "general" && v.general ? "general" : "song";
+  const now = S.askTerminal ? "terminal" : S.askGeneral ? "general" : "song";
+  if (want !== now) {
+    S.askTerminal = want === "terminal"; S.askGeneral = want !== "song";
+    askModeButtons();
+    if (asksheet.classList.contains("on")) askRender();
+  }
 }
 export function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); }
 export function askNoteSeen() { // the notes are on screen: the ✉ light and its footer line go (Josh, 2026-09-29: it stayed up with the panel open)
