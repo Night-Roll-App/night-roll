@@ -40,12 +40,20 @@
    "heart-of-fire-prisonhold": {
     "n": 6,
     "secs": 57.83102,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "introduction-castle-gate": {
     "n": 1,
     "secs": 7.399704,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "nightmare-dracula-s-quarters": {
     "n": 8,
@@ -65,32 +73,56 @@
    "stalker-armory": {
     "n": 3,
     "secs": 34.398624,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "vampire-killer-courtyard": {
     "n": 2,
     "secs": 29.898804000000002,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "victory": {
     "n": 12,
     "secs": 5.08313,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "voyager-ending": {
     "n": 11,
     "secs": 53.08121,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "walking-edge-castle-swamp": {
     "n": 7,
     "secs": 41.598336,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "wicked-child-upper-yard": {
     "n": 4,
     "secs": 68.16394,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
