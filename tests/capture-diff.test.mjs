@@ -97,6 +97,12 @@ test("capture-diff: MOVED — tempo map, meter, ppq, a renamed or removed track,
   assert.equal(diff(base(), ins).verdict, "MOVED", "a track inserted in front renumbers every old one");
 });
 
+test("capture-diff: a meta restating what is in force (4/4 late, a repeated tempo) moves nothing", () => {
+  assert.equal(diff(base(), {...base(), ts: [{tick: 0, num: 4, den: 4}, {tick: 3840, num: 4, den: 4}]}).verdict, "SAME");
+  assert.equal(diff({...base(), ts: [{tick: 3840, num: 4, den: 4}]}, base()).verdict, "SAME");
+  assert.equal(diff(base(), {...base(), tempos: [{tick: 0, usq: 500000}, {tick: 1920, usq: 500000}]}).verdict, "SAME");
+});
+
 test("capture-diff: MOVED — the loop point, when either side states one", () => {
   assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: "14.3>2.3"}).verdict, "SAME");
   assert.equal(diff(base(), base(), {oldLoop: "14.3>2.3", newLoop: "14.4>2.4"}).verdict, "MOVED");

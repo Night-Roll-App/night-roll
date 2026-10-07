@@ -143,8 +143,13 @@ export function captureDiff(oldSmf, newSmf, opts = {}) {
   const MAX = 4; // examples listed per reason
   if (oldSmf.ppq !== newSmf.ppq) moved.push("ppq " + oldSmf.ppq + " → " + newSmf.ppq);
   const tKey = x => x.tick + ":" + x.usq, sKey = x => x.tick + ":" + x.num + "/" + x.den;
+  // compared as the player reads them: a meta that restates what is already
+  // in force (a 4/4 with none before it, a tempo equal to the last) moves nothing
+  const effective = (list, same, dflt) => { const out = []; let cur = dflt; for (const x of list) { if (!same(x, cur)) out.push(x); cur = x; } return out; };
+  const tempos = s => effective(s.tempos, (x, c) => x.usq === c.usq, {usq: 500000});
+  const meters = s => effective(s.timesigs, (x, c) => x.num === c.num && x.den === c.den, {num: 4, den: 4});
   {
-    const [a, b] = multisetDiff(oldSmf.tempos, newSmf.tempos, tKey);
+    const [a, b] = multisetDiff(tempos(oldSmf), tempos(newSmf), tKey);
     if (a.length || b.length) {
       const t = Math.min(...[...a, ...b].map(x => x.tick)); const bar = at(t);
       moved.push("tempo map differs from bar " + bar + " (" + a.length + " old / " + b.length + " new changes; first bpm " +
@@ -152,7 +157,7 @@ export function captureDiff(oldSmf, newSmf, opts = {}) {
     }
   }
   {
-    const [a, b] = multisetDiff(oldSmf.timesigs, newSmf.timesigs, sKey);
+    const [a, b] = multisetDiff(meters(oldSmf), meters(newSmf), sKey);
     if (a.length || b.length) { const t = Math.min(...[...a, ...b].map(x => x.tick)); moved.push("meter differs from bar " + at(t) + " (" + oldSmf.timesigs.map(sKey).join(" ") + " → " + newSmf.timesigs.map(sKey).join(" ") + ")"); }
   }
   if ((opts.oldLoop || null) !== (opts.newLoop || null) && (opts.oldLoop !== undefined || opts.newLoop !== undefined))

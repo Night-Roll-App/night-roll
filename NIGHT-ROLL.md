@@ -4547,7 +4547,9 @@ first-off, as parseMidi does) and gives one verdict:
 - **ADDED-TRACK**: as above for every old track, plus new tracks after them
   (a DPCM track). No existing track number moves.
 - **MOVED**: anything else: a note's start, length or pitch; a track
-  removed, renamed or inserted in front; ppq; the tempo map; the meter; or
+  removed, renamed or inserted in front; ppq; the tempo map or meter as
+  the player reads them (a meta restating what is already in force does
+  not count); or
   the loop point (from each side's `.rollnotes.json` loop line, or
   `--old-loop`/`--new-loop A>T`).
 
@@ -4574,6 +4576,10 @@ albums/{nes,game-boy,snes,ps1,ps2,n64}/) it does four things:
    not archived, so NES/GB tracks get the app's no-playlist sizing (75 s,
    then one 300 s retry when no loop). The exception is a published
    capture of 22 s or less, which is sized as the playlist jingle it was.
+   When the kept length still differs from the published `secs`, the
+   other sizing is tried once and the closer one is kept (`sizing` in the
+   report). This recovers the original window. It never tunes the
+   verdict, because the notes are compared only after the choice.
    Tagged sets (SPC/PSF/PSF2/USF) size from their own tags. FF1 goes
    through `tools/nsf/dump-all.mjs --out` (its verified PERIOD_BARS/meter
    tables decide FF1's bars).
