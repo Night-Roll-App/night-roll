@@ -7715,6 +7715,100 @@ vibrato + sampled bend, sustain hold/cap, reverb bus once/lazy/post-fader,
 no double-apply on a game voice, preview plain), plus "Swell / Swell–fade
 make room".
 
+## Glide (CC84) — continued notes play as one sound (app layer, 2026-10-07)
+
+docs/plans/2026-10-07-capture-audit-2-and-glide.md §2 / §3.1 items 1–2.
+When the chip did NOT re-key a note (a slide, a slur, a legato step), the
+next note is a **continuation** of the one before it on the same voice. It
+stays a separate note on screen with its own start, pitch, length and
+velocity (Josh's §8 rule; Q3 default: it looks exactly as before), but it
+plays as one sound with its predecessor.
+
+- **Data.** `n.lg = 1` on the continuation. The link is to the note on the
+  same track and channel that ENDS at its start (the first such in note
+  order). One rule, three copies: `glidePreds(notes, chOf)` in
+  src/midi/parse.js (writeMidi + the synth) and `glidePredKeys` in
+  tools/nsf/midi-write.mjs (trackBytes + writeSongMidi). No note ends there
+  (the notes were edited apart) = no link: nothing is written, the synth
+  attacks, no prompt. A user split or paste makes plain notes (they never
+  copy `lg`); a drag that keeps the notes touching keeps the link.
+- **In the .mid.** CC84 (Portamento Control, GS/GM2: "the next note-on
+  glides from this key") = the predecessor's key, at the continuation's own
+  tick on its channel, sort order 0.9 (after offs 0, duty 0.5, controllers
+  0.75; before the note-on at 1). The value is recomputed by every write,
+  never stored. parseMidi: a non-foreign CC84 at tick t on channel ch marks
+  the next note-on at t on ch (a count per tick, so two links at one tick
+  mark two note-ons); a foreign file's CC84 stays a raw phase-2 event. Both
+  writers emit it and stay byte-identical; capture-diff counts `cc84` as a
+  gain (VELOCITY, never MOVED). No album .mid carried CC84 before this, so
+  every published file reads and writes back as before (the corpus test).
+- **Hops.** Every site that copies `duties` copies `lg` (draftTracks,
+  Save As, the dropped-MIDI and import-hub drafts, the capture draft — a
+  test counts them); openDraftDoc and publishSong's re-encode spread the
+  note, so they carry it too.
+- **The path (pitch).** The pitch between linked notes rides as ordinary
+  pitch bend (MIDI playback v2), **chain-relative**: the chain head keeps
+  v2's rule (0 at its start, static detune dropped), and every continuation
+  is bent by (real pitch − the head's start pitch) − 100 × (its key − the
+  head's key) cents. So at a link the synth's step to the new key and the
+  bend's jump cancel out. A step with no glide (a slur) is the link alone.
+- **Capture helper** (tools/nsf/midi-write.mjs, for the per-console capture
+  builders): mark a capture event `e.lg = true` from the hardware's own
+  no-re-key signal (never from touching notes alone), and `makeMidi` does
+  the rest — CC84 via trackBytes, and `chainBends` per channel with each
+  event's static detune from `glideCents(e)` (`e.cents`, else from
+  `e.freq0`). Tick-based writers (psx makeMidi, makeMidiTracks) put `lg` on
+  the notes they hand trackBytes and call `chainBends(notes)` themselves:
+  notes of one voice in time order, `{t, lg?, c0?, bend?: [{t, c}]}`, c0 =
+  the note's static detune in cents (any constant reference — only
+  differences within a chain are used), bend in cents from the note's own
+  start; it shifts each continuation's bend by (c0 − head c0) with a t 0
+  point, and deletes c0. Events without `lg` write exactly the bytes they
+  always did.
+- **Playback** (src/audio/voices.js, synth path; bounce shares it). The
+  transport's buildSchedule fills `S.glideNext` (note → its continuation)
+  fresh every play and empties `S.glideVoice`. A note with a continuation
+  on the same synth voice (`glideNextFor`: same `noteVoice`, not a drum,
+  not a game/sf2 voice, still touching) schedules **no release**: its level
+  holds to its end, then a 10 ms tail (GLIDE_TAIL) that is heard only if
+  nothing takes over; its own bend stops at its end (`cx.pitchStop`); it
+  leaves a handle in `S.glideVoice` keyed by the continuation. The
+  continuation (`glideTakeover`), when it is scheduled within the
+  predecessor's span (≤ 5 ms past its end) on the same context, track and
+  voice, builds nothing new: at exactly its `when` it holds every param
+  (`cancelAndHoldAtTime`, Firefox: `cancelScheduledValues`), steps the
+  frequency to its key (soundfont: `playbackRate` to 2^((key − head key)/12)
+  on the head's sample, bend on detune), runs its own bend/mod from there,
+  re-ramps CC7/CC11, pan and send on the predecessor's route nodes, ramps
+  15 ms (GLIDE_RAMP) to its own velocity, then its own shape/`ve`/sustain
+  and release, and calls `stop()` again with its own end. A patch's ADSR
+  runs across the whole chain (`patchEnvFrom`, evaluated from the head's
+  start). Chains of any length re-register at each link.
+- **Falls back to the old attack** whenever anything is inconsistent:
+  scheduled late, playback starting on the continuation, a loop wrap or
+  a ruler cycle inside the chain, a different chip wave (a duty change at
+  the link), controllers that need a node the predecessor never built,
+  a soundfont source without `detune`. Worst case = today's sound (the
+  held head loses only its last 30 ms of release).
+- **Scope.** Chip waves, organ, patches, soundfont samples. Never piano,
+  strings, bell, pluck (they strike), drums, game/sf2 instruments
+  (scheduleGameNote bakes each note's envelope — a render-the-chain pass is
+  later), or the console voice (it replays the rip).
+- **Not in this step:** any capture marking `lg` (the per-console builders,
+  §3.2), continuation velocity from the chip's real level, the optional
+  connector line between linked notes (Q4), linking notes by hand (that
+  would get an Ask `act` action).
+
+Tests: tests/night-roll.test.mjs "glide: …" (both writers byte-identical,
+CC84 placement and value, parse → draft → write round trip, no-lg and
+edited-apart files, foreign CC84 raw, every hop) and "glide playback: …"
+(one oscillator across a link, the frequency step at the link, the
+chain-relative bend continuous, no release in between, the fallbacks,
+soundfont playbackRate, patch ADSR once); tests/nsf.test.mjs "glide: …"
+(trackBytes CC84, chainBends, makeMidi with linked capture events →
+CC84 + chain-relative bend, capture-diff VELOCITY with `cc84` gained, the
+app's parser reading the links back through the publish hop).
+
 ## iPad CoreMIDI bridge (2026-09-30)
 
 Josh's son records from a MIDI keyboard via Web MIDI on a MacBook

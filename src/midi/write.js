@@ -1,4 +1,4 @@
-import { ctlBytes } from "./parse.js";
+import { ctlBytes, glidePreds } from "./parse.js";
 
 export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one track per voice.
   // ONE writer, in two forms (open-items.md "FORMATS AUDIT" #1-2): this hand
@@ -98,18 +98,23 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
     // rule is the notes' own
     for (const e of tr.ctl || []) evs.push({t: e.t, o: 0.75, d: ctlBytes(e, e.ch !== undefined && ((e.ch & 15) !== 9 || kit) ? (e.ch & 15) : ch0)});
     let lastDuty = null;
+    // per-note channel (captures: noise/drums) else the track's own — but
+    // channel 10 is the DRUM channel: a console's voice number that lands
+    // there on a melodic track made FFX and the PS1 albums play parts as
+    // drums (2026-09-30); only a kit track may use it
+    const chOf = n => n.ch !== undefined && ((n.ch & 15) !== 9 || kit) ? (n.ch & 15) : ch0;
+    const preds = glidePreds(tr.notes, chOf);
     for (const n of tr.notes) {
       if (n.gone) continue;
-      // per-note channel (captures: noise/drums) else the track's own — but
-      // channel 10 is the DRUM channel: a console's voice number that lands
-      // there on a melodic track made FFX and the PS1 albums play parts as
-      // drums (2026-09-30); only a kit track may use it
-      const ch = n.ch !== undefined && ((n.ch & 15) !== 9 || kit) ? (n.ch & 15) : ch0;
+      const ch = chOf(n);
       // duty (chip timbre) rides as CC70 ahead of the note it changes on —
       // parseMidi reads it back; other DAWs just see a sound controller
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
       // …and at each duty change while the note is held (n.duties [{t, v}], NES capture v2)
       if (n.duties) for (const q of n.duties) if (q.t > 0 && q.t < n.d) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v & 3]}); lastDuty = q.v & 3; }
+      // glide link: CC84 = the key this note continues from, just before its on
+      const pr = preds && preds.get(n);
+      if (pr) evs.push({t: n.t, o: 0.9, d: [0xB0 | ch, 84, pr.p & 127]});
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       // decay target as polyphonic aftertouch right after the on — parseMidi
       // reads it back as the note's end volume; DAWs see key pressure
@@ -119,7 +124,7 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
       if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]});
       evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
     }
-    evs.sort((a, b) => a.t - b.t || a.o - b.o); // offs (o=0) before duty (0.5) before ons (1) before aftertouch (1.5) at the same tick
+    evs.sort((a, b) => a.t - b.t || a.o - b.o); // offs (o=0) before duty (0.5) before controllers (0.75) before the glide link (0.9) before ons (1) before aftertouch (1.5) at the same tick
     const body = [];
     let last = 0;
     for (const e of evs) { body.push(...vlq(Math.max(0, e.t - last)), ...e.d); last = Math.max(last, e.t); }

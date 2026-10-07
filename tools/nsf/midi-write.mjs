@@ -40,6 +40,53 @@ export function offsetMetaEvent(offset) {
   return {t: 0, o: -2, d: [0xFF, 0x01, bytes.length, ...bytes]};
 }
 
+// ---------------------------------------------------------------- glide (CC84)
+// NIGHT-ROLL.md "Glide (CC84)". A note with `lg` is a CONTINUATION: the chip
+// did not re-key it, so it plays on from the note before it on the same voice
+// (no new attack). The .mid carries CC84 (Portamento Control) = the key it
+// continues from, at its own tick just before its note-on. The link is to the
+// note on the same channel that ENDS at its start (the first such in note
+// order); none (edited apart) = no CC84. src/midi/parse.js glidePreds is the
+// same rule for writeMidi and the synth. Returns Map(note -> predecessor's
+// key) or null when no note has `lg`.
+export function glidePredKeys(notes, chOf) {
+  if (!notes.some(n => n.lg && !n.gone)) return null;
+  const endAt = new Map(), m = new Map();
+  for (const q of notes) if (!q.gone && q.d > 0) { const k = chOf(q) + ":" + (q.t + q.d); if (!endAt.has(k)) endAt.set(k, q); }
+  for (const n of notes) if (n.lg && !n.gone) { const q = endAt.get(chOf(n) + ":" + n.t); if (q && q !== n) m.set(n, q.p & 127); }
+  return m;
+}
+// Chain-relative bend, for capture builders (docs/plans/2026-10-07-capture-
+// audit-2-and-glide.md §2 "The path"). notes: ONE voice's notes in time order,
+// each {t, lg?, c0?, bend?: [{t, c}]} — c0 = the note's static detune from its
+// own key at its start, in cents (any constant reference: only differences
+// between notes of one chain are used, so an estimated root cancels out);
+// bend in cents from the note's own start, as bendFromSeries gives it. The
+// chain head (a note without lg) keeps v2's rule (0 at its start, static
+// detune dropped); every continuation is shifted by (its c0 − the head's c0),
+// so pitch is continuous across each link once the synth steps to the new
+// key. A continuation with no head before it is a head. Mutates bend in
+// place (a shifted bend always opens with a t 0 point) and deletes c0.
+export function chainBends(notes) {
+  let head = null;
+  for (const n of notes) {
+    if (!n.lg || !head) { head = n; continue; }
+    const off = Math.round((n.c0 || 0) - (head.c0 || 0));
+    if (!off) continue;
+    const pts = n.bend && n.bend.length ? n.bend : [];
+    n.bend = [...(pts.length && pts[0].t === 0 ? [] : [{t: 0, c: 0}]), ...pts].map(q => ({t: q.t, c: q.c + off}));
+  }
+  for (const n of notes) delete n.c0;
+  return notes;
+}
+// a capture event's static detune from its key at its start, in cents: the
+// SNES's `cents` (against the sample's root estimate), else from the NES/GB
+// starting frequency `freq0`; 0 when the event carries neither
+export function glideCents(e) {
+  if (e.cents !== undefined && e.cents !== null) return e.cents;
+  if (e.freq0 > 0 && e.midi != null) return 1200 * Math.log2(e.freq0 / 440) + 6900 - 100 * e.midi;
+  return 0;
+}
 export function trackBytes(name, notes, ch, metas = []) {
   const evs = [];
   if (name) evs.push({t: 0, d: [0xFF, 0x03, name.length, ...[...name].map(c => c.charCodeAt(0))]});
@@ -81,6 +128,7 @@ export function trackBytes(name, notes, ch, metas = []) {
     }
   }
   let lastDuty = null;
+  const preds = glidePredKeys(notes, () => ch);
   for (const n of notes) {
     // duty (chip timbre) rides as CC70 ahead of the note it changes on —
     // Night Roll's parser reads it back; other DAWs just see a sound ctrl
@@ -90,6 +138,8 @@ export function trackBytes(name, notes, ch, metas = []) {
     }
     // …and at each change while the note is held ({t: ticks from its start, v})
     if (n.duties) for (const q of n.duties) if (q.t > 0 && n.t + q.t < nextAt.get(n) && q.v !== lastDuty) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v]}); lastDuty = q.v; }
+    // glide link: CC84 = the key this note continues from, just before its on
+    if (preds && preds.has(n)) evs.push({t: n.t, o: 0.9, d: [0xB0 | ch, 84, preds.get(n)]});
     evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p, n.v]});
     // decay target as polyphonic aftertouch right after the on — Night
     // Roll reads it back as the note's end volume; DAWs see key pressure
@@ -273,6 +323,7 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   };
   const byCh = {};
   for (const name of Object.keys(chans)) byCh[name] = [];
+  const linked = events.some(e => e.lg);
   for (const e of events) {
     const t = toTick(e.startFrame);
     const d = Math.max(40, toTick(e.endFrame) - t); // min = a quantized 12th
@@ -297,8 +348,12 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const prog = e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined ? e.srcn : undefined;
     (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
       ...(pan ? {pan} : {}), ...(rev ? {rev} : {}), ...(prog !== undefined ? {prog} : {}),
-      ...(e.channel === "dpcm" ? {sample: e.midi} : {})});
+      ...(e.channel === "dpcm" ? {sample: e.midi} : {}),
+      ...(e.lg ? {lg: 1} : {}), ...(linked ? {c0: glideCents(e)} : {})});
   }
+  // glide links (a capture marks e.lg from the chip's own no-re-key signal):
+  // continuations' bends become chain-relative before the range is sized
+  if (linked) for (const notes of Object.values(byCh)) chainBends([...notes].sort((a, b) => a.t - b.t));
   if (byCh.dpcm && byCh.dpcm.length) {
     const keys = dpcmKeys(byCh.dpcm, PPQ * 4 / tsDen, tsNum);
     for (const n of byCh.dpcm) { n.p = keys.get(n.sample); delete n.sample; }
@@ -344,7 +399,7 @@ function fileBytes(tracks, ppq = PPQ) {
 // `song` object AND every on-device draft (compositions, pre-publish import
 // captures): {ppq, timesig: [num, den], timesigs?: [{tick, num, den}, …],
 // keysig?: {sf, minor}, tempos: [{tick, usq}], tracks: [{name, notes: [{t, d,
-// p, v, gone?, duty?, ve?, ch?, env?}], offset?, midiPan?, ctl?}]}. open-items.md "FORMATS
+// p, v, gone?, duty?, ve?, ch?, env?, duties?, lg?}], offset?, midiPan?, ctl?}]}. open-items.md "FORMATS
 // AUDIT" #1-2 (2026-09-29): index.html's OWN writeMidi used to be a separate,
 // partial writer — commitImports re-encoded every capture through it and
 // silently dropped CC10 pan, CC70 duty, the aftertouch envelope and per-note
@@ -451,13 +506,16 @@ export function writeSongMidi(song) {
       evs.push({t: e.t, o: 0.75, d});
     }
     let lastDuty = null;
+    // channel 10 is the drum channel: only a kit track may use it, whatever
+    // voice number a console capture carries (FFX / PS1, 2026-09-30)
+    const chOf = n => n.ch !== undefined && ((n.ch & 15) !== 9 || isKit) ? (n.ch & 15) : ch0;
+    const preds = glidePredKeys(tr.notes || [], chOf);
     for (const n of tr.notes || []) {
       if (n.gone) continue;
-      // channel 10 is the drum channel: only a kit track may use it, whatever
-      // voice number a console capture carries (FFX / PS1, 2026-09-30)
-      const ch = n.ch !== undefined && ((n.ch & 15) !== 9 || isKit) ? (n.ch & 15) : ch0;
+      const ch = chOf(n);
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
       if (n.duties) for (const q of n.duties) if (q.t > 0 && q.t < n.d) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v & 3]}); lastDuty = q.v & 3; } // duty changes inside the note (see trackBytes)
+      if (preds && preds.has(n)) evs.push({t: n.t, o: 0.9, d: [0xB0 | ch, 84, preds.get(n)]}); // glide link (see glidePredKeys)
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
       if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]}); // volume shape (see trackBytes)

@@ -2935,7 +2935,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "swipe sideways on the strips",
     "Beat subdivisions", "Volume slider", "song gain",
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
-    "What the synth plays from a MIDI file", "makes room", "Edit patch…", "Patches ›",
+    "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -14108,7 +14108,7 @@ test("volume shape playback: scoped like ve — sampled/struck voices and game/s
   const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
   const game = src.slice(src.indexOf("export function scheduleGameNote"), src.indexOf("\nexport function", src.indexOf("export function scheduleGameNote") + 10));
   assert.ok(game.length > 100 && !/noteShapeRamp|\.env\b|\.ve\b/.test(game), "scheduleGameNote never reads env or ve");
-  assert.equal((src.match(/noteShapeRamp\(/g) || []).length, 3, "one definition, two calls (the oscillator path; a patch, own songs only)");
+  assert.equal((src.match(/noteShapeRamp\(/g) || []).length, 4, "one definition, three calls (the oscillator path's oscGainEnv; a patch, own songs only; a patch's glide continuation)");
   void amp;
 });
 
@@ -14364,6 +14364,7 @@ function ctlSpy(ctl, voice = "square") {
          n.connect = x => { n._conn.push(x); return x; };
          n.stop = t => { n._stops.push(+t); };
          for (const pn of params) n[pn] = {_id: id + "." + pn, value: 0, cancelScheduledValues() {},
+           cancelAndHoldAtTime: t => { _ctlLog.push([id, pn, "hold", 0, +(+t).toFixed(4)]); },
            setValueAtTime: (v, t) => { _ctlLog.push([id, pn, "set", +(+v).toFixed(4), +(+t).toFixed(4)]); },
            linearRampToValueAtTime: (v, t) => { _ctlLog.push([id, pn, "lin", +(+v).toFixed(4), +(+t).toFixed(4)]); },
            exponentialRampToValueAtTime: (v, t) => { _ctlLog.push([id, pn, "exp", +(+v).toFixed(4), +(+t).toFixed(4)]); }};
@@ -14496,7 +14497,7 @@ test("MIDI playback: never double-applied — a game instrument voice ignores th
   assert.ok(game.length > 100 && !/noteCtl|ctlRoute|ctlPitch|\.ctl\b/.test(game), "scheduleGameNote never reads the controllers");
   const sched = src.slice(src.indexOf("export function scheduleNote"), src.indexOf("\nscheduleNote = prof"));
   assert.ok(sched.indexOf("chipActive()") < sched.indexOf("playSynthVoice("), "the console voice returns before the synth path");
-  assert.equal((src.match(/noteCtl\(/g) || []).length, 2, "one definition, one call: playSynthVoice");
+  assert.equal((src.match(/noteCtl\(/g) || []).length, 3, "one definition, two calls: playSynthVoice and its glide continuation (glideTakeover)");
   // a preview (a tap) plays plain
   ctlSpy(CTL);
   run(`scheduleNote(0, {p: 60, v: 90, ch: 0, _preview: true}, ${W}, 0.3)`);
@@ -14698,4 +14699,135 @@ test("Mixer scroll bar (Josh #191): wired once on first render, hidden when ever
   const css = readFileSync(new URL("../css/app.css", import.meta.url), "utf8");
   assert.match(css, /\.mixerstrip \{[^}]*touch-action: pan-x;/, "a sideways swipe on a strip scrolls the row");
   run(`song.tracks = []; trackState = []; renderMixer();`);
+});
+
+// ---- glide (CC84; NIGHT-ROLL.md "Glide (CC84)"): a continuation note (`lg`)
+// plays on from the note that ends where it starts — no new attack — and
+// carries CC84 = that note's key through every writer and hop
+const GLIDE_SONG = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [
+  {name: "pulse1", notes: [{t: 0, d: 240, p: 60, v: 100, duty: 2}, {t: 240, d: 240, p: 62, v: 90, duty: 2, lg: 1},
+                           {t: 480, d: 240, p: 64, v: 80, duty: 2, lg: 1}, {t: 960, d: 240, p: 65, v: 80, lg: 1}]}, // the last: nothing ends at 960 — no link written
+  {name: "lead", notes: [{t: 0, d: 480, p: 67, v: 100, ch: 3}, {t: 480, d: 480, p: 69, v: 100, ch: 3, lg: 1}],
+   ctl: [{t: 480, ch: 3, c: "pb", v: -4096}, {t: 720, ch: 3, c: "pb", v: 0}]},
+]};
+const glideHex = bytes => bytes.map(x => x.toString(16).padStart(2, "0")).join(" ");
+const glideLinks = bytes => glideHex(bytes).split(/b[0-9a-f] 54 /).length - 1;
+test("glide: both writers write CC84 = the predecessor's key just before a linked note-on, byte-identical; parse → draft → write round-trips it; a foreign file's CC84 stays raw", () => {
+  installSong();
+  const app = bytesFromApp(GLIDE_SONG), tools = Array.from(writeSongMidi(GLIDE_SONG));
+  assert.deepEqual(app, tools, "writeMidi and writeSongMidi agree");
+  const hex = glideHex(app);
+  for (const seq of ["b0 54 3c 00 90 3e", "b0 54 3e 00 90 40", "b3 54 43 00 93 45"]) assert.ok(hex.includes(seq), seq + " in " + hex);
+  assert.equal(glideLinks(app), 3, "three links; the note with nothing ending at its start gets none");
+  const r = val(`(() => { const s = parseMidi(new Uint8Array(${JSON.stringify(app)}).buffer, {trust: true});
+    const draft = {ppq: s.ppq, timesig: s.timesig, tempos: s.tempos, tracks: draftTracks(s.tracks)};
+    return {lg: s.tracks.map(t => t.notes.map(n => n.lg || 0)), ctl: s.tracks[1].ctl.length, again: Array.from(writeMidi(draft))}; })()`);
+  assert.deepEqual(r.lg, [[0, 1, 1, 0], [0, 1]], "parse marks exactly the linked notes");
+  assert.equal(r.ctl, 2, "CC84 is not a controller event");
+  assert.deepEqual(r.again, app, "parse → draft → publish re-encode is byte-identical");
+  // a song with no lg writes no CC84 (so every existing file is unchanged — the corpus test pins that)
+  const plain = JSON.parse(JSON.stringify(GLIDE_SONG)); plain.tracks.forEach(t => t.notes.forEach(n => delete n.lg));
+  assert.equal(glideLinks(bytesFromApp(plain)), 0, "no lg: no CC84");
+  // an edit that moves a continuation off its predecessor's end drops the link (no prompt)
+  const moved = JSON.parse(JSON.stringify(GLIDE_SONG)); moved.tracks[0].notes[1].t = 250; moved.tracks[0].notes[1].d = 230;
+  assert.equal(glideLinks(bytesFromApp(moved)), 2, "the moved note loses its link; the one after it (still touching) and the lead's keep theirs");
+  const f = val(`(() => { const s = parseMidi(new Uint8Array(${JSON.stringify(app)}).buffer, {trust: true, foreign: true});
+    return {lg: s.tracks.some(t => t.notes.some(n => n.lg)), raw: JSON.stringify(s.source.metas || []).includes("[176,84,60]")}; })()`);
+  assert.deepEqual(f, {lg: false, raw: true}, "foreign: CC84 is some DAW's controller, kept verbatim");
+});
+
+test("glide: every hop that copies a note's duties copies its link (capture and import drafts, Save As, versions); publish and reopen spread the note", () => {
+  installSong();
+  for (const f of ["src/model/versions.js", "src/session/files.js", "src/import/hub.js", "src/import/capture.js"]) {
+    const src = readFileSync(new URL("../" + f, import.meta.url), "utf8");
+    const duties = (src.match(/\.duties = (n|nt)\.duties\.map/g) || []).length, lg = (src.match(/if \((n|nt)\.lg\) (o|on)\.lg = 1/g) || []).length;
+    assert.ok(duties > 0 && lg === duties, f + ": " + duties + " duties copies, " + lg + " link copies");
+  }
+  for (const f of ["src/sync/publish.js", "src/session/song.js"]) assert.match(readFileSync(new URL("../" + f, import.meta.url), "utf8"), /notes: tr\.notes\.map\(n => \(\{\.\.\.n\}\)\)/, f);
+  assert.deepEqual(val(`draftTracks(${JSON.stringify(GLIDE_SONG.tracks)}).map(t => t.notes.map(n => n.lg || 0))`), [[0, 1, 1, 1], [0, 1]], "the draft keeps lg");
+});
+
+// linked notes on the spied synth; times: [[note index, when, durSec]…]
+function glidePlay(ctl, voice, notes, times) {
+  ctlSpy(ctl, voice);
+  run(`song.tracks[0].notes = ${JSON.stringify(notes)}; buildSchedule();`);
+  for (const [k, when, dur] of times) run(`scheduleNote(0, song.tracks[0].notes[${k}], ${when}, ${dur})`);
+}
+test("glide playback: a continuation takes over the sounding oscillator — no new attack, a frequency step to its key at its start, its bend from there (pitch continuous), a 15 ms ramp to its level, one release at the chain's end", () => {
+  installSong(); // 120 bpm: tick 480 = 0.5 s
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  // chain-relative bend: the continuation (62) starts at −200 cents = the head's 60, then slides up to its own key
+  glidePlay([{t: 480, ch: 0, c: "pb", v: -8192}, {t: 720, ch: 0, c: "pb", v: 0}], "square",
+            [{t: 0, d: 480, p: 60, v: 100, ch: 0}, {t: 480, d: 480, p: 62, v: 80, ch: 0, lg: 1}], [[0, W, 0.5], [1, W + 0.5, 0.5]]);
+  const oscs = val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o").map(n => ({id: n._id, stops: n._stops, to: n._conn.map(c => c._id)}))`);
+  assert.equal(oscs.length, 1, "one oscillator for both notes: " + JSON.stringify(oscs));
+  const o = oscs[0], g = o.to[0];
+  const f62 = +(440 * Math.pow(2, (62 - 69) / 12)).toFixed(4);
+  assert.deepEqual(ctlCalls(c => c[0] === o.id && c[1] === "frequency").map(c => c.slice(2)), [["set", f62, W + 0.5]], "the key steps at exactly the continuation's start");
+  const det = ctlCalls(c => c[0] === o.id && c[1] === "detune");
+  assert.ok(!det.some(c => c[3] === -200 && c[4] < W + 0.5), "the head never bends toward the continuation's start: " + JSON.stringify(det));
+  assert.ok(det.some(c => c[2] === "set" && c[3] === -200 && c[4] === W + 0.5), "…the continuation starts at −200 cents with its new key: 62 − 2 = the head's 60");
+  assert.ok(det.some(c => c[2] === "lin" && c[3] === 0 && Math.abs(c[4] - (W + 0.75)) < 1e-3), "…and slides to its own key at tick 720");
+  const gc = ctlCalls(c => c[0] === g).map(c => [c[2], c[3], +(c[4] - W).toFixed(4)]);
+  const a100 = +(100 / 127 * 0.5).toFixed(4), a80 = +(80 / 127 * 0.5).toFixed(4);
+  assert.deepEqual(gc.filter(c => c[0] === "set" && c[1] === 0), [["set", 0, 0]], "one attack from silence, at the head");
+  assert.ok(!gc.some(c => c[0] === "lin" && c[1] === 0 && c[2] === 0.5), "the head schedules no release at its end");
+  assert.ok(gc.some(c => c[0] === "hold" && c[2] === 0.5) && gc.some(c => c[0] === "lin" && c[1] === a80 && c[2] === 0.515), "held at 0.5 s, then 15 ms to the continuation's level: " + JSON.stringify(gc));
+  assert.deepEqual(gc[gc.length - 1], ["lin", 0, 1], "one release, at the continuation's end");
+  assert.ok(gc.some(c => c[1] === a100), "the head played at its own level");
+  assert.equal(o.stops[o.stops.length - 1], +(W + 1.05).toFixed(4), "the oscillator's last stop() is the continuation's");
+  ctlSpyOff();
+});
+
+test("glide playback: anything inconsistent plays the old attack — a late continuation, playback starting on it, a different chip wave, notes edited apart, a struck voice", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  const pair = [{t: 0, d: 480, p: 60, v: 100, ch: 0}, {t: 480, d: 480, p: 62, v: 80, ch: 0, lg: 1}];
+  const oscN = () => val(`Object.keys(_ctlNodes).filter(k => k[0] === "o").length`);
+  glidePlay([], "square", pair, [[0, W, 0.5], [1, W + 0.5, 0.5]]);
+  assert.equal(oscN(), 1, "no controllers on the track: still one voice (a pitch step, no attack)");
+  ctlSpyOff();
+  glidePlay([], "square", pair, [[0, W, 0.5], [1, W + 0.52, 0.5]]);
+  assert.equal(oscN(), 2, "20 ms late: a fresh attack");
+  assert.equal(ctlCalls(c => c[1] === "gain" && c[2] === "lin" && c[3] === 0 && Math.abs(c[4] - (W + 0.51)) < 1e-3).length, 1, "…and the held head fades out 10 ms after its end");
+  ctlSpyOff();
+  glidePlay([], "square", pair, [[1, W + 0.5, 0.5]]);
+  assert.equal(oscN(), 1, "playback starting on the continuation: an ordinary note");
+  assert.equal(ctlCalls(c => c[1] === "gain" && c[2] === "set" && c[3] === 0 && c[4] === W + 0.5).length, 1, "…attacking from silence");
+  ctlSpyOff();
+  glidePlay([], "auto", [{...pair[0], duty: 2}, {...pair[1], duty: 1}], [[0, W, 0.5], [1, W + 0.5, 0.5]]);
+  assert.equal(oscN(), 2, "a different chip wave: two voices");
+  assert.ok(ctlCalls(c => c[1] === "gain" && c[2] === "lin" && c[3] === 0 && Math.abs(c[4] - (W + 0.5)) < 1e-3).length >= 1, "…and the head releases at its end as before");
+  ctlSpyOff();
+  glidePlay([], "square", [pair[0], {...pair[1], t: 500, d: 460}], [[0, W, 0.5], [1, W + 0.52, 0.48]]);
+  assert.equal(oscN(), 2, "edited apart: no link");
+  ctlSpyOff();
+  glidePlay([], "piano", pair, [[0, W, 0.5], [1, W + 0.5, 0.5]]);
+  assert.equal(oscN(), 4, "a struck voice (piano, two oscillators a strike) strikes again");
+  ctlSpyOff();
+});
+
+test("glide playback: a soundfont sample carries on re-pitched by playbackRate; a patch's ADSR runs across the chain (one attack, one release)", () => {
+  installSong();
+  const W = Math.ceil(val(`audio ? audio.currentTime : 0`)) + 10;
+  const pair = [{t: 0, d: 480, p: 60, v: 100, ch: 0}, {t: 480, d: 480, p: 62, v: 100, ch: 0, lg: 1}];
+  ctlSpy([], "sf-piano");
+  run(`sfBank.acoustic_grand_piano = {raw: null, buffers: {60: audio.createBuffer(1, 10, 44100), 62: audio.createBuffer(1, 10, 44100)}, pending: {}, load: Promise.resolve()};
+       song.tracks[0].notes = ${JSON.stringify(pair)}; buildSchedule();
+       scheduleNote(0, song.tracks[0].notes[0], ${W}, 0.5); scheduleNote(0, song.tracks[0].notes[1], ${W + 0.5}, 0.5); delete sfBank.acoustic_grand_piano;`);
+  const bs = val(`Object.keys(_ctlNodes).filter(k => k[0] === "b")`);
+  assert.equal(bs.length, 1, "one buffer source");
+  assert.deepEqual(ctlCalls(c => c[0] === bs[0] && c[1] === "playbackRate").map(c => c.slice(2)), [["set", +Math.pow(2, 2 / 12).toFixed(4), W + 0.5]], "two semitones up at the continuation");
+  ctlSpyOff();
+  const id = val(`patchVoiceId(PATCH_PRESETS.find(p => p.name === "chip-lead"))`);
+  glidePlay([], id, pair, [[0, W, 0.5], [1, W + 0.5, 0.5]]);
+  const oscs = val(`Object.values(_ctlNodes).filter(n => n._id[0] === "o").map(n => ({id: n._id, f: n.frequency.value, to: n._conn.map(c => c._id)}))`);
+  const voice = oscs.filter(o => o.f !== 6);
+  assert.equal(voice.length, 1, "one patch oscillator (plus its vibrato LFO): " + JSON.stringify(oscs));
+  const env = ctlCalls(c => c[0] === voice[0].to[0]).map(c => [c[2], c[3], +(c[4] - W).toFixed(4)]);
+  assert.deepEqual(env.filter(c => c[0] === "set"), [["set", 0, 0]], "the ADSR starts once");
+  assert.deepEqual(env[env.length - 1], ["lin", 0, 1.08], "…and releases once, 80 ms past the chain's end: " + JSON.stringify(env));
+  assert.ok(!env.some(c => c[0] === "lin" && c[1] === 0 && c[2] <= 0.5), "no release at the head's end");
+  assert.ok(env.some(c => c[0] === "hold" && c[2] === 0.5), "…the continuation holds the envelope where it is (its 10 ms tail is cancelled)");
+  ctlSpyOff();
 });

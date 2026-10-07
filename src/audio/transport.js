@@ -27,6 +27,7 @@ import { met } from "./metronome.js";
 import { ensureMetGain } from "./metronome.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { secToTick } from "../midi/parse.js";
+import { glidePreds } from "../midi/parse.js";
 import { beatTicks } from "../model/grid.js";
 import { metClick } from "./metronome.js";
 import { recOpenEnded } from "../model/song.js";
@@ -106,7 +107,12 @@ export function playSec() { // current position on the song timeline, seconds
 export function buildSchedule() {
   // all tracks scheduled; per-track gain nodes apply mute/solo live
   S.schedEvents = [];
+  // glide links (NIGHT-ROLL.md "Glide (CC84)"): which note hands its voice to
+  // which, fresh each play; a voice handle from an earlier play never carries over
+  S.glideNext = new WeakMap(); S.glideVoice = new WeakMap();
   S.song.tracks.forEach((tr, ti) => {
+    const gp = tr.notes ? glidePreds(tr.notes, n => n.ch === undefined ? -1 : n.ch & 15) : null;
+    if (gp) for (const [c, p] of gp) if (!S.glideNext.has(p)) S.glideNext.set(p, c);
     for (const n of tr.notes) {
       if (n.gone) continue;
       S.schedEvents.push({ti, n, sec: tickToSec(S.song, n.t), dur: Math.max(0.04, tickToSec(S.song, n.t + n.d) - tickToSec(S.song, n.t))});

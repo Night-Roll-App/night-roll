@@ -100,6 +100,7 @@ Effort: **S** = an afternoon (wraps one existing function), **M** = a day
 | Play album, next/previous, leave the album | — | yes | `album {action:"play"\|"next"\|"prev"\|"leave", album?, song?}` | S |
 | Game order / A–Z | — | yes (a device pref) | `set_pref {name:"album_order", value}` | S |
 | Background playing, Silent Mode | — | not applicable (iOS) | — | — |
+| Glide: a continued note plays on from the one before (CC84) | — | not applicable (playback of captured data; linking notes by hand would get an action) | — | — |
 
 iPad sound: Safari only starts sound from a finger tap. `playback play`
 works once you've pressed Play at least once this session; before that

@@ -309,8 +309,7 @@ export function ctlRamp(param, pts, when, stop, conv = x => x) {
 // the note's way out: g → [CC7×CC11 gain] → [pan events] → trackGain, plus a
 // CC91 send (post-volume, per note — never the track's whole gain, which also
 // carries the console voice) into the track's fader-following reverb send
-export function ctlRoute(cx, ti, when) {
-  if (!cx) return trackGain(ti);
+export function ctlRoutePts(cx) { // the volume, pan and send timelines of one note
   const stop = cx.end + 0.1;
   const L7 = ctlList(cx.ix, cx.ch, 7), L11 = ctlList(cx.ix, cx.ch, 11);
   const level = tick => (L7 ? ctlAt(L7, tick, 100) : 127) / 127 * (L11 ? ctlAt(L11, tick, 127) : 127) / 127; // GM: volume 100 and expression 127 until the file sets them
@@ -322,16 +321,22 @@ export function ctlRoute(cx, ti, when) {
   }
   const panPts = cx.tr.pan === undefined ? ctlPoints(cx, 10, 64, v => Math.max(-1, Math.min(1, (v - 64) / 63))) : null; // the track: directive's pan wins, as it does over midiPan
   const sendPts = ctlPoints(cx, 91, 0, v => v / 127);
-  const send = sendPts && sendPts.some(p => p.v > 0 && p.sec < stop);
+  const send = !!(sendPts && sendPts.some(p => p.v > 0 && p.sec < stop));
+  return {stop, volPts, panPts, sendPts, send};
+}
+export function ctlRoute(cx, ti, when) {
+  if (!cx) return trackGain(ti);
+  const {stop, volPts, panPts, sendPts, send} = ctlRoutePts(cx);
+  cx.route = {}; // the params a glide continuation re-ramps (glideTakeover)
   let out = trackGain(ti);
   if (panPts && S.audio.createStereoPanner) {
     const p = S.audio.createStereoPanner();
     ctlRamp(p.pan, panPts, when, stop);
-    p.connect(out); out = p; cx.nodes.push(p);
+    p.connect(out); out = p; cx.nodes.push(p); cx.route.pan = p.pan;
   }
   if (volPts || send) {
     const cg = S.audio.createGain();
-    if (volPts) ctlRamp(cg.gain, volPts, when, stop); else cg.gain.value = 1;
+    if (volPts) { ctlRamp(cg.gain, volPts, when, stop); cx.route.vol = cg.gain; } else cg.gain.value = 1;
     cg.connect(out); out = cg; cx.nodes.push(cg);
   }
   if (send) {
@@ -339,7 +344,7 @@ export function ctlRoute(cx, ti, when) {
     if (bus) {
       const sg = S.audio.createGain();
       ctlRamp(sg.gain, sendPts, when, stop);
-      out.connect(sg); sg.connect(bus); cx.nodes.push(sg);
+      out.connect(sg); sg.connect(bus); cx.nodes.push(sg); cx.route.send = sg.gain;
     }
   }
   return out;
@@ -348,7 +353,7 @@ export function ctlRoute(cx, ti, when) {
 // it; an older engine's buffer source without detune bends by playbackRate
 export function ctlPitch(cx, srcs, when) {
   if (!cx) return;
-  const stop = cx.end + 0.1;
+  const stop = cx.pitchStop || cx.end + 0.1; // pitchStop: a glide continuation takes the bend from its own start
   const brL = ctlList(cx.ix, cx.ch, "br");
   const bendPts = ctlPoints(cx, "pb", 0, (v, t) => v / (v >= 0 ? 8191 : 8192) * ctlAt(brL, t, 2) * 100);
   const modPts = ctlPoints(cx, 1, 0, v => v / 127 * VIB_CENTS);
@@ -360,7 +365,7 @@ export function ctlPitch(cx, srcs, when) {
     ctlRamp(lg.gain, modPts, when, stop);
     lfo.connect(lg);
     lfo.start(when); lfo.stop(stop);
-    cx.nodes.push(lg, lfo);
+    cx.nodes.push(lg, lfo); cx.mod = lg;
   }
   for (const s of srcs) {
     if (s.detune) { if (bendPts) ctlRamp(s.detune, bendPts, when, stop); if (lg) lg.connect(s.detune); }
@@ -383,23 +388,33 @@ export function patchShapeApplies() {
   patchShapeApplies.memo = {key: S.songKey, ok};
   return ok;
 }
-export function playPatchNote(ti, n, when, durSec, patch, cx, g, amp, f0) {
+// the ADSR of a voice held from `start` to `end`, scheduled from `from` on
+// (a glide continuation picks the chain's envelope up where it is); `hold` =
+// a continuation takes over at `end`: no release, only GLIDE_TAIL. The stop time.
+export function patchEnvFrom(pg, patch, start, end, hold, from) {
+  const pts = patchEnvPoints(patch, end - start);
+  (hold ? pts.slice(0, -1) : pts).forEach((q, k) => { if (k > 0 && (from === start || start + q.t > from)) pg.linearRampToValueAtTime(q.v, start + q.t); });
+  if (hold) { pg.linearRampToValueAtTime(0, end + GLIDE_TAIL); return end + GLIDE_TAIL + 0.02; }
+  return start + pts[pts.length - 1].t + 0.02;
+}
+export function playPatchNote(ti, n, when, durSec, patch, cx, g, amp, f0, v) {
   const anchor = when + durSec, end = cx ? cx.end : anchor;
+  const next = glideNextFor(ti, n, v);
   const o = makeOsc(patch.wave);
   o.frequency.value = f0;
   const pg = S.audio.createGain();
   g.gain.setValueAtTime(amp, when);
   if (patchShapeApplies()) noteShapeRamp(g.gain, n, amp, anchor, when, end);
-  const pts = patchEnvPoints(patch, end - when);
   pg.gain.setValueAtTime(0, when);
-  for (const q of pts.slice(1)) pg.gain.linearRampToValueAtTime(q.v, when + q.t);
-  const stopAt = when + pts[pts.length - 1].t + 0.02;
+  const stopAt = patchEnvFrom(pg.gain, patch, when, end, !!next, when);
   o.connect(pg); pg.connect(g);
+  if (next && cx) cx.pitchStop = anchor;
   ctlPitch(cx, [o], when);
-  let lg = null;
-  // delayed vibrato: a note let go before the delay stays straight (and costs no LFO)
-  if (patch.vx > 0 && patch.vr > 0 && end - when > patch.vd) {
-    const lfo = S.audio.createOscillator();
+  let lg = null, lfo = null;
+  // delayed vibrato: a note let go before the delay stays straight (and costs
+  // no LFO) — unless a glide continuation carries the voice on past it
+  if (patch.vx > 0 && patch.vr > 0 && (next || end - when > patch.vd)) {
+    lfo = S.audio.createOscillator();
     lfo.frequency.value = patch.vr;
     lg = S.audio.createGain();
     lg.gain.setValueAtTime(0, when);
@@ -411,18 +426,139 @@ export function playPatchNote(ti, n, when, durSec, patch, cx, g, amp, f0) {
   o.onended = () => { try { g.disconnect(); pg.disconnect(); if (lg) lg.disconnect(); } catch (err) {} ctlFree(cx); };
   o.start(when);
   o.stop(stopAt);
+  if (next) glideKeep(next, {ti, v, kind: "patch", wave: patch.wave, patch, srcs: [o], g, pg, lfo, cx, start: when, when, anchor});
 }
 export function ctlFree(cx) { if (cx) for (const x of cx.nodes) { try { x.disconnect(); } catch (err) { /* already gone */ } } }
+// ---- glide (NIGHT-ROLL.md "Glide (CC84)"). A note marked `lg` continues the
+// note that ends where it starts (glidePreds): the chip never re-keyed it, so
+// the synth doesn't either. The predecessor schedules no release — its level
+// holds to its end, then a GLIDE_TAIL fade that is heard only if nothing takes
+// over — and leaves a handle in S.glideVoice keyed by the continuation. The
+// continuation, scheduled on time on the same voice, re-targets the sounding
+// nodes from its own start: a frequency step to its key at exactly `when`, its
+// own bend/controllers, a GLIDE_RAMP to its own level. The pitch stays
+// continuous because a continuation's bend is chain-relative (the capture
+// writes it so). Anything inconsistent (scheduled late, playback starting on
+// the continuation, a loop wrap inside the chain, another voice, controllers
+// needing nodes the predecessor never built) plays an ordinary attack: the
+// worst case is the old sound. Oscillator voices (chip waves, organ), patches
+// and soundfont samples only — never piano/strings/bell/pluck, drums,
+// game/sf2 instruments or the console voice.
+export const GLIDE_RAMP = 0.015, GLIDE_TAIL = 0.01, GLIDE_SLOP = 0.005;
+export function noteVoice(ti, n) { // the synth voice scheduleNote picks: the track's, or on auto the chip duty's
+  const tr = S.song.tracks[ti];
+  let v = trackVoice(ti);
+  // per-note chip timbre: NSF captures carry each pulse note's duty (the
+  // chip's instrument choice — 12.5% thin, 25% classic, 50% hollow; 75%
+  // mirrors 25%). Honored on auto voice; an explicit voice pick overrides.
+  if (n.duty !== undefined && (!tr.voice || tr.voice === "auto")) v = ["square12", "square25", "square", "square25"][n.duty];
+  return v;
+}
+export function glideHold(param, t) { if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(t); else param.cancelScheduledValues(t); } // Firefox has no cancelAndHold: the automation before t stays
+export function glideNextFor(ti, n, v) { // the continuation this note hands its voice to, or null
+  if (n._preview || !S.song || !S.glideNext) return null;
+  const c = S.glideNext.get(n);
+  if (!c || c.gone || !c.lg || n.t + n.d !== c.t || c.ch === 9) return null;
+  const tr = S.song.tracks[ti], tv = tr && tr.voice;
+  if (!tr || (typeof tv === "string" && (tv.startsWith("game:") || tv.startsWith("sf2:"))) || trackIsDrums(ti)) return null;
+  return noteVoice(ti, c) === v ? c : null;
+}
+export function glideKeep(next, h) { S.glideVoice.set(next, {ctx: S.audio, ...h}); }
+// the continuation's controllers fit the nodes its predecessor built: the
+// route's timelines (false = they need a node that isn't there)
+export function glideRouteFits(h, cx) {
+  if (!cx || !h.cx) return !cx && !h.cx ? {} : false;
+  const r = ctlRoutePts(cx), hr = h.cx.route || {};
+  if (!!(r.panPts && S.audio.createStereoPanner) !== !!hr.pan || !!r.volPts !== !!hr.vol || (r.send && !hr.send)) return false;
+  return r;
+}
+// the oscillator path's gain: an attack from 0 (cont = false) or a GLIDE_RAMP
+// from the level the voice holds (cont), then the shape / `ve` decay / sustain,
+// then the release at `end` — or, with `hold`, no release (a continuation takes over)
+export function oscGainEnv(gp, n, amp, when, durSec, anchor, end, cont, hold) {
+  // envelope scales with the note: fixed 8ms attack + 30ms release ATE most
+  // of a 50ms note (MM2 runs at 300bpm sound "cut off" — 2026-08-17); the
+  // chip itself is essentially gated square, so short notes stay mostly body
+  const atk = cont ? Math.min(GLIDE_RAMP, durSec * 0.5) : Math.min(0.008, durSec * 0.15);
+  const rel = hold ? 0 : Math.min(0.03, durSec * 0.25);
+  if (cont) glideHold(gp, when); else gp.setValueAtTime(0, when);
+  if (noteShapeRamp(gp, n, amp, anchor, when + atk, Math.max(when + atk, end - rel))) {
+    // the volume shape: no decay ramp below (a shape replaces `ve` when it's set)
+  } else if (n.ve !== undefined && n.ve < n.v) {
+    gp.linearRampToValueAtTime(amp, when + atk);
+    // the chip's software envelope: ramp to the recorded decay target —
+    // flat sustains against the echo voice beat like a tremolo (Josh's
+    // back-to-back vs the record, 2026-08-17); the decay is the space
+    gp.linearRampToValueAtTime(amp * (n.ve / n.v), Math.max(when + atk, end - rel));
+  } else {
+    gp.linearRampToValueAtTime(amp, when + atk);
+    gp.setValueAtTime(amp, Math.max(when + atk, end - rel));
+  }
+  gp.linearRampToValueAtTime(0, end + (hold ? GLIDE_TAIL : 0));
+}
+// true = this note took over its predecessor's sounding voice (nothing new is built)
+export function glideTakeover(ti, n, when, durSec, v) {
+  const h = S.glideVoice && S.glideVoice.get(n);
+  if (!h) return false;
+  S.glideVoice.delete(n);
+  if (h.ctx !== S.audio || h.ti !== ti || h.v !== v || n._preview || when < h.when || when > h.anchor + GLIDE_SLOP) return false;
+  if (h.kind === "sf" && !h.srcs.every(s => s.detune)) return false;
+  const cx = noteCtl(ti, n, when, durSec);
+  const r = glideRouteFits(h, cx);
+  if (!r) return false;
+  const anchor = when + durSec, end = cx ? cx.end : anchor;
+  const next = glideNextFor(ti, n, v), hold = !!next;
+  if (cx) { // volume, pan and send re-ramped on the predecessor's nodes; bend and mod from here
+    const hr = h.cx.route || {};
+    if (hr.pan) { glideHold(hr.pan, when); ctlRamp(hr.pan, r.panPts, when, r.stop); }
+    if (hr.vol) { glideHold(hr.vol, when); ctlRamp(hr.vol, r.volPts, when, r.stop); }
+    if (hr.send) { glideHold(hr.send, when); ctlRamp(hr.send, r.sendPts, when, r.stop); }
+    cx.route = hr; cx.nodes = h.cx.nodes; // the head's onended frees them all
+    if (h.cx.mod) { glideHold(h.cx.mod.gain, when); h.cx.mod.gain.setValueAtTime(0, when); }
+  }
+  for (const s of h.srcs) if (s.detune) glideHold(s.detune, when);
+  if (next && cx) cx.pitchStop = anchor;
+  ctlPitch(cx, h.srcs, when);
+  const atk = Math.min(GLIDE_RAMP, durSec * 0.5);
+  let stopAt;
+  if (h.kind === "sf") { // the head's sample, re-pitched: playbackRate to the new key, the bend on detune
+    for (const s of h.srcs) s.playbackRate.setValueAtTime(Math.pow(2, (n.p - h.baseP) / 12), when);
+    const vel = (n.v / 127) * h.norm;
+    glideHold(h.g.gain, when);
+    h.g.gain.linearRampToValueAtTime(vel, when + atk);
+    h.g.gain.setValueAtTime(vel, Math.max(when + atk, end - (hold ? 0 : 0.04)));
+    h.g.gain.linearRampToValueAtTime(0, end + (hold ? GLIDE_TAIL : 0.09));
+    stopAt = end + 0.12;
+  } else {
+    const f = 440 * Math.pow(2, (n.p - 69) / 12), amp = (n.v / 127) * (VOICE_AMP[h.wave] || 0.5);
+    for (const s of h.srcs) s.frequency.setValueAtTime(f, when);
+    if (h.kind === "patch") {
+      glideHold(h.g.gain, when);
+      h.g.gain.linearRampToValueAtTime(amp, when + atk);
+      if (patchShapeApplies()) noteShapeRamp(h.g.gain, n, amp, anchor, when + atk, end);
+      glideHold(h.pg.gain, when);
+      stopAt = patchEnvFrom(h.pg.gain, h.patch, h.start, end, hold, when);
+      if (h.lfo) h.lfo.stop(stopAt);
+    } else {
+      oscGainEnv(h.g.gain, n, amp, when, durSec, anchor, end, true, hold);
+      stopAt = end + 0.05;
+    }
+  }
+  for (const s of h.srcs) s.stop(stopAt); // Web Audio keeps the last stop()
+  if (next) glideKeep(next, {...h, cx, when, anchor});
+  return true;
+}
 // the default NES/sampled voice path — used directly above, and as the
 // fallback (with the track's auto voice) when a game instrument can't render
 export function playSynthVoice(ti, n, when, durSec, v) {
+  if (glideTakeover(ti, n, when, durSec, v)) return;
   const cx = noteCtl(ti, n, when, durSec);
   const g = S.audio.createGain();
   g.connect(ctlRoute(cx, ti, when));
   const anchor = when + durSec; // the note's own end: shapes anchor here
   const end = cx ? cx.end : anchor; // …and a held sustain pedal may ring past it
   const patch = parsePatchVoice(v);
-  if (patch) { playPatchNote(ti, n, when, durSec, patch, cx, g, (n.v / 127) * (VOICE_AMP[patch.wave] || 0.5), 440 * Math.pow(2, (n.p - 69) / 12)); return; }
+  if (patch) { playPatchNote(ti, n, when, durSec, patch, cx, g, (n.v / 127) * (VOICE_AMP[patch.wave] || 0.5), 440 * Math.pow(2, (n.p - 69) / 12), v); return; }
   const file = sfFileFor(v);
   if (file) { // sampled instrument: the exact recorded pitch, gated to the note length
     const buf = sfEnsure(file).buffers[n.p];
@@ -430,14 +566,17 @@ export function playSynthVoice(ti, n, when, durSec, v) {
       const src = S.audio.createBufferSource();
       src.buffer = buf;
       const vel = (n.v / 127) * (buf._norm || 1); // linear dynamics × loudness-match (see sfDecode)
+      const next = src.detune ? glideNextFor(ti, n, v) : null; // a glide re-pitches by playbackRate, so the bend needs detune
       g.gain.setValueAtTime(vel, when);
-      g.gain.setValueAtTime(vel, Math.max(when + 0.01, end - 0.04));
-      g.gain.linearRampToValueAtTime(0, end + 0.09); // release past the gate
+      g.gain.setValueAtTime(vel, Math.max(when + 0.01, end - (next ? 0 : 0.04)));
+      g.gain.linearRampToValueAtTime(0, end + (next ? GLIDE_TAIL : 0.09)); // release past the gate
       src.connect(g);
+      if (next && cx) cx.pitchStop = anchor;
       ctlPitch(cx, [src], when);
       src.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); }; // free the chain as it dies
       src.start(when);
       src.stop(end + 0.12);
+      if (next) glideKeep(next, {ti, v, kind: "sf", srcs: [src], g, cx, baseP: n.p, norm: buf._norm || 1, start: when, when, anchor});
       return;
     }
     sfDecode(file, n.p); // not decoded yet: ready by the next loop pass —
@@ -522,26 +661,10 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   }
   const o = makeOsc(v); // chip waves + organ
   o.frequency.value = f0;
-  // envelope scales with the note: fixed 8ms attack + 30ms release ATE most
-  // of a 50ms note (MM2 runs at 300bpm sound "cut off" — 2026-08-17); the
-  // chip itself is essentially gated square, so short notes stay mostly body
-  const atk = Math.min(0.008, durSec * 0.15);
-  const rel = Math.min(0.03, durSec * 0.25);
-  g.gain.setValueAtTime(0, when);
-  if (noteShapeRamp(g.gain, n, amp, anchor, when + atk, Math.max(when + atk, end - rel))) {
-    // the volume shape: no decay ramp below (a shape replaces `ve` when it's set)
-  } else if (n.ve !== undefined && n.ve < n.v) {
-    g.gain.linearRampToValueAtTime(amp, when + atk);
-    // the chip's software envelope: ramp to the recorded decay target —
-    // flat sustains against the echo voice beat like a tremolo (Josh's
-    // back-to-back vs the record, 2026-08-17); the decay is the space
-    g.gain.linearRampToValueAtTime(amp * (n.ve / n.v), Math.max(when + atk, end - rel));
-  } else {
-    g.gain.linearRampToValueAtTime(amp, when + atk);
-    g.gain.setValueAtTime(amp, Math.max(when + atk, end - rel));
-  }
-  g.gain.linearRampToValueAtTime(0, end);
+  const next = glideNextFor(ti, n, v);
+  oscGainEnv(g.gain, n, amp, when, durSec, anchor, end, false, !!next);
   o.connect(g);
+  if (next && cx) cx.pitchStop = anchor; // the continuation's own bend starts at its start
   ctlPitch(cx, [o], when);
   // the DEFAULT voice path — the one every no-directive composition plays.
   // The 2026-08-25 cleanup missed it: ~750 leaked gains/min while looping,
@@ -549,6 +672,7 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   o.onended = () => { try { g.disconnect(); } catch (err) {} ctlFree(cx); };
   o.start(when);
   o.stop(end + 0.05);
+  if (next) glideKeep(next, {ti, v, kind: "osc", wave: v, srcs: [o], g, cx, start: when, when, anchor});
 }
 
 export const gameLibSync = new Map(); // vault folder -> {lib, samples: {hash: {rate, loop, pcm}}}, filled by gamePreloadForSong
@@ -855,13 +979,7 @@ export function scheduleNote(ti, n, when, durSec) {
   const gvoice = S.song.tracks[ti] && S.song.tracks[ti].voice;
   if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
   if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v, durSec); return; }
-  let v = trackVoice(ti);
-  // per-note chip timbre: NSF captures carry each pulse note's duty (the
-  // chip's instrument choice — 12.5% thin, 25% classic, 50% hollow; 75%
-  // mirrors 25%). Honored on auto voice; an explicit voice pick overrides.
-  if (n.duty !== undefined && (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto"))
-    v = ["square12", "square25", "square", "square25"][n.duty];
-  playSynthVoice(ti, n, when, durSec, v);
+  playSynthVoice(ti, n, when, durSec, noteVoice(ti, n));
 }
 scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 

@@ -69,6 +69,7 @@ export function parseMidi(buf, opts = {}) {
     const nextMagic = tn + 1 < magics.length ? magics[tn+1] : d.length;
     const end = Math.min(declaredEnd, nextMagic);
     let j = i + 8, t = 0, running = null, name = "", curDuty, curPan = null; // CC10: where the game put this channel (−1 left … +1 right)
+    const glideAt = {}; // ch -> {t, k}: CC84s at tick t still owed to the note-ons that follow at that tick (NIGHT-ROLL.md "Glide (CC84)")
     const ctl = []; // owned channel controllers [{t, ch, c, v}] (CTL_CCS, "pb" bend, "pg" program) — NIGHT-ROLL.md "MIDI support"
     let offset = 0; // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the written key by this many semitones (a Text meta, "sounding:-12")
     const open = {}, notes = [];
@@ -116,7 +117,10 @@ export function parseMidi(buf, opts = {}) {
               // a CC70 at this very tick was this note's attack duty, not a
               // change inside a note still held (a 40-tick minimum can overlap)
               for (const k in open) for (const o of open[k]) if (o.duties && o.duties[o.duties.length - 1].t === t - o.t) { o.duties.pop(); if (!o.duties.length) delete o.duties; }
-              (open[p] = open[p] || []).push({t, v, duty: curDuty});
+              const on = {t, v, duty: curDuty};
+              const gl = glideAt[ch];
+              if (gl && gl.t === t && gl.k > 0) { on.lg = 1; gl.k--; } // a continuation: the voice carries on from the note that ends here
+              (open[p] = open[p] || []).push(on);
             } else if (open[p] && open[p].length) {
               const o = open[p].shift();
               const n = {t: o.t, d: t - o.t, p, v: o.v, ch};
@@ -124,6 +128,7 @@ export function parseMidi(buf, opts = {}) {
               if (o.ve !== undefined) n.ve = o.ve; // software-envelope decay target
               if (o.env) n.env = o.env; // the note's volume shape (NIGHT-ROLL.md "Volume inside a note")
               if (o.duties) n.duties = o.duties; // duty changes while held [{t: ticks from the start, v}] (NES capture v2)
+              if (o.lg) n.lg = 1; // glide link: plays on from the note before it, no new attack
               notes.push(n);
             }
           } else if (st === 0xB0) {
@@ -139,6 +144,10 @@ export function parseMidi(buf, opts = {}) {
               // within that note; no file before capture v2 has one there
               // (its CC70s all precede a note-on at the same tick, undone above)
               for (const k in open) for (const o of open[k]) if (t > o.t) (o.duties = o.duties || []).push({t: t - o.t, v: val & 3});
+            }
+            else if (ctrl === 84 && !foreignNow) { // CC84 Portamento Control = "the next note-on here glides from this key"; the writers recompute the key, so only the link is kept
+              const gl = glideAt[ch];
+              if (gl && gl.t === t) gl.k++; else glideAt[ch] = {t, k: 1};
             }
             else if (ctrl === 10 || CTL_CCS.has(ctrl)) ctl.push({t, ch, c: ctrl, v: val}); // owned, foreign or not: one CC10 becomes midiPan below
             else raw.push({t, bytes: [0xB0 | ch, ctrl, val]}); // every other CC (phase 2)
@@ -237,6 +246,21 @@ export function ctlBytes(e, ch) {
   if (e.c === "pb") { const x = Math.max(0, Math.min(16383, Math.round(e.v) + 8192)); return [0xE0 | ch, x & 127, x >> 7]; }
   if (e.c === "pg") return [0xC0 | ch, e.v & 127];
   return [0xB0 | ch, e.c & 127, Math.max(0, Math.min(127, Math.round(e.v)))];
+}
+// ---------------------------------------------------- glide links (CC84, n.lg)
+// A note with `lg` continues the note before it on the same voice: the chip
+// never re-keyed it (NIGHT-ROLL.md "Glide (CC84)"). The link is to the note on
+// its track and channel that ENDS at its start (the first such in note order);
+// when none does (the notes were edited apart) there is no link and the note
+// plays as an ordinary attack. One rule for writeMidi and the synth;
+// tools/nsf/midi-write.mjs (glidePredKeys) keeps the same rule for its writers.
+// Returns Map(continuation -> predecessor), or null when no note has `lg`.
+export function glidePreds(notes, chOf) {
+  if (!notes || !notes.some(n => n.lg && !n.gone)) return null;
+  const endAt = new Map(), m = new Map();
+  for (const q of notes) if (!q.gone && q.d > 0) { const k = chOf(q) + ":" + (q.t + q.d); if (!endAt.has(k)) endAt.set(k, q); }
+  for (const n of notes) if (n.lg && !n.gone) { const q = endAt.get(chOf(n) + ":" + n.t); if (q && q !== n) m.set(n, q); }
+  return m;
 }
 export function ctlCopy(tr) { return tr.ctl && tr.ctl.length ? {ctl: tr.ctl.map(e => ({...e}))} : {}; } // every hop (draft, Save As, import, publish) carries ctl like midiPan
 // per-track lookup tables, cached on the ctl array itself (no edit UI changes

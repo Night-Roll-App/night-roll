@@ -971,3 +971,53 @@ test("capture v2 (real rip): Mega Man 2 has no DPCM track, and its held notes ca
   assert.deepEqual(notes(b.b), notes(a.b), "same notes after the publish hop");
   assert.ok(b.a.tracks.some(t => (t.ctl || []).some(e => e.c === "pb")), "bends present");
 });
+
+// ---- glide (CC84; NIGHT-ROLL.md "Glide (CC84)", docs/plans/2026-10-07-capture-
+// audit-2-and-glide.md §2): a continuation (`lg`) carries CC84 = the key it
+// continues from, just before its note-on; captures mark `e.lg` from the
+// chip's own no-re-key signal and makeMidi makes the bend chain-relative.
+test("glide: trackBytes writes CC84 = the predecessor's key right before a linked note-on; a link with nothing ending there writes none", async () => {
+  const { trackBytes } = await import("../tools/nsf/midi-write.mjs");
+  const b = trackBytes("pulse1", [{t: 0, d: 240, p: 60, v: 100}, {t: 240, d: 240, p: 62, v: 90, lg: 1}, {t: 600, d: 100, p: 64, v: 80, lg: 1}], 2);
+  const hex = b.map(x => x.toString(16).padStart(2, "0")).join(" ");
+  assert.ok(hex.includes("b2 54 3c 00 92 3e 5a"), "CC84 60 on channel 3, then (delta 0) the on of 62: " + hex);
+  assert.equal(hex.split("b2 54").length - 1, 1, "only the touching note is linked");
+  const plain = trackBytes("pulse1", [{t: 0, d: 240, p: 60, v: 100}, {t: 240, d: 240, p: 62, v: 90}], 2);
+  assert.ok(!plain.map(x => x.toString(16)).join(" ").includes("b2 54"), "no lg: no CC84");
+});
+
+test("glide: chainBends shifts each continuation by (its detune − the chain head's), with a t 0 point; the head keeps v2's rule", async () => {
+  const { chainBends } = await import("../tools/nsf/midi-write.mjs");
+  const ns = chainBends([
+    {t: 0, c0: 10, bend: [{t: 240, c: -30}]},
+    {t: 480, c0: 60, lg: 1},
+    {t: 960, c0: -5, lg: 1, bend: [{t: 240, c: -100}]},
+    {t: 1440, c0: 30},                 // a new head
+    {t: 1920, c0: 30, lg: 1},          // same detune as its head: nothing to add
+  ]);
+  assert.deepEqual(ns.map(n => n.bend), [[{t: 240, c: -30}], [{t: 0, c: 50}], [{t: 0, c: -15}, {t: 240, c: -115}], undefined, undefined]);
+  assert.ok(ns.every(n => !("c0" in n)), "c0 is the helper's input only");
+});
+
+test("glide: makeMidi links capture events marked lg (CC84 + chain-relative bend) and stays a VELOCITY re-capture; unmarked events write what they always did", async () => {
+  const { readSmf, captureDiff } = await import("../tools/capture-diff.mjs");
+  const fOf = cents => 440 * Math.pow(2, (cents - 6900) / 1200);
+  const ev = [
+    {channel: "pulse1", startFrame: 0, endFrame: 24, midi: 60, vol: 15, duty: 2, freq0: fOf(6010), bendSeries: [[0, 0], [12, -30]]},
+    {channel: "pulse1", startFrame: 24, endFrame: 48, midi: 59, vol: 12, duty: 2, freq0: fOf(5960), lg: true},
+    {channel: "pulse1", startFrame: 48, endFrame: 72, midi: 57, vol: 12, duty: 2, cents: -5, bendSeries: [[0, 0], [12, -100]], lg: true},
+  ];
+  const opts = {bpm: 150, frameSec: 1 / 60};
+  const plain = ev.map(e => { const o = {...e}; delete o.lg; return o; });
+  const linked = readSmf(makeMidi(ev, opts)), before = readSmf(makeMidi(plain, opts));
+  const tr = linked.tracks[0];
+  assert.deepEqual(tr.other.filter(e => e.kind === "cc84").map(e => [e.t, e.key]), [[480, "0:60"], [960, "0:59"]], "a link at each continuation, valued with the key before it");
+  const pb = tr.other.filter(e => e.kind === "bend").map(e => [e.t, +e.key.split(":")[1] - 8192]);
+  assert.deepEqual(pb, [[240, -1229], [480, 2048], [960, -614], [1200, -4710]], "head −30 at its middle; then +50, −15, −115 cents from the chain head (±2 range)");
+  assert.ok(!before.tracks[0].other.some(e => e.kind === "cc84"), "no lg: no CC84");
+  const r = captureDiff(before, linked);
+  assert.equal(r.verdict, "VELOCITY", "same notes: " + r.reasons.join("; "));
+  assert.equal(r.gained.cc84, 2, "capture-diff lists the links as a gain");
+  const p = await parsedOf(makeMidi(ev, opts));
+  for (const s of [p.a, p.b]) assert.deepEqual(s.tracks[0].notes.map(n => !!n.lg), [false, true, true], "the app reads the links back, through the publish hop");
+});

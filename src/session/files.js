@@ -210,6 +210,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
           if (n.ve !== undefined) o.ve = n.ve;
           if (n.env) o.env = n.env.map(q => ({...q})); // volume shape survives
           if (n.duties) o.duties = n.duties.map(q => ({...q})); // duty changes inside the note survive
+          if (n.lg) o.lg = 1; // glide link (CC84): plays on from the note before it
           return o;
         })}))};
   setSong(parsed, key);

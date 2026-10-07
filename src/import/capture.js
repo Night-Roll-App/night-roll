@@ -542,6 +542,7 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
           if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
           if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
           if (nt.duties) o.duties = nt.duties.map(q => ({...q})); // duty changes inside the note survive
+          if (nt.lg) o.lg = 1; // glide link (CC84): plays on from the note before it
           return o;
         })}))});
     { // capture-time annotations: the hardware loop point (same rule as the FF1

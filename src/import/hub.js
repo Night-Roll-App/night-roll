@@ -439,6 +439,7 @@ export function localMidiOpen(parsed, name) {
       if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
       if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
       if (nt.duties) o.duties = nt.duties.map(q => ({...q})); // duty changes inside the note survive
+      if (nt.lg) o.lg = 1; // glide link (CC84): plays on from the note before it
       return o;
     })}))});
   openDraft(key);
@@ -696,6 +697,7 @@ export function initHub1() {
           if (nt.ve !== undefined) o.ve = nt.ve;
           if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
           if (nt.duties) o.duties = nt.duties.map(q => ({...q})); // duty changes inside the note survive
+          if (nt.lg) o.lg = 1; // glide link (CC84): plays on from the note before it
           return o;
         })}))});
     }
