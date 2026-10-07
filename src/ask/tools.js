@@ -417,7 +417,7 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   if (typeof draw === "function") draw();
   if (typeof updateSongBtn === "function") updateSongBtn();
   if (typeof updateSyncBtn === "function") updateSyncBtn();
-  return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written on this device; Publish sends it with the song — the user can discard it in the Publish sheet"};
+  return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written"};
 }
 export function askEditAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
@@ -1161,7 +1161,7 @@ export async function askSongFile(a) {
     createComposition(120, 4, 4); // the form's own defaults — bpm/meter aren't in this action's args
     const ok = await saveSongAs(folder, title);
     if (!ok) throw new Error("could not save the new song — try again");
-    return {ok: true, note: "new song \"" + title + "\" in " + folder + " — Edit → Pencil to write; Publish sends it"};
+    return {ok: true, note: "new song \"" + title + "\" in " + folder + " — Edit → Pencil to write"};
   }
   if (action === "save_version") {
     if (!S.song || !S.songKey) throw new Error("no song open");
@@ -1188,7 +1188,7 @@ export async function askSongFile(a) {
     if (askActGiven(a.folder)) { folder = folderFromInput(String(a.folder)); if (!folder) throw new Error("\"" + a.folder + "\" isn't a usable folder name — pick another"); }
     if (S.playing) stop();
     forkCurrentSong(title, folder); // folder undefined: forkCurrentSong's own default (the last-used folder)
-    return {ok: true, note: "saved a copy as \"" + title + "\"" + (folder ? " in " + folder : "") + " — fully editable; Publish sends it"};
+    return {ok: true, note: "saved a copy as \"" + title + "\"" + (folder ? " in " + folder : "") + " — fully editable"};
   }
   if (action === "rename") {
     const title = String(a.title || "").trim();

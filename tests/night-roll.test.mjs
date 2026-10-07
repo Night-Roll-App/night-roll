@@ -7219,7 +7219,7 @@ test("set_track / add_track / delete_track / keep_that / album: reached through 
 test("song_file new: creates a fresh composition and immediately names/folders it (the File menu's +New song then Save As, one call); a title already taken in that folder errors instead of popping the native-dialog-equivalent appConfirm; a missing title or an unusable folder errors", async () => {
   installActSong();
   const r = await aval(`askSongFile({action: "new", title: "My New Song", folder: "my-covers"})`);
-  assert.match(r.note, /^new song "My New Song" in my-covers — Edit → Pencil to write; Publish sends it$/);
+  assert.match(r.note, /^new song "My New Song" in my-covers — Edit → Pencil to write$/);
   assert.equal(val(`songKey`), "albums/my-covers/my-new-song.mid");
   assert.equal(val(`song.tracks.map(t => t.name).join()`), "pulse1,pulse2,triangle", "createComposition's own default tracks");
   assert.equal(val(`isUnsaved(songKey)`), false, "named and foldered — no longer Untitled");
@@ -7250,7 +7250,7 @@ test("song_file save_as: works on anything open — your own song or a locked ca
   installActSong();
   const before = val(`songKey`);
   const r = await aval(`askSongFile({action: "save_as", title: "Copy One", folder: "my-covers"})`);
-  assert.equal(r.note, "saved a copy as \"Copy One\" in my-covers — fully editable; Publish sends it");
+  assert.equal(r.note, "saved a copy as \"Copy One\" in my-covers — fully editable");
   assert.equal(val(`songKey`), "albums/my-covers/copy-one.mid");
   assert.notEqual(val(`songKey`), before);
   await assert.rejects(run(`askSongFile({action: "save_as"})`), /say a title for the copy/);
@@ -7456,7 +7456,7 @@ test("open_song queues the switch and opens nothing itself: quiet one-line reply
     run(`askGeneral = false; askSwitch = null;`);
     // an album run ends, and unpublished edits are said to be kept
     run(`albumRun = {album: "FF1", list: [], idx: 0, passes: 1, gen: 0}; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, savedStamp: 5, tracks: []}));`);
-    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), {final: "opening Night Rain — the album run ends; Act Test's changes are kept on this device (not published)"});
+    assert.deepEqual(await aval(`askAct({do: [{action: "open_song", song: "Night Rain"}]})`), {final: "opening Night Rain — the album run ends; Act Test's changes are kept"});
     run(`albumRun = null; askSwitch = null; localStorage.setItem(draftStoreKey(songKey), "{}");`);
     for (const t of [r.final]) assert.doesNotMatch(t, /\b(key|chord|meter|major|minor)\b/i, "facts only");
   } finally { uninstallOpenSongWorld(); }
@@ -13554,4 +13554,11 @@ test("note dialog: the second row is where the span ENDS — existing annotation
   run(`openEditor(rollnotes.find(n => n.chord)); document.getElementById("nb2").value = "1"; setBeatPair("nq2", "ns2", 1); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   assert.match(val(`document.getElementById("nstatus").textContent`), /end has to come after the start/);
   run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null;`);
+});
+
+test("Ask never reminds Josh to Publish: the rule is in the system prompt and no tool result nudges it (Josh, 2026-10-06, #492)", () => {
+  installSong();
+  assert.match(val(`askSys()`), /Never remind the user to Publish/);
+  const src = ["tools.js", "actions.js"].map(f => readFileSync(new URL("../src/ask/" + f, import.meta.url), "utf8")).join("\n");
+  assert.doesNotMatch(src, /Publish sends it|\(not published\)/, "tool results don't carry Publish nudges for the model to repeat");
 });

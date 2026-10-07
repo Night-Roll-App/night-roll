@@ -335,7 +335,7 @@ export function askOpenSongQueue(a) {
   const notes = [];
   if (path === S.songKey) notes.push("already open");
   if (S.albumRun && path !== S.songKey) notes.push("the album run ends");
-  if (S.songKey && path !== S.songKey && draftDirtyState(S.songKey)) notes.push(songTitleOf(S.songKey) + "'s changes are kept on this device (not published)");
+  if (S.songKey && path !== S.songKey && draftDirtyState(S.songKey)) notes.push(songTitleOf(S.songKey) + "'s changes are kept");
   return "opening " + title + (notes.length ? " — " + notes.join("; ") : "") + (then ? " · then: " + then : "");
 }
 export async function runActions(items, general) { // the model-free door: [{action, args}] in order, stopping at the first failure → {lines, quiet, failed}
