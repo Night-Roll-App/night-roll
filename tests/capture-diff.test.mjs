@@ -129,8 +129,8 @@ test("recapture: planned action per verdict and annotations", () => {
   assert.equal(planAction("SAME", 5, null, null), "skip");
   assert.equal(planAction("VELOCITY", 5, null, null), "replace");
   assert.equal(planAction("ADDED-TRACK", 5, null, null), "replace");
-  assert.equal(planAction("MOVED", 0, "4.1>2.1", "4.1>2.1"), "replace");
-  assert.equal(planAction("MOVED", 0, "4.1>2.1", "4.2>2.2"), "hold-loop-changed");
+  assert.equal(planAction("MOVED", 0, "4.1>2.1", "4.1>2.1"), "keep-old+add-new", "beats moved: always a copy beside the old (Josh, 2026-10-07)");
+  assert.equal(planAction("MOVED", 0, "4.1>2.1", "4.2>2.2"), "keep-old+add-new");
   assert.equal(planAction("MOVED", 3, null, null), "keep-old+add-new");
   assert.equal(planAction(null, 0, null, null), "none");
   assert.equal(planAction("MOVED", 18, "17.1>1.1", "17.2>1.2", true), "replace", "loop point alone moved: the notes are identical, the song keeps its own loop annotation — no second song");

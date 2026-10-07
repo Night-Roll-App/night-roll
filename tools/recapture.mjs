@@ -152,8 +152,7 @@ export function planAction(verdict, annotations, oldLoop, newLoop, loopOnly = fa
   if (!verdict) return "none";
   if (verdict === "SAME") return "skip";
   if (verdict === "VELOCITY" || verdict === "ADDED-TRACK" || loopOnly) return "replace";
-  if (annotations > 0) return "keep-old+add-new";
-  return (oldLoop || null) !== (newLoop || null) ? "hold-loop-changed" : "replace";
+  return "keep-old+add-new"; // beats moved: the published song stays, annotated or not (Josh, 2026-10-07)
 }
 
 // ---------------------------------------------------------------- one album (child process)
