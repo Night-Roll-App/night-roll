@@ -420,6 +420,11 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
    Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
+Q17. (Terminal #175, 2026-10-07) Cursor position readout — docs/plans/2026-10-07-cursor-position-readout.md.
+    Which way? At bar 4, the "&" of beat 2:
+    A. DAW counter: "4 | 2 | 3" (a third cell for 16ths), "+33%" under it for triplets.
+    B. Count it (advisor's pick): "4 | 2&", plus a small "+33%" only off the grid; every readout in the app uses the same words.
+    C. Tap to switch: tap the beat cell to cycle "4 | 2&" → "4.2.3" → "0:07.500".
 Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     different pitches in a fresh capture (Blitz Off, Hurry, Ominous,
     Welcoming of Maester Mika). Published or fresh — which is right?
