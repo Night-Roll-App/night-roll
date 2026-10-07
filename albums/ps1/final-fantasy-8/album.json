@@ -92,13 +92,21 @@
     "n": 1,
     "secs": 140.00224,
     "track": 78,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "celebration-rinoa-s-theme": {
     "n": 1,
     "secs": 140.00224,
     "track": 79,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "choir-chant": {
     "n": 1,
@@ -110,7 +118,11 @@
     "n": 1,
     "secs": 134.4,
     "track": 70,
-    "disc": 4
+    "disc": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dance-with-the-balamb-fish": {
     "n": 1,
@@ -128,7 +140,11 @@
     "n": 1,
     "secs": 98.617656,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "don-t-be-afraid": {
     "n": 1,
@@ -182,7 +198,11 @@
     "n": 1,
     "secs": 119.31528,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fragments-of-memories": {
     "n": 1,
@@ -254,13 +274,21 @@
     "n": 1,
     "secs": 106.001696,
     "track": 27,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "maybe-i-m-a-lion": {
     "n": 1,
     "secs": 157.090176,
     "track": 73,
-    "disc": 4
+    "disc": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mods-de-chocobo": {
     "n": 1,
@@ -284,7 +312,11 @@
     "n": 1,
     "secs": 96.028799625,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "odeka-ke-chocobo": {
     "n": 1,
@@ -314,7 +346,11 @@
     "n": 1,
     "secs": 98.284068,
     "track": 65,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "retaliation": {
     "n": 1,
@@ -356,7 +392,11 @@
     "n": 1,
     "secs": 180.00264,
     "track": 61,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "slide-show-part-1": {
     "n": 1,
@@ -380,7 +420,11 @@
     "n": 1,
     "secs": 76.615142,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "succession-of-witches": {
     "n": 1,
@@ -410,7 +454,11 @@
     "n": 1,
     "secs": 159.62541212499997,
     "track": 71,
-    "disc": 4
+    "disc": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-extreme": {
     "n": 1,
@@ -422,7 +470,11 @@
     "n": 1,
     "secs": 143.8197285,
     "track": 77,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-landing": {
     "n": 1,
@@ -446,7 +498,11 @@
     "n": 1,
     "secs": 89.144224,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-mission": {
     "n": 1,
@@ -488,7 +544,11 @@
     "n": 1,
     "secs": 73.439082,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "timber-owls": {
     "n": 1,
