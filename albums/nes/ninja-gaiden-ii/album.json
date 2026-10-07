@@ -32,132 +32,236 @@
    "approaching-evil-opening": {
     "n": 11,
     "secs": 93.396264,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "battling-precariously-2-2-4-2-5-1a-7-2": {
     "n": 3,
     "secs": 47.99808,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "blazing-inferno-4-1": {
     "n": 5,
     "secs": 37.33184,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "credits": {
     "n": 27,
     "secs": 180.259456,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cruel-laughter-pre-maze-cutscene": {
     "n": 19,
     "secs": 27.198912,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cunning-enemy-ashtar-jaquio-battles": {
     "n": 8,
     "secs": 41.598336,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "deep-within-the-heart-5-1b-7-1": {
     "n": 6,
     "secs": 40.398384,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "determined-spirit-tower-rises": {
     "n": 21,
     "secs": 22.399104,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "domination-of-darkness-3-1": {
     "n": 4,
     "secs": 73.49706,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "final-confrontation-ryu-vs-jaquio": {
     "n": 20,
     "secs": 28.198872,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "impending-doom": {
     "n": 24,
     "secs": 6.866392,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "inevitable-unused-final-boss-battle": {
     "n": 9,
     "secs": 20.799168,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "irene-lives-ending-ii": {
     "n": 26,
     "secs": 89.32976000000001,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "lord-of-darkness-ashtar-cutscenes": {
     "n": 16,
     "secs": 31.732064,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "lurking-creatures-cutscene": {
     "n": 28,
     "secs": 16.566004,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "military-man-robert-cutscene": {
     "n": 12,
     "secs": 15.866032,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "minions-of-evil-boss-battle": {
     "n": 7,
     "secs": 35.465248,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "motion-of-the-ninja-1-1-7-2-interlude": {
     "n": 22,
     "secs": 28.798848,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "mysterious-foes-cutscenes": {
     "n": 13,
     "secs": 44.798208,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "puppetmaster-cutscenes": {
     "n": 18,
     "secs": 30.798768,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "rushing-foward-2-1-5-2-7-2": {
     "n": 2,
     "secs": 50.66464,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "tearful-reunion-rescue-cutscenes": {
     "n": 14,
     "secs": 49.614682,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "they-got-irene": {
     "n": 15,
     "secs": 4.733144,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "time-is-critical": {
     "n": 25,
     "secs": 10.599576,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "tower-of-lahja-3-2-7-2": {
     "n": 1,
     "secs": 32.4987,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "triumphant-ending-i": {
     "n": 23,
     "secs": 25.698972,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
