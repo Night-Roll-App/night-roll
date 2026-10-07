@@ -420,6 +420,8 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
    Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
+Q19. (capture audit 2, 2026-10-07 — docs/plans/2026-10-07-capture-audit-2-and-glide.md) NES triangle notes run long (Zelda: 439 of 511). Shorten them to where the game stops them? Starts, pitches and bars don't move. Default: yes.
+Q20. (same) SNES phantom notes: ~8% of sampled SNES notes are ghosts the game never played, stacked on real notes (mostly Mega Man X, Street Fighter II). Remove them? Annotated songs keep the old version + a "(re-capture)" copy. Default: yes.
 Q18. ANSWERED (Terminal #187): build the fix; top-bar volume hidden by default, toggle in View › Display. (Terminal #183/#184, 2026-10-07) Loudness — docs/plans/2026-10-07-console-loudness.md. Game sound is 13–22 dB under a normal soundtrack level (a fixed 0.22 master, no loudness step). Fix: each song gets one measured gain so 100% sounds right; synth and console match. Then the volume control:
     1. remove the top-bar button, keep the Mixer master (advisor's pick)  2. remove both  3. keep both
 Q17. ANSWERED B (Terminal #179) — SHIPPED 2026-10-07 (LCD "4 | 2&", +NN% off-grid; one formatter posParts). (Terminal #175, 2026-10-07) Cursor position readout — docs/plans/2026-10-07-cursor-position-readout.md.
