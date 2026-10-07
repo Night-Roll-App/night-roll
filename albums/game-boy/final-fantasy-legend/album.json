@@ -18,6 +18,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -6.5,
+     "synth": -11.5
     }
    },
    "eat-the-meat": {
@@ -26,6 +32,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -5.9,
+     "synth": -7.3
     }
    },
    "epilogue": {
@@ -34,6 +46,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -4.9,
+     "synth": -7.1
     }
    },
    "fanfare": {
@@ -42,11 +60,23 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -4.5,
+     "synth": -6.5
     }
    },
    "fierce-battle": {
     "n": 7,
-    "secs": 43.02875518798828
+    "secs": 43.02875518798828,
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -5,
+     "synth": -6.7
+    }
    },
    "fight": {
     "n": 9,
@@ -54,6 +84,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.3,
+     "peak": -4.7,
+     "synth": -7.7
     }
    },
    "forbidden-tower": {
@@ -62,11 +98,23 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": -3.4,
+     "synth": -8
     }
    },
    "furious-battle": {
     "n": 6,
-    "secs": 52.371185302734375
+    "secs": 52.371185302734375,
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -5.6,
+     "synth": -6.6
+    }
    },
    "hurry-up": {
     "n": 3,
@@ -74,6 +122,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -5.1,
+     "synth": -7.8
     }
    },
    "jingle-01": {
@@ -82,6 +136,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -6.5,
+     "synth": -13.8
     }
    },
    "knights-of-the-demon-world-tower": {
@@ -90,6 +150,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -5.4,
+     "synth": -6.5
     }
    },
    "main-theme": {
@@ -98,6 +164,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.5,
+     "peak": -4.3,
+     "synth": -7.1
     }
    },
    "prologue": {
@@ -106,6 +178,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": -6.5,
+     "synth": -10.3
     }
    },
    "requiem": {
@@ -114,6 +192,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": -6.5,
+     "synth": -11.8
     }
    },
    "the-highest-floor": {
@@ -122,6 +206,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -6.5,
+     "synth": -10.7
     }
    },
    "town-theme": {
@@ -130,6 +220,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.3,
+     "peak": -6.5,
+     "synth": -12.6
     }
    },
    "wipe-your-tears-away": {
@@ -138,6 +234,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.3,
+     "peak": -6.5,
+     "synth": -9.9
     }
    },
    "fierce-battle-recapture": {
@@ -146,6 +248,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -5,
+     "synth": -8
     }
    },
    "furious-battle-recapture": {
@@ -154,6 +262,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -5.6,
+     "synth": -7.6
     }
    }
   },
