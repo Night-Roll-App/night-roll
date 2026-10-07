@@ -20,97 +20,173 @@
    "prelude": {
     "n": 1,
     "secs": 170,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "prologue": {
     "n": 2,
     "secs": 85,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "epilogue": {
     "n": 3,
     "secs": 270,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "overworld": {
     "n": 4,
     "secs": 60,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "ship": {
     "n": 5,
     "secs": 90,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "airship": {
     "n": 6,
     "secs": 45,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "town": {
     "n": 7,
     "secs": 45,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "cornelia-castle": {
     "n": 8,
     "secs": 40,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "gurgu-volcano": {
     "n": 9,
     "secs": 65,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "matoyas-cave": {
     "n": 10,
     "secs": 65,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "cave": {
     "n": 11,
     "secs": 50,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "chaos-temple": {
     "n": 12,
     "secs": 55,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "floating-castle": {
     "n": 13,
     "secs": 65,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "underwater-palace": {
     "n": 14,
     "secs": 55,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "shop": {
     "n": 15,
     "secs": 55,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "battle": {
     "n": 16,
     "secs": 90,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "menu": {
     "n": 17,
     "secs": 35,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "game-over": {
     "n": 18,
     "secs": 45,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    },
    "victory": {
     "n": 19,
     "secs": 30,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "bfb0ea84"
+    }
    }
   }
  }
