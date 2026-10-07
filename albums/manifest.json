@@ -8323,6 +8323,10 @@
     "path": "albums/nes/mega-man-2/boss-battle.mid"
    },
    {
+    "title": "Boss Battle (re-capture)",
+    "path": "albums/nes/mega-man-2/boss-battle-recapture.mid"
+   },
+   {
     "title": "Bubble Man",
     "path": "albums/nes/mega-man-2/bubble-man.mid"
    },
@@ -8377,6 +8381,10 @@
    {
     "title": "Metal Man",
     "path": "albums/nes/mega-man-2/metal-man.mid"
+   },
+   {
+    "title": "Metal Man (re-capture)",
+    "path": "albums/nes/mega-man-2/metal-man-recapture.mid"
    },
    {
     "title": "Password Screen",

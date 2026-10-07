@@ -5,14 +5,20 @@
   "dr-wily-defeated": "Dr. Wily Defeated!",
   "dr-wily-s-castle-ii": "Dr. Wily's Castle II",
   "dr-wily-s-castle": "Dr. Wily's Castle",
-  "dr-wily-s-map": "Dr. Wily's Map"
+  "dr-wily-s-map": "Dr. Wily's Map",
+  "boss-battle-recapture": "Boss Battle (re-capture)",
+  "metal-man-recapture": "Metal Man (re-capture)"
  },
  "nsf": {
   "vault": "nes/mega-man-2.nsf",
   "tracks": {
    "air-man": {
     "n": 7,
-    "secs": 45.33152
+    "secs": 45.33152,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "boss-battle": {
     "n": 18,
@@ -20,47 +26,91 @@
    },
    "bubble-man": {
     "n": 10,
-    "secs": 42.648294
+    "secs": 42.648294,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "crash-man": {
     "n": 5,
-    "secs": 75.980294
+    "secs": 75.980294,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "credits": {
     "n": 24,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dr-wily-defeated": {
     "n": 21,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dr-wily-s-castle-ii": {
     "n": 12,
-    "secs": 76.79692800000001
+    "secs": 76.79692800000001,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "dr-wily-s-castle": {
     "n": 11,
-    "secs": 74.66368
+    "secs": 74.66368,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "enemy-chosen": {
     "n": 16,
-    "secs": 299.988
+    "secs": 299.988,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "epilogue": {
     "n": 22,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "flash-man": {
     "n": 3,
-    "secs": 51.181286
+    "secs": 51.181286,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "heat-man": {
     "n": 6,
-    "secs": 25.682306
+    "secs": 25.682306,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "introduction": {
     "n": 1,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "metal-man": {
     "n": 8,
@@ -68,35 +118,83 @@
    },
    "password-screen": {
     "n": 14,
-    "secs": 6.399744
+    "secs": 6.399744,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "quick-man": {
     "n": 9,
-    "secs": 38.781782
+    "secs": 38.781782,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "stage-select": {
     "n": 15,
-    "secs": 6.816394
+    "secs": 6.816394,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "title-screen": {
     "n": 2,
-    "secs": 42.648294
+    "secs": 42.648294,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "track-20": {
     "n": 20,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "track-23": {
     "n": 23,
-    "secs": 42.648294
+    "secs": 42.648294,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "victory": {
     "n": 19,
-    "secs": 299.971334
+    "secs": 299.971334,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "wood-man": {
     "n": 4,
-    "secs": 39.815074
+    "secs": 39.815074,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "boss-battle-recapture": {
+    "n": 18,
+    "secs": 19.182566,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "metal-man-recapture": {
+    "n": 8,
+    "secs": 38.398464000000004,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
