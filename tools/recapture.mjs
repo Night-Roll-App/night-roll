@@ -2,11 +2,12 @@
 // rips and say, song by song, whether the new capture may replace the old
 // (docs/plans/2026-10-06-capture-fidelity-audit.md §5 and §8).
 //
-//   node tools/recapture.mjs [--console nes] [--album <console>/<slug>|<slug>] [--out /tmp/recap] [--timeout 1800]
+//   node tools/recapture.mjs [--console nes] [--album <console>/<slug>|<slug>] [--out /tmp/recap] [--timeout 1800] [--resume]
 //       dry run (the default): fetch, capture, diff, report. Writes ONLY under
 //       --out: rips/ (download cache — nothing downloads twice), out/<console>/
 //       <album>/<base>.mid (the new captures), work/ (one JSON per album),
 //       logs/, report.json + report.md (built from every album in work/).
+//       --resume skips albums whose work/ result is already there.
 //   node tools/recapture.mjs --apply --album <console>/<slug> [--out /tmp/recap]
 //       copies one album's planned replacements from the report into albums/.
 //
@@ -185,6 +186,36 @@ async function captureGeneric(a, fetched, outDir, log) {
   const t0 = Date.now();
   const items = ns.length ? await runCaptureJob(app, ns) : [];
   log(`  captured ${items.filter(i => i.st === "done").length}/${ns.length} in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+  // NES/GB: the playlist length that sized the original capture is not
+  // archived. When the first sizing's kept length differs from the
+  // published secs, try the other sizing once (no playlist ↔ a playlist
+  // length equal to the published secs) and keep whichever lands closer —
+  // recovering the original window, not tuning the verdict: the notes are
+  // only compared after the choice is made.
+  const sizing = {};
+  if (!PERFILE.has(a.chip) && ns.length) {
+    const secsOf = ids => JSON.parse(app.run(`JSON.stringify(${JSON.stringify(ids)}.map(id => nsfSess.rows[id].secs || null))`));
+    const setLen = (id, len) => app.run(`(() => { const e = (nsfSess.trackList || []).find(x => x.n === ${id}); if (e) e.len = ${len}; })()`);
+    const first = secsOf(ns);
+    const redo = [];
+    ns.forEach((id, k) => {
+      const w = C.__want[rowIds.indexOf(id)], pub = tracks[rowIds.indexOf(id)].tr.secs;
+      sizing[id] = w.len ? "playlist len " + w.len : "no playlist";
+      if (pub && first[k] != null && Math.abs(first[k] - pub) > 0.05) redo.push({id, k, pub, first: first[k], len0: w.len, len1: w.len ? 0 : pub});
+    });
+    if (redo.length) {
+      redo.forEach(r => setLen(r.id, r.len1));
+      await runCaptureJob(app, redo.map(r => r.id));
+      const second = secsOf(redo.map(r => r.id));
+      const back = [];
+      redo.forEach((r, j) => {
+        if (second[j] != null && Math.abs(second[j] - r.pub) < Math.abs(r.first - r.pub)) sizing[r.id] = r.len1 ? "playlist len " + r.len1 + " (retried)" : "no playlist (retried)";
+        else { setLen(r.id, r.len0); back.push(r.id); }
+      });
+      if (back.length) await runCaptureJob(app, back); // the first sizing was closer: capture it again so the draft is that one
+      log(`  sizing retried on ${redo.length} track(s), ${redo.length - back.length} kept the retry`);
+    }
+  }
   const rowInfo = JSON.parse(app.run(`JSON.stringify(${JSON.stringify(ns)}.map(id => { const r = nsfSess.rows[id]; return {id, key: r.key || null, secs: r.secs || null, st: r.st.textContent, warn: r.st.title || ""}; }))`));
   const keys = rowInfo.filter(r => r.key).map(r => r.key);
   if (keys.length) {
@@ -198,7 +229,7 @@ async function captureGeneric(a, fetched, outDir, log) {
     const s = {base, n: tr.n, pubSecs: tr.secs ?? null};
     if (id == null) { songs.push({...s, capture: "no-row", why: "no import row matched this track (file " + (C.__want[i].fileName || "missing") + ", slot " + tr.n + ")"}); return; }
     const it = items[ns.indexOf(id)], ri = rowInfo[ns.indexOf(id)];
-    s.capture = it ? it.st : "not-run"; s.warn = ri.warn || undefined; s.newSecs = ri.secs;
+    s.capture = it ? it.st : "not-run"; s.warn = ri.warn || undefined; s.newSecs = ri.secs; s.sizing = sizing[id];
     if (it && it.msg) s.why = it.msg;
     if (!ri.key) { songs.push(s); return; }
     if (ri.key.split("/").pop() !== base + ".mid") s.renamedKey = ri.key; // the app chose a different base (collision)
@@ -355,7 +386,7 @@ export function applyAlbum(rep, id, log = console.log) {
 
 // ---------------------------------------------------------------- CLI
 function parseArgs(argv) {
-  const o = {console: null, album: null, out: "/tmp/recap", timeout: 1800, apply: false, one: null};
+  const o = {console: null, album: null, out: "/tmp/recap", timeout: 1800, apply: false, one: null, resume: false};
   for (let i = 0; i < argv.length; i++) {
     const x = argv[i];
     if (x === "--console") o.console = argv[++i];
@@ -364,6 +395,7 @@ function parseArgs(argv) {
     else if (x === "--timeout") o.timeout = +argv[++i];
     else if (x === "--apply") o.apply = true;
     else if (x === "--one") o.one = argv[++i];
+    else if (x === "--resume") o.resume = true;
     else throw new Error("unknown argument " + x);
   }
   if (path.resolve(o.out) === ROOT || path.resolve(o.out).startsWith(ROOT + path.sep)) throw new Error("--out must be outside the repo (default /tmp/recap)");
@@ -403,6 +435,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === SELF) {
   mkdirSync(path.join(o.out, "logs"), {recursive: true});
   mkdirSync(path.join(o.out, "work"), {recursive: true});
   for (const a of albums) {
+    const prev = path.join(o.out, "work", a.console + "--" + a.slug + ".json");
+    if (o.resume && existsSync(prev) && !JSON.parse(readFileSync(prev, "utf8")).error) continue; // --resume: an interrupted run picks up where it stopped
     const t0 = Date.now();
     const logf = path.join(o.out, "logs", a.console + "--" + a.slug + ".log");
     const r = spawnSync(process.execPath, ["--experimental-vm-modules", "--no-warnings", SELF, "--one", a.id, "--out", o.out], {timeout: o.timeout * 1000, encoding: "utf8", maxBuffer: 256 << 20});
