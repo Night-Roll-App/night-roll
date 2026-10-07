@@ -7952,6 +7952,10 @@
     "path": "albums/nes/kirbys-adventure/fountain-of-dreams.mid"
    },
    {
+    "title": "Fountain of Dreams (re-capture)",
+    "path": "albums/nes/kirbys-adventure/fountain-of-dreams-recapture.mid"
+   },
+   {
     "title": "Game Over",
     "path": "albums/nes/kirbys-adventure/game-over.mid"
    },

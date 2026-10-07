@@ -32,7 +32,8 @@
   "tower-to-the-sky-intro": "Tower to the Sky ~Intro~",
   "tower-to-the-sky": "Tower to the Sky",
   "vegetable-valley-theme": "Vegetable Valley ~Theme~",
-  "yogurt-yard-theme": "Yogurt Yard ~Theme~"
+  "yogurt-yard-theme": "Yogurt Yard ~Theme~",
+  "fountain-of-dreams-recapture": "Fountain of Dreams (re-capture)"
  },
  "nsf": {
   "vault": "nes/kirbys-adventure.nsf",
@@ -40,52 +41,92 @@
    "battle-across-the-sky": {
     "n": 58,
     "secs": 12.066184,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bird-chirp": {
     "n": 38,
     "secs": 1.149954,
-    "track": 46
+    "track": 46,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bonus-perfect": {
     "n": 48,
     "secs": 3.799848,
-    "track": 54
+    "track": 54,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bonus": {
     "n": 49,
     "secs": 2.283242,
-    "track": 53
+    "track": 53,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "boss": {
     "n": 13,
     "secs": 28.798848,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "butter-building-theme": {
     "n": 46,
     "secs": 6.399744,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "choices": {
     "n": 55,
     "secs": 11.732864,
-    "track": 40
+    "track": 40,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cloud-tops-intro": {
     "n": 33,
     "secs": 44.998200000000004,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cloud-tops": {
     "n": 34,
     "secs": 35.198592,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "crane-fever-intense": {
     "n": 11,
     "secs": 10.66624,
-    "track": 43
+    "track": 43,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "crane-fever": {
     "n": 10,
@@ -95,22 +136,38 @@
    "egg-catcher-intro": {
     "n": 20,
     "secs": 19.565884,
-    "track": 44
+    "track": 44,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "egg-catcher": {
     "n": 21,
     "secs": 14.932736,
-    "track": 45
+    "track": 45,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "epilogue": {
     "n": 56,
     "secs": 74.647014,
-    "track": 56
+    "track": 56,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fanfare-long": {
     "n": 8,
     "secs": 6.383078,
-    "track": 39
+    "track": 39,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fanfare-short": {
     "n": 9,
@@ -125,17 +182,29 @@
    "first-you-draw-a-circle": {
     "n": 50,
     "secs": 7.399704,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "forest-trail-intro": {
     "n": 18,
     "secs": 44.764876,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "forest-trail": {
     "n": 19,
     "secs": 41.065024,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "fountain-of-dreams": {
     "n": 57,
@@ -145,102 +214,182 @@
    "game-over": {
     "n": 12,
     "secs": 3.5665240000000002,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "goal": {
     "n": 6,
     "secs": 2.4999000000000002,
-    "track": 37
+    "track": 37,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "grape-garden-theme": {
     "n": 36,
     "secs": 10.66624,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "grassy-bluff": {
     "n": 16,
     "secs": 25.598976,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "green-fields-intro": {
     "n": 1,
     "secs": 53.16454,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "green-fields": {
     "n": 2,
     "secs": 42.66496,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "green-greens-intro": {
     "n": 4,
     "secs": 31.782062,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "green-greens": {
     "n": 5,
     "secs": 25.382318,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "gunshot": {
     "n": 23,
     "secs": 2.066584,
-    "track": 50
+    "track": 50,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "high-hills-intro": {
     "n": 31,
     "secs": 54.83114,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "high-hills": {
     "n": 32,
     "secs": 43.99824,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "hit": {
     "n": 25,
     "secs": 1.849926,
-    "track": 51
+    "track": 51,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "hyper": {
     "n": 3,
     "secs": 5.33312,
-    "track": 41
+    "track": 41,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "ice-cream-island-theme": {
     "n": 45,
     "secs": 4.266496,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "island-paradise-intro": {
     "n": 41,
     "secs": 59.297628,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "island-paradise": {
     "n": 42,
     "secs": 51.297948,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "kirby-s-adventure": {
     "n": 54,
     "secs": 31.682066,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "miss": {
     "n": 40,
     "secs": 3.233204,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "nightmare-emerges": {
     "n": 53,
     "secs": 10.549578,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "nightmare": {
     "n": 15,
     "secs": 35.698572,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "no-bonus": {
     "n": 47,
@@ -250,72 +399,137 @@
    "open-waters-intro": {
     "n": 43,
     "secs": 42.66496,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "open-waters": {
     "n": 44,
     "secs": 34.131968,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "orange-ocean-theme": {
     "n": 22,
     "secs": 19.199232000000002,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "penalty": {
     "n": 30,
     "secs": 2.549898,
-    "track": 48
+    "track": 48,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "quick-draw": {
     "n": 27,
     "secs": 2.699892,
-    "track": 47
+    "track": 47,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "rainbow-resort-theme": {
     "n": 7,
     "secs": 9.599616000000001,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "spring-in-your-step-bad-rip": {
     "n": 17,
     "secs": 12.799488,
-    "track": 55
+    "track": 55,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "starry-sky-intro": {
     "n": 28,
     "secs": 45.098196,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "starry-sky": {
     "n": 29,
     "secs": 35.198592,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-moon": {
     "n": 14,
     "secs": 15.399384,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "tower-to-the-sky-intro": {
     "n": 51,
     "secs": 47.83142,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "tower-to-the-sky": {
     "n": 52,
     "secs": 38.398464000000004,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "vegetable-valley-theme": {
     "n": 35,
     "secs": 19.199232000000002,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "yogurt-yard-theme": {
     "n": 37,
     "secs": 7.466368,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "fountain-of-dreams-recapture": {
+    "n": 57,
+    "secs": 51.981254,
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
