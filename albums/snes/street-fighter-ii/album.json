@@ -27,177 +27,317 @@
    "balrog-jap-vega-us-europe": {
     "n": 1,
     "secs": 105,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "blanka-s-ending": {
     "n": 1,
     "secs": 62,
-    "track": 25
+    "track": 25,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "blanka": {
     "n": 1,
     "secs": 114,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "bonus-stage": {
     "n": 1,
     "secs": 24,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "capcom-sound": {
     "n": 1,
     "secs": 12,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chun-li-s-ending-1": {
     "n": 1,
     "secs": 75,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chun-li-s-ending-2": {
     "n": 1,
     "secs": 32,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "chun-li": {
     "n": 1,
     "secs": 105,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "continue": {
     "n": 1,
     "secs": 22,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "credits": {
     "n": 1,
     "secs": 224,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dhalsim-s-ending": {
     "n": 1,
     "secs": 34,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dhalsim": {
     "n": 1,
     "secs": 78,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "e-honda-s-ending": {
     "n": 1,
     "secs": 52,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "e-honda": {
     "n": 1,
     "secs": 118,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "end-battle": {
     "n": 1,
     "secs": 12,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fight": {
     "n": 1,
     "secs": 12,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "game-over": {
     "n": 1,
     "secs": 12,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "guile-s-ending": {
     "n": 1,
     "secs": 49,
-    "track": 26
+    "track": 26,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "guile": {
     "n": 1,
     "secs": 132,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "here-comes-a-new-challanger": {
     "n": 1,
     "secs": 12,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ken-s-ending-1": {
     "n": 1,
     "secs": 51,
-    "track": 27
+    "track": 27,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ken-s-ending-2": {
     "n": 1,
     "secs": 46,
-    "track": 28
+    "track": 28,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ken": {
     "n": 1,
     "secs": 124,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "m-bison-jap-balrog-us-europe": {
     "n": 1,
     "secs": 104,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pause": {
     "n": 1,
     "secs": 12,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "player-select": {
     "n": 1,
     "secs": 32,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ranking": {
     "n": 1,
     "secs": 12,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ryu-s-ending": {
     "n": 1,
     "secs": 61,
-    "track": 23
+    "track": 23,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ryu": {
     "n": 1,
     "secs": 98,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "sagat": {
     "n": 1,
     "secs": 163.98,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "start-battle": {
     "n": 1,
     "secs": 12,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-world-warrior": {
     "n": 1,
     "secs": 30,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "vega-jap-m-bison-us-europe": {
     "n": 1,
     "secs": 132,
-    "track": 22
+    "track": 22,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "zangief-s-ending": {
     "n": 1,
     "secs": 24,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "zangief": {
     "n": 1,
     "secs": 101,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    }
   },
   "chip": "spc",
