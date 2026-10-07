@@ -244,8 +244,11 @@ export async function renderN64(result, opts = {}) {
       const [gL, gR] = panGains(notePan(n, n.drum ? bank.drum(n.semitone) : null));
       const smp = bank.pcm(sound.sample);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
-      const baseStep = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
+      let baseStep = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
       let step = baseStep;
+      // the channel bend while the note holds (n.freqChanges, D3/DE): noteFreqScale is recomputed every update
+      const bends = n.freqChanges ? n.freqChanges.map(c => ({i: Math.floor(tickSeconds(tempos, n.tick + c.t) * sampleRate), f: c.f})) : null;
+      let bi = 0;
       const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(tickSeconds(tempos, n.tick + n.dur) * sampleRate);
       const env = new Adsr(envelope);
       let pos = 0, nextUpdate = i0, gPrev = 0, gNext = 0;
@@ -254,6 +257,11 @@ export async function renderN64(result, opts = {}) {
           if (i >= iOff && env.state !== DECAY && !env.done) env.decay(releaseRate);
           const level = env.update() * VOL_SCALE;
           if (steps) { while (gi + 1 < steps.length && i >= steps[gi + 1].i) gi++; base = vel * vel * steps[gi].l; }
+          if (bends && bi < bends.length && i >= bends[bi].i) {
+            while (bi + 1 < bends.length && i >= bends[bi + 1].i) bi++;
+            baseStep = Math.min(FREQ_CAP, freq * bends[bi++].f) * N64_RATE / sampleRate;
+            step = baseStep;
+          }
           if (vib || porta) { // process_notes: frequency ×= vibratoFreqScale × portamentoFreqScale
             let f = 1;
             if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); f *= vib.update(); }
@@ -499,8 +507,11 @@ export async function renderOotGen(result, opts = {}) {
       let smp;
       try { smp = font.pcm(sound.sample); } catch (e) { warn(e.message); continue; }
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
-      const baseStep = Math.min(CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
+      let baseStep = Math.min(CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
       let step = baseStep;
+      // the channel bend while the note holds (n.freqChanges, D3/DE): AudioEffects_SequenceChannelProcessSound
+      const bends = n.freqChanges ? n.freqChanges.map(c => ({i: Math.floor(tickSeconds(tempos, n.tick + c.t) * sampleRate), f: c.f})) : null;
+      let bi = 0;
       const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(tickSeconds(tempos, n.tick + n.dur) * sampleRate);
       const env = new OotAdsr(envelope);
       let pos = 0, nextUpdate = i0, gPrev = 0, gNext = 0;
@@ -516,6 +527,11 @@ export async function renderOotGen(result, opts = {}) {
           if (i >= iOff && !env.decaying && !env.done) env.decay(fadeOut, n.chSustain || 0);
           const a = env.update();
           if (steps) { while (gi + 1 < steps.length && i >= steps[gi + 1].i) gi++; vol = steps[gi].l; level = velSq * vol * vol; }
+          if (bends && bi < bends.length && i >= bends[bi].i) {
+            while (bi + 1 < bends.length && i >= bends[bi + 1].i) bi++;
+            baseStep = Math.min(CAP, freq * bends[bi++].f) * N64_RATE / sampleRate;
+            step = baseStep;
+          }
           if (vib || porta) {
             let f = 1;
             if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); f *= vib.update(); }

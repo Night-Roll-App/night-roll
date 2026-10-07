@@ -253,6 +253,11 @@ test("seqNotes/toNotesTxt/makeMidi (reused unmodified from tools/psx/notes.mjs) 
   assert.equal(String.fromCharCode(...mid.subarray(0, 4)), "MThd");
 });
 
+test("SQ pitch wheel (0xE0) is lsb then msb: 00 40 is the centre", () => {
+  const seq = parseSQ(makeTestSQ());
+  assert.deepEqual(seq.events.filter(e => e.type === "bend").map(e => [e.tick, e.value]), [[1440, 0], [1700, -1]]);
+});
+
 test("BGM pitch bend (0x5C): honored as a pitch slide (tools/psx/akao.mjs's own representation, reused unmodified) — a bend inside a held note becomes note.slide; notes.mjs itself is never touched", () => {
   const seq = parseBGM(makeTestBGM());
   const r = bgmNotes(seq);

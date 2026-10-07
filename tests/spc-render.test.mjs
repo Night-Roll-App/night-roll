@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { makeTestSPC, TEST_MELODY_MIDI } from "../tools/spc/make-test-spc.mjs";
 import { parseSPC, runSPC } from "../tools/spc/spc.mjs";
 import { encodeBRR } from "../tools/spc/brr.mjs";
+import { existsSync, readFileSync } from "node:fs";
 import { renderApu, GAUSS, gaussInterp, noiseStep, NOISE_SEED, DSP_RATE } from "../tools/spc/apu-render.mjs";
 
 const hz = m => 440 * 2 ** ((m - 69) / 12);
@@ -179,4 +180,71 @@ test("60 s of the synthetic tune renders in under 3 s", async () => {
   const ms = performance.now() - t;
   assert.ok(Math.abs(r.voice0.length - 60 * 44100) <= 1);
   assert.ok(ms < 3000, "took " + ms.toFixed(0) + " ms");
+});
+
+// Stereo output and the echo unit (capture audit 2, docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.3)
+test("stereo: VOL L/R per side, a surround voice keeps its inverted phase, the fold of the dry pair is the old mono", async () => {
+  const keyOn = [{sample: 0, addr: 0x4C, value: 0x01}];
+  const plain = await renderApu(handCapture(() => {}, keyOn, 16000), {sampleRate: 32000, stereo: true});
+  assert.ok(plain.voice0.l instanceof Float32Array && plain.voice0.r instanceof Float32Array, "{l, r} per voice");
+  const mono = await renderApu(handCapture(() => {}, keyOn, 16000), {sampleRate: 32000});
+  for (let i = 0; i < mono.voice0.length; i += 97) assert.ok(Math.abs((plain.voice0.l[i] + plain.voice0.r[i]) * 0.5 / Math.SQRT1_2 - mono.voice0[i]) < 1e-6);
+  assert.ok(Math.abs(peak(plain.voice0.l) - peak(mono.voice0) * Math.SQRT1_2) < 1e-3, "centred: each side is the mono level through an equal-power centre pan");
+  const left = await renderApu(handCapture(d => { d[1] = 0; }, keyOn, 16000), {sampleRate: 32000, stereo: true});
+  assert.equal(peak(left.voice0.r), 0, "VOL R 0: nothing on the right");
+  assert.ok(peak(left.voice0.l) > 0.2);
+  // VOL R = -127: the surround trick. The mono fold cancels it to nothing; the pair keeps it.
+  const sur = await renderApu(handCapture(d => { d[1] = 0x81; }, keyOn, 16000), {sampleRate: 32000, stereo: true});
+  const surMono = await renderApu(handCapture(d => { d[1] = 0x81; }, keyOn, 16000), {sampleRate: 32000});
+  assert.ok(peak(surMono.voice0) < 0.01, "folded to mono it cancels (the old console voice)");
+  let x = 0, el = 0, er = 0;
+  for (let i = 0; i < sur.voice0.l.length; i++) { x += sur.voice0.l[i] * sur.voice0.r[i]; el += sur.voice0.l[i] ** 2; er += sur.voice0.r[i] ** 2; }
+  assert.ok(x / Math.sqrt(el * er) < -0.99, "opposite phase");
+  assert.ok(peak(sur.voice0.l) > 0.2 && peak(sur.voice0.r) > 0.2, "loud on both sides");
+});
+
+test("echo: EON voices return through the ring after EDL × 16 ms, FIR and EVOL scale it, FLG bit 5 stops the writes, echo:false is dry", async () => {
+  // one 500 Hz sine, keyed off at 0.1 s (GAIN direct: an 8 ms release)
+  const log = [{sample: 0, addr: 0x4C, value: 0x01}, {sample: 3200, addr: 0x5C, value: 0x01}];
+  const setup = (edl, flg = 0) => d => { d[0x6C] = flg; d[0x4D] = 0x01; d[0x2C] = 0x7F; d[0x3C] = 0x7F; d[0x7D] = edl; d[0x0D] = 0; for (let i = 0; i < 8; i++) d[i * 16 + 0x0F] = i === 7 ? 0x7F : 0; };
+  const dry = await renderApu(handCapture(setup(1), log, 16000), {sampleRate: 32000, stereo: true, echo: false});
+  const wet = await renderApu(handCapture(setup(1), log, 16000), {sampleRate: 32000, stereo: true});
+  const diff = (a, b, i0, i1) => { let m = 0; for (let i = i0; i < i1; i++) m = Math.max(m, Math.abs(a[i] - b[i])); return m; };
+  // EDL 1 = 2 KB = 512 frames: the return starts 512 samples after the first input
+  assert.equal(diff(wet.voice0.l, dry.voice0.l, 0, 511), 0, "nothing returns before the ring comes round");
+  assert.ok(diff(wet.voice0.l, dry.voice0.l, 512, 1024) > 0.1, "the first echo");
+  assert.ok(rms(dry.voice0.l, 32000, 0.13, 0.2) === 0 && rms(wet.voice0.l, 32000, 0.11, 0.115) > 0.05, "the tail sounds after the dry note stops");
+  // FIR7 = 127 (the newest tap) at EVOL 127, EFB 0: one echo at about the dry level, then silence.
+  // 512 samples is exactly 8 periods of the 500 Hz sine, so the echo lands in phase: twice the dry peak
+  assert.ok(Math.abs(peak(wet.voice0.l.subarray(2000, 3000)) / peak(dry.voice0.l.subarray(2000, 3000)) - 2) < 0.05, "one echo, about the dry level, in phase");
+  assert.equal(rms(wet.voice0.l, 32000, 0.2, 0.5), 0, "EFB 0: no repeats");
+  const edl2 = await renderApu(handCapture(setup(2), log, 16000), {sampleRate: 32000, stereo: true});
+  assert.equal(diff(edl2.voice0.l, dry.voice0.l, 0, 1023), 0, "EDL 2 delays the return to 1024 samples");
+  assert.ok(diff(edl2.voice0.l, dry.voice0.l, 1024, 1536) > 0.1);
+  const noWrite = await renderApu(handCapture(setup(1, 0x20), log, 16000), {sampleRate: 32000, stereo: true});
+  assert.equal(diff(noWrite.voice0.l, dry.voice0.l, 0, 16000), 0, "FLG bit 5: the ring is never written");
+  // feedback: EFB 0x40 = half back each pass — the repeats fall about 6 dB a pass
+  const fb = await renderApu(handCapture(d => { setup(1)(d); d[0x0D] = 0x40; }, log, 32000), {sampleRate: 32000, stereo: true});
+  const p1 = peak(fb.voice0.l.subarray(3200 + 512 + 300, 3200 + 1024)), p2 = peak(fb.voice0.l.subarray(3200 + 1024 + 300, 3200 + 1536));
+  assert.ok(p1 > 0.05 && Math.abs(p2 / p1 - 0.5) < 0.1, `feedback halves each repeat: ${p1.toFixed(3)} then ${p2.toFixed(3)}`);
+  // a voice without its EON bit sends nothing
+  const off = await renderApu(handCapture(d => { setup(1)(d); d[0x4D] = 0; }, log, 16000), {sampleRate: 32000, stereo: true});
+  assert.equal(diff(off.voice0.l, dry.voice0.l, 0, 16000), 0, "EON clear: dry");
+});
+
+// Real rips, when this machine has them (/tmp/recap/rips: never in the repo).
+const SMW = "/tmp/recap/rips/snes/super-mario-world/overworld.spc";
+const ZELDA = "/tmp/recap/rips/snes/legend-of-zelda-a-link-to-the-past/beginning-of-the-journey.spc";
+test("real rips: Super Mario World's surround voice survives; A Link to the Past's echo is there", {skip: !(existsSync(SMW) && existsSync(ZELDA)) && "no local SNES rips"}, async () => {
+  const energy = a => { let e = 0; for (let i = 0; i < a.length; i++) e += a[i] * a[i]; return e; };
+  const smw = runSPC(parseSPC(readFileSync(SMW)), 20);
+  const st = await renderApu(smw, {sampleRate: 32000, stereo: true}), mo = await renderApu(smw, {sampleRate: 32000});
+  const v = st.voice4; let x = 0; for (let i = 0; i < v.l.length; i++) x += v.l[i] * v.r[i];
+  assert.ok(x / Math.sqrt(energy(v.l) * energy(v.r)) < -0.9, "voice 4 is a surround voice");
+  assert.ok((energy(v.l) + energy(v.r)) / 2 > energy(mo.voice4) * 100, "20 dB+ louder than its cancelled mono fold");
+  const z = runSPC(parseSPC(readFileSync(ZELDA)), 10);
+  const wet = await renderApu(z, {sampleRate: 32000, stereo: true}), dry = await renderApu(z, {sampleRate: 32000, stereo: true, echo: false});
+  let we = 0, de = 0;
+  for (let k = 0; k < 8; k++) { const a = wet["voice" + k], b = dry["voice" + k]; for (let i = 0; i < a.l.length; i++) { we += (a.l[i] - b.l[i]) ** 2 + (a.r[i] - b.r[i]) ** 2; de += b.l[i] ** 2 + b.r[i] ** 2; } }
+  assert.ok(we / de > 0.1, "the echo carries more than a tenth of the dry energy, got " + (we / de).toFixed(3));
 });

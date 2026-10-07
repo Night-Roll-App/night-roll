@@ -48,6 +48,16 @@ test("sm64 ABI: pitches, onsets, gates and velocities come back exactly", () => 
   assert.ok(Math.abs(res.seconds - 4) < 1e-9);
 });
 
+test("a channel bend under a held note (D3) is kept for the render as n.freqChanges; the note-on value stays n.freq", () => {
+  const res = parseSequence(makeTestSeq({bend: true}));
+  expectMelody(res);
+  const pedal = res.notes.find(n => n.ch === 1);
+  assert.equal(pedal.freq, 1, "unbent at the note-on");
+  assert.deepEqual(pedal.freqChanges, [{t: 4 * Q, f: 2}], "an octave up halfway, while it holds");
+  assert.ok(res.notes.filter(n => n.ch === 0).every(n => !n.freqChanges), "the other channel's notes are untouched");
+  assert.equal(parseSequence(makeTestSeq()).notes.find(n => n.ch === 1).freqChanges, undefined, "no bend, no field");
+});
+
 test("oot ABI: same music through the remapped ldlayer opcode", () => {
   expectMelody(parseSequence(makeTestSeq({abi: "oot"}), {abi: "oot"}));
   // and the sm64 table refuses OoT bytes loudly rather than guessing

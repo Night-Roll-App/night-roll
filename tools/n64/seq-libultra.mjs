@@ -93,11 +93,14 @@ export function parseSequence(input, opts = {}) {
   // what reaches a held note at the next update (effects.c sequence_channel_process_sound recomputes
   // every layer's noteVelocity = velocitySquare × volume × volumeScale × fadeVolume each update; a
   // note's vibrato reads the channel's rate/extent targets live): per channel, the level and the
-  // vibrato targets over time, sliced onto each note at the end as n.gain / n.vibChanges
-  const levelEvents = [], vibEvents = [];
+  // vibrato targets over time, sliced onto each note at the end as n.gain / n.vibChanges; the same
+  // function recomputes noteFreqScale = layer freqScale × the channel's (D3/DE/EC) for every held
+  // note (OoT's AudioEffects_SequenceChannelProcessSound too, on changes.s.freqScale) → n.freqChanges
+  const levelEvents = [], vibEvents = [], bendEvents = [];
   const levelOf = C => C.volume * C.volumeScale * player.volume;
   const noteLevel = C => { levelEvents.push({tick, ch: C.idx, level: levelOf(C)}); };
   const noteVib = C => { vibEvents.push({tick, ch: C.idx, ...C.vib}); };
+  const noteBend = C => { bendEvents.push({tick, ch: C.idx, freq: C.freqScale}); };
   // io ports are how the game steers a sequence (which section, which
   // band member); we never write them, so a song that reads them is
   // running a path the game would not necessarily take — count the reads
@@ -436,8 +439,8 @@ export function parseSequence(input, opts = {}) {
       case 0xE1: C.vib = {...C.vib, rateStart: u8(s) * 32, rateTarget: u8(s) * 32, rateDelay: u8(s) * 16}; noteVib(C); break;
       case 0xE2: C.vib = {...C.vib, extStart: u8(s) * 8, extTarget: u8(s) * 8, extDelay: u8(s) * 16}; noteVib(C); break;
       case 0xE3: C.vib = {...C.vib, delay: u8(s) * 16}; break;
-      case 0xD3: C.freqScale = 0.5 * Math.pow(2, (s8(s) + 127) / 127); break; // gPitchBendFrequencyScale
-      case 0xDE: C.freqScale = s16(s) / 32768; break;
+      case 0xD3: C.freqScale = 0.5 * Math.pow(2, (s8(s) + 127) / 127); noteBend(C); break; // gPitchBendFrequencyScale
+      case 0xDE: C.freqScale = s16(s) / 32768; noteBend(C); break;
       case 0xEE: if (!oot) throw fail("channel", cmd, at); u8(s); stub("channel bendfine EE"); break;
       case 0xDA: C.envelope = envAt(u16(s)); break;
       case 0xDB: C.transposition = s8(s); break;
@@ -447,7 +450,7 @@ export function parseSequence(input, opts = {}) {
       case 0xE7: if (oot) { const a = u16(s); chanParams(C, [3, 4, 5, 6, 7].map(k => byteAt(a + k))); break; } u16(s); stub("channel ldparams E7"); break;
       case 0xE4: if (C.value !== -1) { const a = dynAddr(C, C.value); push(s, s.pc); s.pc = a; } break;
       case 0xEB: C.bank = u8(s); setInstr(C, u8(s)); break;
-      case 0xEC: C.vib = {rateStart: 0, rateTarget: 0, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0}; C.freqScale = 1; noteVib(C); break; // chan_reset: vibrato off, bend cleared
+      case 0xEC: C.vib = {rateStart: 0, rateTarget: 0, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0}; C.freqScale = 1; noteVib(C); noteBend(C); break; // chan_reset: vibrato off, bend cleared
       default: {
         // OoT B0-BD / MM A0-BE: argument widths from each decomp's
         // sSeqInstructionArgsTable (oot src/audio/internal/seqplayer.c, mm
@@ -615,7 +618,7 @@ export function parseSequence(input, opts = {}) {
   // each note carries the level steps and vibrato-target changes that land while it sounds
   // (offsets in ticks from its start); n.vol stays the level at note-on
   const byCh = m => { const o = new Map(); for (const e of m) (o.get(e.ch) || o.set(e.ch, []).get(e.ch)).push(e); return o; };
-  const lv = byCh(levelEvents), vb = byCh(vibEvents);
+  const lv = byCh(levelEvents), vb = byCh(vibEvents), bd = byCh(bendEvents);
   for (const n of notes) {
     // the roll: a glide that lands on another pitch is one note at the landed pitch (n.slide, the shared shape);
     // one that returns to the written pitch stays one note
@@ -624,6 +627,9 @@ export function parseSequence(input, opts = {}) {
     const steps = (lv.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
     if (steps.length) { n.gain = [{t: 0, l: n.vol}]; for (const e of steps) if (e.level !== n.gain[n.gain.length - 1].l) n.gain.push({t: e.tick - n.tick, l: e.level}); if (n.gain.length === 1) delete n.gain; }
     if (n.vib) { const ch = (vb.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end); if (ch.length) n.vibChanges = ch.map(e => ({t: e.tick - n.tick, rateTarget: e.rateTarget, rateDelay: e.rateDelay, extTarget: e.extTarget, extDelay: e.extDelay})); }
+    // the channel bend while the note holds (n.freq is its value at the note-on): {t ticks from the start, f}
+    const bends = (bd.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
+    if (bends.length) { let f = n.freq; const fc = []; for (const e of bends) if (e.freq !== f) { fc.push({t: e.tick - n.tick, f: e.freq}); f = e.freq; } if (fc.length) n.freqChanges = fc; }
   }
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120}); // init_sequence_player default
 

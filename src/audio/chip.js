@@ -138,9 +138,10 @@ export function chipStaticPan(l, r) {
   const win = 512, stride = Math.max(1, Math.floor(n / (win * 4000)));
   const pans = [];
   for (let start = 0; start + win <= n; start += win * stride) {
-    let el = 0, er = 0;
-    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; }
+    let el = 0, er = 0, x = 0;
+    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; x += l[i] * r[i]; }
     if (el < 1e-9 && er < 1e-9) continue; // silence here says nothing about pan
+    if (x < -0.5 * Math.sqrt(el * er)) return null; // opposite phase (an SNES "surround" voice): no pan reproduces it, keep the pair
     pans.push(Math.max(-1, Math.min(1, Math.atan2(Math.sqrt(er), Math.sqrt(el)) * 4 / Math.PI - 1)));
   }
   if (pans.length < 2) return 0; // too little signal to tell: treat as centred
@@ -567,8 +568,9 @@ export const CHIPS = {
   spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC", keepBytes: true,
         channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
         files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
-        render: (M, res, o) => M.renderApu(res.apuLog, o), // the SPC renderer takes the capture itself
+        render: (M, res, o) => M.renderApu(res.apuLog, {...o, stereo: true}), // the SPC renderer takes the capture itself
         renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
+        stereo: true, // {l, r} per voice: VOL L/R, surround voices and the echo's own stereo (tools/spc/apu-render.mjs)
         parse: M => M.parseSPC,
         run: M => async (spc, n, seconds, onProgress) => {
           const cap = await M.runSPCAsync(spc, seconds, onProgress);

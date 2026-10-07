@@ -6,7 +6,9 @@
 //     held for the whole 8 beats (velocity 80 via the short-note table)
 // `loop: true` adds the usual song loop: a backward jump to the channel
 // starts after the 8-beat delay. `abi: "oot"` emits the OoT ldlayer opcode.
-export function makeTestSeq({abi = "sm64", loop = false} = {}) {
+// `bend: true` bends channel 1 an octave up (D3 0x7F) halfway through its
+// held pedal, from the channel script — the pitch moves under a held note.
+export function makeTestSeq({abi = "sm64", loop = false, bend = false} = {}) {
   const b = [], labels = {}, refs = [];
   const label = n => { labels[n] = b.length; };
   const ref = n => { refs.push([b.length, n]); b.push(0, 0); };
@@ -50,7 +52,8 @@ export function makeTestSeq({abi = "sm64", loop = false} = {}) {
   b.push(0xC1, 0x01);            // instrument 1
   b.push(0xDB, 0xF4);            // transpose -12
   b.push(ldlayer | 0); ref("ly1");
-  b.push(0xFD); cu(EIGHT_BEATS);
+  if (bend) { b.push(0xFD); cu(EIGHT_BEATS / 2); b.push(0xD3, 0x7F); b.push(0xFD); cu(EIGHT_BEATS / 2); } // D3 0x7F: 0.5 × 2^(254/127) = ×2
+  else { b.push(0xFD); cu(EIGHT_BEATS); }
   b.push(0xFF);
   label("ly1");
   b.push(0xD0 | 7);              // velocity from the default short-note table: entry 7 = 76

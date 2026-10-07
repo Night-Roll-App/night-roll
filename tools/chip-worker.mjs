@@ -137,9 +137,10 @@ function chipStaticPan(l, r) {
   const win = 512, stride = Math.max(1, Math.floor(n / (win * 4000)));
   const pans = [];
   for (let start = 0; start + win <= n; start += win * stride) {
-    let el = 0, er = 0;
-    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; }
+    let el = 0, er = 0, x = 0;
+    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; x += l[i] * r[i]; }
     if (el < 1e-9 && er < 1e-9) continue;
+    if (x < -0.5 * Math.sqrt(el * er)) return null; // opposite phase (an SNES "surround" voice): no pan reproduces it, keep the pair
     pans.push(Math.max(-1, Math.min(1, Math.atan2(Math.sqrt(er), Math.sqrt(el)) * 4 / Math.PI - 1)));
   }
   if (pans.length < 2) return 0;
@@ -359,8 +360,9 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
     parse: M => b => M.parseSPC(b),
     run: async (M, parsed, n, secs, prog) => ({cap: await M.runSPCAsync(parsed, secs, prog)}),
     lead: (M, res) => { const r = M.reconstruct(res.cap, {}); return (r.events.length ? Math.min(...r.events.map(e => e.startFrame)) : 0) * r.frameSec; },
-    render: (M, res, o) => M.renderApu(res.cap, o),
+    render: (M, res, o) => M.renderApu(res.cap, {...o, stereo: true}),
     channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"],
+    stereo: true, // {l, r} per voice (tools/spc/apu-render.mjs): VOL L/R, surround voices, the echo
   },
 };
 

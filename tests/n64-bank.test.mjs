@@ -305,6 +305,20 @@ test("vibrato as effects.c JP/US: delay, triangle over 64 steps of the k·8 curv
   assert.ok(Math.abs(zc(flat, 0.2, 0.3) - 400) <= 2 && Math.abs(zc(flat, 0.75, 0.85) - 400) <= 2, "no extent: 2 kHz steady");
 });
 
+test("a channel bend under a held note (n.freqChanges, D3/DE) moves the pitch at its tick, with no new attack", async () => {
+  const {rom} = synthRom();
+  const B = TICKS_PER_BEAT, note = {tick: 0, dur: 2 * B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0};
+  const res = {abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 2 * B, warnings: []};
+  const zc = (a, t0, t1) => { let c = 0; for (let i = Math.floor(t0 * 32000) + 1; i < Math.floor(t1 * 32000); i++) if ((a[i - 1] < 0) !== (a[i] < 0)) c++; return c; };
+  const rmsAt = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * 32000); i < Math.floor(t1 * 32000); i++) s += a[i] * a[i]; return Math.sqrt(s / ((t1 - t0) * 32000)); };
+  const bent = (await renderN64({...res, notes: [{...note, freqChanges: [{t: B, f: 2}]}]}, {rom, banks: [0], reverb: null}))["ch 4 inst 0"].l;
+  assert.ok(Math.abs(zc(bent, 0.1, 0.2) - 400) <= 2, "2 kHz before the bend: " + zc(bent, 0.1, 0.2));
+  assert.ok(Math.abs(zc(bent, 0.6, 0.7) - 800) <= 4, "4 kHz after it: " + zc(bent, 0.6, 0.7));
+  assert.ok(Math.abs(20 * Math.log10(rmsAt(bent, 0.55, 0.9) / rmsAt(bent, 0.1, 0.45))) < 0.7, "the level carries on: no new attack");
+  const flat = (await renderN64({...res, notes: [note]}, {rom, banks: [0], reverb: null}))["ch 4 inst 0"].l;
+  assert.ok(Math.abs(zc(flat, 0.6, 0.7) - 400) <= 2, "without it the note holds 2 kHz (the render before this fix)");
+});
+
 test("portamento in the render: the voice starts on the glide's start semitone and reaches the written pitch after `updates` updates (cur += 127/updates, 2^(cur/127))", async () => {
   const p = new Portamento({start: 27, end: 39, updates: 48}); // an octave below, 48 updates
   const seq = []; for (let i = 0; i < 60; i++) seq.push(p.update());
@@ -491,6 +505,10 @@ test("renderN64 on the oot generation: the font's voice at gPitchFrequencies × 
   const period = (a, from, n) => { let best = 0, bv = -1; for (let lag = 4; lag < 200; lag++) { let s = 0; for (let i = from; i < from + n; i++) s += a[i] * a[i + lag]; if (s > bv) { bv = s; best = lag; } } return best; };
   assert.equal(period(mel.l, 8000, 4000), 16, "semitone 39 × tuning 1 = 2000 Hz");
   assert.equal(period(kit.l, 800, 2000), 32, "the drum: its tuning 0.5 alone");
+  // a channel bend under the held note (n.freqChanges): the period halves at its tick (AudioEffects_SequenceChannelProcessSound)
+  const bent = (await renderN64({...res, notes: [{...note, freqChanges: [{t: B, f: 2}]}]}, {set, loc, banks: [0], sampleRate: 32000, reverbs: null}))["ch 4 inst 0"].l;
+  assert.equal(period(bent, 8000, 4000), 16, "before the bend: 2000 Hz");
+  assert.equal(period(bent, 20000, 4000), 8, "after it: an octave up, same voice");
   // level: the square's RMS 0.4375 × ADSR (32700/32767)² (the 32700-update fade toward 29430 has barely begun) × the centre pan's cos(π/2·64/127)
   const want = 14336 / 32768 * (32700 / 32767) ** 2 * Math.cos(Math.PI / 2 * 64 / 127);
   assert.ok(Math.abs(rms(mel.l, 16000, 24000) / want - 1) < 0.03, rms(mel.l, 16000, 24000) + " vs " + want);

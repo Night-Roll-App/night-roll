@@ -29,6 +29,7 @@ function scoreBytes() {
   at(960, [0x90, 67, 100], true);   // chord: trick flags the NEXT event as zero-delta
   at(960, [0x90, 72, 90]);
   at(1440, [0x90, 67, 0]); at(1440, [0x90, 72, 0]);
+  at(1440, [0xE0, 0x00, 0x40]); at(1700, [0xE0, 0x7F, 0x3F]); // the wheel: centre (lsb 00, msb 40), then one step below it (lsb 7F, msb 3F)
   at(1440, [0x90, 62, 100]); at(TEST_SQ_END, [0x90, 62, 0]);
   at(TEST_SQ_END, [0xB0, 99, 1]);   // loop end (cc99=1)
   at(TEST_SQ_END, [0xB0, 38, 0]);   // forever

@@ -111,6 +111,14 @@ test("tallyChipRender: stereo kept (plan.mono false) — peak equals kept, both 
   assert.ok(out.pcm.track.l === l && out.pcm.track.r === r, "kept the ORIGINAL arrays, no copy made");
 });
 
+test("tallyChipRender: an opposite-phase pair (SNES surround) stays stereo even on the mono plan", async () => {
+  const { tallyChipRender } = await import("../tools/chip-worker.mjs");
+  const n = 4000, l = new Float32Array(n), r = new Float32Array(n);
+  for (let i = 0; i < n; i++) { l[i] = Math.sin(i * 0.05); r[i] = -l[i]; }
+  const out = tallyChipRender({track: {l, r}}, ["track"], {mono: true});
+  assert.ok(out.pcm.track.l === l && out.pcm.track.r === r, "kept the pair: a downmix would erase the inversion");
+});
+
 test("tallyChipRender: mono-downmix plan — peak counts BOTH the stereo original and the mono copy", async () => {
   const { tallyChipRender } = await import("../tools/chip-worker.mjs");
   const n = 4000;

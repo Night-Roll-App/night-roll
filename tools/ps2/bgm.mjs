@@ -116,7 +116,7 @@ function parseTrack(d, start, end, ch, ctx) {
       case 0x22: { need(1); const value = d[pos++]; events.push({tick, type: "cc", ch, ctl: 7, value}); break; } // channel volume — notes.mjs's generic CC7 handling
       case 0x24: { need(1); const value = d[pos++]; events.push({tick, type: "cc", ch, ctl: 11, value}); break; } // expression — CC11
       case 0x26: { need(1); const value = d[pos++]; events.push({tick, type: "cc", ch, ctl: 10, value}); break; } // pan — CC10
-      case 0x5C: { // pitch bend: lsb then msb, standard MIDI order (SQ's 0xE0 reads hi-then-lo instead — a real, verified difference between the two drivers)
+      case 0x5C: { // pitch bend: lsb then msb, standard MIDI order (SQ's 0xE0 too — tools/ps2/sq.mjs)
         need(2); const lsb = d[pos++], msb = d[pos++];
         const value = ((msb << 7) | lsb) - 8192;
         events.push({tick, type: "bend", ch, value});

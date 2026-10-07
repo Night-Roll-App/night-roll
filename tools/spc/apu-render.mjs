@@ -8,18 +8,30 @@
 // tools/nsf/apu-render.mjs and tools/gbs/apu-render.mjs: the chip's own
 // sound, not sample players approximating it.
 //
-// renderApu(capture, {sampleRate, onProgress, keepSamples})
-//   -> {voice0..voice7: Float32Array, sampleRate, seconds}
-// capture is runSPC/runSPCAsync's result. Per-voice mono buffers (L and R
-// folded, MVOL applied) so the app's mute/solo gain nodes keep working;
-// rendered at the chip's 32 kHz, then linearly resampled to sampleRate.
+// renderApu(capture, {sampleRate, onProgress, keepSamples, stereo, echo})
+//   -> {voice0..voice7: Float32Array | {l, r}, sampleRate, seconds}
+// capture is runSPC/runSPCAsync's result. One output per voice so the app's
+// mute/solo gain nodes keep working. stereo: true (the app and the chip
+// worker) returns each voice as its {l, r} pair — VOL L/R and MVOL as the
+// chip outputs them, scaled by 1/sqrt 2 so a centred voice is exactly as
+// loud as its old mono fold played through a centred panner; a "surround"
+// voice (VOL L and R of opposite sign: Super Mario World "Overworld" voice
+// 4) keeps its inverted phase instead of cancelling to silence in the
+// fold. Without it the old mono fold, (L + R) / 2 (tools and tests). Rendered
+// at the chip's 32 kHz, then linearly resampled to sampleRate.
 //
 // Faithful (per blargg's SPC_DSP.cpp, Anomie's S-DSP doc, fullsnes — see
 // RESEARCH.md §3 and §6): BRR decode arithmetic (brr.mjs), the Gaussian
 // table and its >>11 / int16-wrap / clamp / &~1 arithmetic, envelope step
 // rules and rate periods (dsp-state.mjs), KOFF release, END/LOOP handling,
 // the noise LFSR and its rate clock, PMON's (OUTX >> 5) × pitch >> 10 term,
-// VOL/MVOL >> 7 scaling with 16-bit clamps, FLG mute and soft reset.
+// VOL/MVOL >> 7 scaling with 16-bit clamps, FLG mute and soft reset, and
+// the echo unit (echo: false turns it off): EON voices' VOL-scaled output
+// summed into a ring of EDL × 2 KB (latched when the ring wraps, EDL 0 = one
+// frame), read back >> 1 into an 8-tap FIR (FIR0 on the oldest sample; taps
+// 0-6 summed and int16-wrapped, tap 7 added and clamped, &~1), returned at
+// EVOL, fed back at EFB, written unless FLG bit 5; FLG bit 6 mutes the
+// output after the echo, as on the chip.
 // Approximate, on purpose: KON acts on the sample of its write (the chip
 // polls KON every 2 samples and starts BRR decoding 5 samples later);
 // envelope rate counters run per voice from KON, not from the chip's
@@ -27,9 +39,16 @@
 // a one-shot's envelope is zeroed when its END block finishes rather than
 // when the chip pre-reads that block's header (~12 samples earlier); the
 // resampler is linear; per-voice buffers cannot reproduce clipping of the
-// SUMMED main output (each voice clamps on its own). Not done: the echo
-// path (EDL/EFB/FIR ring buffer, EVOL) — hook marked below; the dry signal
-// of echo-enabled voices is present, the wet return is not.
+// SUMMED main output (each voice clamps on its own). The echo runs one ring
+// PER VOICE, fed by that voice alone: the chip's echo is linear apart from
+// its clamps and low-bit rounding, so the eight lines sum to the chip's one
+// within a few LSB (and to the clamp on loud mixes), and a muted or soloed
+// voice takes its own echo with it. The rings are the renderer's own, not
+// ARAM at ESA×$100: with FLG bit 5 set the chip would read back whatever
+// that RAM holds, here a ring that is not written reads back what it last
+// held (zero from the start). A line whose ring and input have gone quiet
+// (every value within ±4) stops and is cleared, so it costs nothing after
+// its tail.
 // BRR data comes from the END-of-capture RAM (what runSPC returns): a
 // driver that streams or rewrites sample memory mid-song (rare — none of
 // the five Square/Nintendo sets) renders the final contents for the whole
@@ -110,8 +129,14 @@ export async function renderApu(capture, opts = {}) {
   const seconds = keep / DSP_RATE;
   const N = Math.round(keep * sampleRate / DSP_RATE); // round, not ceil: 2.2 × 44100 is 97020.00000000001 in floating point
   const out = {sampleRate, seconds};
+  const stereo = !!opts.stereo, useEcho = opts.echo !== false;
+  const NCH = stereo ? 16 : 8; // output channel c: voice c >> 1, side c & 1 (stereo); voice c (mono)
   const bufs = [];
-  for (let v = 0; v < 8; v++) bufs.push(out["voice" + v] = new Float32Array(N));
+  for (let v = 0; v < 8; v++) {
+    if (stereo) { const l = new Float32Array(N), r = new Float32Array(N); out["voice" + v] = {l, r}; bufs.push(l, r); }
+    else bufs.push(out["voice" + v] = new Float32Array(N));
+  }
+  const kOut = stereo ? Math.SQRT1_2 / 32768 : 0.5 / 32768;
 
   const regs = Uint8Array.from(dsp0);
   const dsp = new DspVoices(ram, regs);
@@ -148,7 +173,17 @@ export async function renderApu(capture, opts = {}) {
   const vol = new Int32Array(8); // scratch: this sample's post-envelope output per voice (PMON source)
   const CHUNK = 4096;            // 128 ms of chip time per slice
   const work = [];
-  for (let v = 0; v < 8; v++) work.push(new Float32Array(CHUNK + 1)); // [0] = the previous slice's last sample
+  for (let c = 0; c < NCH; c++) work.push(new Float32Array(CHUNK + 1)); // [0] = the previous slice's last sample
+
+  // ---- echo: one ring per voice (see the header), interleaved L,R int16 at
+  // byte offset echoOff / 2; hist: the last 8 values read back (>> 1), per side
+  const ECHO_MAX = 0x7800 / 2; // EDL 15 × 2 KB, in int16 slots
+  const echo = [];
+  for (let v = 0; v < 8; v++) echo.push({ring: new Int16Array(ECHO_MAX), hl: new Int16Array(8), hr: new Int16Array(8), big: 0, live: false});
+  let echoOff = 0, echoLen = 0, histPos = 0;
+  const QUIET = 4;
+  const clamp16 = x => x > 32767 ? 32767 : x < -32768 ? -32768 : x;
+  const fir = new Int8Array(8);
   const ratio = DSP_RATE / sampleRate;
   let j = 0; // next output sample to write
   const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
@@ -175,36 +210,71 @@ export async function renderApu(capture, opts = {}) {
       const np = RATE_PERIOD[flg & 0x1F];
       if (np && ++noiseCounter >= np) { noiseCounter = 0; noise = noiseStep(noise); }
       const mvl = (regs[0x0C] << 24) >> 24, mvr = (regs[0x1C] << 24) >> 24;
+      const eon = useEcho ? regs[0x4D] : 0;
+      if (useEcho) {
+        if (echoOff === 0) echoLen = (regs[0x7D] & 0x0F) * 0x800; // the chip latches EDL as the ring wraps
+        histPos = (histPos + 1) & 7;
+        for (let i = 0; i < 8; i++) fir[i] = regs[i * 16 + 0x0F];
+      }
       let prev = 0;
       for (let v = 0; v < 8; v++) {
-        const vc = dsp.voices[v], bit = 1 << v, w = work[v];
+        const vc = dsp.voices[v], bit = 1 << v;
         let o = 0;
         if (vc.stage !== OFF) {
           o = voiceOut(vc, non & bit);
           dsp.stepVoice(vc, (pmon & bit) ? (prev >> 5) : 0);
-          if (mute) o = 0;
         }
         prev = o;
+        let l = 0, r = 0, inl = 0, inr = 0;
         if (o) {
           const b = v * 16;
-          let l = ((o * ((regs[b] << 24) >> 24)) >> 7) * mvl >> 7;
-          let r = ((o * ((regs[b + 1] << 24) >> 24)) >> 7) * mvr >> 7;
-          if (l > 32767) l = 32767; else if (l < -32768) l = -32768;
-          if (r > 32767) r = 32767; else if (r < -32768) r = -32768;
-          // ECHO HOOK: an echo-enabled voice (EON bit) would also add
-          // (o × VOL) into the echo input here; the ring buffer at
-          // ESA×$100 of EDL×2 KB, 8-tap FIR, EFB feedback and EVOL return
-          // are not implemented in this version.
-          w[s - c0 + 1] = (l + r) * (0.5 / 32768);
-        } else w[s - c0 + 1] = 0;
+          inl = (o * ((regs[b] << 24) >> 24)) >> 7;
+          inr = (o * ((regs[b + 1] << 24) >> 24)) >> 7;
+          l = (inl * mvl) >> 7;
+          r = (inr * mvr) >> 7;
+          if (!(eon & bit)) { inl = 0; inr = 0; }
+        }
+        const e = echo[v];
+        if (useEcho && (inl || inr || e.live)) {
+          e.live = true;
+          const ring = e.ring, hl = e.hl, hr = e.hr, at = echoOff >> 1;
+          hl[histPos] = ring[at] >> 1; hr[histPos] = ring[at + 1] >> 1;
+          // FIR0 weighs the oldest of the eight (histPos + 1), FIR7 the newest
+          let fl = 0, fr = 0;
+          for (let i = 0; i < 7; i++) { const h = (histPos + 1 + i) & 7; fl += (hl[h] * fir[i]) >> 6; fr += (hr[h] * fir[i]) >> 6; }
+          fl = ((fl << 16) >> 16) + ((hl[histPos] * fir[7]) >> 6);
+          fr = ((fr << 16) >> 16) + ((hr[histPos] * fir[7]) >> 6);
+          fl = clamp16(fl) & ~1; fr = clamp16(fr) & ~1;
+          l += ((fl * ((regs[0x2C] << 24) >> 24)) >> 7) << 16 >> 16;
+          r += ((fr * ((regs[0x3C] << 24) >> 24)) >> 7) << 16 >> 16;
+          if (!(flg & 0x20)) {
+            const efb = (regs[0x0D] << 24) >> 24;
+            const wl = clamp16(clamp16(inl) + ((fl * efb) >> 7)) & ~1, wr = clamp16(clamp16(inr) + ((fr * efb) >> 7)) & ~1;
+            const was = (ring[at] > QUIET || ring[at] < -QUIET ? 1 : 0) + (ring[at + 1] > QUIET || ring[at + 1] < -QUIET ? 1 : 0);
+            const now = (wl > QUIET || wl < -QUIET ? 1 : 0) + (wr > QUIET || wr < -QUIET ? 1 : 0);
+            ring[at] = wl; ring[at + 1] = wr;
+            e.big += now - was;
+          }
+          if (!inl && !inr && e.big === 0) { // the tail has died: clear the residue and stop the line
+            let quiet = true;
+            for (let i = 0; i < 8; i++) if (hl[i] > QUIET || hl[i] < -QUIET || hr[i] > QUIET || hr[i] < -QUIET) { quiet = false; break; }
+            if (quiet) { e.live = false; ring.fill(0); hl.fill(0); hr.fill(0); }
+          }
+        }
+        if (mute) { l = 0; r = 0; }
+        else { l = clamp16(l); r = clamp16(r); }
+        const k = s - c0 + 1;
+        if (stereo) { work[2 * v][k] = l * kOut; work[2 * v + 1][k] = r * kOut; }
+        else work[v][k] = (l + r) * kOut;
       }
+      if (useEcho) { echoOff += 4; if (echoOff >= echoLen) echoOff = 0; }
       dsp.sample++;
     }
     // resample this slice: output j covers chip time t = j × ratio while both
     // neighbours t and t+1 are rendered (the last one waits for the next slice)
     const limit = c1 - 1;
     if (ratio === 1) {
-      for (let v = 0; v < 8; v++) bufs[v].set(work[v].subarray(1, c1 - c0 + 1), c0);
+      for (let c = 0; c < NCH; c++) bufs[c].set(work[c].subarray(1, c1 - c0 + 1), c0);
       j = c1;
     } else {
       for (; j < N; j++) {
@@ -212,9 +282,9 @@ export async function renderApu(capture, opts = {}) {
         const i = Math.floor(t);
         if (i >= limit) break;
         const f = t - i, k = i - c0 + 1; // work index of chip sample i (k = 0 is c0 - 1, held over)
-        for (let v = 0; v < 8; v++) { const w = work[v]; bufs[v][j] = w[k] + (w[k + 1] - w[k]) * f; }
+        for (let c = 0; c < NCH; c++) { const w = work[c]; bufs[c][j] = w[k] + (w[k + 1] - w[k]) * f; }
       }
-      for (let v = 0; v < 8; v++) work[v][0] = work[v][c1 - c0];
+      for (let c = 0; c < NCH; c++) work[c][0] = work[c][c1 - c0];
     }
     if (now() - last >= 35) {
       if (opts.onProgress) opts.onProgress(c1 / keep);
@@ -223,7 +293,7 @@ export async function renderApu(capture, opts = {}) {
     }
   }
   // the tail: the final chip sample has no right-hand neighbour; hold it
-  for (; j < N; j++) for (let v = 0; v < 8; v++) bufs[v][j] = work[v][0];
+  for (; j < N; j++) for (let c = 0; c < NCH; c++) bufs[c][j] = work[c][0];
   if (opts.onProgress) opts.onProgress(1);
   return out;
 }

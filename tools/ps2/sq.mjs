@@ -116,7 +116,13 @@ function parseScore(d, start, seq) {
         break;
       }
       case 0xC0: { const program = dataByte(); events.push({tick, type: "program", ch, program}); break; }
-      case 0xE0: { need(1); const hib = d[pos++]; const lob = dataByte(); events.push({tick, type: "bend", ch, value: ((hib << 7) | lob) - 8192}); break; }
+      // standard MIDI order, lsb then msb: on Dark Cloud's 9,713 bends the
+      // channels' resting value is the bytes 00 40 (1,066 times; 40 00 never
+      // occurs) — read msb-first that rest was −8128, two semitones flat at
+      // 48,403 note-ons (2026-10-07). VGMTrans agrees once its names are
+      // read through: SonyPS2Seq.cpp calls the first byte `hi` but passes it
+      // as the `lo` parameter of addPitchBendMidiFormat(offset, len, lo, hi)
+      case 0xE0: { need(1); const lsb = d[pos++]; const msb = dataByte(); events.push({tick, type: "bend", ch, value: ((msb << 7) | lsb) - 8192}); break; }
       default:
         if (sb === 0xFF) {
           need(1);

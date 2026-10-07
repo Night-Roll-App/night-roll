@@ -162,8 +162,10 @@ table directly — 0x10-0x1A note-on/off variants (some referencing a
 "previous key/velocity", MIDI-style running state rather than SQ's
 running-status byte), 0x20 program change, 0x22/0x24/0x26 volume/
 expression/pan (mapped straight onto `seqNotes()`'s own generic CC7/11/10
-handling), 0x5C pitch bend (standard MIDI lsb-then-msb order — SQ's own
-0xE0 reads hi-then-lo instead, confirmed a real difference, not a typo),
+handling), 0x5C pitch bend (standard MIDI lsb-then-msb order — and so is SQ's
+0xE0: an earlier note here said hi-then-lo from VGMTrans's variable names,
+but VGMTrans passes its `hi` as the `lo` parameter, and Dark Cloud's
+at-rest bend is the bytes 00 40; fixed 2026-10-07),
 0x08 one-byte BPM, 0x02/0x03 loop begin/end with NO count field at all
 (VGMTrans's own C++ reader never actually uses these for looping — its
 loop-tracking code is commented out, cosmetic UI labels only; this reader

@@ -2313,6 +2313,10 @@ test("planChipRender: refuses when even the floor (22050, mono) can't fit; chipS
     __l2 = l; __r2 = r;
   })()`);
   assert.equal(run(`chipStaticPan(__l2, __r2)`), null, "a real pan move keeps the track stereo, per the fix's own rule");
+  // opposite phase (an SNES surround voice, VOL R negative): equal energy reads as centred, but
+  // the downmix would lose the inversion — chipStaticPan keeps the pair
+  run(`(() => { const n = 4000, l = new Float32Array(n), r = new Float32Array(n); for (let i = 0; i < n; i++) { l[i] = Math.sin(i * 0.05); r[i] = -l[i]; } __l3 = l; __r3 = r; })()`);
+  assert.equal(run(`chipStaticPan(__l3, __r3)`), null, "anti-phase stays stereo");
 });
 
 // docs/streamed-render-plan.md step 3: chipSegments is the pure tape-time

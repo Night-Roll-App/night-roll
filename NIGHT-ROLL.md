@@ -7569,6 +7569,70 @@ with v1's adapter swapped in (same notes), and FF4 Main Theme when the rip
 is cached (`SNES_RIPS=<dir>` or /tmp/recap/rips/snes; the guard checks the
 file, so an empty cache directory skips).
 
+## Console voice: SNES stereo + echo, N64 channel bends (2026-10-07, capture audit 2 §3.3)
+
+Renderer fixes only: no .mid changes and no re-capture, since every play
+re-reads the rip (docs/plans/2026-10-07-capture-audit-2-and-glide.md).
+
+**SNES stereo.** `renderApu(cap, {stereo: true})` (tools/spc/apu-render.mjs)
+returns each voice as `{l, r}`: VOL L/R and MVOL as the chip outputs
+them, scaled by 1/√2 so a centred voice plays exactly as loud as the old
+mono fold did through a centred panner. `CHIPS.spc` and the worker's
+`RUNNERS.spc` pass it and say `stereo: true`, so `planChipRender` budgets
+two channels and downmixes static-pan voices only when the budget asks.
+Without the option the old fold, (L + R) / 2, is unchanged (tools, tests,
+tools/instruments/verify.mjs). A "surround" voice (VOL L and R of opposite
+sign; a negative VOL shows on voice 7 in most EarthBound songs and in
+three Super Metroid songs) used to cancel to silence in that fold. SMW "Overworld" voice 4 went
+from −46.7 dB to −17.5 dB, with L/R correlation −1.00. `chipStaticPan`
+(src/audio/chip.js and its copy in tools/chip-worker.mjs) returns null for
+an opposite-phase window, so the memory plan never downmixes such a voice.
+FLG bit 6 now mutes after the echo, as on the chip; PMON still reads the
+unmuted output.
+
+**SNES echo.** EON voices feed a ring of EDL × 2 KB (EDL latched as the
+ring wraps; EDL 0 is one frame). It is read back `>> 1` into the 8-tap FIR
+(FIR0 on the oldest sample; taps 0–6 summed and int16-wrapped, tap 7 added
+and clamped, `&~1`), returned at EVOL, fed back at EFB, and written unless
+FLG bit 5 is set. There is one ring per voice, fed by that voice alone. The
+chip's echo is linear apart from clamps and low-bit rounding, so the eight
+lines sum to the chip's one within a few LSB, and mute/solo per track
+still works. The rings are the renderer's own, not ARAM at ESA×$100. A
+line whose ring and input go quiet (all within ±4) stops and is cleared.
+`{echo: false}` renders dry. Measured on real rips, 20 s each, as echo/dry
+energy: −3.3 dB on A Link to the Past "Beginning of the Journey", −6.6 dB
+on FF6 "Awakening", −8.7 dB on Super Metroid "Tension", −13.9 dB on
+EarthBound "Home Sweet Home", and none on SMW (EVOL 0). Render time is
+about 2.3× the old (444 vs 191 ms for 20 s). Tests: tests/spc-render.test.mjs,
+which covers the hand-built delay, FIR gain, EFB halving, FLG bit 5 and EON,
+plus a real-rip test guarded on the two .spc files existing.
+
+**N64 EAD channel bends under a held note.** Each update,
+`sequence_channel_process_sound` (sm64 effects.c; OoT's
+`AudioEffects_SequenceChannelProcessSound` on `changes.s.freqScale`)
+recomputes `noteFreqScale = layer freqScale × channel freqScale` for every
+held note. tools/n64/seq-libultra.mjs records D3/DE/EC as `bendEvents` and
+hangs the changes that land while a note holds on it as `n.freqChanges`
+(`[{t ticks from the start, f}]`; `n.freq` stays the note-on value).
+Both render paths in tools/n64/render.mjs (sm64 and oot) follow them per
+update, with no new attack. The .mid does not read the field. Real rips:
+Ocarina of Time has 478 notes and 3,783 points, Majora's Mask 569 notes and
+6,237 points, Super Mario 64 97 notes and 567 points. These match the
+audit's counts. Tests: tests/n64.test.mjs (`makeTestSeq({bend: true})`)
+and tests/n64-bank.test.mjs (sm64 and oot render: the pitch doubles at the
+bend's tick, and the level carries on).
+
+**PS2 SQ pitch wheel byte order.** tools/ps2/sq.mjs's 0xE0 handler is
+standard MIDI, lsb then msb. Dark Cloud's at-rest bytes are 00 40, which
+occur 1,066 times, while 40 00 never occurs. VGMTrans passes its `hi` as
+the `lo` parameter. No bend reaches the .mid or the console voice yet, so
+nothing audible changes.
+
+**Not done.** PS1 slur/legato is left out because spike 1 needs the
+reference PSF player, which needs a Sony BIOS image. Dark Cloud's console
+bends are left out because their range is unproven (no RPN 0, and the HD
+split bend-range bytes are unread by VGMTrans). Both are in open-items.md.
+
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
 Josh approved "patches v1" (docs/plans/2026-10-06-envelopes-lfo-review.md
