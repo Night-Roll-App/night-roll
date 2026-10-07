@@ -309,7 +309,7 @@ function dpcmKeys(notes, beatTicks, barBeats) {
   return out;
 }
 // RPN 0 (pitch bend sensitivity) on a channel: ±semis, then RPN null
-function bendRangeMetas(ch, semis) {
+export function bendRangeMetas(ch, semis) {
   return [[101, 0], [100, 0], [6, semis], [38, 0], [101, 127], [100, 127]].map(([c, v]) => ({t: 0, o: -0.5, d: [0xB0 | ch, c, v]}));
 }
 export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15, shape = undefined}) {

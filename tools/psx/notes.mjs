@@ -13,9 +13,9 @@ import { guessKit } from "../kit-guess.mjs";
 import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
 export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
-import { akaoRecord } from "./akao.mjs";
+import { akaoRecord, akaoArtOf } from "./akao.mjs";
 import { pitchName } from "../nsf/notes.mjs";
-import { trackBytes, offsetMetaEvent } from "../nsf/midi-write.mjs";
+import { trackBytes, offsetMetaEvent, chainBends, shapeFromSeries, bendRangeMetas } from "../nsf/midi-write.mjs";
 
 const PPQ = 480; // Night Roll's MIDI resolution; SEQ ticks are rescaled to it
 
@@ -109,7 +109,8 @@ const fmt = x => +x.toFixed(3);
 // move together; cents stay. A target between semitones (a pitch-wheel bend,
 // tools/ps2/bgm.mjs) lands on the nearest one, and steps that land on the
 // same semitone stay one note — the roll holds whole MIDI pitches; the
-// console render reads n.slide itself and keeps the exact bend.
+// console render reads n.slide itself and keeps the exact bend. Each piece
+// keeps `whole` (the note it came from) and `off` (its semitones from it).
 export function splitSlides(notes) {
   const out = [];
   for (const n of notes) {
@@ -118,12 +119,70 @@ export function splitSlides(notes) {
     for (const sl of n.slide) {
       const t = n.tick + sl.t, to = Math.round(sl.to);
       if (to === off) continue;
-      if (t > at) out.push({...n, tick: at, endTick: t, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
+      if (t > at) out.push({...n, tick: at, endTick: t, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true, whole: n, off});
       at = t; off = to;
     }
-    if (n.endTick > at) out.push({...n, tick: at, endTick: n.endTick, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
+    if (n.endTick > at) out.push({...n, tick: at, endTick: n.endTick, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true, whole: n, off});
   }
   return out;
+}
+
+// A note's pitch path (PS1 capture v2): t (ticks from its start) →
+// semitones from its own pitch. A portamento note starts at the last note's
+// pitch; each slide runs from wherever the voice is to its landing, a
+// straight line in the SPU pitch register (linear in frequency) over `len`.
+function pitchPath(n) {
+  const R = st => 2 ** (st / 12), ramps = [];
+  const at = t => {
+    let v = n.porta ? n.porta.from : 0;
+    for (const r of ramps) {
+      if (r.t > t) break;
+      v = t >= r.t + r.len ? r.to : 12 * Math.log2(R(r.from) + (R(r.to) - R(r.from)) * (t - r.t) / r.len);
+    }
+    return v;
+  };
+  if (n.porta) ramps.push({t: 0, len: n.porta.len, from: n.porta.from, to: 0});
+  for (const sl of n.slide || []) ramps.push({t: sl.t, len: sl.len, from: at(sl.t), to: sl.to});
+  return {at, ramps};
+}
+// bend points [{t, c}] thinned to their corners (RDP within 2 cents; the
+// first and last kept)
+function rdpCents(pts) {
+  if (pts.length < 3) return pts;
+  const keep = new Set([0, pts.length - 1]);
+  const rdp = (a, b) => {
+    let best = -1, bestD = 2;
+    for (let i = a + 1; i < b; i++) {
+      const dv = Math.abs(pts[i].c - (pts[a].c + (pts[b].c - pts[a].c) * (pts[i].t - pts[a].t) / (pts[b].t - pts[a].t || 1)));
+      if (dv > bestD) { best = i; bestD = dv; }
+    }
+    if (best < 0) return;
+    keep.add(best); rdp(a, best); rdp(best, b);
+  };
+  rdp(0, pts.length - 1);
+  return pts.filter((_, i) => keep.has(i));
+}
+// n.gain ([{t, l}], akao.mjs: vol × expression breakpoints from the note's
+// start) at t; 1 without a series
+function gainAt(g, t) {
+  if (!g) return 1;
+  let l = g[0].l;
+  for (let i = 0; i < g.length; i++) {
+    const a = g[i], b = g[i + 1];
+    if (a.t > t) break;
+    l = b && b.t > t && b.t > a.t ? a.l + (b.l - a.l) * (t - a.t) / (b.t - a.t) : a.l;
+  }
+  return l;
+}
+// the 0xAD–0xBF ADSR overrides on an instrument record: the rates as the SPU
+// takes them; the mode bytes only where the record is INSTR.DAT's, whose mode
+// bytes are the ones the override writes over (FF7's driver keeps both in one
+// field) — a sample set's modes are unpacked from the SPU registers instead
+function adsrOver(a, instr) {
+  const o = {};
+  for (const k of ["ar", "dr", "sl", "sr", "rr"]) if (a[k] !== undefined) o[k] = a[k];
+  if (instr && instr.kind === "instr-dat") for (const k of ["am", "sm", "rm"]) if (a[k] !== undefined) o[k] = a[k];
+  return o;
 }
 
 export function toNotesTxt(result, {title = "seq"} = {}) {
@@ -274,6 +333,7 @@ export function makeMidi(result, {offsets} = {}) {
     if (!recs.has(n.program)) recs.set(n.program, readInstr(instr.ram, instr.offset, n.program));
     return recs.get(n.program);
   };
+  const akao = !!(result.source && result.source.kind === "akao");
   const veOf = n => {
     const t0 = T(n.tick), d = Math.max(1, T(n.endTick) - t0), v = Math.max(1, Math.min(127, n.vel));
     if (n.drum) return undefined;
@@ -314,6 +374,7 @@ export function makeMidi(result, {offsets} = {}) {
   // go to a second MIDI track on channel 10 so neither side lies about
   // what it is
   const emit = (name, evs, ch, offset) => {
+    if (akao) return emitAkao(name, evs, ch, offset);
     const out = [], cc = [];
     if (offset) cc.push(offsetMetaEvent(offset));
     // the track's pan as CC10: the first note's at tick 0, then one at every note whose pan differs from the last written
@@ -330,9 +391,99 @@ export function makeMidi(result, {offsets} = {}) {
     }
     tracks.push(trackBytes(name, out, ch, cc));
   };
+  // PS1 capture v2 (AKAO only; a SEQ or PS2 capture writes the bytes it
+  // always did): what the driver does to the sounding voice, from the score
+  // (NIGHT-ROLL.md "PS1 capture v2") —
+  //   lg     a note the driver does not key on (slur's next note, a slide's
+  //          landed pitch, a portamento note) → CC84 (trackBytes);
+  //   bend   the voice's pitch path, chain-relative (chainBends): a slide
+  //          (0xA4) or portamento glide (0xDA) is a straight line in the SPU
+  //          pitch register over its length (the driver adds (target − now)
+  //          / len every tick), measured from the piece's own key;
+  //   level  vel, ve and the in-note shape from vol × expression (n.gain)
+  //          and the ADSR (the instrument's, with the 0xAD–0xBF overrides),
+  //          timed from the chain's key-on — a continuation does not
+  //          restart the envelope, so its velocity is the level it has;
+  //   prog   the articulation each melodic note plays;
+  //   rev    CC91: the voice's reverb switch × the song's depth;
+  //   pan    CC10 at each note-on (as before) and along a 0xAB fade.
+  const emitAkao = (name, evs, ch, offset) => {
+    const out = [], cc = [];
+    if (offset) cc.push(offsetMetaEvent(offset));
+    let lastPan = null, head = null, prevEnd = null;
+    const sec = tick => secondsAt(seq, tick);
+    const paths = new Map();
+    for (const n of splitSlides(evs)) {
+      const n0 = n.whole || n, rel = n.tick - n0.tick, len = n.endTick - n0.tick;
+      const p = n.drum ? (n.gm || n.key) : n.pitch;
+      if (p < 0 || p > 127) continue;
+      const t = T(n.tick), d = Math.max(1, T(n.endTick) - t);
+      // a link the writer could not make (nothing ends here) is a key-on
+      const lg = !n.drum && (rel > 0 || !!n0.lg) && !!head && prevEnd === n.tick;
+      if (!lg) head = n;
+      prevEnd = n.endTick;
+      const o = {t, d, p, v: Math.max(1, Math.min(127, n.vel))};
+      if (!n.drum) {
+        // the level in velocity units: vol × expression against the
+        // note-on's, × the envelope since the chain's key-on (no instrument
+        // table: the old guessed decay for long notes, no envelope)
+        const g = n0.gain, rec = instr ? recOf(n0) : null;
+        const rec1 = rec && n0.adsr ? {...rec, ...adsrOver(n0.adsr, instr)} : rec;
+        const G = tt => gainAt(g, tt) / (gainAt(g, 0) || 1);
+        const L = tt => n0.vel * G(tt) * (rec1 ? envelopeAt(rec1, sec(n0.tick + tt) - sec(head.tick)) : 1);
+        const v = Math.max(1, Math.min(127, Math.round(L(rel))));
+        o.v = v;
+        const end = L(len);
+        if (!instr) { const ve = veOf(n); if (ve !== undefined) o.ve = ve; }
+        else if (rec1 && end / v < 0.97) o.ve = Math.max(1, Math.round(Math.max(end, v * 0.01)));
+        if (g && g.some(q => q.t > rel && q.t < len)) {
+          const k1 = n.endTick - n.tick, series = [];
+          for (let k = 0; k <= k1; k++) series.push([k, L(rel + k)]);
+          const env = shapeFromSeries({volSeries: series, startFrame: 0, endFrame: k1, vol: v}, v, d, PPQ / seq.ppq, 127, {falls: true, tol: 2, floor: 0});
+          if (env) o.env = env;
+        }
+      }
+      if (lg) o.lg = 1;
+      if (!n.drum) {
+        // the piece's pitch from its own key, in cents, along the note's path
+        if (!paths.has(n0)) paths.set(n0, pitchPath(n0));
+        const {at, ramps} = paths.get(n0), off = n.off || 0, pts = [];
+        const add = tt => {
+          const c = Math.round((at(tt) - off) * 100), q = {t: T(n0.tick + tt) - t, c}, last = pts[pts.length - 1];
+          if (last && last.t === q.t) last.c = c; else if (last ? last.c !== c : c !== 0) pts.push(q);
+        };
+        add(rel);
+        for (const r of ramps) for (let k = 0; k <= r.len; k++) { const tt = r.t + k; if (tt > rel && tt < len) add(tt); }
+        const thin = rdpCents(pts);
+        if (thin.length) o.bend = thin;
+        o.c0 = n0.cents || 0;
+        const art = akaoArtOf(n0);
+        if (art >= 0 && art <= 127) o.prog = art;
+      }
+      if (n0.rev) {
+        let first = n0.rev[0].v;
+        for (const q of n0.rev) if (q.t <= rel) first = q.v;
+        o.rev = [{t: 0, v: first}];
+        for (const q of n0.rev) if (q.t > rel && q.t < len) o.rev.push({t: T(n0.tick + q.t) - t, v: q.v});
+      }
+      out.push(o);
+      // pan: the note-on's (as before), then along a fade under it
+      let pan = notePan(n);
+      const pp = !n.drum && n0.panPts;
+      if (pp) for (const q of pp) if (q.t <= rel) pan = q.v;
+      if (pan !== lastPan) { cc.push({t: lastPan === null ? 0 : t, o: -0.5, d: [0xB0 | ch, 10, pan]}); lastPan = pan; }
+      if (pp) for (const q of pp) if (q.t > rel && q.t < len && q.v !== lastPan) { cc.push({t: T(n0.tick + q.t), o: 1.25, d: [0xB0 | ch, 10, q.v]}); lastPan = q.v; }
+    }
+    chainBends(out);
+    let most = 0; // a loop, not a spread: an unrolled ambience carries more points than the stack holds
+    for (const q of out) for (const b of q.bend || []) most = Math.max(most, Math.abs(b.c));
+    const semis = most > 200 ? Math.min(24, Math.ceil(most / 100)) : 2;
+    for (const q of out) if (q.bend) q.bend = q.bend.map(b => ({t: b.t, v: Math.max(-8192, Math.min(8191, Math.round(b.c / (semis * 100) * 8192)))}));
+    tracks.push(trackBytes(name, out, ch, semis > 2 ? [...cc, ...bendRangeMetas(ch, semis)] : cc));
+  };
   for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch), !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0);
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
-  for (const t of tracks) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length), ...t);
+  for (const t of tracks) { bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length)); for (const b of t) bytes.push(b); } // no spread: a track can outgrow the stack
   return new Uint8Array(bytes);
 }

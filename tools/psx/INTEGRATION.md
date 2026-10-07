@@ -294,9 +294,13 @@ would be 4:44. All 90 songs parse in ~100 ms total, zero crashes.
   is not in the AKAO header for this version; VGMTrans carries a
   per-game table), so no per-instrument confirmation.
 - **Durations are written lengths**; the driver keys off 2 ticks
-  early unless legato/slur. Pitch-bend slides (0xA4) are counted, not
-  applied; tuning (0xD8/D9) is applied as cents; vibrato/tremolo/pan
-  LFOs, ADSR, portamento, overlay/alternate voices are ignored.
+  early unless legato/slur. Tuning (0xD8/D9) is applied as cents.
+  Since capture v2 (NIGHT-ROLL.md "PS1 capture v2") slides (0xA4),
+  slur (0xCC) and portamento (0xDA) mark the notes the driver does not
+  key on (CC84) and ride as pitch bend; ADSR overrides, reverb
+  (0xC2/C3 × 0xEA/EB) and pan fades (0xAB) are written too.
+  Vibrato/tremolo/pan LFOs and overlay/alternate voices are still
+  ignored.
 - **Velocity** is `master (0xA3) × volume (0xA8) / 127` at note-on,
   with 0xA9 slides interpolated; AKAO has no per-note velocity.
 - **CPU-conditional jumps (0xEF)** follow VGMTrans: taken when the

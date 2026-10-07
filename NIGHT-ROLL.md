@@ -7632,6 +7632,90 @@ nothing audible changes.
 reference PSF player, which needs a Sony BIOS image. Dark Cloud's console
 bends are left out because their range is unproven (no RPN 0, and the HD
 split bend-range bytes are unread by VGMTrans). Both are in open-items.md.
+## PS1 capture v2 — glide links, slide bends, levels, programs, reverb, pan fades (2026-10-07)
+
+docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.2 "PS1". What an AKAO
+capture (every PS1 album) now writes on top of v1. Notes — start, pitch,
+length, track order and names, tempo, meter, loop — are v1's (capture-diff
+VELOCITY, never MOVED). A Sony SEQ capture, and PS2 through the same writer,
+writes exactly the bytes it did: everything below is gated on
+`result.source.kind === "akao"` in tools/psx/notes.mjs makeMidi
+(`emitAkao`).
+
+- **Ground truth: the driver's own code.** The plan's reference-player
+  checks could not run (Highly Experimental needs a Sony BIOS image; none on
+  the machine). Instead the six drivers were read from the RAM images the
+  captures play (MIPS disassembly of the opcode handlers and the note path;
+  scratch tools in /tmp/psxtruth). What they show, the same in FF7, SaGa
+  Frontier, FF8, FF9, Chrono Cross and Parasite Eve:
+  - a channel word holds 1 after **0xCC** (slur) or 0xDA, 4 after **0xD0**
+    (legato) — a store, so the last one wins;
+  - every note or tie copies bit 1 into a "no key-on" bit; the NEXT note
+    then sets its pitch on the sounding voice without keying it on;
+  - the 2-tick early key-off is skipped when bit 1 or 4 is set — that is all
+    legato does (its notes re-key);
+  - before each note the driver looks ahead to the next note byte and clears
+    both modes (and the portamento) when a rest, 0xCB/0xCD/0xD1/0xDB or a
+    stop comes first (FF7/SaGa/FF8/CC; FF9 and PE clear on a rest — their
+    0xCD handling was not located, so the FF7 rule is used);
+  - **0xA4** stores the step and length; at the next note/tie the driver
+    sets per-tick increment = (target pitch register − current) / len — a
+    straight line in the SPU pitch register (linear in frequency), from
+    wherever the voice is;
+  - **0xDA** = slur + each note starting at the last note's pitch, sliding
+    to its own over the operand's ticks (the first note after 0xDA does not
+    glide);
+  - 0xAD/AE/AF/B1/B2 set ar/dr/sl/sr/rr, 0xB0 = dr + sl, 0xB7/BB/BF the
+    three mode bytes, 0xB3 and a program change reload the instrument's;
+  - 0xC2/0xC3 switch the voice's reverb bit; 0xEA/0xEB set/fade a song-wide
+    signed 16-bit depth; 0xAB fades the pan to its operand over len ticks.
+- **Where it is read.** tools/psx/akao.mjs runTrack: `n.lg` (no key-on, by
+  the rules above), `n.porta = {from, len}`, `n.adsr` (overrides in force),
+  `n.panPts` (pan inside the note along a 0xAB fade), per-run `revs` and
+  `depths`; akaoNotes attaches `n.rev` ([{t, v}] = switch × |depth| / 0x7FFF
+  × 127; a song that never sets a depth is written at full and warns). All
+  relative to the note's start and attached before the loop unroll, as
+  `n.gain` and `n.slide` are.
+- **What the .mid carries** (emitAkao, per piece of splitSlides — each piece
+  keeps `whole`, its note, and `off`, its semitones from it):
+  - **CC84** on every piece the driver did not key on: a slide's landed
+    pitch, a slurred note, a portamento note — only when the piece before
+    ends at its start (otherwise it is a plain attack);
+  - **pitch bend**, chain-relative: each piece's real pitch from its own key
+    along the note's path (`pitchPath`: the porta and slide ramps, linear in
+    register, sampled per AKAO tick and thinned to 2 cents), `c0` = the
+    note's tuning so `chainBends` keeps the pitch continuous across a slur
+    whose tuning differs; range by RPN 0 when a track bends past ±2;
+  - **level**: L(t) = vel × vol·expr(t)/vol·expr(note-on) × the ADSR
+    envelope (instrument record + overrides) since the CHAIN's key-on. A
+    head keeps v1's velocity; a continuation's velocity is L at its start
+    (the level the voice really has); `ve` = L at the end; a note whose
+    vol/expression moves inside it gets `n.env` (shapeFromSeries, falls
+    included, tol 2) — which replaces `ve` in playback;
+  - **program** = the articulation the note plays (a key-split region's,
+    else the program), at tick 0 and where it changes; drums none; > 127 none;
+  - **CC91** per the voice's switch × depth, changing inside a note when
+    0xC3/0xC2 or a depth fade lands there;
+  - **CC10**: the note-on pan as v1, plus every value change along a 0xAB
+    fade (unthinned, like the SNES).
+- **Not in v2** (open-items): vibrato 0xB4–B6/0xDD, tremolo, pan LFO (the
+  driver's LFO stepping and waveform tables not read yet); channel volume
+  CC7 (an AKAO voice has none apart from vol × expression, which is already
+  the velocity — writing it again would double it; `chVol` is the SEQ/PS2
+  path's, PS2's own item); noise/FM/pitch-mod ops.
+
+Re-capture verdicts (main's capture vs v2's, tools/capture-diff.mjs; scratch
+trees /tmp/ps1v2, nothing under albums/ written): open-items "PS1 capture v2".
+
+Tests: tests/psx-capture-v2.test.mjs — synthetic scores per feature (slur
+incl. the rest / 0xCD / 0xD0 cases, slide ramp vs the register-linear
+formula, portamento incl. the before-a-rest step, expression fade → shape,
+ADSR overrides + 0xB3 + program reset, continuation velocity from the
+chain's envelope, program changes, CC91 switch × depth, pan fade), all at
+once against the v1 writer (VELOCITY), a SEQ capture writing none of it, and
+FF7 "You Can Hear the Cry of the Planet" when the rip file is on disk
+(`PS1_RIPS=<dir>` or /tmp/recap/rips/ps1): 879 links, bends, CC91, programs,
+no note moved.
 
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
@@ -7858,7 +7942,8 @@ plays as one sound with its predecessor.
   strings, bell, pluck (they strike), drums, game/sf2 instruments
   (scheduleGameNote bakes each note's envelope — a render-the-chain pass is
   later), or the console voice (it replays the rip).
-- **Not in this step:** any capture marking `lg` (the per-console builders,
+- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2".
+- **Not in this step:** the other captures marking `lg` (the per-console builders,
   §3.2), continuation velocity from the chip's real level, the optional
   connector line between linked notes (Q4), linking notes by hand (that
   would get an Ask `act` action).

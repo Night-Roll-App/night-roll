@@ -314,6 +314,31 @@ function runTrack(akao, ti, {condition, maxEvents}) {
   let split = null;                 // regions of a key-split program (the articulation per key)
   let patternReturn = null;
   let legato = false, slur = false;
+  // The re-key rule, read from the driver's own code (FF7, SaGa Frontier,
+  // FF8, FF9, Chrono Cross and Parasite Eve all carry it; NIGHT-ROLL.md "PS1
+  // capture v2"): a channel word holds 1 (slur: 0xCC, and 0xDA portamento)
+  // or 4 (legato: 0xD0) — a store, so the last one wins. Each note or tie
+  // copies bit 1 into a "no key-on" bit; the NEXT note then changes pitch on
+  // the sounding voice without keying it on (a continuation). Legato only
+  // cancels the 2-tick early key-off: those notes re-key. Before each note
+  // the driver looks ahead to the next one and clears both modes when a
+  // rest, 0xCB/0xCD/0xD1/0xDB or a stop comes first — so the note before
+  // the rest or the "off" opcode already keys the next one on.
+  let mode = 0, carry = false;      // mode: 1 slur, 4 legato, 0 neither; carry: the last note/tie had slur
+  let porta = 0, portaKey = null;   // 0xDA portamento: glide length (ticks) and the last note's key (0 = none yet)
+  // ADSR overrides (0xAD–0xB2, 0xB7/0xBB/0xBF; 0xB3 and a program change
+  // restore the instrument's own): the fields readInstr names
+  let adsr = {};
+  let revOn = false;                // 0xC2/0xC3: this voice's reverb send on/off
+  const revs = [];                  // [{tick, on}]
+  const depths = [];                // 0xEA/0xEB: song-wide reverb depth, [{tick, len, to}]
+  const pans = [];                  // 0xAA/0xAB: [{tick, len, to}] (len 0 = a set)
+  let slideNext = 0, portaNote = null; // 0xA4's step for the next note/tie (it moves the portamento's "last key"); the note whose glide a clear may still cancel
+  let panFade = null;
+  const panNow = () => Math.floor(fadeAt(panFade, pan));
+  // the look-ahead runs before the note before it sets its pitch, so a clear
+  // also takes that note's own portamento glide away
+  const unkey = () => { mode = 0; carry = false; porta = 0; if (portaNote) { delete portaNote.porta; portaNote = null; } };
   let oneTime = null, fixedDelta = 0, lastDelta = 0;
   const loopBegin = [0, 0, 0, 0], loopCount = [0, 0, 0, 0];
   let layer = 0;
@@ -359,8 +384,12 @@ function runTrack(akao, ti, {condition, maxEvents}) {
         // a tie after a rest, or first thing in a repeat body (the
         // real files do both), just lets time pass — no note to extend
         if (last) last.endTick = tick + delta;
+        carry = !!(mode & 1);
+        if (portaKey !== null) portaKey += slideNext;
+        slideNext = 0; portaNote = null;
       } else if (rest) {
         last = null;
+        unkey();
       } else {
         const rel = Math.floor(noteByte / 11);
         // drum mode: layouts 1/2 play the map's twelve entries regardless of
@@ -368,7 +397,16 @@ function runTrack(akao, ti, {condition, maxEvents}) {
         let key = drum ? (drum.entries ? 24 + rel : octave * 12 + rel) : octave * 12 + rel + transpose;
         const cents = tuningCents();
         const exact = key + cents / 100;
-        const n = {tick, endTick: tick + delta, ch: ti, voice, key, vel: curVol(), program, pitch: Math.round(exact), cents: Math.round((exact - Math.round(exact)) * 100), drum: !!drum, tone: null, root: null, legato: legato || slur, pan};
+        const n = {tick, endTick: tick + delta, ch: ti, voice, key, vel: curVol(), program, pitch: Math.round(exact), cents: Math.round((exact - Math.round(exact)) * 100), drum: !!drum, tone: null, root: null, legato: legato || slur, pan: panNow()};
+        if (!drum) {
+          // no key-on: the voice sounding the last note just changes pitch
+          if (carry && last && !last.drum) n.lg = true;
+          if (porta && portaKey !== null && portaKey !== key) { n.porta = {from: portaKey - key, len: porta}; portaNote = n; }
+          for (const k in adsr) { n.adsr = {...adsr}; break; }
+        }
+        carry = !!(mode & 1);
+        portaKey = key + slideNext;
+        slideNext = 0;
         if (drum) {
           const e = drumEntry(key);
           if (e) { n.program = e.instrument; n.art = e.instrument; n.tone = {instrument: e.instrument, key: e.key, vol: e.vol, pan: e.pan}; }
@@ -382,6 +420,7 @@ function runTrack(akao, ti, {condition, maxEvents}) {
         notes.push(n);
         last = n;
       }
+      if (!rest && !tie) portaNote = portaNote && portaNote.tick === tick ? portaNote : null;
       tick += delta;
       continue;
     }
@@ -401,9 +440,10 @@ function runTrack(akao, ti, {condition, maxEvents}) {
     pc += n;
     switch (vop) {
       case 0xA0: ended = true; break;
-      case 0xA1: case 0xF2: program = a; split = null; break;
-      case 0xF4: program = a; split = null; break;                       // overlay voice: primary instrument
+      case 0xA1: case 0xF2: program = a; split = null; adsr = {}; break;
+      case 0xF4: program = a; split = null; adsr = {}; break;            // overlay voice: primary instrument
       case "split": {                                                   // key-split program at a relative address (layouts 1.1 and 2)
+        adsr = {};
         const dest = pc + s16(a, b);
         split = dest >= 0 && dest < d.length ? readRegions(d, dest, v) : null;
         program = 0x80 + ((dest >> 3) & 0x7F);
@@ -411,7 +451,7 @@ function runTrack(akao, ti, {condition, maxEvents}) {
         break;
       }
       case "split3": {                                                  // key-split program by index into the header's table
-        split = null; program = 0x80 + a;
+        split = null; adsr = {}; program = 0x80 + a;
         if (akao.instrTable != null && a < 16) {
           const ptr = u16(d, akao.instrTable + a * 2);
           if (ptr !== 0xFFFF && (ptr || a === 0)) split = readRegions(d, akao.instrTable + 0x20 + ptr, v);
@@ -423,11 +463,12 @@ function runTrack(akao, ti, {condition, maxEvents}) {
       case 0xA3: { const was = level(); vol = a; volFade = null; gainStep(was); break; }
       case "volfade": { const len = a || 256; const from = fadeAt(volFade, vol); volFade = {start: tick, end: tick + len, from, to: b}; vol = b;
                    gains.push({tick, level: from * fadeAt(exprFade, expr) / (127 * 127)}); gains.push({tick: tick + len, level: b * fadeAt(exprFade, expr) / (127 * 127)}); break; }
-      case 0xAA: pan = a & 0x7F; break;                  // voice pan, 0 left .. 127 right (the SPU's linear L/R volumes)
+      case 0xAA: pan = a & 0x7F; panFade = null; pans.push({tick, len: 0, to: pan}); break; // voice pan, 0 left .. 127 right (the SPU's linear L/R volumes)
+      case 0xAB: { const len = a || 256; panFade = {start: tick, end: tick + len, from: panNow(), to: b & 0x7F}; pan = b & 0x7F; pans.push({tick, len, to: pan}); break; } // pan fade: a straight line in the driver's 8.8 pan
       case 0xA8: { const was = level(); expr = a; exprFade = null; gainStep(was); break; }
       case 0xA9: case "exprfade": { const len = a || 256; const from = fadeAt(exprFade, expr); exprFade = {start: tick, end: tick + len, from, to: b}; expr = b;
                    gains.push({tick, level: fadeAt(volFade, vol) * from / (127 * 127)}); gains.push({tick: tick + len, level: fadeAt(volFade, vol) * b / (127 * 127)}); break; }
-      case 0xA4: bendsOut.push({tick, len: a || 256, semitones: s8(b)}); break;
+      case 0xA4: bendsOut.push({tick, len: a || 256, semitones: s8(b)}); slideNext = s8(b); break;
       case 0xA5: octave = a & 15; break;
       case 0xA6: octave = (octave + 1) & 15; break;
       case 0xA7: octave = (octave - 1) & 15; break;
@@ -435,10 +476,27 @@ function runTrack(akao, ti, {condition, maxEvents}) {
       case 0xC1: transpose += s8(a); break;
       case 0xD8: tuning = s8(a); break;
       case 0xD9: tuning = s8(tuning + s8(a)); break;
-      case 0xCC: slur = true; break;
-      case 0xCD: slur = false; break;
-      case 0xD0: legato = true; break;
-      case 0xD1: legato = false; break;
+      case 0xCC: slur = true; mode = 1; break;
+      case 0xCD: slur = false; unkey(); break;
+      case 0xD0: legato = true; mode = 4; break;
+      case 0xD1: legato = false; unkey(); break;
+      case 0xCB: unkey(); break;
+      case 0xDA: porta = a || 256; portaKey = null; mode = 1; break; // portamento: slur, each note gliding from the last over `a` ticks
+      case 0xDB: unkey(); break;
+      case 0xAD: adsr.ar = a; break;
+      case 0xAE: adsr.dr = a; break;
+      case 0xAF: adsr.sl = a; break;
+      case 0xB0: adsr.dr = a; adsr.sl = b; break;
+      case 0xB1: adsr.sr = a; break;
+      case 0xB2: adsr.rr = a; break;
+      case 0xB3: adsr = {}; break;
+      case 0xB7: adsr.am = a; break;
+      case 0xBB: adsr.sm = a; break;
+      case 0xBF: adsr.rm = a; break;
+      case 0xC2: if (!revOn) { revOn = true; revs.push({tick, on: true}); } break;
+      case 0xC3: if (revOn) { revOn = false; revs.push({tick, on: false}); } break;
+      case 0xEA: depths.push({tick, len: 0, to: s16(a, b)}); break;               // reverb depth (song-wide, any voice sets it)
+      case 0xEB: depths.push({tick, len: a || 256, to: s16(b, c)}); break;        // …faded over `a` ticks
       case 0xDC: fixedDelta = Math.min(255, Math.max(1, lastDelta + s8(a))); break;
       case 0xC8: layer = (layer + 1) & 3; loopBegin[layer] = pc; loopCount[layer] = 0; break;
       case 0xC9: { const count = a || 256; loopCount[layer]++; if (loopCount[layer] === count) layer = (layer - 1) & 3; else pc = loopBegin[layer]; break; }
@@ -531,7 +589,25 @@ function runTrack(akao, ti, {condition, maxEvents}) {
     if (!inside.length) continue; // constant through the note: vel says it all
     n.gain = [{t: 0, l: levelAt(n.tick)}, ...inside.map(g => ({t: g.tick - n.tick, l: g.level})), {t: n.endTick - n.tick, l: levelAt(n.endTick)}];
   }
-  return {notes, tempos, timeSigs, warnings, bends: bendsOut, endTick: tick, loop, voice};
+  // a pan fade under a held note: the pan at every tick its value changes,
+  // relative to the note's start (the note's own `pan` is the start)
+  if (pans.some(p => p.len)) {
+    const panAt = t => { // the last event at or before t: a set, or a fade from where the pan was
+      let k = -1; for (let i = 0; i < pans.length && pans[i].tick <= t; i++) k = i;
+      if (k < 0) return 64;
+      const p = pans[k];
+      return !p.len || t >= p.tick + p.len ? p.to : Math.floor(p.from + (p.to - p.from) * (t - p.tick) / p.len);
+    };
+    for (let i = 0; i < pans.length; i++) pans[i].from = i ? panAt(pans[i].tick - 1e-9) : 64;
+    for (const n of notes) {
+      if (n.drum || !pans.some(p => p.len && p.tick < n.endTick && p.tick + p.len > n.tick)) continue;
+      const pts = [];
+      let was = n.pan;
+      for (let t = n.tick + 1; t < n.endTick; t++) { const v = panAt(t); if (v !== was) { pts.push({t: t - n.tick, v}); was = v; } }
+      if (pts.length) n.panPts = pts;
+    }
+  }
+  return {notes, tempos, timeSigs, warnings, bends: bendsOut, endTick: tick, loop, voice, revs, depths};
 }
 
 // The instrument handle a capture carries (result.instr): plain data (it
@@ -625,6 +701,35 @@ export function akaoNotes(akao, {tempoDiv = null, condition = 0, maxEvents = 200
   // key-on sets the pitch fresh, so the offset restarts at 0 per note); the
   // MIDI writer splits them into notes, the renderer bends the voice.
   // Attached BEFORE the loop unroll so every copy keeps them.
+  // Reverb send per note (`rev`, [{t from its start, v 0..127}]): the voice's
+  // 0xC2/0xC3 switch × the song-wide depth (0xEA sets it, 0xEB fades it — a
+  // signed 16-bit level the driver hands the SPU's reverb volume, |0x7FFF| =
+  // full). A song that switches reverb on but never states a depth plays at
+  // whatever the driver was left with: written as full, said in the warnings.
+  const depthEv = runs.flatMap(r => r.depths).sort((a, b) => a.tick - b.tick);
+  const anyRev = runs.some(r => r.revs.some(x => x.on));
+  if (anyRev && !depthEv.length) warnings.push("reverb is switched on but no depth is set: its send is written at full");
+  {
+    let cur = depthEv.length ? 0 : 0x7FFF;
+    for (const e of depthEv) { e.from = cur; cur = e.to; }
+  }
+  const depthAt = t => {
+    let k = -1; for (let i = 0; i < depthEv.length && depthEv[i].tick <= t; i++) k = i;
+    if (k < 0) return depthEv.length ? 0 : 0x7FFF;
+    const e = depthEv[k];
+    return !e.len || t >= e.tick + e.len ? e.to : e.from + (e.to - e.from) * (t - e.tick) / e.len;
+  };
+  const send = (on, t) => on ? Math.min(127, Math.round(Math.abs(depthAt(t)) / 0x7FFF * 127)) : 0;
+  if (anyRev) for (const r of runs) {
+    const onAt = t => { let on = false; for (const x of r.revs) { if (x.tick > t) break; on = x.on; } return on; };
+    for (const n of r.notes) {
+      const pts = [{t: 0, v: send(onAt(n.tick), n.tick)}];
+      const moves = r.revs.some(x => x.tick > n.tick && x.tick < n.endTick) ||
+        depthEv.some(e => e.tick < n.endTick && (e.len ? e.tick + e.len > n.tick : e.tick > n.tick));
+      if (moves) for (let t = n.tick + 1; t < n.endTick; t++) { const v = send(onAt(t), t); if (v !== pts[pts.length - 1].v) pts.push({t: t - n.tick, v}); }
+      n.rev = pts;
+    }
+  }
   for (const r of runs) {
     if (!r.bends.length) continue;
     const bends = r.bends.slice().sort((a, b) => a.tick - b.tick);
@@ -707,14 +812,16 @@ export function akaoNotes(akao, {tempoDiv = null, condition = 0, maxEvents = 200
   for (const n of notes) if (!programInfo.has(n.program)) programInfo.set(n.program, {program: n.program, drum: n.drum});
   const bends = new Array(akao.tracks.length).fill(0);
   runs.forEach((r, i) => { bends[i] = r.bends.length; });
-  const bendEvents = runs.map(r => r.bends); // per track: {tick, len, semitones} — the renderer bends the sounding note
+  const bendEvents = runs.map(r => r.bends);
+  const revEvents = runs.map(r => r.revs); // per track: {tick, on} — 0xC2/0xC3
+  const depthEvents = depthEv;             // song-wide: {tick, len, from, to} — 0xEA/0xEB // per track: {tick, len, semitones} — the renderer bends the sounding note
   const ctx = akaoInstrContext(akao, instr);
   if (ctx && ctx.kind === "akao-sets") {
     const missing = new Set();
     for (const n of notes) if (!akaoRecord(ctx, n)) missing.add(akaoArtOf(n));
     if (missing.size) warnings.push(`${missing.size} articulation(s) not in the image's sample sets (${[...missing].slice(0, 8).join(", ")}${missing.size > 8 ? ", …" : ""}); those notes render silent`);
   }
-  return {notes, channels, programs: [...programInfo.values()], bends, bendEvents, seq, vab: null, instr: ctx,
+  return {notes, channels, programs: [...programInfo.values()], bends, bendEvents, revEvents, depthEvents, seq, vab: null, instr: ctx,
     source: {kind: "akao", label: "PS1 AKAO", pitchNote: "Pitch is the AKAO key as written (octave × 12 + degree + transpose; the articulation table is tuned so this is the sounding note for melodic instruments). Kits keep their key numbers. Notes are shown at written length; the driver keys off 2 ticks early unless legato."},
     tracks: runs.map((r, i) => ({ch: i, voice: r.voice, notes: r.notes.length, endTick: r.endTick, loop: r.loop}))};
 }
