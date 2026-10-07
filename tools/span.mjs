@@ -17,13 +17,13 @@ for (const tr of doc.tracks) {
   const hits = tr.notes.filter(n => n.t < t1 && n.t + n.d > t0);
   if (!isDrumTrack(tr.name)) hits.forEach(n => pcs.add(n.p % 12)); // kit pieces aren't pitch classes
   if (hits.length) out.tracks.push({track: tr.name, notes: hits.map(n =>
-    ({pitch: pitchName(n.p), onset: fmtBQ(doc, n.t), durQ: +(n.d / doc.ppq).toFixed(3), vel: n.v}))});
+    ({pitch: pitchName(n.p), onset: fmtBQ(doc, n.t), durQ: +(n.d / doc.ppq).toFixed(3), vel: n.v, ...(n.shape ? {shape: n.shape} : {})}))});
 }
 out.pitchClassSet = [...pcs].sort((a, b) => a - b).map(pc => PC_NAMES[pc]);
 outJson(json, out, o => {
   let s = `${o.song} ${o.from}–${o.to}\npitch classes: {${o.pitchClassSet.join(" ")}}\n`;
   for (const tr of o.tracks) {
-    s += `  ${tr.track}: ` + tr.notes.map(n => `${n.pitch}@${n.onset}(${n.durQ}q)`).join(" ") + "\n";
+    s += `  ${tr.track}: ` + tr.notes.map(n => `${n.pitch}@${n.onset}(${n.durQ}q)` + (n.shape ? "[shape " + n.shape.map(([b, l]) => "+" + b + "b→" + l).join(" ") + "]" : "")).join(" ") + "\n";
   }
   return s;
 });

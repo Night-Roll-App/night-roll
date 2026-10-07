@@ -150,6 +150,7 @@ silently.
 | Quantize | — | yes | `edit_notes {op:"quantize", …, strength, ends?}` | S |
 | Velocity (slider, velocity lane) | — | yes | `edit_notes {op:"velocity", …, value}` | S |
 | Remove duplicate notes | — | yes | `edit_notes {op:"dedupe"}` | S |
+| Shape (volume inside a note: Swell / Fade / Swell–fade / Flat, lane points) | have (2026-10-06, docs/plans/2026-10-06-in-note-dynamics.md) | yes | `edit_notes {op:"shape", …, shape \| points}` | S |
 | 🎹 Keep that (last minute you noodled) | — | yes — your hands are on the keys, your voice is free | `keep_that {track?}` | S |
 | Record | — | no — the take is your playing; arming it by voice would start the count-in while you're still talking | — | — |
 | Select / Pencil / Erase, pencil drag, score entry | — | no — finger tools; Ask uses exact-beat tools instead | — | — |

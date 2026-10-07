@@ -117,6 +117,7 @@ export function parseMidi(buf, opts = {}) {
               const n = {t: o.t, d: t - o.t, p, v: o.v, ch};
               if (o.duty !== undefined) n.duty = o.duty; // chip timbre (CC70, our own capture files)
               if (o.ve !== undefined) n.ve = o.ve; // software-envelope decay target
+              if (o.env) n.env = o.env; // the note's volume shape (NIGHT-ROLL.md "Volume inside a note")
               notes.push(n);
             }
           } else if (st === 0xB0) {
@@ -130,11 +131,19 @@ export function parseMidi(buf, opts = {}) {
             else if (ctrl === 70 && !foreignNow) curDuty = val & 3; // CC70 = pulse duty from the NSF capture
             else raw.push({t, bytes: [0xB0 | ch, ctrl, val]}); // every other CC (phase 2)
           } else if (st === 0xA0) {
-            // polyphonic aftertouch = the capture's decay target (end volume) —
-            // foreign: raw only, never read as ve (same reasoning as CC70 above)
+            // polyphonic aftertouch: AT the note-on tick = the capture's decay
+            // target (end volume, `ve`); at a later tick inside the note = a
+            // point of its volume shape, `env` [{t: ticks from the note's
+            // start, r: level / velocity}] — relative, so a velocity edit
+            // rescales the shape. No file before 2026-10-06 had aftertouch
+            // inside a note (checked across every albums/ .mid), so this
+            // reading changes nothing already written. Foreign: raw only,
+            // never read as volume (same reasoning as CC70 above)
             const foreignNow = opts.foreign || sawSourceMarker;
             const p = d[j], val = d[j + 1]; j += 2;
-            if (!foreignNow && open[p] && open[p].length) open[p][open[p].length - 1].ve = val;
+            const on = !foreignNow && open[p] && open[p].length ? open[p][open[p].length - 1] : null;
+            if (on && on.t === t) on.ve = val;
+            else if (on) (on.env = on.env || []).push({t: t - on.t, r: val / on.v});
             else raw.push({t, bytes: [0xA0 | ch, p, val]});
           } else if (st === 0xE0) { const lsb = d[j], msb = d[j + 1]; j += 2; raw.push({t, bytes: [0xE0 | ch, lsb, msb]}); } // pitch bend (phase 2)
           else if (st === 0xC0) { const pgm = d[j]; j += 1; raw.push({t, bytes: [0xC0 | ch, pgm]}); } // program change (phase 2)

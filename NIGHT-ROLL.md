@@ -421,7 +421,7 @@ writeMidi runs inside plain click handlers and the vm test harness
 (tests/harness.mjs), neither of which can `import()` (no
 `importModuleDynamically` in the harness's vm context, and no build step
 to bundle the module in). Both emit CC10 pan (`tr.midiPan`), CC70 duty
-(`n.duty`), aftertouch decay (`n.ve`), per-note channel (`n.ch`, else the
+(`n.duty`), aftertouch decay (`n.ve`) and volume shape (`n.env`, aftertouch inside the note — "Volume shape inside a note" below), per-note channel (`n.ch`, else the
 track's own — drums stay on channel 10, 15 melodic channels cycle for the
 rest so 16+ tracks never collide with drums), a key signature ONLY when
 the song already declared one (never invented — Learning mode is the
@@ -1698,6 +1698,7 @@ sections are these modules now.
 - `audio/transport.js` gained `playSec` this step (unlisted — see chip-stream.js/metronome.js above, both needed it to resolve). Its own step-7 entry's "none yet split" list for `play`/`stop`/the play-gate/album orchestration is now PARTIALLY stale: `chip.*`/`clipLen`/`met.*` are real exports now (chip.js/clips.js/metronome.js, this step), so that specific blocker clause has cleared — but `play`/`stop`/`playGate*`/the album functions remain in app.js regardless, now blocked by `document.getElementById`/`setControl`/`setPlayBtn`/`setInfo`/`loadSong`/`S.CATALOG` (ui/chrome.js step 14, model step 9) instead. No function moved from this cluster this step; see open-items.md's corrected QUEUED entry.
 - `model/song.js` — `editableSong` (the one editability test every "is this mine to edit" check now calls, P1 docs/provenance-plan.md), plus `estimateKey`/`checkKeyVsFile` (+ `keyEstimateSig`/`tonicPcFromName`/`KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`) — the Krumhansl-Schmuckler key estimate and the declared-key-vs-file check, relocated here in step 9 (2026-10-03) after steps 4-5 found they can never reach `theory/key.js` (layer 0 can't import `trackIsDrums`/`barTicks`, genuinely layer 2). **`loadSong`/`loadSongInner`/`setSong`/`computeSongEnd` — this file's whole namesake content — did NOT move**: the first three are saturated with `play`/`stop`/`setInfo`/`fitView`/`renderTrackbar`/`buildScoreModel`/`draw`/ask-panel calls (audio/render/ui/ask, none yet split); `computeSongEnd` alone is blocked by `clipEndTick` (`audio/clips.js`, layer 3 — permanent, clip geometry is genuinely audio-layer). All four stay in app.js bare-name reachable. See docs/split-plan.md "Deviations (9)". **Step 10 (2026-10-03) added `keyNameAt`/`sfDeclaredAt`/`sfDeclaredAtRaw`/`sfShownAt`/`sfAt`** (unlisted by any step's table): "what key/scale-factor does the user's declared annotation say governs this tick, else the Normal estimate" — the same family as `estimateKey`/`checkKeyVsFile` already here, reading `S.keyRegions`/`S.previewSf` directly plus `appMode()` (new import, platform/mode.js, layer 1) and `estimateKey()` (same file). All five were genuinely blocker-free (pure, or blocked only by things this file already has); `gen/bassist.js`'s `bsInferTimeline`/`bsChordTimeline` and `gen/analysis.js`'s `computeAnalysisLayer` needed them. `sfShownAt` was explicitly flagged as destined for `platform/mode.js` back in step 4's Deviations, written when `estimateKey` itself was still unmovable; once step 9 landed `estimateKey` here, `model/song.js` — not `platform/mode.js` — became the only layer-≤2 home that doesn't need an upward import. See docs/split-plan.md "Deviations (10)".
 - `model/selection.js` — `selEditItems`, `clipboardHas`, `clipSummary`: the three selection-adjacent reads with no call into unsplit code (step 9, 2026-10-03). **Every actual mutator — `selEditApply`, `nudgeSelection`, `resizeSelection`, quantize/split/join, copy/paste — did NOT move**: all of them bottom out in `selEditApply`, which calls `saveEdits()` (model/edits.js's own SAFETY-blocked function, step 5), `computeSongEnd()` (blocked, above) and `draw()`/`buildScoreModel()` (render, step 11). The plan's own named targets for this file stay in app.js almost entirely.
+- `model/noteshape.js` (2026-10-06) — a note's volume shape (`n.env`): presets, `setSelectionShape` (one undo through `selEditApply`), `shapePoints`/`shapeLevel`/`shapeFactorAt` (read by `audio/voices.js`'s `noteShapeRamp` and `ui/vellane.js`), `shapeSnap`/`shapeRestore` (the undo log). See "Volume shape inside a note".
 - `model/provenance.js` — the P1 "one origin per song, one rule table" machinery (docs/provenance-plan.md), step 9 (2026-10-03): `isCaptureKey`, `ownFolderPath`, `isComposition`, `isCompositionKey` (unlisted — `publishSong`'s own predicate for a non-open key, `isComposition`'s blocker-free twin), `bakesTempo`/`bakesMeter`, `hasProvenanceNote`, `originOf`/`originFor`/`pendingOrigin(Key)`/`setOrigin`, `RULES`/`rulesFor`, `canEditMusic`, `NR_DIR`/`COMP_DIR`/`PROVENANCE_RE`/`READONLY_DIRS`/`COMP_ALBUMS`/`RESERVED_FOLDERS`, `albumTitleFor`, `slugify`, `untitledKey`, `isUnsaved`, `folderFromInput`, `chosenFolder` — plus `albumMetaCache`/`albumMetaFor` (relocated HERE from `audio/chip.js`, not from app.js — step 8 had put them in chip.js because chip.js's own callers needed them there, flagging the exact risk this step hit: `ownFolderPath` could never import them at layer 3). This one relocation cleared three separate permanent-looking blocks at once — see `model/catalog.js` and `audio/chip.js`'s own entries. **`saveSongAs`/`renameLocalKeys`/`openSaveForm` did NOT move** (each reaches `finalizeNotes`/`draw`/`setInfo`/`updateSongBtn`, none yet split) despite `saveSongAs` being the plan's own named target for this file. See docs/split-plan.md "Deviations (9)".
 - `model/album-order.js` — `setAlbumOrderPref`, `slugOfPath`, `albumTrackMap`, `albumHasTrackData`, `albumOrder`, `albumEffectiveOrder`, `albumOrderControl` (step 9, 2026-10-03): the Game order/A–Z switch, entirely clean — this step's one file whose real content matches the plan's table exactly, nothing left behind.
 - `model/versions.js` — the localStorage version store (Model B), step 9 (2026-10-03): `autosaveOn`, `versionsStoreKey`, `readVersionsRaw`/`writeVersionsRaw`, `migrateVersions`/`readVersions`/`pushVersion`, `songDirtyFlag`/`songUnsaved`, `draftTracks`/`musicSig`/`draftDoc` (the draft fingerprint), `draftKeys`. **`saveVersion`/`saveDraft`/`draftRead`/`draftWrite`/`draftFingerprint`/`pubCompareDraft`/`fingerprintOldDrafts`/`markPublished` all stay in app.js** — `saveVersion` needs `openSaveForm`/`setInfo`/`filesMirror`; `saveDraft` needs `retireOldOverlay`/`logErr`/`setInfo`/`updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` (its `isComposition`/`editableSong` blockers cleared this step, but it stays — see open-items.md's SAFETY re-check). None yet split.
@@ -7137,6 +7138,86 @@ hit preference; single drag, clamps, one undo per drag, still tap, cancel;
 proportional scaling + clamp + undo exactness + a stalk outside the
 selection; the locked gate). Help: Editor → "Velocity lane". No hardware
 key (open-items).
+
+## Volume shape inside a note (`n.env`, 2026-10-06)
+
+Spec: docs/plans/2026-10-06-in-note-dynamics.md, option (b) — a held note
+gets louder or softer while it sounds, on one sound, no new attack
+(Bitwig's per-note gain, Ableton's MPE pressure). Motivating case: FF1
+Shop's pulse2, bars 25–28 — chip volume 8 at the attack, 15 by beat 1.78,
+back to 8 by 2.67, held. `src/model/noteshape.js` (layer 2) is the model.
+
+- **Data.** `n.env = [{t, r}]`: `t` ticks from the note's start
+  (0 < t < n.d), `r` = level ÷ velocity — RELATIVE (Josh, 2026-10-06), so
+  a velocity edit rescales the whole shape. Velocity stays the attack; the
+  level glides point to point and the last one is held to the end. Points
+  at or past a shortened note's end are kept in memory (lengthen it and
+  they're back) but neither written nor played.
+- **In the .mid.** Polyphonic aftertouch (0xA0 | ch, pitch, level) at each
+  point's tick INSIDE the note, level = round(r × velocity) clamped 0–127
+  — the same key pressure Ableton writes for MPE. Aftertouch AT the
+  note-on tick keeps meaning `ve`, so every file written before this parses
+  exactly as before: no .mid in albums/ had aftertouch inside a note when
+  this landed (scanned, all 3,269), and a read-only sample of 26 album files
+  across every console writes back byte-identical (test). parseMidi:
+  `on.t === t` → ve, later tick → an env point (`val / on.v`); a foreign
+  parse keeps both as raw events, never volume. Both writers (writeMidi
+  and tools/nsf/midi-write.mjs's writeSongMidi + trackBytes) emit it and
+  stay byte-identical. An older build reading a shaped file takes the LAST
+  aftertouch as `ve` — a ramp to the final level: wrong in the middle,
+  harmless. Same-pitch overlapping notes on one track can't be told apart
+  (already true of `ve`).
+- **Every hop carries it.** draftTracks (the device draft and the
+  published fingerprint), Save As (session/files.js), the import and
+  capture drafts (import/hub.js, import/capture.js), publish's `{...n}`
+  re-encode, copy/paste, Duplicate, Move to track. Split/Divide leave the
+  shape on the first piece only (its points past the cut drop at write).
+- **Undo.** A "mod" entry item carrying `env` (shapeSnap: env + ve, null =
+  absent) restores both through `shapeRestore`; invertEdit carries them
+  for redo. selEditApply mirrors env/ve onto the chop view's raw twin.
+- **Playback.** `noteShapeRamp` (src/audio/voices.js) on the oscillator
+  path only — chip waves and organ, exactly where `ve` applies. Point
+  times come from the tempo map anchored to the note's END, so a chased
+  note (playback joined mid-note; durSec is the remainder) still lands
+  each point right and starts at the shape's level there. A shape
+  replaces the `ve` decay. Sampled, struck, game and soundfont
+  instruments carry their own recorded envelope and the console voice
+  replays the chip — never shaped twice (test pins scheduleGameNote).
+  bounce.js inherits it through scheduleNote. A tap preview plays flat.
+- **Capture (NES).** tools/nsf/notes.mjs keeps each held note's whole
+  $4004/$4000 constant-volume series (`volSeries`, frames relative to the
+  note's start, so the t0 shift and loop backport carry it; collapseSlides
+  re-bases it). midi-write's `shapeFromSeries` samples it per frame
+  (frames ≥ endFrame are the next note's setup and drop), thins it to
+  corners (Ramer–Douglas–Peucker under one volume step: a 2-frame
+  staircase 8→15 is one line) and writes it ONLY when the level rises
+  after the attack — a fall alone stays the one-number `ve`, so decaying
+  captures re-capture to the same bytes. Generic: register writes only, no
+  per-game table. FF1 Shop scratch capture: pulse2 bars 25–28 each read
+  v68, +0.78b→127, +0.94b→127, +1.67b→68 (38 of 42 pulse2 notes shaped;
+  pulse1 1 of 59 — a real wobble). Nothing under albums/ was re-captured.
+  Not yet: PS1 `n.gain` into the .mid, SNES/GB series.
+- **UI.** ⋯ → Shape (and Edit ▾ → Shape…) opens #shapesheet: Swell
+  (1.75× at the end), Fade (¼), Swell–fade (1.75× at 45%, ½ at the end),
+  Flat (clears env and ve) — `setSelectionShape`, one undo, scaled to
+  each note's length, the peak capped so the stored level fits 127. The
+  velocity lane draws a shaped note's line across its width; with ONE note
+  selected its points get gold handles and a drag moves one in time and
+  level (`S.shapeDrag`, one undo through selEditApply). Not yet: tap the
+  line to add a point, long-press to delete one, saved custom presets.
+- **Ask.** `edit_notes {op: "shape", shape: swell|fade|swell_fade|flat}` or
+  `points: [[beats after the onset, level 0–127]…]` — the same gate, one
+  undo. tools/at.mjs and span.mjs print a note's points as facts
+  (`shape +0.78b→127 …`); the rule text says describe points as numbers,
+  never name the gesture.
+
+Tests: tests/night-roll.test.mjs "volume shape …" (round trip + both
+writers + fixed point; foreign stays raw; the album corpus sample;
+playback gain ramps on a spied param incl. tempo change and chase; ve
+scoping; presets/undo/redo/copy/move/draft→publish; Ask op; lane drag);
+tests/nsf.test.mjs "volume shape capture …" (synthetic swell, decay-only
+unchanged, next-note setup, and the real FF1 Shop rip when ff1.nsf is
+present — `FF1_NSF=<path>` to point at the vault copy).
 
 ## iPad CoreMIDI bridge (2026-09-30)
 

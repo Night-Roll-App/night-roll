@@ -24,6 +24,9 @@ import { resumeAudio } from "./engine.js";
 import { openMaster } from "./engine.js";
 import { chipPreviewBuffer } from "./chip.js";
 import { chipNoteSlice } from "./chip-stream.js";
+import { tickToSec } from "../midi/parse.js";
+import { shapePoints } from "../model/noteshape.js";
+import { shapeFactorAt } from "../model/noteshape.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -208,6 +211,36 @@ export function parseSf2Voice(v) {
   return Number.isFinite(bank) && Number.isFinite(program) ? {slug: parts[0], bank, program} : null;
 }
 export function sf2VoiceId(slug, bank, program) { return "sf2:" + slug + ":" + bank + ":" + program; }
+// n.env (src/model/noteshape.js): ramp the note's gain through its volume
+// shape — one sound, no new attack. Point times come from the tempo map,
+// anchored to the note's END: a chased note (playback started mid-note, so
+// durSec is only the remainder) still lands each point where it belongs.
+// The caller has set the gain at `when`; this ramps to the shape's level at
+// atkEnd, through every point between, to the level at relStart. false = the
+// note has no shape (the caller's own sustain runs, exactly as before).
+// Scoped exactly like `ve`: only the oscillator path (chip waves + organ).
+// A sampled, game or soundfont instrument carries its own recorded
+// envelope, and a console voice replays the chip's own register writes —
+// applying the shape there too would fade the note twice.
+export function noteShapeRamp(param, n, amp, end, atkEnd, relStart) {
+  if (n._preview || !S.song || !(n.d > 0)) return false;
+  const pts = shapePoints(n);
+  if (!pts.length) return false;
+  const t0 = tickToSec(S.song, n.t), begin = end - (tickToSec(S.song, n.t + n.d) - t0);
+  const at = pts.map(q => ({sec: begin + tickToSec(S.song, n.t + q.t) - t0, f: shapeFactorAt(n, pts, q.t)}));
+  const fAt = sec => { // the shape's factor at an audio time: linear between points, 1 at the start, the last held
+    let ps = begin, pf = 1;
+    for (const a of at) {
+      if (sec <= a.sec) return a.sec <= ps ? a.f : pf + (a.f - pf) * (sec - ps) / (a.sec - ps);
+      ps = a.sec; pf = a.f;
+    }
+    return pf;
+  };
+  param.linearRampToValueAtTime(amp * fAt(atkEnd), atkEnd);
+  for (const a of at) if (a.sec > atkEnd && a.sec < relStart) param.linearRampToValueAtTime(amp * a.f, a.sec);
+  param.linearRampToValueAtTime(amp * fAt(relStart), relStart);
+  return true;
+}
 // the default NES/sampled voice path — used directly above, and as the
 // fallback (with the track's auto voice) when a game instrument can't render
 export function playSynthVoice(ti, n, when, durSec, v) {
@@ -314,13 +347,16 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   const atk = Math.min(0.008, durSec * 0.15);
   const rel = Math.min(0.03, durSec * 0.25);
   g.gain.setValueAtTime(0, when);
-  g.gain.linearRampToValueAtTime(amp, when + atk);
-  if (n.ve !== undefined && n.ve < n.v) {
+  if (noteShapeRamp(g.gain, n, amp, end, when + atk, Math.max(when + atk, end - rel))) {
+    // the volume shape: no decay ramp below (a shape replaces `ve` when it's set)
+  } else if (n.ve !== undefined && n.ve < n.v) {
+    g.gain.linearRampToValueAtTime(amp, when + atk);
     // the chip's software envelope: ramp to the recorded decay target —
     // flat sustains against the echo voice beat like a tremolo (Josh's
     // back-to-back vs the record, 2026-08-17); the decay is the space
     g.gain.linearRampToValueAtTime(amp * (n.ve / n.v), Math.max(when + atk, end - rel));
   } else {
+    g.gain.linearRampToValueAtTime(amp, when + atk);
     g.gain.setValueAtTime(amp, Math.max(when + atk, end - rel));
   }
   g.gain.linearRampToValueAtTime(0, end);

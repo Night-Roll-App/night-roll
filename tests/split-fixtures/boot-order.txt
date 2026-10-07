@@ -259,6 +259,7 @@ document.getElementById("octdownbtn").addEventListener("click", () => {
 {
 document.getElementById("trbtn").addEventListener("click", () => {
 document.getElementById("divbtn").addEventListener("click", () => {
+document.getElementById("shapebtn").addEventListener("click", () => {
 document.getElementById("quantbtn").addEventListener("click", () => {
 document.getElementById("cutbtn").addEventListener("click", () => {
 document.getElementById("splitbtn").addEventListener("click", () => {

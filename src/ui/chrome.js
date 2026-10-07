@@ -2062,6 +2062,7 @@ export function initChrome11() {
     proxy("emSplit", () => document.getElementById("splitbtn").click());
     proxy("emDivide", () => document.getElementById("divbtn").click());
     proxy("emJoin", () => document.getElementById("joinbtn").click());
+    proxy("emShape", () => document.getElementById("shapebtn").click());
     proxy("emQuantize", () => document.getElementById("quantbtn").click());
     proxy("emKeep", () => document.getElementById("instkeep").click()); // Capture MIDI (src/input/record.js captureKeep)
     proxy("emDedupe", () => {

@@ -235,6 +235,7 @@
   <button id="drummerbtn" aria-label="Generate drums (Drummer)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="7.5" r="1.5"/></svg></button>
   <button id="bassistbtn" aria-label="Generate a bassline (Bassist)">🎸</button>
   <button id="divbtn" aria-label="Divide selected notes into equal parts"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg></button>
+  <button id="shapebtn" aria-label="Shape the volume inside the selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 18h3c3 0 4-12 7-12s4 12 7 12h3v2h-3c-4.4 0-5.3-9.5-7-9.5S9.4 20 5 20H2z"/></svg></button><!-- docs/plans/2026-10-06-in-note-dynamics.md: Swell / Fade / Swell–fade / Flat -->
   <button id="joinbtn" aria-label="Join selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg></button>
   <button id="splitbtn" aria-label="Split selected notes at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg></button>
   <button id="quantbtn" style="display:none" aria-label="Quantize selected notes to the grid">Q Quantize</button><!-- off the toolbar (Josh, 2026-10-03: "takes up too much room … I've never used it"); Edit ▾ → Quantize… clicks it, Q still works -->
@@ -777,6 +778,15 @@
   </div>
 </div>
 
+<div class="overlay" id="shapesheet">
+  <div class="sheet">
+    <h2>SHAPE</h2>
+    <p class="meta" style="margin:0 0 8px;white-space:normal">The loudness inside each selected note, on one sound — no new
+    attack. Velocity stays the start; the shape scales to each note's length and moves with velocity. Flat clears it.
+    Drag a point in the velocity lane to fine-tune one note. One undo undoes it.</p>
+    <div class="chiprow" id="shapechips"></div>
+  </div>
+</div>
 <div class="overlay" id="divsheet">
   <div class="sheet">
     <h2>DIVIDE INTO</h2>
@@ -1093,6 +1103,7 @@
   <div class="fdiv"></div>
   <button class="fitem" id="emSplit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg>  Split at cursor</button>
   <button class="fitem" id="emDivide"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg>  Divide into…</button>
+  <button class="fitem" id="emShape"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 18h3c3 0 4-12 7-12s4 12 7 12h3v2h-3c-4.4 0-5.3-9.5-7-9.5S9.4 20 5 20H2z"/></svg>  Shape…</button>
   <button class="fitem" id="emJoin"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg>  Join notes</button>
   <button class="fitem" id="emQuantize">Q  Quantize…</button>
   <button class="fitem" id="emKeep">🎹  Keep that</button>
@@ -1651,6 +1662,7 @@
 <link rel="modulepreload" href="src/audio/bounce.js">
 <link rel="modulepreload" href="src/model/song.js">
 <link rel="modulepreload" href="src/model/selection.js">
+<link rel="modulepreload" href="src/model/noteshape.js">
 <link rel="modulepreload" href="src/model/provenance.js">
 <link rel="modulepreload" href="src/model/album-order.js">
 <link rel="modulepreload" href="src/model/versions.js">

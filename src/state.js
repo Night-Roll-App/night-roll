@@ -227,6 +227,7 @@ export const S = {
   captureBuf: [],
   vwVel: false,  // the velocity lane (ui/vellane.js), device pref ff1roll-vel-open
   velDrag: null, // {pid, items, pre, v0, v, hit, moved}: a stalk drag in flight
+  shapeDrag: null, // {pid, it, k, pre, moved}: a volume-shape point drag in the velocity lane (ui/vellane.js)
   midiReady: false,
   midiAccess: null,
   midiErr: null,

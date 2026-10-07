@@ -55,6 +55,10 @@ export function trackBytes(name, notes, ch, metas = []) {
     // decay target as polyphonic aftertouch right after the on — Night
     // Roll reads it back as the note's end volume; DAWs see key pressure
     if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p, n.ve]});
+    // volume shape: aftertouch at ticks INSIDE the note (never the note-on
+    // tick, which stays `ve`), level = r × velocity — the chip's in-note
+    // volume corners (makeMidi's shapeFromSeries)
+    if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p, Math.max(0, Math.min(127, Math.round(q.r * n.v)))]});
     evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p, 64]});
   }
   evs.sort((a, b) => a.t - b.t || (a.o || 0) - (b.o || 0));
@@ -77,6 +81,46 @@ function noiseDrum(idx) { return idx < 6 ? 42 : idx < 12 ? 38 : 35; } // hat / s
 // explicit `drum` (a GM number) is a percussion hit on channel 9 whatever
 // its channel name — SNES noise voices.
 const NES_CHANS = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9};
+
+// A held note's volume series ([[frames from its start, vol]…], tools/nsf/notes.mjs) -> its
+// volume shape [{t, r}] (src/model/noteshape.js): the level sampled every
+// frame, thinned to its corners (Ramer–Douglas–Peucker, tolerance under one
+// volume step, so a 2-frame staircase 8→15 becomes one line), t in ticks
+// from the note's start, r = level ÷ velocity, the last level held to the end.
+// Only for a series that RISES after the attack: a fall alone is still the
+// one-number `ve` it always was, so a decaying capture writes the same bytes
+// as before. Generic: it reads the chip's own volume writes, nothing per game.
+export function shapeFromSeries(e, v, d, ticksPerFrame, volMax = 15) {
+  const sr = e.volSeries, n = e.endFrame - e.startFrame;
+  if (!sr || sr.length < 2 || n < 2 || e.vol == null) return undefined;
+  const lv = [];
+  for (let f = 0, k = 0, cur = sr[0][1]; f < n; f++) {
+    while (k < sr.length && sr[k][0] <= f) cur = sr[k++][1];
+    lv.push(cur);
+  }
+  if (!lv.some(x => x > e.vol)) return undefined;
+  const keep = new Set([0, n - 1]);
+  const rdp = (a, b) => {
+    let best = -1, bestD = 0.75; // < one 4-bit step
+    for (let i = a + 1; i < b; i++) {
+      const dv = Math.abs(lv[i] - (lv[a] + (lv[b] - lv[a]) * (i - a) / (b - a)));
+      if (dv > bestD) { best = i; bestD = dv; }
+    }
+    if (best < 0) return;
+    keep.add(best); rdp(a, best); rdp(best, b);
+  };
+  rdp(0, n - 1);
+  const level = vol => Math.max(8, Math.round(vol / volMax * 127)); // the velocity scale
+  const pts = [];
+  for (const i of [...keep].sort((a, b) => a - b)) {
+    const t = Math.round(i * ticksPerFrame);
+    if (t <= 0 || t >= d) continue;
+    const l = level(lv[i]), prev = pts.length ? pts[pts.length - 1].l : v;
+    if (l === prev && i === n - 1) continue; // flat to the end: the hold is implied
+    pts.push({t, l});
+  }
+  return pts.length ? pts.map(q => ({t: q.t, r: q.l / v})) : undefined;
+}
 export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15}) {
   chans = {...chans, drums: 9};
   const usq = Math.round(6e7 / bpm);
@@ -100,7 +144,8 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const ve = e.volEnd != null && e.vol != null && e.volEnd < e.vol
       ? Math.max(8, Math.round(e.volEnd / volMax * 127)) : undefined;
     const key = e.drum != null ? "drums" : e.channel;
-    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve});
+    const env = e.volSeries ? shapeFromSeries(e, v, d, frameSec / (60 / bpm) * PPQ, volMax) : undefined;
+    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {})});
   }
   const metas = [
     {t: 0, d: [0xFF, 0x58, 4, tsNum, Math.round(Math.log2(tsDen)), 24, 8]},
@@ -237,6 +282,7 @@ export function writeSongMidi(song) {
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
+      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]}); // volume shape (see trackBytes)
       evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
     }
     evs.sort((a, b) => a.t - b.t || a.o - b.o);

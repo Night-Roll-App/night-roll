@@ -14,6 +14,10 @@
 // read-only) draw their stalks and refuse the drag with a status line:
 // those velocities, and a chip note's software-envelope decay target
 // (`n.ve`, drawn as a faint falling line), are facts from the capture.
+// A note's volume shape (`n.env`, src/model/noteshape.js) draws as a line
+// across its own width; with ONE note selected its points get handles, and
+// dragging one moves it (time and level) — one undo per drag, the same
+// selEditApply entry. Captures show their shape and refuse the drag.
 import { S } from "../state.js";
 import { drawImpl as draw } from "./chrome.js"; // same layer: the impl directly, not the hooks.js port (check.mjs rule 10)
 import { setInfoImpl as setInfo } from "./chrome.js";
@@ -21,6 +25,10 @@ import { pxPerTick, trackColor, trackShown, fallActive, css, wrap as rollWrap } 
 import { selEditItems, selEditApply } from "../model/selection.js";
 import { editableSong } from "../model/song.js";
 import { isComposition } from "../model/provenance.js";
+import { shapePoints } from "../model/noteshape.js";
+import { shapeLevel } from "../model/noteshape.js";
+import { shapeSnap } from "../model/noteshape.js";
+import { shapeMovePoint } from "../model/noteshape.js";
 
 export const velWrap = document.getElementById("vellane");
 export const velCanvas = document.getElementById("velcanvas");
@@ -106,9 +114,45 @@ export function velLockedLine() {
     : "these velocities are facts from the capture — Edit a copy (File ▾) to shape them";
 }
 export function velPtrY(e) { return e.clientY - velCanvas.getBoundingClientRect().top; }
+// the one selected note's shape points on screen: [{x, y, k}] (empty unless exactly one note is selected and it has a shape)
+export function velShapeHandles(g) {
+  const items = S.song ? selEditItems() : [];
+  if (items.length !== 1) return null;
+  const {ti, ni, n} = items[0], pts = shapePoints(n);
+  if (!pts.length) return null;
+  const x0 = velNoteX(n, g), ppt = pxPerTick();
+  return {ti, ni, n, x0, ppt, handles: pts.map((q, k) => ({k, x: x0 + q.t * ppt, y: g.yOf(shapeLevel(n, q))}))};
+}
+export function velShapeHit(x, y) {
+  const g = velGeom(), hs = velShapeHandles(g);
+  if (!hs) return null;
+  let best = null, bestD = Infinity;
+  for (const h of hs.handles) {
+    const d = Math.hypot(h.x - x, (h.y - y) * 0.6); // a finger is wider than it is tall here: the lane is 72 px
+    if (d < 14 && d < bestD) { best = h; bestD = d; }
+  }
+  return best ? {...hs, k: best.k} : null;
+}
+export function velShapeMove(e) {
+  const d = S.shapeDrag, g = velGeom(), r = velCanvas.getBoundingClientRect();
+  const t = (e.clientX - r.left - d.x0) / d.ppt;
+  const level = Math.max(0, Math.min(127, Math.round((g.bot - velPtrY(e)) / (g.bot - g.top) * 127)));
+  shapeMovePoint(d.n, d.k, t, level);
+  d.level = level;
+}
 export function velPointerDown(e) {
   if (!velLaneWanted()) return;
   const r = velCanvas.getBoundingClientRect();
+  const sh = velShapeHit(e.clientX - r.left, velPtrY(e));
+  if (sh) {
+    if (!editableSong()) { setInfo(isComposition() ? "shape edits work on your own songs" : "this shape is a fact from the capture — Edit a copy (File ▾) to change it"); return; }
+    velCanvas.setPointerCapture(e.pointerId);
+    const {ti, ni, n} = sh;
+    S.shapeDrag = {pid: e.pointerId, ti, ni, n, k: sh.k, x0: sh.x0, ppt: sh.ppt, level: null, moved: false,
+      pre: [{ti, ni, t: n.t, d: n.d, p: n.p, v: n.v, ...shapeSnap(n)}]};
+    setInfo("shape point " + (sh.k + 1) + " — drag to move it in time and level");
+    return;
+  }
   const hit = velHit(e.clientX - r.left);
   if (!hit) return;
   if (!editableSong()) { setInfo(velLockedLine()); return; }
@@ -120,6 +164,8 @@ export function velPointerDown(e) {
   drawVelLane();
 }
 export function velPointerMove(e) {
+  const sd = S.shapeDrag;
+  if (sd && sd.pid === e.pointerId) { sd.moved = true; velShapeMove(e); draw(); return; }
   const d = S.velDrag;
   if (!d || d.pid !== e.pointerId) return;
   const v = velGeom().vOf(velPtrY(e));
@@ -129,6 +175,19 @@ export function velPointerMove(e) {
   draw(); // the roll's note brightness tracks the drag; drawFull repaints the lane too
 }
 export function velPointerUp(e, cancelled) {
+  const sd = S.shapeDrag;
+  if (sd && sd.pid === e.pointerId) {
+    S.shapeDrag = null;
+    const pre = sd.pre[0], now = JSON.stringify(shapeSnap(sd.n)), before = JSON.stringify({env: pre.env, ve: pre.ve});
+    if (cancelled || !sd.moved || now === before) { // a lost pointer or a still tap: the shape goes back
+      if (pre.env) sd.n.env = pre.env.map(q => ({...q})); else delete sd.n.env;
+      draw();
+      return;
+    }
+    selEditApply([{ti: sd.ti, ni: sd.ni, n: sd.n}], () => {}, sd.pre); // one undo step for the drag
+    setInfo("shape point " + (sd.k + 1) + " → level " + sd.level + " (undo restores it)");
+    return;
+  }
   const d = S.velDrag;
   if (!d || d.pid !== e.pointerId) return;
   S.velDrag = null;
@@ -168,7 +227,17 @@ export function drawVelLane() {
     vctx.fillRect(it.x, y, VEL_STALK_W, g.bot - y);
     vctx.fillRect(it.x - 1, y - 1.5, VEL_STALK_W + 2, 3); // the head: where the finger grabs
     if (sel) { vctx.strokeStyle = css("--gold"); vctx.strokeRect(it.x - 1.5, y - 2.5, VEL_STALK_W + 3, g.bot - y + 2.5); }
-    if (it.n.ve !== undefined && it.n.ve < it.n.v) { // a chip note's envelope decay target (parse.js): a fact, falling across the note
+    const pts = shapePoints(it.n);
+    if (pts.length) { // the volume shape: velocity, through each point, the last level held to the note's end
+      vctx.globalAlpha = sel ? 0.95 : 0.5;
+      vctx.strokeStyle = trackColor(it.ti);
+      vctx.beginPath();
+      vctx.moveTo(it.x + VEL_STALK_W, y);
+      let ly = y;
+      for (const q of pts) { ly = g.yOf(shapeLevel(it.n, q)); vctx.lineTo(it.x + q.t * ppt, ly); }
+      vctx.lineTo(it.x + Math.max(VEL_STALK_W + 4, it.n.d * ppt), ly);
+      vctx.stroke();
+    } else if (it.n.ve !== undefined && it.n.ve < it.n.v) { // a chip note's envelope decay target (parse.js): a fact, falling across the note
       vctx.globalAlpha = 0.5;
       vctx.strokeStyle = trackColor(it.ti);
       vctx.beginPath();
@@ -178,6 +247,18 @@ export function drawVelLane() {
     }
   }
   vctx.globalAlpha = 1;
+  const hs = velShapeHandles(g);
+  if (hs) { // the selected note's points: grab handles
+    vctx.fillStyle = css("--gold");
+    for (const h of hs.handles) { vctx.beginPath(); vctx.arc(h.x, h.y, 4, 0, Math.PI * 2); vctx.fill(); }
+  }
+  if (S.shapeDrag && S.shapeDrag.level !== null && hs && hs.handles[S.shapeDrag.k]) { // the live level beside the grabbed point
+    const h = hs.handles[S.shapeDrag.k], right = h.x + 40 > W;
+    vctx.fillStyle = css("--text");
+    vctx.font = "11px " + css("--mono");
+    vctx.textAlign = right ? "right" : "left";
+    vctx.fillText(String(S.shapeDrag.level), h.x + (right ? -8 : 8), Math.max(12, Math.min(H - 4, h.y + 4)));
+  }
   if (S.velDrag) { // the live value beside the grabbed stalk
     const d = S.velDrag, y = g.yOf(d.hit.n.v), right = d.hit.x + 40 > W;
     vctx.fillStyle = css("--text");

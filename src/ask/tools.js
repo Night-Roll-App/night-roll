@@ -81,6 +81,9 @@ import { diatonicShift } from "../model/selection.js";
 import { copySelection } from "../model/selection.js";
 import { pasteClipboard } from "../model/selection.js";
 import { moveSelectionToTrack } from "../model/selection.js";
+import { selEditItems } from "../model/selection.js";
+import { setSelectionShape } from "../model/noteshape.js";
+import { SHAPE_PRESETS } from "../model/noteshape.js";
 import { sfDeclaredAtRaw } from "../model/song.js";
 import { drBassTrack } from "../gen/drummer.js";
 import { askAct } from "./actions.js";
@@ -854,7 +857,29 @@ export function askSelectRange(a) { // -> {fromBar, toBar, t0, t1, tis, count}; 
   S.lassoAnno = null; // the selection is Ask's now, not a box: a leftover lasso box must not make deleteSelection/copySelection take annotations along
   return {fromBar, toBar, t0, t1, tis, count: sel.length};
 }
-const EDIT_NOTES_OPS = ["delete", "quantize", "velocity", "split", "join", "divide", "dedupe", "transpose", "move", "copy", "to_track"];
+const EDIT_NOTES_OPS = ["delete", "quantize", "velocity", "split", "join", "divide", "dedupe", "transpose", "move", "copy", "to_track", "shape"];
+// op shape (docs/plans/2026-10-06-in-note-dynamics.md): a preset name, or
+// points [[beats from the note's start, level 0–127]…] -> envFor(n) for
+// setSelectionShape. Levels are stored relative to each note's velocity.
+function askEditNotesShape(a) {
+  let pts = a.points;
+  if (typeof pts === "string") {
+    try { pts = JSON.parse(pts); } catch (err) { throw new Error("points must be a list like [[0.75, 127], [1.5, 68]]"); }
+  }
+  if (Array.isArray(pts) && pts.length) {
+    const ppq = S.song.ppq;
+    const list = pts.map(pt => {
+      const b = +(Array.isArray(pt) ? pt[0] : pt && pt.beat), l = +(Array.isArray(pt) ? pt[1] : pt && pt.level);
+      if (!(b > 0) || !(l >= 0 && l <= 127)) throw new Error("each point is [beats after the note starts (> 0), level 0–127]");
+      return {b, l};
+    }).sort((x, y) => x.b - y.b);
+    return {name: "points", label: "points " + list.map(q => "+" + q.b + "b→" + q.l).join(" "),
+      envFor: n => list.map(q => ({t: Math.round(q.b * ppq), r: q.l / (n.v || 80)})).filter(q => q.t > 0 && q.t < n.d)};
+  }
+  const name = String(a.shape || "").trim().toLowerCase().replace(/[\s–-]+/g, "_");
+  if (!SHAPE_PRESETS[name]) throw new Error("say shape: swell, fade, swell_fade or flat — or points [[beats, level]…]");
+  return {name, label: SHAPE_PRESETS[name], envFor: null};
+}
 const askActNum = (v, name) => { // a signed number given as a number or a string ("+2", "-1", "1.5"); undefined when absent
   if (v === undefined || v === null || v === "") return undefined;
   const n = +String(v).trim();
@@ -980,6 +1005,10 @@ export function askEditNotes(a) {
     if (!k) return {ok: true, note: "nothing landed — " + (sel.count ? "every note was already there or shifted off the roll" : "no note on " + trackLabel + " in " + where) + "; nothing changed"};
     const notes = Math.max(0, k - annos);
     return {ok: true, note: "copied " + notes + " note" + (notes === 1 ? "" : "s") + (annos ? " + " + annos + " annotation" + (annos === 1 ? "" : "s") : "") + " from " + trackLabel + " in " + where + " to " + toBar + "." + toBeat + (toTi !== undefined ? " on " + (S.song.tracks[toTi].name || "track " + (toTi + 1)) : "") + (dP ? ", " + askShiftText(dP) : "") + (askBarsCount() > barsBefore ? " — the song grew to " + askBarsCount() + " bars" : "") + "; cursor at the copy's end (one undo restores what was there)"};
+  } else if (op === "shape") {
+    const sh = askEditNotesShape(a);
+    k = setSelectionShape(sh.name, selEditItems(), sh.envFor); // the Shape ▾ chip's own call: one undo
+    how = sh.name === "flat" ? "cleared the volume shape (Flat) on" : "shaped (" + sh.label + ")";
   } else if (op === "to_track") {
     if (a.to_track === undefined || a.to_track === null || a.to_track === "") throw new Error("say to_track: " + S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1)).join(", "));
     const toTi = askEditNotesTarget(a.to_track);

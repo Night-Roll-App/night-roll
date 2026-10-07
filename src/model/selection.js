@@ -176,7 +176,11 @@ export function selEditApply(items, mutate, snapshot) { // mutate + undo + persi
   for (const it of items) {
     mutate(it.n);
     const rn = S.song.rawNotes && it.n.ri !== undefined && S.song.rawNotes[it.ti][it.n.ri];
-    if (rn) { rn.t = it.n.t + S.chopS; rn.d = it.n.d; rn.p = it.n.p; rn.v = it.n.v; }
+    if (rn) {
+      rn.t = it.n.t + S.chopS; rn.d = it.n.d; rn.p = it.n.p; rn.v = it.n.v;
+      if (it.n.env) rn.env = it.n.env; else delete rn.env; // shape edits replace the array, never mutate it
+      if (it.n.ve !== undefined) rn.ve = it.n.ve; else delete rn.ve;
+    }
   }
   ridealongChordBands(pre, items);
   saveEdits();
@@ -215,7 +219,8 @@ export function copySelection(annoSpan) { // returns notes + annotations copied 
   if (!items.length && !lassoed.length) return 0;
   const t0 = items.length ? Math.min(...items.map(({n}) => n.t)) : Math.min(...lassoed.map(n => n.start));
   const tEnd = items.length ? Math.max(...items.map(({n}) => n.t + n.d)) : Infinity;
-  S.noteClipboard = items.map(({ti, n}) => ({dt: n.t - t0, p: n.p, d: n.d, v: n.v || S.pencilVel, ti}));
+  S.noteClipboard = items.map(({ti, n}) => ({dt: n.t - t0, p: n.p, d: n.d, v: n.v || S.pencilVel, ti,
+    ...(n.env ? {env: n.env.map(q => ({...q}))} : {}), ...(n.ve !== undefined ? {ve: n.ve} : {})})); // a volume shape moves and copies with its note
   // Josh's rule (2026-09-13): annotations ride only when the lasso itself
   // went over them — the box reached into the ruler and spans them in time.
   // A tap-built selection, or a box that stayed among the notes, copies none.
@@ -262,8 +267,9 @@ export function pasteClipboard(atTick, opts = {}) {
     if (p < S.PMIN || p > S.PMAX) continue; // shifted off the roll: skip, never wrap
     const isAdd = !isComposition();
     if (tr.notes.some(n => !n.gone && n.t === t0 + c.dt && n.p === p)) continue; // never stack an identical note
-    tr.notes.push({t: t0 + c.dt, d: c.d, p, v: c.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[ti].push({t: t0 + c.dt + S.chopS, d: c.d, p, v: c.v, added: isAdd});
+    const shape = {...(c.env ? {env: c.env.map(q => ({...q}))} : {}), ...(c.ve !== undefined ? {ve: c.ve} : {})};
+    tr.notes.push({t: t0 + c.dt, d: c.d, p, v: c.v, added: isAdd, ...shape});
+    if (S.song.rawNotes) S.song.rawNotes[ti].push({t: t0 + c.dt + S.chopS, d: c.d, p, v: c.v, added: isAdd, ...shape});
     added.push({ti, ni: tr.notes.length - 1});
   }
   if (!added.length && !S.annoClipboard.length) return 0; // nothing landed: no undo step, selection and cursor untouched
@@ -692,8 +698,9 @@ export function moveSelectionToTrack(target, dT = 0) { // ⇄ / tracks-view retr
   for (const it of items) {
     const n = it.n;
     const nt = Math.max(0, n.t + dT);
-    tr.notes.push({t: nt, d: n.d, p: n.p, v: n.v, duty: n.duty, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[target].push({t: nt + S.chopS, d: n.d, p: n.p, v: n.v, added: isAdd});
+    const shape = {...(n.env ? {env: n.env} : {}), ...(n.ve !== undefined ? {ve: n.ve} : {})}; // the volume shape rides along
+    tr.notes.push({t: nt, d: n.d, p: n.p, v: n.v, duty: n.duty, added: isAdd, ...shape});
+    if (S.song.rawNotes) S.song.rawNotes[target].push({t: nt + S.chopS, d: n.d, p: n.p, v: n.v, added: isAdd, ...shape});
     added.push({ti: target, ni: tr.notes.length - 1});
     n.gone = true;
     const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[it.ti][n.ri];

@@ -68,7 +68,12 @@ export function reconstruct(apuLog, frames, frameSec) {
       // envelope period) and never on the triangle (no volume control).
       const vol = name !== "triangle" && c.constVol ? c.vol : null;
       const duty = (name === "pulse1" || name === "pulse2") ? c.duty : undefined; // pulse timbre at note start
-      open[name] = {channel: name, startFrame: frame, endFrame: null, midi, periodValue: c.period, vol, volEnd: vol, duty, freq0: freq};
+      // volSeries: every level change while the note is held, [[frames
+      // from the note's start, vol]…] — relative, so the t0 shift and loop
+      // backport that move startFrame carry it along; midi-write's
+      // shapeFromSeries turns it into the note's volume shape
+      open[name] = {channel: name, startFrame: frame, endFrame: null, midi, periodValue: c.period, vol, volEnd: vol, duty, freq0: freq,
+        volSeries: vol === null ? null : [[0, vol]]};
       events.push(open[name]);
     }
   };
@@ -96,6 +101,14 @@ export function reconstruct(apuLog, frames, frameSec) {
           // attack landing before its period write, not this note's fade
           if (open[name] && c.constVol && c.vol > 0 && open[name].volEnd !== null &&
               c.vol <= open[name].volEnd) open[name].volEnd = c.vol;
+          // …and the whole series, rises included (a swell inside one held
+          // note, FF1 Shop's pulse2). A write in the frame the note ends is
+          // the NEXT note's setup — shapeFromSeries drops frames ≥ endFrame
+          const sr = open[name] && open[name].volSeries;
+          if (sr && c.constVol && c.vol > 0) {
+            const last = sr[sr.length - 1], rf = frame - open[name].startFrame;
+            if (last[0] === rf) last[1] = c.vol; else if (last[1] !== c.vol) sr.push([rf, c.vol]);
+          }
         }
       } else if (r === 2) {
         c.period = (c.period & 0x700) | value;
@@ -142,6 +155,8 @@ export function collapseSlides(events) {
              Math.abs(list[j + 1].midi - list[j].midi) <= 4) j++;
       if (j > i) {
         if (!tiny(list[j])) { // slid into a held note: the target absorbs the ramp
+          const early = list[j].startFrame - list[i].startFrame; // its volume series is relative to its start
+          if (list[j].volSeries) list[j].volSeries = list[j].volSeries.map(([f, v], k) => [k ? f + early : 0, v]);
           list[j].startFrame = list[i].startFrame;
           for (let k = i; k < j; k++) dead.add(list[k]);
         } else {              // pure ornament: first pitch, whole span

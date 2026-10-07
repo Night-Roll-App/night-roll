@@ -106,6 +106,9 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
       // decay target as polyphonic aftertouch right after the on — parseMidi
       // reads it back as the note's end volume; DAWs see key pressure
       if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
+      // volume shape: more aftertouch at ticks INSIDE the note, level =
+      // r × velocity (parseMidi divides back); points past a shortened end drop
+      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]});
       evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
     }
     evs.sort((a, b) => a.t - b.t || a.o - b.o); // offs (o=0) before duty (0.5) before ons (1) before aftertouch (1.5) at the same tick

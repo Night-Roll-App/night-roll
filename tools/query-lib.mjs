@@ -56,7 +56,8 @@ export async function loadSong(arg, {dedupe = true} = {}) {
       // first and refuse, same as the app's own publish guard
       rollnotesVersion: rnVersion, rollnotesReadOnly: rnReadOnly, rollnotesOrigin: rnOrigin,
       tracks: song.tracks.map(tr => ({name: tr.name || "",
-        notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v, ch: n.ch}))})),
+        notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v, ch: n.ch,
+          ...(shapePoints(n).length ? {shape: shapePoints(n).map(q => [+(q.t / song.ppq).toFixed(2), Math.round(shapeLevel(n, q))])} : {})}))})), // a volume shape's points: [beats after the onset, level 0-127]
       // visibleNotes (model/rollnotes.js): the harness runs in Learning, so
       // ✦ AI-tagged estimates stay out of the query tools too — facts only
       rollnotes: visibleNotes().map(n => ({text: n.text, note: n.cnote, b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2,

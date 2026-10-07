@@ -2801,7 +2801,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "drag the tag to scrub",
     "Export score",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
-    "Keep that</b>", "Velocity lane</dt>",
+    "Keep that</b>", "Velocity lane</dt>", "Shape (volume inside a note)</dt>", // docs/plans/2026-10-06-in-note-dynamics.md
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
     "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
     "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry
@@ -13804,4 +13804,213 @@ test("Hear the MIDI: a device-local switch makes chipActive() false for every so
   assert.equal(val(`chipActive()`), true, "Ask flips it back");
   assert.throws(() => run(`askSetPref({name: "sound", value: "loud"})`), /sound must be chip or midi/);
   run(`chip.pcm = null; chip.key = null; localStorage.removeItem("ff1roll-hear-midi"); hearMidi.v = undefined;`);
+});
+
+// ---- volume shape inside a note (docs/plans/2026-10-06-in-note-dynamics.md,
+// option (b)): n.env = [{t, r}], stored as poly aftertouch at ticks INSIDE the
+// note, r relative to velocity; aftertouch AT the note-on tick is still `ve`.
+const SHAPE_SONG = {ppq: 480, timesig: [3, 4], tempos: [{tick: 0, usq: 500000}],
+  tracks: [{name: "pulse2", notes: [
+    {t: 0, d: 1440, p: 62, v: 68, duty: 0, env: [{t: 373, r: 127 / 68}, {t: 451, r: 127 / 68}, {t: 800, r: 1}]},
+    {t: 1440, d: 480, p: 60, v: 100, ve: 40},
+    {t: 1920, d: 960, p: 59, v: 90, ve: 30, env: [{t: 480, r: 0.5}]},
+    {t: 2880, d: 480, p: 57, v: 80}]}]};
+
+test("volume shape: aftertouch inside a note round-trips as n.env (levels exact, relative to velocity); the note-on tick's aftertouch is still ve; both writers agree; a re-write is a fixed point", () => {
+  installSong();
+  app.context._shapeSong = JSON.parse(JSON.stringify(SHAPE_SONG));
+  const bytes = val(`Array.from(writeMidi(_shapeSong))`);
+  assert.deepEqual(bytes, Array.from(writeSongMidi(SHAPE_SONG)), "writeMidi and writeSongMidi agree on shaped notes");
+  const back = val(`parseMidi(writeMidi(_shapeSong).buffer).tracks[0].notes.map(n => ({p: n.p, v: n.v, ve: n.ve === undefined ? null : n.ve,
+    env: n.env ? n.env.map(q => [q.t, Math.round(q.r * n.v)]) : null}))`);
+  assert.deepEqual(back, [
+    {p: 62, v: 68, ve: null, env: [[373, 127], [451, 127], [800, 68]]},
+    {p: 60, v: 100, ve: 40, env: null},
+    {p: 59, v: 90, ve: 30, env: [[480, 45]]},
+    {p: 57, v: 80, ve: null, env: null}]);
+  assert.deepEqual(val(`Array.from(writeMidi(parseMidi(writeMidi(_shapeSong).buffer)))`), bytes, "parse → write of a shaped file is byte-identical");
+  // the in-note points are plain key pressure (0xA0 | channel) at their ticks
+  const at = [];
+  for (let i = 0; i + 2 < bytes.length; i++) if (bytes[i] === 0xA0 && bytes[i + 1] === 62) at.push(bytes[i + 2]);
+  assert.deepEqual(at, [127, 127, 68]);
+  // a point past a shortened note's end is not written (it stays in memory: lengthen the note and it's back)
+  run(`_shapeSong.tracks[0].notes[0].d = 600;`);
+  assert.deepEqual(val(`parseMidi(writeMidi(_shapeSong).buffer).tracks[0].notes[0].env.map(q => q.t)`), [373, 451]);
+});
+
+test("volume shape: a foreign file's in-note aftertouch stays a raw event, never a shape", () => {
+  installSong();
+  app.context._shapeSong = JSON.parse(JSON.stringify(SHAPE_SONG));
+  const f = val(`(() => { const s = parseMidi(writeMidi(_shapeSong).buffer, {foreign: true});
+    return {env: s.tracks[0].notes.filter(n => n.env).length, ve: s.tracks[0].notes.filter(n => n.ve !== undefined).length,
+      raw: s.source.metas[0].events.filter(e => (e.bytes[0] & 0xF0) === 0xA0).length}; })()`);
+  assert.deepEqual(f, {env: 0, ve: 0, raw: 6}, "2 ve + 4 points, all kept verbatim as raw");
+});
+
+test("volume shape: existing album .mid files (read-only sample across every console) parse with no shape and write back byte-identical", () => {
+  installSong();
+  const files = [
+    "albums/game-boy/donkey-kong-land/airship.mid", "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-two-instruments.mid",
+    "albums/game-boy/pokemon-red/to-bill-s-origin-from-cerulean.mid", "albums/game-boy/pokemon-red/battle-vs-gym-leader.mid",
+    "albums/game-boy/pokemon-red/casino.mid", "albums/n64/banjo-kazooie/clanker-s-cavern-normal.mid",
+    "albums/n64/banjo-kazooie/inside-the-pyramid.mid", "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle.mid",
+    "albums/n64/majoras-mask/owl-s-theme.mid", "albums/n64/ocarina-of-time/open-door-of-temple-of-time.mid",
+    "albums/nes/final-fantasy-iii/battle-1.mid", "albums/nes/final-fantasy-iii/beneath-the-horizon-undersea-shrine.mid",
+    "albums/nes/legend-of-zelda/track-22.mid", "albums/nes/ninja-gaiden/nowhere-to-run-3-2-6-2.mid",
+    "albums/nes/super-mario-bros-3/track-01.mid", "albums/nes/super-mario-bros-3/track-59.mid",
+    "albums/ps1/final-fantasy-7/cinco-de-chocobo.mid", "albums/ps1/final-fantasy-8/odeka-ke-chocobo.mid",
+    "albums/ps1/final-fantasy-9/song-of-memories-alternate.mid", "albums/ps1/saga-frontier/margmel-in-ruin.mid",
+    "albums/ps2/final-fantasy-x/hymn-of-the-fayth-spira.mid", "albums/snes/donkey-kong-country/candy-s-love-song.mid",
+    "albums/snes/earthbound/pokey-s-house.mid", "albums/snes/final-fantasy-5/what.mid",
+    "albums/snes/mega-man-x/boss-battle.mid", "albums/snes/yoshis-island/athletic-fuzzy-2.mid",
+  ].filter(f => existsSync(new URL("../" + f, import.meta.url)));
+  assert.ok(files.length >= 20, "at least 20 sample files present (" + files.length + ")");
+  let withVe = 0;
+  for (const f of files) {
+    app.context._corpusBytes = [...readFileSync(new URL("../" + f, import.meta.url))]; // read-only: nothing is ever written back to albums/
+    const r = val(`(() => { const s = parseMidi(new Uint8Array(_corpusBytes).buffer, {trust: true}); const o = Array.from(writeMidi(s));
+      let env = 0, ve = 0; s.tracks.forEach(t => t.notes.forEach(n => { if (n.env) env++; if (n.ve !== undefined) ve++; }));
+      return {same: o.length === _corpusBytes.length && o.every((x, i) => x === _corpusBytes[i]), env, ve}; })()`);
+    assert.equal(r.env, 0, f + ": no shape in a file written before shapes existed");
+    assert.ok(r.same, f + ": parse → write is byte-identical");
+    if (r.ve) withVe++;
+  }
+  assert.ok(withVe >= 5, "the sample includes files whose notes carry ve (note-on aftertouch): " + withVe);
+});
+
+// a gain spy: every AudioParam call on the note's own gain node, [kind, value, time]
+function shapeSpy() {
+  run(`ensureAudio(); playing = true; playRate = 1; songKey = "midi/test.mid"; chip.key = null; chip.pcm = null; chip.stream = null;
+       song.tracks = [{name: "lead", voice: "square", notes: []}]; trackState = [{muted: false, solo: false}]; trackGain(0);
+       if (!globalThis._cgShapeReal) globalThis._cgShapeReal = audio.createGain.bind(audio);
+       _shapeCalls = [];
+       audio.createGain = () => { const g = _cgShapeReal(); _shapeCalls = []; const rec = k => (v, t) => { _shapeCalls.push([k, +(+v).toFixed(4), +(+t).toFixed(4)]); };
+         g.gain = {value: 0, setValueAtTime: rec("set"), linearRampToValueAtTime: rec("lin"), exponentialRampToValueAtTime: rec("exp"), cancelScheduledValues() {}}; return g; };`);
+}
+function shapeSpyOff() { run(`audio.createGain = _cgShapeReal; playing = false; song.tracks = []; trackState = [];`); }
+
+test("volume shape playback: the synth voice ramps its gain through each point at its tempo-map time, one sound (no new attack); an unshaped note schedules exactly as before", () => {
+  installSong(); // 120 bpm to tick 960, then 240 bpm
+  shapeSpy();
+  const amp = val(`(100 / 127) * VOICE_AMP.square`);
+  const W = Math.ceil(val(`audio.currentTime`)) + 10; // an audio time well ahead of the fake clock (scheduleNote never starts in the past)
+  // unshaped: exactly the old four calls — attack, hold, release
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100}, ${W}, 1)`);
+  const plain = val(`_shapeCalls`);
+  assert.deepEqual(plain.map(c => c[0]), ["set", "lin", "set", "lin"]);
+  assert.equal(plain[1][1], +amp.toFixed(4), "attack to the velocity's amplitude");
+  assert.equal(plain[3][1], 0, "release to silence at the end");
+  // shaped: up to 1.27× at the middle (0.5 s in), held, no second attack (never back to 0 before the end)
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, env: [{t: 480, r: 1.27}]}, ${W}, 1)`);
+  const s = val(`_shapeCalls`);
+  assert.equal(s[0][0], "set"); assert.equal(s[0][1], 0);
+  const mid = s.find(c => c[0] === "lin" && Math.abs(c[2] - (W + 0.5)) < 1e-3);
+  assert.ok(mid, "a ramp lands on the point's time: " + JSON.stringify(s));
+  assert.ok(Math.abs(mid[1] - amp * 1.27) < 1e-3, "…at the point's level (1.27 × the velocity's amplitude)");
+  assert.equal(s.filter(c => c[1] === 0).length, 2, "zero only at the start and the end: one attack, one release");
+  assert.equal(s[s.length - 1][1], 0); assert.ok(Math.abs(s[s.length - 1][2] - (W + 1)) < 1e-3);
+  // tempo change inside the note: tick 480 → 960 is 0.5 s, 960 → 1440 is 0.25 s; a point at +720 ticks = tick 1200 = 0.625 s after the onset
+  run(`scheduleNote(0, {t: 480, d: 960, p: 60, v: 100, env: [{t: 720, r: 0.5}]}, ${W}, 0.75)`);
+  const tc = val(`_shapeCalls`);
+  assert.ok(tc.some(c => c[0] === "lin" && Math.abs(c[2] - (W + 0.625)) < 1e-3 && Math.abs(c[1] - amp * 0.5) < 1e-3), "the point follows the tempo map, not a straight proportion: " + JSON.stringify(tc));
+  // chase: playback starts 0.6 s into a 1 s note (durSec = 0.4) — the point at 0.5 s has passed; it starts at the held level, not the attack's
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, env: [{t: 480, r: 1.27}]}, ${W}, 0.4)`);
+  const ch = val(`_shapeCalls`);
+  assert.ok(ch.filter(c => c[0] === "lin").slice(0, -1).every(c => Math.abs(c[1] - amp * 1.27) < 1e-3), "a chased note sounds at the shape's level where playback joined it: " + JSON.stringify(ch));
+  // a shape replaces ve: no decay ramp toward ve
+  run(`scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, ve: 20, env: [{t: 480, r: 1.27}]}, ${W}, 1)`);
+  assert.ok(!val(`_shapeCalls`).some(c => Math.abs(c[1] - amp * 0.2) < 1e-3), "ve's decay target is not used when a shape is set");
+  shapeSpyOff();
+});
+
+test("volume shape playback: scoped like ve — sampled/struck voices and game/soundfont instruments never apply it (no double fade); a preview ignores it", () => {
+  installSong();
+  shapeSpy();
+  const W = Math.ceil(val(`audio.currentTime`)) + 10;
+  run(`song.tracks[0].voice = "piano"; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, env: [{t: 480, r: 0.25}]}, ${W}, 1)`);
+  const amp = val(`(100 / 127) * VOICE_AMP.piano`);
+  assert.ok(!val(`_shapeCalls`).some(c => Math.abs(c[2] - (W + 0.5)) < 1e-3), "piano: no ramp at the shape point");
+  run(`song.tracks[0].voice = "square"; scheduleNote(0, {t: 0, d: 960, p: 60, v: 100, env: [{t: 480, r: 0.25}], _preview: true}, ${W}, 1)`);
+  assert.deepEqual(val(`_shapeCalls`).map(c => c[0]), ["set", "lin", "set", "lin"], "a tap preview plays flat");
+  shapeSpyOff();
+  // game/soundfont instruments render their own recorded envelope: the shape (like ve) is never applied there
+  const src = readFileSync(new URL("../src/audio/voices.js", import.meta.url), "utf8");
+  const game = src.slice(src.indexOf("export function scheduleGameNote"), src.indexOf("\nexport function", src.indexOf("export function scheduleGameNote") + 10));
+  assert.ok(game.length > 100 && !/noteShapeRamp|\.env\b|\.ve\b/.test(game), "scheduleGameNote never reads env or ve");
+  assert.equal((src.match(/noteShapeRamp\(/g) || []).length, 2, "one definition, one call (the oscillator path)");
+  void amp;
+});
+
+test("volume shape: Shape presets on the selection are ONE undo, scaled to each note, relative to velocity; Flat clears; redo; the shape copies, moves and survives draft → reload → publish bytes", async () => {
+  installAskEditSong();
+  run(`multiSel = [{ti: 0, ni: 2}, {ti: 0, ni: 3}]; multiSelKey = new Set(["0:2", "0:3"]); editUndo = []; editRedo = [];`);
+  assert.equal(val(`setSelectionShape("swell")`), 2);
+  assert.equal(val(`editUndo.length`), 1, "one undo step for both notes");
+  const sw = val(`[2, 3].map(i => { const n = song.tracks[0].notes[i]; return {d: n.d, env: n.env.map(q => [q.t, +(q.r * n.v).toFixed(2)])}; })`);
+  assert.deepEqual(sw, [{d: 480, env: [[479, 87.5]]}, {d: 960, env: [[959, 127]]}], "Swell: 1.75× the velocity at the note end (capped so the level fits in 127), each note its own length");
+  // relative: a velocity edit rescales the whole shape (and the stored level is clamped to 127 in the file)
+  run(`setSelectionVelocity(100);`);
+  assert.equal(val(`Math.round(song.tracks[0].notes[2].env[0].r * song.tracks[0].notes[2].v)`), 175);
+  assert.equal(val(`Math.round(shapeLevel(song.tracks[0].notes[2], song.tracks[0].notes[2].env[0]))`), 127);
+  run(`editUndoPop();`); // the velocity edit
+  run(`setSelectionShape("swell_fade");`);
+  assert.equal(val(`song.tracks[0].notes[3].env.length`), 2, "Swell–fade: up to the middle, down to half");
+  run(`setSelectionShape("fade");`);
+  assert.equal(val(`+song.tracks[0].notes[3].env[0].r.toFixed(2)`), 0.25);
+  run(`setSelectionShape("flat");`);
+  assert.equal(val(`song.tracks[0].notes[3].env === undefined && song.tracks[0].notes[2].env === undefined`), true, "Flat clears");
+  run(`editUndoPop();`);
+  assert.equal(val(`+song.tracks[0].notes[3].env[0].r.toFixed(2)`), 0.25, "undo brings the Fade back");
+  run(`editUndoPop(); editUndoPop(); editUndoPop();`);
+  assert.equal(val(`song.tracks[0].notes[2].env === undefined && song.tracks[0].notes[3].env === undefined`), true, "back to no shape at all");
+  run(`editRedoPop();`);
+  assert.equal(val(`song.tracks[0].notes[2].env.length`), 1, "redo re-applies the Swell");
+  // copy/paste and move-to-track carry it
+  run(`selNote = null; multiSel = [{ti: 0, ni: 2}]; multiSelKey = new Set(["0:2"]); copySelection(); pasteClipboard(30 * 1920);`);
+  assert.equal(val(`song.tracks[0].notes[song.tracks[0].notes.length - 1].env.length`), 1, "a pasted copy keeps the shape");
+  run(`multiSel = [{ti: 0, ni: 2}]; multiSelKey = new Set(["0:2"]); moveSelectionToTrack(1);`);
+  assert.equal(val(`song.tracks[1].notes[song.tracks[1].notes.length - 1].env.length`), 1, "moved to another track, the shape rides along");
+  // draft (the device store) → reload → publish's own re-encode: the shape survives every hop
+  run(`draftWrite(songKey, draftDoc(false)); __shRd = null; draftRead(songKey).then(d => { __shRd = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  const pub = val(`(() => { const d = __shRd; const doc = {ppq: d.ppq, timesig: d.timesig, tempos: d.tempos, tracks: d.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(n => ({...n}))}))};
+    const s = parseMidi(writeMidi(doc).buffer); return s.tracks.map(t => t.notes.filter(n => n.env).map(n => [n.p, n.env.length, Math.round(n.env[0].r * n.v)])); })()`);
+  assert.deepEqual(pub, [[[65, 1, 127], [64, 1, 88]], [[64, 1, 88]]], "shaped notes in the published bytes after a draft round-trip");
+  // an older draft (no env anywhere) still reads: flat
+  run(`localStorage.setItem(draftStoreKey("albums/compositions/nightroll/old-shape.mid"), JSON.stringify({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "a", notes: [{t: 0, d: 480, p: 60, v: 90, ve: 40}]}]}));
+       __shOld = null; draftRead("albums/compositions/nightroll/old-shape.mid").then(d => { __shOld = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(val(`__shOld.tracks[0].notes[0].env === undefined && __shOld.tracks[0].notes[0].ve === 40`), true);
+  // locked songs refuse
+  run(`songKey = "albums/nes/final-fantasy-i/songs/shop.mid"; localStorage.removeItem(draftStoreKey(songKey));`);
+  assert.equal(val(`editableSong() ? -1 : setSelectionShape("swell")`), 0, "a capture's notes are facts: no shape edit");
+});
+
+test("volume shape Ask: edit_notes op shape — presets and exact points, one undo, the same safety gate", () => {
+  installAskEditSong();
+  const r = val(`askEditNotes({op: "shape", from_bar: 6, to_bar: 7, tracks: "pulse1", shape: "swell-fade"})`);
+  assert.match(r.note, /^shaped \(Swell–fade\) 2 notes on pulse1 in bars 6–7 \(one undo/);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks[0].notes.some(n => n.env)`), false);
+  const r2 = val(`askEditNotes({op: "shape", from_bar: 6, to_bar: 6, tracks: "pulse1", points: [[0.78, 127], [1.67, 68]]})`);
+  assert.match(r2.note, /^shaped \(points \+0\.78b→127 \+1\.67b→68\) 1 note/);
+  assert.deepEqual(val(`(() => { const n = song.tracks[0].notes.find(n => n.p === 65); return n.env.map(q => [q.t, Math.round(q.r * n.v)]); })()`), [[374, 127], [802, 68]]);
+  const r3 = val(`askEditNotes({op: "shape", from_bar: 6, to_bar: 6, tracks: "pulse1", shape: "flat"})`);
+  assert.match(r3.note, /^cleared the volume shape \(Flat\) on 1 note/);
+  assert.throws(() => run(`askEditNotes({op: "shape", from_bar: 6, to_bar: 6, tracks: "pulse1", shape: "wobble"})`), /say shape: swell, fade, swell_fade or flat/);
+  assert.throws(() => run(`askEditNotes({op: "shape", from_bar: 6, to_bar: 6, tracks: "pulse1", points: [[0, 50]]})`), /each point is/);
+  run(`songKey = "albums/nes/final-fantasy-i/songs/shop.mid"; localStorage.removeItem(draftStoreKey(songKey));`);
+  assert.throws(() => run(`askEditNotes({op: "shape", from_bar: 6, to_bar: 6, tracks: "pulse1", shape: "swell"})`));
+});
+
+test("volume shape lane: with one shaped note selected its points are handles; a drag moves a point (time + level) as ONE undo", () => {
+  installAskEditSong();
+  run(`song.tracks[0].notes[3].env = [{t: 240, r: 0.5}]; selNote = {ti: 0, ni: 3}; multiSel = []; multiSelKey = new Set(); editUndo = [];`);
+  const hs = val(`(() => { const h = velShapeHandles(velGeom()); return h && h.handles.length; })()`);
+  assert.equal(hs, 1, "one handle for the one point");
+  run(`shapeMovePoint(song.tracks[0].notes[3], 0, 5000, 127);`);
+  assert.deepEqual(val(`song.tracks[0].notes[3].env.map(q => [q.t, Math.round(q.r * song.tracks[0].notes[3].v)])`), [[959, 127]], "clamped inside the note, level absolute 0–127 stored relative");
+  run(`selEditApply([{ti: 0, ni: 3, n: song.tracks[0].notes[3]}], () => {}, [{ti: 0, ni: 3, t: 9600, d: 960, p: 65, v: 80, env: [{t: 240, r: 0.5}], ve: null}]); editUndoPop();`);
+  assert.deepEqual(val(`song.tracks[0].notes[3].env`), [{t: 240, r: 0.5}], "undo puts the point back");
 });

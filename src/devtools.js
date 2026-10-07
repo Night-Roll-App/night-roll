@@ -60,6 +60,7 @@ import * as audioMetronome from "./audio/metronome.js";
 import * as audioBounce from "./audio/bounce.js";
 import * as modelSong from "./model/song.js";
 import * as modelSelection from "./model/selection.js";
+import * as modelNoteshape from "./model/noteshape.js";
 import * as modelProvenance from "./model/provenance.js";
 import * as modelAlbumOrder from "./model/album-order.js";
 import * as modelVersions from "./model/versions.js";
@@ -122,7 +123,7 @@ export function exposeGlobals() {
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce,
-                     modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
+                     modelSong, modelSelection, modelNoteshape, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
                      importHub, importCapture, syncPublish,
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,

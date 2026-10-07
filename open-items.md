@@ -44,7 +44,12 @@ So #494's choice (several notes per song) is not settled by him: he wants an adv
 Josh, in his words: "Also please tell him that this would have to be accounted for in the annotation sheet or the analysis sheet. Yeah, we have this analysis sheet now that kind of tracks things for the analysis."
 Ask (for #494): whichever many-vs-one answer wins, song notes must be accounted for in the annotation sheet and in the Analysis sheet, so he can see and reread them there. (The terminal's plan already lists them at the top of Notes and the Analysis sheet; this confirms that is wanted.)
 
-## 2026-10-06 Ask (shop) — in-note volume dynamics: advisor on how other DAWs do it
+## 2026-10-06 in-note volume shape v1 — BUILT on a worktree branch, awaiting merge (docs/plans/2026-10-06-in-note-dynamics.md option (b); NIGHT-ROLL.md "Volume shape inside a note")
+Per-note `n.env` stored as poly aftertouch inside the note (relative to velocity; note-on-tick aftertouch stays `ve`; existing files byte-identical). Synth playback ramps (oscillator path only, like `ve`), NES capture writes the shape from $4004 (rises only; decays stay `ve`), ⋯ → Shape (Swell / Fade / Swell–fade / Flat), lane point drag, Ask `edit_notes op:"shape"`, at/span print points.
+Josh to hear: FF1 Shop pulse2 bars 25–28 on a synth voice needs a RE-CAPTURE of shop.mid (not done — albums/ untouched; scratch capture proved 8→15→8 in all four bars). Re-capture is his call.
+QUEUED follow-ups: tap the lane line to add a point / long-press to delete; PS1 `n.gain` → .mid (makeMidi writes it the same way); GB/SNES volume series; saved custom presets; split/divide carrying the shape across both pieces; the CC11 track lane (option (a)) for phrase dynamics.
+
+## 2026-10-06 Ask (shop) — in-note volume dynamics: advisor on how other DAWs do it — ANSWERED (plan above; v1 built, see the entry above)
 
 Josh, in his words: "presumably this is something that other DAWs have. And we have an example of a song that needs it to sound correct" (shop, bars 25-28: pulse2 holds one note per bar while the chip volume swells 8 -> 15 -> 8 over beats 1-2, then holds at 8; see #510 facts). "If I ever wanted to write a song like this I would need that capability as well... It is a valuable thing to have but we will want to have an advisor to go figure out how other DAWs do this."
 Constraint he stated: splitting the held note into pieces with different velocities does not work, because each piece gets a new attack. Today a note has one velocity for its whole length.

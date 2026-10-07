@@ -224,7 +224,7 @@ key, meter or chord for him unless asked.
 | Legato / fill gaps, humanize `[gk]` | MISSING | Maybe, S (legato); No (humanize — raw takes already keep feel) |
 | Chord insert, progression library | HAS: ♫ chords, 24 emotion-tagged progressions in Roman numerals `[HELP "Insert chord"]` | — (ahead) |
 | Note repeat / duplicate | HAS: ⌘D repeat, copy/paste with bands | — |
-| MIDI CC / pitch bend / aftertouch lanes `[doc]` | PARTIAL: duty (CC70) and envelope decay are stored/written, not editable | Maybe, M — see Automation |
+| MIDI CC / pitch bend / aftertouch lanes `[doc]` | PARTIAL: duty (CC70) and envelope decay are stored/written, not editable; a per-note volume shape (poly aftertouch inside the note) is editable since 2026-10-06 (Shape presets + velocity-lane points) | Maybe, M — see Automation |
 | Score editing on the same data | HAS: engraved score, pencil/erase on staves `[HELP "Score entry"]` | — (ahead; Logic iPad has no score editor) |
 
 ### On-screen instruments

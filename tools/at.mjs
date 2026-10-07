@@ -19,6 +19,7 @@ for (const tr of doc.tracks) {
   const hits = tr.notes.filter(n => n.t < t1 && n.t + n.d > t0)
     .map(n => ({pitch: pitchName(n.p), midi: n.p, onset: fmtBQ(doc, n.t),
                 durQ: +(n.d / doc.ppq).toFixed(3), vel: n.v,
+                ...(n.shape ? {shape: n.shape} : {}), // volume shape points [beats after onset, level]
                 startsHere: n.t >= t0 && n.t < t1, sustainsFromEarlier: n.t < t0}));
   if (hits.length) out.tracks.push({track: tr.name, notes: hits});
 }
@@ -27,7 +28,7 @@ outJson(json, out, o => {
   for (const tr of o.tracks) {
     s += `  ${tr.track}:\n`;
     for (const n of tr.notes)
-      s += `    ${n.pitch}  onset ${n.onset}  ${n.durQ}q  v${n.vel}  ${n.sustainsFromEarlier ? "SUSTAINS from earlier" : "starts here"}\n`;
+      s += `    ${n.pitch}  onset ${n.onset}  ${n.durQ}q  v${n.vel}${n.shape ? "  shape " + n.shape.map(([b, l]) => "+" + b + "b→" + l).join(" ") : ""}  ${n.sustainsFromEarlier ? "SUSTAINS from earlier" : "starts here"}\n`;
   }
   if (!o.tracks.length) s += "  (silence)\n";
   return s;

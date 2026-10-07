@@ -435,6 +435,7 @@ export function localMidiOpen(parsed, name) {
       if (nt.ch !== undefined) o.ch = nt.ch; // drums live on ch 9 — must survive the round-trip
       if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre survives too
       if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
+      if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
       return o;
     })}))});
   openDraft(key);
@@ -689,6 +690,7 @@ export function initHub1() {
           if (nt.ch !== undefined) o.ch = nt.ch;
           if (nt.duty !== undefined) o.duty = nt.duty;
           if (nt.ve !== undefined) o.ve = nt.ve;
+          if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
           return o;
         })}))});
     }

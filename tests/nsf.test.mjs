@@ -556,3 +556,79 @@ test("terminal import (tools/import-set.mjs) and the app's own capture (captureJ
   for (const tr of parsedA.tracks) assert.ok(tr.notes.every(n => n.duty !== undefined),
     "published .mid keeps per-note duty too — writeMidi now emits CC70 (index.html's writeMidi)");
 });
+
+// ---- volume shape inside a held note (docs/plans/2026-10-06-in-note-dynamics.md):
+// the whole $4004 series per note, thinned to corners, written as poly
+// aftertouch INSIDE the note — only when it rises after the attack (a fall
+// alone stays the one-number ve, same bytes as before)
+function swellLog() { // FF1 Shop's pulse2 shape: vol 8, +1 every 2 frames to 15, hold, -1 every 2 frames back to 8, held to frame 54
+  const log = [{frame: 0, addr: 0x4015, value: 0x02}];
+  log.push({frame: 1, addr: 0x4004, value: 0x30 | 8}, {frame: 1, addr: 0x4006, value: 0xFD}, {frame: 1, addr: 0x4007, value: 0});
+  let f = 1;
+  for (let v = 9; v <= 15; v++) log.push({frame: f += 2, addr: 0x4004, value: 0x30 | v});
+  f += 2;
+  for (let v = 14; v >= 8; v--) log.push({frame: f += 2, addr: 0x4004, value: 0x30 | v});
+  log.push({frame: 55, addr: 0x4004, value: 0x30}); // silence ends it
+  return log;
+}
+test("volume shape capture: a swell inside one held note becomes a 3-corner shape (no per-game table — read from the register writes)", async () => {
+  const events = reconstruct(swellLog(), 60, 1 / 60);
+  assert.equal(events.length, 1, "one note, not split at the volume changes");
+  assert.equal(events[0].vol, 8);
+  assert.deepEqual(events[0].volSeries.slice(0, 3), [[0, 8], [2, 9], [4, 10]], "the series is relative to the note's start");
+  // 200 bpm 3/4 at 60 fps: 18 frames a beat, 26.67 ticks a frame
+  const bytes = makeMidi(events, {bpm: 200, tsNum: 3, tsDen: 4, frameSec: 1 / 60, snap: true});
+  const app = await createApp();
+  app.context._swellBytes = [...bytes];
+  const n = JSON.parse(app.run(`JSON.stringify((() => { const n = parseMidi(new Uint8Array(_swellBytes).buffer).tracks[0].notes[0]; return {v: n.v, ve: n.ve, env: n.env.map(q => [+(q.t / 480).toFixed(2), Math.round(q.r * n.v)])}; })())`));
+  assert.equal(n.v, 68, "velocity = the attack's 8");
+  assert.equal(n.ve, undefined, "nothing fell below the attack: no ve");
+  assert.deepEqual(n.env, [[0.78, 127], [0.94, 127], [1.67, 68]], "8 → 15 by +0.78 beat, held to +0.94, back to 8 by +1.67 beats, then flat");
+});
+async function shapeNotesOf(bytes) { // [{v, ve, env}] per note, through the app's own parser
+  const app = await createApp();
+  app.context._capBytes = [...bytes];
+  return JSON.parse(app.run(`JSON.stringify(parseMidi(new Uint8Array(_capBytes).buffer).tracks.flatMap(t => t.notes.map(n => ({v: n.v, ve: n.ve === undefined ? null : n.ve, env: n.env ? n.env.length : 0}))))`));
+}
+test("volume shape capture: a decay-only note keeps its one-number ve and gets no shape (decaying captures write the same bytes as before)", async () => {
+  let frame = 0;
+  const log = [{frame: frame++, addr: 0x4015, value: 0x01}];
+  log.push({frame, addr: 0x4000, value: 0x5F}, {frame, addr: 0x4002, value: 0xFD}, {frame, addr: 0x4003, value: 0});
+  for (const v of [13, 11, 9, 7]) log.push({frame: frame += 3, addr: 0x4000, value: 0x50 | v});
+  log.push({frame: frame += 3, addr: 0x4000, value: 0x50});
+  const events = reconstruct(log, frame + 2, 1 / 60);
+  assert.deepEqual(await shapeNotesOf(makeMidi(events, {bpm: 120, frameSec: 1 / 60, snap: true})),
+    [{v: 127, ve: Math.max(8, Math.round(7 / 15 * 127)), env: 0}], "the decay target only — no shape");
+});
+test("volume shape capture: a write in the frame a note ends is the next note's setup, never this note's shape", async () => {
+  const log = [{frame: 0, addr: 0x4015, value: 0x02}];
+  log.push({frame: 1, addr: 0x4004, value: 0x38}, {frame: 1, addr: 0x4006, value: 0xFD}, {frame: 1, addr: 0x4007, value: 0});
+  log.push({frame: 20, addr: 0x4004, value: 0x3F}, {frame: 20, addr: 0x4006, value: 0x7E}, {frame: 20, addr: 0x4007, value: 0}); // next note: louder, same frame
+  log.push({frame: 40, addr: 0x4004, value: 0x30});
+  const events = reconstruct(log, 45, 1 / 60);
+  assert.equal(events.length, 2);
+  assert.deepEqual((await shapeNotesOf(makeMidi(events, {bpm: 120, frameSec: 1 / 60, snap: true}))).map(n => [n.ve, n.env]),
+    [[null, 0], [null, 0]], "neither note has a shape or a decay");
+});
+const FF1_NSF_SHAPE = process.env.FF1_NSF || new URL("../albums/nes/final-fantasy-i/reference/ff1.nsf", import.meta.url);
+test("volume shape capture (real rip): FF1 Shop (NSF track 15) — pulse2 bars 25–28 each carry the 8→15→8 shape", { skip: !existsSync(FF1_NSF_SHAPE) && "ff1.nsf not present (vault-only; set FF1_NSF to run)" }, async () => {
+  const nsf = parseNSF(readFileSync(FF1_NSF_SHAPE));
+  const {apuLog, frames, frameSec} = runNSF(nsf, 15, 55);
+  let events = reconstruct(apuLog, frames, frameSec);
+  const t0 = Math.min(...events.map(e => e.startFrame));
+  events = events.map(e => ({...e, startFrame: e.startFrame - t0, endFrame: e.endFrame - t0}));
+  const loop = detectLoop(events, frames - t0, null);
+  events = backportTiming(events, loop.period).filter(e => e.startFrame < loop.onsets - 3).map(e => ({...e, endFrame: Math.min(e.endFrame, loop.keep)}));
+  const bpm = +(60 * 3 / (loop.period * frameSec / 28)).toFixed(2); // tools/nsf/dump-all.mjs's own calibration: 28 bars of 3/4
+  const bytes = makeMidi(events, {bpm, tsNum: 3, tsDen: 4, frameSec, snap: true}); // in memory only — nothing under albums/ is written
+  const app = await createApp();
+  app.context._shopBytes = [...bytes];
+  const bars = JSON.parse(app.run(`JSON.stringify((() => { const r = parseMidi(new Uint8Array(_shopBytes).buffer); const bt = r.ppq * 3;
+    return r.tracks.find(t => t.name === "pulse2").notes.filter(n => n.t >= 24 * bt && n.t < 28 * bt)
+      .map(n => ({bar: Math.floor(n.t / bt) + 1, v: n.v, env: (n.env || []).map(q => [+(q.t / r.ppq).toFixed(2), Math.round(q.r * n.v)])})); })())`));
+  assert.deepEqual(bars.map(b => b.bar), [25, 26, 27, 28]);
+  for (const b of bars) {
+    assert.equal(b.v, 68, "bar " + b.bar + ": attack at chip volume 8");
+    assert.deepEqual(b.env, [[0.78, 127], [0.94, 127], [1.67, 68]], "bar " + b.bar + ": up to 15 by beat 1.78, back to 8 by 2.67");
+  }
+});

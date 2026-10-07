@@ -526,6 +526,7 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
           if (nt.ch !== undefined) o.ch = nt.ch; // noise rides ch 9 — dropping it made drums play as pitched tones
           if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre (per-note duty) survives
           if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
+          if (nt.env) o.env = nt.env.map(q => ({...q})); // volume shape survives
           return o;
         })}))});
     { // capture-time annotations: the hardware loop point (same rule as the FF1

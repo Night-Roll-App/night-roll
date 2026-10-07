@@ -84,6 +84,10 @@ import { saveVersion } from "../session/files.js";
 import { pasteClipboard } from "../model/selection.js";
 import { duplicateSelection } from "../model/selection.js";
 import { resizeSelection } from "../model/selection.js";
+import { shapeSnap } from "../model/noteshape.js";
+import { shapeRestore } from "../model/noteshape.js";
+import { setSelectionShape } from "../model/noteshape.js";
+import { SHAPE_PRESETS } from "../model/noteshape.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
@@ -450,7 +454,7 @@ export function updateEditButtons() { // disabled = "this can't do anything righ
   set("redobtn", st[1]); set("emRedo", st[1]); set("nmRedo", st[1]);
   set("splitbtn", st[5]); set("emSplit", st[5]); set("nmSplit", st[5]);
   for (const id of ["joinbtn", "emJoin", "movebtn", "emMove",
-                    "divbtn", "emDivide", "trbtn", "emTranspose",
+                    "divbtn", "emDivide", "trbtn", "emTranspose", "shapebtn", "emShape",
                     "quantbtn", "emQuantize", "nmQuant", "nmDup"]) set(id, st[2]);
   for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete", "nmCopy", "nmCut", "nmDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
   set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]); set("nmPaste", st[3]);
@@ -569,7 +573,9 @@ export function invertEdit(u) { // the entry that would undo an applyU(u), captu
     selTrack: S.selTrack, selNote: S.selNote ? {ti: S.selNote.ti, ni: S.selNote.ni} : null, selClip: S.selClip ? {ti: S.selClip.ti, ci: S.selClip.ci} : null};
   if (u.kind === "mod") return {kind: "mod", items: u.items.map(({ti, ni}) => {
     const n = S.song.tracks[ti].notes[ni];
-    return {ti, ni, t: n.t, d: n.d, p: n.p, v: n.v};
+    const o = {ti, ni, t: n.t, d: n.d, p: n.p, v: n.v};
+    if (u.items.some(x => "env" in x)) Object.assign(o, shapeSnap(n)); // a shape edit's redo restores the shape too
+    return o;
   })};
   if (u.kind === "addBatch") return {kind: "eraseBatch", items: u.items};
   if (u.kind === "eraseBatch") return {kind: "addBatch", items: u.items};
@@ -604,6 +610,7 @@ export function applyEditEntry(u) {
         nn.t = it.t; nn.d = it.d; nn.p = it.p;
         if (it.v !== undefined) nn.v = it.v;
         const rn = S.song.rawNotes && nn.ri !== undefined && S.song.rawNotes[it.ti][nn.ri];
+        if ("env" in it) { shapeRestore(nn, it); if (rn) shapeRestore(rn, it); } // a shape edit's snapshot (src/model/noteshape.js)
         if (rn) { rn.t = it.t + S.chopS; rn.d = it.d; rn.p = it.p; if (it.v !== undefined) rn.v = it.v; }
       }
     } else if (v.kind === "anno") { // restore the whole annotation layer
@@ -1072,6 +1079,26 @@ export function initNoteEditor6() {
       }
     }
     document.getElementById("divsheet").classList.add("on");
+  });
+  document.getElementById("shapebtn").addEventListener("click", () => {
+    if (!selEditItems().length) { setInfo("select notes first — then Shape sets the volume inside each one"); return; }
+    if (!editableSong()) { setInfo("shapes work on your own songs — Edit a copy (File ▾) to shape a capture"); return; }
+    const row = document.getElementById("shapechips");
+    if (!row.children.length) {
+      for (const [key, label] of Object.entries(SHAPE_PRESETS)) {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
+        b.addEventListener("click", () => {
+          const k = setSelectionShape(key);
+          document.getElementById("shapesheet").classList.remove("on");
+          setInfo(!k ? "those notes are too short to shape"
+            : (key === "flat" ? "cleared the shape on " : label + " on ") + k + " note" + (k === 1 ? "" : "s") + " (one undo undoes)");
+        });
+        row.appendChild(b);
+      }
+    }
+    document.getElementById("shapesheet").classList.add("on");
   });
   document.getElementById("quantbtn").addEventListener("click", () => {
     if (!selEditItems().length) { setInfo("select notes first — then Q quantizes them to the grid"); return; }

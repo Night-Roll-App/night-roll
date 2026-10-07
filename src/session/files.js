@@ -198,6 +198,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
           if (n.ch !== undefined) o.ch = n.ch;
           if (n.duty !== undefined) o.duty = n.duty;
           if (n.ve !== undefined) o.ve = n.ve;
+          if (n.env) o.env = n.env.map(q => ({...q})); // volume shape survives
           return o;
         })}))};
   setSong(parsed, key);
