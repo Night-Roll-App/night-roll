@@ -63,7 +63,8 @@ export async function loadSong(arg, {dedupe = true} = {}) {
         start: n.start, end: n.end, section: !!n.section, chord: !!n.chord,
         keydir: n.keydir, keypartial: n.keypartial, tsdir: n.tsdir, tempodir: n.tempodir,
         trackdir: n.trackdir, loopTo: n.loopTo, lane: n.lane,
-        study: n.study})), // {item, done} on an Analysis-sheet entry (tools/annotations.mjs lists it as type "analysis")
+        study: n.study, // {item, done} on an Analysis-sheet entry (tools/annotations.mjs lists it as type "analysis")
+        songnote: n.songnote})), // {title} on a song note — his titled idea about the whole song, body in `note` (tools/annotations.mjs: type "songnote")
     });
   })()`));
   if (dedupe) { // stacked same-start-same-pitch duplicates collapse to the longest

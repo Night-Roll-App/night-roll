@@ -365,6 +365,43 @@ function studyGuideFold(g) {
   }
   return {btn, body: on ? body : null};
 }
+// SONG NOTES at the top: his titled ideas stacked title-then-body, so they
+// read as one page; a tap opens one in the note window, + Song note adds one
+// (the window's Song chip). Shown even when empty — the + is how he starts.
+function studySongNotesBox(list) {
+  const box = document.createElement("div");
+  box.className = "notegroup studygroup";
+  box.id = "studygroup-songnotes";
+  const head = document.createElement("div");
+  head.className = "ghead";
+  head.textContent = "SONG NOTES";
+  const add = document.createElement("button");
+  add.className = "gadd";
+  add.textContent = "+ Song note";
+  add.style.width = "auto";
+  add.style.padding = "0 8px";
+  add.setAttribute("aria-label", "Add a song note");
+  add.addEventListener("click", () => openEditor(null, "song"));
+  head.appendChild(add);
+  box.appendChild(head);
+  for (const n of list.filter(x => x.songnote)) {
+    const item = document.createElement("div");
+    item.className = "studysongnote";
+    item.setAttribute("role", "button");
+    const t = document.createElement("b");
+    t.textContent = n.songnote.title;
+    item.appendChild(t);
+    if (n.cnote) {
+      const body = document.createElement("div");
+      body.className = "studytext";
+      body.textContent = n.cnote;
+      item.appendChild(body);
+    }
+    item.addEventListener("click", () => openEditor(n));
+    box.appendChild(item);
+  }
+  return box;
+}
 export function renderStudySheet(openItem) {
   if (!S.song) return;
   const rows = document.getElementById("studyrows");
@@ -389,6 +426,7 @@ export function renderStudySheet(openItem) {
   }
   studyStatus(S.studyCheck || "");
   rows.innerHTML = "";
+  rows.appendChild(studySongNotesBox(visibleNotes()));
   const {groups, barNotes} = studyGroups(visibleNotes());
   for (const g of groups) {
     const box = document.createElement("div");

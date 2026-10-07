@@ -36,7 +36,9 @@ import { dropSupersededBy } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
 import { trackShown } from "../render/roll.js";
 import { annoSnapshot } from "../model/edits.js";
+import { pushUndo } from "../model/edits.js";
 import { annoRestore } from "../model/rollnotes.js";
+import { putSongNote } from "../model/rollnotes.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { saveLocalNotes } from "../model/edits.js";
 import { pruneTombstones } from "../model/edits.js";
@@ -166,7 +168,7 @@ export function editorType() { return document.getElementById("ntype").value; }
 // the type as a row of chips, not a drop-down (Josh, 2026-10-06, #152/#153);
 // the hidden <select> stays the one source of truth every other path reads
 export const NTYPE_CHIPS = [["note", "Note"], ["section", "Section"], ["chord", "Chord"], ["key", "Key"],
-  ["timesig", "Meter"], ["loop", "Loop"], ["tempo", "Tempo"], ["chop", "Chop"]];
+  ["timesig", "Meter"], ["loop", "Loop"], ["tempo", "Tempo"], ["chop", "Chop"], ["song", "Song"]]; // song = a titled song note, not tied to a bar (model/rollnotes.js putSongNote) — never guessed
 export function renderTypeChips() {
   const row = document.getElementById("ntypechips"), t = editorType();
   if (!row.children.length) for (const [v, label] of NTYPE_CHIPS) {
@@ -224,15 +226,19 @@ export function applyEditorType() {
   document.getElementById("ntemporow").style.display = t === "tempo" ? "" : "none";
   document.getElementById("nlooprow").style.display = t === "loop" ? "" : "none";
   document.getElementById("nchoprow").style.display = t === "chop" ? "" : "none";
-  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" ? "none" : "";
+  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" || t === "song" ? "none" : "";
+  document.getElementById("nfromrow").style.display = t === "song" ? "none" : ""; // a song note has no bar
+  document.getElementById("nsongrow").style.display = t === "song" ? "" : "none";
   document.getElementById("nmic").style.display =
     SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
   document.getElementById("ntext").placeholder =
     t === "note" ? "What's happening at this beat?"
+    : t === "song" ? "The idea, in your words — a rule you found, a couple of example bars…"
                  : "Optional note about this " + (t === "timesig" ? "meter" : t) + " (✱ in the ruler)";
   document.getElementById("nstatus").textContent =
     t === "key" ? "To bar '—' = until further notice; set it to make a temporary key that reverts after." :
     t === "chord" ? "Tap chips or type the symbol. Standard: bare root = major (C), m = minor (Gm), /X = bass note (G7/B)." :
+    t === "song" ? "A song note is about the whole song, not one bar: it lists under SONG NOTES in ☰ All notes and the Analysis sheet." :
     t === "chop" ? "Non-destructive trim: the chopped part disappears entirely and bars renumber. Chopping the start shifts your annotations to match; delete the chop to restore." :
     t === "loop" ? "When playback reaches the 'from' point (or the song end, if 'from' is at/before the target), it jumps back to the target bar/beat." :
     t === "timesig" ? "Until you declare a meter, the grid is a neutral 4/4 ruler. Declaring re-bars the song; existing annotations are converted to keep their musical positions." :
@@ -351,7 +357,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
       q2 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
     }
   }
-  const type = note ? (note.chord ? "chord" : note.section ? "section"
+  const type = note ? (note.songnote ? "song" : note.chord ? "chord" : note.section ? "section"
                        : note.keydir !== undefined || note.keypartial ? "key"
                        : note.tsdir ? "timesig" : note.tempodir !== undefined ? "tempo" : note.chopdir ? "chop"
                        : note.loopTo !== undefined ? "loop" : "note")
@@ -401,10 +407,11 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
     setBeatPair("nq1", "ns1", (dt % barTicks()) / beatTicks() + 1);
   }
   document.getElementById("ntext").value =
-    ["chord", "key", "tempo", "timesig", "loop", "section", "chop"].includes(type)
+    ["chord", "key", "tempo", "timesig", "loop", "section", "chop", "song"].includes(type)
       ? (note && note.cnote || "")
       : note ? note.text : "";
   document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
+  document.getElementById("nsongtitle").value = type === "song" && note && note.songnote ? note.songnote.title : "";
   if (type === "chord") setChordWidget(note ? note.text : "");
   if (type === "key" && note) {
     const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
@@ -425,6 +432,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   // next thing — opening an existing one (any kind) must not raise the iPad
   // keyboard over half the screen (Josh, 2026-10-03)
   if (type === "note" && !note) document.getElementById("ntext").focus();
+  else if (type === "song" && !note) document.getElementById("nsongtitle").focus(); // a new song note starts with its title
   else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
 }
 export function updateEditButtons() { // disabled = "this can't do anything right now"
@@ -704,6 +712,9 @@ export function initNoteEditor3() {
 
 export function initNoteEditor4() {
   document.getElementById("ntype").addEventListener("change", applyEditorType);
+  document.getElementById("nsongtitle").addEventListener("keydown", e => { // a title is one line: Enter moves on to the body
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("ntext").focus(); }
+  });
   document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
   document.getElementById("ntext").addEventListener("input", () => { // a pause after typing, not every keystroke: "A" mid-word must not become a chord
     if (S.ntypePicked || editorType() !== "note") return;
@@ -805,6 +816,17 @@ export function initNoteEditor4() {
     const type = editorType();
     const text = document.getElementById("ntext").value.trim();
     if (type === "note" && !text) { document.getElementById("nstatus").textContent = "Note text is empty."; return; }
+    if (type === "song") { // no bar, no span: the title is its identity (putSongNote refuses a title another song note has)
+      const before = annoSnapshot();
+      try { putSongNote(S.editingNote, {title: document.getElementById("nsongtitle").value, text}); }
+      catch (err) { document.getElementById("nstatus").textContent = err && err.message ? err.message : String(err); return; }
+      pushUndo({kind: "anno", json: before});
+      S.editingNote = null;
+      finalizeNotes();
+      editor.classList.remove("on");
+      draw();
+      return;
+    }
     const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
     const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
     let b2raw = 0, q2raw = 0;

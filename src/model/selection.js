@@ -23,6 +23,7 @@ import { drumStep } from "../hooks.js";
 import { lassoedAnnos } from "../hooks.js";
 import { annoInLasso } from "../hooks.js";
 import { isCopyableAnno } from "./rollnotes.js";
+import { isSongLevelAnno } from "./rollnotes.js";
 import { noteToJSON } from "./rollnotes.js";
 import { visibleNotes } from "./rollnotes.js";
 import { ROLLNOTES_LOCK_MSG } from "./rollnotes.js";
@@ -106,7 +107,7 @@ export function ridealongChordBands(pre, post) { // Phase 1 (open-items plan): a
   if (total > 0 && movedKeys.size >= total) {
     const bt = barTicks(), qt = beatTicks();
     for (const n of S.rollnotes) {
-      const pinned = n.study || n.start === 0 && (n.tsdir || n.trackdir || n.audiodir || n.tempodir !== undefined ||
+      const pinned = isSongLevelAnno(n) || n.start === 0 && (n.tsdir || n.trackdir || n.audiodir || n.tempodir !== undefined ||
         n.keydir !== undefined || n.keypartial || /^lane:/.test(n.text));
       if (!pinned && dT !== 0) {
         setAnchorBQ(n, n.start + dT);
@@ -414,7 +415,7 @@ export function openGapShift(T, delta) {
   }));
   let touched = 0;
   for (const n of S.rollnotes) {
-    if (n.study) continue; // the Analysis sheet's song-level entries sit at 1.1 by convention, not by music — bar edits leave them
+    if (isSongLevelAnno(n)) continue; // sheet answers and song notes sit at 1.1 by convention, not by music — bar edits leave them
     if (n.start >= T) { // at/after the point: the whole annotation slides
       setAnchorBQ(n, n.start + delta);
       if (n.end !== null && n.end !== undefined) setEndBQ(n, n.end + delta);
@@ -468,7 +469,7 @@ export function closeGap(T, len) {
   }));
   let touched = 0, movedToT = 0;
   for (const n of S.rollnotes) {
-    if (n.study) continue; // as in openGapShift: sheet entries are not in the music
+    if (isSongLevelAnno(n)) continue; // as in openGapShift: song-level entries are not in the music
     const wasInSpan = n.start >= T && n.start < T + len;
     const newStart = clamp(n.start);
     // a REAL declared range has n.b2 (resolveNote's own test); n.end alone

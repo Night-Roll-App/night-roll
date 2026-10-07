@@ -77,12 +77,13 @@
         },
         "type": {
           "type": "string",
-          "enum": ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis"]
+          "enum": ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]
         },
         "text": { "type": "string", "description": "Plain prose note — only when 'type' is absent." },
-        "note": { "type": "string", "description": "Attached comment on any typed directive or a chord (cnote); on type: analysis, the user's own answer." },
+        "note": { "type": "string", "description": "Attached comment on any typed directive or a chord (cnote); on type: analysis, the user's own answer; on type: songnote, the note's body." },
         "item": { "type": "string", "description": "type: analysis — the Analysis sheet prompt this entry answers, e.g. 'summary.what' (docs/plans/2026-10-05-analysis-sheet.md §2). One entry per item." },
         "done": { "type": "boolean", "description": "type: analysis — the user's own tick. Written only when true." },
+        "title": { "type": "string", "description": "type: songnote — the song note's short one-line title, e.g. 'Sway'; unique per song (compared without case). The body is 'note'." },
         "label": { "type": "string", "description": "type: section — the band's label." },
         "chord": { "type": "string", "description": "type: chord — the symbol (lasso chord-namer vocabulary)." },
         "key": { "type": "string", "description": "type: key — e.g. 'Bb', 'Gm', 'D dorian', or 'Bb?' (tonic-only, partial)." },

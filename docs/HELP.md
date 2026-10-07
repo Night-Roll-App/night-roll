@@ -245,8 +245,11 @@ The one report the sheet gives, and only when asked: tap **Check coverage** and 
 **Analysis guide**
 Not sure what a full analysis even covers, or how to write one down? **Analysis guide** at the top of the Analysis sheet (or **Help → Analysis**) is reference text — the sixteen things an analysis looks at, how to find each one in Night Roll, and where it lands as an annotation. Generic, the same on every song; it never names a key, a chord, or a reading of yours.
 
+**Song notes**
+An idea about the whole song, not one bar — a rule you found ("Sway: long-short-long is the strongest"), with a couple of example bars written in its words. A song can have as many as you like, each with a short **title**. Tap **☰ Notes ▴ → All notes** (or open the Analysis sheet) and tap **+ Song note**: type the title, then type the idea or tap **Speak** and dictate it, then **Save**. Or tap **Song** in any note window — the bar rows go away and a title box appears. They list first, under **SONG NOTES**: in All notes as "Title — first line", in the Analysis sheet stacked title then body, so they read as one page. Tap one to edit or delete it. Titles are unique in a song — a second "Sway" is refused, so pick another title or edit the first. Song notes are never drawn on the ruler and never move when you insert or delete bars; they publish and undo like any annotation. Ask can write them too, only when you ask: "add a song note called Sway: …", "edit the Sway song note", "delete the Sway song note".
+
 **Choosing the type**
-The note window shows its types as a row of buttons — **Note · Section · Chord · Key · Meter · Loop · Tempo · Chop** — tap one. A fresh **+ Note** also reads what you type: pause after **Gm7** and it becomes a Chord, **3/4** a Meter, **120 bpm** a Tempo, **loop 5.1** a Loop; anything else stays a Note. Tap **Note** to undo a guess — your words come back. Once you tap a type, it stops guessing.
+The note window shows its types as a row of buttons — **Note · Section · Chord · Key · Meter · Loop · Tempo · Chop · Song** — tap one. A fresh **+ Note** also reads what you type: pause after **Gm7** and it becomes a Chord, **3/4** a Meter, **120 bpm** a Tempo, **loop 5.1** a Loop; anything else stays a Note. Tap **Note** to undo a guess — your words come back. Once you tap a type, it stops guessing.
 
 **Attached notes on ANY annotation**
 Every typed annotation — key, meter, tempo, section, chord, loop — can carry a text note: in its editor, whatever you write in the note box below the value rides along (sections have a dedicated label field, so the note box is purely the note — and key, meter, tempo, loop, and chop all show the note box too). The ✱ marker in bands and ☰ Notes says one is there. This is where the DOUBT lives — "whole-tone material, no conventional key" can sit on a key: B♭? and make the open question findable later.
@@ -493,6 +496,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: new, save_version, versions, save_as, rename, or share_link**
 **“Save a version called before drums.”** Say the op: new (a title, and a folder if you want one besides the default), save_version (a label, else "Version N"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link. (act: song_file op title? folder? label?)
+
+**Ask: add|edit|delete a titled song note**
+**“Add a song note called Sway: long-short-long is the strongest, see bars 5 and 12.”** Say add, edit or delete, the note's title, and its words; "rename Sway to Lilt" changes the title. (act: song_note op title new_title? text?)
 
 **Ask: stop playback**
 **“Stop.”** Just that. (act: stop)

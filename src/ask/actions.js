@@ -18,6 +18,7 @@ import { askEditNotes } from "./tools.js";
 import { askAddAnnotation } from "./tools.js";
 import { askEditAnnotation } from "./tools.js";
 import { askDeleteAnnotation } from "./tools.js";
+import { askSongNote } from "./tools.js";
 import { askPublishSong } from "./tools.js";
 import { askListSongs } from "./tools.js";
 import { askReadSong } from "./tools.js";
@@ -165,6 +166,10 @@ export const ASK_ACTIONS = [
    example: "Delete the note at bar 16.", say: "Say which one — bar and beat, plus its text if two share the spot.",
    spec: "delete_annotation {id | bar, beat, match_text?}: removes ONE existing annotation — by id from this turn's context block, or by its current bar and beat (+ match_text when more than one shares the spot); an ambiguous target is an error, never a guess. Only when the user explicitly asks to delete, remove or take back one. A meter or chop the user dictated goes the same way; track/audio/lane directives are the editor's.",
    run(a) { const r = askDeleteAnnotation(a); return "deleted " + r.at + " " + r.text; }},
+  {name: "song_note", args: "op title new_title? text?", gloss: "add|edit|delete a titled song note",
+   example: "Add a song note called Sway: long-short-long is the strongest, see bars 5 and 12.", say: "Say add, edit or delete, the note's title, and its words; \"rename Sway to Lilt\" changes the title.",
+   spec: "song_note {op, title, new_title?, text?}: the user's song notes — titled ideas about the whole song, not tied to a bar (the context lists each as \"songnote: Title — body\"). add: a new one, title short and unique in this song (a title already used is an error), text = the body in the user's words. edit: finds it by title (any case) and replaces the body with text and/or the title with new_title; what isn't given is kept. delete: removes it. One undo step. Only when the user explicitly asks, never a note of your own; refuses on a song viewed from a link or locked by a newer Night Roll.",
+   run(a) { return askSongNote(a).note; }},
   {name: "publish_song", args: "", gloss: "publish the open song (the footer's Publish)",
    example: "Publish.", say: "Just that; it runs the footer's Publish and reports what happened.",
    spec: "publish_song {}: publishes the open song — the same Publish the footer button runs (song + annotations for the user's own song, annotations only for a locked capture). Only when the user explicitly says to publish. Refuses, saying why, when the device isn't connected (no GitHub token, no folder) or nothing here can be published.",

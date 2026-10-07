@@ -139,6 +139,7 @@ export const notelistSheet = document.getElementById("notelistsheet");
 // one group per annotation type, so working a single layer (all the chords,
 // all the keys) never means hunting through a mixed chronological pile
 export const NOTE_GROUPS = [
+  {title: "SONG NOTES", type: "song", match: n => !!n.songnote}, // his titled ideas about the whole song — first, and always shown (its + adds one)
   {title: "KEY", type: "key", match: n => n.keydir !== undefined || n.keypartial},
   {title: "TEMPO", type: "tempo", match: n => n.tempodir !== undefined},
   {title: "TRACKS", type: "note", match: n => n.trackdir},
@@ -381,7 +382,7 @@ export function renderNoteList() {
     // hide empty groups; Text notes always shows (its + adds one), and KEY/
     // METER always show too — Check vs file works on every song, even one
     // with no key/meter declared yet (docs/declared-vs-learner-spec.md C7)
-    if (!mine.length && g.type !== "note" && g.title !== "KEY" && g.title !== "METER") continue;
+    if (!mine.length && g.type !== "note" && g.type !== "song" && g.title !== "KEY" && g.title !== "METER") continue;
     const box = document.createElement("div");
     box.className = "notegroup";
     box.dataset.type = g.title; // the jump bar scrolls to this
@@ -392,6 +393,7 @@ export function renderNoteList() {
     add.className = "gadd";
     add.textContent = "+";
     add.setAttribute("aria-label", "Add " + g.title.toLowerCase());
+    if (g.type === "song") { add.textContent = "+ Song note"; add.style.width = "auto"; add.style.padding = "0 8px"; add.setAttribute("aria-label", "Add a song note"); }
     add.addEventListener("click", e => {
       e.stopPropagation();
       notelistSheet.classList.remove("on");
@@ -454,6 +456,7 @@ export function renderNoteList() {
     const grows = document.createElement("div");
     grows.className = "grows";
     for (const n of mine) {
+      if (n.songnote) { grows.appendChild(songNoteListRow(n, () => notelistSheet.classList.remove("on"))); continue; }
       const row = document.createElement("div");
       row.className = "noterow";
       row.setAttribute("role", "button");
@@ -504,6 +507,33 @@ export function renderNoteList() {
     rows.appendChild(box);
   }
   renderNoteJump(counts);
+}
+// a song note's row, shared by ☰ All notes and the Analysis sheet: "Title —
+// first line of the body"; a tap opens it in the note window (no cursor
+// move — it has no bar). `before` runs first (All notes closes its sheet).
+export function songNoteListRow(n, before) {
+  const row = document.createElement("div");
+  row.className = "noterow songnoterow";
+  row.setAttribute("role", "button");
+  const where = document.createElement("span");
+  where.className = "where";
+  where.textContent = "song";
+  const body = document.createElement("span");
+  body.className = "body";
+  const t = document.createElement("b");
+  t.textContent = n.songnote.title;
+  body.appendChild(t);
+  const first = (n.cnote || "").split("\n")[0].trim();
+  if (first) body.appendChild(document.createTextNode(" — " + first));
+  row.append(where, body);
+  if (n.added) {
+    const u = document.createElement("span");
+    u.className = "unsynced";
+    u.textContent = "unsynced";
+    row.append(u);
+  }
+  row.addEventListener("click", () => { if (before) before(); openEditor(n); });
+  return row;
 }
 // ☰ All notes (chrome density pass, 2026-10-01): extracted from #listbtn's
 // own direct handler so #notesall (inside #notesmenu, the drop-up below)

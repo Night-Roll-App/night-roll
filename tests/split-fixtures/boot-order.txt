@@ -171,6 +171,7 @@ velCanvas.addEventListener("pointercancel", e => velPointerUp(e, true));
 new ResizeObserver(() => { if (velWrap.classList.contains("on")) velResize(); }).observe(velWrap);
 applyVelLane();
 document.getElementById("ntype").addEventListener("change", applyEditorType);
+document.getElementById("nsongtitle").addEventListener("keydown", e => {
 document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
 document.getElementById("ntext").addEventListener("input", () => {
 (function buildChordWidget() {

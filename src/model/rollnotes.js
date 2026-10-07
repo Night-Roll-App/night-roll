@@ -73,8 +73,8 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai"]);
-export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis"]);
+  "item", "done", "ai", "title"]);
+export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
 export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
   const n = {b1: +at[0] || 1, q1: at[1] !== undefined ? +at[1] : 1,
@@ -107,6 +107,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     // empty and dropped
     case "analysis": n.text = studyDirText({item: j.item || "", done: j.done === true || j.done === 1 || j.done === "1"}) +
                               (j.note ? att : j.text ? "\n" + j.text : ""); break;
+    case "songnote": n.text = songNoteDirText(songNoteCleanTitle(j.title) || "untitled") + (j.note ? att : j.text ? "\n" + j.text : ""); break;
     default: n.text = j.text || "";
   }
   if (j.ai && typeof j.ai === "object") n.ai = {model: String(j.ai.model || ""), at: String(j.ai.at || "")}; // ✦ Annotate this song: the AI-estimate tag rides the file, the local store and the undo snapshot (src/ask/annotate.js)
@@ -154,7 +155,7 @@ export function deriveNoteTypes(out) {
     // EVERY typed annotation may carry an attached note: first line is the
     // value, remaining lines are the note — where doubt and reasoning live
     // (web-handoff 2026-08-18; generalizes what chords always had)
-    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis):/i.test(n.text);
+    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis|songnote):/i.test(n.text);
     if (typed && n.text.includes("\n")) {
       const body = n.text.split("\n");
       n.text = body[0].trim();
@@ -217,6 +218,8 @@ export function deriveNoteTypes(out) {
     } else delete n.audiodir;
     const st = studyFromText(n.text);
     if (st) { n.study = st; n.text = studyDirText(st); } else delete n.study;
+    const sn = songNoteFromText(n.text);
+    if (sn) { n.songnote = sn; n.text = songNoteDirText(sn.title); } else delete n.songnote;
   });
   return out.filter(n => n.text);
 }
@@ -257,6 +260,46 @@ export function putStudyEntry(item, {done = false, text = ""} = {}) {
   saveLocalNotes();
   return st.done || body ? fresh : null;
 }
+// ---- song notes (Josh, 2026-10-06; docs/plans/2026-10-06-song-notes-many-
+// vs-one.md): his own titled ideas about the whole song ("Sway"), many per
+// song. Stored as type "songnote" {at:[1,1], title, note}; in memory the
+// text line is "songnote: <title>" and the body is the attached note
+// (cnote) — the same shape as `analysis`, with a free title where that has a
+// fixed prompt id. The title is the identity: unique per song, compared
+// without case. Anchored at 1.1 only because a note needs an anchor: never
+// drawn, never a subtitle, never moved by bar edits (isSongLevelAnno).
+export function songNoteCleanTitle(t) { return String(t === undefined || t === null ? "" : t).replace(/\s+/g, " ").trim(); }
+export function songNoteDirText(title) { return "songnote: " + title; }
+export function songNoteFromText(text) { // {title} or null — the ONE parser (deriveNoteTypes, mergeLocalAdditions)
+  const m = (text || "").match(/^songnote:[ \t]*([^\n]*\S)[ \t]*$/i);
+  return m ? {title: songNoteCleanTitle(m[1])} : null;
+}
+export function songNoteKey(title) { return songNoteCleanTitle(title).toLowerCase(); }
+export function songNoteFor(title, list) { // the song note with this title (any case), or null
+  const k = songNoteKey(title);
+  return (list || S.rollnotes).find(n => n.songnote && songNoteKey(n.songnote.title) === k) || null;
+}
+export function isSongLevelAnno(n) { return !!(n.study || n.songnote); } // bar edits, chop shifts and re-barring leave these at 1.1
+// The one write path for song notes (the editor's Song chip, Ask's
+// song_note): `prev` is the note being edited (any type — a text note
+// switched to Song is retired too), null for a new one. A title already
+// used by ANOTHER song note throws, nothing changed. The old note is RETIRED
+// (tombstoned if synced) — dropping it alone brought it back on reload, the
+// analysis entries' finding 1. Undo is the caller's: snapshot first.
+export function putSongNote(prev, {title, text = ""} = {}) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  const t = songNoteCleanTitle(title);
+  if (!t) throw new Error("a song note needs a title");
+  const clash = S.rollnotes.find(n => n !== prev && n.songnote && songNoteKey(n.songnote.title) === songNoteKey(t));
+  if (clash) throw new Error("this song already has a song note called \u201c" + clash.songnote.title + "\u201d — pick another title, or edit that one");
+  if (prev) retireEdited(prev);
+  const fresh = {b1: 1, q1: 1, b2: null, q2: null, text: songNoteDirText(t), songnote: {title: t}, added: true};
+  const body = String(text || "").trim();
+  if (body) fresh.cnote = body;
+  S.rollnotes.push(resolveNote(fresh));
+  saveLocalNotes();
+  return fresh;
+}
 // one PIECE of a recording: anchor = where it starts in the song; offset = where
 // in the file it starts; len = how much of the file it plays (absent = the rest)
 export function audioDirText(d) {
@@ -284,6 +327,10 @@ export function noteToJSONBase(n) {
     const st = n.study || studyFromText(t);
     j.type = "analysis"; j.item = st.item;
     if (st.done) j.done = true;
+    return withNote(j);
+  }
+  if (n.songnote || songNoteFromText(t)) {
+    j.type = "songnote"; j.title = (n.songnote || songNoteFromText(t)).title;
     return withNote(j);
   }
   if (n.section) { j.type = "section"; j.label = t; return withNote(j); }
@@ -341,10 +388,13 @@ export function dedupedNotesWithIndex(list) {
   for (const n of list) if (n.trackdir) lastFor.set(n.trackdir.name.toLowerCase(), n);
   const lastStudy = new Map(); // one Analysis-sheet entry per item, last wins — same safety net as track:
   for (const n of list) if (n.study) lastStudy.set(n.study.item, n);
+  const lastSongNote = new Map(); // one song note per title (any case), last wins — the same net
+  for (const n of list) if (n.songnote) lastSongNote.set(songNoteKey(n.songnote.title), n);
   const seenAudio = new Set(); // audio: pieces — many per track; only an exact twin drops
   return list.map((n, i) => ({n, i})).filter(({n}) => {
     if (n.trackdir) return lastFor.get(n.trackdir.name.toLowerCase()) === n;
     if (n.study) return lastStudy.get(n.study.item) === n;
+    if (n.songnote) return lastSongNote.get(songNoteKey(n.songnote.title)) === n;
     if (n.audiodir) { const k = n.b1 + ":" + n.q1 + ":" + n.text; if (seenAudio.has(k)) return false; seenAudio.add(k); }
     return true;
   });
@@ -395,14 +445,14 @@ export function trackDirText(d) {
 }
 
 export function isDirective(n) { // anything that isn't a plain text note
-  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.opaque ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis):/i.test(n.text));
+  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.songnote || n.opaque ||
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis|songnote):/i.test(n.text));
 }
 // Song-level entries never draw: no ruler flag (render/roll.js), no flag
 // tap (input/gestures.js — a 1.1 entry otherwise shadowed the key marker's
 // tap there), and no subtitle (isDirective above). One predicate so the two
 // loops can't drift apart.
-export function isUndrawnAnno(n) { return !!(n.study || n.opaque); }
+export function isUndrawnAnno(n) { return !!(n.study || n.songnote || n.opaque); }
 // {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
 export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
 
@@ -434,6 +484,7 @@ export function dropSupersededBy(fresh) {
   const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
                                          (n.q2 || null) === (fresh.q2 || null);
   if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
+  if (fresh.songnote) { for (const n of S.rollnotes.filter(x => x.songnote && songNoteKey(x.songnote.title) === songNoteKey(fresh.songnote.title))) retireEdited(n); return; } // one per title; putSongNote refuses a clash before it gets here
   if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
   else if (!isDirective(fresh)) {
     const t = (fresh.text || "").trim();
@@ -560,6 +611,14 @@ export function mergeLocalAdditions(notes, key) {
       notes.push(deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true});
       continue;
     }
+    const sn = songNoteFromText(n.text);
+    if (sn) { // a song note: same reasoning as the sheet entry above, keyed by title — the local copy is the newer one
+      const same = r => r.songnote && songNoteKey(r.songnote.title) === songNoteKey(sn.title);
+      if (notes.some(r => same(r) && r.text === songNoteDirText(sn.title) && (r.cnote || "") === (n.cnote || ""))) continue;
+      for (let i = notes.length - 1; i >= 0; i--) if (same(notes[i])) notes.splice(i, 1);
+      notes.push(deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true});
+      continue;
+    }
     if (notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) continue;
     const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
     if (km && n.keydir === undefined) {
@@ -664,7 +723,7 @@ export function annoRestore(str) {
 export function shiftAnchors(deltaTicks) {
   const bt = barTicks(), unit = beatTicks();
   for (const n of S.rollnotes) {
-    if (n.chopdir || n.study) continue; // song-level sheet entries have no place in the music to follow
+    if (n.chopdir || isSongLevelAnno(n)) continue; // song-level entries (sheet answers, song notes) have no place in the music to follow
     const conv = (b, q) => {
       const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
       return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
@@ -686,7 +745,7 @@ export function convertAnchors(oldTs, newTs) {
     return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
   };
   for (const n of S.rollnotes) {
-    if (n.study) continue;
+    if (isSongLevelAnno(n)) continue;
     [n.b1, n.q1] = conv(n.b1, n.q1);
     if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);

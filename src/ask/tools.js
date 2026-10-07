@@ -49,6 +49,10 @@ import { bsGenerate } from "../gen/bassist.js";
 import { insertTime } from "../model/selection.js";
 import { openGapShift } from "../model/selection.js";
 import { pushUndo } from "../model/edits.js";
+import { annoSnapshot } from "../model/edits.js";
+import { putSongNote } from "../model/rollnotes.js";
+import { songNoteFor } from "../model/rollnotes.js";
+import { songNoteCleanTitle } from "../model/rollnotes.js";
 import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { saveDraft } from "../model/versions.js";
@@ -190,6 +194,7 @@ export function askNoteKind(n) { // the add_annotation "kind" this existing note
   if (n.tempodir !== undefined) return "tempo";
   if (n.loopTo !== undefined) return "loop";
   if (n.study) return "analysis"; // an Analysis-sheet entry (model/rollnotes.js putStudyEntry) — never a plain note to edit_annotation
+  if (n.songnote) return "songnote"; // a titled song note: the context lists "songnote: <title> — <body>"; song_note edits it
   return "note";
 }
 export function askNoteValue(n, kind) { // the "text" add_annotation would need to reproduce n's own value — chord/section store the bare symbol/label; key/tempo/loop carry a "kind: " prefix
@@ -423,6 +428,7 @@ export function askEditAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   a = a || {};
   const n = askFindAnnotation(a);
+  if (n.songnote) throw new Error("that is a song note — song_note {op: \"edit\", title} changes it");
   if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — change it in the app's own editor, not here");
   const kind = askNoteKind(n);
   const bar = a.new_bar !== undefined ? Math.max(1, Math.round(+a.new_bar)) : n.b1;
@@ -458,6 +464,7 @@ export function askEditAnnotation(a) {
 export function askDeleteAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   const n = askFindAnnotation(a || {});
+  if (n.songnote) throw new Error("that is a song note — song_note {op: \"delete\", title} removes it");
   if (askAnnotationStructural(n) && !n.tsdir && !n.chopdir) throw new Error("that annotation is a structural directive (track/audio/lane) — remove it in the app's own editor, not here"); // a meter or chop the user dictated can be taken back the same way (batch 3); track/audio/lane stay the editor's
   const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
   tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
@@ -472,6 +479,48 @@ export function askDeleteAnnotation(a) {
   if (typeof updateSongBtn === "function") updateSongBtn();
   if (typeof updateSyncBtn === "function") updateSyncBtn();
   return {ok: true, at, text, note: "deleted"};
+}
+// song_note (Josh, 2026-10-06): his titled song notes, named by title (any
+// case — titles are unique per song, so a name is never ambiguous). Same
+// gate as the other annotation writes (a capture he is studying takes song
+// notes like any annotation; a linked or newer-format song refuses); one
+// undo step; putSongNote is the one write path (duplicate titles refused).
+export function askSongNote(a) {
+  if (!S.song || !S.songKey) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG);
+  a = a || {};
+  const op = String(a.op || "").trim().toLowerCase();
+  if (!["add", "edit", "delete"].includes(op)) throw new Error("op must be add, edit or delete");
+  const title = songNoteCleanTitle(a.title);
+  if (!title) throw new Error("say the song note's title");
+  const given = v => v !== undefined && v !== null;
+  const cur = op === "add" ? null : songNoteFor(title);
+  if (op !== "add" && !(cur && annoShown(cur))) {
+    const have = S.rollnotes.filter(n => n.songnote && annoShown(n)).map(n => "\u201c" + n.songnote.title + "\u201d");
+    throw new Error("no song note called \u201c" + title + "\u201d — " + (have.length ? "this song has " + have.join(", ") : "this song has none yet"));
+  }
+  if (op === "edit" && !given(a.new_title) && !given(a.text)) throw new Error("edit needs text (the new body) and/or new_title");
+  const before = annoSnapshot();
+  let line;
+  if (op === "delete") {
+    tombstone(cur); // synced notes need the deletion to survive a reload
+    S.rollnotes = S.rollnotes.filter(x => x !== cur);
+    saveLocalNotes();
+    line = "deleted the song note \u201c" + cur.songnote.title + "\u201d";
+  } else {
+    const newTitle = op === "edit" ? (given(a.new_title) ? songNoteCleanTitle(a.new_title) : cur.songnote.title) : title;
+    const body = given(a.text) ? String(a.text) : (cur && cur.cnote) || "";
+    const fresh = putSongNote(cur, {title: newTitle, text: body}); // throws on a clash or an empty title, nothing changed
+    line = (op === "add" ? "added the song note \u201c" : "edited the song note \u201c") + fresh.songnote.title + "\u201d" +
+           (cur && cur.songnote.title !== fresh.songnote.title ? " (was \u201c" + cur.songnote.title + "\u201d)" : "");
+  }
+  pushUndo({kind: "anno", json: before});
+  finalizeNotes();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, note: line};
 }
 // publish_song (2026-10-01): the exact per-song flow the footer's Publish
 // button runs (#ghsave's "writing mode" branch for his own songs; the plain

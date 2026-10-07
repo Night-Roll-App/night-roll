@@ -111,6 +111,26 @@ keeps only the last per item. In code these are the `study*` names
 (`n.study`, `studyDirText`, `putStudyEntry`) — `analysis*` in src/ is the
 Normal-only estimate layer, deliberately not reused.
 
+A second song-level type was added 2026-10-06 (song notes,
+docs/plans/2026-10-06-song-notes-many-vs-one.md): `"type": "songnote"` —
+the user's own titled idea about the whole song, many per song:
+`{"at": [1, 1], "type": "songnote", "title": "Sway", "note": "<body>"}`.
+`"title"` is one short line and the entry's identity: unique per song,
+compared without case (adding or renaming to a title another song note
+has is refused). The body is `"note"` (optional). Anchored at `[1,1]` for
+the same reason as `analysis`, with the same rules: never drawn (no ruler
+flag, no subtitle, no flag tap — it cannot shadow the key marker at 1.1),
+never moved by bar edits (Insert/Delete bars, whole-song moves, a start
+chop, re-barring), not a bar note anywhere bar notes are counted, and
+`tools/annotations.mjs` lists it as type `songnote`. Legacy-text form,
+parsed forever: `songnote: <title>` with the body as the attached lines.
+Editing one RETIRES the old entry (`putSongNote` in
+src/model/rollnotes.js — tombstoned if published), `mergeLocalAdditions`
+lets this device's copy of a title replace the published one, and the
+writer keeps only the last per title. A build older than this reads the
+entry as an unknown type and writes it back verbatim (Forward
+compatibility, below).
+
 ### Forward compatibility (2026-10-05)
 
 A build that publishes a file it does not fully understand must not strip

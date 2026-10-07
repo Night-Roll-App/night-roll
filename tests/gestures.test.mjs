@@ -1087,3 +1087,27 @@ test("gesture: dragging a PUBLISHED chord band's end survives a reload — the r
     .filter(n => n.chord).map(n => [n.b1, n.q1, n.b2, n.q2]))`));
   assert.deepEqual(after, [[1, 1, 5, 4]], "one chord C, through the end of bar 5 — the drag stuck");
 });
+
+// ---- song notes (Josh, 2026-10-06): titled song-level notes sit at 1.1 like
+// the sheet entries above — no ruler flag, and the flag-tap search skips them,
+// so they cannot shadow the key marker at 1.1.
+test("gesture: song notes at 1.1 draw no ruler flag, and a tap there still opens the KEY marker's editor", async () => {
+  const app = await boot("vm-gest-songnote-flag");
+  app.run(`view.pxq = 200; clampView(); rangeSel = null; rollnotes = rollnotes.filter(n => !n.tsdir); finalizeNotes();`);
+  const flagXs = () => JSON.parse(app.run(`(() => {
+    const xs = [], y0 = STRIP_Y - 8;
+    ctx.moveTo = (x, y) => { if (y === y0) xs.push(x); };
+    draw(); delete ctx.moveTo;
+    return JSON.stringify(xs);
+  })()`));
+  const base = flagXs().length;
+  app.run(`putSongNote(null, {title: "Sway", text: "<rule>"}); putSongNote(null, {title: "Bass pedal"}); finalizeNotes();`);
+  assert.equal(flagXs().length, base, "two song notes at 1.1: no flag");
+  app.run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 1, q1: 1, b2: null, q2: null, text: "key: C", added: true}])[0])); finalizeNotes(); draw();
+           globalThis.__opened = null; openEditor = (n) => { globalThis.__opened = n; };`);
+  const p = JSON.parse(app.run(`JSON.stringify({x: RULER_W + (0 / song.ppq) * view.pxq - view.x + 8, y: 10})`));
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`__opened && __opened.keydir`), 0, "the tap found the key marker, not a song note");
+  assert.equal(app.run(`__opened.songnote`), undefined);
+});

@@ -454,9 +454,15 @@
         <option value="loop">Loop point</option>
         <option value="tempo">Tempo change</option>
         <option value="chop">Chop</option>
+        <option value="song">Song note</option>
       </select>
     </div>
-    <div class="row">
+    <div class="row" id="nsongrow" style="display:none">
+      <span class="lbl">title</span>
+      <input id="nsongtitle" type="text" placeholder="A short name for the idea, e.g. Sway"
+             style="flex:1;min-width:0;min-height:40px" aria-label="Song note title">
+    </div>
+    <div class="row" id="nfromrow">
       <span class="lbl">from bar</span><select id="nb1"></select>
       <span class="lbl">beat</span><select id="nq1"></select><select id="ns1" aria-label="Subdivision"></select>
     </div>

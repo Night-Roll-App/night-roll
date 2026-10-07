@@ -1502,6 +1502,25 @@ back by `noteToJSON`) and a whole type it does not know (`n.opaque`,
 written back verbatim) — a stale build publishing never strips either
 (docs/annotations-v2.md "Forward compatibility").
 
+**Song notes (2026-10-06, docs/plans/2026-10-06-song-notes-many-vs-
+one.md):** `{"at":[1,1],"type":"songnote","title":"Sway","note":"<body>"}`
+— his own titled ideas about the whole song, many per song; legacy text
+`songnote: Sway` + the body as attached lines. Same song-level rules as
+the sheet entries (`isSongLevelAnno(n)` = `n.study || n.songnote` is the
+test every bar edit — `shiftAnchors`, `convertAnchors`, `openGapShift`,
+`closeGap`, the whole-song move pin — skips; `isUndrawnAnno` and
+`isDirective` include it). The TITLE is the identity: unique per song,
+compared without case (`songNoteKey`). `putSongNote(prev, {title,
+text})` is the one write path (the note window's Song chip, Ask's
+`song_note`): it refuses an empty title or one another song note has
+(nothing changed), retires `prev` (tombstone if published), saves the
+local store; the caller pushes the "anno" undo step.
+`mergeLocalAdditions` lets this device's copy of a title replace the
+published one; `dedupedNotesWithIndex` keeps the last per title. Ask
+sees them as `songnote: <title> — <body>` in the compact block (kind
+`songnote`) and as `type/title/note` in the JSON one; edit/delete_annotation
+refuse them and point at `song_note`.
+
 Source fields only: `at`/`to` are [bar, beat] (beats may be fractional;
 `to` beat omitted = end of bar), `type` + its value field(s), free
 `text` (or `note` attached to a chord). Derived data (ticks, band
@@ -2857,6 +2876,18 @@ as covered). It takes the notes list and nothing else; a vm test proxies
 `song.tracks` and spies `estimateKey` to prove a render + a check never
 touch the music. The line lives in `S.studyCheck`, shown in
 `#studyStatus`, cleared on the next open and on song change.
+
+**Song notes** (2026-10-06): a SONG NOTES box sits at the top of the
+sheet (`studySongNotesBox`) — each of his song notes stacked, title in
+bold then the whole body, so they read as one page; a tap opens it in the
+note window, **+ Song note** opens the window on the Song chip. ☰ All
+notes has the same group first in `NOTE_GROUPS` (`songNoteListRow`:
+"Title — first line of the body"; a tap opens it without moving the
+cursor). The note window's **Song** chip (`NTYPE_CHIPS`, never guessed by
+`guessNoteType`) hides the from/ends-at rows (`#nfromrow`, `#ntorow`),
+shows `#nsongrow` (`#nsongtitle`, Enter moves to the body) and saves
+through `putSongNote`, one undo step. Not in v1: filing bar notes under
+a song note and the "Examples: bar 5 · bar 12" line (open-items).
 
 Not built here (later steps, by design): S3 "File under" chips (`topic`
 on bar notes — located prompts list by type only until then) and S5

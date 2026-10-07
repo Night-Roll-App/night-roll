@@ -4,6 +4,17 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-06 song notes v1 — BUILT on a worktree branch, awaiting merge (song-level notes, Josh #494/#497)
+Many titled song notes per song (type `songnote`, NIGHT-ROLL.md ".rollnotes
+format" + "Analysis sheet"): ☰ All notes → SONG NOTES / + Song note, the
+Analysis sheet's SONG NOTES box, the note window's Song chip, Ask
+`song_note add|edit|delete`. Ask's song_note uses the ANNOTATION gate
+(link / newer-format lock), not askWritableGate: Shop is a capture and song
+notes must work there like every annotation.
+QUEUED (not in v1): (a) filing bar notes under a song note — S3's `topic`
+field / "File under" chips also offering the song's song notes, so the
+example bars list themselves; (b) the "Examples: bar 5 · bar 12" line on
+each song note, built from the bar notes filed under it, tap = jump there.
 ## 2026-10-06 Ask (shop) — text notes can't be tapped/opened like chord annotations (Josh)
 Josh: "I can't actually click a text note, which is annoying — make it possible to click on text notes just like I can click chord annotations." On shop he replaced bars 14, 15, 18 (passing chords) with plain `note:` annotations and can't tap them to open/edit. Queued for the terminal; Ask session does not implement.
 

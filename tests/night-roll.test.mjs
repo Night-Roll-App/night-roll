@@ -2770,7 +2770,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "Playing in the background", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -12752,6 +12752,221 @@ test("old-shape tolerance (S1): an analysis entry with its body in `text`, done 
   run(`rollnotes = [];`);
 });
 
+// ---- song notes (Josh, 2026-10-06; docs/plans/2026-10-06-song-notes-many-vs-one.md):
+// many titled notes per song, type "songnote" {at:[1,1], title, note}. Storage
+// mirrors the analysis entries above; the bodies are placeholders, never a
+// reading of any song.
+const songNoteReset = () => run(`rollnotes = []; editUndo = []; editRedo = []; rollnotesReadOnly = false; rollnotesLockReason = null; songKey = "midi/test.mid"; document.getElementById("noteeditor").classList.remove("on"); document.getElementById("studysheet").classList.remove("on"); document.getElementById("notelistsheet").classList.remove("on");`);
+
+test("song notes: JSON → parse → serialize is byte-identical, n.songnote derives, the text grammar yields the same object, and the local store and undo snapshot carry title + body", () => {
+  installSong(); songNoteReset();
+  const notes = [
+    {at: [1, 1], type: "songnote", title: "Sway", note: "<rule in his words>\nbars 5, 12"},
+    {at: [1, 1], type: "songnote", title: "Bass pedal"},
+    {at: [2, 1], text: "a bar note"},
+  ];
+  const doc = studyDoc(notes);
+  run(`rollnotes = parseRollnotes(${JSON.stringify(doc)}).map(resolveNote);`);
+  const once = run(`serializeRollnotes()`);
+  assert.deepEqual(JSON.parse(once).notes, notes, "title and note come back as written");
+  run(`rollnotes = parseRollnotes(${JSON.stringify(once)}).map(resolveNote);`);
+  assert.equal(run(`serializeRollnotes()`), once, "a fixed point");
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => ({text: n.text, songnote: n.songnote, cnote: n.cnote || null}))`), [
+    {text: "songnote: Sway", songnote: {title: "Sway"}, cnote: "<rule in his words>\nbars 5, 12"},
+    {text: "songnote: Bass pedal", songnote: {title: "Bass pedal"}, cnote: null},
+  ]);
+  const text = "[1.1]\nsongnote: Sway\n<rule in his words>\nbars 5, 12\n\n[1.1]\nsongnote: Bass pedal\n\n[2.1]\na bar note\n";
+  assert.deepEqual(val(`parseRollnotes(${JSON.stringify(text)}).map(n => ({...n}))`),
+                   val(`parseRollnotes(${JSON.stringify(doc)}).map(n => ({...n}))`), "legacy text line and JSON entry are the SAME object");
+  assert.equal(val(`songNoteFor("sWAY").cnote`), "<rule in his words>\nbars 5, 12", "found by title, any case");
+  assert.equal(val(`ROLLNOTES_TYPES.has("songnote") && ROLLNOTES_FIELDS.has("title")`), true, "a known type and field — not carried as opaque/extra");
+  assert.equal(val(`rollnotes.some(n => n.opaque || n.extra)`), false);
+  // the unsynced store and an undo snapshot both round-trip
+  run(`songKey = "albums/compositions/nightroll/sn-store.mid"; localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes.forEach(n => { n.added = true; }); saveLocalNotes();`);
+  assert.deepEqual(val(`mergeLocalAdditions([], songKey).filter(n => n.songnote).map(n => [n.songnote.title, n.cnote || null])`),
+    [["Sway", "<rule in his words>\nbars 5, 12"], ["Bass pedal", null]], "the local store keeps title (the text line) and body (cnote)");
+  run(`const __snap = annoSnapshot(); rollnotes = []; annoRestore(__snap);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "undo restores them verbatim");
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  // an empty or multi-line title from a hand-edited file still reads, one line
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([{at: [1, 1], type: "songnote", title: "  two\nlines ", note: "x"}, {at: [1, 1], type: "songnote", note: "y"}]))}).map(resolveNote);`);
+  assert.deepEqual(val(`rollnotes.map(n => n.songnote && n.songnote.title)`), ["two lines", "untitled"]);
+  songNoteReset();
+});
+
+test("song notes are never drawn or moved: directive (no subtitle, hasNotes false), not copyable, Ask kind 'songnote', Insert bars / Delete bars / chop shift / re-barring leave them at 1.1", () => {
+  installSong(); songNoteReset();
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([
+    {at: [1, 1], type: "songnote", title: "Sway", note: "<rule>"},
+    {at: [2, 1], text: "a bar note"},
+  ]))}).map(resolveNote); finalizeNotes();`);
+  assert.equal(run(`isDirective(rollnotes[0])`), true);
+  assert.equal(run(`isUndrawnAnno(rollnotes[0])`), true);
+  assert.equal(run(`isSongLevelAnno(rollnotes[0]) && !isSongLevelAnno(rollnotes[1])`), true);
+  assert.equal(run(`activeNoteAt(0)`), null, "not a subtitle");
+  assert.equal(run(`rollnotes.filter(n => !isDirective(n)).length`), 1, "hasNotes' own test counts only the bar note");
+  assert.equal(run(`isCopyableAnno(rollnotes[0])`), false, "never lasso'd or pasted");
+  assert.equal(run(`askNoteKind(rollnotes[0])`), "songnote");
+  run(`shiftAnchors(barTicks()); rollnotes.forEach(resolveNote);`);
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 3], "a chop shift moves the bar note, not the song note");
+  run(`convertAnchors([4, 4], [2, 4]); rollnotes.forEach(resolveNote);`);
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 5], "re-barring converts the bar note only");
+  run(`convertAnchors([2, 4], [4, 4]); rollnotes.forEach(resolveNote);`);
+  run(`songKey = "albums/compositions/nightroll/sn-move-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+       song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; trackState = [{muted: false, solo: false}];`);
+  assert.equal(run(`insertTime(0, barTicks())`), 2, "the one note and the bar note moved — the song note is not counted");
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 4], "Insert bars at the top: the bar note slides, the song note stays");
+  run(`closeGap(0, barTicks());`);
+  assert.deepEqual(val(`rollnotes.map(n => n.b1)`), [1, 3], "Delete bars: the song note stays");
+  run(`localStorage.removeItem("ff1roll-draft-" + songKey); song.tracks = []; trackState = [];`);
+  songNoteReset();
+});
+
+test("song notes: editing a PUBLISHED one (title and body) survives a reload — tombstoned old, exactly the edited one back; a pure-local one edited twice is one note; a duplicate title is refused, nothing changed", () => {
+  installSong(); songNoteReset();
+  run(`songKey = "albums/nes/final-fantasy-i/songs/sn-reload-test.mid"; localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  const repo = studyDoc([{at: [1, 1], type: "songnote", title: "Sway", note: "first body"}, {at: [1, 1], type: "songnote", title: "Other", note: "o"}, {at: [2, 1], text: "a bar note"}]);
+  run(`rollnotes = parseRollnotes(${JSON.stringify(repo)}).map(resolveNote);`); // as loadNotes leaves a repo copy: synced, no added flag
+  run(`putSongNote(songNoteFor("Sway"), {title: "Lilt", text: "second body"})`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote, !!n.added])`), [["Other", "o", false], ["Lilt", "second body", true]]);
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-tombs-" + songKey) || "[]").length`), 1, "the published one is tombstoned");
+  const reload = () => val(`mergeLocalAdditions(subtractTombstones(parseRollnotes(${JSON.stringify(repo)}), songKey), songKey).filter(n => n.songnote).map(n => [n.songnote.title, n.cnote])`);
+  assert.deepEqual(reload(), [["Other", "o"], ["Lilt", "second body"]], "after reload: exactly the edited one, once");
+  // a body-only edit under the same title: with no tombstone the local copy still replaces the published one, never beside it
+  run(`putSongNote(songNoteFor("Other"), {title: "Other", text: "new o"}); localStorage.removeItem("ff1roll-tombs-" + songKey);`);
+  assert.deepEqual(reload(), [["Sway", "first body"], ["Lilt", "second body"], ["Other", "new o"]], "same title, new body: replaced (Sway is back only because its tombstone was cleared here)");
+  // a pure-local note edited twice is one note
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes = parseRollnotes(${JSON.stringify(repo)}).map(resolveNote);
+       putSongNote(null, {title: "Fresh", text: "a"}); putSongNote(songNoteFor("Fresh"), {title: "Fresh", text: "b"}); putSongNote(songNoteFor("fresh"), {title: "Fresher", text: "c"});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.added).map(n => [n.songnote.title, n.cnote])`), [["Fresher", "c"]]);
+  assert.deepEqual(val(`JSON.parse(localStorage.getItem("ff1roll-notes-" + songKey)).map(n => [n.text, n.cnote])`), [["songnote: Fresher", "c"]], "the unsynced store holds only the last version");
+  assert.deepEqual(reload().filter(r => r[0].startsWith("Fresh")), [["Fresher", "c"]]);
+  // duplicates (any case) refused; empty titles refused; nothing changed
+  const before = run(`serializeRollnotes()`);
+  assert.throws(() => run(`putSongNote(null, {title: " sway ", text: "dup"})`), /already has a song note called “Sway”/);
+  assert.throws(() => run(`putSongNote(songNoteFor("Fresher"), {title: "OTHER"})`), /already has a song note called “Other”/);
+  assert.throws(() => run(`putSongNote(null, {title: "   ", text: "x"})`), /needs a title/);
+  assert.equal(run(`serializeRollnotes()`), before, "a refused write changes nothing");
+  // the serializer's net: two of one title keep the last
+  run(`rollnotes = parseRollnotes(${JSON.stringify(studyDoc([{at: [1, 1], type: "songnote", title: "x", note: "old"}, {at: [1, 1], type: "songnote", title: "X", note: "new"}]))}).map(resolveNote);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes.map(n => n.note), ["new"]);
+  run(`rollnotesReadOnly = true;`);
+  assert.throws(() => run(`putSongNote(null, {title: "Locked"})`), /newer Night Roll/);
+  run(`localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  songNoteReset();
+});
+
+test("song notes in the note window: the Song chip hides the bar rows and shows a title; Save writes one, a duplicate is refused on the status line; opening one sets the chip and fills title + body; Delete removes it; + Note never guesses Song", () => {
+  installSong(); songNoteReset();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; songKey = "albums/nes/final-fantasy-i/songs/sn-editor.mid"; localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  assert.equal(val(`["Sway", "songnote: Sway", "long short long", "Sway: long-short-long"].map(guessNoteType).every(g => g === null)`), true, "a title or a sentence is never guessed as anything");
+  run(`openEditor(null);`);
+  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Song"]);
+  assert.equal(val(`document.getElementById("nsongrow").style.display`), "none", "no title row on a plain note");
+  run(`document.getElementById("ntext").value = "<the rule>"; pickEditorType("song");`);
+  assert.equal(val(`editorType()`), "song");
+  assert.deepEqual(val(`["nfromrow", "ntorow", "nsongrow"].map(id => document.getElementById(id).style.display)`), ["none", "none", ""], "bar rows hidden, title shown");
+  assert.equal(val(`document.getElementById("ntext").value`), "<the rule>", "the words already typed become the body");
+  run(`document.getElementById("nsongtitle").value = ""; document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.match(val(`document.getElementById("nstatus").textContent`), /needs a title/);
+  run(`document.getElementById("nsongtitle").value = "Sway"; document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote, n.b1, n.q1, !!n.added])`), [["Sway", "<the rule>", 1, 1, true]]);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "saved and closed");
+  assert.equal(val(`editUndo.length`), 1, "one undo step");
+  // a second note with the same title (any case) is refused, nothing written
+  run(`openEditor(null, "song"); document.getElementById("nsongtitle").value = "sway"; document.getElementById("ntext").value = "dup"; document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.match(val(`document.getElementById("nstatus").textContent`), /already has a song note called “Sway”/);
+  assert.equal(val(`rollnotes.filter(n => n.songnote).length`), 1);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "the window stays open with his words");
+  // opening the existing one: chip, title and body filled; rename + rewrite in place
+  run(`openEditor(songNoteFor("Sway"));`);
+  assert.deepEqual(val(`[editorType(), document.getElementById("nsongtitle").value, document.getElementById("ntext").value, document.getElementById("ndelete").style.display]`), ["song", "Sway", "<the rule>", ""]);
+  run(`document.getElementById("nsongtitle").value = "Sway (strongest)"; document.getElementById("ntext").value = "<new rule>"; document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote])`), [["Sway (strongest)", "<new rule>"]], "edited in place, not beside");
+  run(`editUndoPop();`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote])`), [["Sway", "<the rule>"]], "undo brings the old one back");
+  run(`openEditor(songNoteFor("Sway")); document.getElementById("ndelete").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`rollnotes.filter(n => n.songnote).length`), 0, "Delete removes it");
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  songNoteReset();
+});
+
+const snWalk = (el, out = []) => { if (!el) return out; if (el.textContent) out.push(el.textContent); if (el.text) out.push(el.text); for (const c of el.children || []) snWalk(c, out); return out; };
+test("song notes are listed: ☰ All notes opens with a SONG NOTES group (\"Title — first line\", + Song note) and the Analysis sheet stacks them at the top (title, then body); a tap opens the note window on that note", () => {
+  installSong(); songNoteReset();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rollnotes = parseRollnotes(${JSON.stringify(studyDoc([
+    {at: [1, 1], type: "songnote", title: "Sway", note: "<line one>\n<line two>"},
+    {at: [1, 1], type: "songnote", title: "Bass pedal"},
+    {at: [2, 1], text: "a bar note"},
+  ]))}).map(resolveNote); finalizeNotes(); renderNoteList();`);
+  const groups = val(`document.getElementById("notelistrows").children.map(g => g.dataset.type)`);
+  assert.equal(groups[0], "SONG NOTES", "the first group");
+  const box = app.el("notelistrows").children[0];
+  const all = snWalk(box).join(" | ");
+  assert.match(all, /SONG NOTES · 2/);
+  assert.match(all, /\+ Song note/);
+  assert.match(all, /Sway \|\s+— <line one>/, "title, then the body's first line");
+  assert.doesNotMatch(all, /line two/);
+  assert.match(snWalk(app.el("notelistrows")).join(" | "), /TEXT NOTES · 1[\s\S]*a bar note/, "the bar note stays under TEXT NOTES");
+  assert.doesNotMatch(snWalk(app.el("notelistrows").children.find(g => g.dataset.type === "TEXT NOTES")).join(" | "), /songnote/, "and the song notes are not repeated there");
+  run(`globalThis.__opened = null; globalThis.__openEditorReal = openEditor; openEditor = (n, t) => { globalThis.__opened = {n, t}; };`);
+  box.children[1].children[0].dispatchEvent({type: "click"});
+  assert.equal(val(`__opened.n.songnote.title`), "Sway", "a tap opens that song note");
+  box.children[0].children.find(b => b.textContent === "+ Song note").dispatchEvent({type: "click", stopPropagation() {}});
+  assert.deepEqual(val(`[__opened.n, __opened.t]`), [null, "song"], "+ Song note opens the window on the Song chip");
+  // the Analysis sheet
+  run(`renderStudySheet();`);
+  const sbox = app.el("studyrows").children[0];
+  assert.equal(sbox.id, "studygroup-songnotes", "the first thing in the sheet");
+  const st = snWalk(sbox).join(" | ");
+  assert.match(st, /^SONG NOTES \| \+ Song note \| Sway \| <line one>\n<line two> \| Bass pedal$/, "title, then the whole body, stacked");
+  sbox.children[1].dispatchEvent({type: "click"});
+  assert.equal(val(`__opened.n.songnote.title`), "Sway");
+  sbox.children[0].children[0].dispatchEvent({type: "click"});
+  assert.deepEqual(val(`[__opened.n, __opened.t]`), [null, "song"]);
+  assert.doesNotMatch(snWalk(app.el("studyrows")).join(" | "), /BAR NOTES · 3/, "song notes are not counted as bar notes");
+  run(`openEditor = __openEditorReal;`);
+  songNoteReset();
+});
+
+test("Ask: act song_note adds, edits (title and/or body, by title in any case) and deletes — one undo each; a duplicate title, an unknown title and a locked or linked song refuse; edit/delete_annotation point at song_note; the context shows title + body", async () => {
+  installActSong();
+  run(`songKey = "albums/nes/final-fantasy-i/songs/sn-ask.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem("ff1roll-notes-" + songKey);`); // a capture he is studying: annotations (and song notes) are still his to write
+  assert.equal(val(`askActOffered("song_note")`), true);
+  assert.match(val(`askActTool(false).function.description`), /\nsong_note op title new_title\? text\? — add\|edit\|delete a titled song note\n/);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "add", title: "Sway", text: "<rule>"}]})`), /added the song note “Sway”/);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote, !!n.added])`), [["Sway", "<rule>", true]]);
+  assert.equal(val(`editUndo.length`), 1);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "add", title: "SWAY", text: "x"}]})`), /already has a song note called “Sway”/);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "edit", title: "Lilt", text: "x"}]})`), /no song note called “Lilt” — this song has “Sway”/);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "edit", title: "sway"}]})`), /needs text/);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "edit", title: "sway", text: "<rule 2>"}]})`), /edited the song note “Sway”/);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "edit", title: "Sway", new_title: "Lilt"}]})`), /edited the song note “Lilt” \(was “Sway”\)/);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote])`), [["Lilt", "<rule 2>"]], "the body kept when only the title changed");
+  assert.equal(val(`editUndo.length`), 3, "one undo per call");
+  // the context: compact (bridge) and full JSON both carry title + body
+  assert.match(val(`askAnnotationsTextCompact()`), /^\d+ \[1\.1\] songnote: Lilt — <rule 2>$/m);
+  assert.match(val(`askAnnotationsText()`), /"type":"songnote","title":"Lilt","note":"<rule 2>"/);
+  assert.match(val(`askLegendText()`), /songnote: Title — body/);
+  assert.match(val(`askSys()`), /"songnote" entries are the user's titled ideas/);
+  // edit/delete_annotation do not touch one
+  const id = val(`rollnotes.findIndex(n => n.songnote)`);
+  assert.throws(() => run(`askEditAnnotation({id: ${id}, text: "x"})`), /song_note/);
+  assert.throws(() => run(`askDeleteAnnotation({id: ${id}})`), /song_note/);
+  // delete, then undo brings it back
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "delete", title: "LILT"}]})`), /deleted the song note “Lilt”/);
+  assert.equal(val(`rollnotes.filter(n => n.songnote).length`), 0);
+  run(`editUndoPop();`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => n.songnote.title)`), ["Lilt"]);
+  // refusals: a locked (newer-format) song, a song from a link (askSongNote's own gate)
+  run(`rollnotesReadOnly = true; rollnotesLockReason = ROLLNOTES_LOCK_MSG;`);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "add", title: "New", text: "x"}]})`), /newer Night Roll/);
+  run(`rollnotesReadOnly = false; rollnotesLockReason = null;`);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "rename", title: "Lilt"}]})`), /op must be add, edit or delete/);
+  assert.match(val(`askActSpec("song_note")`), /Only when the user explicitly asks/);
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes = []; editUndo = []; editRedo = [];`);
+});
+
 test("originOf (docs/annotations-v2.md P4): the stored header's origin.kind wins outright, even where the legacy path-sniffing derivation would land on something else", () => {
   installSong();
   run(`songKey = "albums/my-covers/stamped-import.mid"; rollnotes = [];
@@ -13512,7 +13727,7 @@ test("+ Note: the type is a row of chips, and a fresh plain note guesses its typ
   assert.deepEqual(val(`[guessNoteType("the bass walks down"), guessNoteType("Am visit"), guessNoteType("3/5"), guessNoteType("")]`), [null, null, null, null], "anything else stays a note");
   run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; openEditor(null);`); // the stub DOM has no querySelectorAll (the chord chips refresh through it)
   assert.equal(val(`editorType()`), "note");
-  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop"]);
+  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Song"]);
   run(`document.getElementById("ntext").value = "Gm7"; applyNoteTypeGuess();`);
   assert.equal(val(`editorType()`), "chord");
   assert.equal(val(`document.getElementById("nchordsym").value`), "Gm7");
