@@ -245,6 +245,9 @@ The one report the sheet gives, and only when asked: tap **Check coverage** and 
 **Analysis guide**
 Not sure what a full analysis even covers, or how to write one down? **Analysis guide** at the top of the Analysis sheet (or **Help → Analysis**) is reference text — the sixteen things an analysis looks at, how to find each one in Night Roll, and where it lands as an annotation. Generic, the same on every song; it never names a key, a chord, or a reading of yours.
 
+**Choosing the type**
+The note window shows its types as a row of buttons — **Note · Section · Chord · Key · Meter · Loop · Tempo · Chop** — tap one. A fresh **+ Note** also reads what you type: pause after **Gm7** and it becomes a Chord, **3/4** a Meter, **120 bpm** a Tempo, **loop 5.1** a Loop; anything else stays a Note. Tap **Note** to undo a guess — your words come back. Once you tap a type, it stops guessing.
+
 **Attached notes on ANY annotation**
 Every typed annotation — key, meter, tempo, section, chord, loop — can carry a text note: in its editor, whatever you write in the note box below the value rides along (sections have a dedicated label field, so the note box is purely the note — and key, meter, tempo, loop, and chop all show the note box too). The ✱ marker in bands and ☰ Notes says one is there. This is where the DOUBT lives — "whole-tone material, no conventional key" can sit on a key: B♭? and make the open question findable later.
 

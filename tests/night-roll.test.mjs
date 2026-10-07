@@ -2808,7 +2808,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Paste</dt>", "without opening the keyboard", // Terminal #113–114: 📋 Paste in the AI box — the clipboard lands in the message without the keyboard
     "Analysis guide", 'data-hsec="analysis"', // docs/plans/2026-10-05-analysis-sheet.md §0: the generic analysis reference text, Help → Analysis
     "run the Drummer", // docs/plans/2026-10-05-ask-drummer-tool.md: the drummer Ask tool — spoken drum requests run the real generator
-    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
+    "Analysis sheet", "Check coverage", "What to look for", "Double-tap the span to delete it", // #150 "Choosing the type", "it stops guessing", // #153 // S2 (same plan §2): the per-song window — ☰ Notes ▴ → Analysis sheet, its on-demand coverage line, the folded guide under each group
     "go to bar 13 and play", "AI commands", "(act: go_to", "Open Graveyard", // the act tool (docs/ai-parity.md §2, batch 1) and the Help rows generated from its registry (tools/build_ask_help.mjs)
     "busy 2, follow the drums", // act: bassist (docs/ai-parity.md §5 batch 4)
     "on pulse 1 in bars 5 and 6", // act: edit_notes (docs/ai-parity.md §5 batch 5)
@@ -13503,4 +13503,24 @@ test("Send's click never becomes the message: askSend ignores a non-string argum
   assert.doesNotMatch(sheet, /addEventListener\("click", askSend\)/, "the Send button must not hand its event to askSend");
   const client = readFileSync(new URL("../src/ask/client.js", import.meta.url), "utf8");
   assert.match(client, /if \(typeof carried !== "string"\) carried = undefined;/);
+});
+
+test("+ Note: the type is a row of chips, and a fresh plain note guesses its type from the whole text — chord, meter, tempo, loop — tap Note to undo (Josh, 2026-10-06, #152/#153)", () => {
+  installSong();
+  assert.deepEqual(val(`[guessNoteType("Gm7"), guessNoteType("C/E"), guessNoteType("3/4"), guessNoteType("120 bpm"), guessNoteType("loop 5.1")].map(g => g && g.type)`),
+    ["chord", "chord", "timesig", "tempo", "loop"]);
+  assert.deepEqual(val(`[guessNoteType("the bass walks down"), guessNoteType("Am visit"), guessNoteType("3/5"), guessNoteType("")]`), [null, null, null, null], "anything else stays a note");
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; openEditor(null);`); // the stub DOM has no querySelectorAll (the chord chips refresh through it)
+  assert.equal(val(`editorType()`), "note");
+  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop"]);
+  run(`document.getElementById("ntext").value = "Gm7"; applyNoteTypeGuess();`);
+  assert.equal(val(`editorType()`), "chord");
+  assert.equal(val(`document.getElementById("nchordsym").value`), "Gm7");
+  assert.equal(val(`document.getElementById("ntext").value`), "", "the words moved to the chord box");
+  run(`pickEditorType("note");`);
+  assert.equal(val(`editorType()`), "note");
+  assert.equal(val(`document.getElementById("ntext").value`), "Gm7", "tap Note: the words come back");
+  run(`document.getElementById("ntext").value = "3/4"; applyNoteTypeGuess();`);
+  assert.equal(val(`editorType()`), "note", "after a chip tap, no more guessing");
+  run(`document.getElementById("noteeditor").classList.remove("on");`);
 });

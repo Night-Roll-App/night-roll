@@ -134,6 +134,8 @@ export const S = {
   pinch: null,
   followFree: false,
   lastTapEnd: 0,
+  ntypePicked: false, // the + Note dialog's type was chosen (chip, preset, existing note): no guessing from the text (Josh #153)
+  ntypeGuess: null, // {timer, from: the text a guess moved out of the text box}
   spanTapAt: 0, // the last tap inside the ruler span — a second within 350 ms deletes it (Josh #150)
   masterVol: 1,
   clockProbe: null,

@@ -163,8 +163,59 @@ export function fillBarBeatSelects() {
   mkSubs("ns1"); mkSubs("ns2"); mkSubs("nls");
 }
 export function editorType() { return document.getElementById("ntype").value; }
+// the type as a row of chips, not a drop-down (Josh, 2026-10-06, #152/#153);
+// the hidden <select> stays the one source of truth every other path reads
+export const NTYPE_CHIPS = [["note", "Note"], ["section", "Section"], ["chord", "Chord"], ["key", "Key"],
+  ["timesig", "Meter"], ["loop", "Loop"], ["tempo", "Tempo"], ["chop", "Chop"]];
+export function renderTypeChips() {
+  const row = document.getElementById("ntypechips"), t = editorType();
+  if (!row.children.length) for (const [v, label] of NTYPE_CHIPS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.v = v; b.textContent = label; b.setAttribute("role", "radio");
+    row.appendChild(b);
+  }
+  for (const b of row.children) { b.classList.toggle("active", b.dataset.v === t); b.setAttribute("aria-checked", String(b.dataset.v === t)); }
+}
+export function pickEditorType(v) {
+  S.ntypePicked = true;
+  const g = S.ntypeGuess;
+  if (g) { clearTimeout(g.timer); if (v === "note" && g.from && !document.getElementById("ntext").value.trim()) document.getElementById("ntext").value = g.from; } // back to Note: the words come back
+  S.ntypeGuess = null;
+  document.getElementById("ntype").value = v;
+  applyEditorType();
+}
+// what the typed words look like — only the WHOLE text, only these four
+// shapes; anything else stays a note. Reads his own words, never the music.
+export function guessNoteType(text) {
+  const t = (text || "").trim();
+  if (!t || t.includes("\n")) return null;
+  let m = t.match(/^loop\s*(?:to\s*)?(\d{1,3})(?:\.(\d+(?:\.\d+)?))?$/i);
+  if (m) return {type: "loop", bar: +m[1], beat: m[2] ? +m[2] : 1};
+  m = t.match(/^(\d{1,2})\s*\/\s*(\d{1,2})$/);
+  if (m && [2, 4, 8, 16].includes(+m[2]) && [2, 3, 4, 5, 6, 7, 9, 12].includes(+m[1])) return {type: "timesig", num: +m[1], den: +m[2]};
+  m = t.match(/^(\d{2,3})\s*bpm$/i);
+  if (m && +m[1] >= 20 && +m[1] <= 400) return {type: "tempo", bpm: +m[1]};
+  m = parseChordSym(t);
+  if (m && chordQualParse(m[3]) !== null) return {type: "chord", sym: t};
+  return null;
+}
+export function applyNoteTypeGuess() {
+  if (S.ntypePicked || editorType() !== "note") return;
+  const box = document.getElementById("ntext"), text = box.value, g = guessNoteType(text);
+  if (!g) return;
+  if (g.type === "chord") setChordWidget(g.sym);
+  if (g.type === "timesig") { document.getElementById("ntsnum").value = String(g.num); document.getElementById("ntsden").value = String(g.den); }
+  if (g.type === "tempo") document.getElementById("ntempo").value = String(g.bpm);
+  if (g.type === "loop") { document.getElementById("nlb").value = String(g.bar); setBeatPair("nlq", "nls", g.beat); }
+  box.value = "";
+  S.ntypeGuess = {timer: 0, from: text};
+  document.getElementById("ntype").value = g.type;
+  applyEditorType();
+  setInfo("type: " + NTYPE_CHIPS.find(c => c[0] === g.type)[1] + " — from what you typed; tap Note to undo");
+}
 export function applyEditorType() {
   const t = editorType();
+  renderTypeChips();
   document.getElementById("ntext").style.display = ""; // every authored type carries a note (Josh, 2026-08-22)
   document.getElementById("nsectrow").style.display = t === "section" ? "" : "none";
   document.getElementById("nkeyrow").style.display = t === "key" ? "" : "none";
@@ -311,6 +362,9 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
              : S.rangeSel ? (localStorage.getItem("ff1roll-dragtype") || "section")
              : "note";
   document.getElementById("ntype").value = type;
+  if (S.ntypeGuess) clearTimeout(S.ntypeGuess.timer);
+  S.ntypeGuess = null;
+  S.ntypePicked = !!(note || presetType || S.rangeSel); // only a fresh plain + Note guesses from the words
   if (type === "tempo") {
     let usq = S.song.tempos[0].usq;
     for (const tp of S.song.tempos) { if (tp.tick <= at0) usq = tp.usq; else break; }
@@ -645,6 +699,12 @@ export function initNoteEditor3() {
 
 export function initNoteEditor4() {
   document.getElementById("ntype").addEventListener("change", applyEditorType);
+  document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
+  document.getElementById("ntext").addEventListener("input", () => { // a pause after typing, not every keystroke: "A" mid-word must not become a chord
+    if (S.ntypePicked || editorType() !== "note") return;
+    if (S.ntypeGuess) clearTimeout(S.ntypeGuess.timer);
+    S.ntypeGuess = {timer: setTimeout(applyNoteTypeGuess, 900), from: null};
+  });
 
   (function buildChordWidget() {
     const mkRow = (id, items) => {

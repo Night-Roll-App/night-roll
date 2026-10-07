@@ -444,7 +444,8 @@
     <h2>ANNOTATION</h2>
     <div class="row">
       <span class="lbl">type</span>
-      <select id="ntype">
+      <div class="chiprow" id="ntypechips" role="radiogroup" aria-label="Annotation type" style="margin:0"></div>
+      <select id="ntype" style="display:none" aria-hidden="true">
         <option value="note">Text note</option>
         <option value="section">Section</option>
         <option value="chord">Chord</option>
