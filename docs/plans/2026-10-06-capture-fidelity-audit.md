@@ -355,7 +355,8 @@ What Josh must ear-check (each one, one pass):
    to be rare (annotated: FF1, a Mega Man song, a couple of FF4 songs).
 4. PS1/PS2/N64 slides stay as separate notes (he wants to see start and
    target pitch, and still hear the slide on the console voice).
-5. Reverb/echo in the files: re-asked in plain words (bridge #529) —
-   pending; default yes.
+5. Reverb/echo: store the send (CC91) in the files AND teach the synth a
+   reverb bus so Hear the MIDI plays it (decided 2026-10-06 after #167;
+   the question was confusing — no further ask).
 6. Genesis: skip — but docs/adding-a-console.md updated now with the
    capture-v2 rules (done).
