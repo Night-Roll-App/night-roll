@@ -1,17 +1,26 @@
-// Dump every FF1 song from the NSF into albums/final-fantasy-i/songs/:
+// Dump every FF1 song from the NSF into albums/nes/final-fantasy-i/songs/:
 // <song>.mid (the album Night Roll plays), <song>.notes.txt (text dump for
 // LLM reading), and a measured loop: directive when a song's rollnotes file
 // doesn't exist yet (existing rollnotes are NEVER touched — they hold
 // Josh's analysis). Compare each run's printout against ../CUTS.md.
 // Track numbers from the Zophar m3u; meter read from the existing song file;
 // tempo loop-calibrated from verified PERIOD_BARS (or grid-fitted).
-// Run: node tools/nsf/dump-all.mjs albums/final-fantasy-i/reference/ff1.nsf
+// Run: node tools/nsf/dump-all.mjs <ff1.nsf> [--out <dir>] [--only a,b]
+// --out writes the .mid/.notes.txt there instead (tools/recapture.mjs:
+// /tmp/recap/out/nes/final-fantasy-i/) and never writes a loop directive;
+// the meter is still read from the published song in the repo. The rip is
+// the archive's nes/ff1.nsf (gitignored ROM music, never in the repo).
 import "../vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseNSF, runNSF } from "./nsf.mjs";
 import { reconstruct, toNotesTxt, fitBpm, detectLoop, backportTiming } from "./notes.mjs";
 import { makeMidi } from "./midi-write.mjs";
 import { createApp } from "../../tests/harness.mjs";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+export const FF1_SONGS = path.join(ROOT, "albums/nes/final-fantasy-i/songs");
 
 // Verified loop lengths IN BARS (Josh's analyses + earlier MIDI trims): the
 // chip's frame-exact period ÷ this count gives the TRUE tempo. Songs absent
@@ -43,7 +52,7 @@ const METER_OVERRIDE = { shop: [3, 4] };
 // single grid can't follow — keep raw hardware timing (bar labels approximate)
 const NO_SNAP = { epilogue: true };
 
-const TRACKS = [ // [nsf track, repo name, seconds to capture — ≥ intro + 2 loops]
+export const TRACKS = [ // [nsf track, repo name, seconds to capture — ≥ intro + 2 loops]
   [1,  "prelude", 170],
   [2,  "prologue", 85],
   [3,  "epilogue", 270], // through-composed, ~256s of music + final held chord — no loop to trim
@@ -68,7 +77,7 @@ const TRACKS = [ // [nsf track, repo name, seconds to capture — ≥ intro + 2 
 async function meterOf(repoName) { // meter + bpm seed + bar count from the transcription MIDI
   try {
     const app = await createApp();
-    app.context.midiBytes = [...readFileSync("albums/final-fantasy-i/songs/" + repoName + ".mid")];
+    app.context.midiBytes = [...readFileSync(path.join(FF1_SONGS, repoName + ".mid"))];
     const info = JSON.parse(app.run(
       "JSON.stringify((() => { const r = parseMidi(new Uint8Array(midiBytes).buffer); const bt = r.timesig[0] * 4 / r.timesig[1] * r.ppq; let end = 0; r.tracks.forEach(t => t.notes.forEach(n => end = Math.max(end, n.t + n.d))); return {ts: r.timesig, bpm: Math.round(6e7 / r.tempos[0].usq), bars: Math.ceil(end / bt - 0.05)}; })())"));
     return {tsNum: info.ts[0], tsDen: info.ts[1], seedBpm: info.bpm, midiBars: info.bars};
@@ -77,11 +86,17 @@ async function meterOf(repoName) { // meter + bpm seed + bar count from the tran
   }
 }
 
-const nsfPath = process.argv[2] || "albums/final-fantasy-i/reference/ff1.nsf";
+// {nsfPath, outDir (default: the album), only: [names] | null, log} →
+// [{name, track, mid, loop: "anchor>target" | null, bpm, tempoSrc}]
+export async function dumpFF1({nsfPath, outDir = FF1_SONGS, only = null, log = console.log}) {
+const intoAlbum = path.resolve(outDir) === FF1_SONGS;
+mkdirSync(outDir, {recursive: true});
 const nsf = parseNSF(readFileSync(nsfPath));
-console.log(`${nsf.name} — ${nsf.artist}; ${nsf.songs} tracks in file`);
+log(`${nsf.name} — ${nsf.artist}; ${nsf.songs} tracks in file`);
+const results = [];
 
 for (const [track, name, seconds] of TRACKS) {
+  if (only && !only.includes(name)) continue;
   const {apuLog, frames, frameSec} = runNSF(nsf, track, seconds);
   let events = reconstruct(apuLog, frames, frameSec);
   // shift time zero to the first onset so chip bars line up with MIDI bars
@@ -147,27 +162,47 @@ for (const [track, name, seconds] of TRACKS) {
     frames: keptFrames, frameSec, bpm, tsNum, tsDen, snap,
     title: name + " (chip capture, NSF track " + track + ", " + tempoSrc + " " + bpm + "bpm; " + cutInfo + (snap ? "" : "; raw timing, grid approximate") + ")",
   });
-  writeFileSync("albums/final-fantasy-i/songs/" + name + ".notes.txt", txt);
-  writeFileSync("albums/final-fantasy-i/songs/" + name + ".mid", makeMidi(events, {bpm, tsNum, tsDen, frameSec, snap}));
+  writeFileSync(path.join(outDir, name + ".notes.txt"), txt);
+  writeFileSync(path.join(outDir, name + ".mid"), makeMidi(events, {bpm, tsNum, tsDen, frameSec, snap}));
+  let loopNote = null;
 
   // when the loop returns somewhere other than the top, that's hardware fact:
   // record it as a loop: directive in the chip song's rollnotes (never
   // overwrite a file Josh may have edited)
-  if (loop && !existsSync("albums/final-fantasy-i/songs/" + name + ".rollnotes.json")) {
+  if (loop) {
     const backBeats = (loop.keep - loop.period) * frameSec / beatSec;
     if (backBeats > 0.4) {
       // anchor = the jump point (capture end), value = the jump target —
       // the player fires the loop at the anchor when it sits past the target
       const anchor = bq(loop.keep * frameSec / beatSec);
       const target = "loop: " + bq(backBeats);
-      writeFileSync("albums/final-fantasy-i/songs/" + name + ".rollnotes.json",
-        "# " + name + " — chip capture (legacy text; app migrates on sync)\n\n[" + anchor + "]\n" + target + "\n");
-      console.log("   wrote loop directive: [" + anchor + "] " + target);
+      loopNote = anchor + ">" + bq(backBeats);
+      const rn = path.join(outDir, name + ".rollnotes.json");
+      if (intoAlbum && !existsSync(rn)) {
+        writeFileSync(rn, "# " + name + " — chip capture (legacy text; app migrates on sync)\n\n[" + anchor + "]\n" + target + "\n");
+        log("   wrote loop directive: [" + anchor + "] " + target);
+      }
     }
   }
-  console.log(name.padEnd(22) + "track " + String(track).padEnd(3) +
+  results.push({name, track, mid: path.join(outDir, name + ".mid"), loop: loopNote, bpm, tempoSrc});
+  log(name.padEnd(22) + "track " + String(track).padEnd(3) +
               (loop ? "keep " + (loop.keep * frameSec).toFixed(1) + "s (P=" +
                       (loop.period * frameSec).toFixed(1) + "s)" : "no-loop").padEnd(24) +
               bpm + "bpm (" + tempoSrc + ")  bars " + chipBars.toFixed(2) +
               (midiBars ? " vs midi " + midiBars : ""));
+}
+return results;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const a = process.argv.slice(2);
+  let nsfPath = null, outDir = FF1_SONGS, only = null;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === "--out") outDir = path.resolve(a[++i]);
+    else if (a[i] === "--only") only = a[++i].split(",");
+    else nsfPath = a[i];
+  }
+  nsfPath = nsfPath || path.join(ROOT, "albums/nes/final-fantasy-i/reference/ff1.nsf");
+  if (!existsSync(nsfPath)) { console.error("no NSF at " + nsfPath + " — pass the rip (the archive's nes/ff1.nsf; tools/recapture.mjs fetches it into /tmp/recap/rips/)"); process.exit(1); }
+  await dumpFF1({nsfPath, outDir, only});
 }

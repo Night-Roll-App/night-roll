@@ -83,11 +83,11 @@ async function loadChipModules(app, kind) {
   return M;
 }
 
-export async function importSet(opts, log = console.log) {
-  if (!opts.src) throw new Error("usage: import-set.mjs <zip|dir|file> --slug <slug> [--title T] [--console C] [--publish] [--secs N] [--out root]");
-  if (!opts.slug) throw new Error("--slug is required");
-  const loaded = gatherFiles(opts.src);
-  if (!loaded.length) throw new Error("no files in " + opts.src);
+// The app in the vm with the four seams in place and the picked files open
+// in the import panel — what Import… does before any capture. Shared by
+// importSet and tools/recapture.mjs (which captures an album's tracks from
+// its archived rip through this same session). opts: {out, console}.
+export async function openImportSession(loaded, opts) {
   const app = await createApp();
   const C = app.context;
   const kinds = JSON.parse(app.run("JSON.stringify(Object.keys(CHIPS))"));
@@ -140,6 +140,26 @@ export async function importSet(opts, log = console.log) {
   await app.run("openPickedFiles(__loaded)");
   const sess = JSON.parse(app.run("JSON.stringify(nsfSess ? {chip: nsfSess.chip, name: nsfSess.nsf.name, artist: nsfSess.nsf.artist, songs: nsfSess.nsf.songs, list: nsfSess.trackList, files: nsfSess.files ? nsfSess.files.map(f => ({name: f.name, songs: f.parsed.songs})) : null} : null)"));
   if (!sess) throw new Error("the app did not open an import session: " + (infos.filter(s => /⚠|could not/.test(s)).pop() || infos.pop() || "no message"));
+  return {app, C, kind, consoleName, sess, batch, infos, nsfStore};
+}
+
+// Capture all (one job, the given row ids in order) and wait for it; the
+// job's items, in the same order.
+export async function runCaptureJob(app, ns) {
+  app.context.__statusLog = () => {};
+  app.context.__ns = ns;
+  const jobId = app.run("(() => { const j = captureJobStart(__ns, __statusLog); return j ? j.id : null; })()");
+  if (!jobId) throw new Error("captureJobStart refused (a job already live?)");
+  while (app.run("(jobs.find(j => j.id === " + JSON.stringify(jobId) + ") || {}).state") === "running") await new Promise(r => setTimeout(r, 200));
+  return JSON.parse(app.run("JSON.stringify(jobs.find(j => j.id === " + JSON.stringify(jobId) + ").items)"));
+}
+
+export async function importSet(opts, log = console.log) {
+  if (!opts.src) throw new Error("usage: import-set.mjs <zip|dir|file> --slug <slug> [--title T] [--console C] [--publish] [--secs N] [--out root]");
+  if (!opts.slug) throw new Error("--slug is required");
+  const loaded = gatherFiles(opts.src);
+  if (!loaded.length) throw new Error("no files in " + opts.src);
+  const {app, C, kind, consoleName, sess, batch, infos, nsfStore} = await openImportSession(loaded, opts);
   app.el("impslug").value = opts.slug;
   if (opts.secs) app.el("impsecs").value = String(opts.secs);
   const multi = sess.files && sess.files.length > 1; // a rip with several chip files (chipExtraVault): each row's file is reported, slots are per file
@@ -148,18 +168,8 @@ export async function importSet(opts, log = console.log) {
 
   // ---- Capture all: one job, in list order
   const t0 = Date.now();
-  C.__statusLog = () => {};
-  const jobId = app.run("(() => { const j = captureJobStart(nsfSess.trackList.map(x => x.n), __statusLog); return j ? j.id : null; })()");
-  if (!jobId) throw new Error("captureJobStart refused (a job already live?)");
-  const state = () => app.run("(jobs.find(j => j.id === " + JSON.stringify(jobId) + ") || {}).state");
-  let lastDone = -1;
   const rows = [];
-  while (state() === "running") {
-    await new Promise(r => setTimeout(r, 200));
-    const done = app.run("jobs.find(j => j.id === " + JSON.stringify(jobId) + ").items.filter(it => it.st !== 'queued' && it.st !== 'running').length");
-    if (done !== lastDone) { lastDone = done; }
-  }
-  const items = JSON.parse(app.run("JSON.stringify(jobs.find(j => j.id === " + JSON.stringify(jobId) + ").items)"));
+  const items = await runCaptureJob(app, sess.list.map(x => x.n));
   const rowInfo = JSON.parse(app.run("JSON.stringify(nsfSess.trackList.map(e => { const r = nsfSess.rows[e.n]; return {n: e.n, slot: r.slot != null ? r.slot : e.n, file: r.srcName || null, vault: r.vault || null, title: r.name.value, st: r.st.textContent, warn: r.st.title || '', key: r.key || null, secs: r.secs || null}; }))"));
   for (let i = 0; i < rowInfo.length; i++) {
     const r = rowInfo[i], it = items[i];

@@ -4528,6 +4528,81 @@ Expansion-chip NSFs (header byte 0x7B: VRC6/VRC7/FDS/MMC5/N163/Sunsoft
 its lead voices, and a half-song published is worse than none — and the
 refusal surfaces as the import error both here and in the app.
 
+## Re-capture (tools/recapture.mjs + tools/capture-diff.mjs) — 2026-10-06
+
+The safe re-capture plan of docs/plans/2026-10-06-capture-fidelity-audit.md
+§5, with Josh's answers in §8. Josh's annotations are anchored to bar.beat
+and to track numbers, so a new capture of a published song may add
+expression but must never move a note.
+
+`node tools/capture-diff.mjs <old.mid> <new.mid> [--json]` is the gate. It
+reads the raw SMF (tracks numbered as the app numbers them: only MTrk
+chunks with notes, in file order; notes paired per pitch, first-on
+first-off, as parseMidi does) and gives one verdict:
+
+- **SAME**: every event identical.
+- **VELOCITY**: the notes are identical by (track, start, pitch, length);
+  only velocity, in-note aftertouch (`ve`/shape), CCs, bends, programs,
+  channels or text metas differ.
+- **ADDED-TRACK**: as above for every old track, plus new tracks after them
+  (a DPCM track). No existing track number moves.
+- **MOVED**: anything else: a note's start, length or pitch; a track
+  removed, renamed or inserted in front; ppq; the tempo map; the meter; or
+  the loop point (from each side's `.rollnotes.json` loop line, or
+  `--old-loop`/`--new-loop A>T`).
+
+It also prints short reasons, the first differing bar (by the old file's
+meter map), and the events gained or lost per kind (`ve`, `shape`,
+`cc70`, `bend`, `program`, …).
+
+`node tools/recapture.mjs [--console nes] [--album nes/<slug>]` is the dry
+run. It writes only under `--out` (default `/tmp/recap/`, refused inside the
+repo). For each capture album (an album.json with an `nsf` block under
+albums/{nes,game-boy,snes,ps1,ps2,n64}/) it does four things:
+
+1. Fetches the album's rip from Night-Roll-App/nsf-archive at the paths the
+   app reads (`nsf.vault`; per-file sets `vault + base + ext`; a set's
+   extra chip files `nsf.tracks[].vault`; libraries `nsf.libs`). Each file
+   is checked by HTTP status, byte count vs Content-Length, and the chip's
+   magic, never by a JSON field. Files are cached in `rips/` with a size
+   stamp, so nothing downloads twice.
+2. Captures every album track through the app's own import session
+   (`openImportSession` → `runCaptureJob` → `commitImports`, exported from
+   import-set.mjs), one child process per album under `--timeout` (1800 s).
+   Each row is named by its published base, so the new file is the one a
+   publish would write (parse → draft → writeMidi). Playlist lengths are
+   not archived, so NES/GB tracks get the app's no-playlist sizing (75 s,
+   then one 300 s retry when no loop). The exception is a published
+   capture of 22 s or less, which is sized as the playlist jingle it was.
+   Tagged sets (SPC/PSF/PSF2/USF) size from their own tags. FF1 goes
+   through `tools/nsf/dump-all.mjs --out` (its verified PERIOD_BARS/meter
+   tables decide FF1's bars).
+3. Diffs each new file against the published one, counts the song's
+   published annotations (every `.rollnotes.json` entry except the loop
+   line), and plans an action:
+   - SAME → skip.
+   - VELOCITY / ADDED-TRACK → replace.
+   - MOVED without annotations → replace. If the loop point changed, the
+     song is held instead (`hold-loop-changed`), because its loop line
+     lives in the `.rollnotes.json`.
+   - MOVED with annotations → keep the old song and add the new one as
+     `<base>-recapture.mid`, "<title> (re-capture)".
+4. Writes `out/<console>/<slug>/<base>.mid`, `work/<console>--<slug>.json`,
+   `logs/`, and `report.json` + `report.md`. The report is rebuilt from
+   every album in `work/`, so a one-album rerun updates it.
+
+`--apply --album <console>/<slug>` does one album per run, matching one
+album per push. It copies the planned files into albums/. Before copying
+it checks two sha256 values: the published .mid must still be the one the
+report diffed, and the new capture must be unchanged. It stamps
+`nsf.tracks[base].cap = {v, code}` in album.json (`CAPTURE_VERSION`, and
+the git hash the capture ran on) and rebuilds the manifest. Its hard
+allowlist (`assertWritable`) allows .mid, .notes.txt and album.json inside
+a capture album only. It never writes compositions/, starters/ or any
+`.rollnotes.json`, never deletes, and never overwrites an existing
+`-recapture` file. Old files stay in git history. A keep-old+add-new song's
+loop annotation is printed for Josh to add by hand.
+
 ## ✦ Ask — in-app AI (P1a + P2a + P3 shipped 2026-09-25; P2a's ✦ Fill button removed 2026-10-02 in favor of the write_notes tool, below; design: docs/design/local-llm-design.md)
 
 The tutor half of the AI plan. `✦ Ask` in the top bar (hidden in listener

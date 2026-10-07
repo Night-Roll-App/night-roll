@@ -67,7 +67,12 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    (SAME / VELOCITY / ADDED-TRACK / MOVED): a song whose bars move is never
    replaced in place — if it has published annotations, keep the old song
    and add the re-capture as a new one so Josh can move his annotations
-   over (Josh, 2026-10-06).
+   over (Josh, 2026-10-06). The tools: `tools/recapture.mjs --console <c>`
+   dry-runs the whole console into /tmp/recap/ (report per song),
+   `tools/capture-diff.mjs` is the per-song gate, and `--apply --album`
+   lands one album; a new console's album.json `nsf` block must name every
+   archive file its capture reads, or the re-capture cannot fetch it
+   (NIGHT-ROLL.md "Re-capture").
 8. **The listening pass.** Josh's ear on every song of 3+ games (the
    release gate in open-items). Ear reports are failing tests.
 9. **Docs.** NIGHT-ROLL.md section, tools/<console>/INTEGRATION.md, help

@@ -33,6 +33,9 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `dump_notes.mjs [dir ...]` | Writes `<song>.notes.txt` beside every .mid — plain-text dumps analysis sessions can read. |
 | `album-order.mjs [--write]` | Orders an album's songs by the game's own track order instead of alphabetically. |
 | `import-set.mjs <zip\|dir\|file> --slug` | The app's Import → Capture all → Publish, headless (the same code the app runs, in the vm harness). |
+| `capture-diff.mjs <old.mid> <new.mid> [--json]` | The re-capture gate: SAME / VELOCITY / ADDED-TRACK / MOVED per song, with reasons, the first differing bar, and the events gained or lost. |
+| `recapture.mjs [--console C] [--album A]` | Re-captures published chip albums from the archive into `/tmp/recap/` and writes a report (verdict, annotations, planned action per song); `--apply --album A` copies one album's planned replacements into albums/. |
+| `nsf/dump-all.mjs <ff1.nsf> [--out dir]` | Builds FF1's songs from the NSF with its verified bar counts (`--out`: anywhere but the album). |
 | `migrate-rollnotes-v2.mjs` | The one-time v1 → v2 batch migration of `*.rollnotes.json` (see `docs/annotations-v2.md`). |
 | `spc-undrum.mjs` | One-time fix for SNES captures whose noise voice was merged into a drums track. |
 | `package.mjs [--out <dir>]` | Assembles the product build (default `dist/night-roll-app/`) and refuses to ship anything that is not ours. |
