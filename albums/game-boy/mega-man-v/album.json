@@ -24,167 +24,365 @@
    "boss-battle": {
     "n": 7,
     "secs": 22.502197265625,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -13.3,
+     "peak": -2.6,
+     "synth": -9
+    }
    },
    "boss-defeated": {
     "n": 19,
     "secs": 4.738185882568359,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": -0.9,
+     "synth": -10.2
+    }
    },
    "dark-moon-battle-cutscene-dr-wily-s-stage": {
     "n": 15,
     "secs": 70.72119140625,
-    "track": 17
+    "track": 17,
+    "loud": {
+     "v": 1,
+     "lufs": -13.9,
+     "peak": -0.5,
+     "synth": -11.5
+    }
    },
    "dr-light-s-instructions": {
     "n": 28,
     "secs": 6.42919921875,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -13.7,
+     "peak": -0.9,
+     "synth": -9.5
+    }
    },
    "dr-light-s-shop": {
     "n": 27,
     "secs": 17.111045837402344,
-    "track": 16
+    "track": 16,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -2.7,
+     "synth": -10.1
+    }
    },
    "ending": {
     "n": 22,
     "secs": 61.88104248046875,
-    "track": 26
+    "track": 26,
+    "loud": {
+     "v": 1,
+     "lufs": -13.9,
+     "peak": -2,
+     "synth": -10.7
+    }
    },
    "final-boss-battle": {
     "n": 31,
     "secs": 30.5386962890625,
-    "track": 24
+    "track": 24,
+    "loud": {
+     "v": 1,
+     "lufs": -12.7,
+     "peak": -0.3,
+     "synth": -12
+    }
    },
    "final-boss-defeated": {
     "n": 32,
     "secs": 7.0319366455078125,
-    "track": 25
+    "track": 25,
+    "loud": {
+     "v": 1,
+     "lufs": -12.7,
+     "peak": -0.4,
+     "synth": -11.1
+    }
    },
    "flight-cutscene": {
     "n": 10,
     "secs": 53.0408935546875,
-    "track": 18
+    "track": 18,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": -2.1,
+     "synth": -10.8
+    }
    },
    "game-over-screen": {
     "n": 18,
     "secs": 8.0364990234375,
-    "track": 27
+    "track": 27,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": -2.3,
+     "synth": -10.2
+    }
    },
    "intro-1": {
     "n": 16,
     "secs": 14.231300354003906,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -18.6,
+     "peak": -6.4,
+     "synth": -18
+    }
    },
    "intro-2-terra-s-theme": {
     "n": 26,
     "secs": 45.00439453125,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -12.5,
+     "peak": -0.6,
+     "synth": -10.2
+    }
    },
    "intro-3-dr-wily-s-space-station-sunstar-introduction": {
     "n": 29,
     "secs": 10.71533203125,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": -2.7,
+     "synth": -12.6
+    }
    },
    "jupiter-s-stage": {
     "n": 12,
     "secs": 48.218994140625,
-    "track": 19
+    "track": 19,
+    "loud": {
+     "v": 1,
+     "lufs": -13.3,
+     "peak": -2.4,
+     "synth": -9.6
+    }
    },
    "mars-stage": {
     "n": 11,
     "secs": 70.31936645507812,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -13,
+     "peak": -2,
+     "synth": -10.1
+    }
    },
    "mercury-s-stage": {
     "n": 9,
     "secs": 49.12310028076172,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -12.7,
+     "peak": -2.2,
+     "synth": -9.9
+    }
    },
    "neptune-s-stage": {
     "n": 5,
     "secs": 58.264617919921875,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -12.1,
+     "peak": -2.2,
+     "synth": -9.2
+    }
    },
    "password-screen": {
     "n": 30,
     "secs": 15.00146484375,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": -0.3,
+     "synth": -9.6
+    }
    },
    "pluto-s-stage": {
     "n": 14,
     "secs": 57.86279296875,
-    "track": 20
+    "track": 20,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -1.8,
+     "synth": -9.2
+    }
    },
    "saturn-s-stage": {
     "n": 8,
     "secs": 47.013519287109375,
-    "track": 21
+    "track": 21,
+    "loud": {
+     "v": 1,
+     "lufs": -12.4,
+     "peak": -1.3,
+     "synth": -9.5
+    }
    },
    "shoot-em-up-stage": {
     "n": 4,
     "secs": 38.77610778808594,
-    "track": 23
+    "track": 23,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": -0.5,
+     "synth": -10
+    }
    },
    "stage-select": {
     "n": 1,
     "secs": 32.61479187011719,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": -2.4,
+     "synth": -10.4
+    }
    },
    "stage-start": {
     "n": 17,
     "secs": 9.007575988769531,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -13.6,
+     "peak": -2.6,
+     "synth": -10.3
+    }
    },
    "title-screen": {
     "n": 25,
     "secs": 26.905529022216797,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -12.3,
+     "peak": -0.3,
+     "synth": -8.9
+    }
    },
    "unused-jingle-1": {
     "n": 2,
     "secs": 6.6301116943359375,
-    "track": 32
+    "track": 32,
+    "loud": {
+     "v": 1,
+     "lufs": -13,
+     "peak": -0.8,
+     "synth": -11.1
+    }
    },
    "unused-jingle-2": {
     "n": 23,
     "secs": 8.773178100585938,
-    "track": 33
+    "track": 33,
+    "loud": {
+     "v": 1,
+     "lufs": -12.4,
+     "peak": -2,
+     "synth": -10.4
+    }
    },
    "unused-song-1": {
     "n": 6,
     "secs": 27.3240966796875,
-    "track": 28
+    "track": 28,
+    "loud": {
+     "v": 1,
+     "lufs": -12.1,
+     "peak": -1.3,
+     "synth": -8.9
+    }
    },
    "unused-song-2": {
     "n": 13,
     "secs": 32.94964599609375,
-    "track": 29
+    "track": 29,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -2.3,
+     "synth": -9.8
+    }
    },
    "unused-song-3": {
     "n": 20,
     "secs": 12.255661010742188,
-    "track": 30
+    "track": 30,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": -3,
+     "synth": -9.7
+    }
    },
    "unused-song-4": {
     "n": 24,
     "secs": 56.85823059082031,
-    "track": 31
+    "track": 31,
+    "loud": {
+     "v": 1,
+     "lufs": -14.6,
+     "peak": 0.1,
+     "synth": -13.4
+    }
    },
    "uranus-stage": {
     "n": 3,
     "secs": 32.14599609375,
-    "track": 22
+    "track": 22,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 0.3,
+     "synth": -10.6
+    }
    },
    "venus-stage": {
     "n": 33,
     "secs": 32.14599609375,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -12.5,
+     "peak": -0.5,
+     "synth": -10.2
+    }
    },
    "you-got-a-weapon-screen": {
     "n": 21,
     "secs": 14.4656982421875,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -13.7,
+     "peak": -1.1,
+     "synth": -10.8
+    }
    }
   },
   "chip": "gbs"
