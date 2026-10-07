@@ -14,99 +14,195 @@
   "tracks": {
    "boss-a": {
     "n": 96,
-    "secs": 29.9
+    "secs": 29.9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "boss-b": {
     "n": 99,
-    "secs": 36
+    "secs": 36,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "boss-c": {
     "n": 97,
-    "secs": 37.5
+    "secs": 37.5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "credits": {
     "n": 98,
-    "secs": 117.6
+    "secs": 117.6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-a": {
     "n": 118,
-    "secs": 8.3
+    "secs": 8.3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-b": {
     "n": 103,
-    "secs": 7
+    "secs": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-c": {
     "n": 107,
-    "secs": 3.6
+    "secs": 3.6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-d": {
     "n": 108,
-    "secs": 3.6
+    "secs": 3.6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-e": {
     "n": 102,
-    "secs": 1.9
+    "secs": 1.9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "cutscene-f": {
     "n": 105,
-    "secs": 6.1
+    "secs": 6.1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "epilogue": {
     "n": 119,
-    "secs": 19.1
+    "secs": 19.1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "game-over": {
     "n": 104,
-    "secs": 3.1
+    "secs": 3.1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-1": {
     "n": 109,
-    "secs": 44.8
+    "secs": 44.8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-2a": {
     "n": 110,
-    "secs": 38.4
+    "secs": 38.4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-2b": {
     "n": 111,
-    "secs": 41.5
+    "secs": 41.5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-3a": {
     "n": 113,
-    "secs": 30.8
+    "secs": 30.8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-3b-5": {
     "n": 112,
-    "secs": 40.6
+    "secs": 40.6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-4a": {
     "n": 114,
-    "secs": 40.4
+    "secs": 40.4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-4b": {
     "n": 115,
-    "secs": 29.9
+    "secs": 29.9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-6": {
     "n": 116,
-    "secs": 20.7
+    "secs": 20.7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-7": {
     "n": 117,
-    "secs": 48.6
+    "secs": 48.6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-cleared-a": {
     "n": 101,
-    "secs": 1.8
+    "secs": 1.8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "scene-cleared-b": {
     "n": 100,
-    "secs": 3.4
+    "secs": 3.4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "selection": {
     "n": 106,
-    "secs": 7.5
+    "secs": 7.5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
