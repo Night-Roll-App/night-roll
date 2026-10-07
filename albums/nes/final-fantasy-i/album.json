@@ -24,6 +24,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -10,
+     "synth": -15.4
     }
    },
    "prologue": {
@@ -33,6 +39,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -6.8,
+     "synth": -8.1
     }
    },
    "epilogue": {
@@ -42,6 +54,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -7,
+     "synth": -8.3
     }
    },
    "overworld": {
@@ -51,6 +69,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -6.3,
+     "synth": -11.2
     }
    },
    "ship": {
@@ -60,6 +84,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -7.9,
+     "synth": -10.8
     }
    },
    "airship": {
@@ -69,6 +99,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -7.2,
+     "synth": -9.4
     }
    },
    "town": {
@@ -78,6 +114,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": -7.1,
+     "synth": -8.2
     }
    },
    "cornelia-castle": {
@@ -87,6 +129,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -7.1,
+     "synth": -8.2
     }
    },
    "gurgu-volcano": {
@@ -96,6 +144,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -5.1,
+     "synth": -10.9
     }
    },
    "matoyas-cave": {
@@ -105,6 +159,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -6.8,
+     "synth": -10.1
     }
    },
    "cave": {
@@ -114,6 +174,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -7.1,
+     "synth": -9.8
     }
    },
    "chaos-temple": {
@@ -123,6 +189,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -8,
+     "synth": -9.5
     }
    },
    "floating-castle": {
@@ -132,6 +204,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -5.1,
+     "synth": -9.9
     }
    },
    "underwater-palace": {
@@ -141,6 +219,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -6.7,
+     "synth": -11
     }
    },
    "shop": {
@@ -150,6 +234,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -6.3,
+     "synth": -9.9
     }
    },
    "battle": {
@@ -159,6 +249,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -5.8,
+     "synth": -10.3
     }
    },
    "menu": {
@@ -168,6 +264,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -8.8,
+     "synth": -8.3
     }
    },
    "game-over": {
@@ -177,6 +279,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -7.8,
+     "synth": -8.4
     }
    },
    "victory": {
@@ -186,6 +294,12 @@
     "cap": {
      "v": 2,
      "code": "bfb0ea84"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -5.9,
+     "synth": -9.4
     }
    }
   }
