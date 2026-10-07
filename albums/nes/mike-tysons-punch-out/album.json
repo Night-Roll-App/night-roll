@@ -71,82 +71,146 @@
    "bout-winner": {
     "n": 6,
     "secs": 5.3831180000000005,
-    "track": 14
+    "track": 14,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "don-flamenco-s-theme": {
     "n": 16,
     "secs": 7.383038,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "game-over": {
     "n": 9,
     "secs": 11.6662,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "get-up-little-mac": {
     "n": 22,
     "secs": 5.33312,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "glass-joe-s-theme": {
     "n": 15,
     "secs": 7.399704,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "king-hippo-s-theme": {
     "n": 17,
     "secs": 5.399784,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "match-bgm": {
     "n": 23,
     "secs": 32.33204,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "moving-on-to-next-level": {
     "n": 5,
     "secs": 7.383038,
-    "track": 16
+    "track": 16,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "piston-honda-s-theme": {
     "n": 19,
     "secs": 7.383038,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "preparing-for-next-big-bout": {
     "n": 8,
     "secs": 6.199752,
-    "track": 15
+    "track": 15,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "punch-out-theme-reprise": {
     "n": 2,
     "secs": 8.932976,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "punch-out-theme": {
     "n": 1,
     "secs": 22.399104,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "round-1-begins": {
     "n": 10,
     "secs": 4.199832,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-032": {
     "n": 32,
     "secs": 1.049958,
-    "track": 29
+    "track": 29,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-033": {
     "n": 33,
     "secs": 1.049958,
-    "track": 30
+    "track": 30,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-034": {
     "n": 34,
     "secs": 1.049958,
-    "track": 31
+    "track": 31,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-041": {
     "n": 41,
@@ -156,7 +220,11 @@
    "se-043": {
     "n": 43,
     "secs": 1.08329,
-    "track": 40
+    "track": 40,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-047": {
     "n": 47,
@@ -211,7 +279,11 @@
    "se-064": {
     "n": 64,
     "secs": 1.116622,
-    "track": 61
+    "track": 61,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-066": {
     "n": 66,
@@ -221,7 +293,11 @@
    "se-067": {
     "n": 67,
     "secs": 1.49994,
-    "track": 64
+    "track": 64,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-068": {
     "n": 68,
@@ -236,17 +312,29 @@
    "se-bell": {
     "n": 35,
     "secs": 2.049918,
-    "track": 32
+    "track": 32,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-blocking": {
     "n": 27,
     "secs": 1.049958,
-    "track": 24
+    "track": 24,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-disappearing": {
     "n": 63,
     "secs": 2.58323,
-    "track": 60
+    "track": 60,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-dodging": {
     "n": 40,
@@ -266,7 +354,11 @@
    "se-opponent-asked-for-more": {
     "n": 52,
     "secs": 1.2499500000000001,
-    "track": 49
+    "track": 49,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-opponent-jumping-away": {
     "n": 58,
@@ -286,7 +378,11 @@
    "se-opponent-misses-big-uppercut-blow": {
     "n": 65,
     "secs": 2.049918,
-    "track": 62
+    "track": 62,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-opponent-spitting-from-mouth": {
     "n": 26,
@@ -306,7 +402,11 @@
    "se-opponent-throws-a-punch": {
     "n": 56,
     "secs": 1.5166060000000001,
-    "track": 53
+    "track": 53,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-punch-missed": {
     "n": 29,
@@ -326,22 +426,38 @@
    "se-referee-announcing-tko": {
     "n": 38,
     "secs": 1.483274,
-    "track": 35
+    "track": 35,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-referee-announcing-winner": {
     "n": 39,
     "secs": 1.183286,
-    "track": 36
+    "track": 36,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-referee-counting": {
     "n": 37,
     "secs": 1.283282,
-    "track": 34
+    "track": 34,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-referee": {
     "n": 36,
     "secs": 1.233284,
-    "track": 33
+    "track": 33,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "se-special-punch": {
     "n": 45,
@@ -361,37 +477,65 @@
    "soda-popinski-s-theme": {
     "n": 18,
     "secs": 7.383038,
-    "track": 8
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "the-dream-fight": {
     "n": 13,
     "secs": 5.3831180000000005,
-    "track": 17
+    "track": 17,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "von-kaiser-s-theme": {
     "n": 14,
     "secs": 5.3831180000000005,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "warming-up-with-doc": {
     "n": 20,
     "secs": 26.6656,
-    "track": 18
+    "track": 18,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "you-lose": {
     "n": 7,
     "secs": 5.783102,
-    "track": 12
+    "track": 12,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "you-ve-won-the-championship-ranking": {
     "n": 4,
     "secs": 10.599576,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "you-win": {
     "n": 21,
     "secs": 5.33312,
-    "track": 13
+    "track": 13,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
