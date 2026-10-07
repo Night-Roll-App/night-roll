@@ -4,10 +4,12 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
-## 2026-10-07 RE-CAPTURE EVERYTHING (Josh #170/#171) — tools on main, applying album by album
+## 2026-10-07 RE-CAPTURE EVERYTHING (Josh #170/#171) — DONE except FFX (held for his ear)
 tools/recapture.mjs (dry run → /tmp/recap*; --apply --album c/slug, one album per push) + tools/capture-diff.mjs. --apply never deletes, never writes a .rollnotes.json; annotated songs whose bars move get "<title> (re-capture)" beside the old; MOVED by the loop point alone → replaced, keeping the song's own loop line (FF1 Overworld, FF4 Cry in Sorrow pt 2). CAPTURE_VERSION 2.
 v1 dry run, all consoles (/tmp/recap/report.md): NES 501 songs (SAME 197 · VEL 295 · MOVED 9), GB 333 (304 · 15 · 14), SNES 865 (701 · 152 · 12), PS1 471 (469 · 0 · 1; chrono-cross drowning-valley.psf 404 in the archive), PS2 151 (59 · 78 · 14 — all FFX), N64 924 all SAME.
-Order: NES (v2 dry run in /tmp/recap2) → GB → SNES → PS1. HELD: FFX (see "AWAITS JOSH'S EAR: FFX pitches" — still his call), unannotated MOVED songs whose loop changed (hold-loop-changed: 17).
+APPLIED 2026-10-07, one album per push: NES 19 albums (393 replaced, 8 "(re-capture)" copies), Game Boy 6 (15 replaced, 14 copies), PS1 6 (157 replaced; chrono-cross drowning-valley missing from the archive), SNES 13 (852 replaced, 11 copies — capture v2 4fbd7ce4). N64 + Dark Cloud: identical, nothing to apply. Rule (Josh, 2026-10-07): beats moved → old song kept + "(re-capture)" copy, annotated or not; same beats → replaced; loop-point-only → replaced, its own loop line kept. Copies have no loop line yet (the tool never writes .rollnotes.json).
+HELD: FFX (see "AWAITS JOSH'S EAR: FFX pitches" — still his call).
+CHECK: SNES files grew (5 albums 8.1 → 14.6 MB, EarthBound 3.5 → 6 MB, mostly bends) — watch iPad load time.
 
 ## 2026-10-07 SNES capture v2 — BUILT on a worktree branch, awaiting merge (audit §4 item 2; NIGHT-ROLL.md "SNES capture v2")
 Per note: the DSP's envelope × VOL as `n.env` (falls included; ADSR shapes, slow attacks), L/R → CC10 timeline (moves of 4+ only; a still voice → one CC10 = midiPan), SRCN → program (tick 0, then changes), PITCH wobble under 70 cents → pitch bend (from the note's own start pitch, never the estimated root), EON × EVOL (0 while FLG disables echo writes) → CC91. No `echo:` meta (parseMidi reads none). Notes, velocities, `ve`, tracks, tempo, meter: v1's.

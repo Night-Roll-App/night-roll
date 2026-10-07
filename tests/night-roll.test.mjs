@@ -13853,7 +13853,7 @@ test("volume shape: a foreign file's in-note aftertouch stays a raw event, never
   assert.deepEqual(f, {env: 0, ve: 0, raw: 6}, "2 ve + 4 points, all kept verbatim as raw");
 });
 
-test("volume shape: existing album .mid files (read-only sample across every console) parse with no shape and write back byte-identical", () => {
+test("volume shape: existing album .mid files (read-only sample across every console) write back byte-identical — re-captured ones (capture v2) with their shapes", () => {
   installSong();
   const files = [
     "albums/game-boy/donkey-kong-land/airship.mid", "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-two-instruments.mid",
@@ -13877,7 +13877,6 @@ test("volume shape: existing album .mid files (read-only sample across every con
     const r = val(`(() => { const s = parseMidi(new Uint8Array(_corpusBytes).buffer, {trust: true}); const o = Array.from(writeMidi(s));
       let env = 0, ve = 0; s.tracks.forEach(t => t.notes.forEach(n => { if (n.env) env++; if (n.ve !== undefined) ve++; }));
       return {same: o.length === _corpusBytes.length && o.every((x, i) => x === _corpusBytes[i]), env, ve}; })()`);
-    assert.equal(r.env, 0, f + ": no shape in a file written before shapes existed");
     assert.ok(r.same, f + ": parse → write is byte-identical");
     if (r.ve) withVe++;
   }
@@ -14113,7 +14112,7 @@ test("MIDI controllers: every event type (bend, RPN 0, CC7/11/64/1/91, pan event
   assert.equal(val(`ctlAt(ctlList(ctlIndex({ctl: [{t: 0, ch: 0, c: "pb", v: 1}]}), 0, "br"), 300, 2)`), 2);
 });
 
-test("MIDI controllers: existing album .mid files (≥30, every console, read-only) carry none and write back byte-identical; a capture-shaped file that DOES carry them keeps them through the publish re-encode", () => {
+test("MIDI controllers: existing album .mid files (≥30, every console, read-only) write back byte-identical, controllers and all (capture v2 files carry them); a capture-shaped file that DOES carry them keeps them through the publish re-encode", () => {
   installSong();
   const files = [];
   for (const con of ["nes", "snes", "game-boy", "n64", "ps1", "ps2"]) {
@@ -14137,7 +14136,6 @@ test("MIDI controllers: existing album .mid files (≥30, every console, read-on
     app.context._corpusBytes = [...readFileSync(new URL("../" + f, import.meta.url))]; // read-only: nothing is written back to albums/
     const r = val(`(() => { const s = parseMidi(new Uint8Array(_corpusBytes).buffer, {trust: true}); const o = Array.from(writeMidi(s));
       return {same: o.length === _corpusBytes.length && o.every((x, i) => x === _corpusBytes[i]), ctl: s.tracks.filter(t => t.ctl).length}; })()`);
-    assert.equal(r.ctl, 0, f + ": no controllers in a file written before v2");
     assert.ok(r.same, f + ": parse → write is byte-identical");
   }
   // a capture writer's own controllers (tools/nsf/midi-write.mjs makeMidiTracks — N64 programs, CC lists):
