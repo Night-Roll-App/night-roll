@@ -47,19 +47,31 @@
     "n": 1,
     "secs": 168.45033474999994,
     "track": 75,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "alone": {
     "n": 1,
     "secs": 158.248116,
     "track": 47,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ancient-tomb-of-king-mu": {
     "n": 1,
     "secs": 83.934254,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "ancient-tomb-of-king-sei": {
     "n": 1,
@@ -83,19 +95,31 @@
     "n": 1,
     "secs": 106.358864,
     "track": 25,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "back-streets-of-koorong": {
     "n": 1,
     "secs": 81.746672,
     "track": 46,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-1": {
     "n": 1,
     "secs": 72.30451487499997,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-2": {
     "n": 1,
@@ -107,7 +131,11 @@
     "n": 1,
     "secs": 119.18650075,
     "track": 28,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "battle-4-alternate": {
     "n": 1,
@@ -125,7 +153,11 @@
     "n": 1,
     "secs": 93.14617575000001,
     "track": 53,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "black-x-base": {
     "n": 1,
@@ -137,7 +169,11 @@
     "n": 1,
     "secs": 65.55044362500001,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "blue-town": {
     "n": 1,
@@ -173,13 +209,21 @@
     "n": 1,
     "secs": 22.800064,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "dear-my-country": {
     "n": 1,
     "secs": 57.45624,
     "track": 71,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "despair": {
     "n": 1,
@@ -203,13 +247,21 @@
     "n": 1,
     "secs": 78.06555,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "emelia-s-theme": {
     "n": 1,
     "secs": 77.805312,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fight-alkaiser": {
     "n": 1,
@@ -221,7 +273,11 @@
     "n": 1,
     "secs": 62.37904,
     "track": 72,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "fighting-machine-arena": {
     "n": 1,
@@ -245,31 +301,51 @@
     "n": 1,
     "secs": 110.298829,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "hq": {
     "n": 1,
     "secs": 143.64048,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "junk": {
     "n": 1,
     "secs": 73.68459975000005,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "koorong": {
     "n": 1,
     "secs": 114.847612,
     "track": 27,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "kylin-s-theme": {
     "n": 1,
     "secs": 75.7598,
     "track": 41,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "labyrinth-of-darkness": {
     "n": 1,
@@ -293,7 +369,11 @@
     "n": 1,
     "secs": 160.51778299999998,
     "track": 68,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "last-battle-lute": {
     "n": 1,
@@ -305,7 +385,11 @@
     "n": 1,
     "secs": 210.53898400000006,
     "track": 65,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "last-battle-riki": {
     "n": 1,
@@ -317,7 +401,11 @@
     "n": 1,
     "secs": 250.800704,
     "track": 66,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "leonard-s-laboratory": {
     "n": 1,
@@ -329,7 +417,11 @@
     "n": 1,
     "secs": 85.734562375,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "light-a-lighthouse": {
     "n": 1,
@@ -341,7 +433,11 @@
     "n": 1,
     "secs": 92.90647375,
     "track": 69,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "magic-kingdom": {
     "n": 1,
@@ -365,31 +461,51 @@
     "n": 1,
     "secs": 127.6598076250001,
     "track": 54,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "melody-of-time": {
     "n": 1,
     "secs": 96.770862,
     "track": 48,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "mosperiburg": {
     "n": 1,
     "secs": 84.612793375,
     "track": 56,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "nakajima-manufacturer": {
     "n": 1,
     "secs": 43.3398,
     "track": 21,
-    "disc": 1
+    "disc": 1,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "never": {
     "n": 1,
     "secs": 108.594288,
     "track": 61,
-    "disc": 3
+    "disc": 3,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "next": {
     "n": 1,
@@ -419,13 +535,21 @@
     "n": 1,
     "secs": 3.30208,
     "track": 80,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "pursuit-2": {
     "n": 1,
     "secs": 1.65104,
     "track": 81,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "resolution": {
     "n": 1,
@@ -437,13 +561,21 @@
     "n": 1,
     "secs": 64.3182395625,
     "track": 79,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "robot-2": {
     "n": 1,
     "secs": 119.7004,
     "track": 78,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "shingrow": {
     "n": 1,
@@ -479,13 +611,21 @@
     "n": 1,
     "secs": 93.728346375,
     "track": 76,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-ancient-ship": {
     "n": 1,
     "secs": 63.3708,
     "track": 33,
-    "disc": 2
+    "disc": 2,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "the-opening-of-a-journey": {
     "n": 1,
@@ -515,7 +655,11 @@
     "n": 1,
     "secs": 20.9475735,
     "track": 83,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "b28173b8"
+    }
    },
    "trick": {
     "n": 1,
