@@ -14013,6 +14013,8 @@ test("volume shape lane: with one shaped note selected its points are handles; a
   assert.deepEqual(val(`song.tracks[0].notes[3].env.map(q => [q.t, Math.round(q.r * song.tracks[0].notes[3].v)])`), [[959, 127]], "clamped inside the note, level absolute 0–127 stored relative");
   run(`selEditApply([{ti: 0, ni: 3, n: song.tracks[0].notes[3]}], () => {}, [{ti: 0, ni: 3, t: 9600, d: 960, p: 65, v: 80, env: [{t: 240, r: 0.5}], ve: null}]); editUndoPop();`);
   assert.deepEqual(val(`song.tracks[0].notes[3].env`), [{t: 240, r: 0.5}], "undo puts the point back");
+});
+
 // Capture fidelity audit step 1: the NES sample channel (DPCM) plays in the
 // console voice. No capture writes a dpcm track yet, so its part plays
 // through the noise track (else the triangle) — and it counts toward the
