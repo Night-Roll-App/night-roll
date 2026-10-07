@@ -1988,6 +1988,10 @@
     "path": "albums/nes/contra/alien-s-lair-stage-8.mid"
    },
    {
+    "title": "Alien's Lair (Stage 8) (re-capture)",
+    "path": "albums/nes/contra/alien-s-lair-stage-8-recapture.mid"
+   },
+   {
     "title": "Base Boss",
     "path": "albums/nes/contra/base-boss.mid"
    },

@@ -7,7 +7,8 @@
   "energy-zone-stage-6": "Energy Zone (Stage 6)",
   "jungle-hangar-stages-1-7": "Jungle, Hangar (Stages 1, 7)",
   "snowfield-stage-5": "Snowfield (Stage 5)",
-  "waterfall-stage-3": "Waterfall (Stage 3)"
+  "waterfall-stage-3": "Waterfall (Stage 3)",
+  "alien-s-lair-stage-8-recapture": "Alien's Lair (Stage 8) (re-capture)"
  },
  "nsf": {
   "vault": "nes/contra.nsf",
@@ -20,52 +21,101 @@
    "base-boss": {
     "n": 8,
     "secs": 34.9986,
-    "track": 4
+    "track": 4,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "bases-i-ii-stages-2-4": {
     "n": 7,
     "secs": 51.197952,
-    "track": 3
+    "track": 3,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "ending": {
     "n": 10,
     "secs": 83.33,
-    "track": 10
+    "track": 10,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "energy-zone-stage-6": {
     "n": 5,
     "secs": 21.699132,
-    "track": 7
+    "track": 7,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "game-over": {
     "n": 11,
     "secs": 6.599736,
-    "track": 11
+    "track": 11,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "jungle-hangar-stages-1-7": {
     "n": 2,
     "secs": 51.197952,
-    "track": 2
+    "track": 2,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "snowfield-stage-5": {
     "n": 4,
     "secs": 35.198592,
-    "track": 6
+    "track": 6,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "title-screen": {
     "n": 1,
     "secs": 6.0664240000000005,
-    "track": 1
+    "track": 1,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "victory": {
     "n": 9,
     "secs": 4.733144,
-    "track": 9
+    "track": 9,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    },
    "waterfall-stage-3": {
     "n": 3,
     "secs": 41.598336,
-    "track": 5
+    "track": 5,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
+   },
+   "alien-s-lair-stage-8-recapture": {
+    "n": 6,
+    "secs": 34.298628,
+    "track": 8,
+    "cap": {
+     "v": 2,
+     "code": "0965b9af"
+    }
    }
   }
  }
