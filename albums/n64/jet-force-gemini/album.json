@@ -40,6 +40,10 @@
      "lufs": -10,
      "peak": 8.5,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "arcade-complete": {
@@ -51,6 +55,10 @@
      "lufs": -11.9,
      "peak": 1.9,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "assembling-floyd": {
@@ -62,6 +70,10 @@
      "lufs": -6.8,
      "peak": 5.5,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "asteroid": {
@@ -73,6 +85,10 @@
      "lufs": -8.6,
      "peak": 9.6,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "boss-death": {
@@ -84,6 +100,10 @@
      "lufs": -10,
      "peak": 6.9,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "boss-fight": {
@@ -95,6 +115,10 @@
      "lufs": -6.5,
      "peak": 9.4,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "boss-intro": {
@@ -106,6 +130,10 @@
      "lufs": -14.8,
      "peak": 3.5,
      "synth": -10.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "cave": {
@@ -117,6 +145,10 @@
      "lufs": -10.4,
      "peak": 7.9,
      "synth": -4.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "cerulean": {
@@ -128,6 +160,10 @@
      "lufs": -5.7,
      "peak": 12.4,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "character-select": {
@@ -139,6 +175,10 @@
      "lufs": -6.7,
      "peak": 7.7,
      "synth": -1.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "death": {
@@ -150,6 +190,10 @@
      "lufs": -7.7,
      "peak": 4.9,
      "synth": -1.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "departing-from-goldwood-sfx": {
@@ -161,6 +205,10 @@
      "lufs": -12.9,
      "peak": 2,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "destroying-the-asteroid": {
@@ -172,6 +220,10 @@
      "lufs": -11.8,
      "peak": 7.9,
      "synth": -1.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "entering-pyramid": {
@@ -183,6 +235,10 @@
      "lufs": -9.1,
      "peak": 5.4,
      "synth": -1.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "eschebone": {
@@ -194,6 +250,10 @@
      "lufs": -7.7,
      "peak": 8.6,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "finding-floyd-part-1": {
@@ -205,6 +265,10 @@
      "lufs": -5.3,
      "peak": 7,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "finding-floyd-part-2": {
@@ -216,6 +280,10 @@
      "lufs": -6.3,
      "peak": 6.2,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "finding-floyd-part-3": {
@@ -227,6 +295,10 @@
      "lufs": -7.6,
      "peak": 6.1,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "floyd-mission": {
@@ -238,6 +310,10 @@
      "lufs": -11.8,
      "peak": 6.4,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "floyd-s-destruction": {
@@ -249,6 +325,10 @@
      "lufs": -7.2,
      "peak": 8,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "flume": {
@@ -260,6 +340,10 @@
      "lufs": -17.1,
      "peak": -0.7,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "funky-disco": {
@@ -271,6 +355,10 @@
      "lufs": -19.8,
      "peak": 1.4,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "gem-quarry-saved": {
@@ -282,6 +370,10 @@
      "lufs": -7.2,
      "peak": 9.8,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "gemini": {
@@ -293,6 +385,10 @@
      "lufs": -15.1,
      "peak": -4.2,
      "synth": -11.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "gold-bar": {
@@ -304,6 +400,10 @@
      "lufs": -13.6,
      "peak": 0.1,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "goldwood": {
@@ -315,6 +415,10 @@
      "lufs": -6.9,
      "peak": 10,
      "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "ichor": {
@@ -326,6 +430,10 @@
      "lufs": -8.8,
      "peak": 9.7,
      "synth": -2.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "intro-movie": {
@@ -337,6 +445,10 @@
      "lufs": -5.4,
      "peak": 12.7,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "jeff-barry-racing": {
@@ -348,6 +460,10 @@
      "lufs": -15.5,
      "peak": -0.1,
      "synth": -10.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "jungle": {
@@ -359,6 +475,10 @@
      "lufs": -19.5,
      "peak": -2.4,
      "synth": -13
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "landing-on-gem-quarry": {
@@ -370,6 +490,10 @@
      "lufs": -10.8,
      "peak": 5,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "landing-on-sekhmet-sfx": {
@@ -381,6 +505,10 @@
      "lufs": -11.7,
      "peak": 6.9,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "landing-on-ss-anubis-sfx": {
@@ -392,6 +520,10 @@
      "lufs": -14.5,
      "peak": 1.3,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "large-gemini": {
@@ -403,6 +535,10 @@
      "lufs": -11.3,
      "peak": -3.5,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "level-complete": {
@@ -414,6 +550,10 @@
      "lufs": -12.2,
      "peak": 9.5,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "logo-screens": {
@@ -425,6 +565,10 @@
      "lufs": -20.9,
      "peak": -2.2,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "main-theme": {
@@ -436,6 +580,10 @@
      "lufs": -9.2,
      "peak": 9.9,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "medal-ceremony": {
@@ -447,6 +595,10 @@
      "lufs": -9.2,
      "peak": 12.2,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "medal": {
@@ -458,6 +610,10 @@
      "lufs": -12.5,
      "peak": 5.3,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "meeting-lupus": {
@@ -469,6 +625,10 @@
      "lufs": -9.9,
      "peak": 6.2,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "meeting-mizar-part-1": {
@@ -480,6 +640,10 @@
      "lufs": -6.7,
      "peak": 10.6,
      "synth": -3.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "meeting-mizar-part-2": {
@@ -491,6 +655,10 @@
      "lufs": -9.3,
      "peak": 10,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "menu": {
@@ -502,6 +670,10 @@
      "lufs": -17.1,
      "peak": -3.2,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "mines": {
@@ -513,6 +685,10 @@
      "lufs": -7.1,
      "peak": 9.2,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "mizar-escapes": {
@@ -524,6 +700,10 @@
      "lufs": -8,
      "peak": 10.4,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "mizar-s-death": {
@@ -535,6 +715,10 @@
      "lufs": -8.2,
      "peak": 10.5,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "mizar-s-palace": {
@@ -546,6 +730,10 @@
      "lufs": -7.6,
      "peak": 11.3,
      "synth": -2.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "mizar-s-racetrack": {
@@ -557,6 +745,10 @@
      "lufs": -9.7,
      "peak": 7.5,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "racetrack-lose": {
@@ -568,6 +760,10 @@
      "lufs": -3.3,
      "peak": 7.4,
      "synth": -1.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "racetrack-win": {
@@ -579,6 +775,10 @@
      "lufs": -2.3,
      "peak": 8.1,
      "synth": 2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "rescuing-vela": {
@@ -590,6 +790,10 @@
      "lufs": -8.4,
      "peak": 7.4,
      "synth": -3.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "rith-essa": {
@@ -601,6 +805,10 @@
      "lufs": -12.5,
      "peak": 7.7,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "s-s-anubis": {
@@ -612,6 +820,10 @@
      "lufs": -6.6,
      "peak": 9.8,
      "synth": -4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "sekhmet": {
@@ -623,6 +835,10 @@
      "lufs": -9.6,
      "peak": 7.9,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "ship-landing-bay": {
@@ -634,6 +850,10 @@
      "lufs": -15.4,
      "peak": 1.6,
      "synth": -12.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "something-faster": {
@@ -645,6 +865,10 @@
      "lufs": -10.5,
      "peak": 2.7,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "something-with-a-beat": {
@@ -656,6 +880,10 @@
      "lufs": -15.6,
      "peak": -0.7,
      "synth": -13.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "soothing-rhythms": {
@@ -667,6 +895,10 @@
      "lufs": -8.7,
      "peak": 10.6,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "spacestation": {
@@ -678,6 +910,10 @@
      "lufs": -10.6,
      "peak": 6.9,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "spawnship": {
@@ -689,6 +925,10 @@
      "lufs": -12.7,
      "peak": 4.7,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "tawfret": {
@@ -700,6 +940,10 @@
      "lufs": -14.5,
      "peak": 6,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "the-goldwood-invasion": {
@@ -711,6 +955,10 @@
      "lufs": -7.8,
      "peak": 7.5,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "timeloop-start": {
@@ -722,6 +970,10 @@
      "lufs": -6.7,
      "peak": 5.8,
      "synth": -1.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "transformation-of-tawfret": {
@@ -733,6 +985,10 @@
      "lufs": -9.1,
      "peak": 8.2,
      "synth": -0.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "travelling": {
@@ -744,6 +1000,10 @@
      "lufs": -8,
      "peak": 5.7,
      "synth": -0.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-1-sfx": {
@@ -755,6 +1015,10 @@
      "lufs": -9,
      "peak": 10.4,
      "synth": 0.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-1": {
@@ -766,6 +1030,10 @@
      "lufs": -12.4,
      "peak": 2.1,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-2-sfx": {
@@ -777,6 +1045,10 @@
      "lufs": -19.6,
      "peak": 6,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-2": {
@@ -788,6 +1060,10 @@
      "lufs": -7.5,
      "peak": 11.3,
      "synth": -2.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-3-sfx": {
@@ -799,6 +1075,10 @@
      "lufs": -11.2,
      "peak": 6.3,
      "synth": -3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-3": {
@@ -810,6 +1090,10 @@
      "lufs": -10.6,
      "peak": 6.9,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-4-sfx": {
@@ -821,6 +1105,10 @@
      "lufs": -12,
      "peak": 5.2,
      "synth": -0.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-5-sfx": {
@@ -832,6 +1120,10 @@
      "lufs": -7.6,
      "peak": 8.5,
      "synth": -1.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-6-sfx": {
@@ -843,6 +1135,10 @@
      "lufs": -11,
      "peak": 10.1,
      "synth": -3.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-7-sfx": {
@@ -854,6 +1150,10 @@
      "lufs": -12,
      "peak": 3.1,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-8-sfx": {
@@ -865,6 +1165,10 @@
      "lufs": -9.9,
      "peak": 5.1,
      "synth": -0.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "unidentified-9-sfx": {
@@ -876,6 +1180,10 @@
      "lufs": -7.8,
      "peak": 9.8,
      "synth": 1.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "vela-s-capture": {
@@ -887,6 +1195,10 @@
      "lufs": -9.9,
      "peak": 5.5,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    }
   },
