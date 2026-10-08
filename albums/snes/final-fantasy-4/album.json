@@ -48,6 +48,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.8,
+     "peak": -13.1,
+     "synth": -16.8
     }
    },
    "castle-damcyan": {
@@ -57,6 +63,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -12,
+     "synth": -16.7
     }
    },
    "chocobo-chocobo": {
@@ -66,6 +78,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -13.3,
+     "synth": -16.3
     }
    },
    "chocobo-forest": {
@@ -75,6 +93,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27,
+     "peak": -14.9,
+     "synth": -18.1
     }
    },
    "crickets": {
@@ -84,6 +108,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -37.1,
+     "peak": -28.1,
+     "synth": -23.4
     }
    },
    "cry-in-sorrow-part-1": {
@@ -93,6 +123,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.2,
+     "peak": -14.2,
+     "synth": -15.4
     }
    },
    "cry-in-sorrow-part-2": {
@@ -102,6 +138,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -31.5,
+     "peak": -18.2,
+     "synth": -20.1
     }
    },
    "dancing-calcobrina": {
@@ -111,6 +153,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -13.9,
+     "synth": -16.7
     }
    },
    "dancing-girls": {
@@ -120,6 +168,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -12,
+     "synth": -12.7
     }
    },
    "down-the-well": {
@@ -129,6 +183,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -31.9,
+     "peak": -22.7,
+     "synth": -25.1
     }
    },
    "epilogue-part-1": {
@@ -138,6 +198,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -10.7,
+     "synth": -16.9
     }
    },
    "epilogue-part-2": {
@@ -147,6 +213,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -10.4,
+     "synth": -16.2
     }
    },
    "epilogue-part-3": {
@@ -156,6 +228,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -11.7,
+     "synth": -12.6
     }
    },
    "fabul": {
@@ -165,6 +243,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -12.9,
+     "synth": -12.6
     }
    },
    "fanfare": {
@@ -174,6 +258,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -11.4,
+     "synth": -16.1
     }
    },
    "fight-1": {
@@ -183,6 +273,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -11.1,
+     "synth": -13.6
     }
    },
    "fight-2": {
@@ -192,6 +288,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -10,
+     "synth": -13.1
     }
    },
    "giott-the-great-king": {
@@ -201,6 +303,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -12.7,
+     "synth": -16
     }
    },
    "golbez-clad-in-dark": {
@@ -210,6 +318,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -11.1,
+     "synth": -13.1
     }
    },
    "good-night": {
@@ -219,6 +333,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.1,
+     "peak": -15.8,
+     "synth": -16.4
     }
    },
    "gysahl-s-whistle": {
@@ -228,6 +348,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -19.5,
+     "synth": -18.8
     }
    },
    "hello-big-chocobo": {
@@ -237,6 +363,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.6,
+     "peak": -13.9,
+     "synth": -16.6
     }
    },
    "hey-cid": {
@@ -246,6 +378,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.3,
+     "peak": -12.1,
+     "synth": -15.7
     }
    },
    "hummingway-s-tune": {
@@ -255,6 +393,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28,
+     "peak": -20,
+     "synth": -23.2
     }
    },
    "illusionary-world": {
@@ -264,6 +408,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -14.3,
+     "synth": -17.7
     }
    },
    "into-the-darkness": {
@@ -273,6 +423,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -12,
+     "synth": -16.7
     }
    },
    "join-the-party": {
@@ -282,6 +438,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -13.8,
+     "synth": -14.3
     }
    },
    "kingdom-baron": {
@@ -291,6 +453,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -11.8,
+     "synth": -15.3
     }
    },
    "land-of-dwarves": {
@@ -300,6 +468,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -13,
+     "synth": -15.9
     }
    },
    "long-way-to-go": {
@@ -309,6 +483,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -12,
+     "synth": -13.9
     }
    },
    "lunar-subterrane": {
@@ -318,12 +498,24 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -12.1,
+     "synth": -13.4
     }
    },
    "main-theme-ocean": {
     "n": 1,
     "secs": 154,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -11.7,
+     "synth": -18
+    }
    },
    "main-theme": {
     "n": 1,
@@ -332,6 +524,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -12,
+     "synth": -16.1
     }
    },
    "melody-of-lute-night": {
@@ -341,6 +539,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -34,
+     "peak": -20.2,
+     "synth": -19.5
     }
    },
    "melody-of-lute": {
@@ -350,6 +554,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -34.7,
+     "peak": -22.8,
+     "synth": -19.8
     }
    },
    "mt-ordeals": {
@@ -359,6 +569,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -12.9,
+     "synth": -16.3
     }
    },
    "mystic-mysidia": {
@@ -368,6 +584,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.3,
+     "peak": -11.6,
+     "synth": -15.4
     }
    },
    "palom-and-porom": {
@@ -377,6 +599,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -12,
+     "synth": -17
     }
    },
    "prologue": {
@@ -386,6 +614,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -11,
+     "synth": -10.6
     }
    },
    "red-wings": {
@@ -395,6 +629,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -12.1,
+     "synth": -14.4
     }
    },
    "ring-of-bomb": {
@@ -404,6 +644,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -11.7,
+     "synth": -13.2
     }
    },
    "run": {
@@ -413,6 +659,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -10.6,
+     "synth": -13.4
     }
    },
    "rydia": {
@@ -422,6 +674,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.7,
+     "peak": -14.2,
+     "synth": -17.3
     }
    },
    "samba-de-chocobo": {
@@ -431,6 +689,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -12.7,
+     "synth": -14.3
     }
    },
    "serpent-road": {
@@ -440,6 +704,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29.7,
+     "peak": -16.2,
+     "synth": -29.2
     }
    },
    "ship-ahoy": {
@@ -449,6 +719,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.6,
+     "peak": -14.5,
+     "synth": -15.8
     }
    },
    "somewhere-in-the-world": {
@@ -458,6 +734,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.2,
+     "peak": -14.7,
+     "synth": -19.8
     }
    },
    "surprise": {
@@ -467,6 +749,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -13,
+     "synth": -16.8
     }
    },
    "suspicion": {
@@ -476,6 +764,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -14.7,
+     "synth": -18.9
     }
    },
    "the-airship": {
@@ -485,6 +779,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -12.2,
+     "synth": -13.1
     }
    },
    "the-big-whale": {
@@ -494,6 +794,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -10.8,
+     "synth": -14.3
     }
    },
    "the-dreadful-fight": {
@@ -503,6 +809,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.3,
+     "peak": -11.2,
+     "synth": -14.8
     }
    },
    "the-final-battle": {
@@ -512,6 +824,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -11.1,
+     "synth": -15.2
     }
    },
    "the-lunarians": {
@@ -521,6 +839,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29.1,
+     "peak": -13.6,
+     "synth": -16.1
     }
    },
    "the-package-opens": {
@@ -530,6 +854,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -17.2,
+     "synth": -15.4
     }
    },
    "the-paladin": {
@@ -539,6 +869,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -10.9,
+     "synth": -14.1
     }
    },
    "the-porno-magazine": {
@@ -548,6 +884,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -10.1,
+     "synth": -12.6
     }
    },
    "the-prelude": {
@@ -557,6 +899,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -13.9,
+     "synth": -18.8
     }
    },
    "the-tower-of-babel": {
@@ -566,6 +914,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -12,
+     "synth": -16
     }
    },
    "theme-of-love": {
@@ -575,6 +929,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -14.2,
+     "synth": -18
     }
    },
    "toroian-beauty": {
@@ -584,6 +944,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -12.2,
+     "synth": -16.4
     }
    },
    "tower-of-zot": {
@@ -593,12 +959,24 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -11,
+     "synth": -13.4
     }
    },
    "tranquil-beach": {
     "n": 1,
     "secs": 16,
-    "track": 65
+    "track": 65,
+    "loud": {
+     "v": 1,
+     "lufs": -34,
+     "peak": -24.1,
+     "synth": -33.6
+    }
    },
    "welcome-to-our-town": {
     "n": 1,
@@ -607,6 +985,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -12.5,
+     "synth": -16.3
     }
    },
    "within-the-giant": {
@@ -616,6 +1000,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -11.1,
+     "synth": -15.9
     }
    },
    "main-theme-ocean-recapture": {
@@ -626,7 +1016,13 @@
      "v": 2,
      "code": "b28173b8"
     },
-    "rip": "main-theme-ocean"
+    "rip": "main-theme-ocean",
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -11.7,
+     "synth": -18.3
+    }
    },
    "tranquil-beach-recapture": {
     "n": 1,
@@ -636,7 +1032,13 @@
      "v": 2,
      "code": "b28173b8"
     },
-    "rip": "tranquil-beach"
+    "rip": "tranquil-beach",
+    "loud": {
+     "v": 1,
+     "lufs": -34,
+     "peak": -24.1,
+     "synth": -33.6
+    }
    }
   },
   "chip": "spc",
