@@ -1,4 +1,5 @@
 import { canvas } from "../render/roll.js";
+import { showRulerHl } from "../ui/chrome.js";
 import { tombstone } from "../model/edits.js";
 import { S } from "../state.js";
 import { pxPerTick } from "../render/roll.js";
@@ -845,7 +846,7 @@ export function tap(pos) {
           return;
         }
         S.tapBand = {n: sec, t: performance.now()};
-        S.rangeSel = {a: sec.start, b: sec.end};
+        if (showRulerHl()) S.rangeSel = {a: sec.start, b: sec.end}; // View › Display → Ruler highlight off: the tap only reads out (Josh #243)
         S.playCursor = sec.start;
         setInfo((sec.chord ? "chord " : "section ") + sec.text + " · bar " + sec.b1 + "–" + (sec.b2 || sec.b1) +
                 (sec.cnote ? " · ✱ " + sec.cnote.split("\n")[0] : "") +

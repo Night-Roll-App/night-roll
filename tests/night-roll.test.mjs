@@ -2997,6 +2997,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Ruler highlight",
     "Chip / MIDI switch",
     "speedometer icon",
     "their own full-width row under it",
@@ -15092,4 +15093,17 @@ test("the annotation window is dockable (Josh #236) but never reopened empty by 
   installSong();
   assert.equal(run(`WM_WINDOWS.noteeditor && WM_WINDOWS.noteeditor.dockable`), true);
   assert.equal(run(`typeof S.wmOpeners.noteeditor`), "undefined", "no opener: wmRestoreOpen skips it");
+});
+
+test("View › Display \"Ruler highlight\" (Josh #243): on by default a band tap selects its bars; off, the tap only reads out and clears any highlight", () => {
+  installSong();
+  run(`try { localStorage.removeItem("ff1roll-ruler-hl"); } catch (e) {} showRulerHl.v = undefined;`);
+  assert.equal(run(`showRulerHl()`), true, "on by default");
+  run(`rangeSel = {a: 0, b: 480}; setRulerHl(false);`);
+  assert.equal(val(`rangeSel`), null, "turning it off clears the one showing");
+  run(`showRulerHl.v = undefined;`);
+  assert.equal(run(`showRulerHl()`), false, "remembered per device");
+  assert.equal(val(`askSetPref({name: "ruler_highlight", value: true}).ok`), true);
+  assert.equal(run(`showRulerHl()`), true);
+  run(`try { localStorage.removeItem("ff1roll-ruler-hl"); } catch (e) {} showRulerHl.v = undefined;`);
 });
