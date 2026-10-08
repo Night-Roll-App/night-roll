@@ -67,7 +67,30 @@
   "wizpig-2-defeated": "WizPig 2 defeated",
   "wizpig-lives-with-sound-effects": "WizPig lives (with Sound Effects)",
   "wizpig-race": "WizPig Race",
-  "wizpig": "WizPig"
+  "wizpig": "WizPig",
+  "boulder-canyon-inner-castle-fast-recapture": "Boulder Canyon (Inner Castle) (Fast) (re-capture)",
+  "boulder-canyon-inner-castle-recapture": "Boulder Canyon (Inner Castle) (re-capture)",
+  "boulder-canyon-outer-castle-fast-recapture": "Boulder Canyon (Outer Castle) (Fast) (re-capture)",
+  "boulder-canyon-outer-castle-recapture": "Boulder Canyon (Outer Castle) (re-capture)",
+  "boulder-canyon-outside-castle-fast-recapture": "Boulder Canyon (Outside Castle) (Fast) (re-capture)",
+  "boulder-canyon-outside-castle-recapture": "Boulder Canyon (Outside Castle) (re-capture)",
+  "island-basic-fade-in-recapture": "Island (Basic Fade in) (re-capture)",
+  "island-basic-recapture": "Island (Basic) (re-capture)",
+  "island-dino-domain-recapture": "Island (Dino Domain) (re-capture)",
+  "island-dragon-forest-recapture": "Island (Dragon Forest) (re-capture)",
+  "island-genie-recapture": "Island (Genie) (re-capture)",
+  "island-sherbet-island-recapture": "Island (Sherbet Island) (re-capture)",
+  "island-snowflake-mountain-recapture": "Island (Snowflake Mountain) (re-capture)",
+  "player-select-banjo-recapture": "Player Select (Banjo) (re-capture)",
+  "player-select-bumper-recapture": "Player Select (Bumper) (re-capture)",
+  "player-select-conker-recapture": "Player Select (Conker) (re-capture)",
+  "player-select-diddy-recapture": "Player Select (Diddy) (re-capture)",
+  "player-select-drumstick-recapture": "Player Select (Drumstick) (re-capture)",
+  "player-select-krunch-recapture": "Player Select (Krunch) (re-capture)",
+  "player-select-pipsy-recapture": "Player Select (Pipsy) (re-capture)",
+  "player-select-t-t-recapture": "Player Select (T.T.) (re-capture)",
+  "player-select-timber-recapture": "Player Select (Timber) (re-capture)",
+  "player-select-tiptup-recapture": "Player Select (Tiptup) (re-capture)"
  },
  "nsf": {
   "vault": "n64/diddy-kong-racing/",
@@ -1615,6 +1638,374 @@
      "v": 2,
      "code": "de806413"
     }
+   },
+   "boulder-canyon-inner-castle-fast-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 44,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-inner-castle-fast"
+   },
+   "boulder-canyon-inner-castle-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 40,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-inner-castle"
+   },
+   "boulder-canyon-outer-castle-fast-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 43,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-outer-castle-fast"
+   },
+   "boulder-canyon-outer-castle-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 39,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-outer-castle"
+   },
+   "boulder-canyon-outside-castle-fast-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 42,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-outside-castle-fast"
+   },
+   "boulder-canyon-outside-castle-recapture": {
+    "n": 1,
+    "secs": 18.46153846153846,
+    "track": 38,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "boulder-canyon-outside-castle"
+   },
+   "island-basic-fade-in-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 84,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-basic-fade-in"
+   },
+   "island-basic-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 83,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-basic"
+   },
+   "island-dino-domain-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 86,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-dino-domain"
+   },
+   "island-dragon-forest-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 89,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-dragon-forest"
+   },
+   "island-genie-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 85,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-genie"
+   },
+   "island-sherbet-island-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 88,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-sherbet-island"
+   },
+   "island-snowflake-mountain-recapture": {
+    "n": 1,
+    "secs": 74.71698113207547,
+    "track": 87,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 6.8,
+     "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "island-snowflake-mountain"
+   },
+   "player-select-banjo-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-banjo"
+   },
+   "player-select-bumper-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-bumper"
+   },
+   "player-select-conker-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-conker"
+   },
+   "player-select-diddy-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-diddy"
+   },
+   "player-select-drumstick-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-drumstick"
+   },
+   "player-select-krunch-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-krunch"
+   },
+   "player-select-pipsy-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-pipsy"
+   },
+   "player-select-t-t-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-t-t"
+   },
+   "player-select-timber-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-timber"
+   },
+   "player-select-tiptup-recapture": {
+    "n": 1,
+    "secs": 21.0989010989011,
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -2.1,
+     "peak": 10.2,
+     "synth": 0.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "player-select-tiptup"
    }
   },
   "chip": "usf",

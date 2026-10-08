@@ -2350,6 +2350,14 @@
     "path": "albums/n64/diddy-kong-racing/boulder-canyon-inner-castle-fast.mid"
    },
    {
+    "title": "Boulder Canyon (Inner Castle) (Fast) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-inner-castle-fast-recapture.mid"
+   },
+   {
+    "title": "Boulder Canyon (Inner Castle) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-inner-castle-recapture.mid"
+   },
+   {
     "title": "Boulder Canyon (Outer Castle)",
     "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle.mid"
    },
@@ -2358,12 +2366,28 @@
     "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle-fast.mid"
    },
    {
+    "title": "Boulder Canyon (Outer Castle) (Fast) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle-fast-recapture.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outer Castle) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle-recapture.mid"
+   },
+   {
     "title": "Boulder Canyon (Outside Castle)",
     "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle.mid"
    },
    {
     "title": "Boulder Canyon (Outside Castle) (Fast)",
     "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle-fast.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outside Castle) (Fast) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle-fast-recapture.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outside Castle) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle-recapture.mid"
    },
    {
     "title": "Crescent Island, Credits 2",
@@ -2506,28 +2530,56 @@
     "path": "albums/n64/diddy-kong-racing/island-basic-fade-in.mid"
    },
    {
+    "title": "Island (Basic Fade in) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-basic-fade-in-recapture.mid"
+   },
+   {
     "title": "Island (Basic)",
     "path": "albums/n64/diddy-kong-racing/island-basic.mid"
+   },
+   {
+    "title": "Island (Basic) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-basic-recapture.mid"
    },
    {
     "title": "Island (Dino Domain)",
     "path": "albums/n64/diddy-kong-racing/island-dino-domain.mid"
    },
    {
+    "title": "Island (Dino Domain) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-dino-domain-recapture.mid"
+   },
+   {
     "title": "Island (Dragon Forest)",
     "path": "albums/n64/diddy-kong-racing/island-dragon-forest.mid"
+   },
+   {
+    "title": "Island (Dragon Forest) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-dragon-forest-recapture.mid"
    },
    {
     "title": "Island (Genie)",
     "path": "albums/n64/diddy-kong-racing/island-genie.mid"
    },
    {
+    "title": "Island (Genie) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-genie-recapture.mid"
+   },
+   {
     "title": "Island (Sherbet Island)",
     "path": "albums/n64/diddy-kong-racing/island-sherbet-island.mid"
    },
    {
+    "title": "Island (Sherbet Island) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-sherbet-island-recapture.mid"
+   },
+   {
     "title": "Island (Snowflake Mountain)",
     "path": "albums/n64/diddy-kong-racing/island-snowflake-mountain.mid"
+   },
+   {
+    "title": "Island (Snowflake Mountain) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/island-snowflake-mountain-recapture.mid"
    },
    {
     "title": "Jungle Falls",
@@ -2582,40 +2634,80 @@
     "path": "albums/n64/diddy-kong-racing/player-select-banjo.mid"
    },
    {
+    "title": "Player Select (Banjo) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-banjo-recapture.mid"
+   },
+   {
     "title": "Player Select (Bumper)",
     "path": "albums/n64/diddy-kong-racing/player-select-bumper.mid"
+   },
+   {
+    "title": "Player Select (Bumper) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-bumper-recapture.mid"
    },
    {
     "title": "Player Select (Conker)",
     "path": "albums/n64/diddy-kong-racing/player-select-conker.mid"
    },
    {
+    "title": "Player Select (Conker) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-conker-recapture.mid"
+   },
+   {
     "title": "Player Select (Diddy)",
     "path": "albums/n64/diddy-kong-racing/player-select-diddy.mid"
+   },
+   {
+    "title": "Player Select (Diddy) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-diddy-recapture.mid"
    },
    {
     "title": "Player Select (Drumstick)",
     "path": "albums/n64/diddy-kong-racing/player-select-drumstick.mid"
    },
    {
+    "title": "Player Select (Drumstick) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-drumstick-recapture.mid"
+   },
+   {
     "title": "Player Select (Krunch)",
     "path": "albums/n64/diddy-kong-racing/player-select-krunch.mid"
+   },
+   {
+    "title": "Player Select (Krunch) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-krunch-recapture.mid"
    },
    {
     "title": "Player Select (Pipsy)",
     "path": "albums/n64/diddy-kong-racing/player-select-pipsy.mid"
    },
    {
+    "title": "Player Select (Pipsy) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-pipsy-recapture.mid"
+   },
+   {
     "title": "Player Select (T.T.)",
     "path": "albums/n64/diddy-kong-racing/player-select-t-t.mid"
+   },
+   {
+    "title": "Player Select (T.T.) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-t-t-recapture.mid"
    },
    {
     "title": "Player Select (Timber)",
     "path": "albums/n64/diddy-kong-racing/player-select-timber.mid"
    },
    {
+    "title": "Player Select (Timber) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-timber-recapture.mid"
+   },
+   {
     "title": "Player Select (Tiptup)",
     "path": "albums/n64/diddy-kong-racing/player-select-tiptup.mid"
+   },
+   {
+    "title": "Player Select (Tiptup) (re-capture)",
+    "path": "albums/n64/diddy-kong-racing/player-select-tiptup-recapture.mid"
    },
    {
     "title": "Rareware Logo",
