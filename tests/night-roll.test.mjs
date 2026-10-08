@@ -15432,7 +15432,19 @@ test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — 
   // a new chord opens with nothing filled in (Learning mode: never a numeral of the app's own)
   run(`rangeSel = {a: ${bt}, b: ${3 * bt}, cycle: true}; openEditor(null, "chord"); setChordWidget("F#");`);
   assert.deepEqual(val(`[document.getElementById("nroman").value, document.getElementById("nno5").classList.contains("active")]`), ["", false]);
+  assert.equal(val(`document.getElementById("nromanbox").open`), false, "folded away on a chord without one");
   run(`romanTap("acc", "b"); romanTap("deg", "VII"); romanTap("qual", "maj"); document.getElementById("nno5").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`document.getElementById("nroman").value`), "bVII");
+  // lower-case row is minor; ° / ø spell lower-case (Josh #268)
+  run(`romanTap("degl", "II");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "bii");
+  run(`romanTap("acc", "b"); romanTap("qual", "dim");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "ii°", "♭ tapped again comes off; ° on");
+  run(`romanTap("deg", "V"); romanTap("ext", "7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "V7", "the upper-case row is major");
+  run(`romanTap("degl", "VII"); romanTap("ext", "ø7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "viiø7");
+  run(`romanTap("deg", "VII"); romanTap("acc", "b"); romanTap("ext", "7"); romanTap("ext", "7");`);
   assert.equal(val(`document.getElementById("nroman").value`), "bVII");
   run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   const c = val(`(() => { const n = rollnotes.find(n => n.chord); return {text: n.text, roman: n.roman, no5: n.no5}; })()`);
@@ -15445,6 +15457,7 @@ test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — 
   // reopening shows his entry; a chord without one stays empty
   run(`openEditor(rollnotes.find(n => n.chord));`);
   assert.deepEqual(val(`[document.getElementById("nroman").value, document.getElementById("nno5").classList.contains("active")]`), ["bVII", true]);
+  assert.deepEqual(val(`[document.getElementById("nromanbox").open, document.getElementById("nromansum").textContent]`), [true, "♭VII"], "open, and the summary shows it");
   run(`document.getElementById("nromanclear").dispatchEvent(new Event("click")); document.getElementById("nno5").dispatchEvent(new Event("click")); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   assert.deepEqual(val(`(() => { const n = rollnotes.find(n => n.chord); return [n.roman || null, n.no5 || null]; })()`), [null, null], "cleared: the fields go away, not empty strings");
   // Ask: only on his dictation, kept unless he changes it

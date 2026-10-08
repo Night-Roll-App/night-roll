@@ -780,6 +780,14 @@
   #nfollow #nunsaved { gap: 8px; align-items: center; flex-wrap: wrap; border-left: 4px solid #e66767; padding: 6px 8px;
     background: rgba(230, 103, 103, 0.16); border-radius: 4px; }
   #nfollow #nunsavedtxt { color: #f0a0a0; font-weight: 600; }
+  /* Roman numeral picker folds away under its summary (Josh #268: "taking up tons of room") */
+  #nromanbox { margin: 4px 0; }
+  #nromanbox > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; list-style: none; }
+  #nromanbox > summary::-webkit-details-marker { display: none; }
+  #nromanbox > summary::before { content: "▸"; color: var(--dim); }
+  #nromanbox[open] > summary::before { content: "▾"; }
+  #nromanbox > summary #nromansum { color: var(--gold); font-weight: 600; }
+  #nromanmod .gap { flex: none; width: 10px; }
   #nfollow #nunsaved.flash { animation: unsavedflash 0.9s ease-out; }
   @keyframes unsavedflash { 0%, 40% { background: rgba(230, 103, 103, 0.5); } 100% { background: rgba(230, 103, 103, 0.16); } }
   #nfollow #nseveral button { text-align: left; }

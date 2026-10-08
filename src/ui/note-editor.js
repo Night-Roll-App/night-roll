@@ -59,9 +59,9 @@ import { loadSong } from "../session/song.js";
 import { CHORD_BASES } from "../theory/chords.js";
 import { CHORD_EXTS } from "../theory/chords.js";
 import { ROMAN_DEGREES } from "../theory/chords.js";
-import { ROMAN_EXTS } from "../theory/chords.js";
 import { romanCompose } from "../theory/chords.js";
 import { romanParse } from "../theory/chords.js";
+import { romanPretty } from "../theory/chords.js";
 import { nmic } from "./chrome.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { retireEdited } from "../model/edits.js";
@@ -332,18 +332,24 @@ export function setChordWidget(sym) {
 // key. The box is the truth (typing wins, like the symbol box); the chips
 // spell the common cases and stand down for anything else (V/V, It+6).
 export const romanSel = {acc: "", deg: null, qual: null, ext: ""};
+// upper-case row = major, lower-case row = minor (Josh #268: "I expected there
+// to be lowercase ones"); ° and ø spell lower-case, + upper-case
+export function romanLower() { return romanSel.qual === "min" || romanSel.qual === "dim" || romanSel.ext === "ø7"; }
 export function refreshRomanChips() {
-  const on = (g, v) => g === "acc" ? romanSel.acc === v && (v !== "" || romanSel.deg !== null)
-    : g === "deg" ? romanSel.deg === v : g === "qual" ? romanSel.qual === v : romanSel.ext === v;
-  for (const id of ["nromandeg", "nromanmod", "nromanext"])
+  const on = (g, v) => g === "deg" ? romanSel.deg === v && !romanLower() : g === "degl" ? romanSel.deg === v && romanLower()
+    : g === "acc" ? romanSel.acc === v : g === "qual" ? romanSel.deg !== null && romanSel.qual === v
+    : romanSel.deg !== null && romanSel.ext === v;
+  for (const id of ["nromandeg", "nromandegl", "nromanmod"])
     for (const b of document.getElementById(id).children) b.classList.toggle("active", on(b.dataset.g, b.dataset.v));
+  document.getElementById("nromansum").textContent = romanPretty(document.getElementById("nroman").value.trim()) || "—";
 }
 export function setRomanSel(p) {
   romanSel.acc = p ? p.acc : ""; romanSel.deg = p ? p.deg : null;
   romanSel.qual = p ? p.qual : null; romanSel.ext = p ? p.ext : "";
 }
-export function setRomanWidget(roman, no5) { // openEditor: the chord's own entry, or nothing
+export function setRomanWidget(roman, no5) { // openEditor: the chord's own entry, or nothing — folded away unless it has one
   document.getElementById("nroman").value = roman || "";
+  document.getElementById("nromanbox").open = !!roman;
   setRomanSel(romanParse(roman));
   refreshRomanChips();
   setNo5(!!no5);
@@ -353,14 +359,21 @@ export function setNo5(on) {
   b.classList.toggle("active", on);
   b.setAttribute("aria-pressed", on ? "true" : "false");
 }
-export function romanTap(g, v) { // one chip tap → the box
-  if (g === "deg") romanSel.deg = v;
-  else if (g === "acc") romanSel.acc = v;
-  else if (g === "qual") romanSel.qual = romanSel.qual === v ? null : v;
-  else if (g === "ext") romanSel.ext = romanSel.ext === v ? "" : v; // tap again to take it off
-  refreshRomanChips();
-  const r = romanCompose(romanSel);
+export function romanTap(g, v) { // one chip tap → the box (replacing anything typed there); a modifier tapped again comes off
+  const sel = romanSel;
+  if (g === "deg") { sel.deg = v; sel.qual = sel.qual === "aug" ? "aug" : "maj"; if (sel.ext === "ø7") sel.ext = ""; }
+  else if (g === "degl") { sel.deg = v; sel.qual = sel.qual === "dim" || sel.ext === "ø7" ? sel.qual : "min"; }
+  else if (g === "acc") sel.acc = sel.acc === v ? "" : v;
+  else if (g === "qual") { // ° dim / + aug
+    sel.qual = sel.qual === v ? (v === "dim" ? "min" : "maj") : v;
+    if (sel.ext === "ø7") sel.ext = "";
+  } else if (g === "ext") {
+    sel.ext = sel.ext === v ? "" : v;
+    if (v === "ø7") sel.qual = sel.ext ? null : "min";
+  }
+  const r = romanCompose(sel);
   if (r) document.getElementById("nroman").value = r;
+  refreshRomanChips();
 }
 // dictation into the note text box (Web Speech API — easier on hands than
 // typing; falls back silently to the keyboard mic where unsupported)
@@ -1266,7 +1279,9 @@ export function initNoteEditor4() {
     });
     const mkRoman = (id, items) => {
       const row = document.getElementById(id);
-      for (const [g, v, label] of items) {
+      for (const it of items) {
+        if (!it) { const sp = document.createElement("span"); sp.className = "gap"; row.appendChild(sp); continue; }
+        const [g, v, label] = it;
         const b = document.createElement("button");
         b.type = "button";
         b.dataset.g = g; b.dataset.v = v;
@@ -1276,9 +1291,9 @@ export function initNoteEditor4() {
       row.addEventListener("click", e => { const b = e.target; if (b && b.dataset && b.dataset.g) romanTap(b.dataset.g, b.dataset.v); });
     };
     mkRoman("nromandeg", ROMAN_DEGREES.map(d => ["deg", d, d]));
-    mkRoman("nromanmod", [["acc", "b", "♭"], ["acc", "", "♮"], ["acc", "#", "♯"],
-      ["qual", "maj", "major I"], ["qual", "min", "minor i"], ["qual", "dim", "° dim"], ["qual", "aug", "+ aug"]]);
-    mkRoman("nromanext", ROMAN_EXTS.map(x => ["ext", x, x]));
+    mkRoman("nromandegl", ROMAN_DEGREES.map(d => ["degl", d, d.toLowerCase()]));
+    mkRoman("nromanmod", [["acc", "b", "♭"], ["acc", "#", "♯"], null, ["qual", "dim", "° dim"], ["qual", "aug", "+ aug"], null,
+      ["ext", "7", "7"], ["ext", "maj7", "maj7"], ["ext", "ø7", "ø7"], ["ext", "6", "6"]]); // alter · quality · sevenths
     const rbox = document.getElementById("nroman");
     rbox.addEventListener("input", () => { setRomanSel(romanParse(rbox.value)); refreshRomanChips(); });
     rbox.addEventListener("keydown", e => {
