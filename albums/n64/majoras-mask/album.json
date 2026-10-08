@@ -39,7 +39,10 @@
   "tatl-and-tael-meet-again": "Tatl and Tael Meet Again",
   "the-giants-exit": "The Giants' Exit",
   "treasure-box": "Treasure box",
-  "woods-of-mystery": "Woods of Mystery"
+  "woods-of-mystery": "Woods of Mystery",
+  "staff-roll-recapture": "Staff Roll (re-capture)",
+  "the-monsters-raid-recapture": "The Monsters Raid (re-capture)",
+  "title-demo-recapture": "Title Demo (re-capture)"
  },
  "nsf": {
   "vault": "n64/majoras-mask/",
@@ -54,6 +57,10 @@
      "lufs": -18.7,
      "peak": -5.7,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ballad-of-the-wind-fish": {
@@ -66,6 +73,10 @@
      "lufs": -16.3,
      "peak": -7.1,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bass-guitar-session": {
@@ -78,6 +89,10 @@
      "lufs": -20.8,
      "peak": -8.7,
      "synth": -9.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bass-practice-music": {
@@ -90,6 +105,10 @@
      "lufs": -17.6,
      "peak": -6.6,
      "synth": -10
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "battle": {
@@ -102,6 +121,10 @@
      "lufs": -18.4,
      "peak": -5.1,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-battle": {
@@ -114,6 +137,10 @@
      "lufs": -14.1,
      "peak": 1.1,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-clear": {
@@ -126,6 +153,10 @@
      "lufs": -15,
      "peak": -2.1,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bremen-march": {
@@ -138,6 +169,10 @@
      "lufs": -20,
      "peak": -6.4,
      "synth": -11.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "calling-the-four-giants": {
@@ -150,6 +185,10 @@
      "lufs": -17.5,
      "peak": -2.5,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "catch-item": {
@@ -162,6 +201,10 @@
      "lufs": -16.9,
      "peak": -4.9,
      "synth": -3.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "catch-small-item": {
@@ -174,6 +217,10 @@
      "lufs": -19.1,
      "peak": -5.7,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "cave": {
@@ -186,6 +233,10 @@
      "lufs": -20.8,
      "peak": -6.6,
      "synth": -9.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "chase-theme": {
@@ -198,6 +249,10 @@
      "lufs": -19.8,
      "peak": -3.5,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "clock-tower": {
@@ -210,6 +265,10 @@
      "lufs": -21,
      "peak": -4.7,
      "synth": -4.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "clock-town-day-1": {
@@ -222,6 +281,10 @@
      "lufs": -20.9,
      "peak": -7.5,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "clock-town-day-2": {
@@ -234,6 +297,10 @@
      "lufs": -18.8,
      "peak": -7,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "clock-town-day-3": {
@@ -246,6 +313,10 @@
      "lufs": -23.5,
      "peak": -11.2,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "cremia-s-wagon": {
@@ -258,6 +329,10 @@
      "lufs": -17.1,
      "peak": -3.3,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "dancer": {
@@ -270,6 +345,10 @@
      "lufs": -20.6,
      "peak": -7.4,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "deku-palace": {
@@ -282,6 +361,10 @@
      "lufs": -15.8,
      "peak": -1.4,
      "synth": -10.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "drum-practice-music": {
@@ -306,6 +389,10 @@
      "lufs": -13.1,
      "peak": -0.3,
      "synth": -0.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "evan-s-piano-solo": {
@@ -318,6 +405,10 @@
      "lufs": -25.9,
      "peak": -9.9,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "event-clear": {
@@ -330,6 +421,10 @@
      "lufs": -18,
      "peak": -6.1,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "event-failure-1": {
@@ -342,6 +437,10 @@
      "lufs": -18.9,
      "peak": -5.7,
      "synth": -2.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "event-failure-2": {
@@ -354,6 +453,10 @@
      "lufs": -17.8,
      "peak": -6.7,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "fairy-s-fountain": {
@@ -366,6 +469,10 @@
      "lufs": -29.5,
      "peak": -14.1,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "fanfare": {
@@ -378,6 +485,10 @@
      "lufs": -16.8,
      "peak": -4.7,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "fencing-grounds": {
@@ -390,6 +501,10 @@
      "lufs": -20.7,
      "peak": -4,
      "synth": -11.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "final-hours": {
@@ -402,6 +517,10 @@
      "lufs": -22,
      "peak": -8.2,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "gale-warp": {
@@ -414,6 +533,10 @@
      "lufs": -14.7,
      "peak": -1.9,
      "synth": -1.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "game-over": {
@@ -426,6 +549,10 @@
      "lufs": -23.1,
      "peak": -10.5,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-elegy-of-emptiness": {
@@ -438,6 +565,10 @@
      "lufs": -17.6,
      "peak": -4.6,
      "synth": -3.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-goron-lullaby": {
@@ -450,6 +581,10 @@
      "lufs": -19.1,
      "peak": -6.1,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-heart-container": {
@@ -462,6 +597,10 @@
      "lufs": -18.3,
      "peak": -6.9,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-mask": {
@@ -474,6 +613,10 @@
      "lufs": -13.3,
      "peak": -1.1,
      "synth": -1.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-new-wave-bossa-nova": {
@@ -486,6 +629,10 @@
      "lufs": -19.3,
      "peak": -6.5,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-oath-to-order": {
@@ -498,6 +645,10 @@
      "lufs": -16.9,
      "peak": -6.4,
      "synth": -4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-ocarina": {
@@ -510,6 +661,10 @@
      "lufs": -12.9,
      "peak": -1.3,
      "synth": -1.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-sonata-of-awakening": {
@@ -522,6 +677,10 @@
      "lufs": -18.2,
      "peak": -6.6,
      "synth": -3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "giants-theme": {
@@ -534,6 +693,10 @@
      "lufs": -18.9,
      "peak": -5.8,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "gorman-track": {
@@ -546,6 +709,10 @@
      "lufs": -19.5,
      "peak": -5.4,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "goron-race-goal": {
@@ -558,6 +725,10 @@
      "lufs": -19,
      "peak": -6.7,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "goron-race": {
@@ -570,6 +741,10 @@
      "lufs": -15.8,
      "peak": -1.8,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "goron-s-shrine": {
@@ -582,6 +757,10 @@
      "lufs": -24.8,
      "peak": -8.3,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "great-bay-coast": {
@@ -594,6 +773,10 @@
      "lufs": -18.1,
      "peak": -4.6,
      "synth": -3.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "great-bay-temple": {
@@ -606,6 +789,10 @@
      "lufs": -21,
      "peak": -6.5,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "happy-mask-salesman": {
@@ -618,6 +805,10 @@
      "lufs": -21,
      "peak": -4.7,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "horse-race-goal": {
@@ -630,6 +821,10 @@
      "lufs": -14,
      "peak": -2.8,
      "synth": -2.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "horse-race": {
@@ -642,6 +837,10 @@
      "lufs": -17.7,
      "peak": -2.7,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "house": {
@@ -654,6 +853,10 @@
      "lufs": -23.7,
      "peak": -9.7,
      "synth": -9.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ikana-castle": {
@@ -666,6 +869,10 @@
      "lufs": -16.6,
      "peak": -1.1,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ikana-valley": {
@@ -678,6 +885,10 @@
      "lufs": -19.4,
      "peak": -4,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "intro-woods": {
@@ -690,6 +901,10 @@
      "lufs": -24.3,
      "peak": -10.3,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "jungle-cruise": {
@@ -702,6 +917,10 @@
      "lufs": -17.1,
      "peak": -4.9,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kamaro-s-dance": {
@@ -714,6 +933,10 @@
      "lufs": -13.5,
      "peak": -4.7,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "keaton-quiz": {
@@ -726,6 +949,10 @@
      "lufs": -22.4,
      "peak": -7.3,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "magic-hag-s-house": {
@@ -738,6 +965,10 @@
      "lufs": -19.2,
      "peak": -7.4,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "majora-s-incarnation-battle": {
@@ -750,6 +981,10 @@
      "lufs": -13,
      "peak": 2.6,
      "synth": -4.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "majora-s-mask-battle": {
@@ -762,6 +997,10 @@
      "lufs": -14.2,
      "peak": 0.6,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "majora-s-mask-moon": {
@@ -774,6 +1013,10 @@
      "lufs": -15.8,
      "peak": -1.2,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "majora-s-theme": {
@@ -786,6 +1029,10 @@
      "lufs": -22.1,
      "peak": -8.9,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "majora-s-wrath-battle": {
@@ -798,6 +1045,10 @@
      "lufs": -11.7,
      "peak": 4.8,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "marine-research-laboratory": {
@@ -810,6 +1061,10 @@
      "lufs": -23.8,
      "peak": -8.1,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mayor-s-house-council-room": {
@@ -822,6 +1077,10 @@
      "lufs": -20.5,
      "peak": -7.7,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "middle-boss-battle": {
@@ -834,6 +1093,10 @@
      "lufs": -14.9,
      "peak": 0.6,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mikau-s-cry-ending": {
@@ -846,6 +1109,10 @@
      "lufs": -22,
      "peak": -5.1,
      "synth": -1.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mikau-s-cry": {
@@ -858,6 +1125,10 @@
      "lufs": -20.5,
      "peak": -6.6,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "milk-bar": {
@@ -870,6 +1141,10 @@
      "lufs": -17.2,
      "peak": -3.5,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "minigame": {
@@ -882,6 +1157,10 @@
      "lufs": -18.6,
      "peak": -6.1,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "music-box-house": {
@@ -894,13 +1173,21 @@
      "lufs": -17.2,
      "peak": -5.4,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "new-wave-bossa-nova-with-lulu": {
     "n": 1,
     "secs": 0,
     "track": 116,
-    "disc": 9
+    "disc": 9,
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    }
    },
    "opening-demo": {
     "n": 1,
@@ -912,6 +1199,10 @@
      "lufs": -23.5,
      "peak": -3.6,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "owl-s-theme": {
@@ -924,6 +1215,10 @@
      "lufs": -23.1,
      "peak": -7.4,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "piano-practice-music": {
@@ -936,6 +1231,10 @@
      "lufs": -23.9,
      "peak": -8.1,
      "synth": -10.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pirate-fortress": {
@@ -948,6 +1247,10 @@
      "lufs": -16.8,
      "peak": -2.5,
      "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "recollection-of-zelda": {
@@ -960,6 +1263,10 @@
      "lufs": -22.5,
      "peak": -10.9,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "romani-ranch": {
@@ -972,6 +1279,10 @@
      "lufs": -27.6,
      "peak": -13.6,
      "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "sharp-s-curse": {
@@ -984,6 +1295,10 @@
      "lufs": -18.8,
      "peak": -5.2,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "shooting-gallery": {
@@ -996,6 +1311,10 @@
      "lufs": -17.5,
      "peak": -6,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "shop": {
@@ -1008,6 +1327,10 @@
      "lufs": -22,
      "peak": -4.5,
      "synth": -8.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "snow-mountain": {
@@ -1020,6 +1343,10 @@
      "lufs": -20.5,
      "peak": -4.4,
      "synth": -3.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "snowhead-clear": {
@@ -1032,6 +1359,10 @@
      "lufs": -19.4,
      "peak": -5.4,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "snowhead-temple": {
@@ -1044,6 +1375,10 @@
      "lufs": -18.3,
      "peak": -3.7,
      "synth": -9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "song-of-healing-demo": {
@@ -1056,6 +1391,10 @@
      "lufs": -21.8,
      "peak": -6.1,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "song-of-storms": {
@@ -1068,6 +1407,10 @@
      "lufs": -18.1,
      "peak": -5,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "southern-swamp": {
@@ -1080,6 +1423,10 @@
      "lufs": -19.4,
      "peak": -4.8,
      "synth": -3.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "staff-roll-alternate": {
@@ -1092,6 +1439,10 @@
      "lufs": -13.8,
      "peak": 2,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "staff-roll": {
@@ -1116,6 +1467,10 @@
      "lufs": -26.1,
      "peak": -12.5,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stone-tower-temple-reality": {
@@ -1128,6 +1483,10 @@
      "lufs": -17,
      "peak": -2.9,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "tatl-and-tael-meet-again": {
@@ -1140,6 +1499,10 @@
      "lufs": -19.8,
      "peak": -5,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "termina-field": {
@@ -1152,6 +1515,10 @@
      "lufs": -18.6,
      "peak": -2.3,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-giants-exit": {
@@ -1164,6 +1531,10 @@
      "lufs": -19.1,
      "peak": -6.4,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-monsters-raid": {
@@ -1188,6 +1559,10 @@
      "lufs": -13.6,
      "peak": 1.2,
      "synth": -0.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "title-demo": {
@@ -1212,6 +1587,10 @@
      "lufs": -16.9,
      "peak": -2.5,
      "synth": -2.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "woodfall-clear": {
@@ -1224,6 +1603,10 @@
      "lufs": -19.6,
      "peak": -4.6,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "woodfall-temple": {
@@ -1236,6 +1619,10 @@
      "lufs": -19.3,
      "peak": -3.7,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "woods-of-mystery": {
@@ -1248,6 +1635,10 @@
      "lufs": -17.3,
      "peak": -3.1,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "zora-band": {
@@ -1260,6 +1651,10 @@
      "lufs": -16.8,
      "peak": -2.9,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "zora-hall": {
@@ -1272,7 +1667,62 @@
      "lufs": -22.5,
      "peak": -7.3,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
+   },
+   "staff-roll-recapture": {
+    "n": 1,
+    "secs": 126.88476069723708,
+    "track": 113,
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -14,
+     "peak": 1.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    },
+    "rip": "staff-roll"
+   },
+   "the-monsters-raid-recapture": {
+    "n": 1,
+    "secs": 26.00000000000077,
+    "track": 75,
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -5.9,
+     "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    },
+    "rip": "the-monsters-raid"
+   },
+   "title-demo-recapture": {
+    "n": 1,
+    "secs": 130.74125469338668,
+    "track": 1,
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": 0.2,
+     "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    },
+    "rip": "title-demo"
    }
   },
   "chip": "usf",

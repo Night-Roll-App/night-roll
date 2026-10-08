@@ -12712,6 +12712,10 @@
     "path": "albums/n64/majoras-mask/staff-roll-alternate.mid"
    },
    {
+    "title": "Staff Roll (re-capture)",
+    "path": "albums/n64/majoras-mask/staff-roll-recapture.mid"
+   },
+   {
     "title": "Stone Tower Temple (Illusion)",
     "path": "albums/n64/majoras-mask/stone-tower-temple-illusion.mid"
    },
@@ -12736,12 +12740,20 @@
     "path": "albums/n64/majoras-mask/the-monsters-raid.mid"
    },
    {
+    "title": "The Monsters Raid (re-capture)",
+    "path": "albums/n64/majoras-mask/the-monsters-raid-recapture.mid"
+   },
+   {
     "title": "The Moon Disappears",
     "path": "albums/n64/majoras-mask/the-moon-disappears.mid"
    },
    {
     "title": "Title Demo",
     "path": "albums/n64/majoras-mask/title-demo.mid"
+   },
+   {
+    "title": "Title Demo (re-capture)",
+    "path": "albums/n64/majoras-mask/title-demo-recapture.mid"
    },
    {
     "title": "Treasure box",
