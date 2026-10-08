@@ -62,8 +62,8 @@
     "track": 157,
     "loud": {
      "v": 1,
-     "lufs": -8.9,
-     "peak": 5.8,
+     "lufs": -7.4,
+     "peak": 3.9,
      "synth": -7.4
     },
     "cap": {
@@ -2507,8 +2507,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
+     "lufs": -11.7,
+     "peak": 4,
      "synth": -5.5
     },
     "cap": {
@@ -2523,8 +2523,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
+     "lufs": -9,
+     "peak": 4.9,
      "synth": -5.5
     },
     "cap": {
@@ -2539,8 +2539,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
+     "lufs": -12.8,
+     "peak": 3.5,
      "synth": -5.5
     },
     "cap": {
@@ -2555,8 +2555,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
+     "lufs": -12.5,
+     "peak": 3.8,
      "synth": -5.5
     },
     "cap": {
@@ -2571,8 +2571,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
+     "lufs": -12,
+     "peak": 4,
      "synth": -5.5
     },
     "cap": {
@@ -2680,8 +2680,8 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -13.2,
-     "peak": 3.3,
+     "lufs": -10.4,
+     "peak": 1.3,
      "synth": -7.4
     },
     "cap": {
@@ -2864,9 +2864,9 @@
     "track": 157,
     "loud": {
      "v": 1,
-     "lufs": -8.9,
-     "peak": 5.8,
-     "synth": -7.4
+     "lufs": -7.4,
+     "peak": 3.9,
+     "synth": -5.9
     },
     "cap": {
      "v": 2,
@@ -2881,9 +2881,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
-     "synth": -5.5
+     "lufs": -11.7,
+     "peak": 4,
+     "synth": -7.3
     },
     "cap": {
      "v": 2,
@@ -2898,9 +2898,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
-     "synth": -5.5
+     "lufs": -9,
+     "peak": 4.9,
+     "synth": -7.7
     },
     "cap": {
      "v": 2,
@@ -2915,9 +2915,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
-     "synth": -5.5
+     "lufs": -12.8,
+     "peak": 3.5,
+     "synth": -7.4
     },
     "cap": {
      "v": 2,
@@ -2932,9 +2932,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
-     "synth": -5.5
+     "lufs": -12.5,
+     "peak": 3.8,
+     "synth": -7
     },
     "cap": {
      "v": 2,
@@ -2949,9 +2949,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -7,
-     "peak": 5.3,
-     "synth": -5.5
+     "lufs": -12,
+     "peak": 4,
+     "synth": -7.6
     },
     "cap": {
      "v": 2,
@@ -2966,9 +2966,9 @@
     "disc": 0,
     "loud": {
      "v": 1,
-     "lufs": -13.2,
-     "peak": 3.3,
-     "synth": -7.4
+     "lufs": -10.4,
+     "peak": 1.3,
+     "synth": -7.9
     },
     "cap": {
      "v": 2,
