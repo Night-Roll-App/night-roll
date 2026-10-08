@@ -168,7 +168,7 @@ export function chordPickParse(rest) { // "m7b5" → {base, sev, tens, alts}; an
   for (const b of CHORD_BASES) {
     if (b !== "maj" && rest.startsWith(b) && !rest.startsWith("maj")) { base = b; rest = rest.slice(b.length); break; }
   }
-  let sev = "";
+  let sev = "", add = false;
   const tens = [], alts = [];
   const addTen = (t, picked) => { // a seventh's tension is pick-one; adds stack, once each
     if (tens.includes(t) || (picked && tens.length)) return false;
@@ -180,7 +180,10 @@ export function chordPickParse(rest) { // "m7b5" → {base, sev, tens, alts}; an
     rest = rest.slice(tok.length);
     if (tok === "6" || tok === "7" || tok === "maj7") { if (sev) return null; sev = tok; }
     else if (tok.startsWith("maj")) { if (sev || !addTen(tok.slice(3), true)) return null; sev = "maj7"; }
-    else if (tok.startsWith("add")) { if (!addTen(tok.slice(3), sev === "7" || sev === "maj7")) return null; }
+    else if (tok.startsWith("add")) { // under a seventh an add keeps its word: "7add9" is not "9" (Josh #289)
+      if (sev === "7" || sev === "maj7") { if (add ? !addTen(tok.slice(3), false) : tens.length || !addTen(tok.slice(3), false)) return null; add = true; }
+      else if (!addTen(tok.slice(3), false)) return null;
+    }
     else if (tok.startsWith("sus")) { if (base !== "maj") return null; base = tok; }
     else if (CHORD_ALTS.includes(tok)) { if (alts.includes(tok)) return null; alts.push(tok); }
     else if (sev === "6") { if (tok !== "9" || !addTen("9", false)) return null; } // "69" only
@@ -189,13 +192,15 @@ export function chordPickParse(rest) { // "m7b5" → {base, sev, tens, alts}; an
   }
   tens.sort((a, c) => a - c);
   alts.sort((a, c) => CHORD_ALTS.indexOf(a) - CHORD_ALTS.indexOf(c));
-  return {base, sev, tens, alts};
+  return {base, sev, tens, alts, add};
 }
-export function chordPickCompose(base, sev, tens, alts) { // base · seventh-or-tension · sus · adds · alterations
+export function chordPickCompose(base, sev, tens, alts, add) { // base · seventh-or-tension · sus · adds · alterations; add: tensions under a seventh stay "addN"
   const sus = base === "sus2" || base === "sus4";
   const t = [...(tens || [])].sort((a, c) => a - c);
   let core = "", adds = t;
-  if (sev === "7" || sev === "maj7") {
+  if ((sev === "7" || sev === "maj7") && add) {
+    core = sev;
+  } else if (sev === "7" || sev === "maj7") {
     const top = t[t.length - 1];
     core = (sev === "maj7" ? "maj" : "") + (top || "7");
     adds = [];

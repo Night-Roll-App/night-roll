@@ -303,7 +303,7 @@ export function applyEditorType() {
 }
 export const BASS_SPELLINGS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
                         "G", "G#", "Ab", "A", "A#", "Bb", "B"];
-export const chordSel = {root: null, acc: "", base: "maj", sev: "", tens: [], alts: []};
+export const chordSel = {root: null, acc: "", base: "maj", sev: "", tens: [], alts: [], add: false};
 export function refreshChordChips() {
   for (const b of document.querySelectorAll("#nchordroot button"))
     b.classList.toggle("active", b.dataset.v === chordSel.root);
@@ -314,7 +314,8 @@ export function refreshChordChips() {
   const known = chordSel.base !== null, altsOk = known && chordAltsAllowed(chordSel.base, chordSel.sev);
   for (const b of document.querySelectorAll("#nchordext button, #nchordalt button")) {
     const g = b.dataset.g, v = b.dataset.v;
-    b.classList.toggle("active", known && (g === "sev" ? chordSel.sev === v : g === "ten" ? chordSel.tens.includes(v) : altsOk && chordSel.alts.includes(v)));
+    const addLit = chordSel.add || (chordSel.sev !== "7" && chordSel.sev !== "maj7" && chordSel.tens.some(t => chordSel.sev !== "6" || t !== "9")); // lit whenever the name says "add"
+    b.classList.toggle("active", known && (g === "sev" ? chordSel.sev === v : g === "add" ? addLit : g === "ten" ? chordSel.tens.includes(v) : altsOk && chordSel.alts.includes(v)));
     if (g === "alt") { b.classList.toggle("dimmed", !altsOk); b.setAttribute("aria-disabled", altsOk ? "false" : "true"); }
   }
 }
@@ -326,22 +327,30 @@ export function setChordSelFrom(m) { // parseChordSym match (or null) → chordS
   chordSel.sev = q ? q.sev : "";
   chordSel.tens = q ? q.tens : [];
   chordSel.alts = q ? q.alts : [];
+  chordSel.add = !!(q && q.add);
 }
 export function composeChord() {
   if (!chordSel.root || chordSel.base === null) return; // incomplete/unknown — leave the box alone
   const bass = document.getElementById("nchordbass").value;
   document.getElementById("nchordsym").value = chordSel.root + chordSel.acc +
-    chordPickCompose(chordSel.base, chordSel.sev, chordSel.tens, chordSel.alts) + (bass ? "/" + bass : "");
+    chordPickCompose(chordSel.base, chordSel.sev, chordSel.tens, chordSel.alts, chordSel.add) + (bass ? "/" + bass : "");
 }
 export function chordTap(g, v) { // seventh: pick one · tensions: pick one under a seventh, stack as adds without · alterations: stack
   const c = chordSel;
-  if (c.base === null) { c.base = "maj"; c.sev = ""; c.tens = []; c.alts = []; }
+  if (c.base === null) { c.base = "maj"; c.sev = ""; c.tens = []; c.alts = []; c.add = false; }
+  const named = () => (c.sev === "7" || c.sev === "maj7") && !c.add; // a tension that names the chord is pick-one
   if (g === "sev") {
     c.sev = c.sev === v ? "" : v;
-    if ((c.sev === "7" || c.sev === "maj7") && c.tens.length > 1) c.tens = c.tens.slice(-1); // the highest names it
+    if (named() && c.tens.length > 1) c.tens = c.tens.slice(-1); // the highest names it
+  } else if (g === "add") { // Josh #289: "it needs an add"
+    c.add = !c.add;
+    if (named() && c.tens.length > 1) c.tens = c.tens.slice(-1);
   } else if (g === "ten") {
     if (c.tens.includes(v)) c.tens = c.tens.filter(x => x !== v);
-    else c.tens = c.sev === "7" || c.sev === "maj7" ? [v] : [...c.tens, v].sort((a, b) => a - b);
+    else {
+      if (!c.add && !c.sev && !c.tens.length) c.sev = "7"; // a bare 9 is a ninth chord: C9 carries the 7th (Josh #290); "add" first for Cadd9
+      c.tens = named() ? [v] : [...c.tens, v].sort((a, b) => a - b);
+    }
   } else if (g === "alt") {
     if (!chordAltsAllowed(c.base, c.sev)) return; // dimmed: nothing to alter yet
     c.alts = c.alts.includes(v) ? c.alts.filter(x => x !== v) : CHORD_ALTS.filter(x => x === v || c.alts.includes(x));
@@ -1260,6 +1269,11 @@ export function initNoteEditor4() {
     mkRow("nchordroot", "CDEFGAB".split("").map(l => [l, l]));
     mkRow("nchordacc", [["b", "♭"], ["", "♮"], ["#", "♯"]]);
     mkRow("nchordqual", CHORD_BASES.map(q => [q, q]));
+    { // "no 5" sits beside the 5 chip (Josh #291); it carries no data-v, so the row's quality handler skips it
+      const qual = document.getElementById("nchordqual"), gap = document.createElement("span");
+      gap.className = "gap";
+      qual.appendChild(gap); qual.appendChild(document.getElementById("nno5"));
+    }
     const mkGroups = (id, groups) => { // [g, values] groups, a gap between; one listener per row
       const row = document.getElementById(id);
       groups.forEach(([g, vals], i) => {
@@ -1274,7 +1288,7 @@ export function initNoteEditor4() {
       });
       row.addEventListener("click", e => { const b = e.target; if (b && b.dataset && b.dataset.g) chordTap(b.dataset.g, b.dataset.v); });
     };
-    mkGroups("nchordext", [["sev", CHORD_SEVENTHS], ["ten", CHORD_TENSIONS]]);
+    mkGroups("nchordext", [["sev", CHORD_SEVENTHS], ["add", ["add"]], ["ten", CHORD_TENSIONS]]);
     mkGroups("nchordalt", [["alt", CHORD_ALTS]]);
     const bass = document.getElementById("nchordbass");
     const none = document.createElement("option");

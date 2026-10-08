@@ -3795,7 +3795,7 @@ test("chord quality parse/compose: bases + stacked extensions round-trip", () =>
 test("chord picker primitives (Josh, Terminal #287): seventh · tensions · alterations compose standard names and parse back", () => {
   installSong();
   const P = q => val(`chordPickParse(${JSON.stringify(q)})`);
-  const C = (base, sev, tens, alts) => val(`chordPickCompose(${JSON.stringify(base)}, ${JSON.stringify(sev)}, ${JSON.stringify(tens)}, ${JSON.stringify(alts)})`);
+  const C = (base, sev, tens, alts, add) => val(`chordPickCompose(${JSON.stringify(base)}, ${JSON.stringify(sev)}, ${JSON.stringify(tens)}, ${JSON.stringify(alts)}, ${!!add})`);
   const rules = [ // [base, sev, tens, alts, symbol]
     ["maj", "", [], [], ""], ["m", "", [], [], "m"], ["maj", "7", [], [], "7"], ["maj", "maj7", [], [], "maj7"],
     ["maj", "7", ["9"], [], "9"], ["maj", "maj7", ["9"], [], "maj9"], ["m", "7", ["11"], [], "m11"], ["maj", "7", ["13"], [], "13"],
@@ -3809,19 +3809,20 @@ test("chord picker primitives (Josh, Terminal #287): seventh · tensions · alte
   ];
   for (const [base, sev, tens, alts, sym] of rules) {
     assert.equal(C(base, sev, tens, alts), sym, JSON.stringify([base, sev, tens, alts]));
-    assert.deepEqual(P(sym), {base, sev, tens, alts}, sym);
+    assert.deepEqual(P(sym), {base, sev, tens, alts, add: false}, sym);
   }
   assert.equal(C("maj", "7", ["9", "13"], []), "13", "under a seventh the highest tension names the chord");
   assert.equal(C("maj", "7", [], ["b13", "b9", "#9"]), "7b9#9b13", "alterations in b5 #5 b9 #9 #11 b13 order");
   assert.equal(C("maj", "", ["9"], ["b5"]), "add9", "no seventh, major: nothing to alter (Cb5 would read back as C♭)");
   assert.equal(C("m", "", [], ["b5"]), "mb5", "a non-major base can be altered");
   // the parse also reads the spellings the old chips (and his files) wrote
-  const respell = [["sus47", "7sus4"], ["7add9", "9"], ["maj7add9", "maj9"], ["m7add9", "m9"], ["6add9", "69"], ["79", "9"],
-                   ["7add13", "13"], ["9", "9"], ["sus27", "7sus2"]];
+  // an add under a seventh keeps its word (Josh #289: "it needs an add"): 7add9 stays 7add9, never 9
+  const respell = [["sus47", "7sus4"], ["7add9", "7add9"], ["maj7add9", "maj7add9"], ["m7add9", "m7add9"], ["6add9", "69"], ["79", "9"],
+                   ["7add13", "7add13"], ["9", "9"], ["sus27", "7sus2"], ["7add9add13", "7add9add13"]];
   for (const [old, now] of respell) {
     const p = P(old);
     assert.ok(p, old);
-    assert.equal(C(p.base, p.sev, p.tens, p.alts), now, old);
+    assert.equal(C(p.base, p.sev, p.tens, p.alts, p.add), now, old);
   }
   assert.deepEqual(P("7sus4"), P("sus47"), "7sus4 and sus47 are the same chord");
   for (const bad of ["weird", "m7ø", "ø7", "77", "maj7maj9", "add9add9", "611", "sus4sus2", "msus4", "b9b9", "add2"])
@@ -3838,7 +3839,7 @@ test("chord picker primitives (Josh, Terminal #287): seventh · tensions · alte
       const p = chordPickParse(sym);
       if (!p) continue;
       read++;
-      const again = chordPickCompose(p.base, p.sev, p.tens, p.alts), q = chordPickParse(again);
+      const again = chordPickCompose(p.base, p.sev, p.tens, p.alts, p.add), q = chordPickParse(again);
       const alts = chordAltsAllowed(p.base, p.sev) ? p.alts : [];
       if (!q || JSON.stringify(q) !== JSON.stringify({...p, alts})) bad.push(sym + " → " + again);
     }
@@ -3864,7 +3865,7 @@ test("chord picker vs every stored chord value (albums/**/*.rollnotes.json): par
       const m = parseChordSym(s);
       const p = m && chordPickParse(m[3]);
       if (!p) continue; // the chips stand down; the box keeps it as typed
-      const again = m[1] + m[2] + chordPickCompose(p.base, p.sev, p.tens, p.alts) + (m[4] ? "/" + m[4] : "");
+      const again = m[1] + m[2] + chordPickCompose(p.base, p.sev, p.tens, p.alts, p.add) + (m[4] ? "/" + m[4] : "");
       if (again !== s) out[s] = again;
     }
     return out;
@@ -15512,7 +15513,7 @@ test("chord picker rows (Josh, Terminal #287): seventh / tensions / alterations 
     document.querySelectorAll = sel => /nchordalt/.test(sel) ? [...document.getElementById("nchordext").children, ...document.getElementById("nchordalt").children].filter(b => b.dataset && b.dataset.g) : [];`);
   const sym = () => val(`document.getElementById("nchordsym").value`);
   const chips = id => val(`[...document.getElementById("${id}").children].filter(b => b.dataset && b.dataset.g).map(b => b.dataset.g + ":" + b.textContent)`);
-  assert.deepEqual(chips("nchordext"), ["sev:6", "sev:7", "sev:maj7", "ten:9", "ten:11", "ten:13"]);
+  assert.deepEqual(chips("nchordext"), ["sev:6", "sev:7", "sev:maj7", "add:add", "ten:9", "ten:11", "ten:13"]);
   assert.deepEqual(chips("nchordalt"), ["alt:b5", "alt:#5", "alt:b9", "alt:#9", "alt:#11", "alt:b13"]);
   run(`openEditor(null, "chord"); setChordWidget("");`);
   assert.equal(sym(), "", "a new chord opens empty");
@@ -15538,6 +15539,17 @@ test("chord picker rows (Josh, Terminal #287): seventh / tensions / alterations 
   tap("nchordqual", "sus4"); tap("nchordalt", "b5"); assert.equal(sym(), "G7sus4");
   tap("nchordqual", "dim"); assert.equal(sym(), "Gdim7");
   tap("nchordqual", "m"); tap("nchordext", "maj7"); tap("nchordext", "9"); assert.equal(sym(), "Gmmaj9");
+  // the add chip (Josh #289): lit whenever the name says add; under a seventh it keeps the word
+  const addOn = () => val(`document.getElementById("nchordext").children.find(b => b.dataset.g === "add").classList.contains("active")`);
+  const sevOn = v => val(`document.getElementById("nchordext").children.find(b => b.dataset.g === "sev" && b.dataset.v === ${JSON.stringify(v)}).classList.contains("active")`);
+  run(`setChordWidget("C");`); tap("nchordext", "9");
+  assert.deepEqual([sym(), sevOn("7"), addOn()], ["C9", true, false], "C then 9: C9, the 7th lit with it (Josh #290)");
+  run(`setChordWidget("C");`); tap("nchordext", "add"); tap("nchordext", "9");
+  assert.deepEqual([sym(), sevOn("7"), addOn()], ["Cadd9", false, true], "add first: Cadd9");
+  tap("nchordext", "7"); assert.deepEqual([sym(), addOn()], ["C7add9", true], "add on with a seventh: C7add9");
+  tap("nchordext", "13"); assert.equal(sym(), "C7add9add13", "with add on, tensions stack under the seventh");
+  tap("nchordext", "add"); assert.equal(sym(), "C13", "add off: the highest tension names it");
+  assert.ok(val(`document.getElementById("nchordqual").children.some(b => b.id === "nno5")`), "no 5 sits in the quality row, beside 5 (Josh #291)");
   // opening a stored chord never rewrites it — the chips just light
   for (const [s, st] of [["Dsus47", {base: "sus4", sev: "7", tens: [], alts: []}], ["Cm7add9", {base: "m", sev: "7", tens: ["9"], alts: []}],
                          ["D9/A", {base: "maj", sev: "7", tens: ["9"], alts: []}], ["Absus4add2", {base: null, sev: "", tens: [], alts: []}]]) {
