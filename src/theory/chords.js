@@ -168,3 +168,34 @@ export const CHORD_QUALS = [
   ["7", [0, 4, 7, 10]], ["maj7", [0, 4, 7, 11]], ["m7", [0, 3, 7, 10]],
   ["m7♭5", [0, 3, 6, 10]], ["dim7", [0, 3, 6, 9]],
 ];
+
+// A chord band's Roman numeral (Josh, Terminal #228) is HIS entry, stored as
+// typed — ASCII b/# like the chord symbols, so "bVII" from a ✱ note and from
+// the picker are the same string. Nothing here derives one from the music or
+// a key; these only spell, read back and prettify what he entered.
+export const ROMAN_DEGREES = ["I", "II", "III", "IV", "V", "VI", "VII"];
+export const ROMAN_EXTS = ["7", "maj7", "ø7", "6"];
+const ROMAN_DEG_RE = "VII|VI|V|IV|III|II|I|vii|vi|v|iv|iii|ii|i"; // one case per numeral: "Vii" is not a numeral
+const ROMAN_ONE = new RegExp("^([b#♭♯]?)(" + ROMAN_DEG_RE + ")([°ø+]?)(maj7|7|6)?$");
+export function romanCompose(sel) { // {acc, deg, qual: maj|min|dim|aug|null, ext} → "bVII", "ii°", "viiø7"; no degree → ""
+  if (!sel || !sel.deg) return "";
+  const half = sel.ext === "ø7";
+  const lower = half || sel.qual === "min" || sel.qual === "dim";
+  const q = half ? "" : sel.qual === "dim" ? "°" : sel.qual === "aug" ? "+" : "";
+  return (sel.acc || "") + (lower ? sel.deg.toLowerCase() : sel.deg) + q + (sel.ext || "");
+}
+export function romanParse(str) { // the inverse of romanCompose for what the chips can spell; anything else (V/V, It+6) → null
+  const m = String(str || "").trim().match(ROMAN_ONE);
+  if (!m) return null;
+  if (m[3] === "ø" && m[4] !== "7") return null;
+  const acc = m[1] === "♭" ? "b" : m[1] === "♯" ? "#" : m[1];
+  const lower = m[2] === m[2].toLowerCase();
+  if (m[3] === "+" && lower) return null; // the chips spell augmented upper-case only
+  const ext = m[3] === "ø" ? "ø7" : (m[4] || "");
+  const qual = m[3] === "ø" ? null : m[3] === "°" ? "dim" : m[3] === "+" ? "aug" : lower ? "min" : "maj";
+  return {acc, deg: m[2].toUpperCase(), qual, ext};
+}
+export function romanPretty(r) { // display only: a b/# in front of a numeral reads as ♭/♯ ("bVII" → "♭VII", "V/bVI" → "V/♭VI")
+  return String(r || "").replace(new RegExp("(^|/)([b#])(?=" + ROMAN_DEG_RE + ")", "g"),
+    (_, pre, a) => pre + (a === "b" ? "♭" : "♯"));
+}

@@ -1,6 +1,7 @@
 import { canvas } from "../render/roll.js";
 import { showRulerHl } from "../ui/chrome.js";
 import { softFocus } from "../ui/chrome.js";
+import { chordBandText } from "../model/rollnotes.js";
 import { tombstone } from "../model/edits.js";
 import { S } from "../state.js";
 import { pxPerTick } from "../render/roll.js";
@@ -731,7 +732,7 @@ export function endPointer(e) {
     pushUndo(annoUndoEntry(S.drag.bandEdge.pre, n, "resized")); // edge drags undo like any edit now, and say which band
     finalizeNotes();
     saveLocalNotes();
-    setInfo((n.chord ? "chord " : "section ") + n.text + " · bar " + n.b1 + "–" + (n.b2 || n.b1));
+    setInfo((n.chord ? "chord " : "section ") + chordBandText(n) + " · bar " + n.b1 + "–" + (n.b2 || n.b1));
   }
   else if (S.drag.stripCursor) { // the playhead strip: tap moves the cursor, NEVER touches rangeSel
     if (!S.drag.moved) {
@@ -852,7 +853,7 @@ export function tap(pos) {
         if (showRulerHl()) S.rangeSel = {a: sec.start, b: sec.end}; // View › Display → Ruler highlight off: the tap only reads out (Josh #243)
         S.playCursor = sec.start;
         editorFollowBand(sec); // docked: one tap loads it, highlight or not (plan R1/R13)
-        setInfo((sec.chord ? "chord " : "section ") + sec.text + " · bar " + sec.b1 + "–" + (sec.b2 || sec.b1) +
+        setInfo((sec.chord ? "chord " : "section ") + chordBandText(sec) + " · bar " + sec.b1 + "–" + (sec.b2 || sec.b1) +
                 (sec.cnote ? " · ✱ " + sec.cnote.split("\n")[0] : "") +
                 (sec.stale ? " · notes here now read " + sec.stale + " — rename in ☰ Notes if you agree" : ""));
         if (sec.chord) { // arm the challenge — evidence only on request, never volunteered

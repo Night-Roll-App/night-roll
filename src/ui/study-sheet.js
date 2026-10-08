@@ -1,4 +1,5 @@
 import { S } from "../state.js";
+import { chordBandText } from "../model/rollnotes.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { songNoteKind } from "../model/rollnotes.js";
@@ -229,7 +230,7 @@ function studyAnnoRow(n) { // the same row ☰ All notes draws — his text, his
   where.textContent = studyWhere(n);
   const body = document.createElement("span");
   body.className = "body";
-  body.textContent = n.text;
+  body.textContent = chordBandText(n);
   if ((n.section || n.chord) && S.sectionColors && S.sectionColors[n.text]) {
     const dot = document.createElement("span");
     dot.textContent = "■ ";

@@ -512,7 +512,17 @@
       <div class="row">
         <span class="lbl">/bass</span>
         <select id="nchordbass"></select>
+        <span class="chiprow" style="margin:0"><button type="button" id="nno5" aria-pressed="false">no 5</button></span>
       </div>
+      <div class="row">
+        <span class="lbl">roman</span>
+        <input id="nroman" type="text" autocapitalize="off" autocomplete="off" aria-label="Roman numeral (optional)"
+               placeholder="optional — tap below, or type V/V" style="flex:1;min-width:0">
+        <button type="button" id="nromanclear">Clear</button>
+      </div>
+      <div class="chiprow" id="nromandeg"></div>
+      <div class="chiprow" id="nromanmod"></div>
+      <div class="chiprow" id="nromanext"></div>
     </div>
     <div class="row" id="nsectrow" style="display:none">
       <span class="lbl">label</span>

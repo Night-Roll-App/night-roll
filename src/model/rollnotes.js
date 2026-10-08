@@ -1,6 +1,7 @@
 import { beatsPerBarEff } from "./grid.js";
 import { S } from "../state.js";
 import { keyNameToSf } from "../theory/key.js";
+import { romanPretty } from "../theory/chords.js";
 import { beatTicks } from "./grid.js";
 import { beatsPerBarDisp } from "./grid.js";
 import { snapBeat } from "./grid.js";
@@ -73,8 +74,22 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind"]);
+  "item", "done", "ai", "title", "kind", "roman", "no5"]);
 export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
+// A chord band's own fields beside its symbol (Josh, Terminal #228/#230):
+// `roman` — the Roman numeral HE entered, a string as typed; `no5` — his
+// "no fifth" mark. Absent = none. Only ever what he (or the AI on his
+// dictation) wrote: nothing derives either from the notes or a key.
+export function chordExtrasFrom(o) {
+  const x = {};
+  const r = typeof o.roman === "string" ? o.roman.trim() : "";
+  if (r) x.roman = r;
+  if (o.no5 === true || o.no5 === 1) x.no5 = true;
+  return x;
+}
+export function chordBandText(n) { // the band's readout everywhere it is shown: "F# · ♭VII · no5"
+  return n.text + (n.chord && n.roman ? " · " + romanPretty(n.roman) : "") + (n.chord && n.no5 ? " · no5" : "");
+}
 export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
   const n = {b1: +at[0] || 1, q1: at[1] !== undefined ? +at[1] : 1,
@@ -92,7 +107,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
   const att = j.note ? "\n" + j.note : "";
   switch (j.type) {
     case "section": n.text = "section: " + (j.label || "") + att; break;
-    case "chord": n.text = "chord: " + (j.chord || "") + att; break;
+    case "chord": n.text = "chord: " + (j.chord || "") + att; Object.assign(n, chordExtrasFrom(j)); break;
     case "key": n.text = "key: " + (j.key || "") + att; break;
     case "timesig": n.text = "timesig: " + (j.timesig || "") + att; break;
     case "tempo": n.text = "tempo: " + j.bpm + att; break;
@@ -362,7 +377,7 @@ export function noteToJSONBase(n) {
     return withNote(j);
   }
   if (n.section) { j.type = "section"; j.label = t; return withNote(j); }
-  if (n.chord) { j.type = "chord"; j.chord = t; return withNote(j); }
+  if (n.chord) { j.type = "chord"; j.chord = t; Object.assign(j, chordExtrasFrom(n)); return withNote(j); }
   if ((m = t.match(/^key:\s*(.+)$/is))) { j.type = "key"; j.key = m[1].trim(); return withNote(j); }
   if ((m = t.match(/^timesig:\s*(.+)$/is))) { j.type = "timesig"; j.timesig = m[1].trim(); return withNote(j); }
   if ((m = t.match(/^tempo:\s*(\d+(?:\.\d+)?)\s*$/i))) { j.type = "tempo"; j.bpm = +m[1]; return withNote(j); }

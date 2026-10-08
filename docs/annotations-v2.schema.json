@@ -86,6 +86,8 @@
         "title": { "type": "string", "description": "type: songnote — the song note's short one-line title, e.g. 'Sway'; unique per song (compared without case). The body is 'note'." },
         "label": { "type": "string", "description": "type: section — the band's label." },
         "chord": { "type": "string", "description": "type: chord — the symbol (lasso chord-namer vocabulary)." },
+        "roman": { "type": "string", "description": "type: chord — the Roman numeral the user entered, as typed (ASCII b/# accidentals: 'bVII', 'vi', 'ii°', 'V7', 'V/V'). Absent = none. Never derived by the app." },
+        "no5": { "type": "boolean", "description": "type: chord — the user's 'no fifth' mark. Absent = not marked." },
         "key": { "type": "string", "description": "type: key — e.g. 'Bb', 'Gm', 'D dorian', or 'Bb?' (tonic-only, partial)." },
         "timesig": { "type": "string", "description": "type: timesig — e.g. '6/8'." },
         "bpm": { "type": "number", "exclusiveMinimum": 0, "description": "type: tempo." },

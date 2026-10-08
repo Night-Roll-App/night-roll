@@ -169,7 +169,7 @@ export function askAnnotationsTextCompact() {
     const kind = askNoteKind(n), value = askNoteValue(n, kind);
     const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
     const sub = n.songnote && songNoteKind(n) !== "general" ? " (" + songNoteKind(n) + ")" : ""; // "songnote (question): Title" — his open questions, listable on request
-    return i + " " + at + " " + kind + sub + ": " + value + (n.cnote ? " — " + n.cnote : "");
+    return i + " " + at + " " + kind + sub + ": " + value + askChordExtrasText(n) + (n.cnote ? " — " + n.cnote : "");
   });
   return rows.length ? rows.join("\n") : "(no annotations)";
 }
@@ -206,6 +206,18 @@ export function askFindAnnotation(a) {
   if (cands.length > 1) throw new Error("more than one annotation at bar " + bar + " beat " + beat + ": " +
     cands.map(n => JSON.stringify((n.text || "").split("\n")[0])).join(", ") + " — say which (match_text, or its id from the context)");
   return cands[0];
+}
+// a chord band's own Roman numeral / no-fifth mark: HIS entries, listed as
+// such in the compact block (the JSON one carries "roman"/"no5" as fields)
+export function askChordExtrasText(n) {
+  return n.chord ? (n.roman ? " [roman: " + n.roman + "]" : "") + (n.no5 ? " [no5]" : "") : "";
+}
+// roman/no5 as dictated: a string ("" clears) and a yes/no; undefined = not given
+export function askChordExtrasArgs(a, prev) {
+  const x = {roman: prev ? prev.roman : undefined, no5: prev ? prev.no5 : undefined};
+  if (a.roman !== undefined && a.roman !== null) x.roman = String(a.roman).trim() || undefined;
+  if (a.no5 !== undefined && a.no5 !== null) x.no5 = (a.no5 === true || a.no5 === 1 || /^(true|yes|on|1)$/i.test(String(a.no5).trim())) || undefined;
+  return x;
 }
 export function askNoteKind(n) { // the add_annotation "kind" this existing note was written as
   if (n.section) return "section";
@@ -434,6 +446,8 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   if (!parsed.length) throw new Error("could not parse that annotation");
   const fresh = parsed[0];
   fresh.added = true;
+  if (fresh.chord) Object.assign(fresh, askChordExtrasArgs(a, null));
+  else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation (kind: chord)");
   const isLoop = n => n.loopTo !== undefined || /^loop:/i.test(n.text || "");
   if (isLoop(fresh)) S.rollnotes = S.rollnotes.filter(n => !(n.added && isLoop(n))); // one loop point per song, as the editor does (loopTo is derived later, in finalizeNotes)
   dropSupersededBy(fresh);
@@ -456,7 +470,7 @@ export function askEditAnnotation(a) {
   const beat = a.new_beat !== undefined ? Math.max(1, +a.new_beat) : (n.q1 || 1);
   const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (n.b2 || null);
   const eq = eb !== null ? (a.new_end_beat !== undefined ? Math.max(1, +a.new_end_beat) : (eb === n.b2 ? (n.q2 || null) : null)) : null;
-  const text = String(a.text || "").trim();
+  const text = String(a.text || "").trim() || (n.chord && (a.roman !== undefined || a.no5 !== undefined) ? n.text : ""); // "make that chord a bVII": the symbol stays
   if (!text) throw new Error("empty text");
   const comment = a.comment !== undefined ? String(a.comment).trim() : (n.cnote || "");
   const line = (kind === "note" ? text : kind + ": " + text) + (comment ? "\n" + comment : "");
@@ -465,6 +479,8 @@ export function askEditAnnotation(a) {
   if (!parsed.length) throw new Error("could not parse that annotation");
   const fresh = parsed[0];
   fresh.added = true;
+  if (fresh.chord) Object.assign(fresh, askChordExtrasArgs(a, n)); // kept unless he said otherwise, like the comment
+  else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation");
   if (kind === "key") dropLocalKeyAt(bar, beat); // anchor-level: only a key at the (possibly new) exact beat is replaced
   retireEdited(n); // tombstones a synced original (so it can't come back on reload) and drops it — same path the note editor's own Save uses on an edit
   const isLoop = nn => nn.loopTo !== undefined || /^loop:/i.test(nn.text || "");

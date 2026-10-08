@@ -1,4 +1,5 @@
 import { checkKeyVsFile } from "../model/song.js";
+import { chordBandText } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { estimateKey } from "../model/song.js";
 import { checkMeterVsFile } from "../theory/key.js";
@@ -486,7 +487,7 @@ export function renderNoteList() {
                           (n.chopdir ? " raw" : ""); // chop anchors are pre-chop capture coordinates
       const body = document.createElement("span");
       body.className = "body";
-      body.textContent = n.text + (n.stale ? " — reads: " + n.stale : "");
+      body.textContent = chordBandText(n) + (n.stale ? " — reads: " + n.stale : "");
       if ((n.section || n.chord) && S.sectionColors[n.text]) {
         const dot = document.createElement("span");
         dot.textContent = "■ ";

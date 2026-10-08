@@ -61,7 +61,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
       // visibleNotes (model/rollnotes.js): the harness runs in Learning, so
       // ✦ AI-tagged estimates stay out of the query tools too — facts only
       rollnotes: visibleNotes().map(n => ({text: n.text, note: n.cnote, b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2,
-        start: n.start, end: n.end, section: !!n.section, chord: !!n.chord,
+        start: n.start, end: n.end, section: !!n.section, chord: !!n.chord, roman: n.roman, no5: n.no5, // his own Roman numeral / no-fifth mark on a chord band
         keydir: n.keydir, keypartial: n.keypartial, tsdir: n.tsdir, tempodir: n.tempodir,
         trackdir: n.trackdir, loopTo: n.loopTo, lane: n.lane,
         study: n.study, // {item, done} on an Analysis-sheet entry (tools/annotations.mjs lists it as type "analysis")

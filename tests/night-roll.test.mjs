@@ -2997,6 +2997,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Roman numeral and no 5",
     "Jump into text boxes",
     "Docked annotation window", "follows what you select",
     "Every undo and redo says what it took back",
@@ -15415,4 +15416,49 @@ test("Jump into text boxes (Josh, Terminal #251/#253): every programmatic text-b
   }
   assert.deepEqual(bare, []);
   run(`window.matchMedia = __keepMM; try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {} textJumpOn.v = undefined;`);
+});
+
+test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — empty on a new chord, chips spell it, saved/loaded/round-tripped, shown on the band, Ask writes only what he dictates", () => {
+  installSong();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "nroman"]) document.getElementById(id).focus = () => {}; isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 8); rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; document.getElementById("noteeditor").classList.remove("docked");`);
+  const bt = val(`barTicks()`);
+  // pure helpers
+  assert.equal(val(`romanCompose({acc: "b", deg: "VII", qual: "maj", ext: ""})`), "bVII");
+  assert.equal(val(`romanCompose({acc: "", deg: "II", qual: "dim", ext: ""})`), "ii°");
+  assert.equal(val(`romanCompose({acc: "", deg: "VII", qual: null, ext: "ø7"})`), "viiø7");
+  assert.deepEqual(val(`romanParse("bVII")`), {acc: "b", deg: "VII", qual: "maj", ext: ""});
+  assert.equal(val(`romanParse("V/V")`), null, "beyond the chips: the box keeps it as typed");
+  assert.equal(val(`romanPretty("V/bVI")`), "V/♭VI");
+  // a new chord opens with nothing filled in (Learning mode: never a numeral of the app's own)
+  run(`rangeSel = {a: ${bt}, b: ${3 * bt}, cycle: true}; openEditor(null, "chord"); setChordWidget("F#");`);
+  assert.deepEqual(val(`[document.getElementById("nroman").value, document.getElementById("nno5").classList.contains("active")]`), ["", false]);
+  run(`romanTap("acc", "b"); romanTap("deg", "VII"); romanTap("qual", "maj"); document.getElementById("nno5").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`document.getElementById("nroman").value`), "bVII");
+  run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  const c = val(`(() => { const n = rollnotes.find(n => n.chord); return {text: n.text, roman: n.roman, no5: n.no5}; })()`);
+  assert.deepEqual(c, {text: "F#", roman: "bVII", no5: true});
+  assert.equal(val(`chordBandText(rollnotes.find(n => n.chord))`), "F# · ♭VII · no5", "the band's readout");
+  // the file round trip
+  const j = val(`noteToJSON(rollnotes.find(n => n.chord))`);
+  assert.deepEqual([j.chord, j.roman, j.no5], ["F#", "bVII", true]);
+  assert.deepEqual(val(`(() => { const a = [jsonToRawNote(${JSON.stringify(j)})]; deriveNoteTypes(a); return [a[0].roman, a[0].no5]; })()`), ["bVII", true]);
+  // reopening shows his entry; a chord without one stays empty
+  run(`openEditor(rollnotes.find(n => n.chord));`);
+  assert.deepEqual(val(`[document.getElementById("nroman").value, document.getElementById("nno5").classList.contains("active")]`), ["bVII", true]);
+  run(`document.getElementById("nromanclear").dispatchEvent(new Event("click")); document.getElementById("nno5").dispatchEvent(new Event("click")); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`(() => { const n = rollnotes.find(n => n.chord); return [n.roman || null, n.no5 || null]; })()`), [null, null], "cleared: the fields go away, not empty strings");
+  // Ask: only on his dictation, kept unless he changes it
+  run(`rollnotes = []; finalizeNotes();`);
+  run(`askAddAnnotation({kind: "chord", text: "G7", bar: 2, beat: 1, roman: "V7"});`);
+  assert.equal(val(`rollnotes.find(n => n.chord).roman`), "V7");
+  assert.match(val(`askAnnotationsTextCompact()`), /chord: G7 \[roman: V7\]/);
+  run(`askEditAnnotation({bar: 2, beat: 1, no5: true});`);
+  assert.deepEqual(val(`(() => { const n = rollnotes.find(n => n.chord); return [n.text, n.roman, n.no5]; })()`), ["G7", "V7", true], "symbol and numeral kept; no5 added");
+  assert.throws(() => run(`askAddAnnotation({kind: "section", text: "A", bar: 3, beat: 1, roman: "I"})`), /belong on a chord/);
+  // docked: a Roman numeral change counts as unsaved
+  run(`document.getElementById("noteeditor").classList.add("docked"); S.edFollow.mode = "editing"; openEditor(rollnotes.find(n => n.chord)); S.edFollow.mode = "editing"; editorMark();`);
+  assert.equal(val(`editorDirty()`), false);
+  run(`document.getElementById("nroman").value = "V7/IV";`);
+  assert.equal(val(`editorDirty()`), true);
+  run(`document.getElementById("noteeditor").classList.remove("docked"); S.edFollow.mode = "idle";`);
 });

@@ -389,7 +389,7 @@ export async function moveComposition(destDir) {
     // one the same way a genuine unsynced note would be, so annotationsFor
     // (newKey) inside publishSong reproduces the full set.
     const seed = priorNotes.map(n => ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
-      section: n.section || undefined, chord: n.chord || undefined, cnote: n.cnote || undefined, keydir: n.keydir}));
+      section: n.section || undefined, chord: n.chord || undefined, cnote: n.cnote || undefined, roman: n.roman || undefined, no5: n.no5 || undefined, keydir: n.keydir}));
     if (seed.length) localStorage.setItem("ff1roll-notes-" + newKey, JSON.stringify(seed));
     else localStorage.removeItem("ff1roll-notes-" + newKey);
     try {

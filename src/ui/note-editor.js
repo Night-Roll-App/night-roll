@@ -58,6 +58,10 @@ import { editsKey } from "../model/edits.js";
 import { loadSong } from "../session/song.js";
 import { CHORD_BASES } from "../theory/chords.js";
 import { CHORD_EXTS } from "../theory/chords.js";
+import { ROMAN_DEGREES } from "../theory/chords.js";
+import { ROMAN_EXTS } from "../theory/chords.js";
+import { romanCompose } from "../theory/chords.js";
+import { romanParse } from "../theory/chords.js";
 import { nmic } from "./chrome.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { retireEdited } from "../model/edits.js";
@@ -323,6 +327,41 @@ export function setChordWidget(sym) {
   document.getElementById("nchordsym").value = sym || "";
   refreshChordChips();
 }
+// The chord's Roman numeral (Josh, Terminal #228): HIS reading, so the picker
+// opens empty on every new chord and nothing here looks at the notes or the
+// key. The box is the truth (typing wins, like the symbol box); the chips
+// spell the common cases and stand down for anything else (V/V, It+6).
+export const romanSel = {acc: "", deg: null, qual: null, ext: ""};
+export function refreshRomanChips() {
+  const on = (g, v) => g === "acc" ? romanSel.acc === v && (v !== "" || romanSel.deg !== null)
+    : g === "deg" ? romanSel.deg === v : g === "qual" ? romanSel.qual === v : romanSel.ext === v;
+  for (const id of ["nromandeg", "nromanmod", "nromanext"])
+    for (const b of document.getElementById(id).children) b.classList.toggle("active", on(b.dataset.g, b.dataset.v));
+}
+export function setRomanSel(p) {
+  romanSel.acc = p ? p.acc : ""; romanSel.deg = p ? p.deg : null;
+  romanSel.qual = p ? p.qual : null; romanSel.ext = p ? p.ext : "";
+}
+export function setRomanWidget(roman, no5) { // openEditor: the chord's own entry, or nothing
+  document.getElementById("nroman").value = roman || "";
+  setRomanSel(romanParse(roman));
+  refreshRomanChips();
+  setNo5(!!no5);
+}
+export function setNo5(on) {
+  const b = document.getElementById("nno5");
+  b.classList.toggle("active", on);
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+}
+export function romanTap(g, v) { // one chip tap → the box
+  if (g === "deg") romanSel.deg = v;
+  else if (g === "acc") romanSel.acc = v;
+  else if (g === "qual") romanSel.qual = romanSel.qual === v ? null : v;
+  else if (g === "ext") romanSel.ext = romanSel.ext === v ? "" : v; // tap again to take it off
+  refreshRomanChips();
+  const r = romanCompose(romanSel);
+  if (r) document.getElementById("nroman").value = r;
+}
 // dictation into the note text box (Web Speech API — easier on hands than
 // typing; falls back silently to the keyboard mic where unsupported)
 export const SPEECH = window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -481,6 +520,7 @@ export function editorFill(note, presetType, opts) {
   document.getElementById("nsongtitle").value = type === "song" && note && note.songnote ? note.songnote.title : "";
   setEditorSongKind(note && note.songnote ? songNoteKind(note) : opts && opts.songKind || "general"); // opts.songKind: "+ question" opens a new one already marked
   if (type === "chord") setChordWidget(note ? note.text : "");
+  if (type === "chord") setRomanWidget(note ? note.roman : "", note && note.no5);
   if (type === "key" && note) {
     const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
     if (note.keypartial) {
@@ -819,7 +859,7 @@ export function editorDeleteRun(body) {
 // (unsaved = they differ); sig is the selection last acted on; pending is the
 // selection held behind the "Unsaved … Save · Discard" strip.
 export const ED_FIELD_IDS = ["ntext", "nsectlabel", "nchordsym", "nchordbass", "nkeysel", "nkeymode", "ntempo",
-  "ntsnum", "ntsden", "nlb", "nlq", "nls", "nchopmode", "nsongtitle"];
+  "ntsnum", "ntsden", "nlb", "nlq", "nls", "nchopmode", "nsongtitle", "nroman"];
 export const ED_SPAN_IDS = ["nb1", "nq1", "ns1", "nb2", "nq2", "ns2"];
 export function editorDocked() { return !!(editor && editor.classList && editor.classList.contains("docked")); }
 export function editorFollowing() {
@@ -829,7 +869,7 @@ export function editorFollowing() {
   return !!(w && w.dock !== "bottom" && S.wm[w.dock] && S.wm[w.dock].ids.length > 1);
 }
 export function editorFieldsKey(withType) {
-  return JSON.stringify([withType ? editorType() : "", ED_FIELD_IDS.map(id => document.getElementById(id).value), editorSongKind(), chordSel]);
+  return JSON.stringify([withType ? editorType() : "", ED_FIELD_IDS.map(id => document.getElementById(id).value), editorSongKind(), chordSel, document.getElementById("nno5").classList.contains("active")]);
 }
 export function editorSpanKey() { return ED_SPAN_IDS.map(id => document.getElementById(id).value).join(","); }
 export function editorMark() { S.edFollow.base = editorFieldsKey(S.edFollow.mode === "editing"); S.edFollow.baseSpan = editorSpanKey(); }
@@ -1224,6 +1264,29 @@ export function initNoteEditor4() {
     sym.addEventListener("keydown", e => {
       if (e.key === "Enter") { e.preventDefault(); document.getElementById("nsave").click(); }
     });
+    const mkRoman = (id, items) => {
+      const row = document.getElementById(id);
+      for (const [g, v, label] of items) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.g = g; b.dataset.v = v;
+        b.textContent = label;
+        row.appendChild(b);
+      }
+      row.addEventListener("click", e => { const b = e.target; if (b && b.dataset && b.dataset.g) romanTap(b.dataset.g, b.dataset.v); });
+    };
+    mkRoman("nromandeg", ROMAN_DEGREES.map(d => ["deg", d, d]));
+    mkRoman("nromanmod", [["acc", "b", "♭"], ["acc", "", "♮"], ["acc", "#", "♯"],
+      ["qual", "maj", "major I"], ["qual", "min", "minor i"], ["qual", "dim", "° dim"], ["qual", "aug", "+ aug"]]);
+    mkRoman("nromanext", ROMAN_EXTS.map(x => ["ext", x, x]));
+    const rbox = document.getElementById("nroman");
+    rbox.addEventListener("input", () => { setRomanSel(romanParse(rbox.value)); refreshRomanChips(); });
+    rbox.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); document.getElementById("nsave").click(); }
+    });
+    document.getElementById("nromanclear").addEventListener("click", () => { rbox.value = ""; setRomanSel(null); refreshRomanChips(); });
+    document.getElementById("nno5").addEventListener("click", () =>
+      setNo5(!document.getElementById("nno5").classList.contains("active")));
   })();
 
     nmic.addEventListener("click", () =>
@@ -1351,7 +1414,9 @@ export function initNoteEditor4() {
       if (!sym) { document.getElementById("nstatus").textContent = "Chord symbol is empty — tap chips or type one."; return; }
       localStorage.setItem("ff1roll-dragtype", "chord");
       fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
-               text: sym, chord: true, cnote: text || undefined, added: true};
+               text: sym, chord: true, cnote: text || undefined, added: true,
+               roman: document.getElementById("nroman").value.trim() || undefined,
+               no5: document.getElementById("nno5").classList.contains("active") || undefined};
     } else if (type === "section") {
       const label = document.getElementById("nsectlabel").value.trim();
       if (!label) { document.getElementById("nstatus").textContent = "Section label is empty."; return; }

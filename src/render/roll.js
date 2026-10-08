@@ -1,4 +1,5 @@
 import { S, prof } from "../state.js";
+import { chordBandText } from "../model/rollnotes.js";
 import { annoInLasso } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
 import { secToTick } from "../midi/parse.js";
@@ -486,7 +487,7 @@ export function drawRuler(W, H) {
     ctx.clip();
     ctx.fillStyle = css("--text");
     ctx.font = "10px " + css("--mono");
-    ctx.fillText((n.stale ? "⚠ " : "") + n.text + (n.cnote ? " ✱" : ""), Math.max(x, S.RULER_W) + 5, y + 11);
+    ctx.fillText((n.stale ? "⚠ " : "") + chordBandText(n) + (n.cnote ? " ✱" : ""), Math.max(x, S.RULER_W) + 5, y + 11);
     ctx.restore();
   }
   // P6: the Analyze layer draws AFTER the real section/chord bands, in its
