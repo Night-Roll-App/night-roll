@@ -58,6 +58,10 @@
      "lufs": -8.9,
      "peak": 5.8,
      "synth": -4.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-barrel-course": {
@@ -70,6 +74,10 @@
      "lufs": -12.8,
      "peak": 0.7,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-boss-dogadon": {
@@ -82,6 +90,10 @@
      "lufs": -8.8,
      "peak": 6.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-caves": {
@@ -94,6 +106,10 @@
      "lufs": -13.6,
      "peak": 0.9,
      "synth": -10.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-lobby": {
@@ -106,6 +122,10 @@
      "lufs": -12.4,
      "peak": 0.9,
      "synth": -7.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-race": {
@@ -118,6 +138,10 @@
      "lufs": -9.4,
      "peak": 4.8,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-room": {
@@ -130,6 +154,10 @@
      "lufs": -9.2,
      "peak": 3.7,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-temple": {
@@ -142,6 +170,10 @@
      "lufs": -14.1,
      "peak": 4.8,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec-underground": {
@@ -154,6 +186,10 @@
      "lufs": -13.1,
      "peak": 1.3,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "angry-aztec": {
@@ -166,6 +202,10 @@
      "lufs": -8.1,
      "peak": 6.4,
      "synth": -3.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "baboon-balloon": {
@@ -177,6 +217,10 @@
      "lufs": -14.1,
      "peak": 0.2,
      "synth": -4.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "banana-fairy-isle": {
@@ -189,6 +233,10 @@
      "lufs": -11.7,
      "peak": 1,
      "synth": -4.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "banana-fairy-photo": {
@@ -200,6 +248,10 @@
      "lufs": -16.8,
      "peak": -3.6,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "banana-fairy": {
@@ -211,6 +263,10 @@
      "lufs": -9.5,
      "peak": 2.2,
      "synth": -2.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "banana-medal": {
@@ -222,6 +278,10 @@
      "lufs": -6.5,
      "peak": 4.8,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "barrel-course-complete": {
@@ -233,6 +293,10 @@
      "lufs": -10.8,
      "peak": -2.3,
      "synth": -12.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "battle-arena": {
@@ -245,6 +309,10 @@
      "lufs": -9.7,
      "peak": 4.2,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "beach-ambience": {
@@ -256,6 +324,10 @@
      "lufs": -14.2,
      "peak": -0.6,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "bonus-barrel-introduction": {
@@ -268,6 +340,10 @@
      "lufs": -12.6,
      "peak": -0.9,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "bonus-barrel": {
@@ -280,6 +356,10 @@
      "lufs": -11,
      "peak": 3.2,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "boss-introduction": {
@@ -292,6 +372,10 @@
      "lufs": -11.8,
      "peak": 2.1,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "boss-unlock": {
@@ -304,6 +388,10 @@
      "lufs": -8,
      "peak": 5.7,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "candy-s-music-store": {
@@ -316,6 +404,10 @@
      "lufs": -14.5,
      "peak": 0.1,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "chunky-s-triangle-trample": {
@@ -327,6 +419,10 @@
      "lufs": -7.2,
      "peak": 1.7,
      "synth": -1.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-banana-token": {
@@ -338,6 +434,10 @@
      "lufs": -8.3,
      "peak": 4.5,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-blue-print": {
@@ -349,6 +449,10 @@
      "lufs": -14.9,
      "peak": -2.7,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-bonus-token": {
@@ -360,6 +464,10 @@
      "lufs": -15,
      "peak": -1,
      "synth": -12.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-crystal-coconut": {
@@ -371,6 +479,10 @@
      "lufs": -8.3,
      "peak": -3,
      "synth": -12
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-golden-banana": {
@@ -382,6 +494,10 @@
      "lufs": -6.4,
      "peak": 6.9,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-melon-piece": {
@@ -393,6 +509,10 @@
      "lufs": -7.9,
      "peak": 0.6,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-multi-banana-token": {
@@ -404,6 +524,10 @@
      "lufs": -5.4,
      "peak": 5.3,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "collect-pearl": {
@@ -416,6 +540,10 @@
      "lufs": -9.6,
      "peak": -0.2,
      "synth": -10.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "cranky-s-lab": {
@@ -428,6 +556,10 @@
      "lufs": -14.5,
      "peak": -1.1,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "cranky-s-potion": {
@@ -440,6 +572,10 @@
      "lufs": -8.8,
      "peak": 0.9,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "credits": {
@@ -452,6 +588,10 @@
      "lufs": -8.4,
      "peak": 4.5,
      "synth": -2.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-ballroom": {
@@ -464,6 +604,10 @@
      "lufs": -10.1,
      "peak": 4.4,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-barrel-course": {
@@ -476,6 +620,10 @@
      "lufs": -13.4,
      "peak": 1.5,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-boss-king-kut-out": {
@@ -488,6 +636,10 @@
      "lufs": -7,
      "peak": 8.8,
      "synth": -0.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-caves": {
@@ -500,6 +652,10 @@
      "lufs": -15,
      "peak": -1.9,
      "synth": -10.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-dungeons": {
@@ -512,6 +668,10 @@
      "lufs": -18.7,
      "peak": 0.3,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-greenhouse": {
@@ -524,6 +684,10 @@
      "lufs": -13.3,
      "peak": 3.1,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-library-alternate": {
@@ -536,6 +700,10 @@
      "lufs": -15.8,
      "peak": -1.2,
      "synth": -8.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-library": {
@@ -548,6 +716,10 @@
      "lufs": -13.2,
      "peak": 0,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-lobby": {
@@ -560,6 +732,10 @@
      "lufs": -12.5,
      "peak": 0.7,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-mine-cart": {
@@ -572,6 +748,10 @@
      "lufs": -6.9,
      "peak": 7.3,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-museum": {
@@ -584,6 +764,10 @@
      "lufs": -13.4,
      "peak": 0.3,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-rubbish-bin": {
@@ -596,6 +780,10 @@
      "lufs": -12.3,
      "peak": 2.3,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-tree-trunk": {
@@ -608,6 +796,10 @@
      "lufs": -13.4,
      "peak": 3.1,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-wind-tower": {
@@ -620,6 +812,10 @@
      "lufs": -9.5,
      "peak": 1.6,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle": {
@@ -632,6 +828,10 @@
      "lufs": -12.9,
      "peak": 3.7,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-barrel-course": {
@@ -644,6 +844,10 @@
      "lufs": -13.5,
      "peak": 0.5,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-board-game": {
@@ -656,6 +860,10 @@
      "lufs": -11.6,
      "peak": 2.2,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-boss-army-dillo": {
@@ -668,6 +876,10 @@
      "lufs": -7.5,
      "peak": 5.5,
      "synth": -1.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-earthquake": {
@@ -680,6 +892,10 @@
      "lufs": -7.6,
      "peak": 3.6,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-igloo": {
@@ -692,6 +908,10 @@
      "lufs": -12.8,
      "peak": 1.2,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-indoors": {
@@ -704,6 +924,10 @@
      "lufs": -11.9,
      "peak": 2.4,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-lobby": {
@@ -716,6 +940,10 @@
      "lufs": -17.8,
      "peak": -1.9,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-race": {
@@ -728,6 +956,10 @@
      "lufs": -10.4,
      "peak": 4.8,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves-rotating-room": {
@@ -740,6 +972,10 @@
      "lufs": -14.9,
      "peak": 0.9,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "crystal-caves": {
@@ -752,6 +988,10 @@
      "lufs": -12.8,
      "peak": 5.1,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "defeat-boss": {
@@ -764,6 +1004,10 @@
      "lufs": -8,
      "peak": 6.4,
      "synth": -1.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "diddy-s-guitar-gazump": {
@@ -775,6 +1019,10 @@
      "lufs": -5.2,
      "peak": 3.5,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "dk-isle": {
@@ -787,6 +1035,10 @@
      "lufs": -11.6,
      "peak": 2.1,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "dk-rap": {
@@ -799,6 +1051,10 @@
      "lufs": -10.3,
      "peak": 4.4,
      "synth": -9.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "dk-s-treehouse": {
@@ -811,6 +1067,10 @@
      "lufs": -13.4,
      "peak": 4.5,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "donkey-s-bongo-blast": {
@@ -822,6 +1082,10 @@
      "lufs": -9,
      "peak": 2.3,
      "synth": -8.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "ending": {
@@ -834,6 +1098,10 @@
      "lufs": -13,
      "peak": 2.4,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "enguarde": {
@@ -846,6 +1114,10 @@
      "lufs": -9.5,
      "peak": 1.5,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "entrance": {
@@ -857,6 +1129,10 @@
      "lufs": -10.7,
      "peak": -2.7,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "exit": {
@@ -868,6 +1144,10 @@
      "lufs": -10.6,
      "peak": -1.7,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "failure": {
@@ -880,6 +1160,10 @@
      "lufs": -10.4,
      "peak": 2,
      "synth": -4.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "find-blue-print": {
@@ -891,6 +1175,10 @@
      "lufs": -8,
      "peak": 4.8,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "find-golden-banana": {
@@ -902,6 +1190,10 @@
      "lufs": -8.9,
      "peak": 3,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "find-melon-piece": {
@@ -913,6 +1205,10 @@
      "lufs": -8.8,
      "peak": 1.6,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-boss-mad-jack": {
@@ -925,6 +1221,10 @@
      "lufs": -8.7,
      "peak": 5.9,
      "synth": -3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-car-race": {
@@ -937,6 +1237,10 @@
      "lufs": -10.2,
      "peak": 3.7,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-conveyor-belt": {
@@ -949,6 +1253,10 @@
      "lufs": -10.9,
      "peak": 3.5,
      "synth": -3.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-lobby": {
@@ -961,6 +1269,10 @@
      "lufs": -14.8,
      "peak": 0.7,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-production-room": {
@@ -973,6 +1285,10 @@
      "lufs": -13.5,
      "peak": 3,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory-research-and-development": {
@@ -985,6 +1301,10 @@
      "lufs": -13.5,
      "peak": 1.4,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "frantic-factory": {
@@ -997,6 +1317,10 @@
      "lufs": -15.5,
      "peak": -0.4,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-barrel-course": {
@@ -1009,6 +1333,10 @@
      "lufs": -15.7,
      "peak": 0.3,
      "synth": -9.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-bonus-room": {
@@ -1021,6 +1349,10 @@
      "lufs": -13.8,
      "peak": 0,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-boss-dogadon": {
@@ -1033,6 +1365,10 @@
      "lufs": -8,
      "peak": 5.7,
      "synth": -1.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-day": {
@@ -1045,6 +1381,10 @@
      "lufs": -11.2,
      "peak": 3.4,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-giant-mushroom": {
@@ -1057,6 +1397,10 @@
      "lufs": -14.7,
      "peak": 2.6,
      "synth": -9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-indoors-1": {
@@ -1069,6 +1413,10 @@
      "lufs": -16.6,
      "peak": 0.4,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-indoors-2": {
@@ -1081,6 +1429,10 @@
      "lufs": -13.9,
      "peak": -1.7,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-lobby": {
@@ -1093,6 +1445,10 @@
      "lufs": -14.2,
      "peak": -1.4,
      "synth": -9.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-mine-cart": {
@@ -1105,6 +1461,10 @@
      "lufs": -8.4,
      "peak": 6,
      "synth": -3.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-night": {
@@ -1117,6 +1477,10 @@
      "lufs": -13.4,
      "peak": 0.4,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-race": {
@@ -1129,6 +1493,10 @@
      "lufs": -9.2,
      "peak": 4.6,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-spider": {
@@ -1141,6 +1509,10 @@
      "lufs": -10.4,
      "peak": 2.3,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "fungi-forest-tree-trunk": {
@@ -1153,6 +1525,10 @@
      "lufs": -10.7,
      "peak": 3.2,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "funky-s-armoury": {
@@ -1165,6 +1541,10 @@
      "lufs": -11.1,
      "peak": 2.6,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "game-over": {
@@ -1177,6 +1557,10 @@
      "lufs": -6.7,
      "peak": 7,
      "synth": -2.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-barrel-course": {
@@ -1189,6 +1573,10 @@
      "lufs": -15.8,
      "peak": -1.3,
      "synth": -9.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-boat-race": {
@@ -1201,6 +1589,10 @@
      "lufs": -10.4,
      "peak": 3.6,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-boss-puftoss": {
@@ -1213,6 +1605,10 @@
      "lufs": -8.4,
      "peak": 7.2,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-caves": {
@@ -1225,6 +1621,10 @@
      "lufs": -16.1,
      "peak": 1.7,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-lobby": {
@@ -1237,6 +1637,10 @@
      "lufs": -13.8,
      "peak": -0.6,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-mechanical-fish": {
@@ -1249,6 +1653,10 @@
      "lufs": -14.2,
      "peak": 1.6,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-pearl-treasure": {
@@ -1261,6 +1669,10 @@
      "lufs": -13.1,
      "peak": 1.6,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-ship-ruins": {
@@ -1273,6 +1685,10 @@
      "lufs": -16.5,
      "peak": -1.6,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-submarine": {
@@ -1285,6 +1701,10 @@
      "lufs": -17.7,
      "peak": -2.5,
      "synth": -13.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon-sunken-ship": {
@@ -1297,6 +1717,10 @@
      "lufs": -13,
      "peak": 2.5,
      "synth": -10.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gloomy-galleon": {
@@ -1309,6 +1733,10 @@
      "lufs": -11.3,
      "peak": 2.4,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "gorilla-gone": {
@@ -1320,6 +1748,10 @@
      "lufs": -13.4,
      "peak": 0.3,
      "synth": -5.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "happy-k-lumsy": {
@@ -1332,6 +1764,10 @@
      "lufs": -12.9,
      "peak": 0.5,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "hideout-helm-bonus-barrel": {
@@ -1344,6 +1780,10 @@
      "lufs": -9.4,
      "peak": 4.1,
      "synth": -3.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "hideout-helm-completed": {
@@ -1356,6 +1796,10 @@
      "lufs": -11.8,
      "peak": 4.1,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "hideout-helm-lobby": {
@@ -1368,6 +1812,10 @@
      "lufs": -15.5,
      "peak": -0.2,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "hideout-helm": {
@@ -1380,6 +1828,10 @@
      "lufs": -12.9,
      "peak": 3.2,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "hunky-chunky": {
@@ -1391,6 +1843,10 @@
      "lufs": -12.1,
      "peak": 2.7,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "instrument-refill": {
@@ -1402,6 +1858,10 @@
      "lufs": -10.2,
      "peak": 1,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "introduction": {
@@ -1414,6 +1874,10 @@
      "lufs": -9.6,
      "peak": 6.2,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-ambience": {
@@ -1425,6 +1889,10 @@
      "lufs": -21.3,
      "peak": -6.1,
      "synth": -12.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-barrel-course": {
@@ -1437,6 +1905,10 @@
      "lufs": -16.3,
      "peak": -2.5,
      "synth": -9.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-boss-army-dillo": {
@@ -1449,6 +1921,10 @@
      "lufs": -9.6,
      "peak": 5.9,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-caves-ambience": {
@@ -1461,6 +1937,10 @@
      "lufs": -20.2,
      "peak": -2.8,
      "synth": -13.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-caves": {
@@ -1473,6 +1953,10 @@
      "lufs": -12.2,
      "peak": 1.8,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-lobby": {
@@ -1485,6 +1969,10 @@
      "lufs": -11.7,
      "peak": 4.5,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-mine-cart": {
@@ -1497,6 +1985,10 @@
      "lufs": -7.2,
      "peak": 8.6,
      "synth": -3.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-storm": {
@@ -1509,6 +2001,10 @@
      "lufs": -11.4,
      "peak": 3.5,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-underground": {
@@ -1521,6 +2017,10 @@
      "lufs": -15.3,
      "peak": 2.9,
      "synth": -11.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes": {
@@ -1533,6 +2033,10 @@
      "lufs": -8.9,
      "peak": 5.8,
      "synth": -4.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-lumsy-key": {
@@ -1545,6 +2049,10 @@
      "lufs": -21.4,
      "peak": -12.5,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-lumsy": {
@@ -1557,6 +2065,10 @@
      "lufs": -16.5,
      "peak": -2.8,
      "synth": -13.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-rool-battle-introduction": {
@@ -1569,6 +2081,10 @@
      "lufs": -8.5,
      "peak": 6.1,
      "synth": -0.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-rool-defeated": {
@@ -1581,6 +2097,10 @@
      "lufs": -12,
      "peak": 1.9,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-rool-duel": {
@@ -1593,6 +2113,10 @@
      "lufs": -7.6,
      "peak": 6.3,
      "synth": -1.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-rool-take-off": {
@@ -1605,6 +2129,10 @@
      "lufs": -8.8,
      "peak": 5.8,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "k-rool": {
@@ -1617,6 +2145,10 @@
      "lufs": -9.6,
      "peak": 2,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "krem-isle-snide-s-hq": {
@@ -1629,6 +2161,10 @@
      "lufs": -14.6,
      "peak": 0.7,
      "synth": -7.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "krem-isle": {
@@ -1641,6 +2177,10 @@
      "lufs": -13.2,
      "peak": 0.9,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "lanky-s-trombone-tremor": {
@@ -1652,6 +2192,10 @@
      "lufs": -14.4,
      "peak": 0.7,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "logo": {
@@ -1664,6 +2208,10 @@
      "lufs": -13.2,
      "peak": 3.3,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "lose-bonus-tokens": {
@@ -1675,6 +2223,10 @@
      "lufs": -12.4,
      "peak": -0.4,
      "synth": -11
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "lose-race": {
@@ -1687,6 +2239,10 @@
      "lufs": -13.5,
      "peak": 5.7,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "mad-maze-maul": {
@@ -1698,6 +2254,10 @@
      "lufs": -9,
      "peak": 4.6,
      "synth": -3.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "main-menu": {
@@ -1710,6 +2270,10 @@
      "lufs": -7.9,
      "peak": 8.3,
      "synth": -2.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "mermaid-palace": {
@@ -1722,6 +2286,10 @@
      "lufs": -11.8,
      "peak": 0.2,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "mine-cart-carnage": {
@@ -1733,6 +2301,10 @@
      "lufs": -10,
      "peak": 4.1,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "mini-boss": {
@@ -1744,6 +2316,10 @@
      "lufs": -11.2,
      "peak": 3.1,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "mini-monkey": {
@@ -1755,6 +2331,10 @@
      "lufs": -12.2,
      "peak": 6.4,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "monkey-smash": {
@@ -1767,6 +2347,10 @@
      "lufs": -10.4,
      "peak": 6.1,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "orangsprint": {
@@ -1778,6 +2362,10 @@
      "lufs": -10.8,
      "peak": 2,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "pause-menu": {
@@ -1790,6 +2378,10 @@
      "lufs": -15.5,
      "peak": -1.5,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "pause": {
@@ -1802,6 +2394,10 @@
      "lufs": -13.8,
      "peak": -5.7,
      "synth": -10.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "rambi": {
@@ -1814,6 +2410,10 @@
      "lufs": -12.1,
      "peak": 3.2,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "rocket-barrel-boost": {
@@ -1825,6 +2425,10 @@
      "lufs": -9.2,
      "peak": 2.6,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "snide-s-hq": {
@@ -1837,6 +2441,10 @@
      "lufs": -16.4,
      "peak": -1.3,
      "synth": -10.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "stealthy-snoop": {
@@ -1848,6 +2456,10 @@
      "lufs": -13.2,
      "peak": 4.9,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "strong-kong": {
@@ -1859,6 +2471,10 @@
      "lufs": -9.5,
      "peak": 4.2,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "success": {
@@ -1871,6 +2487,10 @@
      "lufs": -8.4,
      "peak": 3.9,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tag-barrel-chunky": {
@@ -1883,6 +2503,10 @@
      "lufs": -7,
      "peak": 5.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tag-barrel-diddy": {
@@ -1895,6 +2519,10 @@
      "lufs": -7,
      "peak": 5.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tag-barrel-donkey": {
@@ -1907,6 +2535,10 @@
      "lufs": -7,
      "peak": 5.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tag-barrel-lanky": {
@@ -1919,6 +2551,10 @@
      "lufs": -7,
      "peak": 5.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tag-barrel-tiny": {
@@ -1931,6 +2567,10 @@
      "lufs": -7,
      "peak": 5.3,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "tiny-s-saxophone-slam": {
@@ -1942,6 +2582,10 @@
      "lufs": -15.4,
      "peak": -5,
      "synth": -8.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "transformation": {
@@ -1953,6 +2597,10 @@
      "lufs": -8,
      "peak": 0.7,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "troff-n-scoff": {
@@ -1965,6 +2613,10 @@
      "lufs": -11.1,
      "peak": 2.4,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown": {
@@ -1976,6 +2628,10 @@
      "lufs": -9.3,
      "peak": -2.1,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "weapon-upgrade": {
@@ -1988,6 +2644,10 @@
      "lufs": -9.1,
      "peak": 2.9,
      "synth": -1.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "win-race": {
@@ -2000,6 +2660,10 @@
      "lufs": -13.6,
      "peak": 3.9,
      "synth": -3.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "wrinkly-kong": {
@@ -2012,6 +2676,10 @@
      "lufs": -13.2,
      "peak": 3.3,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "boss-unlock-2": {
@@ -2024,6 +2692,10 @@
      "lufs": -16.4,
      "peak": -2.3,
      "synth": -10.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-dungeons-2": {
@@ -2036,6 +2708,10 @@
      "lufs": -13.3,
      "peak": 0,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "creepy-castle-dungeons-3": {
@@ -2048,6 +2724,10 @@
      "lufs": -11.9,
      "peak": 2.2,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "jungle-japes-2": {
@@ -2060,6 +2740,10 @@
      "lufs": -12.4,
      "peak": 5.5,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-2": {
@@ -2071,6 +2755,10 @@
      "lufs": -14,
      "peak": -2.3,
      "synth": -13.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-3": {
@@ -2082,6 +2770,10 @@
      "lufs": -8.2,
      "peak": -2,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-4": {
@@ -2093,6 +2785,10 @@
      "lufs": -9.6,
      "peak": -0.3,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-5": {
@@ -2104,6 +2800,10 @@
      "lufs": -13.5,
      "peak": -3.8,
      "synth": -14.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-6": {
@@ -2115,6 +2815,10 @@
      "lufs": -8.3,
      "peak": 1.2,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-7": {
@@ -2126,6 +2830,10 @@
      "lufs": -5.8,
      "peak": -1.1,
      "synth": -10.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    },
    "unknown-8": {
@@ -2137,6 +2845,10 @@
      "lufs": -11,
      "peak": 0.6,
      "synth": -11
+    },
+    "cap": {
+     "v": 2,
+     "code": "51127d50"
     }
    }
   },
