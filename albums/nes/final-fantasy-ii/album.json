@@ -18,6 +18,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -6.8,
+     "synth": -11.1
     }
    },
    "battle-scene-1": {
@@ -27,6 +33,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -6.5,
+     "synth": -10.9
     }
    },
    "battle-scene-2": {
@@ -36,6 +48,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -6.3,
+     "synth": -10.2
     }
    },
    "castle-pandemonium": {
@@ -45,6 +63,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -8,
+     "synth": -8.9
     }
    },
    "chocobo-theme": {
@@ -54,6 +78,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -6.5,
+     "synth": -13
     }
    },
    "dead-music": {
@@ -63,6 +93,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -7.6,
+     "synth": -9.1
     }
    },
    "dungeon": {
@@ -72,6 +108,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -7.6,
+     "synth": -8.6
     }
    },
    "escape": {
@@ -81,6 +123,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -7.2,
+     "synth": -11.6
     }
    },
    "fanfare": {
@@ -90,6 +138,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -6.9,
+     "synth": -8.2
     }
    },
    "finale": {
@@ -99,6 +153,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -6.9,
+     "synth": -9
     }
    },
    "imperial-army-theme": {
@@ -108,6 +168,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -6.1,
+     "synth": -9
     }
    },
    "joining-the-team": {
@@ -117,6 +183,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -7.2,
+     "synth": -7.9
     }
    },
    "magician-s-tower": {
@@ -126,6 +198,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -6.7,
+     "synth": -8.8
     }
    },
    "main-theme": {
@@ -135,6 +213,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -8.2,
+     "synth": -11.1
     }
    },
    "rebel-army-theme": {
@@ -144,6 +228,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -6.6,
+     "synth": -8.2
     }
    },
    "reunion": {
@@ -153,6 +243,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -7.6,
+     "synth": -8.6
     }
    },
    "revivification": {
@@ -162,6 +258,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -7.7,
+     "synth": -8.7
     }
    },
    "temptation-of-the-princess": {
@@ -171,12 +273,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.1,
+     "peak": -7.1,
+     "synth": -9.5
     }
    },
    "the-emperor-s-revival": {
     "n": 5,
     "secs": 7.99968,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": -7,
+     "synth": -8.5
+    }
    },
    "the-prelude": {
     "n": 1,
@@ -185,6 +299,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.3,
+     "peak": -11.5,
+     "synth": -9.4
     }
    },
    "town": {
@@ -194,6 +314,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -6.5,
+     "synth": -8
     }
    },
    "victory": {
@@ -203,6 +329,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -6.5,
+     "synth": -9.3
     }
    },
    "waltz": {
@@ -212,6 +344,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.1,
+     "peak": -6.8,
+     "synth": -10.2
     }
    }
   }
