@@ -49,7 +49,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -68,6 +68,10 @@
      "lufs": -22.9,
      "peak": -8.1,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "another-guldove": {
@@ -80,6 +84,10 @@
      "lufs": -23.4,
      "peak": -11.8,
      "synth": -8.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "another-marbule": {
@@ -92,6 +100,10 @@
      "lufs": -22.4,
      "peak": -8.8,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "another-termina": {
@@ -104,6 +116,10 @@
      "lufs": -22.3,
      "peak": -7.6,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "birds-ambience": {
@@ -113,7 +129,7 @@
     "disc": 9,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -129,7 +145,7 @@
     "disc": 9,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -145,7 +161,7 @@
     "disc": 9,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -164,6 +180,10 @@
      "lufs": -21.9,
      "peak": -7.7,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "chronopolis": {
@@ -176,6 +196,10 @@
      "lufs": -25,
      "peak": -7.2,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "cleft-of-dimension": {
@@ -188,6 +212,10 @@
      "lufs": -24.7,
      "peak": -9.2,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dancing-the-tokage": {
@@ -200,6 +228,10 @@
      "lufs": -25.5,
      "peak": -8.7,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dead-sea-tower-of-ruin": {
@@ -209,7 +241,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -228,6 +260,10 @@
      "lufs": -23.3,
      "peak": -6.2,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dragon-god": {
@@ -237,7 +273,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -256,6 +292,10 @@
      "lufs": -23.1,
      "peak": -9,
      "synth": -9.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dragonrider": {
@@ -268,6 +308,10 @@
      "lufs": -20.3,
      "peak": -6,
      "synth": -8.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dream-of-the-shore-bordering-another-world": {
@@ -280,6 +324,10 @@
      "lufs": -20.3,
      "peak": -7.5,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "dream-s-creation": {
@@ -292,6 +340,10 @@
      "lufs": -28.4,
      "peak": -16,
      "synth": -15.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "drowning-valley": {
@@ -310,6 +362,10 @@
      "lufs": -23,
      "peak": -10.7,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "etude-1": {
@@ -322,6 +378,10 @@
      "lufs": -27.4,
      "peak": -19.4,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "etude-2": {
@@ -334,6 +394,10 @@
      "lufs": -25.9,
      "peak": -17,
      "synth": -8.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "fairies-make-way-for-magic": {
@@ -346,6 +410,10 @@
      "lufs": -24.6,
      "peak": -12.4,
      "synth": -9.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "fates-gods-of-destiny": {
@@ -355,7 +423,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -374,6 +442,10 @@
      "lufs": -22.9,
      "peak": -7.7,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "gaia-s-navel": {
@@ -386,6 +458,10 @@
      "lufs": -21.5,
      "peak": -7.5,
      "synth": -8.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "gale": {
@@ -395,7 +471,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -411,7 +487,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -430,6 +506,10 @@
      "lufs": -22.2,
      "peak": -12,
      "synth": -11.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "home-guldove": {
@@ -439,7 +519,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -458,6 +538,10 @@
      "lufs": -21.7,
      "peak": -9,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "home-termina-variation": {
@@ -470,6 +554,10 @@
      "lufs": -21.5,
      "peak": -8.4,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "home-termina": {
@@ -482,6 +570,10 @@
      "lufs": -22.1,
      "peak": -8.4,
      "synth": -9.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "home-village-arni": {
@@ -494,6 +586,10 @@
      "lufs": -22.7,
      "peak": -9.3,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "hydra-marshes": {
@@ -506,6 +602,10 @@
      "lufs": -24.7,
      "peak": -8,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "into-a-time-of-darkness": {
@@ -515,7 +615,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -534,6 +634,10 @@
      "lufs": -21.1,
      "peak": -5.1,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "jellyfish-sea": {
@@ -546,6 +650,10 @@
      "lufs": -25.9,
      "peak": -12.8,
      "synth": -11.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "leaving-the-body": {
@@ -558,6 +666,10 @@
      "lufs": -22.2,
      "peak": -8.5,
      "synth": -7.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "life-faraway-promise": {
@@ -570,6 +682,10 @@
      "lufs": -20.6,
      "peak": -7,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "lost-child-of-time": {
@@ -582,6 +698,10 @@
      "lufs": -24.1,
      "peak": -8.6,
      "synth": -10.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "lost-fragments": {
@@ -594,6 +714,10 @@
      "lufs": -26.2,
      "peak": -13.8,
      "synth": -12.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "magical-dreamers-the-wind-stars-and-waves-intro": {
@@ -606,6 +730,10 @@
      "lufs": -25.9,
      "peak": -15.5,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "magical-dreamers-the-wind-stars-and-waves-main": {
@@ -618,6 +746,10 @@
      "lufs": -22.2,
      "peak": -9.2,
      "synth": -8.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "magical-dreamers-the-wind-stars-and-waves-variation": {
@@ -630,6 +762,10 @@
      "lufs": -21.4,
      "peak": -9,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "nap": {
@@ -642,6 +778,10 @@
      "lufs": -23.3,
      "peak": -11.5,
      "synth": -9.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "optimism": {
@@ -654,6 +794,10 @@
      "lufs": -23.1,
      "peak": -6.7,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "orphan-of-flame": {
@@ -666,6 +810,10 @@
      "lufs": -22.6,
      "peak": -7.9,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "people-seized-with-life": {
@@ -678,6 +826,10 @@
      "lufs": -23.1,
      "peak": -8,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "phantom-ship": {
@@ -690,6 +842,10 @@
      "lufs": -24.9,
      "peak": -7.1,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "predicament": {
@@ -702,6 +858,10 @@
      "lufs": -24.1,
      "peak": -9.4,
      "synth": -10.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "previously-lost-hopes": {
@@ -714,6 +874,10 @@
      "lufs": -28,
      "peak": -12.7,
      "synth": -13.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "reminiscence-feelings-not-erased": {
@@ -726,6 +890,10 @@
      "lufs": -27,
      "peak": -12.7,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "shadow-forest": {
@@ -738,6 +906,10 @@
      "lufs": -26.5,
      "peak": -11.7,
      "synth": -10.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "the-big-admirable-mysterious-sleight-of-hand-group": {
@@ -750,6 +922,10 @@
      "lufs": -25.8,
      "peak": -12.1,
      "synth": -11
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "the-brink-of-death-variation": {
@@ -762,6 +938,10 @@
      "lufs": -23.2,
      "peak": -8.3,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "the-brink-of-death": {
@@ -774,6 +954,10 @@
      "lufs": -23.4,
      "peak": -8.9,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "the-star-stealing-girl": {
@@ -786,6 +970,10 @@
      "lufs": -22.8,
      "peak": -7.7,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "time-of-the-dreamwatch": {
@@ -798,6 +986,10 @@
      "lufs": -18.2,
      "peak": -4.6,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "time-s-grasslands-home-world": {
@@ -810,6 +1002,10 @@
      "lufs": -23.6,
      "peak": -9.8,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "tower-of-stars": {
@@ -822,6 +1018,10 @@
      "lufs": -26.4,
      "peak": -14.2,
      "synth": -13.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "victory-spring-s-gift": {
@@ -831,7 +1031,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -847,7 +1047,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -863,7 +1063,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "29428861"
     },
     "loud": {
      "v": 1,
@@ -882,6 +1082,10 @@
      "lufs": -22.2,
      "peak": -6.2,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "voyage-home-world": {
@@ -894,6 +1098,10 @@
      "lufs": -23,
      "peak": -8.7,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    },
    "zelbess": {
@@ -906,6 +1114,10 @@
      "lufs": -26,
      "peak": -11.1,
      "synth": -9.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "29428861"
     }
    }
   },
