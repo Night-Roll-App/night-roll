@@ -66,13 +66,25 @@
     "n": 1,
     "secs": 18.29584,
     "track": 59,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -15.4,
+     "synth": -16.3
+    }
    },
    "a-secret-sleeping-in-the-deep-sea": {
     "n": 1,
     "secs": 132.331436,
     "track": 73,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -6.9,
+     "synth": -11.5
+    }
    },
    "aeris-theme": {
     "n": 1,
@@ -82,25 +94,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -8.5,
+     "synth": -11.5
     }
    },
    "ahead-on-our-way": {
     "n": 1,
     "secs": 102.2021175,
     "track": 26,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -9.8,
+     "synth": -9.5
+    }
    },
    "anxious-heart": {
     "n": 1,
     "secs": 112.523736,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -9.4,
+     "synth": -13.2
+    }
    },
    "attacking-weapon": {
     "n": 1,
     "secs": 23.493464,
     "track": 82,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -4.7,
+     "synth": -9.2
+    }
    },
    "barret-s-theme": {
     "n": 1,
@@ -110,6 +146,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -6.8,
+     "synth": -8.5
     }
    },
    "bombing-mission": {
@@ -120,19 +162,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -4.1,
+     "synth": -9.7
     }
    },
    "buried-in-the-snow": {
     "n": 1,
     "secs": 137.82308,
     "track": 66,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -26.5,
+     "peak": -10.9,
+     "synth": -11.7
+    }
    },
    "cait-sith-s-theme": {
     "n": 1,
     "secs": 107.271584,
     "track": 44,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -6.9,
+     "synth": -10.4
+    }
    },
    "chasing-the-black-caped-man": {
     "n": 1,
@@ -142,6 +202,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -7.1,
+     "synth": -11.2
     }
    },
    "cid-s-theme": {
@@ -152,6 +218,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.6,
+     "peak": -5.1,
+     "synth": -6.1
     }
    },
    "cinco-de-chocobo": {
@@ -162,25 +234,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -6.8,
+     "synth": -10.7
     }
    },
    "continue": {
     "n": 1,
     "secs": 65.1632175,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -7.2,
+     "synth": -12.3
+    }
    },
    "cosmo-canyon": {
     "n": 1,
     "secs": 112.23631741666667,
     "track": 46,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -5.1,
+     "synth": -7.8
+    }
    },
    "costa-del-sol": {
     "n": 1,
     "secs": 65.57291093750001,
     "track": 40,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -6.9,
+     "synth": -6.3
+    }
    },
    "crazy-motorcycle-chase": {
     "n": 1,
@@ -190,25 +286,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -4.8,
+     "synth": -7.5
     }
    },
    "debut": {
     "n": 1,
     "secs": 66.526464,
     "track": 61,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -11.3,
+     "synth": -14.8
+    }
    },
    "descendant-of-shinobi": {
     "n": 1,
     "secs": 78.5732416875,
     "track": 49,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -8.3,
+     "synth": -11.1
+    }
    },
    "don-of-the-slums": {
     "n": 1,
     "secs": 56.761622,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -9.2,
+     "synth": -12
+    }
    },
    "electric-de-chocobo": {
     "n": 1,
@@ -218,25 +338,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.2,
+     "peak": -10,
+     "synth": -7.7
     }
    },
    "fanfare": {
     "n": 1,
     "secs": 23.00925,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -7.3,
+     "synth": -8.2
+    }
    },
    "farm-boy": {
     "n": 1,
     "secs": 77.12128397916668,
     "track": 29,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -10.6,
+     "synth": -10.5
+    }
    },
    "fiddle-de-chocobo": {
     "n": 1,
     "secs": 78.03039666666668,
     "track": 58,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -6.7,
+     "synth": -8.7
+    }
    },
    "fighting": {
     "n": 1,
@@ -246,19 +390,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -6.2,
+     "synth": -7.7
     }
    },
    "flowers-blooming-in-the-church": {
     "n": 1,
     "secs": 141.36876,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -10.9,
+     "synth": -14.1
+    }
    },
    "forested-temple": {
     "n": 1,
     "secs": 102.813504,
     "track": 63,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -6.3,
+     "synth": -9.7
+    }
    },
    "fortress-of-the-condor": {
     "n": 1,
@@ -268,25 +430,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -5.8,
+     "synth": -8.6
     }
    },
    "full-scale-attack": {
     "n": 1,
     "secs": 81.9528,
     "track": 70,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -6.4,
+     "synth": -9.6
+    }
    },
    "gold-saucer": {
     "n": 1,
     "secs": 50.854860875,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -9.1,
+     "synth": -6.3
+    }
    },
    "good-night-until-tomorrow": {
     "n": 1,
     "secs": 8.485851624999999,
     "track": 27,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -11.1,
+     "synth": -11.1
+    }
    },
    "great-warrior": {
     "n": 1,
@@ -296,6 +482,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -5.8,
+     "synth": -9.8
     }
    },
    "holding-my-thoughts-in-my-heart": {
@@ -306,6 +498,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -8.1,
+     "synth": -10.5
     }
    },
    "honeybee-manor": {
@@ -316,6 +514,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -7.1,
+     "synth": -11
     }
    },
    "hurry-faster": {
@@ -326,6 +530,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -5.2,
+     "synth": -5.1
     }
    },
    "hurry": {
@@ -336,13 +546,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -5.1,
+     "synth": -7.8
     }
    },
    "if-you-open-your-heart": {
     "n": 1,
     "secs": 83.277519,
     "track": 80,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -7.2,
+     "synth": -10.2
+    }
    },
    "infiltrating-shinra-tower": {
     "n": 1,
@@ -352,19 +574,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -10.8,
+     "synth": -10.7
     }
    },
    "interrupted-by-fireworks": {
     "n": 1,
     "secs": 77.184042,
     "track": 62,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -7.2,
+     "synth": -9.4
+    }
    },
    "it-s-difficult-to-stand-on-both-feet-isn-t-it": {
     "n": 1,
     "secs": 91.6279,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.4,
+     "synth": -6.3
+    }
    },
    "j-e-n-o-v-a": {
     "n": 1,
@@ -374,6 +614,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -5.1,
+     "synth": -6.4
     }
    },
    "jenova-absolute": {
@@ -384,6 +630,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -5,
+     "synth": -5.9
     }
    },
    "judgement-day": {
@@ -394,19 +646,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -6.1,
+     "synth": -8.8
     }
    },
    "life-stream": {
     "n": 1,
     "secs": 123.69756,
     "track": 47,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -7.4,
+     "synth": -12
+    }
    },
    "lurking-in-the-darkness": {
     "n": 1,
     "secs": 67.6217309375,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -7.2,
+     "synth": -10.7
+    }
    },
    "main-theme-of-final-fantasy-vii": {
     "n": 1,
@@ -416,6 +686,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -6.8,
+     "synth": -12.5
     }
    },
    "mako-reactor": {
@@ -426,13 +702,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -5.9,
+     "synth": -9.8
     }
    },
    "mark-of-the-traitor": {
     "n": 1,
     "secs": 98.5297,
     "track": 41,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -8.6,
+     "synth": -11.3
+    }
    },
    "mining-town": {
     "n": 1,
@@ -442,13 +730,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -8.5,
+     "synth": -11.4
     }
    },
    "off-the-edge-of-despair": {
     "n": 1,
     "secs": 123.08212,
     "track": 75,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -8.8,
+     "synth": -11.2
+    }
    },
    "on-that-day-5-years-ago": {
     "n": 1,
@@ -458,13 +758,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -11.1,
+     "synth": -16.6
     }
    },
    "on-the-other-side-of-the-mountain": {
     "n": 1,
     "secs": 77.1116915,
     "track": 76,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -32.3,
+     "peak": -16.3,
+     "synth": -12.5
+    }
    },
    "one-winged-angel": {
     "n": 1,
@@ -474,6 +786,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -1.2,
+     "synth": -7.5
     }
    },
    "opening-bombing-mission": {
@@ -484,19 +802,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -4.2,
+     "synth": -9.1
     }
    },
    "oppressed-people": {
     "n": 1,
     "secs": 75.7119685,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -8.9,
+     "synth": -13
+    }
    },
    "parochial-town": {
     "n": 1,
     "secs": 64.678432,
     "track": 74,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -6.6,
+     "synth": -10.5
+    }
    },
    "racing-chocobos-place-your-bets": {
     "n": 1,
@@ -506,6 +842,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -8.3,
+     "synth": -5.4
     }
    },
    "red-xiii-s-theme": {
@@ -516,6 +858,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -4.1,
+     "synth": -8.3
     }
    },
    "reunion": {
@@ -526,37 +874,73 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -7.2,
+     "synth": -8.9
     }
    },
    "rufus-welcoming-ceremony": {
     "n": 1,
     "secs": 66.77782062499999,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -6.9,
+     "synth": -7.8
+    }
    },
    "sandy-badlands": {
     "n": 1,
     "secs": 156.056328,
     "track": 45,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -9.9,
+     "synth": -10.5
+    }
    },
    "sending-a-dream-into-the-universe": {
     "n": 1,
     "secs": 85.78951183333332,
     "track": 78,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -6.4,
+     "synth": -9
+    }
    },
    "shinra-corporation": {
     "n": 1,
     "secs": 120.828,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -5.3,
+     "synth": -7.2
+    }
    },
    "shinra-explodes": {
     "n": 1,
     "secs": 20.789496,
     "track": 83,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -9.5,
+     "synth": -8.5
+    }
    },
    "staff-roll": {
     "n": 1,
@@ -566,6 +950,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -2.9,
+     "synth": -8.4
     }
    },
    "steal-the-tiny-bronco": {
@@ -576,6 +966,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -6.4,
+     "synth": -8.2
     }
    },
    "still-more-fighting": {
@@ -586,19 +982,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -6,
+     "synth": -7.4
     }
    },
    "stolen-materia": {
     "n": 1,
     "secs": 38.555064,
     "track": 56,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -11.7,
+     "synth": -14.2
+    }
    },
    "tango-of-tears": {
     "n": 1,
     "secs": 19.320389,
     "track": 60,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -11.1,
+     "synth": -14.3
+    }
    },
    "the-birth-of-god": {
     "n": 1,
@@ -608,6 +1022,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -6.3,
+     "synth": -5.2
     }
    },
    "the-countdown-begins": {
@@ -618,13 +1038,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -5.9,
+     "synth": -9.2
     }
    },
    "the-great-northern-cave": {
     "n": 1,
     "secs": 186.01146,
     "track": 67,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -5,
+     "synth": -8.8
+    }
    },
    "the-highwind-takes-to-the-skies": {
     "n": 1,
@@ -634,31 +1066,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -5.2,
+     "synth": -6.7
     }
    },
    "the-mako-cannon-fires": {
     "n": 1,
     "secs": 44.68552,
     "track": 81,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -18.4,
+     "peak": -6.1,
+     "synth": -6.6
+    }
    },
    "the-nightmare-s-beginning": {
     "n": 1,
     "secs": 88.502659,
     "track": 52,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -30.7,
+     "peak": -17.7,
+     "synth": -12
+    }
    },
    "the-prelude": {
     "n": 1,
     "secs": 154.13108666666668,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -9.3,
+     "synth": -12.9
+    }
    },
    "the-special-pose": {
     "n": 1,
     "secs": 4.260695541666666,
     "track": 90,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -4.7,
+     "synth": -4.7
+    }
    },
    "those-chosen-by-the-planet-no-intro": {
     "n": 1,
@@ -668,6 +1130,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -3.4,
+     "synth": -7.2
     }
    },
    "those-chosen-by-the-planet": {
@@ -678,13 +1146,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -2.9,
+     "synth": -7.6
     }
    },
    "tifa-s-theme": {
     "n": 1,
     "secs": 144.31382,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -7.5,
+     "synth": -12.6
+    }
    },
    "trail-of-blood": {
     "n": 1,
@@ -694,6 +1174,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.4,
+     "peak": -9.9,
+     "synth": -22.5
     }
    },
    "turks-theme": {
@@ -704,6 +1190,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -9.9,
+     "synth": -7.9
     }
    },
    "underneath-the-rotting-pizza": {
@@ -714,13 +1206,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -6.3,
+     "synth": -7.5
     }
    },
    "waltz-de-chocobo": {
     "n": 1,
     "secs": 31.74444,
     "track": 30,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -5.5,
+     "synth": -11.9
+    }
    },
    "weapon-raid": {
     "n": 1,
@@ -730,19 +1234,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.8,
+     "peak": -4.9,
+     "synth": -7.9
     }
    },
    "who-am-i": {
     "n": 1,
     "secs": 41.74724,
     "track": 69,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -9.9,
+     "synth": -10.9
+    }
    },
    "who-are-you": {
     "n": 1,
     "secs": 72.89322975,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -6.6,
+     "synth": -9.4
+    }
    },
    "world-crisis": {
     "n": 1,
@@ -752,6 +1274,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.1,
+     "peak": -4,
+     "synth": -9.2
     }
    },
    "wutai": {
@@ -762,6 +1290,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -6.4,
+     "synth": -5.3
     }
    },
    "you-can-hear-the-cry-of-the-planet": {
@@ -772,6 +1306,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -8.2,
+     "synth": -11.9
     }
    }
   },
