@@ -43,6 +43,10 @@
      "lufs": -12.8,
      "peak": -3.3,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "battle-vs-trainer": {
@@ -54,6 +58,10 @@
      "lufs": -12.5,
      "peak": -2.9,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "battle-vs-wild-pokemon": {
@@ -65,6 +73,10 @@
      "lufs": -12.3,
      "peak": -3.4,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "casino": {
@@ -76,6 +88,10 @@
      "lufs": -12.7,
      "peak": -3.7,
      "synth": -7.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "celadon-city-s-theme": {
@@ -87,6 +103,10 @@
      "lufs": -12.9,
      "peak": -3.4,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "cerulean-city-s-theme": {
@@ -98,6 +118,10 @@
      "lufs": -12.7,
      "peak": -3.4,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "cinnabar-island-s-theme": {
@@ -109,6 +133,10 @@
      "lufs": -12.8,
      "peak": -3.6,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "cycling": {
@@ -120,6 +148,10 @@
      "lufs": -12.3,
      "peak": -2.9,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ending": {
@@ -131,6 +163,10 @@
      "lufs": -12.2,
      "peak": -3.6,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "evolution": {
@@ -153,6 +189,10 @@
      "lufs": -15.2,
      "peak": -1.7,
      "synth": -10
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "into-the-hall": {
@@ -164,6 +204,10 @@
      "lufs": -13.1,
      "peak": -3.9,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "item-fanfare": {
@@ -175,6 +219,10 @@
      "lufs": -12.1,
      "peak": -5.2,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "jigglypuff-s-song": {
@@ -186,6 +234,10 @@
      "lufs": -17.6,
      "peak": -9.2,
      "synth": -17.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "last-battle-vs-rival": {
@@ -197,6 +249,10 @@
      "lufs": -12.1,
      "peak": -3.1,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "lavender-town-s-theme": {
@@ -208,6 +264,10 @@
      "lufs": -16,
      "peak": -4.7,
      "synth": -11.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "level-up-fanfare": {
@@ -219,6 +279,10 @@
      "lufs": -13.2,
      "peak": -4.6,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mt-moon-cave": {
@@ -230,6 +294,10 @@
      "lufs": -14.2,
      "peak": -4.1,
      "synth": -11.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "oak-research-lab": {
@@ -241,6 +309,10 @@
      "lufs": -14.1,
      "peak": -3.6,
      "synth": -9.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocean": {
@@ -252,6 +324,10 @@
      "lufs": -12.5,
      "peak": -4.1,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "opening-part-1": {
@@ -263,6 +339,10 @@
      "lufs": -12,
      "peak": -2.8,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "opening-part-2": {
@@ -274,6 +354,10 @@
      "lufs": -11.8,
      "peak": -2.2,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pallet-town-s-theme": {
@@ -285,6 +369,10 @@
      "lufs": -11.9,
      "peak": -4.7,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pewter-city-s-theme": {
@@ -296,6 +384,10 @@
      "lufs": -12.2,
      "peak": -3.5,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokedex-fanfare-1": {
@@ -307,6 +399,10 @@
      "lufs": -13.2,
      "peak": -3.3,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokedex-fanfare-2": {
@@ -318,6 +414,10 @@
      "lufs": -12.2,
      "peak": -4.4,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-capture-fanfare": {
@@ -329,6 +429,10 @@
      "lufs": -12,
      "peak": -4.9,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-center": {
@@ -340,6 +444,10 @@
      "lufs": -11.9,
      "peak": -3.6,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-gym": {
@@ -351,6 +459,10 @@
      "lufs": -12.1,
      "peak": -3.9,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-mansion": {
@@ -362,6 +474,10 @@
      "lufs": -13.7,
      "peak": -2.5,
      "synth": -9.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-received-fanfare": {
@@ -373,6 +489,10 @@
      "lufs": -12.8,
      "peak": -5.4,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-recovery": {
@@ -384,6 +504,10 @@
      "lufs": -13.9,
      "peak": -5.3,
      "synth": -6.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "pokemon-tower": {
@@ -395,6 +519,10 @@
      "lufs": -14.3,
      "peak": -3.8,
      "synth": -11.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "professor-oak": {
@@ -406,6 +534,10 @@
      "lufs": -15,
      "peak": -4.7,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "rival-appears": {
@@ -417,6 +549,10 @@
      "lufs": -12,
      "peak": -3.6,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "st-anne": {
@@ -428,6 +564,10 @@
      "lufs": -13.2,
      "peak": -4.2,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "sylph-company": {
@@ -439,6 +579,10 @@
      "lufs": -13.7,
      "peak": -3.3,
      "synth": -7.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "team-rocket-hideout": {
@@ -450,6 +594,10 @@
      "lufs": -12.9,
      "peak": -2.4,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-last-road": {
@@ -461,6 +609,10 @@
      "lufs": -13.6,
      "peak": -2.9,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-road-to-cerulean-from-mt-moon": {
@@ -472,6 +624,10 @@
      "lufs": -12.5,
      "peak": -2.7,
      "synth": -6.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-road-to-lavender-town-from-vermilion": {
@@ -483,6 +639,10 @@
      "lufs": -12.4,
      "peak": -3.2,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "the-road-to-viridian-city-from-pallet": {
@@ -494,6 +654,10 @@
      "lufs": -13.1,
      "peak": -1.6,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "to-bill-s-origin-from-cerulean": {
@@ -505,6 +669,10 @@
      "lufs": -12.4,
      "peak": -1.9,
      "synth": -8.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "trainer-appears-bad-guy-version": {
@@ -516,6 +684,10 @@
      "lufs": -15.5,
      "peak": -3.6,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "trainer-appears-boy-version": {
@@ -527,6 +699,10 @@
      "lufs": -14.3,
      "peak": -4.3,
      "synth": -9.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "trainer-appears-girl-version": {
@@ -538,6 +714,10 @@
      "lufs": -15.8,
      "peak": -4.3,
      "synth": -10
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "vermilion-city-s-theme": {
@@ -549,6 +729,10 @@
      "lufs": -11.7,
      "peak": -3.9,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "victory-vs-gym-leader": {
@@ -560,6 +744,10 @@
      "lufs": -12.1,
      "peak": -3.5,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "victory-vs-trainer": {
@@ -571,6 +759,10 @@
      "lufs": -16.1,
      "peak": -5.9,
      "synth": -10.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "victory-vs-wild-pokemon": {
@@ -582,6 +774,10 @@
      "lufs": -18.3,
      "peak": -6.1,
      "synth": -13.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "viridian-forest": {
@@ -593,6 +789,10 @@
      "lufs": -14.1,
      "peak": -1.6,
      "synth": -9.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "evolution-recapture": {
@@ -601,7 +801,7 @@
     "track": 41,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "6495f9af"
     },
     "loud": {
      "v": 1,
