@@ -1152,8 +1152,23 @@ export function setBeatSub(on) {
   S.lcdCache = "";
   updateLCD();
 }
+// the footer's Chip / MIDI switch (Josh #204): only on a song whose console
+// voice exists or is on its way; the label names what you hear now
+export function updateSoundBtn() {
+  const b = document.getElementById("soundbtn");
+  if (!b || !S.song) return;
+  const k = S.songKey;
+  const has = !!k && ((chip.key === k && !!(chip.pcm || chip.buffers || chip.stream)) || chip.rendering === k || !!(chip.resolving && chip.resolving.key === k));
+  const label = hearMidi() ? "MIDI" : "Chip";
+  if (b.style.display !== (has ? "" : "none")) b.style.display = has ? "" : "none";
+  if (b.textContent !== label) {
+    b.textContent = label;
+    b.setAttribute("aria-label", hearMidi() ? "Sound: the MIDI on synth voices — tap for the console voice" : "Sound: console voice — tap for the MIDI");
+  }
+}
 export function updateLCD() {
   if (!S.song) return;
+  updateSoundBtn();
   const t = curTick();
   // counted beat ("2&"); the off-grid "+NN%" takes the BEAT label's line —
   // no new cell on the iPad row — and stays hidden while playing (it would
@@ -2034,11 +2049,13 @@ export function initChrome11() {
     // (the "on" wrapper) so the ▸/▾ + current-view label stay in sync.
     on("vwRoll", () => setViewMode("roll"));
     on("vwScore", () => setViewMode("score"));
+    on("soundbtn", () => document.getElementById("vwHearMidi").click()); // the footer's one-tap copy (Josh #204)
     on("vwHearMidi", () => { // flip what you hear; a playing song picks up from the same spot
       setHearMidi(!hearMidi());
       setInfo(hearMidi() ? "hearing the MIDI — every track on synth voices" : "hearing the console voice where the song has one");
       if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}); }
       renderViewMenu();
+      updateSoundBtn();
     });
     on("vwListener", () => {
       S.listenerMode = !S.listenerMode;

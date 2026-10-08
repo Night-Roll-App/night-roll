@@ -2934,6 +2934,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Chip / MIDI switch",
     "speedometer icon",
     "their own full-width row under it",
     "swipe sideways on the strips",
@@ -14846,4 +14847,19 @@ test("play gate (Josh #203): one loading count that never goes backwards — fil
   const c = val(`playGate().pct`);
   assert.ok(a < b && b < c && c <= 0.9 + 1e-9, [a, b, c].join(" "));
   run(`chip.rendering = null; chip.progress = 0;`);
+});
+
+test("footer Chip / MIDI switch (Josh #204): hidden on a song with no console voice; shown once it exists; one tap flips what you hear and the label", () => {
+  installSong();
+  run(`songKey = "albums/nes/x/y.mid"; chip.key = null; chip.pcm = null; chip.buffers = null; chip.stream = null; chip.rendering = null; chip.resolving = null; setHearMidi(false); updateSoundBtn();`);
+  assert.equal(app.el("soundbtn").style.display, "none", "no console voice: no switch");
+  run(`chip.key = songKey; chip.pcm = {}; updateSoundBtn();`);
+  assert.equal(app.el("soundbtn").style.display, "");
+  assert.equal(app.el("soundbtn").textContent, "Chip");
+  run(`document.getElementById("soundbtn").dispatchEvent({type: "click"});`);
+  assert.equal(run(`hearMidi()`), true);
+  assert.equal(app.el("soundbtn").textContent, "MIDI");
+  run(`document.getElementById("soundbtn").dispatchEvent({type: "click"});`);
+  assert.equal(run(`hearMidi()`), false);
+  run(`chip.key = null; chip.pcm = null; setHearMidi(false);`);
 });
