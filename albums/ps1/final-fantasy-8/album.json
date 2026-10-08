@@ -38,55 +38,109 @@
     "n": 1,
     "secs": 95.998336,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -7.8,
+     "synth": -10.9
+    }
    },
    "alto-chant": {
     "n": 1,
     "secs": 11.29384,
     "track": 82,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -18.3,
+     "synth": -10.5
+    }
    },
    "ami": {
     "n": 1,
     "secs": 131.03071050000003,
     "track": 45,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -10.5,
+     "synth": -12.3
+    }
    },
    "balamb-garden": {
     "n": 1,
     "secs": 98.8211,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -8.9,
+     "synth": -9.8
+    }
    },
    "bass-chant": {
     "n": 1,
     "secs": 21.17595,
     "track": 80,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -14.8,
+     "synth": -17.4
+    }
    },
    "blue-fields": {
     "n": 1,
     "secs": 85.595005375,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -6.3,
+     "synth": -13.4
+    }
    },
    "blue-sky": {
     "n": 1,
     "secs": 41.444691999999996,
     "track": 49,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -9.2,
+     "synth": -12.1
+    }
    },
    "breezy": {
     "n": 1,
     "secs": 72.06668,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -11.1,
+     "synth": -11.2
+    }
    },
    "cactus-jack-galbadian-anthem": {
     "n": 1,
     "secs": 87.65090499999998,
     "track": 28,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -5.9,
+     "synth": -8.6
+    }
    },
    "celebration-irish-jig": {
     "n": 1,
@@ -96,6 +150,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -4.5,
+     "synth": -6.4
     }
    },
    "celebration-rinoa-s-theme": {
@@ -106,13 +166,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -4.5,
+     "synth": -6.4
     }
    },
    "choir-chant": {
     "n": 1,
     "secs": 45.17536,
     "track": 84,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -14.6,
+     "synth": -10.7
+    }
    },
    "compression-of-time": {
     "n": 1,
@@ -122,19 +194,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -5.9,
+     "synth": -9
     }
    },
    "dance-with-the-balamb-fish": {
     "n": 1,
     "secs": 99.8123055,
     "track": 62,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -6.4,
+     "synth": -12.2
+    }
    },
    "dead-end": {
     "n": 1,
     "secs": 68.80752400000002,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -5.7,
+     "synth": -5.5
+    }
    },
    "don-t-be-afraid-extended-intro": {
     "n": 1,
@@ -144,55 +234,109 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -5.8,
+     "synth": -7.3
     }
    },
    "don-t-be-afraid": {
     "n": 1,
     "secs": 87.635794,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -5.3,
+     "synth": -7.3
+    }
    },
    "drifting": {
     "n": 1,
     "secs": 76.797632,
     "track": 50,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -30.3,
+     "peak": -18.3,
+     "synth": -10
+    }
    },
    "fear": {
     "n": 1,
     "secs": 65.45424,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -5.8,
+     "synth": -6.5
+    }
    },
    "female-chant": {
     "n": 1,
     "secs": 11.29384,
     "track": 83,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -15.1,
+     "synth": -10.4
+    }
    },
    "find-your-way": {
     "n": 1,
     "secs": 108.8,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -8.1,
+     "synth": -12.2
+    }
    },
    "fisherman-s-horizon": {
     "n": 1,
     "secs": 107.024016,
     "track": 52,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -9.5,
+     "synth": -12.1
+    }
    },
    "fithos-lusec-wecos-vinosec-variation": {
     "n": 1,
     "secs": 168.0673975,
     "track": 38,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.4,
+     "peak": -4.1,
+     "synth": -10.4
+    }
    },
    "fithos-lusec-wecos-vinosec": {
     "n": 1,
     "secs": 127.7039495,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.2,
+     "synth": -10.2
+    }
    },
    "force-your-way": {
     "n": 1,
@@ -202,73 +346,145 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -6.4,
+     "synth": -9.8
     }
    },
    "fragments-of-memories": {
     "n": 1,
     "secs": 91.201368,
     "track": 42,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -27.4,
+     "peak": -11.7,
+     "synth": -7.2
+    }
    },
    "galbadia-garden-no-intro": {
     "n": 1,
     "secs": 90.4,
     "track": 32,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -10.4,
+     "synth": -10.6
+    }
    },
    "galbadia-garden": {
     "n": 1,
     "secs": 124.97076000000001,
     "track": 31,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -3.7,
+     "synth": -9.2
+    }
    },
    "heresy": {
     "n": 1,
     "secs": 129.23498,
     "track": 51,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -13.4,
+     "synth": -14.4
+    }
    },
    "intruders": {
     "n": 1,
     "secs": 69.9010485,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -28,
+     "peak": -11.4,
+     "synth": -11.5
+    }
    },
    "jailed": {
     "n": 1,
     "secs": 102.85536,
     "track": 43,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -11.1,
+     "synth": -11.2
+    }
    },
    "julia": {
     "n": 1,
     "secs": 82.10127941666667,
     "track": 21,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -27.4,
+     "peak": -11.3,
+     "synth": -9.6
+    }
    },
    "junction": {
     "n": 1,
     "secs": 42.668416,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -14.2,
+     "synth": -8.1
+    }
    },
    "love-grows": {
     "n": 1,
     "secs": 133.711968,
     "track": 58,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -10.8,
+     "synth": -11.7
+    }
    },
    "lunatic-pandora": {
     "n": 1,
     "secs": 108.388,
     "track": 69,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -6,
+     "synth": -6.4
+    }
    },
    "male-chant": {
     "n": 1,
     "secs": 11.29384,
     "track": 81,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -14.6,
+     "synth": -10.4
+    }
    },
    "martial-law": {
     "n": 1,
@@ -278,6 +494,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -6.8,
+     "synth": -8
     }
    },
    "maybe-i-m-a-lion": {
@@ -288,25 +510,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -2.4,
+     "synth": -5.9
     }
    },
    "mods-de-chocobo": {
     "n": 1,
     "secs": 121.412048,
     "track": 66,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -4.2,
+     "synth": -6.2
+    }
    },
    "movin": {
     "n": 1,
     "secs": 207.464027,
     "track": 48,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21,
+     "peak": -4.4,
+     "synth": -8.7
+    }
    },
    "my-mind": {
     "n": 1,
     "secs": 90.855568,
     "track": 25,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -9.8,
+     "synth": -11
+    }
    },
    "never-look-back": {
     "n": 1,
@@ -316,31 +562,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -3.6,
+     "synth": -12.5
     }
    },
    "odeka-ke-chocobo": {
     "n": 1,
     "secs": 38.769108,
     "track": 53,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -13,
+     "synth": -14.9
+    }
    },
    "only-a-plank-between-one-and-perdition": {
     "n": 1,
     "secs": 69.692087,
     "track": 29,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -5.4,
+     "synth": -9.7
+    }
    },
    "overture": {
     "n": 1,
     "secs": 213.21174466666668,
     "track": 76,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -5.6,
+     "synth": -11.9
+    }
    },
    "premonition": {
     "n": 1,
     "secs": 152.107487,
     "track": 40,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -4.9,
+     "synth": -9.2
+    }
    },
    "residents": {
     "n": 1,
@@ -350,43 +626,85 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -9.9,
+     "synth": -10.4
     }
    },
    "retaliation": {
     "n": 1,
     "secs": 41.757253,
     "track": 47,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -5.3,
+     "synth": -11
+    }
    },
    "ride-on": {
     "n": 1,
     "secs": 89.144224,
     "track": 67,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -4.6,
+     "synth": -8.2
+    }
    },
    "rivals": {
     "n": 1,
     "secs": 96.003128,
     "track": 44,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -11,
+     "synth": -12.6
+    }
    },
    "roses-and-wine": {
     "n": 1,
     "secs": 62.60904,
     "track": 22,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -11.6,
+     "synth": -10.5
+    }
    },
    "seed": {
     "n": 1,
     "secs": 124.801872,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -8.6,
+     "synth": -9.3
+    }
    },
    "shuffle-or-boogie": {
     "n": 1,
     "secs": 64.001024,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -8.1,
+     "synth": -12.6
+    }
    },
    "silence-and-motion": {
     "n": 1,
@@ -396,25 +714,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -8.6,
+     "synth": -9.6
     }
    },
    "slide-show-part-1": {
     "n": 1,
     "secs": 43.200648,
     "track": 56,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -9.9,
+     "synth": -11.5
+    }
    },
    "slide-show-part-2": {
     "n": 1,
     "secs": 49.020864,
     "track": 57,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -12.8,
+     "synth": -14.9
+    }
    },
    "starting-up-looped": {
     "n": 1,
     "secs": 17.538406,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -26.9,
+     "peak": -13.2,
+     "synth": -12.4
+    }
    },
    "starting-up": {
     "n": 1,
@@ -424,31 +766,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -6.1,
+     "synth": -7.5
     }
    },
    "succession-of-witches": {
     "n": 1,
     "secs": 98.66568,
     "track": 30,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -10.6,
+     "synth": -10.3
+    }
    },
    "tears-of-the-moon-descent": {
     "n": 1,
     "secs": 46.665584,
     "track": 64,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21,
+     "peak": -7.6,
+     "synth": -7.7
+    }
    },
    "tears-of-the-moon": {
     "n": 1,
     "secs": 69.678,
     "track": 63,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -8.3,
+     "synth": -7.6
+    }
    },
    "tell-me": {
     "n": 1,
     "secs": 119.99792,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -11.5,
+     "synth": -8.5
+    }
    },
    "the-castle": {
     "n": 1,
@@ -458,13 +830,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -10.1,
+     "synth": -16.5
     }
    },
    "the-extreme": {
     "n": 1,
     "secs": 230.66643999999997,
     "track": 74,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -3.7,
+     "synth": -9.3
+    }
    },
    "the-landing-demo": {
     "n": 1,
@@ -474,25 +858,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -4.2,
+     "synth": -7.2
     }
    },
    "the-landing": {
     "n": 1,
     "secs": 158.326168,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -7.2,
+     "synth": -9.1
+    }
    },
    "the-legendary-beast": {
     "n": 1,
     "secs": 203.425164,
     "track": 72,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -4.9,
+     "synth": -9
+    }
    },
    "the-loser": {
     "n": 1,
     "secs": 68.57024,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -27.9,
+     "peak": -13.8,
+     "synth": -12.3
+    }
    },
    "the-man-with-the-machine-gun": {
     "n": 1,
@@ -502,43 +910,85 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -6,
+     "synth": -8.4
     }
    },
    "the-mission": {
     "n": 1,
     "secs": 115.55544,
     "track": 26,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -6.9,
+     "synth": -8.5
+    }
    },
    "the-oath": {
     "n": 1,
     "secs": 93.601404,
     "track": 55,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -13.2,
+     "synth": -11.8
+    }
    },
    "the-salt-flats": {
     "n": 1,
     "secs": 106.8396,
     "track": 59,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -9,
+     "synth": -10
+    }
    },
    "the-spy": {
     "n": 1,
     "secs": 107.29148,
     "track": 46,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -6.5,
+     "synth": -8.5
+    }
    },
    "the-stage-is-set": {
     "n": 1,
     "secs": 104.3484,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -6.8,
+     "synth": -9.2
+    }
    },
    "the-successor": {
     "n": 1,
     "secs": 217.082029,
     "track": 75,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -27.5,
+     "peak": -11.4,
+     "synth": -9.3
+    }
    },
    "the-winner": {
     "n": 1,
@@ -548,55 +998,109 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -5.8,
+     "synth": -9.9
     }
    },
    "timber-owls": {
     "n": 1,
     "secs": 85.090512,
     "track": 24,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -9.5,
+     "synth": -12.6
+    }
    },
    "trust-me": {
     "n": 1,
     "secs": 93.601404,
     "track": 60,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -6.7,
+     "synth": -8
+    }
    },
    "truth": {
     "n": 1,
     "secs": 99.001452,
     "track": 68,
-    "disc": 4
+    "disc": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -11.5,
+     "synth": -10.7
+    }
    },
    "under-her-control": {
     "n": 1,
     "secs": 98.401476,
     "track": 34,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -4.4,
+     "synth": -11
+    }
    },
    "unrest": {
     "n": 1,
     "secs": 205.78214733333334,
     "track": 33,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -11.4,
+     "synth": -8.7
+    }
    },
    "waltz-for-the-moon": {
     "n": 1,
     "secs": 84.91620649999999,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -6.4,
+     "synth": -8.4
+    }
    },
    "where-i-belong": {
     "n": 1,
     "secs": 103.69080499999998,
     "track": 54,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -8.7,
+     "synth": -8.8
+    }
    },
    "wounded": {
     "n": 1,
     "secs": 49.500726,
     "track": 41,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -7.3,
+     "synth": -6.5
+    }
    }
   },
   "chip": "psf",
