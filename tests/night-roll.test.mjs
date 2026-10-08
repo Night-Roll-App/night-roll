@@ -1,10 +1,17 @@
 // Unit tests for Night Roll's pure logic (index.html inline script).
 // Run: node --test tests/
-import test from "node:test";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import nodeTest, { after } from "node:test";
+import { readFileSync, existsSync, readdirSync, writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createApp, appSource, helpSource, helpBody } from "./harness.mjs";
 import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
+
+// tools/run-tests.mjs compares this count with the tests the runner reported:
+// a run that loses its tail (a force-exited child dropped 11 unflushed results
+// on macOS, 2026-10-08) must fail, not print "fail 0"
+let registeredTests = 0;
+const test = (...a) => { registeredTests++; return nodeTest(...a); };
+after(() => { if (process.env.NR_TEST_COUNT_FILE) writeFileSync(process.env.NR_TEST_COUNT_FILE, String(registeredTests)); });
 
 const app = await createApp();
 const run = (code) => app.run(code);

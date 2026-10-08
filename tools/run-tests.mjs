@@ -5,6 +5,9 @@
 // rip (ps2-real) silently skipped gestures, bridge, modules… (2026-10-03).
 // Exit code: 1 if any file failed, after printing which ones.
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const FILES = [
   "night-roll", "nsf", "import-set", "album-order", "gbs", "vgm", "vgm-real",
@@ -15,7 +18,12 @@ const FILES = [
   "migrate-rollnotes", "modules", "controls", "boot-order", "quiz", "theory",
   "theory-harmony", "multi-file-chip", "capture-diff",
 ];
-const FORCE_EXIT = new Set(["night-roll"]); // its harness leaves timers behind
+// No --test-force-exit: its process.exit() in the test child drops results
+// still buffered for the parent's pipe (async on macOS) — night-roll reported
+// 579–599 of its tests with "fail 0" (2026-10-08). A wedged file is killed below.
+// Files here write how many tests they registered (NR_TEST_COUNT_FILE); a run
+// that reports fewer fails.
+const COUNTED = new Set(["night-roll"]);
 
 // a name or a path ("tests/night-roll.test.mjs"); an unknown one is an error —
 // a path once filtered to zero files and still printed "all test files passed"
@@ -26,13 +34,24 @@ if (unknown.length) {
   process.exit(1);
 }
 const failed = [];
+const tmp = mkdtempSync(join(tmpdir(), "nr-tests-"));
 for (const f of only.length ? FILES.filter(x => only.includes(x)) : FILES) {
-  const args = ["--experimental-vm-modules", "--test", ...(FORCE_EXIT.has(f) ? ["--test-force-exit"] : []), `tests/${f}.test.mjs`];
+  const tap = join(tmp, `${f}.tap`), countFile = join(tmp, `${f}.count`);
+  const args = ["--experimental-vm-modules", "--test", "--test-reporter=spec", "--test-reporter-destination=stdout",
+    "--test-reporter=tap", `--test-reporter-destination=${tap}`, `tests/${f}.test.mjs`];
   // a file that wedges (a failed assertion skipping a teardown once hung
   // night-roll with no failure printed) is killed and counted as failed
-  const r = spawnSync(process.execPath, args, {stdio: "inherit", timeout: 300000, killSignal: "SIGKILL"});
-  if (r.status !== 0) { failed.push(f); if (r.signal) console.error(`\n✖ ${f}: killed (${r.signal}) — wedged or over 300 s`); }
+  const r = spawnSync(process.execPath, args, {stdio: "inherit", timeout: 300000, killSignal: "SIGKILL", env: {...process.env, NR_TEST_COUNT_FILE: countFile}});
+  if (r.status !== 0) { failed.push(f); if (r.signal) console.error(`\n✖ ${f}: killed (${r.signal}) — wedged or over 300 s`); continue; }
+  if (!COUNTED.has(f)) continue;
+  const registered = existsSync(countFile) ? +readFileSync(countFile, "utf8") : NaN;
+  const reported = +((existsSync(tap) ? readFileSync(tap, "utf8") : "").match(/^# tests (\d+)$/m) || [])[1];
+  if (!(registered > 0) || reported !== registered) {
+    failed.push(f);
+    console.error(`\n✖ ${f}: ${registered} tests registered, ${reported} reported — results went missing`);
+  }
 }
+rmSync(tmp, {recursive: true, force: true});
 if (failed.length) {
   console.error(`\n✖ ${failed.length} test file(s) failed: ${failed.join(", ")}`);
   process.exit(1);
