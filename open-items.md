@@ -4,6 +4,9 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-08 Name: stays Night Roll (Josh, Terminal #271–#274)
+"Retro DAW" and "8-bit DAW" are generic phrases that nobody can own; no app is named either. Josh picked "1 or 2": keep Night Roll, and use "a retro DAW for game music" as a tagline and/or App Store subtitle when it publishes. Nothing to build.
+
 ## 2026-10-07 Empty captures, steps 1–3 — BUILT on a worktree branch, awaiting merge (docs/plans/2026-10-07-empty-captures.md §4; NIGHT-ROLL.md "Game-steered N64 sequences, and no silent note drops")
 Built: N64 ldseq B0 / runseq C4 / testchan = "not enabled" / rand CE in turn (with a warning); io ports from the save state (`parkedPlayerIo`); a game-steered script loops where its deciding state repeats; SPC low-confidence root falls back to 72; makeMidi reports dropped notes. Dry run, main vs branch: OoT changes only the 3 Hyrule Field songs (Main 153.9 s → loop 13.0 s, Battle 77.1 → 25.8, Waiting 68.7 → 26.8; the 21 piece minis are SAME, since their state holds io = −1, so they do not end 0.2 s sooner). MM: Bossa Nova gains 190 notes, Staff Roll runs 379.6 s. Hyrule Field Battle's console render plays (30 s: 12 tracks, −23.8 dBFS).
 DECIDE before `--apply` of snes/earthbound: the root fallback changes 17 more EarthBound songs (MOVED). Each one gains notes that main dropped silently. In 16 the lost notes are sample #24, the static (28.6 Hz "low"); in Stonehenge Base Shuts Down it is one note of a high-confidence 500 Hz root. Examples: Belch's Factory 6611 → 20340 notes, Mysterious Crash 672 → 1393, Teleportation 1488 → 2332. Giygas' Static is ADDED-TRACK (0 → 2 notes). Still dropped after the fix, now with a warning: notes on HIGH-confidence roots (e.g. #8 at 500 Hz, down to MIDI −49 in Belch's Factory).
