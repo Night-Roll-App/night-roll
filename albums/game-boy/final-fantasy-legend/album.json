@@ -141,7 +141,7 @@
      "v": 1,
      "lufs": -18,
      "peak": -6.5,
-     "synth": -13.8
+     "synth": -13.2
     }
    },
    "knights-of-the-demon-world-tower": {
@@ -155,7 +155,7 @@
      "v": 1,
      "lufs": -15,
      "peak": -5.4,
-     "synth": -6.5
+     "synth": -6.6
     }
    },
    "main-theme": {
@@ -169,7 +169,7 @@
      "v": 1,
      "lufs": -14.5,
      "peak": -4.3,
-     "synth": -7.1
+     "synth": -7
     }
    },
    "prologue": {
@@ -183,7 +183,7 @@
      "v": 1,
      "lufs": -13.4,
      "peak": -6.5,
-     "synth": -10.3
+     "synth": -10.2
     }
    },
    "requiem": {
@@ -197,7 +197,7 @@
      "v": 1,
      "lufs": -14.9,
      "peak": -6.5,
-     "synth": -11.8
+     "synth": -11.7
     }
    },
    "the-highest-floor": {
