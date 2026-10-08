@@ -19,349 +19,697 @@
     "n": 1,
     "secs": 36,
     "track": 48,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 3.8,
+     "synth": -4.5
+    }
    },
    "archives-x": {
     "n": 1,
     "secs": 52.636986301369866,
     "track": 30,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -5.7,
+     "peak": 7.1,
+     "synth": -2.2
+    }
    },
    "archives": {
     "n": 1,
     "secs": 136.91542288557216,
     "track": 11,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9.8,
+     "peak": 6.7,
+     "synth": -5.3
+    }
    },
    "aztec-x": {
     "n": 1,
     "secs": 56,
     "track": 38,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -6.6,
+     "peak": 6.4,
+     "synth": -0.7
+    }
    },
    "aztec": {
     "n": 1,
     "secs": 162.7826086956522,
     "track": 19,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.9,
+     "peak": 6.5,
+     "synth": -2.3
+    }
    },
    "bungeee": {
     "n": 1,
     "secs": 66,
     "track": 53,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 0.2,
+     "synth": -4.7
+    }
    },
    "bunker-1-x": {
     "n": 1,
     "secs": 54.857142857142854,
     "track": 24,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 6.2,
+     "synth": -2.8
+    }
    },
    "bunker-1": {
     "n": 1,
     "secs": 152,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -10.5,
+     "peak": 6.8,
+     "synth": -4.9
+    }
    },
    "bunker-2-x": {
     "n": 1,
     "secs": 61.44,
     "track": 28,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 6,
+     "synth": -3.7
+    }
    },
    "bunker-2": {
     "n": 1,
     "secs": 128,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 4.4,
+     "synth": -3.4
+    }
    },
    "captured-statue": {
     "n": 1,
     "secs": 5.305851063829787,
     "track": 57,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -10,
+     "peak": 2.3,
+     "synth": -0.8
+    }
    },
    "captured-surface": {
     "n": 1,
     "secs": 11.326923076923077,
     "track": 56,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -5.1,
+     "peak": 5.6,
+     "synth": 0.5
+    }
    },
    "caverns-x": {
     "n": 1,
     "secs": 54.857142857142854,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -7.6,
+     "peak": 5.2,
+     "synth": -1.5
+    }
    },
    "caverns": {
     "n": 1,
     "secs": 249.79591836734693,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8.7,
+     "peak": 5.7,
+     "synth": -2.5
+    }
    },
    "citadel": {
     "n": 1,
     "secs": 128.4,
     "track": 43,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -6.4,
+     "peak": 6.6,
+     "synth": -2.7
+    }
    },
    "control-x": {
     "n": 1,
     "secs": 49.77777777777778,
     "track": 35,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -6.4,
+     "peak": 5.8,
+     "synth": -3.9
+    }
    },
    "control": {
     "n": 1,
     "secs": 136,
     "track": 16,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9.4,
+     "peak": 6.4,
+     "synth": -6.4
+    }
    },
    "cradle-x": {
     "n": 1,
     "secs": 55.576022314615024,
     "track": 37,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -5.2,
+     "peak": 7.8,
+     "synth": -2.4
+    }
    },
    "cradle": {
     "n": 1,
     "secs": 121.25677595916005,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -6.4,
+     "peak": 6.6,
+     "synth": -2.8
+    }
    },
    "dam-x": {
     "n": 1,
     "secs": 49.54838709677419,
     "track": 21,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -7.8,
+     "peak": 5.6,
+     "synth": -3.2
+    }
    },
    "dam": {
     "n": 1,
     "secs": 145.71428571428572,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 5.1,
+     "synth": -4.5
+    }
    },
    "depot-x": {
     "n": 1,
     "secs": 50.90909090909091,
     "track": 32,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.7,
+     "synth": 0.2
+    }
    },
    "depot": {
     "n": 1,
     "secs": 136.6153846153846,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9.1,
+     "peak": 4.8,
+     "synth": -1.3
+    }
    },
    "egypt-x": {
     "n": 1,
     "secs": 55.65217391304348,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -4.3,
+     "peak": 9.8,
+     "synth": 0.7
+    }
    },
    "egypt": {
     "n": 1,
     "secs": 162.406015037594,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.9,
+     "peak": 6.2,
+     "synth": -3
+    }
    },
    "elevator-caverns": {
     "n": 1,
     "secs": 31.035714285714285,
     "track": 46,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 7.4,
+     "synth": -3.9
+    }
    },
    "elevator-control": {
     "n": 1,
     "secs": 68.61,
     "track": 45,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -9.5,
+     "peak": 4.1,
+     "synth": -6.1
+    }
    },
    "ending-theme": {
     "n": 1,
     "secs": 60,
     "track": 51,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -5.9,
+     "peak": 7.6,
+     "synth": -2.2
+    }
    },
    "facility-x": {
     "n": 1,
     "secs": 46.22222222222222,
     "track": 22,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -7.6,
+     "peak": 7.7,
+     "synth": -3.1
+    }
    },
    "facility": {
     "n": 1,
     "secs": 120,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -10.7,
+     "peak": 6.6,
+     "synth": -6.1
+    }
    },
    "frigate-beta": {
     "n": 1,
     "secs": 12.173913043478262,
     "track": 58,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -9.1,
+     "peak": 5,
+     "synth": -1.4
+    }
    },
    "frigate-x": {
     "n": 1,
     "secs": 46.3448275862069,
     "track": 26,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 5,
+     "synth": -3.1
+    }
    },
    "frigate": {
     "n": 1,
     "secs": 134.76923076923077,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 5.7,
+     "synth": -2.2
+    }
    },
    "james-bond-theme": {
     "n": 1,
     "secs": 83.03356303069123,
     "track": 41,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -6.5,
+     "peak": 7.2,
+     "synth": -2.4
+    }
    },
    "jungle-x": {
     "n": 1,
     "secs": 46.829268292682926,
     "track": 34,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -5,
+     "peak": 7.8,
+     "synth": -3.1
+    }
    },
    "jungle": {
     "n": 1,
     "secs": 238.08,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -11.8,
+     "peak": 4.3,
+     "synth": -9
+    }
    },
    "mission-death-beta": {
     "n": 1,
     "secs": 16.75235632183908,
     "track": 40,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 4.6,
+     "synth": -1.1
+    }
    },
    "mission-death": {
     "n": 1,
     "secs": 13.013921901528015,
     "track": 49,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -8.7,
+     "peak": 6.8,
+     "synth": -1.2
+    }
    },
    "mission-select": {
     "n": 1,
     "secs": 37.89473684210526,
     "track": 47,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -8.6,
+     "peak": 4.2,
+     "synth": -3.4
+    }
    },
    "multiplayer-death-beta": {
     "n": 1,
     "secs": 8,
     "track": 54,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -10.5,
+     "peak": 6.1,
+     "synth": 1.3
+    }
    },
    "multiplayer-death": {
     "n": 1,
     "secs": 9.912170364169109,
     "track": 55,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -8.7,
+     "peak": 6.5,
+     "synth": -1.2
+    }
    },
    "nintendo-and-rareware": {
     "n": 1,
     "secs": 75.84,
     "track": 50,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -7.2,
+     "peak": 8.8,
+     "synth": -4.8
+    }
    },
    "runway-plane": {
     "n": 1,
     "secs": 11.451597695169918,
     "track": 52,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -4.5,
+     "peak": 6.7,
+     "synth": -1.3
+    }
    },
    "runway-x": {
     "n": 1,
     "secs": 45.354330708661415,
     "track": 23,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -6.7,
+     "peak": 7,
+     "synth": -1.9
+    }
    },
    "runway": {
     "n": 1,
     "secs": 155.52,
     "track": 3,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.5,
+     "peak": 7.5,
+     "synth": -4
+    }
    },
    "silo-x": {
     "n": 1,
     "secs": 54.857142857142854,
     "track": 25,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -7.8,
+     "peak": 5.9,
+     "synth": -2.9
+    }
    },
    "silo": {
     "n": 1,
     "secs": 140.16,
     "track": 6,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 5.8,
+     "synth": -2.4
+    }
    },
    "statue-x": {
     "n": 1,
     "secs": 52.36363636363637,
     "track": 29,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -5.8,
+     "peak": 6.7,
+     "synth": -1.4
+    }
    },
    "statue": {
     "n": 1,
     "secs": 100.40816326530613,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.7,
+     "peak": 6.8,
+     "synth": -2
+    }
    },
    "streets-x": {
     "n": 1,
     "secs": 57.6,
     "track": 31,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 3.7,
+     "synth": -3.5
+    }
    },
    "streets": {
     "n": 1,
     "secs": 164.57142857142858,
     "track": 12,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.2,
+     "peak": 5.7,
+     "synth": -1.6
+    }
    },
    "surface-1": {
     "n": 1,
     "secs": 245.76,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.9,
+     "peak": 7,
+     "synth": -4
+    }
    },
    "surface-2-x": {
     "n": 1,
     "secs": 61.11363636363637,
     "track": 27,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -6.6,
+     "peak": 7,
+     "synth": -1.3
+    }
    },
    "surface-2": {
     "n": 1,
     "secs": 153.6,
     "track": 8,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 6.6,
+     "synth": -6.4
+    }
    },
    "the-basement": {
     "n": 1,
     "secs": 108.31858407079646,
     "track": 42,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 6.6,
+     "synth": -3.9
+    }
    },
    "train-x": {
     "n": 1,
     "secs": 55.08196721311475,
     "track": 33,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -5.6,
+     "peak": 8.4,
+     "synth": -1
+    }
    },
    "train": {
     "n": 1,
     "secs": 166,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 5,
+     "synth": -2.9
+    }
    },
    "unsquare-water-dance": {
     "n": 1,
     "secs": 133.5,
     "track": 44,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -12.3,
+     "peak": 2.1,
+     "synth": -4.9
+    }
    }
   },
   "chip": "usf",
