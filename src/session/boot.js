@@ -68,7 +68,12 @@ export function boot() {
     } else S.currentPath = qsong ? qsong
       : loadable(last) ? last : homeSong(all);
     // album links (2026-09-29): a shared link can arm an album too (armAlbumLink)
+    // …and a relaunch re-arms the run that was going (Josh #205/#206): only when
+    // no link chose a song, and only if the last song is still in that album
+    let lastAlbum = null;
+    try { lastAlbum = localStorage.getItem("ff1roll-lastalbum") || null; } catch (err) { /* private mode */ }
     armAlbumLink(typeof location !== "undefined" ? albumParamFromURL(location.href) : null, S.currentPath);
+    if (!S.albumRun && !qsong && lastAlbum && S.currentPath === last) armAlbumLink(lastAlbum, S.currentPath);
     updateSongBtn();
     reflectSongURL(S.currentPath); // the address bar is the share link from the first frame: path form, never ?song=
     // a dead link (moved/renamed song in ?song= or a stale last-song) must not

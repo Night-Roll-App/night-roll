@@ -14863,3 +14863,16 @@ test("footer Chip / MIDI switch (Josh #204): hidden on a song with no console vo
   assert.equal(run(`hearMidi()`), false);
   run(`chip.key = null; chip.pcm = null; setHearMidi(false);`);
 });
+
+test("album play survives a relaunch (Josh #205/#206): a live run is remembered; boot re-arms it paused on the song it was on; leaving the album forgets it", () => {
+  installSong();
+  run(`globalThis.__keepCat = CATALOG; CATALOG = {"Zelda": [["track-01", "albums/nes/legend-of-zelda/track-01.mid"], ["track-02", "albums/nes/legend-of-zelda/track-02.mid"], ["track-03", "albums/nes/legend-of-zelda/track-03.mid"]]};`);
+  const album = "Zelda", path = "albums/nes/legend-of-zelda/track-02.mid";
+  run(`armAlbumLink(${JSON.stringify(album)}, ${JSON.stringify(path)});`);
+  assert.equal(app.store.get("ff1roll-lastalbum"), album, "a run is remembered");
+  run(`albumClear();`);
+  assert.equal(app.store.get("ff1roll-lastalbum") || null, null, "✕ / leaving forgets it");
+  run(`albumStrip();`);
+  assert.equal(app.store.get("ff1roll-lastalbum") || null, null, "no run: nothing written back");
+  run(`CATALOG = globalThis.__keepCat;`);
+});

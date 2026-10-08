@@ -42,6 +42,7 @@ export function armAlbumLink(album, path) { // ?album= at boot: arm the run WITH
 export function albumClear() { // the run is over; whatever is playing keeps playing
   if (!S.albumRun) return;
   S.albumRun = null; S.albumEndAbs = null;
+  try { localStorage.removeItem("ff1roll-lastalbum"); } catch (err) { /* private mode */ }
   albumStrip();
   reflectSongURL(S.currentPath); // the link drops the album param — just this song again
 }

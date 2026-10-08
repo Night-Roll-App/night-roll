@@ -88,7 +88,9 @@ export function audioStopSrcs() {
 // actions that change WHAT is loaded: ✕, picking a song, ●, Download audio.
 // Nothing pops mid-run — a newer repo save is kept out of the way, not asked about.
 export const ALBUM_PASSES = 2, ALBUM_CAP_SEC = 300, ALBUM_FADE = 1.5, ALBUM_MAX_FAILS = 3;
-// session only: no autoplay without a gesture — a reload with ?album= re-arms the run (armAlbumLink), never plays it
+// no autoplay without a gesture — a reload with ?album=, or a relaunch with a run
+// remembered (ff1roll-lastalbum, Josh #205/#206), re-arms it (armAlbumLink) paused at
+// the start of the song it was on; ▶ carries on
 export function albumNextIdx(idx, len) { return ((idx % len) + len) % len; }
 // wraps both ways
 export function albumPrevIdx(idx, len) { return albumNextIdx(idx - 1, len); }
@@ -129,6 +131,9 @@ export function buildSchedule() {
 }
 
 export function albumStrip() { // the run's one visible body — text, paused dimming, shown iff a run exists
+  // a live run is remembered for a relaunch (device-local); only albumClear forgets it —
+  // a stop() before boot reads it must not wipe it
+  if (S.albumRun) { try { localStorage.setItem("ff1roll-lastalbum", S.albumRun.album); } catch (err) { /* private mode */ } }
   const el = document.getElementById("albumstrip");
   if (!el) return;
   if (!S.albumRun) { el.style.display = "none"; return; }
