@@ -26,6 +26,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -5.8,
+     "synth": -9.3
     }
    },
    "area-b-03": {
@@ -35,6 +41,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17,
+     "peak": -5.8,
+     "synth": -8.9
     }
    },
    "area-c-05": {
@@ -44,6 +56,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -5.7,
+     "synth": -9.9
     }
    },
    "area-cleared-08": {
@@ -53,6 +71,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17,
+     "peak": -7.8,
+     "synth": -9.2
     }
    },
    "area-d-02": {
@@ -62,6 +86,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -5,
+     "synth": -9.3
     }
    },
    "areas-e-f-06": {
@@ -71,6 +101,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -5.8,
+     "synth": -9.5
     }
    },
    "boss-theme-07": {
@@ -80,6 +116,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -5.2,
+     "synth": -9.7
     }
    },
    "ending-credits-0e": {
@@ -89,6 +131,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -5.9,
+     "synth": -9.6
     }
    },
    "final-area-04": {
@@ -98,6 +146,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -6.4,
+     "synth": -9.9
     }
    },
    "game-over-09": {
@@ -107,6 +161,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -6.8,
+     "synth": -9.6
     }
    },
    "highscore-0d": {
@@ -116,6 +176,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -6.3,
+     "synth": -10
     }
    },
    "introduction-0a": {
@@ -125,6 +191,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -6.7,
+     "synth": -10.5
     }
    },
    "stage-select-0c": {
@@ -134,6 +206,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -5.2,
+     "synth": -9.2
     }
    }
   }
