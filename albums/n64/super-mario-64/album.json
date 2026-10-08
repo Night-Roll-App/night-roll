@@ -23,192 +23,420 @@
    "cave-dungeon-both-variations": {
     "n": 1,
     "secs": 122.84774436092673,
-    "track": 17
+    "track": 17,
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -1.1,
+     "synth": -7.1
+    }
    },
    "cave-dungeon-hazy-maze": {
     "n": 1,
     "secs": 122.84774436092673,
-    "track": 16
+    "track": 16,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -1.1,
+     "synth": -8.3
+    }
    },
    "cave-dungeon": {
     "n": 1,
     "secs": 122.84774436092673,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -1.1,
+     "synth": -9.4
+    }
    },
    "correct-solution": {
     "n": 1,
     "secs": 2.9614093959731336,
-    "track": 22
+    "track": 22,
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -5.6,
+     "synth": -7
+    }
    },
    "course-clear": {
     "n": 1,
     "secs": 2.3076923076923017,
-    "track": 28
+    "track": 28,
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": -4.2,
+     "synth": -6.1
+    }
    },
    "dire-dire-docks-in-water": {
     "n": 1,
     "secs": 90.4135338345925,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -14.4,
+     "peak": -0.9,
+     "synth": -3.9
+    }
    },
    "dire-dire-docks-underwater-cave": {
     "n": 1,
     "secs": 90.4135338345925,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": 0.2,
+     "synth": -3.1
+    }
    },
    "dire-dire-docks": {
     "n": 1,
     "secs": 90.4135338345925,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -5.5,
+     "synth": -6.5
+    }
    },
    "ending-demo": {
     "n": 1,
     "secs": 72.78124999999825,
-    "track": 36
+    "track": 36,
+    "loud": {
+     "v": 1,
+     "lufs": -14.4,
+     "peak": -0.7,
+     "synth": -4.9
+    }
    },
    "file-select": {
     "n": 1,
     "secs": 19.199999999999445,
-    "track": 21
+    "track": 21,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -5.9,
+     "synth": -7.3
+    }
    },
    "game-start": {
     "n": 1,
     "secs": 2.4639423076923146,
-    "track": 27
+    "track": 27,
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -5.9,
+     "synth": -6.5
+    }
    },
    "haunted-house": {
     "n": 1,
     "secs": 104.21052631576619,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -14,
+     "peak": 0.1,
+     "synth": -4.5
+    }
    },
    "inside-the-castle-walls": {
     "n": 1,
     "secs": 61.4137931034523,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -3.9,
+     "synth": -8.6
+    }
    },
    "koopa-clear": {
     "n": 1,
     "secs": 2.452606635071099,
-    "track": 33
+    "track": 33,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": -1.7,
+     "synth": -3.3
+    }
    },
    "koopa-s-message": {
     "n": 1,
     "secs": 2.4999999999999982,
-    "track": 30
+    "track": 30,
+    "loud": {
+     "v": 1,
+     "lufs": -10.3,
+     "peak": 3.1,
+     "synth": -2.6
+    }
    },
    "koopa-s-road": {
     "n": 1,
     "secs": 71.11111111110752,
-    "track": 31
+    "track": 31,
+    "loud": {
+     "v": 1,
+     "lufs": -12.6,
+     "peak": 1.5,
+     "synth": -3.3
+    }
    },
    "koopa-s-theme": {
     "n": 1,
     "secs": 71.73913043477907,
-    "track": 32
+    "track": 32,
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -3.4,
+     "synth": -7.3
+    }
    },
    "lakitu-s-message": {
     "n": 1,
     "secs": 4.537166861091153,
-    "track": 38
+    "track": 38,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -9.7,
+     "synth": -9.3
+    }
    },
    "lethal-lava-land": {
     "n": 1,
     "secs": 78.17819148936417,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -0.3,
+     "synth": -4.2
+    }
    },
    "looping-steps": {
     "n": 1,
     "secs": 14.793749999999427,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -4.6,
+     "synth": -2.5
+    }
    },
    "main-theme": {
     "n": 1,
     "secs": 72.21238938053907,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -2.8,
+     "synth": -9.8
+    }
    },
    "merry-go-round": {
     "n": 1,
     "secs": 28.89375000000229,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -3.2,
+     "synth": -6.2
+    }
    },
    "metallic-mario": {
     "n": 1,
     "secs": 27.75510204081831,
-    "track": 20
+    "track": 20,
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -0.1,
+     "synth": -9.2
+    }
    },
    "opening": {
     "n": 1,
     "secs": 30.601851851850356,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -0.8,
+     "synth": -7.2
+    }
    },
    "peach-s-message": {
     "n": 1,
     "secs": 5.603197674418654,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -3.8,
+     "synth": -4.2
+    }
    },
    "piranha-plant-s-lullaby": {
     "n": 1,
     "secs": 67.646484375,
-    "track": 18
+    "track": 18,
+    "loud": {
+     "v": 1,
+     "lufs": -27.6,
+     "peak": -11.7,
+     "synth": -7.5
+    }
    },
    "power-star": {
     "n": 1,
     "secs": 4.1145833333333135,
-    "track": 24
+    "track": 24,
+    "loud": {
+     "v": 1,
+     "lufs": -15.2,
+     "peak": -3.8,
+     "synth": -2.5
+    }
    },
    "powerful-mario": {
     "n": 1,
     "secs": 24.888888888889447,
-    "track": 19
+    "track": 19,
+    "loud": {
+     "v": 1,
+     "lufs": -13.9,
+     "peak": -0.3,
+     "synth": -5.4
+    }
    },
    "race-fanfare": {
     "n": 1,
     "secs": 2.6874999999999956,
-    "track": 25
+    "track": 25,
+    "loud": {
+     "v": 1,
+     "lufs": -18.9,
+     "peak": -6,
+     "synth": -8
+    }
    },
    "slider": {
     "n": 1,
     "secs": 77.14285714285596,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -3.4,
+     "synth": -4.8
+    }
    },
    "snow-mountain": {
     "n": 1,
     "secs": 90.9803921568458,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -2.4,
+     "synth": -5.2
+    }
    },
    "staff-roll": {
     "n": 1,
     "secs": 200.5606633825796,
-    "track": 37
+    "track": 37,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": 2.2,
+     "synth": -4.9
+    }
    },
    "stage-boss": {
     "n": 1,
     "secs": 42.83333333332762,
-    "track": 29
+    "track": 29,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 2.3,
+     "synth": -5.4
+    }
    },
    "star-catch-fanfare": {
     "n": 1,
     "secs": 3.4615384615384515,
-    "track": 26
+    "track": 26,
+    "loud": {
+     "v": 1,
+     "lufs": -19.1,
+     "peak": -4.6,
+     "synth": -5.6
+    }
    },
    "title-theme": {
     "n": 1,
     "secs": 103.26308139532922,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -1.5,
+     "synth": -10.7
+    }
    },
    "toad-s-message": {
     "n": 1,
     "secs": 2.1764705882352873,
-    "track": 23
+    "track": 23,
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -3.4,
+     "synth": -7.1
+    }
    },
    "ultimate-koopa-clear": {
     "n": 1,
     "secs": 24.512499999999143,
-    "track": 35
+    "track": 35,
+    "loud": {
+     "v": 1,
+     "lufs": -11.7,
+     "peak": 1.5,
+     "synth": -2
+    }
    },
    "ultimate-koopa": {
     "n": 1,
     "secs": 83.3865077227632,
-    "track": 34
+    "track": 34,
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": -2.1,
+     "synth": -6
+    }
    }
   },
   "chip": "usf",
