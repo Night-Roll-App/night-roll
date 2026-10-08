@@ -87,7 +87,7 @@
      "v": 1,
      "lufs": -20.9,
      "peak": -6.9,
-     "synth": -11.5
+     "synth": -12
     },
     "cap": {
      "v": 2,
@@ -107,7 +107,7 @@
      "v": 1,
      "lufs": -21.9,
      "peak": -8.5,
-     "synth": -11.5
+     "synth": -12.4
     }
    },
    "ahead-on-our-way": {
@@ -119,7 +119,7 @@
      "v": 1,
      "lufs": -20.5,
      "peak": -9.8,
-     "synth": -9.5
+     "synth": -9.8
     },
     "cap": {
      "v": 2,
@@ -135,7 +135,7 @@
      "v": 1,
      "lufs": -23.4,
      "peak": -9.4,
-     "synth": -13.2
+     "synth": -13.3
     },
     "cap": {
      "v": 2,
@@ -171,7 +171,7 @@
      "v": 1,
      "lufs": -20.2,
      "peak": -6.8,
-     "synth": -8.5
+     "synth": -8.6
     }
    },
    "bombing-mission": {
@@ -235,7 +235,7 @@
      "v": 1,
      "lufs": -20.2,
      "peak": -7.1,
-     "synth": -11.2
+     "synth": -11.6
     }
    },
    "cid-s-theme": {
@@ -251,7 +251,7 @@
      "v": 1,
      "lufs": -18.6,
      "peak": -5.1,
-     "synth": -6.1
+     "synth": -6.2
     }
    },
    "cinco-de-chocobo": {
@@ -267,7 +267,7 @@
      "v": 1,
      "lufs": -21.2,
      "peak": -6.8,
-     "synth": -10.7
+     "synth": -10.8
     }
    },
    "continue": {
@@ -279,7 +279,7 @@
      "v": 1,
      "lufs": -17.6,
      "peak": -7.2,
-     "synth": -12.3
+     "synth": -14.5
     },
     "cap": {
      "v": 2,
@@ -295,7 +295,7 @@
      "v": 1,
      "lufs": -20.6,
      "peak": -5.1,
-     "synth": -7.8
+     "synth": -8.1
     },
     "cap": {
      "v": 2,
@@ -311,7 +311,7 @@
      "v": 1,
      "lufs": -21.9,
      "peak": -6.9,
-     "synth": -6.3
+     "synth": -6.4
     },
     "cap": {
      "v": 2,
@@ -331,7 +331,7 @@
      "v": 1,
      "lufs": -21.7,
      "peak": -4.8,
-     "synth": -7.5
+     "synth": -7.6
     }
    },
    "debut": {
@@ -375,7 +375,7 @@
      "v": 1,
      "lufs": -20.2,
      "peak": -9.2,
-     "synth": -12
+     "synth": -12.7
     },
     "cap": {
      "v": 2,
@@ -459,7 +459,7 @@
      "v": 1,
      "lufs": -19.7,
      "peak": -6.2,
-     "synth": -7.7
+     "synth": -7.8
     }
    },
    "flowers-blooming-in-the-church": {
@@ -471,7 +471,7 @@
      "v": 1,
      "lufs": -23.8,
      "peak": -10.9,
-     "synth": -14.1
+     "synth": -15.6
     },
     "cap": {
      "v": 2,
@@ -487,7 +487,7 @@
      "v": 1,
      "lufs": -22.1,
      "peak": -6.3,
-     "synth": -9.7
+     "synth": -9.4
     },
     "cap": {
      "v": 2,
@@ -535,7 +535,7 @@
      "v": 1,
      "lufs": -20.1,
      "peak": -9.1,
-     "synth": -6.3
+     "synth": -6.4
     },
     "cap": {
      "v": 2,
@@ -551,7 +551,7 @@
      "v": 1,
      "lufs": -20.5,
      "peak": -11.1,
-     "synth": -11.1
+     "synth": -11.7
     },
     "cap": {
      "v": 2,
@@ -603,7 +603,7 @@
      "v": 1,
      "lufs": -23.4,
      "peak": -7.1,
-     "synth": -11
+     "synth": -11.1
     }
    },
    "hurry-faster": {
@@ -619,7 +619,7 @@
      "v": 1,
      "lufs": -18.7,
      "peak": -5.2,
-     "synth": -5.1
+     "synth": -5.3
     }
    },
    "hurry": {
@@ -635,7 +635,7 @@
      "v": 1,
      "lufs": -21.7,
      "peak": -5.1,
-     "synth": -7.8
+     "synth": -7.9
     }
    },
    "if-you-open-your-heart": {
@@ -647,7 +647,7 @@
      "v": 1,
      "lufs": -21.2,
      "peak": -7.2,
-     "synth": -10.2
+     "synth": -10.6
     },
     "cap": {
      "v": 2,
@@ -679,7 +679,7 @@
      "v": 1,
      "lufs": -21.6,
      "peak": -7.2,
-     "synth": -9.4
+     "synth": -9.7
     },
     "cap": {
      "v": 2,
@@ -715,7 +715,7 @@
      "v": 1,
      "lufs": -19.3,
      "peak": -5.1,
-     "synth": -6.4
+     "synth": -6.6
     }
    },
    "jenova-absolute": {
@@ -747,7 +747,7 @@
      "v": 1,
      "lufs": -21.5,
      "peak": -6.1,
-     "synth": -8.8
+     "synth": -8.9
     }
    },
    "life-stream": {
@@ -759,7 +759,7 @@
      "v": 1,
      "lufs": -19.3,
      "peak": -7.4,
-     "synth": -12
+     "synth": -12.1
     },
     "cap": {
      "v": 2,
@@ -775,7 +775,7 @@
      "v": 1,
      "lufs": -20.7,
      "peak": -7.2,
-     "synth": -10.7
+     "synth": -11.3
     },
     "cap": {
      "v": 2,
@@ -795,7 +795,7 @@
      "v": 1,
      "lufs": -22.5,
      "peak": -6.8,
-     "synth": -12.5
+     "synth": -12.7
     }
    },
    "mako-reactor": {
@@ -811,7 +811,7 @@
      "v": 1,
      "lufs": -20.9,
      "peak": -5.9,
-     "synth": -9.8
+     "synth": -10
     }
    },
    "mark-of-the-traitor": {
@@ -843,7 +843,7 @@
      "v": 1,
      "lufs": -19.8,
      "peak": -8.5,
-     "synth": -11.4
+     "synth": -11.6
     }
    },
    "off-the-edge-of-despair": {
@@ -875,7 +875,7 @@
      "v": 1,
      "lufs": -25.4,
      "peak": -11.1,
-     "synth": -16.6
+     "synth": -17.5
     }
    },
    "on-the-other-side-of-the-mountain": {
@@ -923,7 +923,7 @@
      "v": 1,
      "lufs": -20.2,
      "peak": -4.2,
-     "synth": -9.1
+     "synth": -9.3
     }
    },
    "oppressed-people": {
@@ -935,7 +935,7 @@
      "v": 1,
      "lufs": -24.2,
      "peak": -8.9,
-     "synth": -13
+     "synth": -13.4
     },
     "cap": {
      "v": 2,
@@ -971,7 +971,7 @@
      "v": 1,
      "lufs": -19.2,
      "peak": -8.3,
-     "synth": -5.4
+     "synth": -5.5
     }
    },
    "red-xiii-s-theme": {
@@ -987,7 +987,7 @@
      "v": 1,
      "lufs": -18.3,
      "peak": -4.1,
-     "synth": -8.3
+     "synth": -8.4
     }
    },
    "reunion": {
@@ -1003,7 +1003,7 @@
      "v": 1,
      "lufs": -21.2,
      "peak": -7.2,
-     "synth": -8.9
+     "synth": -9
     }
    },
    "rufus-welcoming-ceremony": {
@@ -1031,7 +1031,7 @@
      "v": 1,
      "lufs": -20.6,
      "peak": -9.9,
-     "synth": -10.5
+     "synth": -10.6
     },
     "cap": {
      "v": 2,
@@ -1063,7 +1063,7 @@
      "v": 1,
      "lufs": -20.1,
      "peak": -5.3,
-     "synth": -7.2
+     "synth": -7.8
     },
     "cap": {
      "v": 2,
@@ -1079,7 +1079,7 @@
      "v": 1,
      "lufs": -22.4,
      "peak": -9.5,
-     "synth": -8.5
+     "synth": -9.3
     },
     "cap": {
      "v": 2,
@@ -1115,7 +1115,7 @@
      "v": 1,
      "lufs": -21.6,
      "peak": -6.4,
-     "synth": -8.2
+     "synth": -8.4
     }
    },
    "still-more-fighting": {
@@ -1195,7 +1195,7 @@
      "v": 1,
      "lufs": -20.2,
      "peak": -5.9,
-     "synth": -9.2
+     "synth": -9
     }
    },
    "the-great-northern-cave": {
@@ -1207,7 +1207,7 @@
      "v": 1,
      "lufs": -20.5,
      "peak": -5,
-     "synth": -8.8
+     "synth": -8.9
     },
     "cap": {
      "v": 2,
@@ -1239,7 +1239,7 @@
      "v": 1,
      "lufs": -18.4,
      "peak": -6.1,
-     "synth": -6.6
+     "synth": -6.7
     },
     "cap": {
      "v": 2,
@@ -1255,7 +1255,7 @@
      "v": 1,
      "lufs": -30.7,
      "peak": -17.7,
-     "synth": -12
+     "synth": -11.7
     },
     "cap": {
      "v": 2,
@@ -1271,7 +1271,7 @@
      "v": 1,
      "lufs": -21.2,
      "peak": -9.3,
-     "synth": -12.9
+     "synth": -13.9
     },
     "cap": {
      "v": 2,
@@ -1307,7 +1307,7 @@
      "v": 1,
      "lufs": -17.8,
      "peak": -3.4,
-     "synth": -7.2
+     "synth": -8.1
     }
    },
    "those-chosen-by-the-planet": {
@@ -1323,7 +1323,7 @@
      "v": 1,
      "lufs": -18,
      "peak": -2.9,
-     "synth": -7.6
+     "synth": -8.4
     }
    },
    "tifa-s-theme": {
@@ -1335,7 +1335,7 @@
      "v": 1,
      "lufs": -21.6,
      "peak": -7.5,
-     "synth": -12.6
+     "synth": -13.1
     },
     "cap": {
      "v": 2,
@@ -1355,7 +1355,7 @@
      "v": 1,
      "lufs": -28.4,
      "peak": -9.9,
-     "synth": -22.5
+     "synth": -23.4
     }
    },
    "turks-theme": {
@@ -1371,7 +1371,7 @@
      "v": 1,
      "lufs": -27.3,
      "peak": -9.9,
-     "synth": -7.9
+     "synth": -7.8
     }
    },
    "underneath-the-rotting-pizza": {
@@ -1387,7 +1387,7 @@
      "v": 1,
      "lufs": -24.7,
      "peak": -6.3,
-     "synth": -7.5
+     "synth": -7.3
     }
    },
    "waltz-de-chocobo": {
@@ -1467,7 +1467,7 @@
      "v": 1,
      "lufs": -19.1,
      "peak": -4,
-     "synth": -9.2
+     "synth": -9.4
     }
    },
    "wutai": {
@@ -1483,7 +1483,7 @@
      "v": 1,
      "lufs": -21.7,
      "peak": -6.4,
-     "synth": -5.3
+     "synth": -5.4
     }
    },
    "you-can-hear-the-cry-of-the-planet": {
@@ -1499,7 +1499,7 @@
      "v": 1,
      "lufs": -22.3,
      "peak": -8.2,
-     "synth": -11.9
+     "synth": -12.2
     }
    }
   },
