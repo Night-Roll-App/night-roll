@@ -360,9 +360,12 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
     parse: M => b => M.parseSPC(b),
     run: async (M, parsed, n, secs, prog) => ({cap: await M.runSPCAsync(parsed, secs, prog)}),
     lead: (M, res) => { const r = M.reconstruct(res.cap, {}); return (r.events.length ? Math.min(...r.events.map(e => e.startFrame)) : 0) * r.frameSec; },
-    render: (M, res, o) => M.renderApu(res.cap, {...o, stereo: true}),
+    render: (M, res, o) => M.renderApu(res.cap, {...o, stereo: !o.monoOnly}),
     channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"],
     stereo: true, // {l, r} per voice (tools/spc/apu-render.mjs): VOL L/R, surround voices, the echo
+    // stereo doubles every voice; on a device budget under this the render stays mono (the iPad app:
+    // Josh #216/#221 — module loads failing and the audio clock stalling after the stereo render shipped)
+    stereoBudgetMin: 1_000_000_000,
   },
 };
 
@@ -658,7 +661,8 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     // inline path exactly (the worker can't call the page's copy)
     const tracks = chipEstimateTracksW(R, res, M);
     const canStream = !!R.stream;
-    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000, canStream});
+    const stereo = !!R.stereo && !(R.stereoBudgetMin && (budget || 2_000_000_000) < R.stereoBudgetMin);
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: stereo ? 2 : 1, budget: budget || 2_000_000_000, canStream});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) post({debug: (title || id) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)"});
     let pcm, pan, transfer, peakBytes, keptBytes, outRate, groups;
@@ -666,7 +670,7 @@ if (typeof self !== "undefined") self.onmessage = async e => {
       const out = await renderStreamed(M, R, res, {sampleRate: plan.rate, plan, onProgress: p => post({progress: 0.3 + p * 0.7})});
       ({pcm, pan, transfer, peakBytes, keptBytes, groups} = out); outRate = out.sampleRate;
     } else {
-      const r = await R.render(M, res, {sampleRate: plan.rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
+      const r = await R.render(M, res, {sampleRate: plan.rate, monoOnly: !!R.stereo && !stereo, onProgress: p => post({progress: 0.3 + p * 0.7})});
       const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
       const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
       ({pcm, pan, transfer, peakBytes, keptBytes} = tallyChipRender(r, names, plan)); outRate = r.sampleRate; groups = names.length;

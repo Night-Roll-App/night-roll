@@ -484,3 +484,16 @@ test("RUNNERS.nsf: dpcm is a part, planned only for a song whose log uses the sa
   RUNNERS.nsf.render({renderApu: (log, frames, frameSec, o) => { got = o; return {}; }}, {apuLog: [], frames: 1, frameSec: 1, prg: {banked: false}}, {sampleRate: 44100});
   assert.deepEqual(got, {sampleRate: 44100, prg: {banked: false}});
 });
+
+test("SNES stereo is web-only: under the stereo budget minimum (the iPad app's 600 MB) the SPC runner renders mono (Josh #216/#221)", async () => {
+  const W = await import("../tools/chip-worker.mjs");
+  const R = W.RUNNERS.spc;
+  assert.equal(R.stereo, true);
+  assert.ok(R.stereoBudgetMin > 600_000_000 && R.stereoBudgetMin <= 2_000_000_000, "app budget below, web budget above");
+  let seen = null;
+  const M = {renderApu: (cap, o) => { seen = o; return {}; }};
+  R.render(M, {cap: {}}, {sampleRate: 32000, monoOnly: true});
+  assert.equal(seen.stereo, false);
+  R.render(M, {cap: {}}, {sampleRate: 32000});
+  assert.equal(seen.stereo, true);
+});

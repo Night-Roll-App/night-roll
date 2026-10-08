@@ -568,9 +568,10 @@ export const CHIPS = {
   spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC", keepBytes: true,
         channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
         files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
-        render: (M, res, o) => M.renderApu(res.apuLog, {...o, stereo: true}), // the SPC renderer takes the capture itself
+        render: (M, res, o) => M.renderApu(res.apuLog, {...o, stereo: !o.monoOnly}), // the SPC renderer takes the capture itself
         renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
         stereo: true, // {l, r} per voice: VOL L/R, surround voices and the echo's own stereo (tools/spc/apu-render.mjs)
+        stereoBudgetMin: 1_000_000_000, // mono under this budget (the iPad app) — tools/chip-worker.mjs RUNNERS.spc says why
         parse: M => M.parseSPC,
         run: M => async (spc, n, seconds, onProgress) => {
           const cap = await M.runSPCAsync(spc, seconds, onProgress);
@@ -912,7 +913,8 @@ export async function chipRender() {
     // decide the render's OWN sample rate/channels BEFORE it allocates anything
     const tracks = chipEstimateTracks(kind, res, M);
     const canStream = !!CHIPS[kind].stream;
-    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget, canStream});
+    const stereo = !!CHIPS[kind].stereo && !(CHIPS[kind].stereoBudgetMin && budget < CHIPS[kind].stereoBudgetMin);
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: stereo ? 2 : 1, budget, canStream});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
     if (canStream) { // chunk by chunk, straight into the kept buffers (2026-09-30: peak ≈ kept + one chunk, not ~3x — chipRenderStreamed's own comment)
@@ -927,7 +929,7 @@ export async function chipRender() {
     const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, {...o, prg: rr.prg})); // prg: the NES program image DPCM samples are read from (a GB run has none)
     let r;
     try {
-      r = await render(M, res, {sampleRate: plan.rate,
+      r = await render(M, res, {sampleRate: plan.rate, monoOnly: !!CHIPS[kind].stereo && !stereo,
         onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
     } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
     if (S.songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
