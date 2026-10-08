@@ -15,6 +15,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -6.7,
+     "synth": -10.3
     }
    },
    "amazon": {
@@ -24,6 +30,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -5.4,
+     "synth": -9.5
     }
    },
    "bless-me-bagpipes": {
@@ -33,6 +45,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.2,
+     "peak": -5.7,
+     "synth": -7.5
     }
    },
    "boss-battle": {
@@ -42,6 +60,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -4.2,
+     "synth": -9.9
     }
    },
    "death": {
@@ -51,6 +75,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": -7.1,
+     "synth": -6.4
     }
    },
    "gyro-s-flying-machine": {
@@ -60,6 +90,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -5.3,
+     "synth": -8.8
     }
    },
    "himalayas": {
@@ -69,6 +105,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -5.6,
+     "synth": -9.5
     }
    },
    "opening": {
@@ -78,12 +120,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -4.3,
+     "synth": -8.8
     }
    },
    "stage-select": {
     "n": 2,
     "secs": 3.3332,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -9,
+     "synth": -7
+    }
    },
    "the-moon": {
     "n": 7,
@@ -92,6 +146,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -5.7,
+     "synth": -10
     }
    },
    "transylvania": {
@@ -101,6 +161,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -4.7,
+     "synth": -10.1
     }
    }
   }
