@@ -24,6 +24,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -4.1,
+     "synth": -10.8
     }
    },
    "bloody-tears-street-day-time-bgm": {
@@ -33,12 +39,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -4.5,
+     "synth": -10.5
     }
    },
    "dwelling-of-doom-mansion-bgm": {
     "n": 4,
     "secs": 25.432316,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -4.7,
+     "synth": -10.9
+    }
    },
    "game-over-game-over": {
     "n": 7,
@@ -47,6 +65,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -9,
+     "synth": -10.8
     }
    },
    "last-boss-last-boss-bgm": {
@@ -56,6 +80,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.4,
+     "peak": -4.2,
+     "synth": -9.6
     }
    },
    "message-of-darkness-naming-bgm": {
@@ -65,12 +95,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -4.9,
+     "synth": -10.9
     }
    },
    "monster-dance-night-bgm": {
     "n": 3,
     "secs": 23.599056,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -4.9,
+     "synth": -10.8
+    }
    },
    "the-silence-of-the-daylight-town-stage-bgm": {
     "n": 1,
@@ -79,6 +121,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -4.9,
+     "synth": -10.2
     }
    },
    "within-these-castle-walls-castle-bgm": {
@@ -88,6 +136,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -4,
+     "synth": -10.9
     }
    },
    "dwelling-of-doom-mansion-bgm-recapture": {
@@ -97,6 +151,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -4.7,
+     "synth": -10
     }
    },
    "monster-dance-night-bgm-recapture": {
@@ -106,6 +166,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -4.9,
+     "synth": -10
     }
    }
   }
