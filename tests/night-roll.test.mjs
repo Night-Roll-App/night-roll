@@ -15186,7 +15186,7 @@ function dockTeardown() {
 const fld = id => val(`document.getElementById(${JSON.stringify(id)}).value`);
 const follow = (a, b) => run(`rangeSel = ${a === null ? "null" : `{a: ${a}, b: ${b}, cycle: true}`}; editorFollowSelection();`);
 
-test("docked annotation window: a band tap loads it; a span matching or inside one chord loads it; several or a partial overlap list them with \"New chord over the whole span anyway\"; empty bars give a blank chord with the span's bars (plan R1–R4)", () => {
+test("docked annotation window: a band tap loads it; a span matching or inside one chord loads it; several or a partial overlap say how many in one row with \"New chord here\"; empty bars give a blank chord with the span's bars (plan R1–R4)", () => {
   const bt = dockSetup();
   run(`const g = rollnotes.find(n => n.text === "G7"); rangeSel = {a: g.start, b: g.end}; editorFollowBand(g);`); // what tap() does with Ruler highlight on
   assert.equal(val(`edFollow.mode`), "editing");
@@ -15204,16 +15204,16 @@ test("docked annotation window: a band tap loads it; a span matching or inside o
   follow(8 * bt, 14 * bt);
   assert.equal(val(`edFollow.mode`), "several");
   assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`),
-    ["chord G7 · bar 9–10", "chord C · bar 11–12", "New chord over the whole span anyway"]);
-  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^2 chords in this span:/);
+    ["New chord here"], "one row: no line per band (Josh #257)");
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^2 chords in this span — tap one in the ruler/);
   assert.equal(val(`document.getElementById("nsave").disabled`), true);
-  run(`document.getElementById("nseveral").children[1].dispatchEvent({type: "click"});`);
-  assert.equal(val(`editingNote && editingNote.text`), "C", "a row loads that chord");
+  run(`editorPick(rollnotes.find(n => n.chord && n.text === "C"));`); // tapping that band in the ruler
+  assert.equal(val(`editingNote && editingNote.text`), "C", "tapping one loads that chord");
   assert.deepEqual(val(`[rangeSel.a, rangeSel.b]`), [10 * bt, 12 * bt], "and the highlight moves to it");
   follow(11 * bt, 13 * bt);
   assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`),
-    ["chord C · bar 11–12", "New chord over the whole span anyway"], "partly over one chord: a one-row list, never a silent overlap");
-  run(`document.getElementById("nseveral").children[1].dispatchEvent({type: "click"});`);
+    ["New chord here"], "partly over one chord: one row, never a silent overlap");
+  run(`document.getElementById("nseveral").children[0].dispatchEvent({type: "click"});`);
   assert.equal(val(`edFollow.mode`), "new");
   assert.deepEqual([fld("nb1"), fld("nb2")], ["12", "14"]);
   follow(12 * bt, 14 * bt);
@@ -15354,7 +15354,7 @@ test("docked annotation window: a lasso reaching into the ruler counts as a sele
   run(`globalThis.__keepLasso = S.hooks.lassoedAnnos; S.hooks.lassoedAnnos = () => rollnotes.filter(n => n.chord); lassoAnno = {t0: 0, t1: ${12 * bt}, y0: 0, y1: 40};`);
   run(`editorFollowSelection();`);
   assert.equal(val(`edFollow.mode`), "several");
-  assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`), ["chord G7 · bar 9–10", "chord C · bar 11–12"], "a lasso list has no \"anyway\" row: it is not a span");
+  assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`), [], "a lasso over several: the count only, and no \"New … here\" row — it is not a span");
   run(`S.hooks.lassoedAnnos = () => rollnotes.filter(n => n.text === "C"); lassoAnno = {t0: ${10 * bt}, t1: ${12 * bt}, y0: 0, y1: 40}; editorFollowSelection();`);
   assert.equal(val(`editingNote && editingNote.text`), "C");
   run(`lassoAnno = null; editorFollowSelection();`);

@@ -1068,6 +1068,7 @@
      specificity — beats the generic rule above, so it needs its own override
      here too (ID + .docked + .ask) to actually fill the dock while docked */
   #asksheet.docked .sheet.ask { width: 100%; max-width: none; height: 100%; max-height: none; }
+  #noteeditor.docked .sheet { overflow-y: auto; -webkit-overflow-scrolling: touch; } /* no inner scroller of its own: docked, the window scrolls so Save is always reachable (Josh #257) */
   .overlay.docked .sheetgrip { display: none; } /* the dock's divider resizes it instead */
   /* Phase B: the tab strip for a side dock cell holding more than one window
      (wmLayoutTabs) — order: 0 puts it above the window(s), order: 1 above.

@@ -976,22 +976,16 @@ export function editorRender() {
   const kinds = f.list.length && f.list.every(n => n.chord) ? "chords" : f.list.length && f.list.every(n => n.section) ? "sections" : "annotations";
   document.getElementById("nfollowmsg").textContent =
     f.mode === "idle" ? (f.msg ? f.msg + ". " : "") + "Select bars in the ruler, or tap a chord or section."
-    : f.mode === "several" ? f.list.length + " " + kinds + " in this span:"
+    : f.mode === "several" ? f.list.length + " " + kinds + " in this span — tap one in the ruler to edit it" // one row, never a line per band (Josh #257: "way too huge")
     : f.mode === "readonly" ? (LINK_SONGS ? "Someone else's song: annotations are theirs — open your own copy to write." : S.rollnotesLockReason || ROLLNOTES_LOCK_MSG)
     : f.msg;
   const list = document.getElementById("nseveral");
   list.textContent = "";
   list.style.display = f.mode === "several" ? "flex" : "none";
   if (f.mode === "several") {
-    for (const n of f.list) {
-      const b = document.createElement("button");
-      b.type = "button"; b.textContent = annoLabel(n);
-      b.addEventListener("click", () => editorPick(n));
-      list.appendChild(b);
-    }
     if (f.listSpan && !S.rollnotesReadOnly) { // R3: never automatic — saving it makes overlapping bands
       const b = document.createElement("button"), sp = f.listSpan;
-      b.type = "button"; b.textContent = "New " + (NTYPE_CHIPS.find(c => c[0] === sp.type) || [sp.type, sp.type])[1].toLowerCase() + " over the whole span anyway";
+      b.type = "button"; b.textContent = "New " + (NTYPE_CHIPS.find(c => c[0] === sp.type) || [sp.type, sp.type])[1].toLowerCase() + " here";
       b.addEventListener("click", () => editorLoad({kind: "empty", a: sp.a, b: sp.b, type: sp.type}));
       list.appendChild(b);
     }
