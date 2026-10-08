@@ -16,6 +16,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -7.6,
+     "synth": -9.5
     }
    },
    "ending": {
@@ -25,6 +31,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -7.6,
+     "synth": -9.1
     }
    },
    "high-score-tetris-master": {
@@ -34,17 +46,35 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -6.8,
+     "synth": -8.7
     }
    },
    "music-1": {
     "n": 3,
     "secs": 54.797808,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -18.9,
+     "peak": -6,
+     "synth": -9.9
+    }
    },
    "music-2": {
     "n": 4,
     "secs": 35.198592,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.4,
+     "peak": -6,
+     "synth": -10.3
+    }
    },
    "music-3": {
     "n": 5,
@@ -53,6 +83,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -11.4,
+     "synth": -9
     }
    },
    "unknown-track-1": {
@@ -62,6 +98,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -6.6,
+     "synth": -11
     }
    }
   }
