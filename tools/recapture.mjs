@@ -49,7 +49,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { diffFiles, loopOfRollnotes } from "./capture-diff.mjs";
+import { diffFiles, loopOfRollnotes, readSmf } from "./capture-diff.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SELF = fileURLToPath(import.meta.url);
@@ -149,10 +149,11 @@ export function annotationsOf(rnPath) {
 // loopOnly (MOVED by the loop point alone): the notes are identical, so the song's
 // own loop annotation still lands where it did — replace the .mid, never write the
 // .rollnotes.json, and keep that loop rather than adding a second song.
-export function planAction(verdict, annotations, oldLoop, newLoop, loopOnly = false) {
+export function planAction(verdict, annotations, oldLoop, newLoop, loopOnly = false, oldEmpty = false) {
   if (!verdict) return "none";
   if (verdict === "SAME") return "skip";
   if (verdict === "VELOCITY" || verdict === "ADDED-TRACK" || loopOnly) return "replace";
+  if (oldEmpty && !annotations) return "replace"; // the published song had no notes at all (OoT Hyrule Field): nothing to keep beside the capture
   return "keep-old+add-new"; // beats moved: the published song stays, annotated or not (Josh, 2026-10-07)
 }
 
@@ -287,10 +288,10 @@ export async function recaptureAlbum(a, outRoot, log = console.log) {
     if (!s.newMid) { s.verdict = null; s.action = "none"; continue; }
     try {
       const d = diffFiles(oldMid, s.newMid, {oldLoop: ann.loop, newLoop: s.newLoop || null});
-      Object.assign(s, {verdict: d.verdict, reasons: d.reasons, loopOnly: d.loopOnly, firstBar: d.firstBar, bars: d.bars, gained: d.gained, lost: d.lost});
+      Object.assign(s, {verdict: d.verdict, reasons: d.reasons, loopOnly: d.loopOnly, oldEmpty: readSmf(readFileSync(oldMid)).tracks.every(t => !t.notes.length), firstBar: d.firstBar, bars: d.bars, gained: d.gained, lost: d.lost});
       s.newSha = sha(readFileSync(s.newMid));
     } catch (err) { s.verdict = null; s.why = "diff failed: " + err.message; }
-    s.action = planAction(s.verdict, s.annotations, s.oldLoop, s.newLoop, s.loopOnly);
+    s.action = planAction(s.verdict, s.annotations, s.oldLoop, s.newLoop, s.loopOnly, s.oldEmpty);
     if (s.action === "keep-old+add-new") { s.addBase = s.base + "-recapture"; s.addTitle = s.title + " (re-capture)"; }
   }
   res.songs = songs;

@@ -164,3 +164,8 @@ test("recapture: a per-file \"(re-capture)\" copy (rip: <source base>) fetches n
   const a = {chip: "spc", meta: {nsf: {vault: "snes/x/", perFile: true, tracks: {"beach": {n: 1}, "beach-recapture": {n: 1, rip: "beach"}}}}};
   assert.deepEqual(vaultFilesOf(a).map(f => f.vault), ["snes/x/beach.spc"]);
 });
+
+test("recapture: a published song with no notes at all (OoT Hyrule Field) is replaced, not kept beside a copy — unless it carries annotations", () => {
+  assert.equal(planAction("MOVED", 0, null, "49.1>17.1", false, true), "replace");
+  assert.equal(planAction("MOVED", 2, null, "49.1>17.1", false, true), "keep-old+add-new");
+});
