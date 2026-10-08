@@ -947,7 +947,7 @@ test("applySoundingOffsets + toMidi (real ROM): Title Theme's shifted tracks car
 // every note where it was and carries each sample's fade; the kits and the notes are what they were.
 const DK64_ARCHIVE = [process.env.N64_USF_DIR && join(process.env.N64_USF_DIR, "donkey-kong-64"), "/tmp/recap/rips/n64/donkey-kong-64"]
   .find(d => d && existsSync(join(d, "logo.usf")) && existsSync(join(d, "nus-ndop-usa.usflib")));
-test("DK64_ARCHIVE Logo (real rip): one-shot drum samples fade inside their notes; pitches, lengths and kits unchanged", {skip: !DK64_ARCHIVE}, () => {
+test("DK64 Logo (real rip): one-shot drum samples fade inside their notes; pitches, lengths and kits unchanged", {skip: !DK64_ARCHIVE}, () => {
   const set = loadUSF(["logo.usf", "nus-ndop-usa.usflib"].map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(DK64_ARCHIVE, n)))})));
   const {res} = sequenceOfSet(set);
   const part = (ch, inst) => res.notes.filter(n => n.ch === ch && n.inst === inst);
@@ -955,7 +955,13 @@ test("DK64_ARCHIVE Logo (real rip): one-shot drum samples fade inside their note
   assert.deepEqual([congas.length, bongoA.length, bongoB.length], [100, 20, 20]);
   assert.deepEqual([...new Set(congas.map(n => n.midi))].sort(), [60, 65], "the written pitches stay");
   assert.ok([...congas, ...bongoA, ...bongoB].every(n => n.env && n.env.length), "every hit carries its sample's fade");
-  assert.ok(bongoA.every(n => n.dur === 96 && n.env.at(-1).r === 0 && n.env.at(-1).t < 60), "a two-beat note on a 0.48 s hit falls silent about a beat in");
+  // inst 3: one 0.48 s hit, keyBase 66 — key 60 plays it at 2^(−6/12) (0.68 s), key 55 at 2^(−11/12) (0.91 s);
+  // each two-beat note falls silent where the sample ends at its own pitch, not at the note-off
+  const tps = 48 * res.tempos[0].bpm / 60;
+  for (const n of bongoA) {
+    const end = 0.48 / Math.pow(2, (n.key - 66) / 12) * tps;
+    assert.ok(n.dur === 96 && n.env.at(-1).r === 0 && Math.abs(n.env.at(-1).t - end) <= 3, `key ${n.key}: silent at ${n.env.at(-1).t} ticks, the sample ends at ${end.toFixed(1)}`);
+  }
   assert.ok(res.notes.filter(n => n.drum).every(n => !n.env), "kit hits are the drum lane's");
   assert.ok(toMidi(res).length > 1000);
 });
