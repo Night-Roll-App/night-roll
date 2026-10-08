@@ -18,11 +18,23 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.2,
+     "peak": -5.1,
+     "synth": -8.9
     }
    },
    "boss-battle": {
     "n": 18,
-    "secs": 19.182566
+    "secs": 19.182566,
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -3.9,
+     "synth": -7.6
+    }
    },
    "bubble-man": {
     "n": 10,
@@ -30,6 +42,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.6,
+     "peak": -4.5,
+     "synth": -7.7
     }
    },
    "crash-man": {
@@ -38,6 +56,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -5.1,
+     "synth": -8.7
     }
    },
    "credits": {
@@ -46,6 +70,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.9,
+     "peak": -3.3,
+     "synth": -9.7
     }
    },
    "dr-wily-defeated": {
@@ -54,6 +84,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -13.6,
+     "peak": -3.4,
+     "synth": -7.7
     }
    },
    "dr-wily-s-castle-ii": {
@@ -62,6 +98,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": -4.4,
+     "synth": -10.1
     }
    },
    "dr-wily-s-castle": {
@@ -70,6 +112,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": -3.6,
+     "synth": -7.7
     }
    },
    "enemy-chosen": {
@@ -78,6 +126,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -7.7,
+     "synth": -9.1
     }
    },
    "epilogue": {
@@ -86,6 +140,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -6.8,
+     "synth": -9.7
     }
    },
    "flash-man": {
@@ -94,6 +154,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16,
+     "peak": -4.4,
+     "synth": -9.2
     }
    },
    "heat-man": {
@@ -102,6 +168,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -6.8,
+     "synth": -9.6
     }
    },
    "introduction": {
@@ -110,11 +182,23 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -5,
+     "synth": -7.3
     }
    },
    "metal-man": {
     "n": 8,
-    "secs": 38.398464000000004
+    "secs": 38.398464000000004,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -4,
+     "synth": -7.1
+    }
    },
    "password-screen": {
     "n": 14,
@@ -122,6 +206,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -13.6,
+     "peak": -4.6,
+     "synth": -9.2
     }
    },
    "quick-man": {
@@ -130,6 +220,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": -3.2,
+     "synth": -9.5
     }
    },
    "stage-select": {
@@ -138,6 +234,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -5,
+     "synth": -10.4
     }
    },
    "title-screen": {
@@ -146,6 +248,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -2.8,
+     "synth": -9.1
     }
    },
    "track-20": {
@@ -154,6 +262,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -3.7,
+     "synth": -8.5
     }
    },
    "track-23": {
@@ -162,6 +276,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -2.8,
+     "synth": -9.1
     }
    },
    "victory": {
@@ -170,6 +290,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -5.9,
+     "synth": -9.3
     }
    },
    "wood-man": {
@@ -178,6 +304,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -2.4,
+     "synth": -7.9
     }
    },
    "boss-battle-recapture": {
@@ -186,6 +318,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -3.9,
+     "synth": -9.6
     }
    },
    "metal-man-recapture": {
@@ -194,6 +332,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -4,
+     "synth": -8.9
     }
    }
   }
