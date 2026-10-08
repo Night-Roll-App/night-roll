@@ -29,6 +29,10 @@
      "lufs": -15.9,
      "peak": -5.5,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "2-player-mode-game-over": {
@@ -40,6 +44,10 @@
      "lufs": -15.1,
      "peak": -5.5,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "2-player-mode-round-over": {
@@ -51,6 +59,10 @@
      "lufs": -14.7,
      "peak": -3.4,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "a-type-music-version-1-0": {
@@ -62,6 +74,10 @@
      "lufs": -16.2,
      "peak": -3.9,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "a-type-music-version-1-1": {
@@ -74,6 +90,10 @@
      "lufs": -15.4,
      "peak": -4.6,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-game-level-9-high-0-ending": {
@@ -96,6 +116,10 @@
      "lufs": -16.7,
      "peak": -5.5,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-game-level-9-high-2-ending": {
@@ -107,6 +131,10 @@
      "lufs": -15.5,
      "peak": -5.5,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-game-level-9-high-3-ending": {
@@ -118,6 +146,10 @@
      "lufs": -13.7,
      "peak": -4.1,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-game-level-9-high-4-5-ending": {
@@ -129,6 +161,10 @@
      "lufs": -14.8,
      "peak": -3.9,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-game-level-9-high-5-ending-part-2-100000-points": {
@@ -140,6 +176,10 @@
      "lufs": -15.3,
      "peak": -5.5,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "b-type-music": {
@@ -151,6 +191,10 @@
      "lufs": -16,
      "peak": -3.3,
      "synth": -10.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "c-type-music": {
@@ -162,6 +206,10 @@
      "lufs": -19.9,
      "peak": -5.5,
      "synth": -19.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "game-over": {
@@ -173,6 +221,10 @@
      "lufs": -16.1,
      "peak": -5.5,
      "synth": -5.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "high-score": {
@@ -184,6 +236,10 @@
      "lufs": -14.8,
      "peak": -6.3,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-clear": {
@@ -195,6 +251,10 @@
      "lufs": -16.9,
      "peak": -6.5,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "title": {
@@ -206,6 +266,10 @@
      "lufs": -15.8,
      "peak": -4.4,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "unknown-jingle-02": {
@@ -217,6 +281,10 @@
      "lufs": -18.7,
      "peak": -5.5,
      "synth": -13.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    }
   },
