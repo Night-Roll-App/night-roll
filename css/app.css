@@ -335,6 +335,8 @@
     flex-shrink: 0;
   }
   #editrow.on { display: flex; }
+  #lockclip { display: none; gap: 6px; align-items: center; }
+  #lockclip.on { display: inline-flex; }
   #moderowbreak { flex-basis: 100%; height: 0; }
 
   footer {

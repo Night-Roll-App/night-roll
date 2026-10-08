@@ -1989,7 +1989,7 @@ export function initSheets5() {
     setInfo("pasted " + k + " note" + (k === 1 ? "" : "s") + " onto " + (S.song.tracks[S.ptTarget].name || "track") + (shift ? " (" + shift + ")" : "") + " — selected, cursor at their end");
   });
   document.getElementById("pastebtn").addEventListener("click", () => {
-    if (!editableSong()) { setInfo("paste works on your own songs — captures are locked"); return; }
+    if (!editableSong()) { if (!pasteClipboard(S.playCursor) && !clipboardHas()) setInfo("nothing copied yet — lasso over the chords/sections and tap Copy first"); return; } // locked notes: annotations only, and pasteAnnotationsOnly says what landed
     const k = pasteClipboard(S.playCursor); // pastes the last ⧉/⌘C copy — surviving any scrolling
     setInfo(k ? "pasted " + clipSummary() + " — cursor moved to their end, paste again to chain"
               : "nothing copied yet — select notes and tap Copy (or ⌘C) first");

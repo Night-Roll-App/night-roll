@@ -20,6 +20,12 @@ import { prof } from "../state.js";
 // once, copy chords). Works on editable songs; drag on the roll or arrow
 // keys — keyboard covers everything, easier on the hands than dragging.
 export function editableSong() { return !!S.song && !LINK_SONGS && canEditMusic(S.songKey) && !(S.cmp && S.cmp.showing === "repo"); }
+// notes locked, annotations still the user's (a capture, a starter, a
+// published song with no local copy here): Copy/Paste carry annotations only
+// (Josh, Terminal #235). A linked song or Compare's repo side stays read-only
+// through and through. S.rollnotesReadOnly is deliberately NOT checked — a
+// paste there refuses out loud (pasteAnnotations) rather than hiding.
+export function lockedAnnoSong() { return !!S.song && !editableSong() && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo"); }
 // docs/theory-toolkit.md §3.0: the ONE adapter every in-app caller of the
 // theory FACTS toolkit shares — live state, unsaved edits included (the same
 // reason read_bars reads S.song rather than the repo file). Audio tracks

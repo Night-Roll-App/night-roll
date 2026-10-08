@@ -22,6 +22,7 @@ import { isDirective } from "../model/rollnotes.js";
 import { lassoedAnnos } from "../hooks.js";
 import { annoInLassoImpl as annoInLasso } from "../render/roll.js";
 import { editableSong } from "../model/song.js";
+import { lockedAnnoSong } from "../model/song.js";
 import { ownFolderPath } from "../model/provenance.js";
 import { originOf } from "../model/provenance.js";
 import { drawImpl as draw } from "./chrome.js";
@@ -468,13 +469,20 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
 }
 export function updateEditButtons() { // disabled = "this can't do anything right now"
-  const sel = S.song ? selEditItems().length : 0;
+  const locked = lockedAnnoSong(); // notes locked: Copy/Paste carry annotations only, so lassoed notes don't enable them
+  const sel = S.song && !locked ? selEditItems().length : 0;
   const annos = S.song && S.lassoAnno ? lassoedAnnos().length : 0;
   const piece = !!(S.song && S.selClip && selClipObj()); // a selected audio piece splits too
-  const st = [!S.editUndo.length, !S.editRedo.length, !sel, !clipboardHas(), !(sel || annos), !(sel || piece)];
+  // #lockclip: the locked song's Undo/Redo/Copy/Paste, out in the footer only
+  // while there is something for them to do (Lasso on, or annotations copied) —
+  // the captures keep their bare footer otherwise (no edit row there, 2026-08-15)
+  const clipOut = locked && (S.lassoMode || S.annoClipboard.length > 0);
+  const st = [!S.editUndo.length, !S.editRedo.length, !sel, locked ? !S.annoClipboard.length : !clipboardHas(), !(sel || annos), !(sel || piece), clipOut];
   const key = st.join("|");
   if (key === S.editBtnCache) return;
   S.editBtnCache = key;
+  const lc = document.getElementById("lockclip");
+  if (lc && lc.classList) lc.classList.toggle("on", clipOut);
   const set = (id, off) => { const b = document.getElementById(id); if (b) b.disabled = off; };
   set("undobtn", st[0]); set("emUndo", st[0]); set("nmUndo", st[0]); // nm* = the hold-still note menu (DAW F2), same states
   set("redobtn", st[1]); set("emRedo", st[1]); set("nmRedo", st[1]);
@@ -1177,9 +1185,17 @@ export function initNoteEditor6() {
   // hands): arrows move, shift = octave, alt+arrows resize, cmd-c/v copy/paste
   // at the playhead, delete removes. Ignored while typing in a field.
   document.addEventListener("keydown", e => {
-    if (!S.song || !editableSong()) return;
+    if (!S.song) return;
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (!editableSong()) { // locked notes: only the annotation clipboard and its undo (Josh, Terminal #235)
+      const mk = (e.metaKey || e.ctrlKey) && lockedAnnoSong() ? e.key.toLowerCase() : "";
+      if (mk === "c") { if (copySelection()) { setInfo("copied " + clipSummary() + " — ⌘V pastes at the playhead"); e.preventDefault(); } }
+      else if (mk === "v") { if (clipboardHas()) { pasteClipboard(S.playCursor); e.preventDefault(); } }
+      else if (mk === "z") { if (e.shiftKey) editRedoPop(); else editUndoPop(); e.preventDefault(); }
+      else if (mk === "y") { editRedoPop(); e.preventDefault(); }
+      return;
+    }
     const grid = moveSnapTicks(); // 16ths, or triplet steps while a T duration is active
     const meta = e.metaKey || e.ctrlKey;
     if (meta && e.key.toLowerCase() === "s") { e.preventDefault(); saveVersion(); return; }

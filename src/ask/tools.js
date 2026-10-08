@@ -18,6 +18,7 @@ import { askBarRow } from "./context.js";
 import { askSpanNotesCompact } from "./context.js";
 import { LETTER_PC } from "../theory/chords.js";
 import { editableSong } from "../model/song.js";
+import { lockedAnnoSong } from "../model/song.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { parseRollnotes } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
@@ -934,10 +935,32 @@ function askEditNotesVel(spec) { // 80 -> every note to 80; "+10"/"-10" -> relat
   if (!(n >= 1 && n <= 127)) throw new Error("vel must be 1–127, or relative like +10 or -10");
   return () => n;
 }
+// edit_notes copy on a song whose notes are locked (Josh, Terminal #235): the
+// annotations spanning the bars are copied, notes never — the ⧉/📋 path's
+// pasteAnnotationsOnly, so it lands re-anchored, replace-not-double, one undo.
+// tracks is optional here: no note is read or written.
+function askCopyAnnotationsLocked(a) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG);
+  const {fromBar, toBar} = askDrummerRange(a);
+  const bt = barTicks(), where = fromBar === toBar ? "bar " + fromBar : "bars " + fromBar + "–" + toBar;
+  const toBar2 = Math.round(askActNum(a.at_bar, "at_bar") ?? 0), toBeat = askActNum(a.at_beat, "at_beat") ?? 1;
+  if (!(toBar2 >= 1)) throw new Error("say at_bar (where the copy starts)");
+  if (!(toBeat >= 1)) throw new Error("at_beat must be ≥ 1");
+  const dP = askEditNotesShift(a);
+  const at = Math.round((toBar2 - 1) * bt + (toBeat - 1) * beatTicks());
+  const keep = [S.noteClipboard, S.annoClipboard];
+  let k = 0;
+  try {
+    if (copySelection({t0: (fromBar - 1) * bt, t1: toBar * bt}) && S.annoClipboard.length) k = pasteClipboard(at, {dP});
+  } finally { [S.noteClipboard, S.annoClipboard] = keep; }
+  if (!k) return {ok: true, note: "no annotations in " + where + " to copy; nothing changed (this song's notes are locked — only annotations copy here)"};
+  return {ok: true, note: "copied " + k + " annotation" + (k === 1 ? "" : "s") + " from " + where + " to " + toBar2 + "." + toBeat + (dP ? ", chord labels " + askShiftText(dP) : "") + " — this song's notes are locked, so no notes were copied (one undo restores what was there)"};
+}
 export function askEditNotes(a) {
   const gate = askWritableGate();
-  if (gate) throw new Error(gate);
   a = a || {};
+  if (gate && String(a.op || "").trim().toLowerCase() === "copy" && lockedAnnoSong()) return askCopyAnnotationsLocked(a);
+  if (gate) throw new Error(gate);
   const op = String(a.op || "").trim().toLowerCase();
   if (!EDIT_NOTES_OPS.includes(op)) throw new Error("op must be one of " + EDIT_NOTES_OPS.join(", "));
   const sel = askSelectRange(a);

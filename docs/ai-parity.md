@@ -147,7 +147,7 @@ silently.
 | Delete notes | — | yes | `edit_notes {op:"delete", from_bar, to_bar, tracks, pitch?}` | S |
 | Transpose (half steps, octaves, in key) | — | yes; "in key" uses YOUR declared key, else says there isn't one | `edit_notes {op:"transpose", …, semitones? \| octaves? \| scale_steps?}` | M |
 | Move in time | — | yes | `edit_notes {op:"move", …, beats}` | M |
-| Copy / Paste to… (another bar, track, octave) | partly (`copy_bars` does whole bars, every track) | yes | `edit_notes {op:"copy", …, to_bar, to_beat?, to_track?, semitones?}` | M |
+| Copy / Paste to… (another bar, track, octave) | partly (`copy_bars` does whole bars, every track) | yes | `edit_notes {op:"copy", …, to_bar, to_beat?, to_track?, semitones?}` | M — on a locked-notes song, copy carries the annotations only (Terminal #235) |
 | Move to track | — | yes | `edit_notes {op:"to_track", …, to_track}` | S |
 | Split / Join / Divide | — | yes | `edit_notes {op:"split"\|"join"\|"divide", …, at_beat? \| parts?}` | S |
 | Quantize | — | yes | `edit_notes {op:"quantize", …, strength, ends?}` | S |

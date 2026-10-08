@@ -5294,6 +5294,24 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     annotations overlapping that span ride instead of `annoInLasso`'s
     lane-precise pixel test (omitted — every UI caller — keeps the lasso
     rule). Nothing rides without `labels`.
+    **On a locked-notes song** (`lockedAnnoSong()`, Terminal #235) copy is
+    the one op `askWritableGate` does not refuse: `askCopyAnnotationsLocked`
+    copies the annotations over the bars (tracks optional, labels implied)
+    and pastes them through `pasteAnnotationsOnly` — never a note.
+- **Annotation copy/paste on locked-notes songs** (Josh, Terminal #235:
+  repeated sections on captures). `lockedAnnoSong()` (model/song.js) = a
+  song is open, `editableSong()` is false, and it is not a linked song or
+  Compare's repo side. There `copySelection()` copies annotations only
+  (lassoed notes are ignored, the anchor is the first annotation — or
+  `annoSpan.t0`), and `pasteClipboard()` routes to `pasteAnnotationsOnly()`:
+  re-anchored via `pasteAnnotations` (dropSupersededBy: replace, never
+  double), one `{kind:"anno"}` undo, `saveLocalNotes`, cursor to the end;
+  copied notes are skipped and the status line says so; `S.rollnotesReadOnly`
+  refuses. UI: the edit row stays hidden on captures (2026-08-15), so
+  `placeClipBtns()` (ui/chrome.js) moves the row's own #undobtn/#redobtn/
+  #copybtn/#pastebtn into the footer's `#lockclip` beside Lasso, and
+  `updateEditButtons` shows it only while Lasso is on or annotations are
+  copied. ⌘C/⌘V/⌘Z/⇧⌘Z work there too; no other key does.
   - `to_track`: `to_track` → `moveSelectionToTrack(ti)` (the ⇄ sheet's own;
     an audio track is refused up front). The sheet's `S.mvFromFilter` is
     nulled for the call and restored — Ask named the source tracks itself.

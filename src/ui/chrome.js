@@ -94,6 +94,7 @@ import { isLocalDraft } from "../model/edits.js";
 import { draftWrite } from "../model/versions.js";
 import { draftDoc } from "../model/versions.js";
 import { editableSong } from "../model/song.js";
+import { lockedAnnoSong } from "../model/song.js";
 import { baseName } from "../model/rollnotes.js";
 import { overlayNoteSig } from "../model/edits.js";
 import { updateClearBtn } from "../model/edits.js";
@@ -1096,6 +1097,20 @@ export function placeLassoBtn(editable) {
   if (editable) { if (b.nextSibling !== seg) row.insertBefore(b, seg); b.classList.add("inrow"); }
   else if (b.parentNode !== placeLassoBtn.home.parent) { placeLassoBtn.home.parent.insertBefore(b, placeLassoBtn.home.next); b.classList.remove("inrow"); }
 }
+// Locked-notes song (lockedAnnoSong): the edit row stays hidden, so its own
+// Undo/Redo/Copy/Paste buttons — same ids, handlers, guards — move into the
+// footer's #lockclip beside Lasso; back home (before Cut / Delete, the row's
+// fixed order) on an editable song. updateEditButtons shows/hides #lockclip.
+export function placeClipBtns(out) {
+  const box = document.getElementById("lockclip"), cut = document.getElementById("cutbtn"), del = document.getElementById("delbtn");
+  const ids = ["undobtn", "redobtn", "copybtn", "pastebtn"], bs = ids.map(id => document.getElementById(id));
+  if (!box || !cut || !del || bs.some(b => !b || !b.parentNode) || typeof box.appendChild !== "function" || !cut.parentNode || typeof cut.parentNode.insertBefore !== "function") return; // the vm harness's stub elements can't move
+  if (out) { if (bs[0].parentNode !== box) for (const b of bs) box.appendChild(b); }
+  else if (bs[0].parentNode === box) {
+    cut.parentNode.insertBefore(bs[0], cut); cut.parentNode.insertBefore(bs[1], cut);
+    del.parentNode.insertBefore(bs[2], del); del.parentNode.insertBefore(bs[3], del);
+  }
+}
 export function updateEditBtnVisImpl() { // the edit ROW exists only on songs made in the app
   // (or local .mid loads) — never on the FF captures (Josh, 2026-08-15)
   if (typeof updateChipBtn === "function") updateChipBtn(); // chip-audio offer follows the song
@@ -1115,6 +1130,7 @@ export function updateEditBtnVisImpl() { // the edit ROW exists only on songs ma
   S.editOn = editable;
   document.getElementById("editrow").classList.toggle("on", editable);
   placeLassoBtn(editable);
+  placeClipBtns(lockedAnnoSong());
   if (editable) document.getElementById("velseg").style.display =
     (S.mode === "pencil" || S.mode === "select") ? "" : "none";
   document.getElementById("recbtn").style.display = editable ? "" : "none";

@@ -1450,6 +1450,69 @@ test("copy/paste carries the annotations under the selection: bands re-anchor, l
   run(`localStorage.removeItem("ff1roll-tombs-" + songKey); songKey = null; multiSel = []; multiSelKey = new Set(); editUndo = []; editRedo = []; noteClipboard = null; annoClipboard = []; lassoAnno = null; rollnotes = []; trackState = [];`);
 });
 
+test("locked-notes song (Terminal #235): lasso → Copy → Paste carries the annotations only; notes untouched; one undo; read-only refuses; Ask edit_notes copy too", () => {
+  installSong();
+  run(`
+    songKey = "albums/nes/final-fantasy-i/songs/zz-anno-copy-locked.mid"; localStorage.removeItem("ff1roll-draft-" + songKey);
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [{name: "pulse1", notes: [{t: 1920, d: 480, p: 64, v: 80}, {t: 2400, d: 480, p: 67, v: 80}, {t: 2880, d: 960, p: 71, v: 80}]}]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; noteClipboard = null; annoClipboard = [];
+    trackState = [{muted: false, solo: false}]; rollnotesReadOnly = false;
+    rollnotes = parseRollnotes(JSON.stringify({version: 1, notes: [
+      {at: [2, 1], to: [2, 4], type: "section", label: "A"},
+      {at: [2, 1], to: [2, 4], type: "chord", chord: "Em"},
+      {at: [3, 1], to: [3, 4], type: "chord", chord: "C"},
+      {at: [6, 1], to: [6, 4], type: "chord", chord: "G"}]})).map(resolveNote);
+    finalizeNotes();
+    multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}, {ti: 0, ni: 2}]; multiSelKey = new Set(["0:0", "0:1", "0:2"]); selNote = null;
+    lassoAnno = {t0: 1920, t1: 7680, y0: 0, y1: 400}; /* the box reached the ruler over bars 2–3 */
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture's notes are locked");
+  assert.equal(val(`lockedAnnoSong()`), true);
+  const notesBefore = val(`JSON.stringify(song.tracks[0].notes)`);
+  assert.equal(run(`copySelection()`), 3, "annotations only — the lassoed notes don't ride on a locked song");
+  assert.equal(val(`noteClipboard.length`), 0);
+  assert.deepEqual(val(`annoClipboard.map(a => [a.dt, a.json.type])`), [[0, "section"], [0, "chord"], [1920, "chord"]]);
+  run(`updateEditButtons()`);
+  assert.equal(val(`document.getElementById("pastebtn").disabled`), false, "Paste enabled once annotations are copied");
+  const nBefore = val(`rollnotes.length`);
+  assert.equal(run(`pasteClipboard(3840 * 2)`), 3); // bar 5, as the 📋 button does at the cursor
+  assert.deepEqual(val(`rollnotes.filter(n => n.added).map(n => [n.b1, n.q1, n.b2, n.q2, n.text])`),
+    [[5, 1, 5, 4, "A"], [5, 1, 5, 4, "Em"], [6, 1, 6, 4, "C"]]);
+  assert.equal(val(`rollnotes.some(n => n.chord && n.text === "G")`), false, "bar 6's G is replaced, never doubled");
+  assert.equal(val(`rollnotes.length`), nBefore + 2);
+  assert.equal(val(`JSON.stringify(song.tracks[0].notes)`), notesBefore, "notes untouched");
+  assert.equal(val(`playCursor`), 3840 * 3, "cursor at the pasted span's end");
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop()`);
+  assert.equal(val(`rollnotes.length`), nBefore);
+  assert.equal(val(`rollnotes.some(n => n.chord && n.text === "G")`), true, "undo restores what was there");
+  assert.equal(val(`JSON.stringify(song.tracks[0].notes)`), notesBefore);
+  // a clipboard that also holds notes (copied on an editable song): annotations land, notes stay behind, said out loud
+  run(`noteClipboard = [{dt: 0, p: 60, d: 480, v: 80, ti: 0}];`);
+  assert.equal(run(`pasteClipboard(3840 * 2)`), 3);
+  assert.equal(val(`JSON.stringify(song.tracks[0].notes)`), notesBefore, "no note pasted onto a locked song");
+  assert.match(val(`document.getElementById("noteinfo").textContent`), /notes are locked, so the 1 copied note stayed behind/);
+  run(`editUndoPop(); noteClipboard = null;`);
+  // S.rollnotesReadOnly (a newer app's file) still refuses
+  run(`rollnotesReadOnly = true; rollnotesLockReason = ROLLNOTES_LOCK_MSG;`);
+  assert.equal(run(`pasteClipboard(3840 * 2)`), 0);
+  assert.equal(val(`rollnotes.length`), nBefore);
+  assert.equal(val(`editUndo.length`), 0);
+  run(`rollnotesReadOnly = false; rollnotesLockReason = null;`);
+  // Ask's edit_notes copy: the annotations spanning the bars, tracks optional, notes never
+  run(`songEndTick = 1920 * 8;`); // a capture's length: bars 2–3 exist
+  const r = run(`askEditNotes({op: "copy", from_bar: 2, to_bar: 3, at_bar: 5}).note`);
+  assert.match(r, /copied 3 annotations from bars 2–3 to 5\.1/);
+  assert.deepEqual(val(`rollnotes.filter(n => n.added).map(n => [n.b1, n.text])`), [[5, "A"], [5, "Em"], [6, "C"]]);
+  assert.equal(val(`JSON.stringify(song.tracks[0].notes)`), notesBefore);
+  assert.equal(val(`annoClipboard.length`), 3, "the user's clipboard survives Ask's copy");
+  run(`editUndoPop()`);
+  assert.equal(val(`rollnotes.length`), nBefore);
+  assert.throws(() => run(`askEditNotes({op: "delete", from_bar: 2, to_bar: 3, tracks: "pulse1"})`), /locked here/, "every other op still refuses");
+  run(`songKey = null; multiSel = []; multiSelKey = new Set(); editUndo = []; editRedo = []; noteClipboard = null; annoClipboard = []; lassoAnno = null; rollnotes = []; trackState = [];`);
+});
+
 test("Paste to…: the clipboard lands on a chosen track, shifted, same rhythm", () => {
   installSong();
   run(`
@@ -2986,6 +3049,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mute the noise channel", // act: set_track/add_track/delete_track/keep_that/album (docs/ai-parity.md §5 batch 7)
     "Turn the debug log on", // act: song_file/set_pref (docs/ai-parity.md §5 batch 8)
     "? Open questions", // a song note's kind (Josh, Terminal #225/#226)
+    "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6996,9 +7060,13 @@ test("edit_notes batch 6: a leftover lasso box never makes Ask's selection take 
     localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
   `);
   assert.equal(val(`editableSong()`), false);
-  for (const op of ["transpose", "move", "copy", "to_track"]) assert.throws(() => run(`askEditNotes({op: ${JSON.stringify(op)}, from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 1, beats: 1, at_bar: 9, to_track: "pulse2"})`), /locked here \(a capture or starter\) — ✎ Edit/, op);
+  for (const op of ["transpose", "move", "to_track"]) assert.throws(() => run(`askEditNotes({op: ${JSON.stringify(op)}, from_bar: 3, to_bar: 3, tracks: "pulse1", semitones: 1, beats: 1, at_bar: 9, to_track: "pulse2"})`), /locked here \(a capture or starter\) — ✎ Edit/, op);
   assert.deepEqual(askMoveSnap(), before);
   assert.equal(val(`editUndo.length`), 0);
+  // copy (Terminal #235): on locked notes it copies the annotations only — the notes never change
+  assert.match(run(`askEditNotes({op: "copy", from_bar: 3, to_bar: 3, tracks: "pulse1", at_bar: 9, to_track: "pulse2"}).note`), /notes are locked/);
+  assert.deepEqual(askMoveSnap(), before);
+  run(`while (editUndo.length) editUndoPop();`);
   run(`localStorage.removeItem(draftStoreKey(songKey)); lassoAnno = null;`);
   assert.match(val(`askActTool(false).function.description`), /\nedit_notes op from_bar to_bar\|section [^\n]* — bulk-edit[^\n]*transpose move copy to_track/, "the index line names the four ops (no help round needed to find them)");
 });

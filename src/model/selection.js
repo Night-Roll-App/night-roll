@@ -19,6 +19,7 @@ import { buildScoreModel } from "../hooks.js";
 import { draw } from "../hooks.js";
 import { prof } from "../state.js";
 import { editableSong } from "./song.js";
+import { lockedAnnoSong } from "./song.js";
 import { drumStep } from "../hooks.js";
 import { lassoedAnnos } from "../hooks.js";
 import { annoInLasso } from "../hooks.js";
@@ -213,11 +214,14 @@ export function resizeSelection(dTicks) { // same delta for every note — a cho
 // the bars the user named ARE the ruler reach a lasso box would need, so the
 // copyable annotations whose time overlaps that span ride instead of the
 // lane-precise box test; omitted (every UI caller) keeps the lasso rule.
+// On a song whose notes are locked (lockedAnnoSong) the copy is annotations
+// only, anchored at the first one (or the span's start) — the notes can't be
+// pasted back there, and anchoring at a lassoed note would shift the bands.
 export function copySelection(annoSpan) { // returns notes + annotations copied (0 = nothing to copy)
-  const items = selEditItems();
+  const items = editableSong() ? selEditItems() : [];
   const lassoed = lassoedAnnos(); // bands alone are a copy too (Josh, 2026-09-13: ⧉ was gray with only chords lasso'd)
-  if (!items.length && !lassoed.length) return 0;
-  const t0 = items.length ? Math.min(...items.map(({n}) => n.t)) : Math.min(...lassoed.map(n => n.start));
+  if (!items.length && !lassoed.length && !annoSpan) return 0;
+  const t0 = items.length ? Math.min(...items.map(({n}) => n.t)) : annoSpan ? annoSpan.t0 : Math.min(...lassoed.map(n => n.start));
   const tEnd = items.length ? Math.max(...items.map(({n}) => n.t + n.d)) : Infinity;
   S.noteClipboard = items.map(({ti, n}) => ({dt: n.t - t0, p: n.p, d: n.d, v: n.v || S.pencilVel, ti,
     ...(n.env ? {env: n.env.map(q => ({...q}))} : {}), ...(n.ve !== undefined ? {ve: n.ve} : {})})); // a volume shape moves and copies with its note
@@ -253,8 +257,33 @@ export function pasteAnnotations(t0, dP) { // re-anchored copies; chord labels t
     S.rollnotes.push(n);
   }
 }
+// Paste on a locked-notes song: the annotations alone, re-anchored at the
+// cursor, ONE anno undo step; the notes are never touched and the status line
+// says when copied notes stayed behind. Returns the annotations placed.
+export function pasteAnnotationsOnly(atTick, opts = {}) {
+  if (!lockedAnnoSong()) { setInfo("this song is read-only here — nothing pastes"); return 0; }
+  if (S.rollnotesReadOnly) { setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return 0; }
+  const skipped = S.noteClipboard ? S.noteClipboard.length : 0;
+  const notesMsg = skipped ? " — this song's notes are locked, so the " + skipped + " copied note" + (skipped === 1 ? "" : "s") + " stayed behind" : "";
+  if (!S.annoClipboard.length) { setInfo("nothing to paste here" + notesMsg + " (no annotations copied)"); return 0; }
+  const snap = moveSnapTicks();
+  const t0 = Math.max(0, Math.round(atTick / snap) * snap);
+  const annoBefore = annoSnapshot();
+  pasteAnnotations(t0, opts.dP || 0);
+  finalizeNotes();
+  saveLocalNotes();
+  pushUndo({kind: "anno", json: annoBefore});
+  const end = Math.max(...S.annoClipboard.map(a => t0 + a.dt + (a.len || 0)));
+  S.playCursor = Math.ceil(end / snap) * snap; // ⌘V again chains, as on an editable song
+  if (S.viewMode === "score") buildScoreModel();
+  draw();
+  const k = S.annoClipboard.length;
+  setInfo("pasted " + k + " annotation" + (k === 1 ? "" : "s") + notesMsg + " — cursor at their end, paste again to chain");
+  return k;
+}
 export function pasteClipboard(atTick, opts = {}) {
-  if (!editableSong() || !clipboardHas()) return 0;
+  if (!clipboardHas()) return 0;
+  if (!editableSong()) return pasteAnnotationsOnly(atTick, opts);
   const snap = moveSnapTicks(); // same grid as moves
   const t0 = Math.max(0, Math.round(atTick / snap) * snap);
   const dP = opts.dP || 0;
