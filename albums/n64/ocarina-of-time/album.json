@@ -70,6 +70,10 @@
      "lufs": -21.4,
      "peak": -6.9,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bolero-of-fire": {
@@ -81,6 +85,10 @@
      "lufs": -18.3,
      "peak": -3.8,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-battle": {
@@ -92,6 +100,10 @@
      "lufs": -17.2,
      "peak": 0.3,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-clear": {
@@ -103,6 +115,10 @@
      "lufs": -15,
      "peak": -2.1,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "chamber-of-sages": {
@@ -114,6 +130,10 @@
      "lufs": -19.7,
      "peak": -6.9,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "deku-tree": {
@@ -125,6 +145,10 @@
      "lufs": -21.1,
      "peak": -8.3,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "dinosaur-boss-battle": {
@@ -136,6 +160,10 @@
      "lufs": -15.8,
      "peak": 0.4,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "dodongo-s-cavern": {
@@ -147,6 +175,10 @@
      "lufs": -21.8,
      "peak": -6.7,
      "synth": -12.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "end-credits-a": {
@@ -158,6 +190,10 @@
      "lufs": -23.3,
      "peak": -9.1,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "end-credits-b": {
@@ -169,6 +205,10 @@
      "lufs": -18.4,
      "peak": -3.2,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "end-credits-c": {
@@ -180,6 +220,10 @@
      "lufs": -15.5,
      "peak": -0.3,
      "synth": -2.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "end-credits-d": {
@@ -191,6 +235,10 @@
      "lufs": -25.7,
      "peak": -15.2,
      "synth": -7.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "enter-ganondorf": {
@@ -202,6 +250,10 @@
      "lufs": -15.6,
      "peak": -3.7,
      "synth": -1.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "enter-zelda": {
@@ -213,6 +265,10 @@
      "lufs": -16.8,
      "peak": -4.7,
      "synth": -3.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "escape-from-ganon-s-castle": {
@@ -224,6 +280,10 @@
      "lufs": -16.5,
      "peak": -1.6,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "escape-from-lon-lon-ranch": {
@@ -235,6 +295,10 @@
      "lufs": -18,
      "peak": -6.1,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "fairy-flying": {
@@ -246,6 +310,10 @@
      "lufs": -23.9,
      "peak": -11.5,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "fire-temple": {
@@ -257,6 +325,10 @@
      "lufs": -18.2,
      "peak": -5.8,
      "synth": -12
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "forest-temple": {
@@ -268,6 +340,10 @@
      "lufs": -21.3,
      "peak": -7.7,
      "synth": -9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "game-over": {
@@ -279,6 +355,10 @@
      "lufs": -23,
      "peak": -10.5,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ganon-s-castle-bridge": {
@@ -290,6 +370,10 @@
      "lufs": -15.4,
      "peak": -2.9,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ganon-s-castle-underground": {
@@ -301,6 +385,10 @@
      "lufs": -23,
      "peak": -9.8,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ganondorf-battle": {
@@ -312,6 +400,10 @@
      "lufs": -17,
      "peak": -3.9,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ganondorf-s-theme": {
@@ -323,6 +415,10 @@
      "lufs": -21.3,
      "peak": -8.2,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "gerudo-valley": {
@@ -334,6 +430,10 @@
      "lufs": -19.8,
      "peak": -4.3,
      "synth": -3.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-fairy-ocarina": {
@@ -345,6 +445,10 @@
      "lufs": -12.9,
      "peak": -1.3,
      "synth": -1.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-heart-container": {
@@ -356,6 +460,10 @@
      "lufs": -18.3,
      "peak": -6.9,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "get-spiritual-stone": {
@@ -367,6 +475,10 @@
      "lufs": -16.3,
      "peak": -4.8,
      "synth": -2.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "goron-city": {
@@ -378,6 +490,10 @@
      "lufs": -24.8,
      "peak": -8.3,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "great-fairy-s-fountain": {
@@ -389,6 +505,10 @@
      "lufs": -29.5,
      "peak": -14.1,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "horse-race-goal": {
@@ -400,6 +520,10 @@
      "lufs": -14,
      "peak": -2.8,
      "synth": -2.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "horse-race": {
@@ -411,6 +535,10 @@
      "lufs": -17.7,
      "peak": -2.7,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "house": {
@@ -422,6 +550,10 @@
      "lufs": -23.8,
      "peak": -9.7,
      "synth": -9.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-castle-courtyard": {
@@ -433,17 +565,29 @@
      "lufs": -21.3,
      "peak": -5.3,
      "synth": -9.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-battle": {
     "n": 1,
     "secs": 600.0000000000523,
-    "track": 20
+    "track": 20,
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    }
    },
    "hyrule-field-main-theme": {
     "n": 1,
     "secs": 600.0000000000523,
-    "track": 19
+    "track": 19,
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    }
    },
    "hyrule-field-morning-theme": {
     "n": 1,
@@ -454,12 +598,20 @@
      "lufs": -25.3,
      "peak": -8.3,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-waiting": {
     "n": 1,
     "secs": 600.0000000000523,
-    "track": 21
+    "track": 21,
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
+    }
    },
    "hyrule-field": {
     "n": 1,
@@ -470,6 +622,10 @@
      "lufs": -22.1,
      "peak": -3.6,
      "synth": -7.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ice-cavern": {
@@ -481,6 +637,10 @@
      "lufs": -21.5,
      "peak": -8,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ingo-s-theme": {
@@ -492,6 +652,10 @@
      "lufs": -19.5,
      "peak": -5.4,
      "synth": -4.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "inside-ganon-s-castle": {
@@ -503,6 +667,10 @@
      "lufs": -22,
      "peak": -8,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "inside-jabu-jabu-s-belly": {
@@ -514,6 +682,10 @@
      "lufs": -23.1,
      "peak": -7.6,
      "synth": -10
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "inside-the-deku-tree": {
@@ -525,6 +697,10 @@
      "lufs": -21.7,
      "peak": -8.5,
      "synth": -14.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "item-catch": {
@@ -536,6 +712,10 @@
      "lufs": -16.9,
      "peak": -4.9,
      "synth": -3.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kaepora-gaebora-s-theme": {
@@ -547,6 +727,10 @@
      "lufs": -23.1,
      "peak": -7.4,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kakariko-village-orchestral-version": {
@@ -558,6 +742,10 @@
      "lufs": -26.7,
      "peak": -15,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kakariko-village": {
@@ -569,6 +757,10 @@
      "lufs": -25.6,
      "peak": -12.1,
      "synth": -8.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kokiri-forest": {
@@ -580,6 +772,10 @@
      "lufs": -21.9,
      "peak": -6.4,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kotake-koume-s-theme": {
@@ -591,6 +787,10 @@
      "lufs": -19.2,
      "peak": -7.4,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "last-battle": {
@@ -602,6 +802,10 @@
      "lufs": -14.7,
      "peak": 0.1,
      "synth": -0.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "legend-of-hyrule": {
@@ -613,6 +817,10 @@
      "lufs": -18.6,
      "peak": -2.7,
      "synth": -4.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "lon-lon-ranch": {
@@ -624,6 +832,10 @@
      "lufs": -27.7,
      "peak": -13.9,
      "synth": -4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "lost-woods": {
@@ -635,6 +847,10 @@
      "lufs": -17.3,
      "peak": -3.1,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "main-menu-fairy-s-fountain": {
@@ -646,6 +862,10 @@
      "lufs": -29.5,
      "peak": -14.1,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "market": {
@@ -657,6 +877,10 @@
      "lufs": -21.1,
      "peak": -7.8,
      "synth": -10.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "master-sword": {
@@ -668,6 +892,10 @@
      "lufs": -17.9,
      "peak": -5.8,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "medal-get-fanfare": {
@@ -679,6 +907,10 @@
      "lufs": -17.8,
      "peak": -3.8,
      "synth": -3.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "meet-zelda-again": {
@@ -690,6 +922,10 @@
      "lufs": -24.2,
      "peak": -10.9,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "middle-boss-battle": {
@@ -701,6 +937,10 @@
      "lufs": -17.1,
      "peak": -3.5,
      "synth": -4.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mini-game": {
@@ -712,6 +952,10 @@
      "lufs": -18.6,
      "peak": -6.1,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "minuet-of-forest": {
@@ -723,6 +967,10 @@
      "lufs": -19.6,
      "peak": -7.7,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "nocturne-of-shadow": {
@@ -734,6 +982,10 @@
      "lufs": -15.3,
      "peak": -2.3,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-epona-s-theme": {
@@ -745,6 +997,10 @@
      "lufs": -16.3,
      "peak": -8.7,
      "synth": -7.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-of-time-zelda-s-ocarina": {
@@ -756,6 +1012,10 @@
      "lufs": -23.9,
      "peak": -12.9,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-saria-s-song": {
@@ -767,6 +1027,10 @@
      "lufs": -16.5,
      "peak": -9.9,
      "synth": -10.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-song-of-storms": {
@@ -778,6 +1042,10 @@
      "lufs": -14.7,
      "peak": -8.1,
      "synth": -8.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-song-of-time": {
@@ -789,6 +1057,10 @@
      "lufs": -16.9,
      "peak": -8.1,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-sun-s-song": {
@@ -800,6 +1072,10 @@
      "lufs": -16.9,
      "peak": -6.2,
      "synth": -12
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ocarina-zelda-s-lullaby": {
@@ -811,6 +1087,10 @@
      "lufs": -16.4,
      "peak": -9.4,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "open-door-of-temple-of-time": {
@@ -822,6 +1102,10 @@
      "lufs": -17.4,
      "peak": -5.9,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "open-treasure-box": {
@@ -833,6 +1117,10 @@
      "lufs": -16.9,
      "peak": -2.5,
      "synth": -2.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "potion-shop": {
@@ -844,6 +1132,10 @@
      "lufs": -23.8,
      "peak": -8.1,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "prelude-of-light": {
@@ -855,6 +1147,10 @@
      "lufs": -21.6,
      "peak": -9,
      "synth": -7.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "requiem-of-spirit": {
@@ -866,6 +1162,10 @@
      "lufs": -16.2,
      "peak": -5.1,
      "synth": -2.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "seal-of-six-sages": {
@@ -877,6 +1177,10 @@
      "lufs": -17.6,
      "peak": -4.5,
      "synth": -3.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "serenade-of-water": {
@@ -888,6 +1192,10 @@
      "lufs": -15.5,
      "peak": -4.1,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "shadow-temple": {
@@ -899,6 +1207,10 @@
      "lufs": -19.3,
      "peak": -6,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "sheik-s-theme": {
@@ -910,6 +1222,10 @@
      "lufs": -25.5,
      "peak": -8.7,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "shooting-gallery": {
@@ -921,6 +1237,10 @@
      "lufs": -17.5,
      "peak": -6,
      "synth": -5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "shop": {
@@ -932,6 +1252,10 @@
      "lufs": -22,
      "peak": -4.5,
      "synth": -8.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "small-item-catch": {
@@ -943,6 +1267,10 @@
      "lufs": -19.1,
      "peak": -5.7,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "spirit-temple": {
@@ -954,6 +1282,10 @@
      "lufs": -18.2,
      "peak": -2.4,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "temple-of-time": {
@@ -965,6 +1297,10 @@
      "lufs": -25.9,
      "peak": -10.1,
      "synth": -10.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "title-theme": {
@@ -976,6 +1312,10 @@
      "lufs": -20.3,
      "peak": -6.4,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "water-temple": {
@@ -987,6 +1327,10 @@
      "lufs": -30.2,
      "peak": -14.1,
      "synth": -11.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "windmill-hut": {
@@ -998,6 +1342,10 @@
      "lufs": -18.2,
      "peak": -4.9,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "zelda-s-theme": {
@@ -1009,6 +1357,10 @@
      "lufs": -22.5,
      "peak": -10.9,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "zora-s-domain": {
@@ -1020,6 +1372,10 @@
      "lufs": -22.5,
      "peak": -7.3,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-10": {
@@ -1031,6 +1387,10 @@
      "lufs": -22.8,
      "peak": -7.6,
      "synth": -6.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-11": {
@@ -1042,6 +1402,10 @@
      "lufs": -19.6,
      "peak": -5.7,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-12": {
@@ -1053,6 +1417,10 @@
      "lufs": -21.5,
      "peak": -8.8,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-13": {
@@ -1064,6 +1432,10 @@
      "lufs": -21.7,
      "peak": -6.8,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-14": {
@@ -1075,6 +1447,10 @@
      "lufs": -20.1,
      "peak": -6.2,
      "synth": -8.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-15": {
@@ -1086,6 +1462,10 @@
      "lufs": -19.8,
      "peak": -6.8,
      "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-16": {
@@ -1097,6 +1477,10 @@
      "lufs": -19.9,
      "peak": -6.3,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-17": {
@@ -1108,6 +1492,10 @@
      "lufs": -19.6,
      "peak": -6.7,
      "synth": -5.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-18": {
@@ -1119,6 +1507,10 @@
      "lufs": -21.7,
      "peak": -9.4,
      "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-19": {
@@ -1130,6 +1522,10 @@
      "lufs": -21.6,
      "peak": -8.9,
      "synth": -4.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-2": {
@@ -1141,6 +1537,10 @@
      "lufs": -20.7,
      "peak": -6,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-20": {
@@ -1152,6 +1552,10 @@
      "lufs": -21.9,
      "peak": -8.1,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-21": {
@@ -1163,6 +1567,10 @@
      "lufs": -22.1,
      "peak": -10,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-3": {
@@ -1174,6 +1582,10 @@
      "lufs": -20.8,
      "peak": -6.7,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-4": {
@@ -1185,6 +1597,10 @@
      "lufs": -20,
      "peak": -6.6,
      "synth": -4.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-5": {
@@ -1196,6 +1612,10 @@
      "lufs": -23.2,
      "peak": -8.6,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-6": {
@@ -1207,6 +1627,10 @@
      "lufs": -21.3,
      "peak": -7.5,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-7": {
@@ -1218,6 +1642,10 @@
      "lufs": -21.6,
      "peak": -4.4,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-8": {
@@ -1229,6 +1657,10 @@
      "lufs": -22.8,
      "peak": -8,
      "synth": -6.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "hyrule-field-9": {
@@ -1240,6 +1672,10 @@
      "lufs": -20.9,
      "peak": -5.8,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    }
   },
