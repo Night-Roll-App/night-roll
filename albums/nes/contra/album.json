@@ -16,7 +16,13 @@
    "alien-s-lair-stage-8": {
     "n": 6,
     "secs": 34.298628,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -2.2,
+     "synth": -10.1
+    }
    },
    "base-boss": {
     "n": 8,
@@ -25,6 +31,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -2.4,
+     "synth": -9.6
     }
    },
    "bases-i-ii-stages-2-4": {
@@ -34,6 +46,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -2.5,
+     "synth": -10.9
     }
    },
    "ending": {
@@ -43,6 +61,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -2.8,
+     "synth": -10.9
     }
    },
    "energy-zone-stage-6": {
@@ -52,6 +76,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -2.3,
+     "synth": -10.5
     }
    },
    "game-over": {
@@ -61,6 +91,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -2.2,
+     "synth": -11.3
     }
    },
    "jungle-hangar-stages-1-7": {
@@ -70,6 +106,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.4,
+     "peak": -1.7,
+     "synth": -10.9
     }
    },
    "snowfield-stage-5": {
@@ -79,6 +121,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -2.2,
+     "synth": -10.4
     }
    },
    "title-screen": {
@@ -88,6 +136,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.4,
+     "peak": -6.5,
+     "synth": -10.1
     }
    },
    "victory": {
@@ -97,6 +151,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -1.2,
+     "synth": -10.5
     }
    },
    "waterfall-stage-3": {
@@ -106,6 +166,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.4,
+     "peak": -1.3,
+     "synth": -10.7
     }
    },
    "alien-s-lair-stage-8-recapture": {
@@ -115,6 +181,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -2.2,
+     "synth": -9.6
     }
    }
   }
