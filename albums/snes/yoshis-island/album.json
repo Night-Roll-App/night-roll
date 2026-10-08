@@ -36,6 +36,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -8.9,
+     "synth": -17.3
     }
    },
    "athletic-fuzzy-2": {
@@ -46,6 +52,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -7.5,
+     "synth": -16.9
     }
    },
    "athletic-fuzzy-3": {
@@ -56,6 +68,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -8.8,
+     "synth": -17.8
     }
    },
    "athletic": {
@@ -66,6 +84,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -7.7,
+     "synth": -17.7
     }
    },
    "big-boss-clear": {
@@ -76,6 +100,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -9.1,
+     "synth": -13.3
     }
    },
    "big-boss-no-intro": {
@@ -86,6 +116,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -6.3,
+     "synth": -14.2
     }
    },
    "big-boss": {
@@ -96,6 +132,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -6.3,
+     "synth": -14.4
     }
    },
    "bonus-fanfare": {
@@ -106,6 +148,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.6,
+     "peak": -8.2,
+     "synth": -6.3
     }
    },
    "bonus-game": {
@@ -116,6 +164,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -13.8,
+     "synth": -22.2
     }
    },
    "boss-intro": {
@@ -126,6 +180,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -6.7,
+     "synth": -13.6
     }
    },
    "bowser-clear": {
@@ -136,6 +196,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -2.9,
+     "synth": -7.8
     }
    },
    "bowser": {
@@ -146,6 +212,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": -4,
+     "synth": -9.8
     }
    },
    "castle-fortress": {
@@ -156,6 +228,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -8.7,
+     "synth": -15.2
     }
    },
    "ending-part-1": {
@@ -166,6 +244,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -7.4,
+     "synth": -14.5
     }
    },
    "ending-part-2": {
@@ -176,6 +260,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -10.1,
+     "synth": -18.7
     }
    },
    "extra-life": {
@@ -186,6 +276,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -11.6,
+     "synth": -11.4
     }
    },
    "flower-garden-fuzzy-1": {
@@ -196,6 +292,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -10.6,
+     "synth": -20.3
     }
    },
    "flower-garden-fuzzy-2": {
@@ -206,6 +308,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.8,
+     "peak": -12.4,
+     "synth": -19.8
     }
    },
    "flower-garden": {
@@ -216,6 +324,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -10,
+     "synth": -21.1
     }
    },
    "game-over": {
@@ -226,6 +340,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -7.4,
+     "synth": -14.2
     }
    },
    "game-start": {
@@ -236,6 +356,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.2,
+     "peak": -11.9,
+     "synth": -17.2
     }
    },
    "goal": {
@@ -246,6 +372,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -10.6,
+     "synth": -15.7
     }
    },
    "kamek-s-theme": {
@@ -256,6 +388,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -6.9,
+     "synth": -16.6
     }
    },
    "luigi-is-rescued": {
@@ -266,6 +404,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -9,
+     "synth": -14.7
     }
    },
    "map-part-1": {
@@ -276,6 +420,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -11.3,
+     "synth": -18.6
     }
    },
    "map-part-2": {
@@ -286,6 +436,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -11.2,
+     "synth": -18.2
     }
    },
    "map-part-3": {
@@ -296,6 +452,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -11.9,
+     "synth": -18.7
     }
    },
    "map-part-4": {
@@ -306,6 +468,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.2,
+     "peak": -12.8,
+     "synth": -19.8
     }
    },
    "map-part-5": {
@@ -316,6 +484,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -11,
+     "synth": -17.4
     }
    },
    "map-part-6": {
@@ -326,6 +500,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -10.3,
+     "synth": -16.7
     }
    },
    "map-part-7": {
@@ -336,6 +516,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -11.5,
+     "synth": -17.2
     }
    },
    "mario-kidnapped": {
@@ -346,6 +532,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.4,
+     "peak": -14.8,
+     "synth": -14
     }
    },
    "mini-boss": {
@@ -356,6 +548,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -6.7,
+     "synth": -16.4
     }
    },
    "nintendo-mark": {
@@ -366,6 +564,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.8,
+     "peak": -12,
+     "synth": -16.4
     }
    },
    "overworld-fuzzy": {
@@ -376,6 +580,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -10.1,
+     "synth": -17.2
     }
    },
    "overworld": {
@@ -386,6 +596,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -8.7,
+     "synth": -17
     }
    },
    "player-down": {
@@ -396,6 +612,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -11.5,
+     "synth": -18.8
     }
    },
    "powerful-infant": {
@@ -406,6 +628,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -10.5,
+     "synth": -17.8
     }
    },
    "room-before-boss": {
@@ -416,6 +644,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -7.6,
+     "synth": -12.2
     }
    },
    "score": {
@@ -426,6 +660,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -7.5,
+     "synth": -13.5
     }
    },
    "story-music-box": {
@@ -436,6 +676,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.6,
+     "peak": -15.7,
+     "synth": -17.7
     }
    },
    "training-course": {
@@ -446,6 +692,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -30.1,
+     "peak": -13.9,
+     "synth": -17.3
     }
    },
    "transform": {
@@ -456,6 +708,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -6.6,
+     "synth": -7.5
     }
    },
    "underground": {
@@ -466,6 +724,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -8.1,
+     "synth": -17.4
     }
    },
    "world-complete": {
@@ -476,6 +740,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -6.9,
+     "synth": -5.9
     }
    },
    "yoshi-s-island-world-6": {
@@ -486,6 +756,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -4,
+     "synth": -12.8
     }
    },
    "yoshi-s-island": {
@@ -496,6 +772,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -4.1,
+     "synth": -12.6
     }
    },
    "yoshi-start-demo": {
@@ -506,6 +788,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29.8,
+     "peak": -14.9,
+     "synth": -20.3
     }
    }
   },
