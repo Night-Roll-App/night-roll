@@ -93,6 +93,9 @@ import { shapeRestore } from "../model/noteshape.js";
 import { setSelectionShape } from "../model/noteshape.js";
 import { SHAPE_ROOM_V } from "../model/noteshape.js";
 import { SHAPE_PRESETS } from "../model/noteshape.js";
+import { askUndoDescribe } from "../ask/actions.js";
+import { canvas } from "../render/roll.js";
+import { pxPerTick } from "../render/roll.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
@@ -613,7 +616,7 @@ export function invertEdit(u) { // the entry that would undo an applyU(u), captu
   })};
   if (u.kind === "addBatch") return {kind: "eraseBatch", items: u.items};
   if (u.kind === "eraseBatch") return {kind: "addBatch", items: u.items};
-  if (u.kind === "anno") return {kind: "anno", json: annoSnapshot()}; // current state, like mod
+  if (u.kind === "anno") return Object.assign({}, u, {json: annoSnapshot()}); // current state, like mod — its what/at label rides along
   return {ti: u.ti, ni: u.ni, kind: u.kind === "add" ? "erase" : "add"};
 }
 export function editRedoPop() {
@@ -621,12 +624,57 @@ export function editRedoPop() {
   if (!r || !S.song) return;
   S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
   applyEditEntry(r);
+  revealEdit(r, "redid");
 }
 export function editUndoPop() {
   const u = S.editUndo.pop();
   if (!u || !S.song) return;
   S.editRedo.push(invertEdit(u));
   applyEditEntry(u);
+  revealEdit(u, "undid");
+}
+// An annotation undo step names what it holds and where (Josh, Terminal #247:
+// undoing "a few times" must never silently take a text note he can't see).
+export function annoLabel(n) {
+  const bars = n.songnote ? "" : " · bar " + n.b1 + (n.b2 && n.b2 !== n.b1 ? "–" + n.b2 : "");
+  const word = n.songnote ? "song note \u201c" + n.songnote.title + "\u201d"
+    : n.chord ? "chord " + n.text : n.section ? "section " + n.text
+    : n.keydir !== undefined || n.keypartial || n.tsdir || n.tempodir !== undefined || n.chopdir || /^loop:/.test(n.text || "") ? n.text
+    : "note \u201c" + String(n.text || "").split("\n")[0].slice(0, 30) + "\u201d";
+  return word + bars;
+}
+export function annoUndoEntry(before, n, how) { // how: saved | edited | deleted | resized
+  const e = {kind: "anno", json: before};
+  if (!n) return e;
+  e.what = how === "deleted" ? "deleted " + annoLabel(n) : annoLabel(n) + " (" + how + ")";
+  if (!n.songnote && typeof n.start === "number") e.at = {a: n.start, b: typeof n.end === "number" && n.end > n.start ? n.end : n.start + beatTicks()};
+  return e;
+}
+// after an undo/redo: the status line says what changed, an off-screen
+// change scrolls into view, and an annotation's span flashes in the ruler
+export function revealEdit(e, verb) {
+  if (!e || !S.song) return;
+  setInfo(verb + ": " + askUndoDescribe(e, verb === "redid"));
+  let at = e.kind === "anno" ? e.at || null : null;
+  if (!at && e.kind !== "anno") {
+    const ticks = [], walk = v => {
+      if (!v) return;
+      if (v.kind === "group") { (v.entries || []).forEach(walk); return; }
+      for (const it of v.items || [v]) { const nn = S.song.tracks[it.ti] && S.song.tracks[it.ti].notes[it.ni]; if (nn) ticks.push(nn.t); }
+    };
+    walk(e);
+    if (ticks.length) at = {a: Math.min(...ticks), b: Math.max(...ticks)};
+  }
+  if (!at) return;
+  if (S.viewMode !== "score") {
+    const x = at.a * pxPerTick(), W = ((canvas && canvas.clientWidth) || 800) - (S.RULER_W || 0);
+    if (x < S.view.x || x > S.view.x + W) { S.view.x = Math.max(0, x - W * 0.3); S.followFree = true; clampView(); }
+  }
+  if (e.kind === "anno") {
+    S.annoFlash = {a: at.a, b: at.b, until: Date.now() + 1200};
+    setTimeout(() => { S.annoFlash = null; draw(); }, 1250);
+  }
+  draw();
 }
 export function applyEditEntry(u) {
   const setGone = (ti, ni, gone) => {
@@ -690,6 +738,38 @@ export function applyEditEntry(u) {
   draw();
 }
 
+// Save/Delete around their bodies: ONE undo step each, for every annotation
+// type (R10, docs/plans/2026-10-07-docked-annotation-window.md). A refused
+// Save (empty symbol, the re-bar warning's first tap) writes nothing — the
+// annotation it had already lifted out for replacement goes back.
+export function editorSaveRun(body) {
+  if (S.rollnotesReadOnly) { body(); return null; } // the body says why
+  const before = annoSnapshot(), retired = S.editingNote, idx = retired ? S.rollnotes.indexOf(retired) : -1;
+  const made = body();
+  if (!made) {
+    if (retired && idx >= 0 && !S.rollnotes.includes(retired)) { S.rollnotes.splice(Math.min(idx, S.rollnotes.length), 0, retired); pruneTombstones(); finalizeNotes(); saveLocalNotes(); }
+    return null;
+  }
+  pushUndo(annoUndoEntry(before, made.start === undefined && !made.songnote ? resolveNote(made) : made, retired ? "edited" : "saved"));
+  S.editingNote = null;
+  S.rangeSel = null;
+  editor.classList.remove("on");
+  updateEditButtons();
+  draw();
+  return made;
+}
+export function editorDeleteRun(body) {
+  if (S.rollnotesReadOnly) { body(); return null; }
+  const before = annoSnapshot();
+  const gone = body();
+  if (!gone) return null;
+  pushUndo(annoUndoEntry(before, gone, "deleted"));
+  S.editingNote = null;
+  editor.classList.remove("on");
+  updateEditButtons();
+  draw();
+  return gone;
+}
 export function initNoteEditor1() {
   renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
   document.getElementById("octbtn").addEventListener("click", () => {
@@ -850,7 +930,9 @@ export function initNoteEditor4() {
       document.getElementById("nsave").click();
     }
   });
-  document.getElementById("nsave").addEventListener("click", () => {
+  // the body returns the annotation it wrote (falsy = refused, nothing
+  // written); editorSaveRun around it owns undo, close/stay and the readout
+  const nsaveBody = () => {
     // P4 (docs/annotations-v2.md): closes P3's known gap — every manual
     // annotation edit refuses on a locked (newer-than-this-app) song, same
     // message as the Ask tool's add/edit_annotation, instead of landing
@@ -861,15 +943,11 @@ export function initNoteEditor4() {
     const text = document.getElementById("ntext").value.trim();
     if (type === "note" && !text) { document.getElementById("nstatus").textContent = "Note text is empty."; return; }
     if (type === "song") { // no bar, no span: the title is its identity (putSongNote refuses a title another song note has)
-      const before = annoSnapshot();
-      try { putSongNote(S.editingNote, {title: document.getElementById("nsongtitle").value, text, kind: editorSongKind()}); }
+      let made;
+      try { made = putSongNote(S.editingNote, {title: document.getElementById("nsongtitle").value, text, kind: editorSongKind()}); }
       catch (err) { document.getElementById("nstatus").textContent = err && err.message ? err.message : String(err); return; }
-      pushUndo({kind: "anno", json: before});
-      S.editingNote = null;
       finalizeNotes();
-      editor.classList.remove("on");
-      draw();
-      return;
+      return made;
     }
     const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
     const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
@@ -962,18 +1040,18 @@ export function initNoteEditor4() {
       fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null, text, added: true};
     }
     dropSupersededBy(fresh);
-    S.rollnotes.push(resolveNote(fresh));
-    S.rangeSel = null;
+    const made = resolveNote(fresh);
+    S.rollnotes.push(made);
     finalizeNotes();
     saveLocalNotes();
     buildScoreModel(); // annotations can change signatures/spelling
     clampView();
     S.lastSubtitle = undefined;
     updateSubtitle();
-    editor.classList.remove("on");
-    draw();
-  });
-  document.getElementById("ndelete").addEventListener("click", () => {
+    return made;
+  };
+  document.getElementById("nsave").addEventListener("click", () => editorSaveRun(nsaveBody));
+  const ndeleteBody = () => { // returns the annotation it removed; falsy = refused or waiting for the confirming second tap
     // P4 (docs/annotations-v2.md): closes P3's known gap — see #nsave's own guard
     if (S.rollnotesReadOnly) { document.getElementById("nstatus").textContent = S.rollnotesLockReason || ROLLNOTES_LOCK_MSG; return; }
     // deleting the meter directive re-bars back to neutral 4/4 — same two-tap
@@ -1005,6 +1083,7 @@ export function initNoteEditor4() {
       S.rebarArmed = false;
       shiftAnchors(S.chopS);
     }
+    const gone = S.editingNote;
     tombstone(S.editingNote); // synced notes need the deletion to survive a reload
     S.rollnotes = S.rollnotes.filter(n => n !== S.editingNote);
     finalizeNotes();
@@ -1013,9 +1092,9 @@ export function initNoteEditor4() {
     clampView();
     S.lastSubtitle = undefined;
     updateSubtitle();
-    editor.classList.remove("on");
-    draw();
-  });
+    return gone;
+  };
+  document.getElementById("ndelete").addEventListener("click", () => editorDeleteRun(ndeleteBody));
 }
 
 export function initNoteEditor5() {

@@ -2997,6 +2997,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Every undo and redo says what it took back",
     "Ruler highlight",
     "Chip / MIDI switch",
     "speedometer icon",
@@ -15106,4 +15107,58 @@ test("View › Display \"Ruler highlight\" (Josh #243): on by default a band tap
   assert.equal(val(`askSetPref({name: "ruler_highlight", value: true}).ok`), true);
   assert.equal(run(`showRulerHl()`), true);
   run(`try { localStorage.removeItem("ff1roll-ruler-hl"); } catch (e) {} showRulerHl.v = undefined;`);
+});
+
+test("annotation window: Save and Delete are ONE undo step each for every type, and every annotation undo/redo says what it changed and flashes where (plan R10; Josh, Terminal #247)", () => {
+  installSong();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym"]) document.getElementById(id).focus = () => {}; isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 8); rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; document.getElementById("noteeditor").classList.remove("docked");`);
+  const bt = val(`barTicks()`);
+  run(`globalThis.__keepSetInfo = setInfo; globalThis.__info = ""; setInfo = m => { __info = m; };`); // an earlier test leaves setInfo stubbed — read what it was handed
+  const info = () => val(`__info`);
+  const save = () => run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  // a new chord from a ruler span
+  run(`rangeSel = {a: ${bt}, b: ${3 * bt}, cycle: true}; openEditor(null, "chord"); setChordWidget("G7");`);
+  save();
+  assert.equal(val(`rollnotes.filter(n => n.chord).length`), 1);
+  assert.equal(val(`editUndo.length`), 1, "one step");
+  run(`view.x = 99999; editUndoPop();`);
+  assert.equal(val(`rollnotes.filter(n => n.chord).length`), 0, "undo takes the chord back out");
+  assert.match(info(), /^undid: chord G7 · bar 2–3 \(saved\)$/);
+  assert.ok(val(`!!annoFlash && annoFlash.a === ${bt} && annoFlash.b === ${3 * bt}`), "its span flashes in the ruler");
+  assert.ok(val(`view.x < 99999`), "an off-screen change scrolls into view");
+  run(`editRedoPop();`);
+  assert.equal(val(`rollnotes.filter(n => n.chord).length`), 1);
+  assert.match(info(), /^redid: chord G7 · bar 2–3 \(saved\)$/);
+  // editing an existing section: one step, the old label comes back
+  run(`rollnotes = deriveNoteTypes([{b1: 5, q1: 1, b2: 6, q2: 4, text: "section: A", added: true}]).map(resolveNote); finalizeNotes(); editUndo = []; editRedo = [];`);
+  run(`openEditor(rollnotes.find(n => n.section)); document.getElementById("nsectlabel").value = "B";`);
+  save();
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.section).map(n => n.text)`), ["A"]);
+  assert.match(info(), /^undid: section B · bar 5–6 \(edited\)$/);
+  // a text note and a tempo undo too
+  run(`rollnotes = []; finalizeNotes(); editUndo = []; rangeSel = null; playCursor = 0; openEditor(null, "note"); document.getElementById("ntext").value = "the bass walks";`);
+  save();
+  run(`openEditor(null, "tempo"); document.getElementById("ntempo").value = "90";`);
+  save();
+  assert.equal(val(`editUndo.length`), 2, "a text note and a tempo: a step each");
+  // Delete: one step, named
+  run(`openEditor(rollnotes.find(n => n.text === "the bass walks")); document.getElementById("ndelete").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`rollnotes.some(n => n.text === "the bass walks")`), false);
+  assert.equal(val(`editUndo.length`), 3);
+  run(`editUndoPop();`);
+  assert.equal(val(`rollnotes.some(n => n.text === "the bass walks")`), true, "undo brings the deleted note back");
+  assert.match(info(), /^undid: deleted note “the bass walks” · bar 1$/);
+  // a refused Save writes nothing and loses nothing
+  run(`rollnotes = deriveNoteTypes([{b1: 2, q1: 1, b2: 2, q2: 4, text: "chord: C", added: true}]).map(resolveNote); finalizeNotes(); editUndo = [];`);
+  run(`openEditor(rollnotes.find(n => n.chord)); setChordWidget("");`);
+  save();
+  assert.match(val(`document.getElementById("nstatus").textContent`), /symbol is empty/);
+  assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => n.text)`), ["C"], "the chord it was editing is still there");
+  assert.equal(val(`editUndo.length`), 0, "no step for a refused Save");
+  // Ask's undo names it the same way
+  run(`setChordWidget("Dm"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.match(val(`askUndoDescribe(editUndo[editUndo.length - 1])`), /chord Dm · bar 2 \(edited\)/);
+  run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null; rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; annoFlash = null; setInfo = __keepSetInfo;`);
 });

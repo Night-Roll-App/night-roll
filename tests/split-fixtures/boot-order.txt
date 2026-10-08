@@ -182,8 +182,10 @@ nmic.addEventListener("click", () =>
 document.getElementById("notebtn").addEventListener("click", () => {
 document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
 document.getElementById("ntext").addEventListener("keydown", e => {
-document.getElementById("nsave").addEventListener("click", () => {
-document.getElementById("ndelete").addEventListener("click", () => {
+const nsaveBody = () => {
+document.getElementById("nsave").addEventListener("click", () => editorSaveRun(nsaveBody));
+const ndeleteBody = () => {
+document.getElementById("ndelete").addEventListener("click", () => editorDeleteRun(ndeleteBody));
 if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
 for (const id of ["gridab", "gridaq"]) document.getElementById(id).addEventListener("input", () => {
 document.getElementById("gridoff").addEventListener("click", () => { S.gridDiv = null; syncDurSeg(); draw(); openGridSheet(); });

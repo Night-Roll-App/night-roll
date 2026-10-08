@@ -446,6 +446,13 @@ export function drawRuler(W, H) {
   // in score view, band edges follow the ENGRAVED positions (scoreTickToX,
   // the playhead's own map) — linear time put "A part" a hair off its notes
   const tickX = t => S.viewMode === "score" && S.scoreModel ? scoreTickToX(t) : S.RULER_W + t * ppt - S.view.x;
+  if (S.annoFlash && Date.now() < S.annoFlash.until) { // an annotation undo/redo: show WHERE it changed (Josh, Terminal #247)
+    const fx = tickX(S.annoFlash.a), fe = Math.max(tickX(S.annoFlash.b), fx + 6);
+    ctx.fillStyle = css("--accent");
+    ctx.globalAlpha = 0.45;
+    ctx.fillRect(fx, 0, fe - fx, S.RULER_H);
+    ctx.globalAlpha = 1;
+  }
   // bands the lasso has taken (or is taking, mid-drag) get a gold outline —
   // the only sign that ⧉/✂ will carry them (Josh, 2026-09-13)
   let hl = S.lassoAnno;

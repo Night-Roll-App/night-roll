@@ -81,6 +81,7 @@ import { BASE_RULER_H } from "../render/roll.js";
 import { cycleSecDepth } from "../ui/chrome.js";
 import { LANE_H } from "../render/roll.js";
 import { openEditor } from "../ui/note-editor.js";
+import { annoUndoEntry } from "../ui/note-editor.js";
 import { isUndrawnAnno } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { openAnalyzeSheet } from "../ui/sheets.js";
@@ -726,7 +727,7 @@ export function endPointer(e) {
     // text — Josh, 2026-10-06, #489: chord C dragged out to bar 6 didn't stick)
     if (!S.drag.bandEdge.orig.added) tombstone(S.drag.bandEdge.orig);
     n.added = true; // edited spans must persist and sync
-    pushUndo({kind: "anno", json: S.drag.bandEdge.pre}); // edge drags undo like any edit now
+    pushUndo(annoUndoEntry(S.drag.bandEdge.pre, n, "resized")); // edge drags undo like any edit now, and say which band
     finalizeNotes();
     saveLocalNotes();
     setInfo((n.chord ? "chord " : "section ") + n.text + " · bar " + n.b1 + "–" + (n.b2 || n.b1));

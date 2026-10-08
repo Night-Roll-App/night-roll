@@ -68,6 +68,7 @@ export const S = {
   rollnotesOrigin: null,
   playCursor: 0,
   editingNote: null,
+  annoFlash: null, // {a, b, until}: the span an annotation undo/redo just changed, flashed in the ruler (revealEdit)
   rangeSel: null,
   tapBand: {n: null, t: 0},
   lassoMode: false,

@@ -408,7 +408,7 @@ export function askUndoDescribe(e, flipped) { // what an undo entry did, by coun
     else if (v.kind === "addBatch") c.added += (v.items || []).length;
     else if (v.kind === "eraseBatch") c.erased += (v.items || []).length;
     else if (v.kind === "mod") c.changed += (v.items || []).length;
-    else if (v.kind === "anno") other.push("the annotation layer");
+    else if (v.kind === "anno") other.push(v.what || "the annotation layer"); // editor Save/Delete and band-edge drags name theirs (annoUndoEntry)
     else if (v.kind === "trackRemove") other.push("a track removed");
     else if (v.kind === "trackInsert") other.push("a track added");
     else if (v.kind === "trackReorder") other.push("tracks reordered");
