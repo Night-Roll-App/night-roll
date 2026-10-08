@@ -22,6 +22,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.4,
+     "peak": -10.2,
+     "synth": -13.9
     }
    },
    "bad-boss-boogie": {
@@ -31,6 +37,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -7.4,
+     "synth": -14.6
     }
    },
    "bonus-lose": {
@@ -40,6 +52,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -10.4,
+     "synth": -13.3
     }
    },
    "bonus-room-blitz": {
@@ -49,6 +67,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.3,
+     "peak": -8.5,
+     "synth": -13.3
     }
    },
    "bonus-room-opened": {
@@ -58,6 +82,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -19.9,
+     "synth": -13.8
     }
    },
    "bonus-win": {
@@ -67,6 +97,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -11,
+     "synth": -11.1
     }
    },
    "candy-s-love-song": {
@@ -76,6 +112,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -7.2,
+     "synth": -12
     }
    },
    "cave-dweller-concert": {
@@ -85,6 +127,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -31.5,
+     "peak": -11.1,
+     "synth": -17.1
     }
    },
    "cranky-s-theme": {
@@ -94,6 +142,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -9.9,
+     "synth": -12.6
     }
    },
    "dk-island-swing": {
@@ -103,6 +157,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -9,
+     "synth": -15.2
     }
    },
    "extra-life-balloon": {
@@ -112,6 +172,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -30.5,
+     "peak": -22.3,
+     "synth": -17.1
     }
    },
    "fanfare": {
@@ -121,6 +187,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -8.1,
+     "synth": -11.3
     }
    },
    "fear-factory": {
@@ -130,6 +202,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -9.6,
+     "synth": -12.4
     }
    },
    "forest-frenzy": {
@@ -139,6 +217,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.8,
+     "peak": -13.7,
+     "synth": -15.5
     }
    },
    "funky-s-fugue": {
@@ -148,6 +232,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -9.7,
+     "synth": -16.2
     }
    },
    "gang-plank-galleon": {
@@ -157,6 +247,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -8.6,
+     "synth": -12.3
     }
    },
    "ice-cave-chant": {
@@ -166,6 +262,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29.9,
+     "peak": -13.4,
+     "synth": -16.6
     }
    },
    "k-rool-s-cacophony": {
@@ -175,6 +277,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -11.7,
+     "synth": -11.6
     }
    },
    "level-goal": {
@@ -184,6 +292,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -9.9,
+     "synth": -11.5
     }
    },
    "life-in-the-mines": {
@@ -193,6 +307,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -8.8,
+     "synth": -18.7
     }
    },
    "lost-life": {
@@ -202,6 +322,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -9.9,
+     "synth": -11.6
     }
    },
    "mine-cart-madness": {
@@ -211,6 +337,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.9,
+     "peak": -10.1,
+     "synth": -14.2
     }
    },
    "misty-menace": {
@@ -220,6 +352,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -39.4,
+     "peak": -19.6,
+     "synth": -25.9
     }
    },
    "northern-hemispheres": {
@@ -229,6 +367,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27,
+     "peak": -12.1,
+     "synth": -16.7
     }
    },
    "simian-segue": {
@@ -238,6 +382,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.8,
+     "peak": -11.8,
+     "synth": -12.1
     }
    },
    "the-credits-concerto": {
@@ -247,6 +397,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.5,
+     "peak": -10.3,
+     "synth": -16.9
     }
    },
    "theme": {
@@ -256,6 +412,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -7.9,
+     "synth": -12.8
     }
    },
    "treetop-rock": {
@@ -265,6 +427,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.1,
+     "peak": -13.8,
+     "synth": -18.8
     }
    },
    "voices-of-the-temple": {
@@ -274,6 +442,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -11.8,
+     "synth": -15.3
     }
    }
   },
