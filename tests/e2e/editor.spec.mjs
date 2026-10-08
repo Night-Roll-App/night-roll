@@ -245,6 +245,9 @@ test("dragging a section band's right edge moves its boundary and persists", asy
 });
 
 test("double-tap a band opens its annotation editor", async ({ page }) => {
+  // a console render still running on the main thread (CI webkit: no module
+  // workers) can hold the second tap past the 350 ms window — let it finish
+  await page.waitForFunction(() => { try { return !chip.rendering && !chip.resolving; } catch (e) { return true; } }, null, { timeout: 30000 });
   await page.evaluate(() => {
     rollnotes = deriveNoteTypes([
       { b1: 1, q1: 1, b2: 1, q2: 2, text: "section: A", added: true },
