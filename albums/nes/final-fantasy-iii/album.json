@@ -61,6 +61,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -9.1,
+     "synth": -8.3
     }
    },
    "applause-sound-effect": {
@@ -70,6 +76,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -5.4,
+     "synth": -7
     }
    },
    "bahamut-flies-about-sound-effect": {
@@ -79,6 +91,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -9.4,
+     "synth": -19.8
     }
    },
    "battle-1": {
@@ -88,6 +106,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -4.6,
+     "synth": -11.6
     }
    },
    "battle-2": {
@@ -97,6 +121,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -4.1,
+     "synth": -11.2
     }
    },
    "beneath-the-horizon-undersea-shrine": {
@@ -106,12 +136,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -7.9,
+     "synth": -10.8
     }
    },
    "big-chocobo-fat-chocobo-discovered": {
     "n": 26,
     "secs": 15.616042,
-    "track": 19
+    "track": 19,
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -7.9,
+     "synth": -10.7
+    }
    },
    "boo-sound-effect": {
     "n": 63,
@@ -120,6 +162,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -10.3,
+     "synth": -29
     }
    },
    "castle-of-hain": {
@@ -129,12 +177,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -7.4,
+     "synth": -10.2
     }
    },
    "chocobo-forest": {
     "n": 46,
     "secs": 3.199872,
-    "track": 59
+    "track": 59,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -11.3,
+     "synth": -12.8
+    }
    },
    "chocobos-chocobo-theme": {
     "n": 9,
@@ -143,12 +203,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -7.3,
+     "synth": -12
     }
    },
    "crystal-cave-into-the-crystal-cave": {
     "n": 3,
     "secs": 47.99808,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -7.6,
+     "synth": -9.1
+    }
    },
    "crystal-room": {
     "n": 65,
@@ -157,6 +229,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -12.6,
+     "synth": -13.8
     }
    },
    "cute-little-tozas-village-of-little-people-tozas": {
@@ -166,6 +244,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.3,
+     "peak": -7.5,
+     "synth": -10.1
     }
    },
    "dancer-s-dance": {
@@ -175,6 +259,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -8.1,
+     "synth": -11.5
     }
    },
    "danger-sound-effect": {
@@ -184,6 +274,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": -4.5,
+     "synth": -11.9
     }
    },
    "deep-under-the-water-submarine-nautilus": {
@@ -193,6 +289,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -9.2,
+     "synth": -9.3
     }
    },
    "elia-the-maiden-of-water": {
@@ -202,6 +304,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -9.7,
+     "synth": -8.6
     }
    },
    "eternal-wind": {
@@ -211,6 +319,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -9,
+     "synth": -13.3
     }
    },
    "fall-sound-effect": {
@@ -220,6 +334,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -11,
+     "synth": -21.2
     }
    },
    "fanfare-victory-fanfare": {
@@ -229,6 +349,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17,
+     "peak": -5.4,
+     "synth": -10.8
     }
    },
    "forbidden-land-forbidden-land-eureka": {
@@ -238,6 +364,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -7.9,
+     "synth": -11.5
     }
    },
    "garuda-defeat": {
@@ -247,6 +379,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -7.4,
+     "synth": -10.4
     }
    },
    "go-above-the-clouds-the-enterprise-flies-through-the-sky": {
@@ -256,12 +394,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -7.5,
+     "synth": -10.2
     }
    },
    "good-morning-une-s-morning-exercise": {
     "n": 28,
     "secs": 17.465968,
-    "track": 48
+    "track": 48,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -7,
+     "synth": -9.5
+    }
    },
    "good-ol-fellows-four-old-men-s-theme": {
     "n": 10,
@@ -270,6 +420,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.9,
+     "peak": -8.1,
+     "synth": -11.6
     }
    },
    "hazardous-short-music-1": {
@@ -279,6 +435,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -7.3,
+     "synth": -8.7
     }
    },
    "hazardous-short-music-2": {
@@ -288,12 +450,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -7.5,
+     "synth": -9.6
     }
    },
    "hazardous-short-music-3": {
     "n": 15,
     "secs": 5.33312,
-    "track": 25
+    "track": 25,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -8,
+     "synth": -9.7
+    }
    },
    "in-the-covert-town-hidden-village-of-falgabard": {
     "n": 19,
@@ -302,6 +476,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -8.3,
+     "synth": -11.3
     }
    },
    "item-get": {
@@ -311,6 +491,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -7.1,
+     "synth": -9
     }
    },
    "jinn-the-fire-jinn-s-curse": {
@@ -320,6 +506,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -9,
+     "synth": -11.8
     }
    },
    "let-me-know-the-truth-house-of-doga-and-une": {
@@ -329,17 +521,35 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -7.8,
+     "synth": -9.4
     }
    },
    "let-s-play-the-piano-again-piano-practice-2": {
     "n": 47,
     "secs": 4.849806,
-    "track": 33
+    "track": 33,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -9.7,
+     "synth": -17.8
+    }
    },
    "let-s-play-the-piano-piano-practice-1": {
     "n": 53,
     "secs": 9.49962,
-    "track": 32
+    "track": 32,
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -15.5,
+     "synth": -19.7
+    }
    },
    "living-forest": {
     "n": 14,
@@ -348,6 +558,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -10.1,
+     "synth": -8.5
     }
    },
    "lute-of-noah": {
@@ -357,6 +573,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -12.6,
+     "synth": -14.4
     }
    },
    "my-home-town-hometown-of-ur": {
@@ -366,6 +588,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -9.3,
+     "synth": -8.8
     }
    },
    "opening-theme": {
@@ -375,12 +603,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -7.4,
+     "synth": -9.2
     }
    },
    "parting-with-a-companion": {
     "n": 54,
     "secs": 6.733064,
-    "track": 37
+    "track": 37,
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -7.9,
+     "synth": -8.4
+    }
    },
    "resting-at-the-inn": {
     "n": 1,
@@ -389,12 +629,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": -9,
+     "synth": -9.7
     }
    },
    "return-of-the-warrior": {
     "n": 6,
     "secs": 27.548898,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -7,
+     "synth": -9.8
+    }
    },
    "sailing-enterprise-the-enterprise-goes-out-to-the-sea": {
     "n": 35,
@@ -403,6 +655,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -7.9,
+     "synth": -9.6
     }
    },
    "salonia-megalopolis-of-salonia": {
@@ -412,6 +670,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -8.1,
+     "synth": -9.5
     }
    },
    "shattering-sound-effect": {
@@ -421,6 +685,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -7.8,
+     "synth": -10
     }
    },
    "shrine-of-nept": {
@@ -430,12 +700,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -6.9,
+     "synth": -9.2
     }
    },
    "swift-twist": {
     "n": 27,
     "secs": 15.766036,
-    "track": 34
+    "track": 34,
+    "loud": {
+     "v": 1,
+     "lufs": -17.3,
+     "peak": -8.1,
+     "synth": -9.8
+    }
    },
    "the-boundless-ocean": {
     "n": 58,
@@ -444,6 +726,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -8.8,
+     "synth": -8.8
     }
    },
    "the-crystal-tower": {
@@ -453,6 +741,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -7.9,
+     "synth": -9.8
     }
    },
    "the-dark-crystals": {
@@ -462,6 +756,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -8,
+     "synth": -9.3
     }
    },
    "the-dungeon-dungeon": {
@@ -471,6 +771,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -7.1,
+     "synth": -11.3
     }
    },
    "the-everlasting-world-ending-theme-1": {
@@ -480,6 +786,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -11.9,
+     "synth": -18.5
     }
    },
    "the-everlasting-world-ending-theme-2": {
@@ -489,6 +801,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -7.4,
+     "synth": -11.1
     }
    },
    "the-everlasting-world-ending-theme-3": {
@@ -498,6 +816,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": -5.1,
+     "synth": -10.3
     }
    },
    "the-invincible-giant-battleship-invincible": {
@@ -507,6 +831,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -7.3,
+     "synth": -10.6
     }
    },
    "the-prelude-prelude": {
@@ -516,6 +846,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -13,
+     "synth": -10.6
     }
    },
    "the-requiem-requiem": {
@@ -525,6 +861,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -7.9,
+     "synth": -8.7
     }
    },
    "the-way-to-the-top-the-road-to-the-mountain-top": {
@@ -534,6 +876,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -7.9,
+     "synth": -13.7
     }
    },
    "this-is-the-last-battle-last-battle-1": {
@@ -543,6 +891,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -9.4,
+     "synth": -8.9
     }
    },
    "this-is-the-last-battle-last-battle-2": {
@@ -552,6 +906,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -10.7,
+     "synth": -9.1
     }
    },
    "this-is-the-last-battle-last-battle-3": {
@@ -561,6 +921,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -5,
+     "synth": -10.7
     }
    },
    "time-remains-village-of-the-ancients": {
@@ -570,6 +936,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -7.7,
+     "synth": -8.6
     }
    },
    "tower-of-owen": {
@@ -579,6 +951,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -8.3,
+     "synth": -9.7
     }
    },
    "town-of-water-town-of-alm": {
@@ -588,12 +966,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": -9,
+     "synth": -9
     }
    },
    "vegies-of-geasal-geasal-s-vegetables": {
     "n": 18,
     "secs": 17.449302,
-    "track": 21
+    "track": 21,
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -7.3,
+     "synth": -10.7
+    }
    }
   }
  }
