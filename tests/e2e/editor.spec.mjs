@@ -256,9 +256,14 @@ test("double-tap a band opens its annotation editor", async ({ page }) => {
     return { x: r.left + RULER_W + (rollnotes[0].start + rollnotes[0].end) / 2 / song.ppq * view.pxq - view.x,
              y: r.top + BASE_RULER_H + LANE_H / 2 };
   });
+  // one tap alone opens nothing (wait past the double-tap window before the next part)
   await page.mouse.click(mid.x, mid.y);
   expect(await page.evaluate(() => document.getElementById("noteeditor").classList.contains("on"))).toBe(false);
-  await page.mouse.click(mid.x, mid.y); // second tap within the window
+  await page.waitForTimeout(500);
+  // two taps back to back — no round trip between them: a slow CI runner's
+  // evaluate() between the taps outlasted the window and the pair never counted
+  await page.mouse.click(mid.x, mid.y);
+  await page.mouse.click(mid.x, mid.y);
   expect(await page.evaluate(() => document.getElementById("noteeditor").classList.contains("on"))).toBe(true);
 });
 
