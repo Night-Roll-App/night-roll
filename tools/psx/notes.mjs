@@ -334,6 +334,7 @@ export function makeMidi(result, {offsets} = {}) {
     return recs.get(n.program);
   };
   const akao = !!(result.source && result.source.kind === "akao");
+  const ps2 = !akao && result.ps2 && (result.ps2.kind === "sq" || result.ps2.kind === "bgm") ? result.ps2 : null;
   const veOf = n => {
     const t0 = T(n.tick), d = Math.max(1, T(n.endTick) - t0), v = Math.max(1, Math.min(127, n.vel));
     if (n.drum) return undefined;
@@ -375,6 +376,7 @@ export function makeMidi(result, {offsets} = {}) {
   // what it is
   const emit = (name, evs, ch, offset) => {
     if (akao) return emitAkao(name, evs, ch, offset);
+    if (ps2) return emitPs2(name, evs, ch, offset);
     const out = [], cc = [];
     if (offset) cc.push(offsetMetaEvent(offset));
     // the track's pan as CC10: the first note's at tick 0, then one at every note whose pan differs from the last written
@@ -481,7 +483,129 @@ export function makeMidi(result, {offsets} = {}) {
     for (const q of out) if (q.bend) q.bend = q.bend.map(b => ({t: b.t, v: Math.max(-8192, Math.min(8191, Math.round(b.c / (semis * 100) * 8192)))}));
     tracks.push(trackBytes(name, out, ch, semis > 2 ? [...cc, ...bendRangeMetas(ch, semis)] : cc));
   };
+  // PS2 capture v2 (Sony SQ/HD/BD and Square's BGM/WD; a PS1 SEQ writes the
+  // bytes it always did) — the notes are v1's, and around them what the
+  // sequence and the driver do to the sounding voice (NIGHT-ROLL.md "PS2
+  // capture v2"):
+  //   bend   the channel's wheel, raw, at the driver's own range: SQ from the
+  //          split the note plays (modhsyn.irx: range × wheel ÷ 8192, in
+  //          128ths of a semitone, the down range below centre), BGM from
+  //          0x5D (ffxpatch.irx: wheel × range ÷ 32, in 256ths); measured
+  //          from each piece's own key, so a bend-born split piece (BGM's
+  //          ±2 roll pitch, as v1) continues its predecessor's path
+  //   lg     those split pieces: one note-on in the score, never re-keyed
+  //   CC7/11/64/1  the channel's own controller stream (the console's
+  //          default 127 at tick 0 where a channel sends any CC7/CC11)
+  //   CC10   v1's note-on pan plus each change while a note sounds
+  //   prog   the program each melodic note plays
+  //   CC91   the voice's wet (effect) send: SQ the sample's SPU mix bits ×
+  //          the ini's EVOL depth; BGM 0x60 on / 0x61 off
+  const streams = new Map();
+  if (ps2) {
+    const S_ = c => streams.get(c) || streams.set(c, {cc: new Map(), off: [], rev: [], pbRaw: []}).get(c);
+    const raw = new Map(), rng = new Map();
+    for (const e of seq.events) {
+      if (e.ch == null) continue;
+      if (e.type === "cc") { const m = S_(e.ch).cc; (m.get(e.ctl) || m.set(e.ctl, []).get(e.ctl)).push({tick: e.tick, v: e.value}); }
+      else if (e.type === "bend") S_(e.ch).pbRaw.push({tick: e.tick, v: e.value});
+      else if (e.type === "reverb") S_(e.ch).rev.push({tick: e.tick, v: e.on ? 127 : 0});
+      if (ps2.kind === "bgm" && (e.type === "bend" || e.type === "bendRange")) {
+        if (e.type === "bend") raw.set(e.ch, e.value); else rng.set(e.ch, e.value);
+        const r = rng.get(e.ch), v = raw.get(e.ch) || 0;
+        S_(e.ch).off.push({tick: e.tick, c: r === undefined ? (v ? null : 0) : ((v * r) >> 5) / 256 * 100});
+      }
+    }
+  }
+  const at = (list, tick, dflt) => { let v = dflt; for (const q of list) { if (q.tick > tick) break; v = q.v !== undefined ? q.v : q.c; } return v; };
+  const rv = ps2 && ps2.reverb || null;
+  const wetSend = rv && rv.mode && rv.depth ? Math.round(Math.min(1, Math.abs(rv.depth) / 0x7FFF) * 127) : 0;
+  const unknownRange = new Set();
+  let clamped = 0;
+  const emitPs2 = (name, evs, ch, offset) => {
+    const out = [], cc = [];
+    if (offset) cc.push(offsetMetaEvent(offset));
+    const src = evs[0].ch, st = streams.get(src) || {cc: new Map(), off: [], rev: [], pbRaw: []};
+    const pans = [];
+    let lastPan = null, prevEnd = null, prevWhole = null;
+    for (const n of splitSlides(evs)) {
+      const p = n.drum ? (n.gm || n.key) : n.pitch;
+      if (p < 0 || p > 127) continue;
+      const t = T(n.tick);
+      const d = Math.max(1, T(n.endTick) - t), v = Math.max(1, Math.min(127, n.vel));
+      const ve = veOf(n);
+      const o = ve !== undefined ? {t, d, p, v, ve} : {t, d, p, v};
+      const n0 = n.whole || n, off = n.off || 0;
+      if (!n.drum) {
+        // a bend-born piece after the first: the same note-on, never re-keyed
+        if (n.whole && n.tick > n0.tick && prevWhole === n0 && prevEnd === n.tick) o.lg = 1;
+        // the wheel in cents from this piece's own key: its value at the
+        // start, then each change while it sounds
+        let cents = null;
+        if (ps2.kind === "sq") {
+          const tone = result.vab ? tonesFor(result.vab, n0.program, n0.key)[0] : null;
+          if (tone && tone.bendLow != null) cents = q => Math.trunc((q.v >= 0 ? tone.bendHigh : tone.bendLow) * q.v / 8192) / 128 * 100;
+        } else cents = q => q.c;
+        const list = ps2.kind === "sq" ? st.pbRaw : st.off;
+        if (cents && list.length) {
+          const pts = [];
+          let unknown = false;
+          const add = (tick, q) => {
+            let c = q ? cents(q) : 0;
+            if (c === null) { unknown = true; return; }
+            c = Math.round(c - off * 100);
+            const qq = {t: T(tick) - t, c}, last = pts[pts.length - 1];
+            if (last && last.t === qq.t) last.c = c; else if (last ? last.c !== c : c !== 0) pts.push(qq);
+          };
+          let held = null;
+          for (const q of list) { if (q.tick > n.tick) break; held = q; }
+          add(n.tick, held);
+          for (const q of list) if (q.tick > n.tick && q.tick < n.endTick) add(q.tick, q);
+          if (unknown) unknownRange.add(src); // the whole note: a path with a hole in it would be a guess
+          else if (pts.length) o.bend = pts;
+        }
+        o.c0 = n0.cents || 0;
+        if (n0.program >= 0 && n0.program <= 127) o.prog = n0.program;
+        prevEnd = n.endTick; prevWhole = n0;
+      }
+      // the wet send
+      if (ps2.kind === "sq") {
+        const tone = result.vab ? tonesFor(result.vab, n0.program, n0.key)[0] : null;
+        if (tone && tone.spuAttr != null) o.rev = [{t: 0, v: tone.spuAttr & 0xC ? wetSend : 0}];
+      } else if (st.rev.length && st.rev[0].tick <= n.tick) {
+        o.rev = [{t: 0, v: at(st.rev, n.tick, 0)}];
+        for (const q of st.rev) if (q.tick > n.tick && q.tick < n.endTick) o.rev.push({t: T(q.tick) - t, v: q.v});
+      }
+      out.push(o);
+      const pan = notePan(n);
+      if (pan !== lastPan) { pans.push({t: lastPan === null ? 0 : t, o: -0.5, v: pan}); lastPan = pan; }
+    }
+    // pan while a note sounds (v1 wrote only note-on values)
+    const cc10 = st.cc.get(10) || [];
+    for (const q of cc10) if (evs.some(n => !n.drum && n.tick < q.tick && n.endTick > q.tick)) pans.push({t: T(q.tick), o: 1.25, v: q.v});
+    pans.sort((a, b) => a.t - b.t || a.o - b.o);
+    let pv = null;
+    for (const q of pans) if (q.v !== pv) { cc.push({t: q.t, o: q.o, d: [0xB0 | ch, 10, q.v]}); pv = q.v; }
+    // the channel's controllers over this track's span
+    const first = evs.reduce((m, n) => Math.min(m, n.tick), Infinity), last = evs.reduce((m, n) => Math.max(m, n.endTick), 0); // no spread: a track can outgrow the stack
+    for (const [c, dflt] of [[7, 127], [11, 127], [64, 0], [1, 0]]) {
+      const list = st.cc.get(c) || [];
+      if (!list.length) continue;
+      let cur = at(list, first, dflt);
+      cc.push({t: 0, o: -0.5, d: [0xB0 | ch, c, cur]});
+      for (const q of list) if (q.tick > first && q.tick < last && q.v !== cur) { cc.push({t: T(q.tick), o: 0.75, d: [0xB0 | ch, c, q.v]}); cur = q.v; }
+    }
+    chainBends(out);
+    let most = 0;
+    for (const q of out) for (const b of q.bend || []) most = Math.max(most, Math.abs(b.c));
+    const semis = most > 200 ? Math.min(24, Math.ceil(most / 100)) : 2;
+    if (most > 2400) clamped++;
+    for (const q of out) if (q.bend) q.bend = q.bend.map(b => ({t: b.t, v: Math.max(-8192, Math.min(8191, Math.round(b.c / (semis * 100) * 8192)))}));
+    tracks.push(trackBytes(name, out, ch, semis > 2 ? [...cc, ...bendRangeMetas(ch, semis)] : cc));
+  };
   for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch), !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0);
+  const warn = w => { const ws = seq.warnings || (seq.warnings = []); if (!ws.includes(w)) ws.push(w); };
+  if (unknownRange.size) warn(`channel(s) ${[...unknownRange].map(c => c + 1).join(", ")} bend before their first bend range (0x5D): the driver's default range is not known, so those bends are not written`);
+  if (clamped) warn(`${clamped} track(s) bend past ±24 semitones: their pitch bend is clipped at ±24 in the .mid`);
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
   for (const t of tracks) { bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length)); for (const b of t) bytes.push(b); } // no spread: a track can outgrow the stack

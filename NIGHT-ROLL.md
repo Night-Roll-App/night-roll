@@ -7842,6 +7842,85 @@ parseMidi + publish re-encode (links, bends, pan, programs, shapes, duty;
 notes identical to the capture with v2's fields removed), and Link's
 Awakening "Main Theme" when the rip is cached (`GB_RIPS=<dir>` or
 /tmp/recap/rips/game-boy; the guard checks the file).
+## PS2 capture v2 — the wheel at the driver's range, glide links, CC7/CC11, pan, programs, reverb (2026-10-07)
+
+docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.2 "PS2". What a PS2
+capture — Sony's SQ/HD/BD (Dark Cloud) and Square's BGM/WD (Final Fantasy X)
+— writes on top of v1. Notes (start, pitch, length, track order and names),
+tempo, meter and loop are v1's: capture-diff VELOCITY, never MOVED. Gated on
+`result.ps2` (set by tools/ps2/capture.mjs ps2Song) in tools/psx/notes.mjs
+makeMidi (`emitPs2`); a PS1 SEQ capture writes exactly the bytes it did.
+
+- **Ground truth: the drivers' own code** (no reference player; the IOP
+  modules ship inside each set's .psf2lib — scratch disassembly in
+  /tmp/ps2scratch, `dis.mjs`/`elf.mjs`):
+  - **Dark Cloud (modhsyn.irx).** The pitch-bend handler stores wheel − 0x2000
+    per channel; each voice's offset = (the split's bend range) × wheel ÷ 8192
+    (truncated), using the split block's u16 at +8 for a wheel above centre
+    and +6 below it. The offset is added to the note's fine pitch, which
+    libsd's sceSdNote2Pitch takes in **128ths of a semitone** (it divides by
+    128 into semitones). So the HD bytes 256 / 1536 / 307 / 128 are ±2 /
+    ±12 / ±2.4 / ±1 semitones. Over the 59 songs, the splits of programs
+    that bend read 256 (74 times), 307 (12) and 1536 (3).
+  - **Dark Cloud reverb.** sq.irx hands the ini's `-r` to libsd as the effect
+    mode and `-d` as EVOL L/R (every song: -r=3 -d=4096); modhsyn sets each
+    voice's mix switches from the sample's SPU attribute byte (+0x29: 1/2 dry
+    L/R → VMIXL/R, 4/8 wet L/R → VMIXEL/ER).
+  - **FFX (ffxpatch.irx, BGM dispatch table at .data 0x17500).** 0x5C stores
+    the wheel, 0x5D stores a signed byte; the pitch offset = wheel × that byte
+    ÷ 32 in the pitch routine's **256ths of a semitone** — 0x5D is the bend
+    range in semitones (bgm.mjs used to skip it). FFX's 68 0x5D: 2 ×59, 24 ×5
+    (Pursuit), 12 ×2 (Hurry, Aeon Battle), 127 ×2 (Luca, Welcoming of Maester
+    Mika). The default before any 0x5D was not found (the track struct's byte
+    is never written elsewhere); 10 wheel moves in 7 songs come before one.
+  - **FFX reverb.** 0x60 sets the track's dry + wet mix bits, 0x61 clears wet
+    and keeps dry (bits 0x400/0x800/0x1000/0x2000 — the layout the voice loop
+    turns into VMIXL/R/EL/ER); 0x62 (not in FFX) sets them per side.
+    0x64/0x65 set/clear bit 0x200 (the voice loop's PMON bit; not followed).
+  - **No re-key signal.** Every BGM note-on queues a key-on, and SQ has no
+    portamento controller in Dark Cloud's data, so the only continuations
+    are BGM's bend-born split pieces: one note-on, the wheel moved.
+- **What the .mid carries** (per piece of splitSlides; SQ notes never split):
+  - **pitch bend**: the channel's wheel, raw (every event, no thinning), at
+    the driver's range, in cents from each piece's own key — the value at its
+    start, then each change while it sounds. BGM's split pieces keep v1's ±2
+    roll pitch (so no note moves) and the bend carries the rest: Pursuit's
+    chord sits at −24 real, −2 in the roll, so its track bends −22 (RPN 22).
+    A BGM note bending before its track's first 0x5D gets no bend (warning).
+    RPN 0 sized to the track's largest bend, past ±2 (max 24, warned);
+  - **CC84** on each BGM piece after the first when the piece before ends at
+    its start (glide: one sound, separate notes on screen);
+  - **CC7 / CC11 / CC64 / CC1**: the source channel's own stream over the
+    track's span — the value in force at its first note at tick 0 (127, the
+    console's default, where a channel sends CC7 or CC11 only later), then
+    each change. In-note loudness rides here (the synth ramps CC7 × CC11
+    under a held note); `ve` stays v1's;
+  - **CC10**: v1's note-on pan plus every change while a melodic note sounds;
+  - **program** per melodic note (tick 0, then changes);
+  - **CC91**: Dark Cloud — wet bits ? |EVOL| ÷ 0x7FFF × 127 (16) : 0, per
+    note; FFX — 127 after 0x60, 0 after 0x61, changing inside a note; a
+    channel with neither writes none (default not known). FFX's EVOL is not
+    read (written at full, like PS1's songs with no depth).
+- **Not in v2**: the console voice still slides BGM at ±2 and still drops
+  Dark Cloud's wheel (spu-render reads `n.slide`; giving SQ notes slides
+  would split them) — both are now unblocked; HD/WD ADSR → `n.env`; the HD's
+  program transpose/detune and the detune unit (the driver adds the sample
+  and split detune bytes as 128ths, toBank reads the sample's as cents).
+  The stored Loudness synth measurements (album.json `loud.synth`) were
+  taken on v1 files — channels that send CC7/CC11 now play at their own
+  level in Hear the MIDI, so a re-capture wants a re-measure.
+
+Re-capture verdicts (main's capture vs v2, tools/capture-diff.mjs; scratch
+trees /tmp/ps2v2/{main,v2}, nothing under albums/ written): open-items "PS2
+capture v2".
+
+Tests: tests/ps2.test.mjs "PS2 capture v2 …" (synthetic SQ: bend at the
+split's ±2 and asymmetric ±12/±2 with RPN, CC7/CC11/CC64, pan inside a note,
+program, CC91 from the wet bits × depth, none without -r/-d; BGM: 0x5D/0x60/
+0x61 parsed, the split piece's CC84, range 2 vs 12 vs none; every case
+against the v1 writer: VELOCITY, notes equal) and tests/ps2-real.test.mjs
+(The King's Curse, Auron's Theme, Pursuit when the rips are on disk —
+`PS2_RIPS=<dir>` or /tmp/recap/rips/ps2).
 
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
@@ -8069,6 +8148,7 @@ plays as one sound with its predecessor.
   (scheduleGameNote bakes each note's envelope — a render-the-chain pass is
   later), or the console voice (it replays the rip).
 - **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; Game Boy — "Game Boy capture v2".
+- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; PS2 BGM's bend-born split pieces — "PS2 capture v2".
 - **Not in this step:** the other captures marking `lg` (the per-console builders,
   §3.2), continuation velocity from the chip's real level, the optional
   connector line between linked notes (Q4), linking notes by hand (that

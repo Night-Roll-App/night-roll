@@ -55,6 +55,10 @@ export function parseHD(buf) {
       const so = splitBlockAddr + s * sizeSplitBlock; // sizeSplitBlock is 20 in every real file seen (VGMTrans asserts this)
       splits.push({
         sampleSetIndex: u16(so), rangeLow: u8(so + 2), rangeHigh: u8(so + 4),
+        // bend range down / up, 1/128 semitone (modhsyn.irx: a voice's bend
+        // offset = range × wheel ÷ 8192, the down range for a wheel below
+        // centre; libsd's sceSdNote2Pitch takes fine in 128ths)
+        bendLow: u16(so + 6), bendHigh: u16(so + 8),
         panpot: u8(so + 17), transpose: i8(so + 18), detune: i8(so + 19),
       });
     }
@@ -89,6 +93,9 @@ export function parseHD(buf) {
       vagIndex: u16(so), velLow: u8(so + 2), velHigh: u8(so + 4),
       baseNote: u8(so + 11), detune: i8(so + 12), panpot: u8(so + 13),
       volume: u8(so + 16), adsr1: u16(so + 18), adsr2: u16(so + 20),
+      // SPU mix bits, as modhsyn.irx sets a voice's switches from them: 1 dry
+      // L, 2 dry R, 4 wet (effect send) L, 8 wet R
+      spuAttr: u8(so + 41),
     });
   }
 
@@ -151,6 +158,7 @@ export function toBank(hd, bd) {
           // AROUND 64 (e.g. 10/64/116), not around 0 — adding another 64 here
           // (this module's first cut) hard-panned nearly every note right.
           vol: samp.volume, pan: split.panpot, adsr1: samp.adsr1, adsr2: samp.adsr2,
+          bendLow: split.bendLow, bendHigh: split.bendHigh, spuAttr: samp.spuAttr,
         });
       }
     }

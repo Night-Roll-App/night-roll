@@ -222,9 +222,10 @@ Unlike AKAO's slide-BY-N-semitones opcode, a MIDI-style bend is already
 an ABSOLUTE offset from centre, so each entry lands instantly (no ramp)
 at that value — a real pitch-wheel glide is just many bend events in a
 row, which this naturally reconstructs as a chain of snap points. The
-bend RANGE (±2 semitones) is an assumption — BGM has no RPN/registered-
-parameter mechanism to encode a real one — flagged in the warnings, not
-silently guessed. 35 of 92 real FFX songs use 0x5C at least once.
+slides (the roll's split, the console voice) use ±2 semitones. The real
+range is opcode 0x5D (found 2026-10-07 in ffxpatch.irx's dispatch table;
+NIGHT-ROLL.md "PS2 capture v2"), and the .mid's pitch bend uses it.
+35 of 92 real FFX songs use 0x5C at least once.
 
 ## 6. Milestone 3 verification (2026-09-28, all 92 real Final Fantasy X songs)
 

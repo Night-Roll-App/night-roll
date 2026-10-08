@@ -69,10 +69,10 @@ const mkNote = (tick, ch, key, vel) => vel ? {tick, type: "on", ch, key, vel} : 
 // side effect worth a dedicated case below (VGMTrans's own comments: "no
 // idea", "part of init", found once or twice per corpus and never explained
 // even by the community's own reverse-engineering)
-const SKIP_1 = new Set([0x0A, 0x0D, 0x28, 0x31, 0x34, 0x35, 0x3E, 0x58, 0x3C, 0x5D]);
+const SKIP_1 = new Set([0x0A, 0x0D, 0x28, 0x31, 0x34, 0x35, 0x3E, 0x58, 0x3C]);
 const SKIP_2 = new Set([0x19, 0x47]);
 const SKIP_3 = new Set([0x40, 0x48, 0x50]);
-const SKIP_0 = new Set([0x04, 0x60, 0x61, 0x7F, 0x29 /* found in "Victory!" */, 0x41 /* found in "Yuna's Theme" */]);
+const SKIP_0 = new Set([0x04, 0x7F, 0x29 /* found in "Victory!" */, 0x41 /* found in "Yuna's Theme" */]);
 
 // One track's event stream -> this track's own final tick (its end-of-track
 // opcode, or wherever it ran out). Pushes into the shared arrays on `ctx`.
@@ -123,6 +123,14 @@ function parseTrack(d, start, end, ch, ctx) {
         bends.push({tick, ch, value});
         break;
       }
+      // the driver's own handlers (ffxpatch.irx's BGM dispatch table, read
+      // 2026-10-07; NIGHT-ROLL.md "PS2 capture v2"): 0x5D stores a signed
+      // byte the bend handler multiplies by — the range in semitones, the
+      // track's until the next 0x5D; 0x60 sets the voice's dry and wet
+      // (reverb) mix bits, 0x61 clears wet and keeps dry
+      case 0x5D: { need(1); const b = d[pos++]; events.push({tick, type: "bendRange", ch, value: b > 127 ? b - 256 : b}); break; }
+      case 0x60: events.push({tick, type: "reverb", ch, on: true}); break;
+      case 0x61: events.push({tick, type: "reverb", ch, on: false}); break;
       default:
         warnings.push(`track ${ch + 1}: unknown opcode 0x${op.toString(16)} at tick ${tick}: track ends here`);
         return tick;
@@ -190,9 +198,12 @@ export function parseBGM(buf) {
   };
 }
 
-// MIDI's own default pitch-bend range when nothing else says otherwise (BGM
-// has no RPN0/registered-parameter mechanism to encode a real range — this
-// is an assumption, flagged in the warnings, not a fact read from the file).
+// The range the roll's split pieces (and the console voice's slides) use —
+// v1's, kept so no note moves. The driver's real range is 0x5D's operand
+// (parseTrack above); the .mid's pitch bend uses that (tools/psx/notes.mjs
+// makeMidi, "PS2 capture v2"), measured from each piece's own key. 59 of
+// FFX's 68 0x5D set 2; Pursuit (24), Hurry and Aeon Battle (12), Luca and
+// Welcoming of Maester Mika (127) differ.
 const BEND_RANGE_SEMITONES = 2;
 
 // seqNotes() only counts "bend" events (seq.bends[ch]++, for the summary
@@ -228,7 +239,7 @@ function attachBendSlides(result, bendsRaw) {
     attached++;
   }
   if (attached) (result.seq.warnings || (result.seq.warnings = [])).push(
-    `${attached} note(s) carry a pitch bend (0x5C): rendered as pitch slides, bend range assumed ±${BEND_RANGE_SEMITONES} semitones (not encoded in the file)`);
+    `${attached} note(s) carry a pitch bend (0x5C): split in the roll and slid in the console voice at ±${BEND_RANGE_SEMITONES} semitones; the .mid's bends use the track's own range (0x5D)`);
 }
 
 // seq: parseBGM()'s result. opts: {vab} — a bank from tools/ps2/wd.mjs's

@@ -16,7 +16,8 @@ export const TEST_SQ_NOTES = [ // [tick, key, duration ticks] — the chord (G4,
 ];
 export const TEST_SQ_END = 1920;
 
-function scoreBytes() {
+// extra: more [tick, bytes] events (channel 0) merged into the score
+function scoreBytes(extra = []) {
   // {tick, bytes, trick}: `trick` ORs 0x80 onto the event's LAST data byte,
   // meaning the very next event (same tick) is encoded with NO delta byte —
   // real Sony encoders use this to save space on simultaneous events.
@@ -34,6 +35,7 @@ function scoreBytes() {
   at(TEST_SQ_END, [0xB0, 99, 1]);   // loop end (cc99=1)
   at(TEST_SQ_END, [0xB0, 38, 0]);   // forever
   at(TEST_SQ_END, [0xFF, 0x51, 0, 0x07, 0xA1, 0x20]); // re-affirm 120bpm (0x07A120 = 500000), exercising the tempo meta's padding byte
+  for (const [tick, bytes] of extra) at(tick, bytes);
   at(TEST_SQ_END, [0xFF, 0x2F]);
   // stable sort keeps same-tick order (loop start before the first note, etc.)
   const order = ev.map((e, i) => i).sort((a, b) => ev[a].tick - ev[b].tick || a - b);
@@ -59,8 +61,8 @@ const chunk = (creator, type, body) => [...ascii(creator), ...ascii(type), ...bo
 
 // A single Vers+Hdr+Midi chunk trio around one score, matching every real
 // Dark Cloud .SQ file's shape (tools/ps2/sq.mjs's header comment).
-export function makeTestSQ({ppq = 480} = {}) {
-  const sc = scoreBytes();
+export function makeTestSQ({ppq = 480, extra = []} = {}) {
+  const sc = scoreBytes(extra);
   const vers = chunk("IECS", "sreV", [...le32(16), ...le16(0), 1, 0]); // chunkSize=16, ver 1.0
   const HDR_CHUNK_SIZE = 32; // tag(8) + chunkSize + fileSize + songChunkAddr + midiChunkAddr + seSeq + seSong (6*4)
   // Hdr: chunkSize, fileSize, songChunkAddr(-1), midiChunkAddr (unused for navigation by the reader; filled in anyway), se*ChunkAddr(-1)
@@ -96,7 +98,7 @@ function offsetChunk(creator, type, paramBlocks) {
 
 // --- HD: one program, one split covering the whole keyboard, one sample,
 // one VAG-info entry pointing at offset 0 in a (synthetic, silent) BD. ---
-export function makeTestHD({baseNote = 60, adsr1 = 0x80FF, adsr2 = 0x1FEE, sampleRate = 0} = {}) {
+export function makeTestHD({baseNote = 60, adsr1 = 0x80FF, adsr2 = 0x1FEE, sampleRate = 0, bendLow = 0, bendHigh = 0, spuAttr = 0} = {}) {
   const vers = chunk("IECS", "sreV", [...le32(16), ...le16(0), 1, 1]);
 
   // VAGInfoParam (8 bytes): vagOffsetAddr(u32) + sampleRate(u16) + attribute(u8) + reserved(u8)
@@ -113,13 +115,13 @@ export function makeTestHD({baseNote = 60, adsr1 = 0x80FF, adsr2 = 0x1FEE, sampl
     ...le16(adsr1), ...le16(adsr2),
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* key-follow ADSR fields, unused */
     ...le16(0), ...le16(0), ...le16(0), ...le16(0), /* LFO delay/fade fields, unused */
-    0, 0, /* sampleLfoAttr, sampleSpuAttr */
+    0, spuAttr, /* sampleLfoAttr, sampleSpuAttr (mix bits: 1/2 dry L/R, 4/8 wet L/R) */
   ];
   // SampSetParam (4-byte header + nSample u16s): velCurve, velLimitLow, velLimitHigh, nSample, sampleIndex[]
   const sampSetParam = [0, 0, 127, 1, ...le16(0)];
   // SplitBlock (20 bytes)
   const split = [...le16(0) /* sampleSetIndex */, 0 /* rangeLow */, 0 /* crossFade */, 127 /* rangeHigh */, 0 /* splitNumber */,
-    ...le16(0), ...le16(0), 0, 0, 0, 0, 0, 0, 100 /* volume */, 0 /* panpot */, 0 /* transpose */, 0 /* detune */];
+    ...le16(bendLow), ...le16(bendHigh) /* bend range down/up, 1/128 semitone */, 0, 0, 0, 0, 0, 0, 100 /* volume */, 0 /* panpot */, 0 /* transpose */, 0 /* detune */];
   // ProgParam (36 bytes) + its one SplitBlock appended right after (splitBlockAddr=36, relative to the ProgParam's own start)
   const progParam = [...le32(36), 1 /* nSplit */, 20 /* sizeSplitBlock */, 100 /* volume */, 0 /* panpot */, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...le16(0), ...le16(0), ...le16(0), ...le16(0), ...le16(0), ...le16(0), 0, 0, 0, 0,

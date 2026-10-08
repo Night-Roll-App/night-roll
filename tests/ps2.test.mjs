@@ -264,7 +264,7 @@ test("BGM pitch bend (0x5C): honored as a pitch slide (tools/psx/akao.mjs's own 
   const bentNote = r.notes.find(n => n.tick <= TEST_BGM_BEND_TICK && n.endTick > TEST_BGM_BEND_TICK);
   assert.ok(bentNote, "the bend must fall inside a held note in this fixture");
   assert.deepEqual(bentNote.slide, [{t: TEST_BGM_BEND_TICK - bentNote.tick, len: 1, to: -1}], "value -4096 of ±8192 at an assumed ±2-semitone range = -1 semitone, landed instantly (len 1)");
-  assert.match(r.seq.warnings.join(" "), /2 note\(s\) carry a pitch bend.*assumed ±2 semitones/);
+  assert.match(r.seq.warnings.join(" "), /2 note\(s\) carry a pitch bend.*at ±2 semitones/);
   // the wheel is never reset, so the NEXT note (tick 120) starts bent: a bend held from before a note applies from its first tick
   const next = r.notes.find(n => n.tick === 120);
   assert.deepEqual(next.slide, [{t: 0, len: 1, to: -1}]);
@@ -390,4 +390,96 @@ test("dump CLI writes .notes.txt and .mid for a real-shaped minipsf2+psf2lib pai
   writeFileSync(join(dir, "bare.BD"), bd);
   run(join(dir, "bare.SQ"), "--hd", join(dir, "bare.HD"), "--bd", join(dir, "bare.BD"), "--title", "bare");
   assert.match(readFileSync(join(dir, "bare.notes.txt"), "utf8"), /^# bare — 4\/4, 120bpm/);
+});
+
+// ---- PS2 capture v2 (NIGHT-ROLL.md "PS2 capture v2") ----
+// What the .mid carries on top of v1 — the wheel at the driver's own range,
+// glide links on bend-born split pieces, the channel's CC7/CC11/CC64/CC1,
+// pan while a note sounds, a program per note, the wet send as CC91 — with
+// every note (track, start, pitch, length) where v1 put it.
+import { readSmf, captureDiff } from "../tools/capture-diff.mjs";
+const v1Of = r => makeMidi({...r, ps2: undefined}); // the same result through the v1 writer (a PS1 SEQ's path)
+const evsOf = (tr, k) => tr.other.filter(e => e.kind === k);
+const pbOf = e => +e.key.split(":")[1] - 8192;
+async function sqSong({extra = [], hd = {}, ini = "sq.irx -r=3 -d=4096 -s=T.SQ -h=T.HD -b=T.BD"} = {}) {
+  const lib = makePSF2(buildPSF2Fs([fileNode("T.SQ", makeTestSQ({extra})), fileNode("T.HD", makeTestHD(hd)), fileNode("T.BD", new Uint8Array(32))]), {game: "Test"});
+  const mini = makePSF2(buildPSF2Fs([fileNode("psf2.ini", new TextEncoder().encode("libsd.irx\r\n" + ini + "\r\n"))]), {_lib: "t.psf2lib"});
+  const sources = await loadPSF2Chain(mini, n => n === "t.psf2lib" ? lib : null, {name: "m.psf2"});
+  return ps2Song(mergePSF2(sources), sources.find(s => s.name === "m.psf2"));
+}
+async function bgmSong(opts = {}) {
+  const mini = makePSF2(buildPSF2Fs([fileNode("song.bgm", makeTestBGM(opts)), fileNode("song.wd", makeTestWD())]), {});
+  const sources = await loadPSF2Chain(mini, () => null, {name: "m.psf2"});
+  return ps2Song(mergePSF2(sources), sources.find(s => s.name === "m.psf2"));
+}
+
+test("PS2 capture v2 (SQ): the wheel at the split's own bend range, the channel's CC7/CC11/CC64, pan inside a note, program, CC91 = wet bits × the ini's depth; notes are v1's", async () => {
+  const song = await sqSong({
+    hd: {bendLow: 256, bendHigh: 256, spuAttr: 0x1F},
+    extra: [[0, [0xB0, 7, 100]], [240, [0xE0, 0x00, 0x20]], [240, [0xB0, 11, 64]], [240, [0xB0, 10, 20]], [400, [0xE0, 0x00, 0x40]], [480, [0xB0, 64, 127]], [900, [0xB0, 64, 0]]],
+  });
+  assert.deepEqual(song.result.ps2, {kind: "sq", reverb: {mode: 3, depth: 4096}});
+  const v2 = readSmf(makeMidi(song.result)), v1 = readSmf(v1Of(song.result));
+  const d = captureDiff(v1, v2);
+  assert.equal(d.verdict, "VELOCITY", d.reasons.join("; "));
+  assert.deepEqual(v2.tracks.map(t => t.notes), v1.tracks.map(t => t.notes), "every note where v1 put it");
+  const tr = v2.tracks[0];
+  // −4096 × 256 ÷ 8192 = −128 128ths = −1 semitone → −4096 at the default ±2
+  assert.deepEqual(evsOf(tr, "bend").map(e => [e.t, pbOf(e)]), [[240, -4096], [400, 0]]);
+  assert.equal(evsOf(tr, "cc6").length, 0, "within ±2: no RPN");
+  assert.deepEqual(evsOf(tr, "cc7").map(e => [e.t, e.key]), [[0, "0:100"]]);
+  assert.deepEqual(evsOf(tr, "cc11").map(e => [e.t, e.key]), [[0, "0:127"], [240, "0:64"]], "the console's default, then the change under the held C");
+  assert.deepEqual(evsOf(tr, "cc64").map(e => [e.t, e.key]), [[0, "0:0"], [480, "0:127"], [900, "0:0"]]);
+  assert.deepEqual(evsOf(tr, "cc10").map(e => [e.t, e.key]), [[0, "0:64"], [240, "0:20"]], "v1's note-on pan, then the change while C sounds");
+  assert.deepEqual(evsOf(tr, "program").map(e => [e.t, e.key]), [[0, "0:0"]]);
+  assert.deepEqual(evsOf(tr, "cc91").map(e => [e.t, e.key]), [[0, "0:" + Math.round(4096 / 0x7FFF * 127)]], "EVOL 4096 of 0x7FFF");
+  assert.equal(evsOf(tr, "cc84").length, 0, "an SQ note is never split: no links");
+});
+
+test("PS2 capture v2 (SQ): up and down ranges are the split's own two fields; past ±2 the track gets RPN 0; a dry sample sends nothing", async () => {
+  const song = await sqSong({hd: {bendLow: 256, bendHigh: 1536, spuAttr: 0x13}, extra: [[100, [0xE0, 0x7F, 0x7F]], [200, [0xE0, 0x00, 0x00]], [300, [0xE0, 0x00, 0x40]]]});
+  const tr = readSmf(makeMidi(song.result)).tracks[0];
+  assert.equal(evsOf(tr, "cc6")[0].key, "0:12", "+8191 × 1536 ÷ 8192 = 1535 128ths = 11.99 semitones → RPN ±12");
+  assert.deepEqual(evsOf(tr, "bend").map(e => [e.t, pbOf(e)]), [[100, Math.round(1199 / 1200 * 8192)], [200, Math.round(-200 / 1200 * 8192)], [300, 0]], "down: −8192 × 256 ÷ 8192 = −2 semitones");
+  assert.equal(evsOf(tr, "cc91").length, 0, "spuAttr 0x13: no wet bit");
+});
+
+test("PS2 capture v2 (SQ): no -r/-d in the ini → no send; a bank without bend ranges bends nothing", async () => {
+  const song = await sqSong({hd: {spuAttr: 0x1F}, ini: "sq.irx -s=T.SQ -h=T.HD -b=T.BD", extra: [[100, [0xE0, 0x00, 0x20]]]});
+  const tr = readSmf(makeMidi(song.result)).tracks[0];
+  assert.equal(evsOf(tr, "cc91").length, 0);
+  assert.equal(evsOf(tr, "bend").length, 0, "range 0 in the split: the driver moves nothing");
+});
+
+test("BGM 0x5D is the bend range (signed semitones), 0x60/0x61 the wet send on/off — parsed, not skipped", () => {
+  const seq = parseBGM(makeTestBGM({range: -3, reverb: true}));
+  assert.deepEqual(seq.events.filter(e => e.type === "bendRange" || e.type === "reverb").map(e => [e.tick, e.type, e.value ?? e.on]), [[0, "bendRange", -3], [0, "reverb", true]]);
+  assert.deepEqual(parseBGM(makeTestBGM({reverb: false})).events.filter(e => e.type === "reverb").map(e => e.on), [false]);
+  assert.deepEqual(seq.warnings, []);
+});
+
+test("PS2 capture v2 (BGM): the bend-born split piece is a glide link (CC84 = the key it leaves); at range 2 the step needs no bend; notes are v1's", async () => {
+  const song = await bgmSong({range: 2, reverb: true});
+  const v2 = readSmf(makeMidi(song.result)), v1 = readSmf(v1Of(song.result));
+  assert.equal(captureDiff(v1, v2).verdict, "VELOCITY");
+  assert.deepEqual(v2.tracks.map(t => t.notes), v1.tracks.map(t => t.notes));
+  const tr = v2.tracks[0], at = TEST_BGM_BEND_TICK * 10; // ppq 48 → 480
+  const before = tr.notes.find(n => n.t + n.d === at);
+  assert.deepEqual(evsOf(tr, "cc84").map(e => [e.t, e.key]), [[at, "1:" + before.p]], "the piece a semitone down continues the one before it under one note-on");
+  assert.equal(tr.notes.find(n => n.t === at).p, before.p - 1);
+  assert.equal(evsOf(tr, "bend").length, 0, "−4096 × 2 ÷ 32 = −256 256ths = −1 semitone: exactly the piece's own key");
+  assert.deepEqual(evsOf(tr, "cc91").map(e => [e.t, e.key]), [[0, "1:127"]]);
+});
+
+test("PS2 capture v2 (BGM): at range 12 the same wheel is −6 semitones — the piece (v1's ±2 roll pitch, 63) bends −5 more, with RPN; no range → no bend and a warning", async () => {
+  const song = await bgmSong({range: 12});
+  const tr = readSmf(makeMidi(song.result)).tracks[0], at = TEST_BGM_BEND_TICK * 10;
+  assert.equal(evsOf(tr, "cc6")[0].key, "1:5");
+  assert.deepEqual(evsOf(tr, "bend").map(e => [e.t, pbOf(e)]), [[at, -8192]], "−500 cents at ±5; the next note starts under the same wheel, so no new event");
+  assert.equal(evsOf(tr, "cc84").length, 1);
+  const none = await bgmSong({});
+  const tr0 = readSmf(makeMidi(none.result)).tracks[0];
+  assert.equal(evsOf(tr0, "bend").length, 0);
+  assert.equal(evsOf(tr0, "cc91").length, 0, "no 0x60/0x61: the default send is not known, nothing written");
+  assert.match(none.result.seq.warnings.join(" "), /bend before their first bend range \(0x5D\)/);
 });

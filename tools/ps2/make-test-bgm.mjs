@@ -29,11 +29,16 @@ function track0Bytes() {
   return ev;
 }
 
-function track1Bytes() {
+// range: a 0x5D bend range (semitones, signed byte) at tick 0; reverb:
+// true/false = 0x60 (wet on) / 0x61 (wet off) at tick 0; null = none (the
+// default bytes, as every older test reads them)
+function track1Bytes({range = null, reverb = null} = {}) {
   const ev = [];
   let last = 0;
   const at = (tick, ...bytes) => { ev.push(...writeVL(tick - last), ...bytes); last = tick; };
   at(0, 0x20, 0);                          // program change 0
+  if (range !== null) at(0, 0x5D, i8(range));
+  if (reverb !== null) at(0, reverb ? 0x60 : 0x61);
   at(0, 0x02);                             // loop begin
   at(0, 0x11, 60, 100);                    // note on, explicit key+vel
   at(48, 0x1A, 60);                        // note off, explicit key (also sets prevKey)
@@ -49,8 +54,8 @@ function track1Bytes() {
   return ev;
 }
 
-export function makeTestBGM({ppq = 48, seqID = 7, assocWDID = 7} = {}) {
-  const t0 = track0Bytes(), t1 = track1Bytes();
+export function makeTestBGM({ppq = 48, seqID = 7, assocWDID = 7, range = null, reverb = null} = {}) {
+  const t0 = track0Bytes(), t1 = track1Bytes({range, reverb});
   const header = [
     ...ascii("BGM "), ...le16(seqID), ...le16(assocWDID), 2 /* numTracks */,
     0, 0, 0, 0, 0, /* 0x09-0x0D unused */

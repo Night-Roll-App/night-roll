@@ -130,3 +130,49 @@ test("Final Fantasy X WD banks: every instrument's key ranges partition the keyb
   }
   assert.ok(instruments > 600, `read ${instruments} instruments`);
 });
+
+// ---- PS2 capture v2 on the real rips (NIGHT-ROLL.md "PS2 capture v2") ----
+// The re-capture's download cache (tools/recapture.mjs → <out>/rips/ps2/<slug>/);
+// skipped when the files are not there.
+import { makeMidi } from "../tools/psx/notes.mjs";
+import { readSmf, captureDiff } from "../tools/capture-diff.mjs";
+const RECAP = process.env.PS2_RIPS || "/tmp/recap/rips/ps2";
+const ripAt = (slug, base) => {
+  const dir = join(RECAP, slug), lib = existsSync(dir) && readdirSync(dir).find(f => f.endsWith(".psf2lib"));
+  return lib && existsSync(join(dir, base + ".psf2")) ? {dir, name: base + ".psf2"} : null;
+};
+async function v2Of(rip) {
+  const {mini, files} = await loadOne(rip.dir, rip.name);
+  const r = (await ps2Song(files, mini)).result;
+  const v2 = readSmf(makeMidi(r)), v1 = readSmf(makeMidi({...r, ps2: undefined}));
+  const count = k => v2.tracks.reduce((a, tr) => a + tr.other.filter(e => e.kind === k).length, 0);
+  return {v1, v2, count, r};
+}
+const KING = ripAt("dark-cloud", "the-king-s-curse");
+test("real rip (Dark Cloud, The King's Curse): the wheel's slow sags as bends at the split's ±2, the channel's own CC7/CC11, the wet send; no note moves", {skip: !KING && "Dark Cloud rip not on disk (PS2_RIPS or /tmp/recap/rips/ps2)"}, async () => {
+  const {v1, v2, count} = await v2Of(KING);
+  assert.equal(captureDiff(v1, v2).verdict, "VELOCITY");
+  assert.deepEqual(v2.tracks.map(t => t.notes), v1.tracks.map(t => t.notes));
+  assert.equal(count("bend"), 2270);
+  assert.equal(count("cc6"), 0, "every bent split here is 256/256: ±2");
+  assert.equal(count("cc84"), 0, "SQ notes are never split: nothing to link");
+  assert.ok(count("cc91") > 0 && count("cc7") > 0 && count("cc11") > 0 && count("program") > 0);
+  // ch 5's held G sags to −4352 (× 256 ÷ 8192 = −136 128ths = −106 cents) by its end
+  const sag = v2.tracks.find(t => t.name === "ch 5 prog 3").other.filter(e => e.kind === "bend").map(e => +e.key.split(":")[1] - 8192);
+  assert.equal(Math.min(...sag), Math.round(-106 / 200 * 8192));
+});
+const AURON = ripAt("final-fantasy-x", "auron-s-theme"), PURSUIT = ripAt("final-fantasy-x", "pursuit");
+test("real rip (FFX, Auron's Theme): the bend-born split pieces are 26 glide links with the wheel's path; no note moves", {skip: !AURON && "FFX rip not on disk (PS2_RIPS or /tmp/recap/rips/ps2)"}, async () => {
+  const {v1, v2, count} = await v2Of(AURON);
+  assert.equal(captureDiff(v1, v2).verdict, "VELOCITY");
+  assert.deepEqual(v2.tracks.map(t => t.notes), v1.tracks.map(t => t.notes));
+  assert.equal(count("cc84"), 26);
+  assert.equal(count("bend"), 65);
+  assert.ok(count("cc91") > 0 && count("program") > 0);
+});
+test("real rip (FFX, Pursuit): 0x5D sets ±24, so the wheel's −8192 is two octaves — the .mid bends past the roll's ±2 split with RPN 22", {skip: !PURSUIT && "FFX rip not on disk"}, async () => {
+  const {v1, v2} = await v2Of(PURSUIT);
+  assert.equal(captureDiff(v1, v2).verdict, "VELOCITY");
+  const tr = v2.tracks.find(t => t.name === "ch 2 prog 4");
+  assert.equal(tr.other.find(e => e.kind === "cc6").key.split(":")[1], "22", "−24 semitones real, −2 in the roll: 22 more as bend");
+});

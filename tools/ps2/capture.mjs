@@ -68,6 +68,11 @@ export async function ps2Song(files, miniSource, {inflate = null} = {}) {
         } else warnings.push(`psf2.ini names -h=${hName} but no such file is in this image`);
       }
       const result = seqNotes(seq, {vab: bank});
+      // PS2 capture v2 (tools/psx/notes.mjs makeMidi): the ini's -r/-d are
+      // sq.irx's effect mode and depth — it hands them to libsd as the
+      // effect mode and EVOL L/R (disassembly, NIGHT-ROLL.md "PS2 capture v2")
+      const num = flag => { const v = iniArg(ini, flag); return v != null && /^-?\d+$/.test(v) ? +v : null; };
+      result.ps2 = {kind: "sq", reverb: {mode: num("-r"), depth: num("-d")}};
       (result.seq.warnings || (result.seq.warnings = [])).push(...warnings);
       return {kind: "sq", result, bank, renderable: !!bank, why: bank ? null : "no HD/BD bank in this image", warnings, source: {sq: sName, hd: hName, bd: bName}};
     }
@@ -103,6 +108,7 @@ export async function ps2Song(files, miniSource, {inflate = null} = {}) {
         wdName = chosen.path;
       }
       const result = bgmNotes(seq, {vab: bank});
+      result.ps2 = {kind: "bgm"};
       (result.seq.warnings || (result.seq.warnings = [])).push(...warnings);
       return {kind: "bgm", result, bank, renderable: !!bank, why: bank ? null : "no WD bank in this image", warnings, source: {bgm: entry.path, wd: wdName}};
     }
