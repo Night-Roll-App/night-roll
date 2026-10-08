@@ -190,6 +190,8 @@ export function pickEditorType(v) {
   S.ntypeGuess = null;
   document.getElementById("ntype").value = v;
   applyEditorType();
+  // Section: the label is what he types first, and usually all (Josh #227) — the cursor goes there, not the text box
+  if (v === "section") document.getElementById("nsectlabel").focus();
 }
 // what the typed words look like — only the WHOLE text, only these four
 // shapes; anything else stays a note. Reads his own words, never the music.
@@ -439,6 +441,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   // next thing — opening an existing one (any kind) must not raise the iPad
   // keyboard over half the screen (Josh, 2026-10-03)
   if (type === "note" && !note) document.getElementById("ntext").focus();
+  else if (type === "section" && !note) document.getElementById("nsectlabel").focus(); // a new section starts with its label (Josh #227)
   else if (type === "song" && !note) document.getElementById("nsongtitle").focus(); // a new song note starts with its title
   else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
 }

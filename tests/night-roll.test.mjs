@@ -14879,3 +14879,11 @@ test("album play survives a relaunch (Josh #205/#206): a live run is remembered;
   assert.equal(app.store.get("ff1roll-lastalbum") || null, null, "no run: nothing written back");
   run(`CATALOG = globalThis.__keepCat;`);
 });
+
+test("note editor (Josh #227): picking Section puts the cursor in the label, not the text box", () => {
+  installSong();
+  run(`globalThis.__fx = []; for (const id of ["nsectlabel", "ntext"]) document.getElementById(id).focus = () => __fx.push(id);`);
+  run(`pickEditorType("section");`);
+  assert.deepEqual(val(`__fx`), ["nsectlabel"]);
+  run(`for (const id of ["nsectlabel", "ntext"]) delete document.getElementById(id).focus; pickEditorType("note");`);
+});
