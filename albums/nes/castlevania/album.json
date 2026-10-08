@@ -20,22 +20,46 @@
    "black-night-final-battle": {
     "n": 10,
     "secs": 17.599296,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -8.4,
+     "synth": -11.6
+    }
    },
    "death": {
     "n": 14,
     "secs": 2.599896,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -18.9,
+     "peak": -11.3,
+     "synth": -8
+    }
    },
    "game-complete": {
     "n": 13,
     "secs": 5.099796,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": -7.7,
+     "synth": -10
+    }
    },
    "game-over": {
     "n": 15,
     "secs": 5.216458,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -8.5,
+     "synth": -10.6
+    }
    },
    "heart-of-fire-prisonhold": {
     "n": 6,
@@ -44,6 +68,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21,
+     "peak": -8.2,
+     "synth": -10.7
     }
    },
    "introduction-castle-gate": {
@@ -53,22 +83,46 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -10.3,
+     "synth": -10.6
     }
    },
    "nightmare-dracula-s-quarters": {
     "n": 8,
     "secs": 35.198592,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -8.2,
+     "synth": -11.1
+    }
    },
    "out-of-time-upper-terrace": {
     "n": 5,
     "secs": 31.99872,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -8.6,
+     "synth": -10.7
+    }
    },
    "poison-mind-boss-theme": {
     "n": 9,
     "secs": 7.466368,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -18.4,
+     "peak": -9.2,
+     "synth": -10.7
+    }
    },
    "stalker-armory": {
     "n": 3,
@@ -77,6 +131,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -8.8,
+     "synth": -10.7
     }
    },
    "vampire-killer-courtyard": {
@@ -86,6 +146,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -9.6,
+     "synth": -10.8
     }
    },
    "victory": {
@@ -95,6 +161,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.1,
+     "peak": -9,
+     "synth": -11
     }
    },
    "voyager-ending": {
@@ -104,6 +176,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.8,
+     "peak": -9.5,
+     "synth": -9.6
     }
    },
    "walking-edge-castle-swamp": {
@@ -113,6 +191,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -5.9,
+     "synth": -10.3
     }
    },
    "wicked-child-upper-yard": {
@@ -122,6 +206,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -7.1,
+     "synth": -10.6
     }
    }
   }
