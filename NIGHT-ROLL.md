@@ -7831,6 +7831,48 @@ parts stay pitched, with the sample's fade. Tests: "one-shot samples…",
 "envelope decays…" (tests/n64-rare.test.mjs, synthetic bank); "DK64 Logo
 (real rip)…" (tests/n64-real.test.mjs, skipped without the rip).
 
+## N64 Rare: the SDK sequence players pick the song and mute channels (2026-10-08, DK64 audit)
+
+Audit (Josh #216): Wrinkly Kong captured the Logo's song, 100 Bananas captured
+Jungle Japes, and the five Tag Barrels were byte-identical. Plan and findings:
+docs/plans/2026-10-08-dk64-song-pick.md. Truth came from lazyusf2 with its
+RDRAM read back while it plays (which ALCSeq's curLoc advances). The ripper's
+a0 is not read at the saved PC: patching it renders byte-identical.
+
+Reader (`tools/n64/rare.mjs` `findSeqPlayers`): libultra's own ALCSeqPlayer,
+not a game table. It is found by shape: +4 points at itself, handler (+8),
+drvr (+0x14) and bank (+0x20) are KSEG0 pointers, and maxChannels (+0x34) is
+1..16. It reads target (+0x18 ALCSeq*, whose first word is the song's
+address), state (+0x2c, 1 = playing), chanMask|vol (+0x30) and the waiting
+events of evtq.allocList (+0x50: {next, prev, delta, type, payload}, where a
+payload ALCSeq* names a queued song). GoldenEye's look-alikes (mapped handler
+0x7xxxxxxx, no bank word) fail the shape.
+
+Pick order in the no-table branch (`miniRamSequence`, DK64):
+1. the RAM song a player is playing;
+2. else the songs queued players' events name (DK64 starts 107 of 178 minis
+   just after the state was taken);
+3. among several, the one whose pass (to its last note's end) is nearest the
+   tag's length (`tagSeconds`; 100 Bananas: a 2 s jingle over ducked Jungle
+   Japes, tag 4 s);
+4. else the song the mini's chunks write most of, else the first, with a
+   "CHECK BY EAR" warning.
+
+Over all 178 DK64 minis only Wrinkly Kong (→ 0x7E4FE0) and 100 Bananas
+(→ 0x7E7900) move.
+
+Channel mask (`maskedChannels`): bit k = MIDI channel k. Muted channels leave
+`res.notes`/`res.channels`, are listed in `res.ducked`, and the warning names
+the mask. The mask is never applied when it would silence every channel. In
+lazyusf2, one Tag Barrel's state with another's mask renders the other
+(−55 dB residual). The Barrels play ch 7–11 plus donkey 1, diddy 3+6,
+lanky 2, tiny 5, chunky 4. Songs from a table (DKR, Banjo, GoldenEye, JFG)
+take the mask only when exactly one player in the rip carries one (not 0,
+not 0xFFFF): DKR's per-racer Player Select, island and Boulder Canyon castle
+variants; unmasking one changes its lazyusf2 render. Tests: "SDK sequence
+players in RAM…" (tests/n64-rare.test.mjs, the deciding bytes); "DK64 (real
+rip): the sequence players pick the song…" (tests/n64-real.test.mjs).
+
 ## PS1 capture v2 — glide links, slide bends, levels, programs, reverb, pan fades (2026-10-07)
 
 docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.2 "PS1". What an AKAO

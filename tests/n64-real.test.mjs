@@ -870,7 +870,7 @@ test("Donkey Kong 64 (real rip): no song table — the song unpacked in RAM, its
   assert.deepEqual([boss.seq.ram, boss.res.notes.length, boss.res.tempos[0].bpm], [0x7E4FE0, 2234, 195]);
   const logo = sequenceOfSet(rareSet(DK64, "001 Logo.miniusf"));
   assert.deepEqual([logo.seq.ram, logo.res.notes.length], [0x7DF800, 436]);
-  assert.match(logo.res.warnings.join(" "), /writes none of the 4 songs/);
+  assert.doesNotMatch(logo.res.warnings.join(" "), /CHECK BY EAR/, "the playing sequence player names the Logo's song");
 });
 
 test("Diddy Kong Racing (real rip): the SDK 'S1' sequence file in RAM, plain ALCSeq songs in ROM, the song in a0", {skip: !DKR && "no Diddy Kong Racing rip"}, async () => {
@@ -964,4 +964,35 @@ test("DK64 Logo (real rip): one-shot drum samples fade inside their notes; pitch
   }
   assert.ok(res.notes.filter(n => n.drum).every(n => !n.env), "kit hits are the drum lane's");
   assert.ok(toMidi(res).length > 1000);
+});
+
+// each DK64 mini's RAM slot before the sequence players were read (all but Wrinkly Kong and 100 Bananas keep it)
+const DK64_SLOTS = {
+  0x7DF800: "angry-aztec-barrel-course angry-aztec-boss-dogadon angry-aztec-lobby angry-aztec-race angry-aztec-room angry-aztec-temple angry-aztec-underground angry-aztec banana-fairy-isle battle-arena bonus-barrel-introduction bonus-barrel boss-introduction boss-unlock-2 boss-unlock candy-s-music-store cranky-s-lab credits creepy-castle-ballroom creepy-castle-barrel-course creepy-castle-boss-king-kut-out creepy-castle-caves creepy-castle-dungeons-2 creepy-castle-dungeons-3 creepy-castle-dungeons creepy-castle-greenhouse creepy-castle-library-alternate creepy-castle-library creepy-castle-lobby creepy-castle-mine-cart creepy-castle-museum creepy-castle-rubbish-bin creepy-castle-tree-trunk creepy-castle-wind-tower creepy-castle crystal-caves-barrel-course crystal-caves-board-game crystal-caves-boss-army-dillo crystal-caves-igloo crystal-caves-indoors crystal-caves-lobby crystal-caves-race crystal-caves-rotating-room crystal-caves dk-isle dk-rap dk-s-treehouse ending enguarde frantic-factory-boss-mad-jack frantic-factory-car-race frantic-factory-conveyor-belt frantic-factory-lobby frantic-factory fungi-forest-barrel-course fungi-forest-bonus-room fungi-forest-boss-dogadon fungi-forest-day fungi-forest-giant-mushroom fungi-forest-indoors-1 fungi-forest-indoors-2 fungi-forest-lobby fungi-forest-mine-cart fungi-forest-night fungi-forest-race fungi-forest-spider fungi-forest-tree-trunk funky-s-armoury game-over gloomy-galleon-barrel-course gloomy-galleon-boat-race gloomy-galleon-boss-puftoss gloomy-galleon-lobby gloomy-galleon-mechanical-fish gloomy-galleon-pearl-treasure gloomy-galleon-ship-ruins gloomy-galleon-submarine gloomy-galleon-sunken-ship gloomy-galleon gorilla-gone happy-k-lumsy hideout-helm-bonus-barrel hideout-helm-completed hideout-helm-lobby hideout-helm introduction jungle-japes-2 jungle-japes-barrel-course jungle-japes-boss-army-dillo jungle-japes-lobby jungle-japes-mine-cart jungle-japes-storm jungle-japes-underground jungle-japes k-lumsy k-rool-battle-introduction k-rool-defeated k-rool-duel k-rool-take-off k-rool krem-isle-snide-s-hq krem-isle logo lose-race mad-maze-maul main-menu mermaid-palace mine-cart-carnage monkey-smash orangsprint rambi snide-s-hq stealthy-snoop troff-n-scoff unknown-2 win-race",
+  0x7E4FE0: "angry-aztec-caves baboon-balloon beach-ambience chunky-s-triangle-trample cranky-s-potion crystal-caves-earthquake defeat-boss diddy-s-guitar-gazump donkey-s-bongo-blast frantic-factory-production-room frantic-factory-research-and-development gloomy-galleon-caves hunky-chunky jungle-ambience jungle-japes-caves lanky-s-trombone-tremor mini-boss mini-monkey rocket-barrel-boost strong-kong tag-barrel-chunky tag-barrel-diddy tag-barrel-donkey tag-barrel-lanky tag-barrel-tiny tiny-s-saxophone-slam weapon-upgrade",
+  0x7E7900: "banana-fairy-photo banana-fairy banana-medal barrel-course-complete collect-blue-print collect-golden-banana entrance exit failure find-blue-print find-golden-banana find-melon-piece instrument-refill jungle-japes-caves-ambience k-lumsy-key lose-bonus-tokens pause-menu success transformation unknown-7 unknown-8 unknown",
+  0x7E9820: "collect-banana-token collect-bonus-token collect-crystal-coconut collect-melon-piece collect-multi-banana-token collect-pearl pause unknown-3 unknown-4 unknown-5 unknown-6"
+};
+// Donkey Kong 64's song pick and channel masks (docs/plans/2026-10-08-dk64-song-pick.md): the SDK
+// sequence player that plays — or whose queued event names — a song is the one lazyusf2's player
+// advances (its RDRAM read back while it plays); the five Tag Barrels' states differ only in that
+// player's chanMask (one Kong's state with another's mask renders the other, −55 dB residual).
+test("DK64 (real rip): the sequence players pick the song (Wrinkly Kong is not the Logo, 100 Bananas is its jingle); each Tag Barrel keeps its own channels", {skip: !DK64_ARCHIVE}, () => {
+  const cap = m => sequenceOfSet(loadUSF([m + ".usf", "nus-ndop-usa.usflib"].map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(DK64_ARCHIVE, n)))}))));
+  const logo = cap("logo"), wrinkly = cap("wrinkly-kong"), bananas = cap("100-bananas");
+  assert.deepEqual([logo.seq.ram, logo.res.notes.length], [0x7DF800, 436]);
+  assert.deepEqual([wrinkly.seq.ram, wrinkly.res.notes.length], [0x7E4FE0, 320], "Wrinkly Kong plays the second slot, not the Logo's song");
+  assert.deepEqual([bananas.seq.ram, bananas.res.notes.length], [0x7E7900, 56], "the 2 s jingle (tag 4 s), not Jungle Japes queued under it");
+  const own = {donkey: [1], diddy: [3, 6], lanky: [2], tiny: [5], chunky: [4]};
+  for (const [kong, chs] of Object.entries(own)) {
+    const b = cap("tag-barrel-" + kong);
+    assert.equal(b.seq.ram, 0x7E4FE0);
+    assert.deepEqual(b.res.channels, [...chs, 7, 8, 9, 10, 11], kong);
+    assert.deepEqual(b.res.ducked, [1, 2, 3, 4, 5, 6].filter(c => !chs.includes(c)), kong);
+  }
+  // every other song keeps the slot it had before the players were read
+  const moved = new Set(["wrinkly-kong", "100-bananas"]);
+  const slots = Object.entries(DK64_SLOTS).flatMap(([at, names]) => names.split(" ").map(n => [n, +at]));
+  assert.equal(slots.length + moved.size, readdirSync(DK64_ARCHIVE).filter(n => /\.usf$/.test(n)).length, "every mini is listed");
+  for (const [m, at] of slots) assert.equal(cap(m).seq.ram, at, m);
 });

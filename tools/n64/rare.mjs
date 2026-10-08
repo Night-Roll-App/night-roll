@@ -559,17 +559,91 @@ export function findRamSequences(ram) {
   }
   return out;
 }
-// A mini that writes none of them (DK64's Logo is the library's own state)
-// gets the first by address — the Logo's song, by lazyusf2's render — with
-// a warning: a mini of sound effects looks the same.
+// ---- the SDK sequence players (RAM) ------------------------------------------
+// libultra's ALCSeqPlayer (libaudio.h) — the SDK's own struct, the same in every
+// game built on it, not a table about any one game:
+//   +0x00 ALPlayer node {next, clientData (the player itself), handler, callTime, samplesLeft}
+//   +0x14 drvr   +0x18 target (ALCSeq*; the ALCSeq's first word is its song's address)
+//   +0x20 bank   +0x2c state (1 = playing)   +0x30 u16 chanMask (bit k: MIDI channel k sounds), s16 vol
+//   +0x34 u8 maxChannels   +0x50 evtq.allocList: the events waiting to run,
+//         ALEventListItem {next, prev, delta, s16 type, payload…} (a play/seq event's payload: an ALCSeq*)
+// Found by shape: the self pointer, then handler, driver and bank all KSEG0 pointers and
+// 1..16 channels. GoldenEye's runs its code mapped (handler 0x7xxxxxxx) and keeps no
+// bank word there, so its look-alikes fail; Donkey Kong 64 (lazyusf2: the player whose
+// ALCSeq advances is the one with state 1, or the one a queued event names) and Diddy
+// Kong Racing (its per-racer variants differ only in chanMask; lazyusf2 renders differ
+// with it) pass. A word the rip never read is absent: null.
+const kseg0 = v => v != null && (v >>> 24) === 0x80;
+export function findSeqPlayers(ram) {
+  const g = a => ram.has(a, 4) ? ram.u32(a) : null;
+  const out = [];
+  for (const r of ram.ranges) for (let o = (r.offset + 3) & ~3; o + 4 <= r.offset + r.bytes.length; o += 4) {
+    const at = o - 4;
+    if (at < 0 || ram.u32(o) !== ((0x80000000 | at) >>> 0)) continue;
+    const mc = g(at + 0x34);
+    if (!kseg0(g(at + 8)) || !kseg0(g(at + 0x14)) || !kseg0(g(at + 0x20)) || mc == null || !(mc >>> 24) || (mc >>> 24) > 16) continue;
+    const seqAt = p => kseg0(p) ? g(p & 0x1FFFFFFF) : null; // an ALCSeq* → its song's address
+    const tgt = g(at + 0x18), song = seqAt(tgt), w30 = g(at + 0x30);
+    const queued = [], head = at + 0x50;
+    for (let q = g(head), n = 0; kseg0(q) && (q & 0x1FFFFFFF) !== head && n < 64; q = g(q & 0x1FFFFFFF), n++) {
+      const s = seqAt(g((q & 0x1FFFFFFF) + 0x10));
+      if (kseg0(s) && !queued.includes(s & 0x1FFFFFFF)) queued.push(s & 0x1FFFFFFF);
+    }
+    out.push({at, state: g(at + 0x2c), song: kseg0(song) ? song & 0x1FFFFFFF : null, queued,
+              mask: w30 == null ? null : w30 >>> 16, vol: w30 == null ? null : w30 & 0xFFFF});
+  }
+  return out;
+}
+
+// A tag's "m:ss(.f)" or seconds, as seconds (null when absent)
+export function tagSeconds(v) {
+  if (v == null || v === "") return null;
+  const n = String(v).trim().split(":").reduce((a, x) => a * 60 + Number(x), 0);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+// Which of the RAM songs the mini plays, in this order: the sequence player playing
+// one (state 1, its target's song); else the songs queued players' waiting events name
+// (Donkey Kong 64 starts most songs just after the rip's state was taken); among several,
+// the one whose own pass is nearest the tag's length (100 Bananas: its 2 s jingle over a
+// ducked level song, tag 4 s); else the song the mini's own state chunks write most of,
+// else the first by address — with a warning, since nothing in the rip then says which.
 export function miniRamSequence(set, ram) {
   const songs = findRamSequences(ram);
   if (!songs.length) return null;
   const chunks = ((set.top && set.top.state) || []).filter(c => c.offset >= PJ64_RDRAM).map(c => [c.offset - PJ64_RDRAM, c.bytes.length]);
   const written = s => chunks.reduce((n, [a, len]) => n + Math.max(0, Math.min(a + len, s.addr + s.size) - Math.max(a, s.addr)), 0);
-  const ranked = songs.map(s => ({...s, of: songs.length, written: written(s)})).sort((a, b) => b.written - a.written || a.addr - b.addr);
+  const all = songs.map(s => ({...s, of: songs.length, written: written(s)}));
+  const byAddr = new Map(all.map(s => [s.addr, s]));
+  const players = findSeqPlayers(ram);
+  const nearestTag = list => {
+    if (list.length === 1) return list[0];
+    const tag = tagSeconds(set.tags && set.tags.length);
+    if (!tag) return null;
+    const pass = c => { try { const r = cseqNotes(c.song.cs); return Math.max(r.seconds, ...r.notes.map(n => tickSeconds(r.tempos, n.tick + n.dur))); } catch { return 0; } }; // one pass, to its last note's end
+    return list.map(c => ({c, d: Math.abs(Math.log(Math.max(0.1, pass(c)) / tag))})).sort((a, b) => a.d - b.d)[0].c;
+  };
+  const playing = [], queued = [];
+  for (const p of players) {
+    if (p.state === 1 && byAddr.has(p.song) && !playing.some(c => c.song === byAddr.get(p.song))) playing.push({song: byAddr.get(p.song), player: p});
+    for (const a of p.queued) if (byAddr.has(a) && !queued.some(c => c.song === byAddr.get(a))) queued.push({song: byAddr.get(a), player: p});
+  }
+  for (const [list, how] of [[playing, "playing"], [queued, "queued"]]) {
+    const pick = list.length ? nearestTag(list) : null;
+    if (pick) return {...pick.song, how, player: pick.player, among: list.length};
+  }
+  const ranked = all.sort((a, b) => b.written - a.written || a.addr - b.addr);
   if (ranked.length > 1 && ranked[0].written && ranked[0].written === ranked[1].written) throw new Error("this rip's memory holds " + songs.length + " songs and the mini writes as much of two of them (at 0x" + ranked[0].addr.toString(16) + " and 0x" + ranked[1].addr.toString(16) + ")");
-  return ranked[0];
+  return {...ranked[0], how: ranked[0].written ? "written" : "first", player: null};
+}
+
+// The channels a sequence player's chanMask silences, of those the song plays (bit k = MIDI
+// channel k: lazyusf2 with one Tag Barrel's state and another's mask renders the other).
+// None when the mask is unknown, full, or would silence everything.
+export function maskedChannels(player, channels) {
+  if (!player || player.mask == null || player.mask === 0xFFFF) return [];
+  const off = channels.filter(c => !(player.mask & (1 << c)));
+  return off.length < channels.length ? off : [];
 }
 
 // Which song a mini plays: the RAM word the mini's own save-state chunk
@@ -966,8 +1040,21 @@ export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
     const rest = miniOverrideWords(set).filter(w => w.value !== id && decodeLiA1(w.value) !== id);
     if (rest.length && rest.length <= 4) res.warnings.push("this mini also sets " + rest.length + " memory word" + (rest.length > 1 ? "s" : "") + " the roll does not use (" + rest.map(w => "0x" + w.addr.toString(16) + " = 0x" + w.value.toString(16)).join(", ") + "): the roll plays every track of the song");
   }
-  if (own && !own.written && own.of > 1) res.warnings.push("this mini writes none of the " + own.of + " songs in the rip's memory; the roll is the first (0x" + own.addr.toString(16) + "), the library's own — a mini of sound effects looks the same");
+  if (own && own.how === "first" && own.of > 1) res.warnings.push("CHECK BY EAR: no sequence player in the rip's memory plays or queues any of its " + own.of + " songs, and this mini writes none of them; the roll is the first (0x" + own.addr.toString(16) + "), the library's own — a mini of sound effects looks the same");
+  else if (own && own.how === "written" && own.of > 1) res.warnings.push("CHECK BY EAR: no sequence player in the rip's memory plays or queues any of its " + own.of + " songs; the roll is the one this mini writes most of (0x" + own.addr.toString(16) + ")");
+  else if (own && own.among > 1) res.warnings.push(own.among + " songs " + own.how + " in the rip's memory; the roll is the one whose length is nearest the tag's (0x" + own.addr.toString(16) + ")");
   res.sequenceId = id; res.variation = 0; res.reverb = null; res.ducked = [];
+  // the player's channel mask: the channels it silences leave the capture (DK64's Tag Barrels, one per Kong;
+  // DKR's per-racer Player Select). A song from the table: only when one player in the rip carries a mask.
+  let player = own ? own.player : null;
+  if (table) { const masked = findSeqPlayers(ram).filter(p => p.mask != null && p.mask !== 0xFFFF && p.mask !== 0); player = masked.length === 1 ? masked[0] : null; }
+  const muted = maskedChannels(player, res.channels);
+  if (muted.length) {
+    res.ducked = muted;
+    res.notes = res.notes.filter(n => !muted.includes(n.ch));
+    res.channels = res.channels.filter(c => !muted.includes(c));
+    res.warnings.push("channels " + muted.join(",") + " muted by the sequence player's channel mask (0x" + player.mask.toString(16) + ")");
+  }
   if (bank) { // programs that are kits in this bank: their notes are slots
     const kits = new Set(bank.instruments.filter(isKitInstrument).map(i => i.index));
     if (kits.size) {
@@ -982,7 +1069,7 @@ export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
                table: table ? {kind: table.kind || "rom", at: table.at, count: table.count} : {kind: "mini", at: own.addr, count: 1},
                banks: banks.map(b => ({at: b.at, instCount: b.instCount, sampleRate: b.sampleRate, how: b.how})), bankFile: banks.length ? {at: banks[bankIndex].fileAt, count: 1, banks: [banks[bankIndex]]} : null};
   const seq = {...seqInfo, banks: [Math.max(0, bankIndex)]};
-  return {game, loc, id, seq, res, present, ducked: [], driver: "rare"};
+  return {game, loc, id, seq, res, present, ducked: res.ducked, driver: "rare"};
 }
 
 // ---- the render --------------------------------------------------------------

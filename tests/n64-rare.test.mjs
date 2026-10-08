@@ -10,7 +10,7 @@ import zlib from "node:zlib";
 import { inflateRaw, decompress1172, is1172, parseCSeq, cseqNotes, unrollTracks, findMusicTable, miniOverrideWords, miniRareTrack,
          findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains,
          findFxParams, SdkFx, SMALLROOM_FX, attachGains, parse1172, findRamSequences, miniRamSequence, findSeqFileInRam,
-         miniOverrideRegs, findRareBanks, sampleDecay, attachVoiceShapes, SHAPE_LEVELS } from "../tools/n64/rare.mjs";
+         miniOverrideRegs, findRareBanks, sampleDecay, attachVoiceShapes, SHAPE_LEVELS, findSeqPlayers, maskedChannels, tagSeconds } from "../tools/n64/rare.mjs";
 import { readSmf } from "../tools/capture-diff.mjs";
 import { SparseImage, PJ64_RDRAM, rdramOf } from "../tools/n64/usf.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
@@ -483,8 +483,58 @@ test("a song unpacked in RAM: found by its division and first track with the hea
   const out = rareSequenceOfSet({rom: new SparseImage(), state: st, top: {state: []}});
   assert.equal(out.seq.ram, 0x10000);
   assert.equal(out.res.notes.length, 2);
-  assert.match(out.res.warnings.join(" "), /writes none of the 2 songs/);
+  assert.match(out.res.warnings.join(" "), /CHECK BY EAR: no sequence player .* writes none of them/);
   assert.match(out.res.warnings.join(" "), /no sound bank/);
+});
+
+// The deciding bytes of Donkey Kong 64's rips (lazyusf2: the ALCSeq whose curLoc advances is the
+// playing player's target, or the one a queued event names; the Tag Barrels differ only in chanMask).
+// libultra's ALCSeqPlayer: +4 self, +8 handler, +0x14 drvr, +0x18 target ALCSeq*, +0x20 bank,
+// +0x2c state, +0x30 chanMask|vol, +0x34 maxChannels, +0x50 allocList {next, prev, delta, type, payload}.
+test("SDK sequence players in RAM: the playing one, else a queued event's sequence, picks the song; tag length breaks ties; chanMask drops channels; mapped look-alikes are not players", () => {
+  const P = n => { const a = [...n]; while (a.length % 4) a.push(0); return Uint8Array.from(a); };
+  const t0 = [...tempo(500000), ...note(0, 0, 60, 100, 48), ...END], t1 = [0, 0xC1, 3, ...note(0, 1, 64, 90, 96), ...END];
+  const songA = cseq([t0, t1]); // 2 notes, channels 0 and 1, about 1 s
+  const long = []; for (let i = 0; i < 40; i++) long.push(...note(i ? 96 : 0, 2, 67, 80, 96));
+  const songB = cseq([[...tempo(500000), ...long, ...END]]); // 40 notes, channel 2, about 40 s
+  const K = a => (0x80000000 | a) >>> 0;
+  const player = (at, {state = 0, target = 0, mask = 0xFFFF, vol = 0x7FFF, events = []} = {}) => {
+    const w = {[at + 4]: K(at), [at + 8]: 0x8072D8D0, [at + 0x14]: 0x80768228, [at + 0x20]: 0x807AF638, [at + 0x34]: 0x10000000,
+               [at + 0x18]: target, [at + 0x2c]: state, [at + 0x30]: ((mask << 16) | vol) >>> 0};
+    let next = K(at + 0x50); // the list runs head → item … → head
+    for (const [i, e] of [...events.entries()].reverse()) { const it = at + 0x400 + 0x20 * i; Object.assign(w, {[it]: next, [it + 0xc]: 0x000D0000, [it + 0x10]: e}); next = K(it); }
+    w[at + 0x50] = next;
+    return w;
+  };
+  const seqObj = (at, song) => ({[at]: K(song)});
+  const build = (words, tags = {}) => { const st = state({words, bytes: {[0x10000]: P(songA), [0x20000]: P(songB)}}); return {state: st, top: {state: []}, tags, rom: new SparseImage()}; };
+  const objs = {...seqObj(0x31000, 0x20000), ...seqObj(0x31100, 0x10000)};
+  // a playing player names B; the mini writes nothing (the old rule took A, the first)
+  const playing = build({...objs, ...player(0x30000, {state: 1, target: K(0x31000)}), ...player(0x38000)});
+  const ps = findSeqPlayers(rdramOf(playing.state).ram);
+  assert.deepEqual(ps.map(p => [p.at, p.state, p.song]), [[0x30000, 1, 0x20000], [0x38000, 0, null]]);
+  assert.equal(miniRamSequence(playing, rdramOf(playing.state).ram).how, "playing");
+  assert.equal(rareSequenceOfSet(playing).seq.ram, 0x20000);
+  // nothing playing: the sequence a queued event points at (the game starts it just after the state)
+  const queued = build({...objs, ...player(0x30000, {events: [K(0x31100)]})});
+  assert.deepEqual(findSeqPlayers(rdramOf(queued.state).ram)[0].queued, [0x10000]);
+  assert.equal(rareSequenceOfSet(queued).seq.ram, 0x10000);
+  // two queued (a jingle over a level song): the tag's length picks; no tag → the old rule, flagged
+  const two = w => ({...objs, ...player(0x30000, {events: [K(0x31000)]}), ...player(0x38000, {events: [K(0x31100)]}), ...w});
+  assert.equal(rareSequenceOfSet(build(two(), {length: "0:02"})).seq.ram, 0x10000);
+  assert.equal(rareSequenceOfSet(build(two(), {length: "0:45"})).seq.ram, 0x20000);
+  assert.match(rareSequenceOfSet(build(two(), {length: "0:02"})).res.warnings.join(" "), /2 songs queued .* nearest the tag/);
+  assert.match(rareSequenceOfSet(build(two())).res.warnings.join(" "), /CHECK BY EAR/);
+  // the playing player's chanMask: bit 1 clear → channel 1 leaves the capture
+  const masked = rareSequenceOfSet(build({...objs, ...player(0x30000, {state: 1, target: K(0x31100), mask: 0xFFFD})}));
+  assert.deepEqual([masked.res.channels, masked.res.ducked, masked.res.notes.length], [[0], [1], 1]);
+  assert.match(masked.res.warnings.join(" "), /channels 1 muted by the sequence player's channel mask \(0xfffd\)/);
+  assert.deepEqual(maskedChannels({mask: 0xFFFC}, [0, 1]), [], "a mask that would silence everything is not applied");
+  assert.deepEqual(maskedChannels({mask: null}, [0, 1]), []);
+  // GoldenEye's look-alike: the self pointer, but a mapped handler (0x7xxxxxxx) and no bank word
+  const ge = state({words: {0x2f1914: K(0x2f1910), 0x2f1918: 0x70011a6c, 0x2f1924: 0x8005e750, 0x2f1940: 0x00ff7fff, 0x2f1944: 0x10000000}});
+  assert.deepEqual(findSeqPlayers(rdramOf(ge).ram), []);
+  assert.deepEqual([tagSeconds("1:20"), tagSeconds("4"), tagSeconds("0:02.5"), tagSeconds(""), tagSeconds(undefined)], [80, 4, 2.5, null, null]);
 });
 
 test("the SDK sequence file in RAM ('S1', absolute ROM offsets) with the song passed in a0", () => {
