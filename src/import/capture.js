@@ -338,7 +338,9 @@ export async function captureChipTrack(kind, M, nsf, track, seconds, onProgress)
     if (Math.min(ph, grid - ph) > 1.6) far++;
   }
   const snap = far / Math.max(1, timed) < 0.12;
-  const bytes = M.makeMidi(hits.length ? events.concat(hits) : events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap, ...CHIPS[kind || "nsf"].midiOpts(M)});
+  // the runner's own warnings (SPC: a root that fell back to the default) and any note the MIDI could not hold
+  const warnings = [...(res.warnings || [])];
+  const bytes = M.makeMidi(hits.length ? events.concat(hits) : events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap, ...CHIPS[kind || "nsf"].midiOpts(M), warnings});
   const beatSec = 60 / bpm;
   const backBeats = loop ? (loop.keep - loop.period) * frameSec / beatSec : statedLoop != null ? statedLoop * frameSec / beatSec : 0;
   const bq = beats => { // beats-from-zero -> [bar, beat] on the 16th grid (4/4 until re-barred)
@@ -348,7 +350,7 @@ export async function captureChipTrack(kind, M, nsf, track, seconds, onProgress)
   const loops = !!loop || statedLoop != null;
   return {bytes, bpm, secs: keptFrames * frameSec, looped: loops, snapped: snap,
           loopAnchor: loops && backBeats > 0.4 ? bq(keptFrames * frameSec / beatSec) : null,
-          loopTarget: loops && backBeats > 0.4 ? bq(backBeats) : null};
+          loopTarget: loops && backBeats > 0.4 ? bq(backBeats) : null, ...(warnings.length ? {warnings} : {})};
 }
 export async function openChipImport(kind, bytes, name, m3uList, files) {
   kind = kind || "nsf";

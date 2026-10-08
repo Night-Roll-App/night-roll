@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI, TEST_TICKS_PER_NOTE, TEST_TICK_TARGET } from "../tools/spc/make-test-spc.mjs";
 import { parseSPC, runSPC, parseXid6, parseTrackName } from "../tools/spc/spc.mjs";
-import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC, spcRebin, SPC_SHAPE, PAN_STEP } from "../tools/spc/notes.mjs";
+import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC, spcRebin, SPC_SHAPE, PAN_STEP, rootFallback } from "../tools/spc/notes.mjs";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -543,4 +543,48 @@ test("SNES capture v2 (real rip): FF4 Main Theme — echo on its voices, ADSR sh
   assert.ok(pitched.every(t => ctlOf(t, "pg").length >= 1), "every pitched voice names its sample");
   const shaped = pitched.reduce((s, t) => s + t.notes.filter(n => n.env).length, 0);
   assert.ok(shaped > 20, "ADSR shapes where v1 wrote no ve: " + shaped);
+});
+
+// ---- empty captures (docs/plans/2026-10-07-empty-captures.md §3): a low-confidence root that pushes
+// notes off the MIDI range falls back to the default root, and the writer never drops a note silently
+test("a low-confidence root that puts notes outside MIDI 0–127 falls back to the default root (72), re-pitching from PITCH, with a warning", () => {
+  const inst = (id, conf, rootMidi) => ({id, key: id + "@0", srcn: 24 + id, root: {rootMidi, rootHz: 440 * 2 ** ((rootMidi - 69) / 12), confidence: conf, clarity: 0.7}});
+  const giy = 69 + 12 * Math.log2(28.6 / 440); // EarthBound sample #24's estimate
+  const low = inst(0, "low", giy), high = inst(1, "high", giy), fine = inst(2, "low", 60);
+  const ev = (i, pitch) => { const exact = i.root.rootMidi + 12 * Math.log2(pitch / 4096); return {instrument: i.key, pitch, midi: Math.round(exact), cents: 0}; };
+  const events = [ev(low, 993), ev(low, 937), ev(high, 993), ev(fine, 993)];
+  assert.ok(events[0].midi < 0 && events[2].midi < 0, "the fixture starts below MIDI 0");
+  const warnings = rootFallback([low, high, fine], events);
+  assert.deepEqual(events.map(e => e.midi), [47, 46, events[2].midi, events[3].midi], "only the low-confidence, out-of-range instrument moves");
+  assert.equal(events[0].cents, Math.round((72 + 12 * Math.log2(993 / 4096) - 47) * 100));
+  assert.equal(low.root.rootMidi, 72); assert.equal(low.root.confidence, "none"); assert.ok(Math.abs(low.root.estimateHz - 28.6) < 0.1);
+  assert.equal(high.root.rootMidi, giy, "a high-confidence root is a measurement: kept");
+  assert.equal(fine.root.rootMidi, 60, "in range: kept");
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /instrument 0 \(sample #24\): its root estimate \(28\.6 Hz, low\) put notes outside MIDI 0–127, so it uses the default root/);
+});
+
+test("makeMidi reports every note it cannot hold (pitch outside 0–127): into opts.warnings, else console.warn — never silently", () => {
+  const events = [{channel: "voice2", startFrame: 0, endFrame: 100, midi: -3, vol: 100}, {channel: "voice3", startFrame: 0, endFrame: 100, midi: 60, vol: 100},
+                  {channel: "voice3", startFrame: 100, endFrame: 200, midi: 130, vol: 100}];
+  const warnings = [];
+  makeMidi(events, {bpm: 120, frameSec: 0.01, volMax: 127, warnings});
+  assert.deepEqual(warnings, ["2 notes dropped: pitch outside MIDI 0–127 (voice2 ×1, voice3 ×1)"]);
+  const said = [], keep = console.warn; console.warn = m => said.push(m);
+  try { makeMidi(events, {bpm: 120, frameSec: 0.01, volMax: 127}); } finally { console.warn = keep; }
+  assert.equal(said.length, 1); assert.match(said[0], /2 notes dropped/);
+  const quiet = []; makeMidi([events[1]], {bpm: 120, frameSec: 0.01, volMax: 127, warnings: quiet});
+  assert.deepEqual(quiet, [], "nothing dropped, nothing said");
+});
+
+const GIYGAS = ["/tmp/recap/rips/snes/earthbound/giygas-static.spc"].find(f => existsSync(f));
+test("EarthBound Giygas' Static (real SPC): its two held voices land in MIDI range, ~1 semitone apart, with the fallback named", {skip: !GIYGAS}, () => {
+  const r = reconstruct(runSPC(parseSPC(new Uint8Array(readFileSync(GIYGAS))), 12), {});
+  assert.deepEqual(r.events.map(e => e.voice).sort(), [2, 3]);
+  for (const e of r.events) assert.ok(e.midi >= 0 && e.midi <= 127 && e.endFrame - e.startFrame > 5000, JSON.stringify([e.midi, e.startFrame, e.endFrame]));
+  const [a, b] = [...r.events].sort((x, y) => x.voice - y.voice).map(e => e.midi + e.cents / 100);
+  assert.ok(Math.abs(a - b - 12 * Math.log2(993 / 937)) < 0.02);
+  assert.ok(r.warnings.some(w => /default root/.test(w)));
+  const warnings = []; makeMidi(r.events, {bpm: 120, frameSec: r.frameSec, volMax: 127, shape: SPC_SHAPE, warnings});
+  assert.deepEqual(warnings, [], "nothing dropped now");
 });

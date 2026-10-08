@@ -48,6 +48,7 @@ const byId = new Map([...cap.instruments.values()].map(i => [i.id, i.key]));
 for (const k of Object.keys(roots)) if (/^\d+$/.test(k) && byId.has(+k)) { roots[byId.get(+k)] = roots[k]; delete roots[k]; }
 const r = reconstruct(cap, {roots});
 console.error(`# ${cap.dspLog.length} DSP writes, ${cap.instruments.size} instruments, ${r.events.length} notes`);
+for (const w of r.warnings || []) console.error("# warning: " + w);
 const snap = !args.includes("--raw");
 process.stdout.write(toNotesTxt(r, {bpm: +opt("bpm"), tsNum, tsDen, title: opt("title", spc.name || file), snap}));
 if (opt("mid")) {

@@ -369,6 +369,7 @@ export function reconstruct(capture, {roots = {}} = {}) {
   for (let v = 0; v < 8; v++) close(v, samples);
 
   classifyNoiseVoices(events);
+  const warnings = rootFallback(insts, events);
 
   for (const e of events) {
     e.startFrame = toTick(e.startSample);
@@ -379,7 +380,32 @@ export function reconstruct(capture, {roots = {}} = {}) {
     instruments: insts,
     frames: toTick(samples),
     frameSec: TICK_SEC,
+    warnings,
   };
+}
+
+// A root estimated at "low" (or "none") confidence that puts any of its
+// instrument's notes outside MIDI 0–127 is not a usable root: EarthBound's
+// Giygas' Static holds sample #24 (static: no period to find) at PITCH 0x3E1
+// and 0x3A9, its 28.6 Hz estimate put both notes at MIDI −3/−4, and the MIDI
+// writer dropped them. Such an instrument falls back to DEFAULT_ROOT_MIDI (as
+// "none" already does), its notes are re-pitched from their PITCH, and the
+// capture says so. Pitches stay relative to the root, as with every SPC note.
+export function rootFallback(insts, events) {
+  const warnings = [];
+  for (const inst of insts) {
+    if (inst.root.confidence !== "low" && inst.root.confidence !== "none") continue;
+    const evs = events.filter(e => e.instrument === inst.key && e.noiseClock === undefined && e.pitch > 0);
+    if (!evs.some(e => e.midi < 0 || e.midi > 127)) continue;
+    const was = inst.root;
+    inst.root = {periodSamples: null, rootHz: null, rootMidi: DEFAULT_ROOT_MIDI, confidence: "none", clarity: was.clarity, estimateHz: was.rootHz};
+    for (const e of evs) {
+      const exact = DEFAULT_ROOT_MIDI + 12 * Math.log2(e.pitch / 4096);
+      e.midi = Math.round(exact); e.cents = Math.round((exact - e.midi) * 100);
+    }
+    warnings.push(`instrument ${inst.id} (sample #${inst.srcn}): its root estimate (${was.rootHz == null ? "none" : was.rootHz.toFixed(1) + " Hz"}, ${was.confidence}) put notes outside MIDI 0–127, so it uses the default root ${pitchName(DEFAULT_ROOT_MIDI)}`);
+  }
+  return warnings;
 }
 
 // How makeMidi turns an SNES note's volSeries into its shape (n.env): every

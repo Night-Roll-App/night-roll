@@ -22,14 +22,20 @@
 // Options beyond the ABI: `present` (a byte mask from a USF rip: reading a
 // missing byte throws with its offset), `io` ({port: value} the game would
 // have written), `variation` (the id's SEQ_VARIATION bit: 0 or 0x80),
-// `maxSeconds` / `maxTicks` / `stopAtLoop`. The result
-// carries `ioReads` so a caller can tell a game-driven song from a broken
-// one. Verified against the SM64 / OoT / MM catalogues (INTEGRATION.md §8).
+// `maxSeconds` / `maxTicks` / `stopAtLoop`, `loadSeq` (id -> {bytes,
+// present} | null: the set's other sequences, for B0/C4) and `player` (this
+// player's index, for C4). The result carries `ioReads` so a caller can tell
+// a game-driven song from a broken one, `loads` (what B0/C4 brought in, when)
+// and `warnings`. Verified against the SM64 / OoT / MM catalogues (INTEGRATION.md §8).
 //
 // Implemented (state actually tracked, affects output):
 //   all three levels: FF FD FE FC F8 F7 F6 FB FA F9 F5 (+ F4 F3 F2 in oot)
 //   sequence: DF DE DD DC D7 D6 D2 D1 CC C9 C8 0x0n 0x5n 0x7n 0x8n 0x9n
-//             oot: CD (dyncall) C6 (stop) 0x4n 0xAn
+//             oot: CD (dyncall) C6 (stop) 0x4n 0xAn, B0n (ldseq: opts.loadSeq
+//             copies another sequence in), C4 (runseq on this player: the
+//             sequence swaps, the io ports stay), CE (rand: each site returns
+//             0, 1, 2, … in turn — the game's pick isn't reproducible — with
+//             a warning), 0x0n testchan = "channel not enabled"
 //   channel:  C1 C2 C3 C4 C5 C7 C8 C9 CB CC DB E4 EB, sm64 low ops
 //             0x0n 0x1n 0x2n 0x3n 0x4n 0x5n 0x6n 0x7n 0x8n 0x9n 0xAn 0xBn,
 //             oot low ops 0x0n 0x2n 0x3n 0x4n 0x5n 0x6n 0x7n 0x78 0x8n
@@ -54,8 +60,8 @@
 //   (B0 taps in the sequence data, B3 rewrites them from the engine's
 //   low/high-pass rows, B1 drops it → `filter`) and comb filter (BB → `comb`).
 // Stubbed (arguments consumed, effect ignored — listed in result.stubbed
-// when encountered): the mute machinery, note pools, the oot random ops
-// (read as 0 so output is deterministic), oot ldsample (0x1n)
+// when encountered): the mute machinery, note pools, runseq on another
+// player, an ldseq of a sequence the rip lacks, oot ldsample (0x1n)
 // and any opcode outside the tables, which throw with the offset.
 import { TICKS_PER_BEAT, SEMITONE_TO_MIDI, DEFAULT_SHORT_VEL, DEFAULT_SHORT_GATE } from "./constants.mjs";
 export { TICKS_PER_BEAT, SEMITONE_TO_MIDI };
@@ -80,16 +86,19 @@ export function ootFilterTaps(lowPass, highPass) {
 
 export function parseSequence(input, opts = {}) {
   const {abi = "sm64", maxTicks = TICKS_PER_BEAT * 4 * 2000, maxSeconds = Infinity,
-         maxNotes = 250000, stopAtLoop = true, present = null, io = null, variation = 0} = opts;
+         maxNotes = 250000, stopAtLoop = true, present = null, io = null, variation = 0,
+         loadSeq = null, player: playerIdx = null} = opts;
   if (abi !== "sm64" && abi !== "oot" && abi !== "mm") throw new Error("abi must be sm64, oot or mm, got " + abi);
   const oot = abi === "oot" || abi === "mm"; // the OoT generation; "mm" differs only in the channel A0-BE table
   const mm = abi === "mm";
   // copy: channel C7 / sequence C7 write into the sequence bytes
-  const seq = input instanceof ArrayBuffer ? new Uint8Array(input.slice(0)) : Uint8Array.from(input);
+  // (`let`: the oot runseq C4 swaps in another sequence on this player)
+  let seq = input instanceof ArrayBuffer ? new Uint8Array(input.slice(0)) : Uint8Array.from(input);
   // `present[i]` falsy = byte i is a hole (a USF rip carries only the bytes
   // the game read); reading one is an error, not a zero
-  const have = present ? Uint8Array.from(present) : null;
-  const notes = [], tempos = [], stubbed = new Set();
+  let have = present ? Uint8Array.from(present) : null;
+  const notes = [], tempos = [], stubbed = new Set(), warnings = [], loads = []; // loads: [{tick, op: "ldseq"|"runseq", id}]
+  const warn = w => { if (!warnings.includes(w)) warnings.push(w); };
   // what reaches a held note at the next update (effects.c sequence_channel_process_sound recomputes
   // every layer's noteVelocity = velocitySquare × volume × volumeScale × fadeVolume each update; a
   // note's vibrato reads the channel's rate/extent targets live): per channel, the level and the
@@ -172,8 +181,29 @@ export function parseSequence(input, opts = {}) {
   // the music returns to (the target may be the mid-song FD delay itself).
   const firstVisit = new Map();
   function noteLoop(target, s) {
+    if (steered) { if (s.depth === 0) steerLoop("jump " + target + "|" + player.io.join(",") + "|" + randKey(), target); return; }
     if (loop || s.depth !== 0 || !firstVisit.has(target)) return;
     loop = {tick: firstVisit.get(target), at: tick, offset: target};
+  }
+  // A game-steered script (oot: it loads sequences into itself with ldseq B0
+  // or picks with rand CE — OoT's Hyrule Field controller, seq 2, does both)
+  // jumps back after every section it plays, so its first backward jump is
+  // the controller's loop, not the music's. Its loop is where the state that
+  // decides what plays next repeats. At an ldseq: the sequence loaded, where
+  // the top level stands (its pc or call site, its loop counters) and each
+  // rand site's place in its cycle — not the io ports, which such a
+  // controller writes for itself (which buffer it loads into, the last pick:
+  // seq 2 alternates two buffers, so with them a round of an odd number of
+  // pieces would never repeat). At a top-level backward jump: the target, the
+  // io ports and the rand cycle.
+  let steered = false;
+  const randSites = new Map(); // CE offset -> {k: picks made, n}
+  const steerSeen = new Map();
+  const randKey = () => [...randSites].map(([a, r]) => a + ":" + (r.k % (r.n || 256))).join(",");
+  function steerLoop(key, offset) {
+    if (loop) return;
+    if (steerSeen.has(key)) loop = {tick: steerSeen.get(key), at: tick, offset, steered: true};
+    else steerSeen.set(key, tick);
   }
 
   // ---- notes
@@ -523,6 +553,42 @@ export function parseSequence(input, opts = {}) {
     throw fail("channel", cmd, at);
   }
 
+  // ldseq B0n: AudioLoad_SlowLoadSeq copies sequence `id` into this sequence's own memory at `dst` and
+  // sets io port n to 1 when done (0 when the id cannot load). The copy is instant here; the bytes come
+  // from opts.loadSeq(id) → {bytes, present} (the rip's ROM or RAM cache), null = not in the rip.
+  function ldSeq(port, id, dst) {
+    const L = loadSeq && loadSeq(id);
+    if (!L) { player.io[port] = 0; stub("sequence ldseq 0xBn"); warn("loads sequence " + hex(id) + ", which is not in the rip (read as a failed load)"); return; }
+    const end = Math.min(seq.length, dst + L.bytes.length);
+    for (let a = dst; a < end; a++) { seq[a] = L.bytes[a - dst]; if (have) have[a] = L.present ? L.present[a - dst] : 1; }
+    for (const m of [filters, envs]) for (const a of [...m.keys()]) if (a < end && a + 0x100 > dst) m.delete(a); // caches of the overwritten bytes
+    steered = true;
+    player.io[port] = 1;
+    loads.push({tick, op: "ldseq", id, dst});
+    steerLoop("load " + id + "|" + (player.st.depth ? player.st.stack[0] : player.st.pc) + "|" + player.st.loops.join(",") + "|" + randKey(), dst);
+  }
+  // runseq C4 pp ss: AudioLoad_SyncInitSeqPlayer(pp, ss) — pp 0xFF is this player. On this player it
+  // stops the channels, resets the player (AudioSeq_ResetSequencePlayer: 120 bpm, no transposition,
+  // the default short-note tables) and starts sequence ss at its first byte; the io ports stay
+  // (only AudioSeq_InitSequencePlayer, at boot, clears them). Returns true when it swapped.
+  // Another player's sequence is not captured here: a stub, and a warning.
+  function runSeq(target, id) {
+    const self = target === 0xFF || (playerIdx != null && target === playerIdx);
+    const L = self && loadSeq ? loadSeq(id) : null;
+    if (!L) {
+      stub("sequence runseq C4");
+      warn(self ? "starts sequence " + hex(id) + ", which is not in the rip" : "starts sequence " + hex(id) + " on another player (not captured)");
+      return false;
+    }
+    loads.push({tick, op: "runseq", id});
+    freeChannels(0xFFFF);
+    seq = Uint8Array.from(L.bytes); have = L.present ? Uint8Array.from(L.present) : null;
+    filters.clear(); envs.clear(); firstVisit.clear(); randSites.clear(); steerSeen.clear(); steered = false;
+    player.st = state(0); player.delay = 0; player.transposition = 0; player.volume = 1; player.shortVel = -1; player.shortGate = -1;
+    setTempo(120);
+    return true;
+  }
+
   function setTempo(bpm) {
     player.tempo = Math.max(1, bpm);
     const last = tempos[tempos.length - 1];
@@ -573,12 +639,20 @@ export function parseSequence(input, opts = {}) {
           case 0xCC: player.value = seqVal(u8(s)); break;
           case 0xC9: player.value = seqVal(player.value & u8(s)); break;
           case 0xC8: player.value = seqVal(player.value - u8(s)); break;
-          case 0xCE: if (!oot) throw fail("sequence", cmd, at); u8(s); player.value = 0; stub("sequence random CE"); break;
+          // rand: the game's value is (audioRandom >> 2) % n, audioRandom stirred with osGetCount() every
+          // audio frame (oot/mm seqplayer.c ASEQ_OP_SEQ_RAND) — not reproducible without the CPU clock.
+          // Each site returns 0, 1, 2, … in turn instead: every choice once, in order, deterministic.
+          case 0xCE: if (!oot) throw fail("sequence", cmd, at); {
+            const n = u8(s), r = randSites.get(at) || {k: 0, n};
+            randSites.set(at, r); player.value = seqVal(n ? r.k % n : r.k & 0xFF); r.k++; steered = true;
+            warn("this song picks sections at random in the game; the capture plays each choice in turn");
+            break;
+          }
           case 0xCD: if (!oot) throw fail("sequence", cmd, at); { const t = u16(s); if (player.value !== -1) { push(s, s.pc); s.pc = u16at(t + player.value * 2); } } break;
           case 0xC7: { const v = u8(s), a = u16(s); poke(a, (player.value + v) & 0xFF); break; }
           case 0xC6: if (!oot) throw fail("sequence", cmd, at); player.enabled = false; freeChannels(0xFFFF); return;
           case 0xC5: case 0xC3: case 0xC2: if (!oot) throw fail("sequence", cmd, at); u16(s); stub("sequence " + hex(cmd)); break;
-          case 0xC4: if (!oot) throw fail("sequence", cmd, at); u8(s); u8(s); stub("sequence runseq C4"); break;
+          case 0xC4: if (!oot) throw fail("sequence", cmd, at); if (runSeq(u8(s), u8(s))) return; break;
           case 0xEF: if (!oot) throw fail("sequence", cmd, at); u16(s); u8(s); stub("sequence EF"); break;
           default: throw fail("sequence", cmd, at);
         }
@@ -586,7 +660,9 @@ export function parseSequence(input, opts = {}) {
       }
       const lo = cmd & 0xF;
       switch (cmd & 0xF0) {
-        case 0x00: { const C = player.channels[lo]; if (C) player.value = C.finished ? 1 : 0; break; }
+        // testchan: oot/mm read `channel->enabled ^ 1` — an initchan'd channel never started reads 1, as
+        // does an unallocated one (sequenceChannelNone is disabled); sm64 reads `finished`
+        case 0x00: { const C = player.channels[lo]; if (oot) player.value = C && C.enabled ? 0 : 1; else if (C) player.value = C.finished ? 1 : 0; break; }
         case 0x40: if (!oot) throw fail("sequence", cmd, at); disableChannel(player.channels[lo]); break;
         case 0x50: player.value = seqVal(player.value - (oot ? player.io[lo] : player.variation)); if (oot) ioReads++; break;
         case 0x60: if (!oot) throw fail("sequence", cmd, at); u8(s); u8(s); stub("sequence ldres 0x6n"); break;
@@ -594,7 +670,7 @@ export function parseSequence(input, opts = {}) {
         case 0x80: if (oot) { player.value = player.io[lo]; if (lo < 2) player.io[lo] = -1; ioReads++; } else player.value = player.variation; break;
         case 0x90: enableChannel(lo, u16(s)); break;
         case 0xA0: if (!oot) throw fail("sequence", cmd, at); { const r = s16(s); enableChannel(lo, s.pc + r); } break;
-        case 0xB0: if (!oot) throw fail("sequence", cmd, at); u8(s); u16(s); stub("sequence ldseq 0xBn"); break;
+        case 0xB0: if (!oot) throw fail("sequence", cmd, at); ldSeq(lo, u8(s), u16(s)); if (loop && stopAtLoop) return; break;
         default: throw fail("sequence", cmd, at);
       }
     }
@@ -634,7 +710,7 @@ export function parseSequence(input, opts = {}) {
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120}); // init_sequence_player default
 
   return {abi, ticksPerBeat: TICKS_PER_BEAT, notes, tempos, endTick: tick, seconds, loop,
-          truncated, selfModified, ioReads, stubbed: [...stubbed].sort(),
+          truncated, selfModified, ioReads, stubbed: [...stubbed].sort(), warnings, loads,
           channels: [...new Set(notes.map(n => n.ch))].sort((a, b) => a - b)};
 }
 

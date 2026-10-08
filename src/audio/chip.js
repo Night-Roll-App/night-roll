@@ -578,7 +578,7 @@ export const CHIPS = {
           const r = M.reconstruct(cap, {});
           const k = 5; // 2 ms ticks → 10 ms frames (SNES capture v2's series ride along — spcRebin)
           const events = M.spcRebin(r.events, k);
-          return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events};
+          return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events, warnings: r.warnings};
         },
         midiOpts: M => ({volMax: 127, shape: M.SPC_SHAPE})},
   // Sega Genesis / Mega Drive (2026-09-27; Josh: "is it gonna download games

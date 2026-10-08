@@ -312,7 +312,9 @@ function dpcmKeys(notes, beatTicks, barBeats) {
 export function bendRangeMetas(ch, semis) {
   return [[101, 0], [100, 0], [6, semis], [38, 0], [101, 127], [100, 127]].map(([c, v]) => ({t: 0, o: -0.5, d: [0xB0 | ch, c, v]}));
 }
-export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15, shape = undefined}) {
+// `warnings` (an array): where a dropped note is reported — a note MIDI cannot hold (pitch outside
+// 0–127) is never dropped silently; without the array the report goes to console.warn
+export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum, volMax = 15, shape = undefined, warnings = null}) {
   chans = {...chans, drums: 9};
   const usq = Math.round(6e7 / bpm);
   // snap:false keeps raw hardware timing — for through-composed pieces with
@@ -324,11 +326,12 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   const byCh = {};
   for (const name of Object.keys(chans)) byCh[name] = [];
   const linked = events.some(e => e.lg);
+  const dropped = new Map(); // channel -> notes dropped
   for (const e of events) {
     const t = toTick(e.startFrame);
     const d = Math.max(40, toTick(e.endFrame) - t); // min = a quantized 12th
     const p = e.drum != null ? e.drum : e.channel === "noise" ? drum(e.midi) : e.midi;
-    if (p < 0 || p > 127) continue;
+    if (p < 0 || p > 127) { dropped.set(e.channel, (dropped.get(e.channel) || 0) + 1); continue; }
     // chip volume -> velocity (accent data from the ROM); triangle and
     // envelope-mode notes have no level, so they get a neutral 96
     const v = e.vol == null ? 96 : Math.max(8, Math.round(e.vol / volMax * 127));
@@ -384,6 +387,11 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
       chans[name] = nextCh; used.add(nextCh);
     }
     tracks.push(trackBytes(name, notes, chans[name], rangeOf[name] > 2 ? bendRangeMetas(chans[name], rangeOf[name]) : []));
+  }
+  if (dropped.size) {
+    const n = [...dropped.values()].reduce((a, b) => a + b, 0);
+    const w = n + " note" + (n === 1 ? "" : "s") + " dropped: pitch outside MIDI 0–127 (" + [...dropped].map(([c, k]) => c + " ×" + k).join(", ") + ")";
+    if (warnings) warnings.push(w); else console.warn("makeMidi: " + w);
   }
   return fileBytes(tracks);
 }

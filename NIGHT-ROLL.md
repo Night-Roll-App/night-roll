@@ -7569,6 +7569,60 @@ with v1's adapter swapped in (same notes), and FF4 Main Theme when the rip
 is cached (`SNES_RIPS=<dir>` or /tmp/recap/rips/snes; the guard checks the
 file, so an empty cache directory skips).
 
+## Game-steered N64 sequences, and no silent note drops (2026-10-07, empty captures)
+
+docs/plans/2026-10-07-empty-captures.md is the investigation (Terminal
+#207–#209: five published songs had no notes). The fixes are about how the
+driver works, never which game it is.
+
+**Oot-generation opcodes** (tools/n64/seq-libultra.mjs `parseSequence`):
+- `ldseq` B0n: `ldSeq` copies sequence `id` into this sequence's memory at
+  `dst` and sets io port n = 1, or 0 with a warning when the rip lacks it.
+  The bytes come from `opts.loadSeq(id)`; capture.mjs passes
+  `sequenceImageOf`, which uses the ROM pages or the audio heap's RAM copy,
+  whichever holds more.
+- `runseq` C4 pp ss: `runSeq`. When pp is 0xFF or this player (`opts.player`),
+  it stops the channels, resets the player (120 bpm, no transposition,
+  default short-note tables), keeps the io ports, and starts ss at byte 0.
+  On another player it is a stub with a warning.
+- `testchan` 0x0n reads `!enabled`, as `enabled ^ 1` does in the engine. An
+  initchan'd channel that never started reads 1, and so does an
+  unallocated one. SM64 keeps `finished`.
+- `rand` CE n: the game's pick needs the CPU clock, so each site returns
+  0, 1, 2, … in turn. The warning says "this song picks sections at random
+  in the game; the capture plays each choice in turn".
+- The result carries `loads` ([{tick, op, id}]) and `warnings`.
+
+**Loop of a game-steered script.** After a script runs ldseq or rand,
+its backward jumps no longer mark the loop. The loop is the first repeat
+of the state that decides what plays next:
+- at an ldseq: the id, the top level's pc or call site, its loop counters,
+  and each rand site's count mod n. The io ports are left out: OoT's
+  Hyrule Field controller alternates two load buffers through io 6.
+- at a top-level backward jump: the target, the io ports and the rand
+  cycle.
+
+**Io ports from the save state** (capture.mjs `parkedPlayerIo`). The player
+is the parked call's a0, decoded from the instruction at the PC (`lbu
+a0,1(s0)` before `jal AudioLoad_SyncInitSeqPlayer`). The `SequencePlayer`
+array is found by shape (`OOT_PLAYER`: 16 evenly stepped channel pointers
+at +0x38, io at +0x158, 0x160 apart; the same in oot and mm). These offsets
+are engine-dialect data: WHERE to look. The OoT Hyrule Field minis get
+player 1, io 2 = 0/1/2 (main/battle/waiting). MM's minis park at the
+exception vector, so they read nothing and keep io = −1. The console voice
+uses the same `sequenceOfSet`, so it follows the same parse.
+
+**SPC root fallback** (tools/spc/notes.mjs `rootFallback`, run by
+`reconstruct`). An instrument whose root confidence is "low"/"none" and
+which has any note outside MIDI 0–127 gets `DEFAULT_ROOT_MIDI` (72). Its
+notes are re-pitched from PITCH, and `reconstruct` returns a warning
+(`r.warnings` → `CHIPS.spc.run` → the import row).
+
+**makeMidi never drops silently** (tools/nsf/midi-write.mjs): a note
+outside 0–127 is counted per channel and reported into `opts.warnings`, or
+to console.warn when no array is passed. `captureChipTrack` passes one and
+returns `warnings` on the capture.
+
 ## Console voice: SNES stereo + echo, N64 channel bends (2026-10-07, capture audit 2 §3.3)
 
 Renderer fixes only: no .mid changes and no re-capture, since every play
