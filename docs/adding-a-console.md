@@ -53,6 +53,13 @@ Josh 2026-09-28; do Genesis first when a console is next added.
    shared `makeMidi` (`ccFromSeries`, `shape` options) — a new console reuses
    those writer fields rather than adding its own. Bends are measured from
    the note's own starting register value, never from an estimated root.
+   Sequence-driver consoles (PS1, N64) write ticks directly: they put the
+   same per-note fields (`env`, `bend`, `prog`, `rev`, `lg`) on the notes
+   they hand `trackBytes`, read the driver's own state for each (N64: the
+   channel level as CC7, the bank envelope as the shape, the render's own
+   vibrato/portamento classes for the bend — NIGHT-ROLL.md "N64 capture
+   v2"), and check every raw controller's scale (Rare's cc10 is 0..127, not
+   EAD's 0..1 — v1 put every Rare track hard right).
 4. **Chip audio.** A renderer (tools/<console>/…-render.mjs) giving one
    buffer per track (stereo pair `{l, r}` when the hardware pans), the
    console's own samples/synthesis, envelopes, volume under held notes,

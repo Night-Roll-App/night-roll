@@ -318,13 +318,36 @@ export function attachGains(notes, volsByCh) {
   return n;
 }
 
+// N64 capture v2 (the .mid only; the render reads n.pan/n.rev at the note-on): the SDK player
+// sets every voice of the channel on a cc10 / cc91 (seqp.c __handleMIDIMsg: alSynSetPan /
+// alSynSetFXMix per voice), so the changes that land while a note sounds ride it as
+// n.panChanges [{t, pan}] / n.revChanges [{t, rev}] (t ticks after the note-on, raw 0..127);
+// n.bendC0 = the wheel at the note-on in cents (bend × the instrument's bendRange).
+export function attachHeldControls(notes, ctlByCh, bendRangeOf = () => 200) {
+  for (const n of notes) {
+    if (n.bend) n.bendC0 = n.bend * (bendRangeOf(n.inst) || 200);
+    const evs = ctlByCh.get(n.ch);
+    if (!evs) continue;
+    let pan = n.pan, rev = n.rev;
+    const pc = [], rc = [];
+    for (const e of evs) {
+      if (e.tick <= n.tick || e.tick >= n.tick + n.dur) continue;
+      const t = e.tick - n.tick;
+      if (e.pan !== undefined && e.pan !== pan) { if (pc.length && pc[pc.length - 1].t === t) pc[pc.length - 1].pan = e.pan; else pc.push({t, pan: e.pan}); pan = e.pan; }
+      if (e.rev !== undefined && e.rev !== rev) { if (rc.length && rc[rc.length - 1].t === t) rc[rc.length - 1].rev = e.rev; else rc.push({t, rev: e.rev}); rev = e.rev; }
+    }
+    if (pc.length) n.panChanges = pc;
+    if (rc.length) n.revChanges = rc;
+  }
+}
+
 export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) {
   const scale = TICKS_PER_BEAT / cs.division;
   const T = t => Math.round(t * scale);
   const notes = [], tempoMap = new Map(), warnings = [];
   const chan = [];
   for (let c = 0; c < 16; c++) chan.push({program: null, vol: 127, pan: 64, rev: 0, bend: 0});
-  const loops = new Map(), bendsByCh = new Map(), volsByCh = new Map();
+  const loops = new Map(), bendsByCh = new Map(), volsByCh = new Map(), ctlByCh = new Map(); // ctlByCh: cc10/cc91 for the held-note timelines
   let endTick = 0, offs = 0, poly = 0, pressure = 0;
   const tracks = unrollTracks(cs);
   const all = [];
@@ -337,8 +360,8 @@ export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) 
       case "program": C.program = e.program; break;
       case "control":
         if (e.controller === 7) { C.vol = e.value; (volsByCh.get(e.ch) || volsByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), value: e.value}); }
-        else if (e.controller === 10) C.pan = e.value;
-        else if (e.controller === 91) C.rev = e.value;
+        else if (e.controller === 10) { C.pan = e.value; (ctlByCh.get(e.ch) || ctlByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), pan: e.value}); }
+        else if (e.controller === 91) { C.rev = e.value; (ctlByCh.get(e.ch) || ctlByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), rev: e.value}); }
         break;
       case "bend": C.bend = e.value / 8192; (bendsByCh.get(e.ch) || bendsByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), value: e.value}); break;
       case "noteOff": offs++; break;
@@ -370,6 +393,7 @@ export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) 
   if (slid) warnings.push(slid + " notes carry pitch bends (the roll writes each landed pitch as its own note; the render bends the voice)");
   const gained = attachGains(notes, volsByCh);
   if (gained) warnings.push(gained + " notes change volume while held (cc7; the render follows)");
+  attachHeldControls(notes, ctlByCh, bendRangeOf);
   const tempos = [...tempoMap].map(([tick, bpm]) => ({tick, bpm: Math.round(bpm * 100) / 100})).sort((a, b) => a.tick - b.tick);
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120});
   if (offs) warnings.push(offs + " note-off events (unused by this player, ignored)");

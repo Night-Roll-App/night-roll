@@ -578,3 +578,91 @@ export async function renderOotGen(result, opts = {}) {
   if (opts.onProgress) opts.onProgress(1);
   return out;
 }
+
+// ---- the envelope a note is held under, for the .mid (N64 capture v2) -------
+// noteEnvelopes(result, {set, banks}) → Map(note → {amp: Float32Array(dur), peak}), EAD only: per
+// sequence tick of the note (k = 0 … dur − 1, the loudest the voice gets inside that tick, so an attack
+// that lands within one tick is no shape), the voice's envelope level as an amplitude — sm64
+// (adsr/32767)² (the volume law squares it), the oot generation's float ADSR as is. `peak` = the
+// envelope's own highest level held (no release), so a note whose envelope never moves after its attack
+// writes no shape. The envelope is the one the render picks, by the same rules (renderN64 /
+// renderOotGen: the layer's unless its release is 0, then the channel's; a drum's own). Only the note's
+// held span: the release after the note-off is the instrument's own (the .mid has no place for it). A
+// note the render cannot voice (no bank, no instrument, a synth waveform) has no entry. A Rare result
+// gets none: its notes carry their own n.env from the capture.
+export function noteEnvelopes(result, opts = {}) {
+  const out = new Map();
+  if (!result || !result.notes || !result.notes.length) return out;
+  const {tempos} = result;
+  const set = opts.set;
+  // the tick windows of one note, in seconds from its start: [k] = [start of tick k, start of tick k + 1)
+  const windows = n => { const t0 = tickSeconds(tempos, n.tick), w = new Float64Array(n.dur + 1); for (let k = 0; k <= n.dur; k++) w[k] = tickSeconds(tempos, n.tick + k) - t0; return w; };
+  const perTick = (n, ups, step) => { // step(): the next update's amplitude; the update at j sits at j/ups s
+    const w = windows(n), amp = new Float32Array(n.dur);
+    let j = 0, last = 0;
+    for (let k = 0; k < n.dur; k++) {
+      let best = -1;
+      while (j / ups < w[k + 1]) { last = step(); j++; if (last > best) best = last; if (j > 4e6) break; }
+      amp[k] = best < 0 ? last : best;
+    }
+    return amp;
+  };
+  const peaks = new Map(); // envelope → its highest held level over 4 s (or until it hangs / ends)
+  const peakOf = (key, make, ups) => {
+    if (peaks.has(key)) return peaks.get(key);
+    const env = make();
+    let p = 0;
+    for (let j = 0; j < 4 * ups; j++) { const a = env.update(); if (a > p) p = a; if (env.done || env.state === HANG) break; } // HANG = O_HANG: both generations hold there
+    peaks.set(key, p);
+    return p;
+  };
+  // Rare: the capture already shapes its notes (rare.mjs attachVoiceShapes: the sound's envelope × a
+  // one-shot sample's fade, as n.env) — a second shape here would fade them twice
+  if (result.driver === "rare") return out;
+  const oot = result.gen === "oot";
+  const rom = opts.rom || (set && set.rom);
+  const bankIds = opts.banks && opts.banks.length ? opts.banks : null;
+  if (!bankIds || (oot ? !set : !rom)) return out;
+  const cache = new Map();
+  let loc = null, mem = null, files = null;
+  const bankOf = i => {
+    const id = bankIds[i] != null ? bankIds[i] : bankIds[0];
+    if (!cache.has(id)) {
+      let b = null;
+      try {
+        if (oot) { if (!loc) { loc = opts.loc && opts.loc.gen === "oot" ? opts.loc : locateEAD(set); mem = ootMemory(set); } b = readFont(set, loc, id, {mem}); }
+        else { if (!files) files = opts.files || findAudioFiles(rom, opts.loc || null); b = readBank(rom, files, id); }
+      } catch { b = null; }
+      cache.set(id, b);
+    }
+    return cache.get(id);
+  };
+  for (const n of result.notes) {
+    const bank = bankOf(n.bank || 0);
+    if (!bank) continue;
+    let layerEnv = null, layerRel = 0;
+    if (n.drum) {
+      const d = bank.drum(n.semitone);
+      if (!d) continue;
+      layerEnv = d.envelope; layerRel = oot ? d.decayIndex : d.releaseRate;
+    } else {
+      if (n.inst == null || n.inst >= 0x80 || (oot && n.inst === 0x7E)) continue;
+      if (!bank.instrument(n.inst)) continue;
+      if (n.lyAdsr) {
+        if (n.lyAdsr.inst != null) { const li = bank.instrument(n.lyAdsr.inst); if (li) { layerEnv = li.envelope; layerRel = oot ? li.decayIndex : li.releaseRate; } }
+        else { layerEnv = n.lyAdsr.envelope; layerRel = n.lyAdsr.releaseRate; }
+      }
+    }
+    const chInst = n.chInst != null ? bank.instrument(n.chInst) : null;
+    const chEnv = n.chEnv || (chInst ? chInst.envelope : oot ? OOT_DEFAULT_ENVELOPE : DEFAULT_ENVELOPE);
+    const envelope = layerRel === 0 || !layerEnv ? chEnv : layerEnv;
+    if (!envelope) continue;
+    const ups = oot ? OOT_UPDATES_PER_SECOND : UPDATES_PER_SECOND;
+    const make = oot ? () => new OotAdsr(envelope) : () => { const a = new Adsr(envelope); return {update: () => { const v = a.update() / 32767; return v * v; }, get done() { return a.done; }, get state() { return a.state; }}; };
+    const peak = peakOf(envelope, make, ups);
+    if (!(peak > 0)) continue;
+    const env = make();
+    out.set(n, {amp: perTick(n, ups, () => env.update()), peak});
+  }
+  return out;
+}

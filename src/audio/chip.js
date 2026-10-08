@@ -758,7 +758,11 @@ export const CHIPS = {
           ), {sampleRate: 32000});
           const shiftWarnings = M.applySoundingOffsets(groups, offsets, "midi");
           if (onProgress) onProgress(0.6);
-          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4, offsets});
+          // N64 capture v2: the envelope each note is held under (the game's own bank/font ADSR, Rare's
+          // sound envelopes) becomes its volume shape; a rip whose bank cannot be read writes none
+          let envelopes = null;
+          try { envelopes = M.noteEnvelopes(res, {set, banks: seq.banks}); } catch (e) { (res.warnings || (res.warnings = [])).push("no volume shapes: " + (e && e.message || e)); }
+          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4, offsets, envelopes});
           const tpb = res.ticksPerBeat || 48;
           { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them
             let cov = 0; for (let i = 0; i < present.length; i++) cov += present[i];

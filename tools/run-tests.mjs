@@ -10,7 +10,7 @@ const FILES = [
   "night-roll", "nsf", "import-set", "album-order", "gbs", "vgm", "vgm-real",
   "psx", "psx-real", "psx-capture-v2", "psx-instr", "psx-render", "ps2", "ps2-real", "spc",
   "spc-real", "spc-render", "spc-undrum", "n64", "n64-real", "n64-bank",
-  "n64-rare", "sounding", "chip-worker", "instruments", "instruments-export",
+  "n64-rare", "n64-capture-v2", "sounding", "chip-worker", "instruments", "instruments-export",
   "instruments-sf2", "gestures", "bridge", "ai", "annotate", "ask-storage", "pwa", "package", "m3u-real",
   "migrate-rollnotes", "modules", "controls", "boot-order", "quiz", "theory",
   "theory-harmony", "multi-file-chip", "capture-diff",

@@ -105,11 +105,15 @@ export function parseSequence(input, opts = {}) {
   // vibrato targets over time, sliced onto each note at the end as n.gain / n.vibChanges; the same
   // function recomputes noteFreqScale = layer freqScale × the channel's (D3/DE/EC) for every held
   // note (OoT's AudioEffects_SequenceChannelProcessSound too, on changes.s.freqScale) → n.freqChanges
-  const levelEvents = [], vibEvents = [], bendEvents = [];
+  // The channel's pan (DD, DC, E8/E7) reaches held notes the same way (notePan = layer pan × (1 − weight) +
+  // channel pan × weight, every update) → n.panChanges, for the .mid (N64 capture v2; the console voice still
+  // pans at the note-on)
+  const levelEvents = [], vibEvents = [], bendEvents = [], panEvents = [];
   const levelOf = C => C.volume * C.volumeScale * player.volume;
   const noteLevel = C => { levelEvents.push({tick, ch: C.idx, level: levelOf(C)}); };
   const noteVib = C => { vibEvents.push({tick, ch: C.idx, ...C.vib}); };
   const noteBend = C => { bendEvents.push({tick, ch: C.idx, freq: C.freqScale}); };
+  const notePanEv = C => { panEvents.push({tick, ch: C.idx, pan: C.pan, panWeight: C.panWeight}); };
   // io ports are how the game steers a sequence (which section, which
   // band member); we never write them, so a song that reads them is
   // running a path the game would not necessarily take — count the reads
@@ -213,6 +217,9 @@ export function parseSequence(input, opts = {}) {
     L.note = null;
   }
   function noteOn(L, ev) {
+    // C4 continuous notes: a note-on while the layer's last note still sounds (no rest, no gate release)
+    // carries the one voice on (N64 capture v2: n.lg, the .mid's glide link)
+    if (L.continuous && L.note && !ev.drum) ev.lg = true;
     noteOff(L);
     if (notes.length >= maxNotes) throw new Error("more than " + maxNotes + " notes — runaway sequence?");
     L.note = ev;
@@ -421,7 +428,7 @@ export function parseSequence(input, opts = {}) {
   // into the channel, replacing any DA/D9 override; 0x7F (drums) and >= 0x80
   // (the synth waveforms) leave the channel's adsr as it was
   function chanParams(C, [tr, pan, weight, rev, revIdx]) {
-    C.transposition = (tr << 24) >> 24; C.pan = pan / 128; C.panWeight = weight / 128; C.reverb = rev; C.reverbIndex = revIdx;
+    C.transposition = (tr << 24) >> 24; C.pan = pan / 128; C.panWeight = weight / 128; C.reverb = rev; C.reverbIndex = revIdx; notePanEv(C);
   }
   function setInstr(C, id) {
     C.instr = id;
@@ -458,8 +465,8 @@ export function parseSequence(input, opts = {}) {
       case 0xE6: case 0xE9:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
       case 0xD9: C.release = u8(s); break;
-      case 0xDD: C.pan = u8(s) / 128; break;
-      case 0xDC: C.panWeight = u8(s) / 128; break;                                 // chan_setpanmix: how much of the pan is the channel's (rest: the layer's / the drum's)
+      case 0xDD: C.pan = u8(s) / 128; notePanEv(C); break;
+      case 0xDC: C.panWeight = u8(s) / 128; notePanEv(C); break;                                 // chan_setpanmix: how much of the pan is the channel's (rest: the layer's / the drum's)
       case 0xDF: C.volume = u8(s) / 127; noteLevel(C); break;
       case 0xE0: C.volumeScale = u8(s) / 128; noteLevel(C); break;
       // vibrato (seqplayer.c JP/US): D7 rate = u8·32 (start = target, no ramp), D8 extent target = u8·8
@@ -694,7 +701,7 @@ export function parseSequence(input, opts = {}) {
   // each note carries the level steps and vibrato-target changes that land while it sounds
   // (offsets in ticks from its start); n.vol stays the level at note-on
   const byCh = m => { const o = new Map(); for (const e of m) (o.get(e.ch) || o.set(e.ch, []).get(e.ch)).push(e); return o; };
-  const lv = byCh(levelEvents), vb = byCh(vibEvents), bd = byCh(bendEvents);
+  const lv = byCh(levelEvents), vb = byCh(vibEvents), bd = byCh(bendEvents), pn = byCh(panEvents);
   for (const n of notes) {
     // the roll: a glide that lands on another pitch is one note at the landed pitch (n.slide, the shared shape);
     // one that returns to the written pitch stays one note
@@ -706,6 +713,9 @@ export function parseSequence(input, opts = {}) {
     // the channel bend while the note holds (n.freq is its value at the note-on): {t ticks from the start, f}
     const bends = (bd.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
     if (bends.length) { let f = n.freq; const fc = []; for (const e of bends) if (e.freq !== f) { fc.push({t: e.tick - n.tick, f: e.freq}); f = e.freq; } if (fc.length) n.freqChanges = fc; }
+    // the channel's pan while the note holds: {t ticks from the start, pan, panWeight} (n.pan/n.panWeight are the note-on's)
+    const pans = (pn.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
+    if (pans.length) { let p = n.pan, w = n.panWeight; const pc = []; for (const e of pans) if (e.pan !== p || e.panWeight !== w) { const last = pc[pc.length - 1]; if (last && last.t === e.tick - n.tick) { last.pan = e.pan; last.panWeight = e.panWeight; } else pc.push({t: e.tick - n.tick, pan: e.pan, panWeight: e.panWeight}); p = e.pan; w = e.panWeight; } if (pc.length) n.panChanges = pc; }
   }
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120}); // init_sequence_player default
 

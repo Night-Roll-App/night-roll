@@ -8010,6 +8010,94 @@ against the v1 writer: VELOCITY, notes equal) and tests/ps2-real.test.mjs
 (The King's Curse, Auron's Theme, Pursuit when the rips are on disk —
 `PS2_RIPS=<dir>` or /tmp/recap/rips/ps2).
 
+## N64 capture v2 — level, envelopes, bends, glide links, programs, reverb, pan (2026-10-07)
+
+docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.2 "N64". What a USF
+capture (both drivers: Nintendo EAD — SM64, OoT, MM — and Rare's SDK
+player — GoldenEye, Banjo-Kazooie, DK64, DKR, JFG) now writes on top of v1.
+Notes — start, pitch, length, track order and names, tempo, loop — are
+v1's (capture-diff VELOCITY, never MOVED); only a continuation piece's
+velocity changes (below). Everything is read from the sequence and the
+rip's own bank, the same way for every game on the engine.
+
+- **Where it is read.** tools/n64/seq-libultra.mjs (EAD) already kept
+  `n.vol`, `n.gain` (level steps under the note), `n.freq` /
+  `n.freqChanges` (D3/DE/EC), `n.vib` / `n.vibChanges`, `n.porta`, `n.rev`,
+  `n.inst`; v2 adds `n.panChanges` (DD/DC/E8/E7 while the note holds —
+  effects.c recomputes notePan every update) and `n.lg` (a C4 continuous
+  note-on while the layer's last note still sounds). tools/n64/rare.mjs
+  `attachHeldControls` (in cseqNotes, apart from the kit detection) adds
+  `n.panChanges` / `n.revChanges` (the SDK player sets every voice of the
+  channel on a cc10 / cc91) and `n.bendC0` (the wheel at the note-on, in
+  cents). tools/n64/render.mjs `noteEnvelopes(result, {set, banks})` gives
+  each EAD note the envelope the render would pick (layer / channel / drum
+  ADSR) as a per-tick amplitude; chip.js's USF capture passes it to toMidi
+  (a bank that cannot be read writes no shapes and says so). A Rare result
+  gets none from it: rare.mjs `attachVoiceShapes` already puts the sound's
+  envelope × a one-shot sample's fade on the note as `n.env`.
+- **What the .mid carries** (tools/n64/notes.mjs toMidi):
+  - **CC7** = the channel's level, at tick 0 and at every change (a note-on
+    or a step under a held note): EAD volume × scale × the player's (the oot
+    generation squares it, as its volume law does), Rare cc7/127. One
+    timeline per track, so every held voice follows it as in the game.
+    Velocity stays the note command's.
+  - **Volume shape** (`n.env`), one source per note, never both: the
+    capture's own `n.env` when the note has one (Rare), written as is; else
+    the EAD bank envelope over the held span, falls included (shapeFromSeries,
+    tol 2, the loudest level per sequence tick, so an attack inside one tick
+    is no shape), against the envelope's own peak. A wheel-split piece after
+    the first samples its whole note's shape from its own start: the level
+    there is its velocity, the rest is relative to it.
+    The release after the note-off is the instrument's and is not written.
+    Many instruments hold flat once attacked (Gerudo Valley's all do — the
+    decay is in the sample) and write none.
+  - **Pitch bend** = the note's sounding pitch from its own key: the EAD
+    channel bend at the note-on (the roll keeps the key; SM64 35 / OoT 237 /
+    MM 290 notes were 50 cents or more off) and under it, vibrato and
+    portamento simulated per audio update with the render's own `Vibrato` /
+    `Portamento` classes (sm64 240/s, oot 180/s, the oot sine and portamento
+    speeds) thinned to corners (RDP 3 cents); Rare's wheel at the note-on and
+    each wheel event, as steps. RPN 0 when a track bends past ±2 (≤ ±24).
+  - **Glide links (CC84)**: Rare's wheel-split pieces after the first (the
+    SDK bends the sounding voice — no key-on) and EAD C4 continuous notes. A
+    piece's bend is measured from its own key along the whole note's one
+    path, so links are continuous without chainBends. A continuation's
+    velocity is the envelope's level at its start (the voice is not
+    re-attacked); its shape carries on from there.
+  - **Program** at every change (EAD C1/EB, Rare 0xC0); a synth waveform
+    (instrument 0x80+) has no number and writes none (v1 aliased it & 0x7F).
+    Drums none. v1 wrote one per track at tick 0 only; MIDI playback v2's
+    `ctlCopy` already carries programs through every hop to publish.
+  - **CC91** = the send at each note-on (EAD D4/E8/E7, the oot bit 7 side
+    swap masked off), plus Rare cc91 changes under a note.
+  - **CC10** at each note-on (as v1) plus every change under a held note.
+    **Rare fix:** v1 read Rare's raw cc10 (0..127) as a 0..1 fraction, so
+    every published Rare track was CC10 127 — hard right — in Hear the MIDI.
+- **Limits.** MIDI pitch bend is per channel: where two notes of one track
+  overlap with different bends (a Rare chord under a wheel split — JFG 88
+  of 23,651 pieces in 20 songs, Banjo-Kazooie and GoldenEye 0), the later
+  note's bend wins (trackBytes' "never past the next note's start"). Not in
+  v2: OoT's note filter and comb (no MIDI equivalent), Rare instrument
+  vibrato/tremolo fields and CC65 (spike 4 not done), the oot ED gain.
+  The console voice still pans and sends reverb at the note-on (§3.3).
+
+Re-capture verdicts (main's capture vs v2's, tools/capture-diff.mjs; scratch
+trees /tmp/n64v2, nothing under albums/ written): open-items "N64 capture v2".
+Loudness: songs' stored synth loudness (`nsf.tracks[base].loud`) was measured
+without CC7, so a re-capture needs a fresh `measure-loudness --apply`.
+
+Tests: tests/n64-capture-v2.test.mjs — synthetic EAD sequences (a tiny
+assembler in the test) for CC7 / CC10 / CC91 / program / D3 bend + RPN, a
+bend in force at the note-on, vibrato (sm64 and oot) against the `Vibrato`
+class, the oot squared level, C4 links, portamento modes 1 and 2; synthetic
+ALCSeq for Rare's pan fix and held-note cc7/cc10/cc91, the wheel split →
+links + bends from each piece's key; envelopes from a hand-laid sm64 bank
+(fall → shape, flat → none) and a continuation's velocity; the app's parser
+and writeMidi re-encode (tr.ctl, n.lg); every synthetic one against a
+v1-shaped result through capture-diff (never MOVED); and Diddy Kong Racing
+"Title Theme", Ocarina of Time "Gerudo Valley", Super Mario 64 "Main Theme"
+when the rips are on disk (`N64_RIPS=<dir>` or /tmp/recap/rips/n64).
+
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
 Josh approved "patches v1" (docs/plans/2026-10-06-envelopes-lfo-review.md
@@ -8235,8 +8323,7 @@ plays as one sound with its predecessor.
   strings, bell, pluck (they strike), drums, game/sf2 instruments
   (scheduleGameNote bakes each note's envelope — a render-the-chain pass is
   later), or the console voice (it replays the rip).
-- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; Game Boy — "Game Boy capture v2".
-- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; PS2 BGM's bend-born split pieces — "PS2 capture v2".
+- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; Game Boy — "Game Boy capture v2"; PS2 BGM's bend-born split pieces — "PS2 capture v2"; N64 (Rare wheel-split pieces, EAD C4 continuous notes) — "N64 capture v2".
 - **Not in this step:** the other captures marking `lg` (the per-console builders,
   §3.2), continuation velocity from the chip's real level, the optional
   connector line between linked notes (Q4), linking notes by hand (that
