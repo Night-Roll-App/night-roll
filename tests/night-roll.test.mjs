@@ -3034,7 +3034,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "drag the tag to scrub",
     "Export score",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
-    "Keep that</b>", "Velocity lane</dt>", "Shape (volume inside a note)</dt>", // docs/plans/2026-10-06-in-note-dynamics.md
+    "Save last 60s</b>", "Velocity lane</dt>", "Shape (volume inside a note)</dt>", // docs/plans/2026-10-06-in-note-dynamics.md
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
     "counts songs only", "▸ Chats", "Publish chats", "no Dock</b> button", // Terminal #111: the Publish window's count, Chats section, and the job dialog that no longer docks
     "one motion", "Retry</b> beside Close", // Terminal #112: a one-song publish closes its dialog and a floating Publish window by itself; failed, both stay with Retry

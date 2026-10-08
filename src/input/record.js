@@ -145,7 +145,7 @@ export function captureNoteOff(key) {
 // slider applies the same way it does to a recording. Raw unless the
 // Snap-while-recording pref is on (recSnap), exactly Record's rule.
 export function captureKeep() {
-  if (!S.song || !editableSong()) { setInfo("Keep that works on your own songs"); return 0; }
+  if (!S.song || !editableSong()) { setInfo("Save last 60s works on your own songs"); return 0; }
   if (S.recording) { setInfo("Record is already taking this down — ● or ■ stops it first"); return 0; }
   const tr = S.song.tracks[S.selTrack];
   if (!tr || tr.kind === "audio") { setInfo("pick a note track to keep the phrase on (tap its chip)"); return 0; }

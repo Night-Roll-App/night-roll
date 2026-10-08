@@ -74,7 +74,7 @@ export const CONTROLS = {
   instoctup: {glyph: "›", cls: "", label: "", aria: "Keyboard up an octave"},
   instlock: {glyph: "🔓", cls: "", label: "", aria: "Lock the keyboard where it is"},
   instsustain: {label: "Sustain", aria: null},
-  instkeep: {label: "Keep that", aria: "Keep what you just played: the last minute of keys lands at the cursor"},
+  instkeep: {label: "Save last 60s", aria: "Keep what you just played: the last minute of keys lands at the cursor"},
 };
 
 function glyphHtml(glyph, cls) {
