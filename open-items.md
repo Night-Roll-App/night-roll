@@ -449,6 +449,9 @@ STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
 ## 2026-10-07 LOUDNESS SHIPPED (8259613f) — store the measurements next
 Each song measures itself on first play (device cache) until album.json carries it. Storing: `node tools/measure-loudness.mjs --apply --album <console>/<slug>`, one album per push — renders every song, so run it while Josh isn't using the Mac (CPU). Josh's ear check owed: FF1 Battle, FF6 Terra, Cry of the Planet, SM64 Slider at 100%, console vs Hear the MIDI.
 
+## 2026-10-07 MIDI should sound closer to Chip (Josh #217: "the chip sounds good the midi does not sound great… not that important… as long as the chip works… but having the midi sound good would be ideal")
+First heard on DKR Title Theme now that the Chip | MIDI switch exists. Gap closers, in order: N64 capture v2 (shapes, vibrato, CC91, programs — audit-2 build list), then default the MIDI's tracks to the game's own instrument samples ("game:" voices) where a rip's bank is available, falling back to synth voices.
+
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q19. (capture audit 2, 2026-10-07 — docs/plans/2026-10-07-capture-audit-2-and-glide.md) NES triangle notes run long (Zelda: 439 of 511). Shorten them to where the game stops them? Starts, pitches and bars don't move. Default: yes.
 Q20. (same) SNES phantom notes: ~8% of sampled SNES notes are ghosts the game never played, stacked on real notes (mostly Mega Man X, Street Fighter II). Remove them? Annotated songs keep the old version + a "(re-capture)" copy. Default: yes.
