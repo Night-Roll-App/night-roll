@@ -372,6 +372,10 @@
        his ticks, his answers. The guide itself is a button INSIDE the sheet
        (Josh, Terminal #147: "I don't wanna clutter the drop-up"), not here. -->
   <button class="fitem" id="notesstudy">Analysis sheet</button>
+  <!-- the open song's open questions, one tap (Josh, Terminal #226): All
+       notes filtered to song notes of kind "question"; shown only when the
+       song has one (initNotes2 sets the count each time the drop-up opens) -->
+  <button class="fitem" id="notesquestions" style="display:none">? Open questions</button>
   <!-- the strip above the footer, one tap from the notes it shows (Josh,
        2026-10-02: "we used to have a button … show the notes or hide the
        notes"; it moved to View ▾ → Panels and was hard to find) -->
@@ -466,6 +470,10 @@
       <span class="lbl">title</span>
       <input id="nsongtitle" type="text" placeholder="A short name for the idea, e.g. Sway"
              style="flex:1;min-width:0;min-height:40px" aria-label="Song note title">
+    </div>
+    <div class="row" id="nsongkindrow" style="display:none">
+      <span class="lbl">kind</span>
+      <div class="chiprow" id="nsongkinds" role="radiogroup" aria-label="Song note kind" style="margin:0"></div>
     </div>
     <div class="row" id="nfromrow">
       <span class="lbl">from bar</span><select id="nb1"></select>

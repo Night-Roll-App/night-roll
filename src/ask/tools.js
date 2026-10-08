@@ -58,6 +58,9 @@ import { annoSnapshot } from "../model/edits.js";
 import { putSongNote } from "../model/rollnotes.js";
 import { songNoteFor } from "../model/rollnotes.js";
 import { songNoteCleanTitle } from "../model/rollnotes.js";
+import { songNoteKind } from "../model/rollnotes.js";
+import { songNoteKindInfo } from "../model/rollnotes.js";
+import { SONGNOTE_KINDS } from "../model/rollnotes.js";
 import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { saveDraft } from "../model/versions.js";
@@ -164,7 +167,8 @@ export function askAnnotationsTextCompact() {
   const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n) && !askAnnotationStructural(n)).map(({n, i}) => {
     const kind = askNoteKind(n), value = askNoteValue(n, kind);
     const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
-    return i + " " + at + " " + kind + ": " + value + (n.cnote ? " — " + n.cnote : "");
+    const sub = n.songnote && songNoteKind(n) !== "general" ? " (" + songNoteKind(n) + ")" : ""; // "songnote (question): Title" — his open questions, listable on request
+    return i + " " + at + " " + kind + sub + ": " + value + (n.cnote ? " — " + n.cnote : "");
   });
   return rows.length ? rows.join("\n") : "(no annotations)";
 }
@@ -214,6 +218,7 @@ export function askNoteKind(n) { // the add_annotation "kind" this existing note
 }
 export function askNoteValue(n, kind) { // the "text" add_annotation would need to reproduce n's own value — chord/section store the bare symbol/label; key/tempo/loop carry a "kind: " prefix
   if (kind === "note") return n.text || "";
+  if (kind === "songnote" && n.songnote) return n.songnote.title; // the text line may carry "(question)" — the kind is listed beside it
   const m = (n.text || "").match(/^[a-z]+:\s*(.+)$/is);
   return m ? m[1].trim() : (n.text || "");
 }
@@ -500,6 +505,12 @@ export function askDeleteAnnotation(a) {
 // gate as the other annotation writes (a capture he is studying takes song
 // notes like any annotation; a linked or newer-format song refuses); one
 // undo step; putSongNote is the one write path (duplicate titles refused).
+export function askSongNoteKindArg(k) { // "general" | "question" (or a label: "open question") → the stored id; anything else refuses
+  const v = String(k).trim().toLowerCase();
+  const hit = SONGNOTE_KINDS.find(x => x.id === v || x.label.toLowerCase() === v);
+  if (!hit) throw new Error("kind must be " + SONGNOTE_KINDS.map(x => x.id).join(" or "));
+  return hit.id;
+}
 export function askSongNote(a) {
   if (!S.song || !S.songKey) throw new Error("no song open");
   if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
@@ -515,7 +526,8 @@ export function askSongNote(a) {
     const have = S.rollnotes.filter(n => n.songnote && annoShown(n)).map(n => "\u201c" + n.songnote.title + "\u201d");
     throw new Error("no song note called \u201c" + title + "\u201d — " + (have.length ? "this song has " + have.join(", ") : "this song has none yet"));
   }
-  if (op === "edit" && !given(a.new_title) && !given(a.text)) throw new Error("edit needs text (the new body) and/or new_title");
+  if (op === "edit" && !given(a.new_title) && !given(a.text) && !given(a.kind)) throw new Error("edit needs text (the new body), new_title and/or kind");
+  if (given(a.kind)) askSongNoteKindArg(a.kind); // an unknown kind refuses before anything changes
   const before = annoSnapshot();
   let line;
   if (op === "delete") {
@@ -526,8 +538,9 @@ export function askSongNote(a) {
   } else {
     const newTitle = op === "edit" ? (given(a.new_title) ? songNoteCleanTitle(a.new_title) : cur.songnote.title) : title;
     const body = given(a.text) ? String(a.text) : (cur && cur.cnote) || "";
-    const fresh = putSongNote(cur, {title: newTitle, text: body}); // throws on a clash or an empty title, nothing changed
+    const fresh = putSongNote(cur, {title: newTitle, text: body, kind: given(a.kind) ? askSongNoteKindArg(a.kind) : undefined}); // throws on a clash or an empty title, nothing changed; kind not given = kept
     line = (op === "add" ? "added the song note \u201c" : "edited the song note \u201c") + fresh.songnote.title + "\u201d" +
+           (songNoteKind(fresh) !== "general" || (cur && songNoteKind(cur) !== songNoteKind(fresh)) ? " (" + songNoteKindInfo(songNoteKind(fresh)).label.toLowerCase() + ")" : "") +
            (cur && cur.songnote.title !== fresh.songnote.title ? " (was \u201c" + cur.songnote.title + "\u201d)" : "");
   }
   pushUndo({kind: "anno", json: before});

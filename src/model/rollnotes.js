@@ -73,7 +73,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title"]);
+  "item", "done", "ai", "title", "kind"]);
 export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
 export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
@@ -107,7 +107,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     // empty and dropped
     case "analysis": n.text = studyDirText({item: j.item || "", done: j.done === true || j.done === 1 || j.done === "1"}) +
                               (j.note ? att : j.text ? "\n" + j.text : ""); break;
-    case "songnote": n.text = songNoteDirText(songNoteCleanTitle(j.title) || "untitled") + (j.note ? att : j.text ? "\n" + j.text : ""); break;
+    case "songnote": n.text = songNoteDirText(songNoteCleanTitle(j.title) || "untitled", songNoteCleanKind(j.kind)) + (j.note ? att : j.text ? "\n" + j.text : ""); break;
     default: n.text = j.text || "";
   }
   if (j.ai && typeof j.ai === "object") n.ai = {model: String(j.ai.model || ""), at: String(j.ai.at || "")}; // ✦ Annotate this song: the AI-estimate tag rides the file, the local store and the undo snapshot (src/ask/annotate.js)
@@ -155,7 +155,7 @@ export function deriveNoteTypes(out) {
     // EVERY typed annotation may carry an attached note: first line is the
     // value, remaining lines are the note — where doubt and reasoning live
     // (web-handoff 2026-08-18; generalizes what chords always had)
-    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis|songnote):/i.test(n.text);
+    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis|songnote(?:\([^)\n]*\))?):/i.test(n.text);
     if (typed && n.text.includes("\n")) {
       const body = n.text.split("\n");
       n.text = body[0].trim();
@@ -219,7 +219,7 @@ export function deriveNoteTypes(out) {
     const st = studyFromText(n.text);
     if (st) { n.study = st; n.text = studyDirText(st); } else delete n.study;
     const sn = songNoteFromText(n.text);
-    if (sn) { n.songnote = sn; n.text = songNoteDirText(sn.title); } else delete n.songnote;
+    if (sn) { n.songnote = sn; n.text = songNoteDirText(sn.title, sn.kind); } else delete n.songnote;
   });
   return out.filter(n => n.text);
 }
@@ -269,10 +269,33 @@ export function putStudyEntry(item, {done = false, text = ""} = {}) {
 // without case. Anchored at 1.1 only because a note needs an anchor: never
 // drawn, never a subtitle, never moved by bar edits (isSongLevelAnno).
 export function songNoteCleanTitle(t) { return String(t === undefined || t === null ? "" : t).replace(/\s+/g, " ").trim(); }
-export function songNoteDirText(title) { return "songnote: " + title; }
-export function songNoteFromText(text) { // {title} or null — the ONE parser (deriveNoteTypes, mergeLocalAdditions)
-  const m = (text || "").match(/^songnote:[ \t]*([^\n]*\S)[ \t]*$/i);
-  return m ? {title: songNoteCleanTitle(m[1])} : null;
+// What a song note IS (Josh, Terminal #225): a field inside the note, not a
+// new type. Absent = general — notes written before kinds existed are never
+// rewritten. Adding a kind is one row here; a kind this build doesn't list
+// (a newer build's) is kept and written back, shown with its id as label.
+export const SONGNOTE_KINDS = [
+  {id: "general", label: "General", glyph: ""},
+  {id: "question", label: "Open question", glyph: "?"},
+];
+export function songNoteCleanKind(k) { // "" for general/absent/junk, else the kind id
+  const v = String(k === undefined || k === null ? "" : k).trim().toLowerCase();
+  return /^[a-z][a-z0-9_-]{0,31}$/.test(v) && v !== "general" ? v : "";
+}
+export function songNoteKind(n) { return (n && n.songnote && n.songnote.kind) || "general"; }
+export function songNoteKindInfo(kind) {
+  const id = songNoteCleanKind(kind) || "general";
+  return SONGNOTE_KINDS.find(k => k.id === id) || {id, label: id, glyph: ""};
+}
+// the in-memory text line carries the kind (the unsynced store and the
+// deriver only see text): "songnote: T" for general, "songnote(question): T"
+export function songNoteDirText(title, kind) { const k = songNoteCleanKind(kind); return "songnote" + (k ? "(" + k + ")" : "") + ": " + title; }
+export function songNoteFromText(text) { // {title, kind?} or null — the ONE parser (deriveNoteTypes, mergeLocalAdditions)
+  const m = (text || "").match(/^songnote(?:\(([^)\n]*)\))?:[ \t]*([^\n]*\S)[ \t]*$/i);
+  if (!m) return null;
+  const d = {title: songNoteCleanTitle(m[2])};
+  const k = songNoteCleanKind(m[1]);
+  if (k) d.kind = k;
+  return d;
 }
 export function songNoteKey(title) { return songNoteCleanTitle(title).toLowerCase(); }
 export function songNoteFor(title, list) { // the song note with this title (any case), or null
@@ -286,14 +309,17 @@ export function isSongLevelAnno(n) { return !!(n.study || n.songnote); } // bar 
 // used by ANOTHER song note throws, nothing changed. The old note is RETIRED
 // (tombstoned if synced) — dropping it alone brought it back on reload, the
 // analysis entries' finding 1. Undo is the caller's: snapshot first.
-export function putSongNote(prev, {title, text = ""} = {}) {
+export function putSongNote(prev, {title, text = "", kind} = {}) { // kind undefined = keep prev's (general for a new note)
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   const t = songNoteCleanTitle(title);
   if (!t) throw new Error("a song note needs a title");
   const clash = S.rollnotes.find(n => n !== prev && n.songnote && songNoteKey(n.songnote.title) === songNoteKey(t));
   if (clash) throw new Error("this song already has a song note called \u201c" + clash.songnote.title + "\u201d — pick another title, or edit that one");
+  const k = songNoteCleanKind(kind === undefined ? (prev && prev.songnote && prev.songnote.kind) : kind);
   if (prev) retireEdited(prev);
-  const fresh = {b1: 1, q1: 1, b2: null, q2: null, text: songNoteDirText(t), songnote: {title: t}, added: true};
+  const sn = {title: t};
+  if (k) sn.kind = k;
+  const fresh = {b1: 1, q1: 1, b2: null, q2: null, text: songNoteDirText(t, k), songnote: sn, added: true};
   const body = String(text || "").trim();
   if (body) fresh.cnote = body;
   S.rollnotes.push(resolveNote(fresh));
@@ -330,7 +356,9 @@ export function noteToJSONBase(n) {
     return withNote(j);
   }
   if (n.songnote || songNoteFromText(t)) {
-    j.type = "songnote"; j.title = (n.songnote || songNoteFromText(t)).title;
+    const sn = n.songnote || songNoteFromText(t);
+    j.type = "songnote"; j.title = sn.title;
+    if (sn.kind) j.kind = sn.kind; // absent = general: old notes stay byte-identical
     return withNote(j);
   }
   if (n.section) { j.type = "section"; j.label = t; return withNote(j); }
@@ -446,7 +474,7 @@ export function trackDirText(d) {
 
 export function isDirective(n) { // anything that isn't a plain text note
   return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.songnote || n.opaque ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis|songnote):/i.test(n.text));
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis|songnote(?:\([^)\n]*\))?):/i.test(n.text));
 }
 // Song-level entries never draw: no ruler flag (render/roll.js), no flag
 // tap (input/gestures.js — a 1.1 entry otherwise shadowed the key marker's
@@ -614,7 +642,7 @@ export function mergeLocalAdditions(notes, key) {
     const sn = songNoteFromText(n.text);
     if (sn) { // a song note: same reasoning as the sheet entry above, keyed by title — the local copy is the newer one
       const same = r => r.songnote && songNoteKey(r.songnote.title) === songNoteKey(sn.title);
-      if (notes.some(r => same(r) && r.text === songNoteDirText(sn.title) && (r.cnote || "") === (n.cnote || ""))) continue;
+      if (notes.some(r => same(r) && r.text === songNoteDirText(sn.title, sn.kind) && (r.cnote || "") === (n.cnote || ""))) continue;
       for (let i = notes.length - 1; i >= 0; i--) if (same(notes[i])) notes.splice(i, 1);
       notes.push(deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true});
       continue;

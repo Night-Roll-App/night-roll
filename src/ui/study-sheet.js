@@ -1,6 +1,8 @@
 import { S } from "../state.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { visibleNotes } from "../model/rollnotes.js";
+import { songNoteKind } from "../model/rollnotes.js";
+import { songNoteKindInfo } from "../model/rollnotes.js";
 import { studyEntryFor } from "../model/rollnotes.js";
 import { putStudyEntry } from "../model/rollnotes.js";
 import { isUndrawnAnno } from "../model/rollnotes.js";
@@ -381,15 +383,35 @@ function studySongNotesBox(list) {
   add.style.width = "auto";
   add.style.padding = "0 8px";
   add.setAttribute("aria-label", "Add a song note");
-  add.addEventListener("click", () => openEditor(null, "song"));
+  const isQ = n => songNoteKind(n) === "question";
+  const nq = list.filter(x => x.songnote && isQ(x)).length;
+  if (!nq) S.studyQOnly = false;
+  add.addEventListener("click", () => openEditor(null, "song", S.studyQOnly ? {songKind: "question"} : undefined));
+  if (nq) { // open questions only, in place — shown only when there is one
+    const qb = document.createElement("button");
+    qb.className = "gadd songqfilter" + (S.studyQOnly ? " active" : "");
+    qb.style.width = "auto"; qb.style.padding = "0 8px";
+    qb.textContent = "? Open questions · " + nq;
+    qb.setAttribute("aria-pressed", String(S.studyQOnly));
+    qb.addEventListener("click", () => { S.studyQOnly = !S.studyQOnly; renderStudySheet(); });
+    head.appendChild(qb);
+  }
   head.appendChild(add);
   box.appendChild(head);
-  for (const n of list.filter(x => x.songnote)) {
+  for (const n of list.filter(x => x.songnote && (!S.studyQOnly || isQ(x)))) {
     const item = document.createElement("div");
     item.className = "studysongnote";
     item.setAttribute("role", "button");
     const t = document.createElement("b");
-    t.textContent = n.songnote.title;
+    const kind = songNoteKindInfo(songNoteKind(n));
+    if (kind.glyph) { // "?" = an open question
+      const k = document.createElement("span");
+      k.className = "songkindbadge";
+      k.textContent = kind.glyph;
+      k.title = kind.label;
+      t.appendChild(k);
+    }
+    t.appendChild(document.createTextNode(n.songnote.title));
     item.appendChild(t);
     if (n.cnote) {
       const body = document.createElement("div");

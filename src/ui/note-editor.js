@@ -39,6 +39,9 @@ import { annoSnapshot } from "../model/edits.js";
 import { pushUndo } from "../model/edits.js";
 import { annoRestore } from "../model/rollnotes.js";
 import { putSongNote } from "../model/rollnotes.js";
+import { SONGNOTE_KINDS } from "../model/rollnotes.js";
+import { songNoteKind } from "../model/rollnotes.js";
+import { songNoteKindInfo } from "../model/rollnotes.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { saveLocalNotes } from "../model/edits.js";
 import { pruneTombstones } from "../model/edits.js";
@@ -183,6 +186,23 @@ export function renderTypeChips() {
   }
   for (const b of row.children) { b.classList.toggle("active", b.dataset.v === t); b.setAttribute("aria-checked", String(b.dataset.v === t)); }
 }
+// a song note's kind (Josh, Terminal #225): one tap, no keyboard. The row's
+// data-v is the one source of truth; a kind from a newer build that this
+// one doesn't list shows as an extra chip so Save keeps it.
+export function editorSongKind() { return document.getElementById("nsongkinds").dataset.v || "general"; }
+export function setEditorSongKind(kind) {
+  const row = document.getElementById("nsongkinds"), id = songNoteKindInfo(kind).id;
+  row.dataset.v = id;
+  row.textContent = "";
+  const kinds = SONGNOTE_KINDS.some(k => k.id === id) ? SONGNOTE_KINDS : SONGNOTE_KINDS.concat([songNoteKindInfo(id)]);
+  for (const k of kinds) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.v = k.id; b.setAttribute("role", "radio");
+    b.textContent = (k.glyph ? k.glyph + " " : "") + k.label;
+    b.classList.toggle("active", k.id === id); b.setAttribute("aria-checked", String(k.id === id));
+    row.appendChild(b);
+  }
+}
 export function pickEditorType(v) {
   S.ntypePicked = true;
   const g = S.ntypeGuess;
@@ -236,6 +256,7 @@ export function applyEditorType() {
   document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" || t === "song" ? "none" : "";
   document.getElementById("nfromrow").style.display = t === "song" ? "none" : ""; // a song note has no bar
   document.getElementById("nsongrow").style.display = t === "song" ? "" : "none";
+  document.getElementById("nsongkindrow").style.display = t === "song" ? "" : "none";
   document.getElementById("nmic").style.display =
     SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
   document.getElementById("ntext").placeholder =
@@ -421,6 +442,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
       : note ? note.text : "";
   document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
   document.getElementById("nsongtitle").value = type === "song" && note && note.songnote ? note.songnote.title : "";
+  setEditorSongKind(note && note.songnote ? songNoteKind(note) : opts && opts.songKind || "general"); // opts.songKind: "+ question" opens a new one already marked
   if (type === "chord") setChordWidget(note ? note.text : "");
   if (type === "key" && note) {
     const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
@@ -729,6 +751,7 @@ export function initNoteEditor4() {
     if (e.key === "Enter") { e.preventDefault(); document.getElementById("ntext").focus(); }
   });
   document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
+  document.getElementById("nsongkinds").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) setEditorSongKind(b.dataset.v); });
   document.getElementById("ntext").addEventListener("input", () => { // a pause after typing, not every keystroke: "A" mid-word must not become a chord
     if (S.ntypePicked || editorType() !== "note") return;
     if (S.ntypeGuess) clearTimeout(S.ntypeGuess.timer);
@@ -831,7 +854,7 @@ export function initNoteEditor4() {
     if (type === "note" && !text) { document.getElementById("nstatus").textContent = "Note text is empty."; return; }
     if (type === "song") { // no bar, no span: the title is its identity (putSongNote refuses a title another song note has)
       const before = annoSnapshot();
-      try { putSongNote(S.editingNote, {title: document.getElementById("nsongtitle").value, text}); }
+      try { putSongNote(S.editingNote, {title: document.getElementById("nsongtitle").value, text, kind: editorSongKind()}); }
       catch (err) { document.getElementById("nstatus").textContent = err && err.message ? err.message : String(err); return; }
       pushUndo({kind: "anno", json: before});
       S.editingNote = null;

@@ -2985,6 +2985,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "to pulse 2, an octave down", // act: edit_notes transpose/move/copy/to_track (docs/ai-parity.md §5 batch 6)
     "Mute the noise channel", // act: set_track/add_track/delete_track/keep_that/album (docs/ai-parity.md §5 batch 7)
     "Turn the debug log on", // act: song_file/set_pref (docs/ai-parity.md §5 batch 8)
+    "? Open questions", // a song note's kind (Josh, Terminal #225/#226)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -13110,7 +13111,7 @@ test("Ask: act song_note adds, edits (title and/or body, by title in any case) a
   installActSong();
   run(`songKey = "albums/nes/final-fantasy-i/songs/sn-ask.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem("ff1roll-notes-" + songKey);`); // a capture he is studying: annotations (and song notes) are still his to write
   assert.equal(val(`askActOffered("song_note")`), true);
-  assert.match(val(`askActTool(false).function.description`), /\nsong_note op title new_title\? text\? — add\|edit\|delete a titled song note\n/);
+  assert.match(val(`askActTool(false).function.description`), /\nsong_note op title new_title\? text\? kind\? — add\|edit\|delete a titled song note \(general or open question\)\n/);
   assert.match(await aval(`askAct({do: [{action: "song_note", op: "add", title: "Sway", text: "<rule>"}]})`), /added the song note “Sway”/);
   assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, n.cnote, !!n.added])`), [["Sway", "<rule>", true]]);
   assert.equal(val(`editUndo.length`), 1);
@@ -13141,6 +13142,137 @@ test("Ask: act song_note adds, edits (title and/or body, by title in any case) a
   run(`rollnotesReadOnly = false; rollnotesLockReason = null;`);
   await assert.rejects(run(`askAct({do: [{action: "song_note", op: "rename", title: "Lilt"}]})`), /op must be add, edit or delete/);
   assert.match(val(`askActSpec("song_note")`), /Only when the user explicitly asks/);
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes = []; editUndo = []; editRedo = [];`);
+});
+
+// ---- song note kinds (Josh, Terminal #225/#226): a `kind` field inside the
+// songnote entry — absent = general, "question" = an open question. The
+// bodies are placeholders, never a reading of any song.
+test("song note kinds: kind round-trips JSON ↔ memory ↔ JSON, the text grammar, the unsynced store, undo and tombstones; absent = general and an old note stays byte-identical; a newer build's kind is kept", () => {
+  installSong(); songNoteReset();
+  const notes = [
+    {at: [1, 1], type: "songnote", title: "Why the pedal", kind: "question", note: "<his question>"},
+    {at: [1, 1], type: "songnote", title: "Sway", note: "<rule>"},
+    {at: [1, 1], type: "songnote", title: "Later", kind: "strategy"},
+  ];
+  const doc = studyDoc(notes);
+  run(`rollnotes = parseRollnotes(${JSON.stringify(doc)}).map(resolveNote);`);
+  const once = run(`serializeRollnotes()`);
+  assert.deepEqual(JSON.parse(once).notes, notes, "kind written back only where it was set — Sway (no kind) is unchanged");
+  assert.deepEqual(val(`rollnotes.map(n => [n.text, songNoteKind(n)])`), [["songnote(question): Why the pedal", "question"], ["songnote: Sway", "general"], ["songnote(strategy): Later", "strategy"]]);
+  assert.equal(val(`rollnotes.some(n => n.extra)`), false, "kind is a known field, not carried as extra");
+  assert.deepEqual(val(`[songNoteKindInfo("question").glyph, songNoteKindInfo(undefined).id, songNoteKindInfo("strategy").label, songNoteCleanKind("General"), SONGNOTE_KINDS.map(k => k.id)]`),
+    ["?", "general", "strategy", "", ["general", "question"]], "one table; an unknown kind shows its id; general is never written");
+  const text = "[1.1]\nsongnote(question): Why the pedal\n<his question>\n";
+  assert.deepEqual(val(`parseRollnotes(${JSON.stringify(text)}).map(n => ({...n}))`),
+                   val(`parseRollnotes(${JSON.stringify(studyDoc([notes[0]]))}).map(n => ({...n}))`), "text line and JSON entry are the SAME object");
+  // unsynced store + undo
+  run(`songKey = "albums/compositions/nightroll/snk-store.mid"; localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes.forEach(n => { n.added = true; }); saveLocalNotes();`);
+  assert.deepEqual(val(`mergeLocalAdditions([], songKey).map(n => [n.songnote.title, songNoteKind(n)])`), [["Why the pedal", "question"], ["Sway", "general"], ["Later", "strategy"]]);
+  run(`const __snap = annoSnapshot(); rollnotes = []; annoRestore(__snap);`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "undo restores kinds verbatim");
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  // putSongNote: kind undefined keeps it, "general" clears it; re-marking a PUBLISHED one tombstones the old and survives a reload
+  run(`songKey = "albums/nes/final-fantasy-i/songs/snk-reload.mid"; localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey);
+       rollnotes = parseRollnotes(${JSON.stringify(doc)}).map(resolveNote);`);
+  run(`putSongNote(songNoteFor("why the pedal"), {title: "Why the pedal", text: "<edited>"})`);
+  assert.equal(val(`songNoteKind(songNoteFor("Why the pedal"))`), "question", "an edit that doesn't say kind keeps it");
+  run(`putSongNote(songNoteFor("Sway"), {title: "Sway", text: "<rule>", kind: "question"})`);
+  const reload = () => val(`mergeLocalAdditions(subtractTombstones(parseRollnotes(${JSON.stringify(doc)}), songKey), songKey).filter(n => n.songnote).map(n => [n.songnote.title, songNoteKind(n)])`);
+  assert.deepEqual(reload(), [["Later", "strategy"], ["Why the pedal", "question"], ["Sway", "question"]], "after reload: the re-marked one once, as a question");
+  run(`putSongNote(songNoteFor("Sway"), {title: "Sway", text: "<rule>", kind: "general"})`);
+  assert.deepEqual(reload().find(r => r[0] === "Sway"), ["Sway", "general"], "back to general");
+  assert.equal(JSON.parse(run(`serializeRollnotes()`)).notes.find(n => n.title === "Sway").kind, undefined, "general is written as no kind at all");
+  run(`localStorage.removeItem("ff1roll-tombs-" + songKey); localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  songNoteReset();
+});
+
+test("song note kinds in the note window: a General | ? Open question chip row under the title (Song chip only); one tap sets it, Save writes it, opening a question shows it chosen; a new one is General", () => {
+  installSong(); songNoteReset();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; songKey = "albums/nes/final-fantasy-i/songs/snk-editor.mid"; localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  run(`openEditor(null);`);
+  assert.equal(val(`document.getElementById("nsongkindrow").style.display`), "none", "no kind row on a plain note");
+  run(`openEditor(null, "song");`);
+  assert.equal(val(`document.getElementById("nsongkindrow").style.display`), "");
+  assert.deepEqual(val(`[...document.getElementById("nsongkinds").children].map(b => [b.textContent, b.classList.contains("active")])`), [["General", true], ["? Open question", false]], "a new song note starts General");
+  run(`document.getElementById("nsongkinds").dispatchEvent({type: "click", target: {closest: () => document.getElementById("nsongkinds").children[1]}});`);
+  assert.equal(val(`editorSongKind()`), "question", "one tap");
+  run(`document.getElementById("nsongtitle").value = "Why the pedal"; document.getElementById("ntext").value = "<his question>"; document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, [{at: [1, 1], type: "songnote", title: "Why the pedal", kind: "question", note: "<his question>"}]);
+  run(`openEditor(songNoteFor("Why the pedal"));`);
+  assert.equal(val(`editorSongKind()`), "question", "opening it shows its kind");
+  run(`setEditorSongKind("general"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`songNoteKind(songNoteFor("Why the pedal"))`), "general", "answered: back to General");
+  run(`openEditor(null, "song", {songKind: "question"});`);
+  assert.equal(val(`editorSongKind()`), "question", "a + from the questions view starts as a question");
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  songNoteReset();
+});
+
+test("open questions are found in one tap: a ? badge on their rows (All notes and the Analysis sheet); ☰ Notes ▴ → ? Open questions · N (only when N > 0) opens All notes with just them; the ? Open questions chip filters in both lists and toggles back", () => {
+  installSong(); songNoteReset();
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rollnotes = parseRollnotes(${JSON.stringify(studyDoc([
+    {at: [1, 1], type: "songnote", title: "Sway", note: "<rule>"},
+    {at: [1, 1], type: "songnote", title: "Why the pedal", kind: "question", note: "<q one>"},
+    {at: [1, 1], type: "songnote", title: "Ending", kind: "question"},
+    {at: [2, 1], text: "a bar note"},
+  ]))}).map(resolveNote); finalizeNotes();`);
+  assert.deepEqual(val(`openQuestionNotes().map(n => n.songnote.title)`), ["Why the pedal", "Ending"]);
+  // the drop-up entry
+  run(`closeDropUp(); document.getElementById("listbtn").click();`);
+  assert.deepEqual(val(`[document.getElementById("notesquestions").style.display, document.getElementById("notesquestions").textContent]`), ["", "? Open questions · 2"]);
+  run(`document.getElementById("notesquestions").click();`);
+  assert.equal(val(`notelistSheet.classList.contains("on") && noteListQOnly`), true, "All notes, questions only");
+  const qa = snWalk(app.el("notelistrows")).join(" | ");
+  assert.deepEqual(val(`document.getElementById("notelistrows").children.map(g => g.dataset.type)`), ["SONG NOTES"], "only that group");
+  assert.match(qa, /\? \| Why the pedal/, "the ? badge before the title");
+  assert.doesNotMatch(qa, /Sway|a bar note/, "general notes and bar notes are hidden");
+  assert.match(val(`document.getElementById("notelistStatus").textContent`), /^2 open questions/);
+  // the chip toggles back to everything; plain All notes always opens unfiltered
+  const qb = () => app.el("notelistrows").children[0].children[0].children.find(b => /Open questions/.test(b.textContent));
+  assert.equal(qb().textContent, "? Open questions · 2");
+  qb().dispatchEvent({type: "click", stopPropagation() {}});
+  assert.equal(val(`noteListQOnly`), false);
+  assert.match(snWalk(app.el("notelistrows")).join(" | "), /Sway[\s\S]*a bar note/);
+  assert.doesNotMatch(snWalk(app.el("notelistrows").children[0]).join(" | ").replace(/\? Open questions · 2/, ""), /\? \| Sway/, "no badge on a general one");
+  run(`openNoteList({questions: true}); openNoteList();`);
+  assert.equal(val(`noteListQOnly`), false, "All notes opens with everything");
+  // the Analysis sheet: badge + in-place filter
+  run(`renderStudySheet();`);
+  const sbox = () => app.el("studyrows").children[0];
+  assert.match(snWalk(sbox()).join(" | "), /SONG NOTES \| \? Open questions · 2 \| \+ Song note \| Sway \| <rule> \| \? \| Why the pedal/);
+  sbox().children[0].children[0].dispatchEvent({type: "click"});
+  assert.equal(val(`studyQOnly`), true);
+  assert.doesNotMatch(snWalk(sbox()).join(" | "), /Sway/);
+  assert.match(snWalk(sbox()).join(" | "), /Why the pedal[\s\S]*Ending/);
+  // no questions: no drop-up entry, no chip, the filters fall back off
+  run(`putSongNote(songNoteFor("Why the pedal"), {title: "Why the pedal", kind: "general"}); putSongNote(songNoteFor("Ending"), {title: "Ending", kind: "general"}); renderStudySheet(); closeDropUp(); document.getElementById("listbtn").click();`);
+  assert.equal(val(`document.getElementById("notesquestions").style.display`), "none");
+  assert.equal(val(`studyQOnly`), false);
+  assert.doesNotMatch(snWalk(sbox()).join(" | "), /Open questions/);
+  run(`closeDropUp(); notelistSheet.classList.remove("on"); studyQOnly = false; noteListQOnly = false;`);
+  songNoteReset();
+});
+
+test("Ask: song_note takes kind (general|question) — add as a question, re-mark one, edit with kind alone; a bad kind refuses, nothing changed; the context lists \"songnote (question): Title — body\"; the spec keeps Learning mode (list, never answer)", async () => {
+  installActSong();
+  run(`songKey = "albums/nes/final-fantasy-i/songs/snk-ask.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem("ff1roll-notes-" + songKey);`);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "add", title: "Why the pedal", text: "<q>", kind: "question"}]})`), /added the song note “Why the pedal” \(open question\)/);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "add", title: "Sway", text: "<rule>"}]})`), /added the song note “Sway”$/);
+  assert.deepEqual(val(`rollnotes.filter(n => n.songnote).map(n => [n.songnote.title, songNoteKind(n)])`), [["Why the pedal", "question"], ["Sway", "general"]]);
+  assert.match(val(`askAnnotationsTextCompact()`), /^\d+ \[1\.1\] songnote \(question\): Why the pedal — <q>$/m);
+  assert.match(val(`askAnnotationsTextCompact()`), /^\d+ \[1\.1\] songnote: Sway — <rule>$/m);
+  assert.match(val(`askAnnotationsText()`), /"type":"songnote","title":"Why the pedal","kind":"question","note":"<q>"/);
+  assert.match(val(`askLegendText()`), /songnote \(question\): Title — body/);
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "edit", title: "sway", kind: "open question"}]})`), /edited the song note “Sway” \(open question\)/, "kind alone is an edit; the label works too");
+  assert.equal(val(`songNoteFor("Sway").cnote`), "<rule>", "the body kept");
+  assert.match(await aval(`askAct({do: [{action: "song_note", op: "edit", title: "Sway", kind: "general"}]})`), /edited the song note “Sway” \(general\)/);
+  const before = run(`serializeRollnotes()`);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "edit", title: "Sway", kind: "answer"}]})`), /kind must be general or question/);
+  await assert.rejects(run(`askAct({do: [{action: "song_note", op: "add", title: "New", kind: "maybe"}]})`), /kind must be general or question/);
+  assert.equal(run(`serializeRollnotes()`), before, "a refused kind changes nothing");
+  assert.match(val(`askActSpec("song_note")`), /never answer one, hint at an answer or rank them unless the user asks/);
+  assert.match(val(`askSys()`), /kind "question" = an open question/);
   run(`localStorage.removeItem("ff1roll-notes-" + songKey); rollnotes = []; editUndo = []; editRedo = [];`);
 });
 

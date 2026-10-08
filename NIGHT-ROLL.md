@@ -1581,6 +1581,21 @@ sees them as `songnote: <title> — <body>` in the compact block (kind
 `songnote`) and as `type/title/note` in the JSON one; edit/delete_annotation
 refuse them and point at `song_note`.
 
+**Song note kinds (2026-10-07, Josh Terminal #225/#226):** an optional
+`"kind"` field inside the entry — absent = general (old notes are never
+rewritten; `"general"` is never written), `"question"` = an open question
+he still has to solve. One table, `SONGNOTE_KINDS` in model/rollnotes.js
+(`{id, label, glyph}`): adding a kind is one row. A kind this build does
+not list (a newer build's) is kept and written back, shown with its id as
+the label (`songNoteKindInfo`). In memory the kind rides the TEXT line —
+`songnote(question): Title` — because the unsynced store and the deriver
+only see text (`songNoteDirText(title, kind)` / `songNoteFromText`);
+`n.songnote = {title, kind?}`, read through `songNoteKind(n)`.
+`putSongNote(prev, {title, text, kind})`: kind undefined keeps prev's.
+Ask: `song_note` takes `kind` (general|question, or the label; anything
+else refuses); the compact context lists `songnote (question): Title —
+body`; the spec says list them as written, never answer one unasked.
+
 Source fields only: `at`/`to` are [bar, beat] (beats may be fractional;
 `to` beat omitted = end of bar), `type` + its value field(s), free
 `text` (or `note` attached to a chord). Derived data (ticks, band
@@ -2953,6 +2968,19 @@ cursor). The note window's **Song** chip (`NTYPE_CHIPS`, never guessed by
 shows `#nsongrow` (`#nsongtitle`, Enter moves to the body) and saves
 through `putSongNote`, one undo step. Not in v1: filing bar notes under
 a song note and the "Examples: bar 5 · bar 12" line (open-items).
+Kinds (2026-10-07): the window's `#nsongkindrow` (Song chip only) is a
+chip row built from `SONGNOTE_KINDS` — "General | ? Open question";
+`#nsongkinds`' `data-v` is the one source of truth (`editorSongKind` /
+`setEditorSongKind`; `openEditor(null, "song", {songKind})` presets it).
+Rows of kind with a glyph get a `.songkindbadge` ("?") before the title in
+both lists. Finding them: **☰ Notes ▴ → ? Open questions · N**
+(`#notesquestions`, shown only when N > 0, count set as the drop-up opens)
+opens All notes with `S.noteListQOnly` — only the SONG NOTES group, only
+questions; plain All notes always opens unfiltered. Both lists' SONG
+NOTES header carries a "? Open questions · N" toggle (`.songqfilter`;
+the Analysis sheet's flips `S.studyQOnly` in place); either filter turns
+itself off when the last question is gone, and a + Song note from a
+filtered view starts as a question. `openQuestionNotes()` is the one query.
 
 Not built here (later steps, by design): S3 "File under" chips (`topic`
 on bar notes — located prompts list by type only until then) and S5

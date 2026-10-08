@@ -1266,6 +1266,11 @@
   .studysongnote { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; min-height: 44px; border-top: 1px solid var(--grid);
     font-size: 0.875rem; color: var(--text); overflow-wrap: anywhere; cursor: pointer; } /* a song note: title, then its body — stacked so they read as one page */
   .studysongnote .studytext { margin-left: 0; }
+  /* a song note's kind glyph ("?" = open question, Josh #225): a small ring
+     before the title, in the accent so a list of ideas shows its questions */
+  .songkindbadge { display: inline-block; min-width: 1.3em; height: 1.3em; line-height: 1.2em; margin-right: 6px; border: 1px solid var(--accent);
+    border-radius: 999px; color: var(--accent); font-weight: 700; font-size: 0.8em; text-align: center; vertical-align: 0.1em; }
+  .gadd.songqfilter.active { border-color: var(--accent); color: var(--accent); }
   .studyanswer { margin-left: 52px; display: flex; flex-direction: column; gap: 6px; }
   .studyanswer textarea { width: 100%; box-sizing: border-box; min-height: 72px; font-size: 1rem; line-height: 1.4; padding: 8px 10px;
     border: 1px solid var(--grid); border-radius: 8px; background: var(--panel2); color: var(--text); resize: vertical; }

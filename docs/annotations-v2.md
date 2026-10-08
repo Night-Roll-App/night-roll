@@ -131,6 +131,14 @@ writer keeps only the last per title. A build older than this reads the
 entry as an unknown type and writes it back verbatim (Forward
 compatibility, below).
 
+A song note may carry `"kind"` (2026-10-07): absent = general, `"question"`
+= an open question he still has to solve —
+`{"at": [1, 1], "type": "songnote", "title": "Why the pedal", "kind": "question", "note": "<body>"}`.
+`"general"` is never written, so notes from before kinds existed stay
+byte-identical. Legacy-text form: `songnote(question): <title>`. A kind
+this build doesn't know is kept and written back; a build older than kinds
+carries the field as an unknown one (`extra`) and writes it back too.
+
 A track's `"voice"` may be a **patch** since 2026-10-06 (patches v1,
 NIGHT-ROLL.md "Patches") — no new type and no new field: the patch is
 the voice string itself, so every reader, writer, store and undo path

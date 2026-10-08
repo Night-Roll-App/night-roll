@@ -269,6 +269,9 @@ Not sure what a full analysis even covers, or how to write one down? **Analysis 
 **Song notes**
 An idea about the whole song, not one bar — a rule you found ("Sway: long-short-long is the strongest"), with a couple of example bars written in its words. A song can have as many as you like, each with a short **title**. Tap **☰ Notes ▴ → All notes** (or open the Analysis sheet) and tap **+ Song note**: type the title, then type the idea or tap **Speak** and dictate it, then **Save**. Or tap **Song** in any note window — the bar rows go away and a title box appears. They list first, under **SONG NOTES**: in All notes as "Title — first line", in the Analysis sheet stacked title then body, so they read as one page. Tap one to edit or delete it. Titles are unique in a song — a second "Sway" is refused, so pick another title or edit the first. Song notes are never drawn on the ruler and never move when you insert or delete bars; they publish and undo like any annotation. Ask can write them too, only when you ask: "add a song note called Sway: …", "edit the Sway song note", "delete the Sway song note".
 
+**Open questions**
+A song note can be an **open question** — something you still have to solve — instead of a general idea. In the song note's window, tap **General** or **? Open question** under the title (one tap; a new note starts as General, and notes from before this stay General). Open questions show a **?** before the title in All notes and the Analysis sheet. To see just the open song's questions, tap **☰ Notes ▴ → ? Open questions** (it appears when the song has one, with the count); All notes and the Analysis sheet also get a **? Open questions · N** button beside + Song note that shows only them — tap it again for everything. Solved one? Open it and tap **General**, or rewrite it as your answer. Ask can mark them when you ask ("mark Sway as an open question", "what are my open questions in this song?") — it lists them as you wrote them and never answers one unless you ask it to.
+
 **Choosing the type**
 After a ruler drag, + Note opens on the type you used last for a short span; **more than two bars opens as a Section**. The note window shows its types as a row of buttons — **Note · Section · Chord · Key · Meter · Loop · Tempo · Chop · Song** — tap one. A fresh **+ Note** also reads what you type: pause after **Gm7** and it becomes a Chord, **3/4** a Meter, **120 bpm** a Tempo, **loop 5.1** a Loop; anything else stays a Note. Tap **Note** to undo a guess — your words come back. Once you tap a type, it stops guessing.
 
@@ -518,8 +521,8 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 **Ask: new, save_version, versions, save_as, rename, or share_link**
 **“Save a version called before drums.”** Say the op: new (a title, and a folder if you want one besides the default), save_version (a label, else "Version N"), versions (lists them), save_as (a title, and a folder), rename (the new name), or share_link. (act: song_file op title? folder? label?)
 
-**Ask: add|edit|delete a titled song note**
-**“Add a song note called Sway: long-short-long is the strongest, see bars 5 and 12.”** Say add, edit or delete, the note's title, and its words; "rename Sway to Lilt" changes the title. (act: song_note op title new_title? text?)
+**Ask: add|edit|delete a titled song note (general or open question)**
+**“Add a song note called Sway: long-short-long is the strongest, see bars 5 and 12.”** Say add, edit or delete, the note's title, and its words; "rename Sway to Lilt" changes the title; "as an open question" (or "mark Sway as an open question") makes it one. (act: song_note op title new_title? text? kind?)
 
 **Ask: stop playback**
 **“Stop.”** Just that. (act: stop)

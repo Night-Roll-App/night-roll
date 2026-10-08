@@ -21,6 +21,8 @@ import { beatTicks } from "../model/grid.js";
 import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
+import { songNoteKind } from "../model/rollnotes.js";
+import { songNoteKindInfo } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { computeSongEnd } from "../model/song.js";
@@ -364,12 +366,20 @@ export function useFileKey() {
   draw();
   setInfo("key set to " + r.file.name + " at bar " + bar + " (from the file's label — unsynced — Sync to commit)");
 }
+// the open song's open questions: song notes he marked kind "question"
+export function openQuestionNotes() { return visibleNotes().filter(n => n.songnote && songNoteKind(n) === "question"); }
 export function renderNoteList() {
   const rows = document.getElementById("notelistrows");
   rows.innerHTML = "";
   const counts = new Map();
-  const sorted = [...visibleNotes()].sort((a, b) => a.start - b.start || (a.section ? -1 : 1)); // visibleNotes: Learning lists no ✦ AI estimate (and so no ✦ AI badge)
-  document.getElementById("notelistStatus").textContent = sorted.length
+  const nq = openQuestionNotes().length;
+  if (!nq) S.noteListQOnly = false; // the last one was answered: back to everything
+  const qOnly = S.noteListQOnly;
+  const sorted = [...visibleNotes()].filter(n => !qOnly || (n.songnote && songNoteKind(n) === "question"))
+    .sort((a, b) => a.start - b.start || (a.section ? -1 : 1)); // visibleNotes: Learning lists no ✦ AI estimate (and so no ✦ AI badge)
+  document.getElementById("notelistStatus").textContent = qOnly
+    ? nq + " open question" + (nq === 1 ? "" : "s") + " · tap one to open it · tap \u201c? Open questions\u201d again for every note"
+    : sorted.length
     ? sorted.length + " notes · tap one to edit or delete · synced-note changes need Sync to stick"
     : "No notes yet — add the first one.";
   const remaining = [...sorted];
@@ -382,6 +392,7 @@ export function renderNoteList() {
     // hide empty groups; Text notes always shows (its + adds one), and KEY/
     // METER always show too — Check vs file works on every song, even one
     // with no key/meter declared yet (docs/declared-vs-learner-spec.md C7)
+    if (qOnly && g.type !== "song") continue; // the open-questions view is that one group
     if (!mine.length && g.type !== "note" && g.type !== "song" && g.title !== "KEY" && g.title !== "METER") continue;
     const box = document.createElement("div");
     box.className = "notegroup";
@@ -394,10 +405,19 @@ export function renderNoteList() {
     add.textContent = "+";
     add.setAttribute("aria-label", "Add " + g.title.toLowerCase());
     if (g.type === "song") { add.textContent = "+ Song note"; add.style.width = "auto"; add.style.padding = "0 8px"; add.setAttribute("aria-label", "Add a song note"); }
+    if (g.type === "song" && nq) { // the filter, only when there is something to filter to
+      const qb = document.createElement("button");
+      qb.className = "gadd songqfilter" + (qOnly ? " active" : "");
+      qb.style.width = "auto"; qb.style.padding = "0 8px";
+      qb.textContent = "? Open questions · " + nq;
+      qb.setAttribute("aria-pressed", String(qOnly));
+      qb.addEventListener("click", e => { e.stopPropagation(); S.noteListQOnly = !S.noteListQOnly; renderNoteList(); });
+      head.appendChild(qb);
+    }
     add.addEventListener("click", e => {
       e.stopPropagation();
       notelistSheet.classList.remove("on");
-      openEditor(null, g.type);
+      openEditor(null, g.type, g.type === "song" && qOnly ? {songKind: "question"} : undefined); // + from the questions view starts a question
     });
     if (g.type === "chord" && mine.length && isComposition()) {
       // on-demand label review — the app NEVER volunteers this (Josh's rule:
@@ -516,9 +536,17 @@ export function songNoteListRow(n, before) {
   row.setAttribute("role", "button");
   const where = document.createElement("span");
   where.className = "where";
+  const kind = songNoteKindInfo(songNoteKind(n));
   where.textContent = "song";
   const body = document.createElement("span");
   body.className = "body";
+  if (kind.glyph) { // "?" = an open question; the label rides the tooltip
+    const k = document.createElement("span");
+    k.className = "songkindbadge";
+    k.textContent = kind.glyph;
+    k.title = kind.label;
+    body.appendChild(k);
+  }
   const t = document.createElement("b");
   t.textContent = n.songnote.title;
   body.appendChild(t);
@@ -537,8 +565,9 @@ export function songNoteListRow(n, before) {
 // ☰ All notes (chrome density pass, 2026-10-01): extracted from #listbtn's
 // own direct handler so #notesall (inside #notesmenu, the drop-up below)
 // can call it too — #listbtn itself now just opens the drop-up.
-export function openNoteList() {
+export function openNoteList(opts) { // opts.questions: just the open song's open questions (#notesquestions)
   if (!S.song) return;
+  S.noteListQOnly = !!(opts && opts.questions);
   renderNoteList();
   notelistSheet.classList.add("on");
 }
@@ -642,10 +671,14 @@ export function initNotes1() {
 export function initNotes2() {
   document.getElementById("listbtn").addEventListener("click", e => {
     document.getElementById("notesstrip").textContent = S.subOn ? "Hide notes strip" : "Show notes strip";
+    const nq = S.song ? openQuestionNotes().length : 0;
+    document.getElementById("notesquestions").style.display = nq ? "" : "none";
+    document.getElementById("notesquestions").textContent = "? Open questions · " + nq;
     openDropUp(e.currentTarget, document.getElementById("notesmenu"));
   });
   document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
   document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
+  document.getElementById("notesquestions").addEventListener("click", () => { closeDropUp(); openNoteList({questions: true}); });
   // #notesstudy (Analysis sheet) is wired in src/ui/study-sheet.js's initStudySheet1; the guide is a button inside that sheet (Josh, Terminal #147)
   document.getElementById("notelistSync").addEventListener("click", () => {
     notelistSheet.classList.remove("on");

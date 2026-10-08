@@ -98,6 +98,7 @@ cofCanvas.addEventListener("pointercancel", () => { S.cofPtr = null; S.cofDragRo
 document.getElementById("listbtn").addEventListener("click", e => {
 document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
 document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
+document.getElementById("notesquestions").addEventListener("click", () => { closeDropUp(); openNoteList({questions: true}); });
 document.getElementById("notelistSync").addEventListener("click", () => {
 document.getElementById("notelistAdd").addEventListener("click", () => {
 document.getElementById("helptabs").addEventListener("click", e => {
@@ -174,6 +175,7 @@ applyVelLane();
 document.getElementById("ntype").addEventListener("change", applyEditorType);
 document.getElementById("nsongtitle").addEventListener("keydown", e => {
 document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
+document.getElementById("nsongkinds").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) setEditorSongKind(b.dataset.v); });
 document.getElementById("ntext").addEventListener("input", () => {
 (function buildChordWidget() {
 nmic.addEventListener("click", () =>
