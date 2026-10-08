@@ -51,6 +51,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -6.4,
+     "synth": -8.4
     }
    },
    "alone": {
@@ -61,6 +67,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -8.7,
+     "synth": -6.1
     }
    },
    "ancient-tomb-of-king-mu": {
@@ -71,25 +83,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -6.8,
+     "synth": -7.2
     }
    },
    "ancient-tomb-of-king-sei": {
     "n": 1,
     "secs": 63.9026,
     "track": 18,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -7.4,
+     "synth": -5.5
+    }
    },
    "annihilation": {
     "n": 1,
     "secs": 21.204158625,
     "track": 29,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -13.3,
+     "synth": -11.4
+    }
    },
    "asellus-theme": {
     "n": 1,
     "secs": 93.99816787499995,
     "track": 9,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -7.5,
+     "synth": -7.1
+    }
    },
    "baccarat": {
     "n": 1,
@@ -99,6 +135,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -7.1,
+     "synth": -5
     }
    },
    "back-streets-of-koorong": {
@@ -109,6 +151,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -10.3,
+     "synth": -4.8
     }
    },
    "battle-1": {
@@ -119,13 +167,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -6.2,
+     "synth": -5.6
     }
    },
    "battle-2": {
     "n": 1,
     "secs": 100.15936300000001,
     "track": 20,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -5.9,
+     "synth": -6.5
+    }
    },
    "battle-3": {
     "n": 1,
@@ -135,19 +195,37 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -7,
+     "synth": -9.3
     }
    },
    "battle-4-alternate": {
     "n": 1,
     "secs": 112.93267199999998,
     "track": 45,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -8.1,
+     "synth": -7.4
+    }
    },
    "battle-4": {
     "n": 1,
     "secs": 112.93267199999998,
     "track": 44,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -7.7,
+     "synth": -7.2
+    }
    },
    "battle-5": {
     "n": 1,
@@ -157,13 +235,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -4.6,
+     "synth": -3.4
     }
    },
    "black-x-base": {
     "n": 1,
     "secs": 66.262748,
     "track": 58,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -3.8,
+     "synth": -5.1
+    }
    },
    "blue-s-theme": {
     "n": 1,
@@ -173,37 +263,73 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -10.3,
+     "synth": -7.7
     }
    },
    "blue-town": {
     "n": 1,
     "secs": 126.039775125,
     "track": 31,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -6.3,
+     "synth": -6.1
+    }
    },
    "booby-trap": {
     "n": 1,
     "secs": 64.1177210625,
     "track": 36,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -11.5,
+     "synth": -5.6
+    }
    },
    "castle-of-needles": {
     "n": 1,
     "secs": 91.38744974999999,
     "track": 50,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -5,
+     "synth": -4.9
+    }
    },
    "confrontation-caballero-family": {
     "n": 1,
     "secs": 51.144742,
     "track": 17,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -9.3,
+     "synth": -7
+    }
    },
    "contented": {
     "n": 1,
     "secs": 83.98781124999998,
     "track": 74,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -11.3,
+     "synth": -9.3
+    }
    },
    "danger": {
     "n": 1,
@@ -213,6 +339,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -7.6,
+     "synth": -5.2
     }
    },
    "dear-my-country": {
@@ -223,25 +355,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -8.5,
+     "synth": -6.5
     }
    },
    "despair": {
     "n": 1,
     "secs": 96.72768,
     "track": 34,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -27.4,
+     "peak": -10.5,
+     "synth": -5.2
+    }
    },
    "destiny-a-law": {
     "n": 1,
     "secs": 115.20417125,
     "track": 70,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -5.2,
+     "synth": -5.1
+    }
    },
    "devin": {
     "n": 1,
     "secs": 49.400208,
     "track": 26,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -8.3,
+     "synth": -7.8
+    }
    },
    "dungeon": {
     "n": 1,
@@ -251,6 +407,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -7.4,
+     "synth": -7.9
     }
    },
    "emelia-s-theme": {
@@ -261,13 +423,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -7.6,
+     "synth": -3.6
     }
    },
    "fight-alkaiser": {
     "n": 1,
     "secs": 148.69727999999998,
     "track": 7,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -5.2,
+     "synth": -6.4
+    }
    },
    "fight-r3x": {
     "n": 1,
@@ -277,25 +451,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -6.6,
+     "synth": -5.5
     }
    },
    "fighting-machine-arena": {
     "n": 1,
     "secs": 84.983083,
     "track": 22,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -10.1,
+     "synth": -11.9
+    }
    },
    "finale": {
     "n": 1,
     "secs": 8.991539999999999,
     "track": 77,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -9,
+     "synth": -6.8
+    }
    },
    "hell": {
     "n": 1,
     "secs": 132.206476,
     "track": 59,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -10,
+     "synth": -7.3
+    }
    },
    "hey-fuse": {
     "n": 1,
@@ -305,6 +503,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -6.9,
+     "synth": -4.4
     }
    },
    "hq": {
@@ -315,6 +519,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -6.7,
+     "synth": -5.3
     }
    },
    "junk": {
@@ -325,6 +535,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -9.4,
+     "synth": -5
     }
    },
    "koorong": {
@@ -335,6 +551,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.3,
+     "peak": -8.9,
+     "synth": -5.7
     }
    },
    "kylin-s-theme": {
@@ -345,25 +567,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -6.9,
+     "synth": -5.5
     }
    },
    "labyrinth-of-darkness": {
     "n": 1,
     "secs": 66.179276,
     "track": 51,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -8.3,
+     "synth": -7.3
+    }
    },
    "last-battle-asellus": {
     "n": 1,
     "secs": 180.88425525000002,
     "track": 62,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -6.1,
+     "synth": -5
+    }
    },
    "last-battle-blue": {
     "n": 1,
     "secs": 374.7259229999999,
     "track": 63,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21,
+     "peak": -4.7,
+     "synth": -5.3
+    }
    },
    "last-battle-emelia": {
     "n": 1,
@@ -373,13 +619,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.2,
+     "synth": -4.8
     }
    },
    "last-battle-lute": {
     "n": 1,
     "secs": 188.88107850000006,
     "track": 67,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -5.5,
+     "synth": -5.7
+    }
    },
    "last-battle-red": {
     "n": 1,
@@ -389,13 +647,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -5.6,
+     "synth": -4.7
     }
    },
    "last-battle-riki": {
     "n": 1,
     "secs": 140.60844899999998,
     "track": 64,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -5.5,
+     "synth": -5.5
+    }
    },
    "last-battle-t260g": {
     "n": 1,
@@ -405,13 +675,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -6.2,
+     "synth": -6.9
     }
    },
    "leonard-s-laboratory": {
     "n": 1,
     "secs": 138.911696,
     "track": 23,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -8.6,
+     "synth": -6.9
+    }
    },
    "let-s-swing": {
     "n": 1,
@@ -421,13 +703,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -8.3,
+     "synth": -7.6
     }
    },
    "light-a-lighthouse": {
     "n": 1,
     "secs": 257.266656,
     "track": 73,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -10.4,
+     "synth": -10.1
+    }
    },
    "lummox-beat": {
     "n": 1,
@@ -437,25 +731,49 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -7.4,
+     "synth": -7
     }
    },
    "magic-kingdom": {
     "n": 1,
     "secs": 123.75067037500001,
     "track": 52,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -6.1,
+     "synth": -5.6
+    }
    },
    "march": {
     "n": 1,
     "secs": 23.323975,
     "track": 82,
-    "disc": 9
+    "disc": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -5.4,
+     "synth": -5.2
+    }
    },
    "margmel-in-ruin": {
     "n": 1,
     "secs": 127.0590545,
     "track": 4,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -14.2,
+     "synth": -13.7
+    }
    },
    "melody-a-tune": {
     "n": 1,
@@ -465,6 +783,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -10.2,
+     "synth": -10.8
     }
    },
    "melody-of-time": {
@@ -475,6 +799,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -6.6,
+     "synth": -2.8
     }
    },
    "mosperiburg": {
@@ -485,6 +815,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -6.5,
+     "synth": -5
     }
    },
    "nakajima-manufacturer": {
@@ -495,6 +831,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -9.7,
+     "synth": -6.5
     }
    },
    "never": {
@@ -505,31 +847,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -7.5,
+     "synth": -6.3
     }
    },
    "next": {
     "n": 1,
     "secs": 8.10789025,
     "track": 30,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -13.2,
+     "synth": -9.7
+    }
    },
    "omble": {
     "n": 1,
     "secs": 50.017688,
     "track": 32,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -11.2,
+     "synth": -6.5
+    }
    },
    "opening-title": {
     "n": 1,
     "secs": 144.93226825,
     "track": 2,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.5,
+     "peak": -6.9,
+     "synth": -5
+    }
    },
    "owmi": {
     "n": 1,
     "secs": 99.71068862499999,
     "track": 39,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -9.6,
+     "synth": -8.5
+    }
    },
    "pursuit-1": {
     "n": 1,
@@ -539,6 +911,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -10.7,
+     "synth": -6
     }
    },
    "pursuit-2": {
@@ -549,13 +927,25 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -11,
+     "synth": -6.9
     }
    },
    "resolution": {
     "n": 1,
     "secs": 76.19860012499998,
     "track": 55,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -9.7,
+     "synth": -8.6
+    }
    },
    "riki": {
     "n": 1,
@@ -565,6 +955,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -6.2,
+     "synth": -5.9
     }
    },
    "robot-2": {
@@ -575,37 +971,73 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -7,
+     "synth": -4.5
     }
    },
    "shingrow": {
     "n": 1,
     "secs": 91.309472,
     "track": 40,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -7.8,
+     "synth": -7.6
+    }
    },
    "shudder": {
     "n": 1,
     "secs": 93.84178962499999,
     "track": 38,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -9.6,
+     "synth": -7.7
+    }
    },
    "shuzer": {
     "n": 1,
     "secs": 78.44743375,
     "track": 42,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -4.1,
+     "synth": -4.2
+    }
    },
    "standard-yorkland-song": {
     "n": 1,
     "secs": 136.32554666666667,
     "track": 5,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -5.4,
+     "synth": -5
+    }
    },
    "sunset-town": {
     "n": 1,
     "secs": 64.8377925,
     "track": 15,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -6.5,
+     "synth": -7.9
+    }
    },
    "tears-of-joy": {
     "n": 1,
@@ -615,6 +1047,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -9.8,
+     "synth": -10.3
     }
    },
    "the-ancient-ship": {
@@ -625,31 +1063,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.1,
+     "peak": -8.2,
+     "synth": -5.1
     }
    },
    "the-opening-of-a-journey": {
     "n": 1,
     "secs": 95.92663466666667,
     "track": 1,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -16.3,
+     "synth": -9.7
+    }
    },
    "the-ultimate-weapon": {
     "n": 1,
     "secs": 108.96864,
     "track": 60,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -7.2,
+     "synth": -6.8
+    }
    },
    "theme-of-the-cygnus": {
     "n": 1,
     "secs": 92.901848,
     "track": 24,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -6.6,
+     "synth": -5.3
+    }
    },
    "to-the-new-world": {
     "n": 1,
     "secs": 35.206,
     "track": 14,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -11.9,
+     "synth": -10.3
+    }
    },
    "travelling-regions": {
     "n": 1,
@@ -659,31 +1127,61 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -15,
+     "synth": -14.8
     }
    },
    "trick": {
     "n": 1,
     "secs": 59.76937024999999,
     "track": 10,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -11.2,
+     "synth": -9.2
+    }
    },
    "victory": {
     "n": 1,
     "secs": 16.681641,
     "track": 13,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -8.3,
+     "synth": -4.4
+    }
    },
    "wakatu": {
     "n": 1,
     "secs": 101.745408,
     "track": 57,
-    "disc": 3
+    "disc": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -5.7,
+     "synth": -5.2
+    }
    },
    "with-orlouge": {
     "n": 1,
     "secs": 161.18886612499995,
     "track": 49,
-    "disc": 2
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -9,
+     "synth": -6.5
+    }
    }
   },
   "chip": "psf",
