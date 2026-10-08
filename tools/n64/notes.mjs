@@ -26,12 +26,18 @@ export function splitSlides(notes) {
       const r = Math.round(sl.to);
       if (r === off) continue;
       const t = n.tick + sl.t;
-      if (t > at) out.push({...n, tick: at, dur: t - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true});
+      if (t > at) out.push({...n, tick: at, dur: t - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true, env: pieceEnv(n, at, t)});
       at = t; off = r;
     }
-    if (end > at) out.push({...n, tick: at, dur: end - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true});
+    if (end > at) out.push({...n, tick: at, dur: end - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true, env: pieceEnv(n, at, end)});
   }
   return out;
+}
+// a piece's share of the note's volume shape (rare.mjs attachOneShotShapes), from the piece's own start
+function pieceEnv(n, from, to) {
+  if (!n.env) return undefined;
+  const e = n.env.filter(q => n.tick + q.t > from && n.tick + q.t < to).map(q => ({t: n.tick + q.t - from, r: q.r}));
+  return e.length ? e : undefined;
 }
 
 export function toNotesTxt(res, {title = "n64", tsNum = 4, tsDen = 4} = {}) {
@@ -138,7 +144,8 @@ export function toMidi(res, {tsNum = 4, tsDen = 4, offsets} = {}) {
     for (const n of g.notes) { const p = panOf(n); if (p !== lastPan) { if (lastPan !== null) cc.push({t: n.tick * scale, cc: 10, v: p}); lastPan = p; } }
     return {
       name: g.name, ch: g.kit ? 9 : g.ch === 9 ? (spare === null ? 9 : spare) : g.ch,
-      notes: g.notes.map(n => ({t: n.tick * scale, d: Math.max(1, n.dur * scale), p: g.kit ? n.gm : n.midi, v: Math.max(1, Math.min(127, n.vel))})),
+      notes: g.notes.map(n => ({t: n.tick * scale, d: Math.max(1, n.dur * scale), p: g.kit ? n.gm : n.midi, v: Math.max(1, Math.min(127, n.vel)),
+                                ...(!g.kit && n.env ? {env: n.env.map(q => ({t: q.t * scale, r: q.r}))} : {})})),
       program: g.kit || g.first.inst == null ? undefined : g.first.inst & 0x7F,
       pan: g.notes.length ? panOf(g.notes[0]) : undefined, cc,
       offset: !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0,

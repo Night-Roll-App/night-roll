@@ -7714,6 +7714,48 @@ nothing audible changes.
 reference PSF player, which needs a Sony BIOS image. Dark Cloud's console
 bends are left out because their range is unproven (no RPN 0, and the HD
 split bend-range bytes are unread by VGMTrans). Both are in open-items.md.
+## N64 Rare: notes fade as the bank plays them (2026-10-07, Josh #215/#216/#218)
+
+Ear report (DK64 Logo, "the drums are coming out as notes and they sound
+awful"; DKR Title Theme, "things that should be percussion are showing up as
+notes"). Cause: Rare banks are full of ONE-SHOT samples (no loop: DK64 has
+425 non-kit one-shot parts, every envelope "hold") and decaying envelopes
+(DKR). The console voice stops when a one-shot sample runs out and falls
+along its envelope; the MIDI note had neither, so the synth held every note
+at full level to its written length — Logo's 0.48 s bongo hit, written as
+two beats, played as a two-beat square tone.
+
+Fix (`tools/n64/rare.mjs` `attachVoiceShapes`, called by
+`rareSequenceOfSet` once the bank is read): each melodic note gets a volume
+shape (`n.env`, "Volume shape inside a note") = the envelope's attack/decay
+law (envelopeGain's: exponential to decayVolume over decayTime, then held;
+÷ the attack volume) × a one-shot sample's own running loudness from its
+peak, at the note's playback rate (key − keyBase, detune; bends ignored),
+sampled every 5 ms: one point where it falls to each of ½, ¼, ⅛, 1/16,
+then the end (0 where a one-shot ends; the held decay level for a loop).
+A late peak (swell) holds full level until it falls. Points convert to
+ticks under the tempo map; points at/after the note's end are dropped. A
+held envelope on a looping sample, kit hits (n.drum) and sounds the rip
+lacks get none. `splitSlides` gives each landed pitch its share of the
+shape. `toMidi` writes it as in-note aftertouch (melodic groups only), so
+pitches, lengths and track layout are untouched: capture-diff says
+VELOCITY. Capture warning: "N notes fade as the bank plays them".
+
+Not done — drum flip. No bank fact separates a percussion one-shot from a
+melodic one in these games: DK64's every instrument is a single full-range
+one-shot with the same held envelope, and the sample's pitch clarity
+overlaps (Logo inst 3 0.88 vs melodic inst 29 0.79, sounding.mjs's
+autocorrelation). The usage rule (one sound, one-shot, ≤ 2 keys, ≥ 8 notes
+in the part) flips DK64 79 parts / 50 songs, DKR 115 / 56, Banjo 193 / 135,
+GoldenEye 22 / 15, JFG 16 / 14 — and 9 / 44 / 7 / 9 / 9 of those are on a
+sample that plays > 6 keys in another song (melodic). Marking any of them
+drum: true renames the track ("… kit") and moves its pitches to GM keys,
+which capture-diff calls MOVED; keeping the track on MIDI ch 9 with its
+pitches (VELOCITY) would play a 60/65 conga as drumHit's hat tick. So the
+parts stay pitched, with the sample's fade. Tests: "one-shot samples…",
+"envelope decays…" (tests/n64-rare.test.mjs, synthetic bank); "DK64 Logo
+(real rip)…" (tests/n64-real.test.mjs, skipped without the rip).
+
 ## PS1 capture v2 — glide links, slide bends, levels, programs, reverb, pan fades (2026-10-07)
 
 docs/plans/2026-10-07-capture-audit-2-and-glide.md §3.2 "PS1". What an AKAO

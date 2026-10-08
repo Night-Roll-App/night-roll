@@ -8,6 +8,7 @@ session start alongside the quiz.)
 Built: N64 ldseq B0 / runseq C4 / testchan = "not enabled" / rand CE in turn (with a warning); io ports from the save state (`parkedPlayerIo`); a game-steered script loops where its deciding state repeats; SPC low-confidence root falls back to 72; makeMidi reports dropped notes. Dry run, main vs branch: OoT changes only the 3 Hyrule Field songs (Main 153.9 s → loop 13.0 s, Battle 77.1 → 25.8, Waiting 68.7 → 26.8; the 21 piece minis are SAME, since their state holds io = −1, so they do not end 0.2 s sooner). MM: Bossa Nova gains 190 notes, Staff Roll runs 379.6 s. Hyrule Field Battle's console render plays (30 s: 12 tracks, −23.8 dBFS).
 DECIDE before `--apply` of snes/earthbound: the root fallback changes 17 more EarthBound songs (MOVED). Each one gains notes that main dropped silently. In 16 the lost notes are sample #24, the static (28.6 Hz "low"); in Stonehenge Base Shuts Down it is one note of a high-confidence 500 Hz root. Examples: Belch's Factory 6611 → 20340 notes, Mysterious Crash 672 → 1393, Teleportation 1488 → 2332. Giygas' Static is ADDED-TRACK (0 → 2 notes). Still dropped after the fix, now with a warning: notes on HIGH-confidence roots (e.g. #8 at 500 Hz, down to MIDI −49 in Belch's Factory).
 TO DO after merge: plan step 4 (`--apply` for n64/ocarina-of-time and n64/majoras-mask; earthbound waits on the decision above) and `measure-loudness --apply` for the 4 N64 songs that have no `loud`; step 5, the browser check.
+
 ## 2026-10-07 PS2 capture v2 — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.2 PS2; NIGHT-ROLL.md "PS2 capture v2")
 Dark Cloud (SQ/HD/BD) and FFX (BGM/WD) captures now write: the channel's pitch wheel as raw bend at the DRIVER'S OWN range, CC84 glide links on BGM's bend-born split pieces (one note-on, never re-keyed), the channel's CC7/CC11/CC64/CC1 stream (in-note loudness), CC10 changes while a note sounds, a program per note, CC91 from the voice's wet send. Notes are v1's.
 BEND RANGE — SETTLED from the drivers' code, not guessed: Dark Cloud's modhsyn.irx bends a voice by (split bend range) × wheel ÷ 8192, in libsd's 128ths of a semitone — the HD bytes 256/1536/307/128 are ±2/±12/±2.4/±1 (down range below centre, up range above). FFX's ffxpatch.irx: 0x5D (bgm.mjs skipped it as "unknown") is the range in semitones; wheel × range ÷ 32 in 256ths. FFX's 68 0x5D: 2 ×59, 24 ×5 (Pursuit), 12 ×2 (Hurry, Aeon Battle), 127 ×2 (Luca, Welcoming of Maester Mika). The default before a track's first 0x5D was not found: those bends are not written (7 songs, 10 tiny wheel moves, no notes split by them).
@@ -17,6 +18,199 @@ FFX HELD (Q1): ready to dry-run, not to apply. Facts for Josh's Q1 ear check, fr
 Named-song gate: Dark Cloud "The King's Curse" — 2,270 bends (ch 5's held G sags −106 cents, the next note starts under it), ±2, VELOCITY. FFX "Auron's Theme" — 26 CC84 links + 65 bends on one track, VELOCITY.
 QUEUED (unblocked by the range finding): the console voice — Dark Cloud's wheel is still dropped (spu-render reads n.slide; SQ notes must not split) and FFX still slides at ±2 (Pursuit/Hurry/Welcoming play off the driver's pitch); HD/WD ADSR → n.env; HD program transpose/detune unread, and the driver adds the sample/split detune bytes as 128ths where toBank reads the sample's as cents (pitch change → its own gate). Loudness: stored synth measurements were taken on v1 files; CC7/CC11 channels change level in Hear the MIDI — re-measure after an --apply.
 Josh to hear (after merge + an --apply he approves): Dark Cloud "The King's Curse" with Hear the MIDI on an instrument voice — the sagging G, channel levels.
+
+## 2026-10-07 N64 Rare: notes fade as the bank plays them (Josh #215/#216/#218) — BUILT on a worktree branch, awaiting merge (NIGHT-ROLL.md "N64 Rare: notes fade as the bank plays them")
+Cause of "drums come out as notes and sound awful" (DK64 Logo) and "percussion showing up as notes" (DKR Title Theme): one-shot samples + decaying envelopes the MIDI never carried — every note held at full level to its written length. Fix: each melodic note carries the bank's fade as a volume shape (in-note aftertouch); pitches/lengths/tracks unchanged → capture-diff VELOCITY (dry run /tmp/n64drums/v2).
+NOT DONE — drum flip (would be MOVED: track rename + GM keys). Usage rule (one sound, one-shot, ≤2 keys, ≥8 notes) would flip: DK64 79 parts/50 songs (9 on a sample melodic elsewhere), DKR 115/56 (44), Banjo 193/135 (7), GoldenEye 22/15 (9), JFG 16/14 (9). No bank fact separates percussion from melodic one-shots (DK64: all one-shot, all held envelopes; pitch clarity overlaps). QUESTION for Josh (add to the numbered list): after hearing the fade, do the hand-drum parts still need the kit lane? Kit = MOVED (re-capture copies for annotated songs).
+TO DO after merge: tools/recapture.mjs --apply per Rare album, one album per push (DK64, DKR, Banjo, GoldenEye, JFG).
+DK64 whole-album audit (Josh #216) — song-pick problems, not fixed here (each fix is MOVED; queue):
+- logo == wrinkly-kong (same .mid), and 100-bananas == jungle-japes: the RAM-song pick (miniRamSequence) takes the first of 4 RAM songs when a mini writes none of them. wrinkly-kong's tag says 80 s (capture 21.6 s), 100-bananas' tag says 4 s (capture 124.8 s, it is Jungle Japes). Generic fix idea: when the mini writes none, ask which RAM song the mini's own reference (tag length / the lazyusf2 render) matches — needs a design, MOVED.
+- tag-barrel-{donkey,diddy,lanky,tiny,chunky}: five identical captures (the game's per-Kong channel mutes are not read; same shape as SM64's ducking) — find where DK64 keeps the mute mask.
+- tag much longer than capture (not ×2 loop): mermaid-palace 248/66.6 s, fungi-forest-barrel-course 214/59.1, crystal-caves-earthquake 26/6.4, k-lumsy-key 14/3.7 — check the song pick for each.
+- 1–2 notes with no bank sound: introduction, gloomy-galleon-boss-puftoss, collect-bonus-token, collect-melon-piece.
+Per-song table (tracks, notes, findings; "outlast" = melodic notes written ≥1.5× and ≥0.15 s longer than their one-shot sample — what the fade now fixes):
+
+| # | song | tracks | notes | findings |
+|---|---|---|---|---|
+| 1 | logo | 6 (2 kit) | 436 | song pick: mini writes none of the 4 RAM songs, first taken; same .mid as wrinkly-kong; 31 notes outlast their one-shot sample (17% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i2, ch3 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 2 | dk-rap | 14 (7 kit) | 1856 | 9 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 3 | main-menu | 14 (5 kit) | 1923 | 69 notes outlast their one-shot sample (7% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch5 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 4 | monkey-smash | 11 (0 kit) | 1862 | 38 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch9 i3, ch10 i3 (fade shape; kit = MOVED) |
+| 5 | battle-arena | 9 (1 kit) | 1639 | 5 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch7 i2 (fade shape; kit = MOVED) |
+| 6 | introduction | 18 (4 kit) | 3085 | 23 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape); 2 notes with no bank sound |
+| 7 | dk-s-treehouse | 9 (1 kit) | 1275 | 68 notes outlast their one-shot sample (7% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i3, ch2 i3 (fade shape; kit = MOVED) |
+| 8 | cranky-s-lab | 7 (0 kit) | 833 | 129 notes outlast their one-shot sample (15% of melodic) → fixed (fade shape) |
+| 9 | bonus-barrel-introduction | 4 (0 kit) | 120 | 18 notes outlast their one-shot sample (15% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i7 (fade shape; kit = MOVED) |
+| 10 | bonus-barrel | 6 (0 kit) | 1837 | — |
+| 11 | success | 5 (0 kit) | 50 | drum-like one-shot parts kept pitched: ch1 i2 (fade shape; kit = MOVED) |
+| 12 | failure | 5 (0 kit) | 33 | drum-like one-shot parts kept pitched: ch4 i2 (fade shape; kit = MOVED) |
+| 13 | cranky-s-potion | 5 (0 kit) | 228 | — |
+| 14 | dk-isle | 12 (3 kit) | 1444 | 35 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch7 i3, ch11 i11 (fade shape; kit = MOVED) |
+| 15 | pause | 1 (0 kit) | 4 | length: tag 3s vs capture 0.6s |
+| 16 | pause-menu | 4 (2 kit) | 287 | 29 notes outlast their one-shot sample (22% of melodic) → fixed (fade shape) |
+| 17 | tag-barrel-donkey | 11 (2 kit) | 1022 | same .mid as tag-barrel-chunky, tag-barrel-diddy, tag-barrel-lanky, tag-barrel-tiny; 29 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 18 | tag-barrel-diddy | 11 (2 kit) | 1022 | same .mid as tag-barrel-chunky, tag-barrel-donkey, tag-barrel-lanky, tag-barrel-tiny; 29 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 19 | tag-barrel-lanky | 11 (2 kit) | 1022 | same .mid as tag-barrel-chunky, tag-barrel-diddy, tag-barrel-donkey, tag-barrel-tiny; 29 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 20 | tag-barrel-tiny | 11 (2 kit) | 1022 | same .mid as tag-barrel-chunky, tag-barrel-diddy, tag-barrel-donkey, tag-barrel-lanky; 29 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 21 | tag-barrel-chunky | 11 (2 kit) | 1022 | same .mid as tag-barrel-diddy, tag-barrel-donkey, tag-barrel-lanky, tag-barrel-tiny; 29 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 22 | k-lumsy | 5 (1 kit) | 945 | — |
+| 23 | wrinkly-kong | 6 (2 kit) | 436 | song pick: mini writes none of the 4 RAM songs, first taken; same .mid as logo; length: tag 80s vs capture 21.6s; 31 notes outlast their one-shot sample (17% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i2, ch3 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 24 | jungle-japes-lobby | 7 (2 kit) | 1197 | 72 notes outlast their one-shot sample (16% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch3 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 25 | jungle-japes | 13 (2 kit) | 3893 | same .mid as 100-bananas; 35 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i2, ch3 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 26 | jungle-japes-caves | 4 (0 kit) | 388 | 186 notes outlast their one-shot sample (48% of melodic) → fixed (fade shape) |
+| 27 | jungle-japes-caves-ambience | 2 (0 kit) | 112 | — |
+| 28 | jungle-japes-2 | 11 (2 kit) | 2250 | 65 notes outlast their one-shot sample (5% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i3, ch2 i3, ch9 i2 (fade shape; kit = MOVED) |
+| 29 | funky-s-armoury | 8 (0 kit) | 1835 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 30 | weapon-upgrade | 4 (0 kit) | 28 | — |
+| 31 | jungle-japes-storm | 5 (1 kit) | 839 | drum-like one-shot parts kept pitched: ch3 i93 (fade shape; kit = MOVED) |
+| 32 | rambi | 11 (2 kit) | 1665 | — |
+| 33 | jungle-japes-barrel-course | 2 (1 kit) | 253 | — |
+| 34 | jungle-japes-underground | 9 (2 kit) | 1153 | — |
+| 35 | jungle-japes-mine-cart | 13 (1 kit) | 4503 | — |
+| 36 | jungle-japes-boss-army-dillo | 9 (1 kit) | 3654 | — |
+| 37 | angry-aztec-lobby | 7 (2 kit) | 610 | 2 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 38 | angry-aztec-caves | 10 (1 kit) | 794 | 12 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch6 i2 (fade shape; kit = MOVED) |
+| 39 | angry-aztec | 13 (5 kit) | 2599 | 65 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch7 i45 (fade shape; kit = MOVED) |
+| 40 | candy-s-music-store | 5 (0 kit) | 712 | 27 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape) |
+| 41 | angry-aztec-underground | 12 (2 kit) | 1097 | 58 notes outlast their one-shot sample (6% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch6 i2 (fade shape; kit = MOVED) |
+| 42 | angry-aztec-barrel-course | 2 (1 kit) | 459 | — |
+| 43 | angry-aztec-room | 9 (2 kit) | 3523 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i7 (fade shape; kit = MOVED) |
+| 44 | angry-aztec-temple | 12 (1 kit) | 350 | 120 notes outlast their one-shot sample (34% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch2 i2, ch3 i22, ch8 i7 (fade shape; kit = MOVED) |
+| 45 | angry-aztec-race | 13 (3 kit) | 3815 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i7 (fade shape; kit = MOVED) |
+| 46 | win-race | 10 (2 kit) | 471 | 28 notes outlast their one-shot sample (18% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i29, ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 47 | lose-race | 10 (2 kit) | 436 | 28 notes outlast their one-shot sample (24% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i3, ch9 i3 (fade shape; kit = MOVED) |
+| 48 | angry-aztec-boss-dogadon | 8 (1 kit) | 3383 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 49 | banana-fairy-isle | 5 (0 kit) | 574 | 52 notes outlast their one-shot sample (9% of melodic) → fixed (fade shape) |
+| 50 | krem-isle | 7 (0 kit) | 843 | 32 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i2 (fade shape; kit = MOVED) |
+| 51 | krem-isle-snide-s-hq | 6 (2 kit) | 495 | 111 notes outlast their one-shot sample (39% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch3 i57 (fade shape; kit = MOVED) |
+| 52 | frantic-factory-lobby | 4 (0 kit) | 852 | 16 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i7 (fade shape; kit = MOVED) |
+| 53 | frantic-factory | 12 (1 kit) | 1118 | 9 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch7 i7 (fade shape; kit = MOVED) |
+| 54 | frantic-factory-production-room | 8 (1 kit) | 1190 | 74 notes outlast their one-shot sample (7% of melodic) → fixed (fade shape) |
+| 55 | frantic-factory-conveyor-belt | 5 (0 kit) | 1503 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 56 | frantic-factory-research-and-development | 7 (1 kit) | 726 | 52 notes outlast their one-shot sample (9% of melodic) → fixed (fade shape) |
+| 57 | frantic-factory-car-race | 8 (0 kit) | 2609 | 25 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 58 | frantic-factory-boss-mad-jack | 12 (1 kit) | 3919 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 59 | gloomy-galleon-lobby | 5 (0 kit) | 718 | — |
+| 60 | gloomy-galleon-caves | 8 (1 kit) | 800 | 16 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape) |
+| 61 | gloomy-galleon | 12 (1 kit) | 1711 | 4 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 62 | gloomy-galleon-barrel-course | 3 (1 kit) | 553 | — |
+| 63 | enguarde | 4 (0 kit) | 1844 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 64 | mermaid-palace | 5 (0 kit) | 421 | length: tag 248s vs capture 66.6s; 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 65 | gloomy-galleon-pearl-treasure | 4 (0 kit) | 291 | 4 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 66 | collect-pearl | 2 (0 kit) | 18 | length: tag 3s vs capture 0.7s; drum-like one-shot parts kept pitched: ch4 i24 (fade shape; kit = MOVED) |
+| 67 | gloomy-galleon-mechanical-fish | 5 (0 kit) | 1588 | — |
+| 68 | gloomy-galleon-sunken-ship | 6 (1 kit) | 505 | — |
+| 69 | gloomy-galleon-ship-ruins | 4 (1 kit) | 484 | — |
+| 70 | gloomy-galleon-submarine | 4 (1 kit) | 236 | — |
+| 71 | gloomy-galleon-boat-race | 9 (0 kit) | 1848 | — |
+| 72 | gloomy-galleon-boss-puftoss | 8 (1 kit) | 4412 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); 2 notes with no bank sound |
+| 73 | fungi-forest-lobby | 4 (0 kit) | 652 | — |
+| 74 | fungi-forest-day | 13 (1 kit) | 1799 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 75 | fungi-forest-indoors-1 | 5 (1 kit) | 508 | — |
+| 76 | fungi-forest-night | 11 (0 kit) | 1130 | 23 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape) |
+| 77 | fungi-forest-indoors-2 | 3 (1 kit) | 411 | — |
+| 78 | fungi-forest-spider | 7 (0 kit) | 1639 | — |
+| 79 | fungi-forest-giant-mushroom | 4 (1 kit) | 379 | — |
+| 80 | fungi-forest-barrel-course | 2 (1 kit) | 229 | length: tag 214s vs capture 59.1s |
+| 81 | fungi-forest-bonus-room | 6 (1 kit) | 537 | 14 notes outlast their one-shot sample (3% of melodic) → fixed (fade shape) |
+| 82 | fungi-forest-tree-trunk | 5 (0 kit) | 1539 | — |
+| 83 | fungi-forest-race | 7 (0 kit) | 2133 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 84 | fungi-forest-mine-cart | 12 (1 kit) | 3699 | 3 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 85 | fungi-forest-boss-dogadon | 7 (1 kit) | 3875 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 86 | crystal-caves-lobby | 6 (0 kit) | 676 | 41 notes outlast their one-shot sample (6% of melodic) → fixed (fade shape) |
+| 87 | crystal-caves | 12 (1 kit) | 935 | 147 notes outlast their one-shot sample (16% of melodic) → fixed (fade shape) |
+| 88 | crystal-caves-earthquake | 6 (0 kit) | 168 | length: tag 26s vs capture 6.4s |
+| 89 | crystal-caves-barrel-course | 2 (1 kit) | 386 | — |
+| 90 | crystal-caves-igloo | 5 (0 kit) | 541 | 44 notes outlast their one-shot sample (8% of melodic) → fixed (fade shape) |
+| 91 | crystal-caves-board-game | 8 (0 kit) | 1158 | — |
+| 92 | crystal-caves-rotating-room | 5 (1 kit) | 528 | 48 notes outlast their one-shot sample (10% of melodic) → fixed (fade shape) |
+| 93 | crystal-caves-indoors | 5 (1 kit) | 676 | 38 notes outlast their one-shot sample (6% of melodic) → fixed (fade shape) |
+| 94 | crystal-caves-race | 10 (0 kit) | 1974 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 95 | crystal-caves-boss-army-dillo | 8 (1 kit) | 4963 | — |
+| 96 | creepy-castle-lobby | 4 (0 kit) | 246 | — |
+| 97 | creepy-castle | 12 (2 kit) | 1663 | 82 notes outlast their one-shot sample (5% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch9 i57 (fade shape; kit = MOVED) |
+| 98 | creepy-castle-barrel-course | 2 (1 kit) | 419 | — |
+| 99 | creepy-castle-tree-trunk | 6 (1 kit) | 410 | 8 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch3 i2 (fade shape; kit = MOVED) |
+| 100 | creepy-castle-dungeons | 6 (0 kit) | 522 | 187 notes outlast their one-shot sample (36% of melodic) → fixed (fade shape) |
+| 101 | creepy-castle-caves | 5 (0 kit) | 523 | — |
+| 102 | creepy-castle-greenhouse | 7 (2 kit) | 572 | 262 notes outlast their one-shot sample (56% of melodic) → fixed (fade shape) |
+| 103 | creepy-castle-rubbish-bin | 9 (0 kit) | 1177 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 104 | creepy-castle-museum | 4 (0 kit) | 413 | — |
+| 105 | creepy-castle-library | 4 (0 kit) | 674 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 106 | creepy-castle-library-alternate | 5 (0 kit) | 713 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 107 | creepy-castle-ballroom | 12 (3 kit) | 886 | 6 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i93 (fade shape; kit = MOVED) |
+| 108 | creepy-castle-wind-tower | 4 (1 kit) | 1682 | — |
+| 109 | creepy-castle-dungeons-2 | 8 (0 kit) | 264 | 31 notes outlast their one-shot sample (12% of melodic) → fixed (fade shape) |
+| 110 | creepy-castle-dungeons-3 | 7 (0 kit) | 469 | 26 notes outlast their one-shot sample (6% of melodic) → fixed (fade shape) |
+| 111 | creepy-castle-mine-cart | 8 (1 kit) | 4213 | — |
+| 112 | troff-n-scoff | 6 (0 kit) | 554 | 3 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 113 | boss-unlock | 8 (0 kit) | 557 | — |
+| 114 | boss-unlock-2 | 6 (0 kit) | 316 | 1 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 115 | boss-introduction | 4 (0 kit) | 472 | — |
+| 116 | creepy-castle-boss-king-kut-out | 8 (1 kit) | 3434 | 2 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 117 | defeat-boss | 9 (3 kit) | 125 | drum-like one-shot parts kept pitched: ch3 i29, ch5 i3, ch6 i3 (fade shape; kit = MOVED) |
+| 118 | k-lumsy-key | 2 (0 kit) | 75 | length: tag 14s vs capture 3.7s |
+| 119 | hideout-helm-lobby | 5 (0 kit) | 598 | 24 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape) |
+| 120 | k-rool | 5 (0 kit) | 241 | — |
+| 121 | snide-s-hq | 7 (2 kit) | 616 | 92 notes outlast their one-shot sample (23% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch4 i57 (fade shape; kit = MOVED) |
+| 122 | hideout-helm-completed | 9 (0 kit) | 1616 | drum-like one-shot parts kept pitched: ch7 i29 (fade shape; kit = MOVED) |
+| 123 | hideout-helm-bonus-barrel | 9 (0 kit) | 2281 | — |
+| 124 | game-over | 7 (0 kit) | 559 | — |
+| 125 | hideout-helm | 10 (1 kit) | 2200 | 28 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i29 (fade shape; kit = MOVED) |
+| 126 | happy-k-lumsy | 3 (0 kit) | 177 | — |
+| 127 | k-rool-take-off | 12 (1 kit) | 2153 | — |
+| 128 | k-rool-battle-introduction | 6 (1 kit) | 1181 | 15 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 129 | k-rool-duel | 13 (2 kit) | 6094 | 16 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch8 i25 (fade shape; kit = MOVED) |
+| 130 | k-rool-defeated | 6 (0 kit) | 422 | — |
+| 131 | credits | 10 (1 kit) | 2266 | 186 notes outlast their one-shot sample (8% of melodic) → fixed (fade shape) |
+| 132 | ending | 9 (2 kit) | 1433 | 299 notes outlast their one-shot sample (29% of melodic) → fixed (fade shape) |
+| 133 | unknown | 2 (0 kit) | 34 | — |
+| 134 | unknown-2 | 1 (0 kit) | 7 | length: tag 3s vs capture 0.4s |
+| 135 | unknown-3 | 1 (0 kit) | 32 | — |
+| 136 | unknown-4 | 4 (0 kit) | 18 | length: tag 3s vs capture 0.6s |
+| 137 | unknown-5 | 1 (0 kit) | 17 | length: tag 3s vs capture 0.9s |
+| 138 | unknown-6 | 4 (0 kit) | 48 | drum-like one-shot parts kept pitched: ch2 i24 (fade shape; kit = MOVED) |
+| 139 | unknown-7 | 3 (0 kit) | 126 | — |
+| 140 | unknown-8 | 3 (0 kit) | 80 | length: tag 3s vs capture 6.9s |
+| 142 | entrance | 3 (0 kit) | 144 | — |
+| 143 | exit | 3 (0 kit) | 144 | — |
+| 144 | collect-bonus-token | 2 (0 kit) | 18 | length: tag 3s vs capture 0.6s; 1 notes with no bank sound |
+| 145 | lose-bonus-tokens | 2 (0 kit) | 35 | — |
+| 146 | collect-banana-token | 2 (0 kit) | 16 | length: tag 3s vs capture 0.5s |
+| 147 | collect-multi-banana-token | 3 (0 kit) | 53 | — |
+| 148 | beach-ambience | 4 (0 kit) | 713 | 14 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape) |
+| 149 | jungle-ambience | 5 (0 kit) | 49 | 23 notes outlast their one-shot sample (47% of melodic) → fixed (fade shape) |
+| 150 | find-melon-piece | 1 (0 kit) | 14 | — |
+| 151 | collect-melon-piece | 1 (0 kit) | 15 | length: tag 3s vs capture 0.9s; 1 notes with no bank sound |
+| 152 | find-blue-print | 5 (0 kit) | 45 | — |
+| 153 | collect-blue-print | 4 (1 kit) | 23 | 2 notes outlast their one-shot sample (12% of melodic) → fixed (fade shape) |
+| 154 | find-golden-banana | 6 (0 kit) | 113 | drum-like one-shot parts kept pitched: ch6 i3 (fade shape; kit = MOVED) |
+| 155 | collect-golden-banana | 9 (5 kit) | 135 | 5 notes outlast their one-shot sample (7% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch2 i3, ch3 i3, ch8 i2 (fade shape; kit = MOVED) |
+| 156 | banana-medal | 7 (0 kit) | 198 | drum-like one-shot parts kept pitched: ch3 i24 (fade shape; kit = MOVED) |
+| 157 | 100-bananas | 13 (2 kit) | 3893 | same .mid as jungle-japes; length: tag 4s vs capture 124.8s; 35 notes outlast their one-shot sample (2% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch1 i2, ch3 i3, ch4 i3 (fade shape; kit = MOVED) |
+| 158 | banana-fairy | 4 (1 kit) | 367 | — |
+| 159 | banana-fairy-photo | 1 (0 kit) | 11 | — |
+| 160 | barrel-course-complete | 3 (0 kit) | 126 | — |
+| 161 | instrument-refill | 4 (0 kit) | 133 | — |
+| 162 | donkey-s-bongo-blast | 3 (1 kit) | 58 | drum-like one-shot parts kept pitched: ch2 i2 (fade shape; kit = MOVED) |
+| 163 | diddy-s-guitar-gazump | 3 (0 kit) | 59 | — |
+| 164 | lanky-s-trombone-tremor | 2 (0 kit) | 41 | — |
+| 165 | tiny-s-saxophone-slam | 2 (0 kit) | 41 | — |
+| 166 | chunky-s-triangle-trample | 3 (0 kit) | 59 | — |
+| 167 | collect-crystal-coconut | 1 (0 kit) | 11 | length: tag 3s vs capture 0.7s |
+| 168 | transformation | 4 (0 kit) | 248 | — |
+| 169 | strong-kong | 7 (2 kit) | 1847 | drum-like one-shot parts kept pitched: ch3 i2 (fade shape; kit = MOVED) |
+| 170 | rocket-barrel-boost | 7 (0 kit) | 1302 | 3 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 171 | baboon-balloon | 3 (0 kit) | 112 | 46 notes outlast their one-shot sample (41% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch3 i7 (fade shape; kit = MOVED) |
+| 172 | orangsprint | 9 (0 kit) | 1798 | — |
+| 173 | mini-monkey | 7 (1 kit) | 917 | 3 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch6 i2 (fade shape; kit = MOVED) |
+| 174 | hunky-chunky | 5 (0 kit) | 451 | 5 notes outlast their one-shot sample (1% of melodic) → fixed (fade shape) |
+| 175 | gorilla-gone | 4 (1 kit) | 136 | 43 notes outlast their one-shot sample (49% of melodic) → fixed (fade shape); drum-like one-shot parts kept pitched: ch2 i7 (fade shape; kit = MOVED) |
+| 176 | mad-maze-maul | 7 (0 kit) | 2196 | 7 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 177 | stealthy-snoop | 6 (2 kit) | 639 | 23 notes outlast their one-shot sample (4% of melodic) → fixed (fade shape) |
+| 178 | mine-cart-carnage | 7 (0 kit) | 1842 | 5 notes outlast their one-shot sample (0% of melodic) → fixed (fade shape) |
+| 179 | mini-boss | 6 (1 kit) | 2234 | — |
+
 
 ## 2026-10-07 Console loudness — the song gain (Q18, Josh #183/#186/#187) — BUILT on a worktree branch, awaiting merge
 docs/plans/2026-10-07-console-loudness.md §4A; NIGHT-ROLL.md "Audio gain stages". MASTER_VOL 0.22 is gone: each song plays at one gain to −16 LUFS (peak ≤ −1 dBFS); synth = same gain + match; clips at unity; limiter as safety net; bounce matches; stored master > 100% resets to 100% once; top-bar 🔊 hidden by default (View › Display › Volume slider; Ask set_pref volume_slider).

@@ -795,6 +795,112 @@ export function isKitInstrument(inst) {
   return seen >= 2;
 }
 
+// A note's loudness over time, as the bank plays it: the envelope's
+// attack/decay ramps (envelopeGain's alSynSetVol law — exponential from the
+// attack volume to the decay volume over decayTime, then held) times, for a
+// one-shot sample (no loop), the sample's own decay — and silence where it
+// runs out (renderRare's `if (!smp.looping) break`), however long the
+// sequence holds the note. A MIDI note carries neither, so the synth held
+// every note at full level to its written length — a 0.4 s bongo hit
+// written as two beats sounded as a two-beat tone (Josh, DK64 Logo,
+// 2026-10-07). The note keeps its pitch and length; its loudness carries
+// the bank's shape as a volume shape (n.env, NIGHT-ROLL.md "Volume shape
+// inside a note"): the times it falls to each of SHAPE_LEVELS, then where
+// it stops (0 for a one-shot's end, the held decay level for a loop) — the
+// sample at the note's playback rate (key − keyBase, detune; bends
+// ignored), in ticks under the tempo map. A held envelope on a looping
+// sample, a drum and a sound the rip lacks get none. Everything is read
+// from the bank; nothing says which instrument is a drum.
+export const SHAPE_LEVELS = [0.5, 0.25, 0.125, 0.0625];
+const SHAPE_STEP = 0.005, SHAPE_MAX_S = 8; // seconds: the scan's resolution and its reach
+// a one-shot sample's running loudness from its peak: {at(sec) → level ÷ peak, end (sec)} at the sample's own rate
+function sampleLoudness(pcm, rate) {
+  const hop = Math.max(1, Math.floor(rate * SHAPE_STEP)), env = [];
+  for (let i = 0; i < pcm.length; i += hop) {
+    let s = 0; const e = Math.min(pcm.length, i + hop);
+    for (let k = i; k < e; k++) s += pcm[k] * pcm[k];
+    env.push(Math.sqrt(s / (e - i)));
+  }
+  if (!env.length) return null;
+  let pk = 0; for (let k = 1; k < env.length; k++) if (env[k] > env[pk]) pk = k;
+  if (!(env[pk] > 0)) return null;
+  for (let k = env.length - 2; k >= pk; k--) env[k] = Math.max(env[k], env[k + 1]); // what is still to come: monotone from the peak
+  const peak = env[pk];
+  return {end: pcm.length / rate, at: sec => { const k = Math.floor(sec * rate / hop); return k <= pk ? 1 : k < env.length ? env[k] / peak : 0; }};
+}
+// the envelope's level τ seconds after the note-on, ÷ the attack volume (the note's velocity is the attack); null = it never moves
+function envelopeLevel(env) {
+  if (!env) return null;
+  const A = Math.max(ENV_FLOOR, (env.attackVolume || 0) / 127), D = Math.max(ENV_FLOOR, (env.decayVolume || 0) / 127);
+  const ta = Math.max(0, (env.attackTime || 0) / 1e6);
+  const hold = env.decayTime == null || env.decayTime < 0 || env.decayTime === 0x7FFFFFFF;
+  if (hold || D >= A) return null; // the attack is never in the rip (attackTime 0): a held or rising decay is a flat note
+  const td = Math.max(0, env.decayTime / 1e6);
+  return {end: ta + td, at: t => t <= ta ? 1 : t >= ta + td ? D / A : td > 0 ? Math.pow(D / A, (t - ta) / td) : D / A};
+}
+// [{s, r}] in seconds after the note-on (level ÷ the note's attack), or null for a flat note
+export function voiceShape(env, loud, ratio = 1) {
+  const E = envelopeLevel(env);
+  if (!E && !loud) return null;
+  const end = Math.min(SHAPE_MAX_S, loud ? loud.end / ratio : E.end);
+  const f = t => (E ? E.at(t) : 1) * (loud ? loud.at(t * ratio) : 1);
+  const out = [];
+  let t = 0, prev = 1, i = 0;
+  // a late peak (a swell, a slow attack): full level until it falls
+  for (; t < end; t += SHAPE_STEP) { const v = f(t); if (v < 1) break; prev = v; }
+  if (t >= 0.02 && t < end) out.push({s: t - SHAPE_STEP, r: 1});
+  for (; t < end && i < SHAPE_LEVELS.length; t += SHAPE_STEP) {
+    const v = f(t);
+    while (i < SHAPE_LEVELS.length && v < SHAPE_LEVELS[i]) { if (i + 1 >= SHAPE_LEVELS.length || v >= SHAPE_LEVELS[i + 1]) out.push({s: t, r: SHAPE_LEVELS[i]}); i++; }
+    prev = v;
+  }
+  const last = loud ? 0 : f(end);
+  if (!out.length || out[out.length - 1].s < end) out.push({s: end, r: Math.min(last, out.length ? out[out.length - 1].r : 1)});
+  return out;
+}
+// a one-shot sample's shape at its own rate, the envelope held: [{s, r}], the last r = 0 at the sample's end
+export function sampleDecay(pcm, rate) { const l = sampleLoudness(pcm, rate); return l && voiceShape(null, l, 1); }
+// the tick (fractional) at `sec` seconds under a tempo map [{tick, bpm}] — tickSeconds' inverse
+function secondsTick(tempos, sec) {
+  let at = 0;
+  for (let i = 0; i < tempos.length; i++) {
+    const per = 60 / (tempos[i].bpm * TICKS_PER_BEAT), next = i + 1 < tempos.length ? tempos[i + 1].tick : Infinity;
+    const span = (next - tempos[i].tick) * per;
+    if (sec <= at + span) return tempos[i].tick + (sec - at) / per;
+    at += span;
+  }
+  return Infinity;
+}
+// sets n.env on every melodic note whose sound decays (a falling envelope, a one-shot sample); returns how many
+export function attachVoiceShapes(notes, bank, tempos) {
+  const louds = new Map(), shapes = new Map();
+  let shaped = 0;
+  for (const n of notes) {
+    if (n.drum) continue;
+    const inst = bank.instrument(n.inst), s = inst && bank.sound(inst, n.key, n.vel);
+    const w = s && s.wave;
+    if (!w) continue;
+    const looping = w.loop && w.loop.count !== 0 && w.loop.end > w.loop.start;
+    if (!looping && !louds.has(w.at)) { const p = bank.pcm(w); louds.set(w.at, p && !p.looping ? sampleLoudness(p.pcm, bank.sampleRate) : null); }
+    const loud = looping ? null : louds.get(w.at);
+    const km = s.keymap || {keyBase: 60, detune: 0};
+    const ratio = Math.pow(2, ((n.key - km.keyBase) * 100 + (km.detune || 0)) / 1200);
+    const key = w.at + ":" + (s.envelope ? s.envelope.at : "-") + ":" + ratio;
+    if (!shapes.has(key)) shapes.set(key, voiceShape(s.envelope, loud, ratio));
+    const d = shapes.get(key);
+    if (!d) continue;
+    const s0 = tickSeconds(tempos, n.tick), env = [];
+    for (const q of d) {
+      const t = Math.round(secondsTick(tempos, s0 + q.s) - n.tick);
+      if (t < 1) continue;
+      if (t >= n.dur) break;
+      if (env.length && env[env.length - 1].t === t) env[env.length - 1].r = q.r; else env.push({t, r: q.r});
+    }
+    if (env.length) { n.env = env; shaped++; }
+  }
+  return shaped;
+}
+
 // ---- the driver --------------------------------------------------------------
 // sequenceOfSet's fallback: the same shape it returns for EAD sets.
 export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
@@ -844,6 +950,8 @@ export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
       for (const n of res.notes) if (kits.has(n.inst)) { n.drum = true; delete n.slide; }
       res.kits = [...kits].sort((a, b) => a - b);
     }
+    const shaped = attachVoiceShapes(res.notes, bank, res.tempos);
+    if (shaped) res.warnings.push(shaped + " notes fade as the bank plays them (a one-shot sample's end, a falling envelope): the MIDI carries each as a volume shape; pitches and lengths are the sequence's");
   } else res.warnings.push("no sound bank in this rip's memory (the roll is fine; the console render will not be)");
   const loc = {gen: "rare", abi: "rare",
                sequences: table ? table.entries.map((x, i) => x ? {id: i, rom: x.rom, size: x.packed, unpacked: x.size, coverage: x.coverage, banks: [bankIndex]} : {id: i, rom: null, size: 0, coverage: 0, banks: [bankIndex]}) : [],

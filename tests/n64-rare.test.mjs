@@ -10,7 +10,8 @@ import zlib from "node:zlib";
 import { inflateRaw, decompress1172, is1172, parseCSeq, cseqNotes, unrollTracks, findMusicTable, miniOverrideWords, miniRareTrack,
          findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains,
          findFxParams, SdkFx, SMALLROOM_FX, attachGains, parse1172, findRamSequences, miniRamSequence, findSeqFileInRam,
-         miniOverrideRegs, findRareBanks } from "../tools/n64/rare.mjs";
+         miniOverrideRegs, findRareBanks, sampleDecay, attachVoiceShapes, SHAPE_LEVELS } from "../tools/n64/rare.mjs";
+import { readSmf } from "../tools/capture-diff.mjs";
 import { SparseImage, PJ64_RDRAM, rdramOf } from "../tools/n64/usf.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { renderN64 } from "../tools/n64/render.mjs";
@@ -511,4 +512,78 @@ test("every ALBank in RAM: the 'B1' file's first, then any of the bank's own sha
   const st = bankState({words: {0x2000: (1 << 16), 0x2004: 32000, 0x2008: 0, 0x200C: P(0x3100)}});
   const {ram} = rdramOf(st);
   assert.deepEqual(findRareBanks(ram).map(b => [b.at, b.how, b.instCount, b.sampleRate]), [[0x3010, "B1", 2, 22050], [0x2000, "shape", 1, 32000]]);
+});
+
+// ---- one-shot samples: the note ends with its sample ----------------------------
+// instrument 0's upper key map (60..127) re-pointed at a one-shot raw 16-bit wavetable: 0.1 s at
+// 22050 Hz, a 441 Hz tone falling as exp(−t / 20 ms) — a hit. The lower map keeps the looping square.
+function oneShotSet() {
+  const P = a => (0x80000000 | a) >>> 0, N = 2205;
+  const st = bankState({words: {0x3600: 0x8000, 0x3604: N * 2, 0x3608: 0x01000000, 0x360C: 0, 0x3610: 0}});
+  st.write(PJ64_RDRAM + 0x3218, Uint8Array.from(le32(P(0x3600))));
+  const rom = squareRom(), pcm = new Uint8Array(N * 2);
+  for (let i = 0; i < N; i++) { const v = Math.round(0.8 * 32767 * Math.exp(-i / 22050 / 0.02) * Math.sin(2 * Math.PI * 441 * i / 22050)); pcm[i * 2] = (v >> 8) & 255; pcm[i * 2 + 1] = v & 255; }
+  rom.write(0x8000, pcm);
+  return {st, rom};
+}
+test("one-shot samples: a note on a non-looping sample carries the sample's decay as a volume shape at its playback rate; a looping sound and a drum get none", () => {
+  const {st, rom} = oneShotSet(), {ram} = rdramOf(st);
+  const bank = readRareBank(ram, rom, 0x3010);
+  const d = sampleDecay(bank.pcm(bank.instrument(0).sounds[1].wave).pcm, 22050);
+  assert.deepEqual(d.map(q => q.r), [...SHAPE_LEVELS, 0], "half, quarter, eighth, sixteenth, then silence");
+  assert.ok(Math.abs(d[0].s - 0.0139) < 0.006 && Math.abs(d[3].s - 0.0555) < 0.006, "−6 dB at 20 ms × ln 2, −24 dB at 4 × that: " + d.map(q => q.s.toFixed(4)));
+  assert.ok(Math.abs(d[4].s - 0.1) < 1e-9, "silent where the sample ends");
+  const tempos = [{tick: 0, bpm: 120}]; // 96 ticks a second
+  const mk = (key, tick, dur, extra = {}) => ({ch: 0, inst: 0, drum: false, key, semitone: key, midi: key, tick, dur, vel: 100, ...extra});
+  const notes = [mk(60, 0, 96), mk(72, 96, 96), mk(48, 192, 96), mk(60, 288, 4), {...mk(36, 300, 96), inst: 1, drum: true}];
+  assert.equal(attachVoiceShapes(notes, bank, tempos), 3);
+  const [atKey, octaveUp, looping, short, drum] = notes;
+  assert.equal(atKey.env.at(-1).r, 0);
+  assert.ok(Math.abs(atKey.env.at(-1).t - 10) <= 1, "0.1 s = ~10 ticks at key 60 (= keyBase): " + JSON.stringify(atKey.env));
+  assert.ok(Math.abs(octaveUp.env.at(-1).t - 5) <= 1, "an octave up plays the sample twice as fast: " + JSON.stringify(octaveUp.env));
+  assert.equal(looping.env, undefined, "a looping sample sustains: no shape");
+  assert.ok(short.env.every(q => q.t < 4), "points past a short note's end are not kept");
+  assert.equal(drum.env, undefined, "a kit hit is the drum lane's, no shape");
+  // the MIDI carries it as aftertouch inside the note; pitch and length untouched
+  const res = {notes, tempos, endTick: 400, warnings: []};
+  const smf = readSmf(toMidi(res));
+  const tr = smf.tracks.find(t => t.name === "ch 0 inst 0");
+  assert.deepEqual(tr.notes.map(n => [n.t, n.d, n.p]), [[0, 960, 60], [960, 960, 72], [1920, 960, 48], [2880, 40, 60]]);
+  const at = tr.other.filter(o => o.kind === "shape");
+  assert.equal(at.length, atKey.env.length + octaveUp.env.length + short.env.length);
+  assert.equal(at.find(o => o.t === atKey.env.at(-1).t * 10).key, "0:60:0", "the last point is silence");
+});
+test("one-shot samples through sequenceOfSet: the capture says how many notes end with their sample", () => {
+  const seqBytes = cseq([[...tempo(500000), 0, 0xC0, 0, ...note(0, 0, 72, 100, 96), ...note(96, 0, 48, 100, 96), ...END]]);
+  const packed = cat([0x11, 0x72], zlib.deflateRawSync(seqBytes));
+  const {st, rom} = oneShotSet();
+  const base = 0x419000, entries = [];
+  for (let i = 0; i < 8; i++) { rom.write(base + i * packed.length, packed); entries.push(...be32(base + i * packed.length), ...be16(seqBytes.length), ...be16(packed.length)); }
+  st.write(PJ64_RDRAM + 0x603C, Uint8Array.from(le32(5)));
+  for (let i = 0; i < entries.length; i += 4) st.write(PJ64_RDRAM + 0x2d1c00 + i, Uint8Array.from([entries[i + 3], entries[i + 2], entries[i + 1], entries[i]]));
+  const out = sequenceOfSet({rom, state: st, top: {state: [{offset: PJ64_RDRAM + 0x603C, bytes: Uint8Array.from(le32(5))}]}, order: ["x.miniusf"]});
+  const [hit, held] = out.res.notes;
+  assert.ok(hit.env && hit.env.at(-1).r === 0, "key 72: the one-shot ends inside the note");
+  assert.equal(held.env, undefined, "key 48: the looping square holds");
+  assert.ok(out.res.warnings.some(w => /^1 notes fade as the bank plays them/.test(w)), out.res.warnings.join(" | "));
+});
+test("one-shot samples + pitch bends: each landed pitch keeps its share of the shape, timed from its own start", () => {
+  const n = {ch: 0, inst: 0, drum: false, key: 60, semitone: 60, midi: 60, tick: 0, dur: 96, vel: 100,
+             slide: [{t: 48, len: 1, to: 2}], env: [{t: 10, r: 0.5}, {t: 60, r: 0.25}, {t: 90, r: 0}]};
+  const [a, b] = splitSlides([n]);
+  assert.deepEqual(a.env, [{t: 10, r: 0.5}]);
+  assert.deepEqual(b.env, [{t: 12, r: 0.25}, {t: 42, r: 0}]);
+});
+test("envelope decays: a looping sound whose envelope falls (decayTime, decayVolume < attack) fades to the held decay level; a held envelope stays flat", () => {
+  const st = bankState();
+  st.write(PJ64_RDRAM + 0x3304, Uint8Array.from(le32(100000)));      // decay over 100 ms…
+  st.write(PJ64_RDRAM + 0x330C, Uint8Array.from(le32(0x7F200000)));  // …from 127 to 32
+  const {ram} = rdramOf(st), bank = readRareBank(ram, squareRom(), 0x3010);
+  const n = {ch: 0, inst: 0, drum: false, key: 48, semitone: 48, midi: 48, tick: 0, dur: 96, vel: 100};
+  assert.equal(attachVoiceShapes([n], bank, [{tick: 0, bpm: 120}]), 1);
+  assert.equal(n.env.length, 2, JSON.stringify(n.env));
+  assert.ok(Math.abs(n.env[0].t - 5) <= 1 && n.env[0].r === 0.5, "half way down the geometric ramp at 50 ms: " + JSON.stringify(n.env));
+  assert.ok(Math.abs(n.env[1].t - 10) <= 1 && Math.abs(n.env[1].r - 32 / 127) < 1e-9, "then held at 32/127 from 100 ms");
+  const flat = {...n, env: undefined}, held = readRareBank(rdramOf(bankState()).ram, squareRom(), 0x3010);
+  assert.equal(attachVoiceShapes([flat], held, [{tick: 0, bpm: 120}]), 0);
 });

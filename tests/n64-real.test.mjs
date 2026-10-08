@@ -941,3 +941,21 @@ test("applySoundingOffsets + toMidi (real ROM): Title Theme's shifted tracks car
   const bytes = toMidi(res, {tsNum: 4, tsDen: 4, offsets});
   assert.ok(bytes.length > 100);
 });
+
+// Donkey Kong 64's Logo (Josh, 2026-10-07: "the drums are coming out as notes and they sound awful"):
+// its hand-drum parts (inst 2, inst 3) are one-shot samples the synth held as tones. The capture keeps
+// every note where it was and carries each sample's fade; the kits and the notes are what they were.
+const DK64_ARCHIVE = [process.env.N64_USF_DIR && join(process.env.N64_USF_DIR, "donkey-kong-64"), "/tmp/recap/rips/n64/donkey-kong-64"]
+  .find(d => d && existsSync(join(d, "logo.usf")) && existsSync(join(d, "nus-ndop-usa.usflib")));
+test("DK64_ARCHIVE Logo (real rip): one-shot drum samples fade inside their notes; pitches, lengths and kits unchanged", {skip: !DK64_ARCHIVE}, () => {
+  const set = loadUSF(["logo.usf", "nus-ndop-usa.usflib"].map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(DK64_ARCHIVE, n)))})));
+  const {res} = sequenceOfSet(set);
+  const part = (ch, inst) => res.notes.filter(n => n.ch === ch && n.inst === inst);
+  const congas = part(1, 2), bongoA = part(3, 3), bongoB = part(4, 3);
+  assert.deepEqual([congas.length, bongoA.length, bongoB.length], [100, 20, 20]);
+  assert.deepEqual([...new Set(congas.map(n => n.midi))].sort(), [60, 65], "the written pitches stay");
+  assert.ok([...congas, ...bongoA, ...bongoB].every(n => n.env && n.env.length), "every hit carries its sample's fade");
+  assert.ok(bongoA.every(n => n.dur === 96 && n.env.at(-1).r === 0 && n.env.at(-1).t < 60), "a two-beat note on a 0.48 s hit falls silent about a beat in");
+  assert.ok(res.notes.filter(n => n.drum).every(n => !n.env), "kit hits are the drum lane's");
+  assert.ok(toMidi(res).length > 1000);
+});
