@@ -64,172 +64,376 @@
    "battle": {
     "n": 1,
     "secs": 57.600000000004535,
-    "track": 11
+    "track": 11,
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -6.9,
+     "synth": -8.4
+    }
    },
    "bolero-of-fire": {
     "n": 1,
     "secs": 18.762139128394043,
-    "track": 62
+    "track": 62,
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -3.8,
+     "synth": -5.4
+    }
    },
    "boss-battle": {
     "n": 1,
     "secs": 71.74999999998762,
-    "track": 13
+    "track": 13,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": 0.3,
+     "synth": -4.8
+    }
    },
    "boss-clear": {
     "n": 1,
     "secs": 11.666666666666453,
-    "track": 14
+    "track": 14,
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -2.1,
+     "synth": -2
+    }
    },
    "chamber-of-sages": {
     "n": 1,
     "secs": 91.99999999999653,
-    "track": 50
+    "track": 50,
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -6.9,
+     "synth": -5
+    }
    },
    "deku-tree": {
     "n": 1,
     "secs": 25.945945945945308,
-    "track": 3
+    "track": 3,
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -8.3,
+     "synth": -6.3
+    }
    },
    "dinosaur-boss-battle": {
     "n": 1,
     "secs": 63.151351351345994,
-    "track": 40
+    "track": 40,
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": 0.4,
+     "synth": -3.1
+    }
    },
    "dodongo-s-cavern": {
     "n": 1,
     "secs": 90,
-    "track": 38
+    "track": 38,
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -6.7,
+     "synth": -12.2
+    }
    },
    "end-credits-a": {
     "n": 1,
     "secs": 156.48755259880372,
-    "track": 84
+    "track": 84,
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -9.1,
+     "synth": -5.9
+    }
    },
    "end-credits-b": {
     "n": 1,
     "secs": 146.68464105844774,
-    "track": 85
+    "track": 85,
+    "loud": {
+     "v": 1,
+     "lufs": -18.4,
+     "peak": -3.2,
+     "synth": -5.2
+    }
    },
    "end-credits-c": {
     "n": 1,
     "secs": 67.98192498928552,
-    "track": 86
+    "track": 86,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -0.3,
+     "synth": -2.4
+    }
    },
    "end-credits-d": {
     "n": 1,
     "secs": 49.39813664596066,
-    "track": 87
+    "track": 87,
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -15.2,
+     "synth": -7.8
+    }
    },
    "enter-ganondorf": {
     "n": 1,
     "secs": 15.999999999999636,
-    "track": 2
+    "track": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -15.6,
+     "peak": -3.7,
+     "synth": -1.1
+    }
    },
    "enter-zelda": {
     "n": 1,
     "secs": 4.243356643356625,
-    "track": 26
+    "track": 26,
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -4.7,
+     "synth": -3.4
+    }
    },
    "escape-from-ganon-s-castle": {
     "n": 1,
     "secs": 48.54666666666559,
-    "track": 80
+    "track": 80,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -1.6,
+     "synth": -5.6
+    }
    },
    "escape-from-lon-lon-ranch": {
     "n": 1,
     "secs": 8.017064331017915,
-    "track": 56
+    "track": 56,
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -6.1,
+     "synth": -4.4
+    }
    },
    "fairy-flying": {
     "n": 1,
     "secs": 16.215716486903286,
-    "track": 4
+    "track": 4,
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -11.5,
+     "synth": -7.1
+    }
    },
    "fire-temple": {
     "n": 1,
     "secs": 97.69911504426167,
-    "track": 63
+    "track": 63,
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -5.8,
+     "synth": -12
+    }
    },
    "forest-temple": {
     "n": 1,
     "secs": 102.12765957447981,
-    "track": 61
+    "track": 61,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -7.7,
+     "synth": -9
+    }
    },
    "game-over": {
     "n": 1,
     "secs": 9.730769230769463,
-    "track": 75
+    "track": 75,
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -10.5,
+     "synth": -7.3
+    }
    },
    "ganon-s-castle-bridge": {
     "n": 1,
     "secs": 19.701492537313488,
-    "track": 76
+    "track": 76,
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -2.9,
+     "synth": -3.1
+    }
    },
    "ganon-s-castle-underground": {
     "n": 1,
     "secs": 79.20000000000944,
-    "track": 77
+    "track": 77,
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -9.8,
+     "synth": -8.7
+    }
    },
    "ganondorf-battle": {
     "n": 1,
     "secs": 66.95746455378705,
-    "track": 79
+    "track": 79,
+    "loud": {
+     "v": 1,
+     "lufs": -17,
+     "peak": -3.9,
+     "synth": -4.6
+    }
    },
    "ganondorf-s-theme": {
     "n": 1,
     "secs": 31.361709401710048,
-    "track": 49
+    "track": 49,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -8.2,
+     "synth": -5.7
+    }
    },
    "gerudo-valley": {
     "n": 1,
     "secs": 86.00000000000418,
-    "track": 70
+    "track": 70,
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -4.3,
+     "synth": -3.7
+    }
    },
    "get-fairy-ocarina": {
     "n": 1,
     "secs": 9.064285714285754,
-    "track": 18
+    "track": 18,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": -1.3,
+     "synth": -1.7
+    }
    },
    "get-heart-container": {
     "n": 1,
     "secs": 2.999999999999991,
-    "track": 15
+    "track": 15,
+    "loud": {
+     "v": 1,
+     "lufs": -18.3,
+     "peak": -6.9,
+     "synth": -4.3
+    }
    },
    "get-spiritual-stone": {
     "n": 1,
     "secs": 14.114285714285899,
-    "track": 17
+    "track": 17,
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -4.8,
+     "synth": -2.3
+    }
    },
    "goron-city": {
     "n": 1,
     "secs": 83.728260869561,
-    "track": 35
+    "track": 35,
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -8.3,
+     "synth": -9.4
+    }
    },
    "great-fairy-s-fountain": {
     "n": 1,
     "secs": 27.566172442572036,
-    "track": 42
+    "track": 42,
+    "loud": {
+     "v": 1,
+     "lufs": -29.5,
+     "peak": -14.1,
+     "synth": -7.9
+    }
    },
    "horse-race-goal": {
     "n": 1,
     "secs": 3.4838709677419732,
-    "track": 54
+    "track": 54,
+    "loud": {
+     "v": 1,
+     "lufs": -14,
+     "peak": -2.8,
+     "synth": -2.3
+    }
    },
    "horse-race": {
     "n": 1,
     "secs": 40.89677419354737,
-    "track": 53
+    "track": 53,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -2.7,
+     "synth": -5.9
+    }
    },
    "house": {
     "n": 1,
     "secs": 27.585034013607395,
-    "track": 5
+    "track": 5,
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -9.7,
+     "synth": -9.8
+    }
    },
    "hyrule-castle-courtyard": {
     "n": 1,
     "secs": 23.040000000000802,
-    "track": 25
+    "track": 25,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -5.3,
+     "synth": -9.1
+    }
    },
    "hyrule-field-battle": {
     "n": 1,
@@ -244,7 +448,13 @@
    "hyrule-field-morning-theme": {
     "n": 1,
     "secs": 30.199999999998987,
-    "track": 34
+    "track": 34,
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -8.3,
+     "synth": -9.2
+    }
    },
    "hyrule-field-waiting": {
     "n": 1,
@@ -254,357 +464,783 @@
    "hyrule-field": {
     "n": 1,
     "secs": 13.266666666666554,
-    "track": 88
+    "track": 88,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -3.6,
+     "synth": -7.7
+    }
    },
    "ice-cavern": {
     "n": 1,
     "secs": 35.67567567567542,
-    "track": 64
+    "track": 64,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -8,
+     "synth": -6.6
+    }
    },
    "ingo-s-theme": {
     "n": 1,
     "secs": 54,
-    "track": 55
+    "track": 55,
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.4,
+     "synth": -4.4
+    }
    },
    "inside-ganon-s-castle": {
     "n": 1,
     "secs": 200.59704769084408,
-    "track": 78
+    "track": 78,
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -8,
+     "synth": -7.6
+    }
    },
    "inside-jabu-jabu-s-belly": {
     "n": 1,
     "secs": 50.52631578947507,
-    "track": 44
+    "track": 44,
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -7.6,
+     "synth": -10
+    }
    },
    "inside-the-deku-tree": {
     "n": 1,
     "secs": 76.80000000000034,
-    "track": 12
+    "track": 12,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -8.5,
+     "synth": -14.1
+    }
    },
    "item-catch": {
     "n": 1,
     "secs": 2.999999999999991,
-    "track": 8
+    "track": 8,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -4.9,
+     "synth": -3.8
+    }
    },
    "kaepora-gaebora-s-theme": {
     "n": 1,
     "secs": 52.66583850931672,
-    "track": 22
+    "track": 22,
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -7.4,
+     "synth": -7.9
+    }
    },
    "kakariko-village-orchestral-version": {
     "n": 1,
     "secs": 92.79777546278243,
-    "track": 57
+    "track": 57,
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -15,
+     "synth": -7.4
+    }
    },
    "kakariko-village": {
     "n": 1,
     "secs": 95.17206285368769,
-    "track": 32
+    "track": 32,
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -12.1,
+     "synth": -8.5
+    }
    },
    "kokiri-forest": {
     "n": 1,
     "secs": 51.31034482758793,
-    "track": 6
+    "track": 6,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -6.4,
+     "synth": -6.3
+    }
    },
    "kotake-koume-s-theme": {
     "n": 1,
     "secs": 47.454545454541844,
-    "track": 73
+    "track": 73,
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -7.4,
+     "synth": -7.2
+    }
    },
    "last-battle": {
     "n": 1,
     "secs": 94.32432432433662,
-    "track": 81
+    "track": 81,
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": 0.1,
+     "synth": -0.7
+    }
    },
    "legend-of-hyrule": {
     "n": 1,
     "secs": 115.99999999999108,
-    "track": 16
+    "track": 16,
+    "loud": {
+     "v": 1,
+     "lufs": -18.6,
+     "peak": -2.7,
+     "synth": -4.7
+    }
    },
    "lon-lon-ranch": {
     "n": 1,
     "secs": 127.0588235294185,
-    "track": 30
+    "track": 30,
+    "loud": {
+     "v": 1,
+     "lufs": -27.7,
+     "peak": -13.9,
+     "synth": -4
+    }
    },
    "lost-woods": {
     "n": 1,
     "secs": 32.571428571430864,
-    "track": 37
+    "track": 37,
+    "loud": {
+     "v": 1,
+     "lufs": -17.3,
+     "peak": -3.1,
+     "synth": -7.3
+    }
    },
    "main-menu-fairy-s-fountain": {
     "n": 1,
     "secs": 27.566172442572036,
-    "track": 109
+    "track": 109,
+    "loud": {
+     "v": 1,
+     "lufs": -29.5,
+     "peak": -14.1,
+     "synth": -7.9
+    }
    },
    "market": {
     "n": 1,
     "secs": 40.27397260274217,
-    "track": 23
+    "track": 23,
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -7.8,
+     "synth": -10.7
+    }
    },
    "master-sword": {
     "n": 1,
     "secs": 12.244897959183847,
-    "track": 48
+    "track": 48,
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -5.8,
+     "synth": -3.3
+    }
    },
    "medal-get-fanfare": {
     "n": 1,
     "secs": 11.914285714285791,
-    "track": 51
+    "track": 51,
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -3.8,
+     "synth": -3.6
+    }
    },
    "meet-zelda-again": {
     "n": 1,
     "secs": 41.28479888905353,
-    "track": 74
+    "track": 74,
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -10.9,
+     "synth": -4.9
+    }
    },
    "middle-boss-battle": {
     "n": 1,
     "secs": 59.99999999999663,
-    "track": 39
+    "track": 39,
+    "loud": {
+     "v": 1,
+     "lufs": -17.1,
+     "peak": -3.5,
+     "synth": -4.3
+    }
    },
    "mini-game": {
     "n": 1,
     "secs": 25.945945945947013,
-    "track": 31
+    "track": 31,
+    "loud": {
+     "v": 1,
+     "lufs": -18.6,
+     "peak": -6.1,
+     "synth": -5.7
+    }
    },
    "minuet-of-forest": {
     "n": 1,
     "secs": 16.416666666666266,
-    "track": 60
+    "track": 60,
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -7.7,
+     "synth": -6.5
+    }
    },
    "nocturne-of-shadow": {
     "n": 1,
     "secs": 23.12142857142867,
-    "track": 67
+    "track": 67,
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": -2.3,
+     "synth": -2.5
+    }
    },
    "ocarina-epona-s-theme": {
     "n": 1,
     "secs": 6.872727272727367,
-    "track": 29
+    "track": 29,
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -8.7,
+     "synth": -7.7
+    }
    },
    "ocarina-of-time-zelda-s-ocarina": {
     "n": 1,
     "secs": 29.744615225200903,
-    "track": 83
+    "track": 83,
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -12.9,
+     "synth": -6.9
+    }
    },
    "ocarina-saria-s-song": {
     "n": 1,
     "secs": 5.3333333333333375,
-    "track": 36
+    "track": 36,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -9.9,
+     "synth": -10.1
+    }
    },
    "ocarina-song-of-storms": {
     "n": 1,
     "secs": 4.535714285714278,
-    "track": 58
+    "track": 58,
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": -8.1,
+     "synth": -8.1
+    }
    },
    "ocarina-song-of-time": {
     "n": 1,
     "secs": 9.260443086325369,
-    "track": 45
+    "track": 45,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -8.1,
+     "synth": -8.3
+    }
    },
    "ocarina-sun-s-song": {
     "n": 1,
     "secs": 5.892857142857173,
-    "track": 33
+    "track": 33,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -6.2,
+     "synth": -12
+    }
    },
    "ocarina-zelda-s-lullaby": {
     "n": 1,
     "secs": 8.86699507389171,
-    "track": 27
+    "track": 27,
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -9.4,
+     "synth": -7.6
+    }
    },
    "open-door-of-temple-of-time": {
     "n": 1,
     "secs": 13.636363636363548,
-    "track": 47
+    "track": 47,
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -5.9,
+     "synth": -5.4
+    }
    },
    "open-treasure-box": {
     "n": 1,
     "secs": 7.562109237935988,
-    "track": 7
+    "track": 7,
+    "loud": {
+     "v": 1,
+     "lufs": -16.9,
+     "peak": -2.5,
+     "synth": -2.1
+    }
    },
    "potion-shop": {
     "n": 1,
     "secs": 43.404255319148966,
-    "track": 43
+    "track": 43,
+    "loud": {
+     "v": 1,
+     "lufs": -23.8,
+     "peak": -8.1,
+     "synth": -7.2
+    }
    },
    "prelude-of-light": {
     "n": 1,
     "secs": 15.999999999999636,
-    "track": 68
+    "track": 68,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -9,
+     "synth": -7.6
+    }
    },
    "requiem-of-spirit": {
     "n": 1,
     "secs": 24.976461038960736,
-    "track": 72
+    "track": 72,
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -5.1,
+     "synth": -2.2
+    }
    },
    "seal-of-six-sages": {
     "n": 1,
     "secs": 28.05194805194894,
-    "track": 82
+    "track": 82,
+    "loud": {
+     "v": 1,
+     "lufs": -17.6,
+     "peak": -4.5,
+     "synth": -3.2
+    }
    },
    "serenade-of-water": {
     "n": 1,
     "secs": 17.064285714286047,
-    "track": 65
+    "track": 65,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -4.1,
+     "synth": -3.1
+    }
    },
    "shadow-temple": {
     "n": 1,
     "secs": 92.30769230768769,
-    "track": 69
+    "track": 69,
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -6,
+     "synth": -6.2
+    }
    },
    "sheik-s-theme": {
     "n": 1,
     "secs": 24.644094981796197,
-    "track": 52
+    "track": 52,
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -8.7,
+     "synth": -7.9
+    }
    },
    "shooting-gallery": {
     "n": 1,
     "secs": 32.100000000003014,
-    "track": 24
+    "track": 24,
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -6,
+     "synth": -5
+    }
    },
    "shop": {
     "n": 1,
     "secs": 59.99999999999606,
-    "track": 10
+    "track": 10,
+    "loud": {
+     "v": 1,
+     "lufs": -22,
+     "peak": -4.5,
+     "synth": -8.5
+    }
    },
    "small-item-catch": {
     "n": 1,
     "secs": 2.999999999999991,
-    "track": 9
+    "track": 9,
+    "loud": {
+     "v": 1,
+     "lufs": -19.1,
+     "peak": -5.7,
+     "synth": -2.6
+    }
    },
    "spirit-temple": {
     "n": 1,
     "secs": 163.5616438356534,
-    "track": 71
+    "track": 71,
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -2.4,
+     "synth": -5.2
+    }
    },
    "temple-of-time": {
     "n": 1,
     "secs": 73.86331874646807,
-    "track": 46
+    "track": 46,
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -10.1,
+     "synth": -10.3
+    }
    },
    "title-theme": {
     "n": 1,
     "secs": 77.9023775786394,
-    "track": 1
+    "track": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -6.4,
+     "synth": -5.7
+    }
    },
    "water-temple": {
     "n": 1,
     "secs": 154.4827586206531,
-    "track": 66
+    "track": 66,
+    "loud": {
+     "v": 1,
+     "lufs": -30.2,
+     "peak": -14.1,
+     "synth": -11.1
+    }
    },
    "windmill-hut": {
     "n": 1,
     "secs": 43.20000000000126,
-    "track": 59
+    "track": 59,
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -4.9,
+     "synth": -7
+    }
    },
    "zelda-s-theme": {
     "n": 1,
     "secs": 41.28479888905353,
-    "track": 28
+    "track": 28,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -10.9,
+     "synth": -5.4
+    }
    },
    "zora-s-domain": {
     "n": 1,
     "secs": 82.3125,
-    "track": 41
+    "track": 41,
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -7.3,
+     "synth": -7.3
+    }
    },
    "hyrule-field-10": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 97
+    "track": 97,
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -7.6,
+     "synth": -6.3
+    }
    },
    "hyrule-field-11": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 98
+    "track": 98,
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -5.7,
+     "synth": -4.6
+    }
    },
    "hyrule-field-12": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 99
+    "track": 99,
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -8.8,
+     "synth": -8.6
+    }
    },
    "hyrule-field-13": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 100
+    "track": 100,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -6.8,
+     "synth": -9.3
+    }
    },
    "hyrule-field-14": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 101
+    "track": 101,
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -6.2,
+     "synth": -8.4
+    }
    },
    "hyrule-field-15": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 102
+    "track": 102,
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -6.8,
+     "synth": -7.4
+    }
    },
    "hyrule-field-16": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 103
+    "track": 103,
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -6.3,
+     "synth": -6.1
+    }
    },
    "hyrule-field-17": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 104
+    "track": 104,
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -6.7,
+     "synth": -5.7
+    }
    },
    "hyrule-field-18": {
     "n": 1,
     "secs": 13.822887773643616,
-    "track": 105
+    "track": 105,
+    "loud": {
+     "v": 1,
+     "lufs": -21.7,
+     "peak": -9.4,
+     "synth": -5.5
+    }
    },
    "hyrule-field-19": {
     "n": 1,
     "secs": 14.01459854014593,
-    "track": 106
+    "track": 106,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -8.9,
+     "synth": -4.6
+    }
    },
    "hyrule-field-2": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 89
+    "track": 89,
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -6,
+     "synth": -5.9
+    }
    },
    "hyrule-field-20": {
     "n": 1,
     "secs": 13.913043478260677,
-    "track": 107
+    "track": 107,
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -8.1,
+     "synth": -3.1
+    }
    },
    "hyrule-field-21": {
     "n": 1,
     "secs": 13.913043478260677,
-    "track": 108
+    "track": 108,
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -10,
+     "synth": -5.2
+    }
    },
    "hyrule-field-3": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 90
+    "track": 90,
+    "loud": {
+     "v": 1,
+     "lufs": -20.8,
+     "peak": -6.7,
+     "synth": -5.2
+    }
    },
    "hyrule-field-4": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 91
+    "track": 91,
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -6.6,
+     "synth": -4.1
+    }
    },
    "hyrule-field-5": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 92
+    "track": 92,
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -8.6,
+     "synth": -8.7
+    }
    },
    "hyrule-field-6": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 93
+    "track": 93,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -7.5,
+     "synth": -5.2
+    }
    },
    "hyrule-field-7": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 94
+    "track": 94,
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -4.4,
+     "synth": -7
+    }
    },
    "hyrule-field-8": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 95
+    "track": 95,
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -8,
+     "synth": -6.6
+    }
    },
    "hyrule-field-9": {
     "n": 1,
     "secs": 12.799999999999914,
-    "track": 96
+    "track": 96,
+    "loud": {
+     "v": 1,
+     "lufs": -20.9,
+     "peak": -5.8,
+     "synth": -7.3
+    }
    }
   },
   "chip": "usf",
