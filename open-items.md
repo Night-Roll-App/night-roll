@@ -771,6 +771,17 @@ Q12. A no-model fast path for "play"/"stop" (instant, no AI round), or keep
 Q13. "Open Graveyard and play from bar 9": after switching songs, does the
     follow-on ("play from bar 9") send itself, or wait for your tap?
     Default: sends itself.
+Q22. (✱-note converter, Josh #229/#230, 2026-10-08) A read-only scan of his chord
+  ✱ notes found 19 obvious ones; nothing is changed until he says yes.
+  - 12 whose whole note is the mark ("No 5th", "bVII", "vii°7"): the mark moves into
+    the chord's no 5 / roman field and the note goes away.
+  - 7 that start with "No 5th." followed by more words: no 5 is set and the note
+    stays exactly as written.
+  - 6 skipped (the mark sits mid-sentence, e.g. "Calling this minor 7 because there's
+    no 5th…").
+  Songs: FF1 shop, underwater palace, prologue, chaos temple; his Graveyard, -2 and -3.
+  The scan script is tmp/conv-scan.mjs in the job dir; the applier is not written yet.
+
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
 wash" using the hardware NOISE generator as a texture, not a drum — but
