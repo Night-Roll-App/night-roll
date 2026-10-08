@@ -29,6 +29,10 @@
      "lufs": -16.4,
      "peak": -1.1,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "cave-dungeon-hazy-maze": {
@@ -40,6 +44,10 @@
      "lufs": -17.2,
      "peak": -1.1,
      "synth": -8.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "cave-dungeon": {
@@ -51,6 +59,10 @@
      "lufs": -17.1,
      "peak": -1.1,
      "synth": -9.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "correct-solution": {
@@ -62,6 +74,10 @@
      "lufs": -15.6,
      "peak": -5.6,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "course-clear": {
@@ -73,6 +89,10 @@
      "lufs": -15.3,
      "peak": -4.2,
      "synth": -6.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "dire-dire-docks-in-water": {
@@ -84,6 +104,10 @@
      "lufs": -14.4,
      "peak": -0.9,
      "synth": -3.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "dire-dire-docks-underwater-cave": {
@@ -95,6 +119,10 @@
      "lufs": -14.2,
      "peak": 0.2,
      "synth": -3.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "dire-dire-docks": {
@@ -106,6 +134,10 @@
      "lufs": -21.3,
      "peak": -5.5,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "ending-demo": {
@@ -117,6 +149,10 @@
      "lufs": -14.4,
      "peak": -0.7,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "file-select": {
@@ -128,6 +164,10 @@
      "lufs": -17.7,
      "peak": -5.9,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "game-start": {
@@ -139,6 +179,10 @@
      "lufs": -18.3,
      "peak": -5.9,
      "synth": -6.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "haunted-house": {
@@ -150,6 +194,10 @@
      "lufs": -14,
      "peak": 0.1,
      "synth": -4.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "inside-the-castle-walls": {
@@ -161,6 +209,10 @@
      "lufs": -17.7,
      "peak": -3.9,
      "synth": -8.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "koopa-clear": {
@@ -172,6 +224,10 @@
      "lufs": -13.1,
      "peak": -1.7,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "koopa-s-message": {
@@ -183,6 +239,10 @@
      "lufs": -10.3,
      "peak": 3.1,
      "synth": -2.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "koopa-s-road": {
@@ -194,6 +254,10 @@
      "lufs": -12.6,
      "peak": 1.5,
      "synth": -3.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "koopa-s-theme": {
@@ -205,6 +269,10 @@
      "lufs": -17.1,
      "peak": -3.4,
      "synth": -7.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "lakitu-s-message": {
@@ -216,6 +284,10 @@
      "lufs": -20.8,
      "peak": -9.7,
      "synth": -9.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "lethal-lava-land": {
@@ -227,6 +299,10 @@
      "lufs": -17.4,
      "peak": -0.3,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "looping-steps": {
@@ -238,6 +314,10 @@
      "lufs": -14.8,
      "peak": -4.6,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "main-theme": {
@@ -249,6 +329,10 @@
      "lufs": -21.1,
      "peak": -2.8,
      "synth": -9.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "merry-go-round": {
@@ -260,6 +344,10 @@
      "lufs": -15.4,
      "peak": -3.2,
      "synth": -6.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "metallic-mario": {
@@ -271,6 +359,10 @@
      "lufs": -15.8,
      "peak": -0.1,
      "synth": -9.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "opening": {
@@ -282,6 +374,10 @@
      "lufs": -16,
      "peak": -0.8,
      "synth": -7.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "peach-s-message": {
@@ -293,6 +389,10 @@
      "lufs": -17.2,
      "peak": -3.8,
      "synth": -4.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "piranha-plant-s-lullaby": {
@@ -304,6 +404,10 @@
      "lufs": -27.6,
      "peak": -11.7,
      "synth": -7.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "power-star": {
@@ -315,6 +419,10 @@
      "lufs": -15.2,
      "peak": -3.8,
      "synth": -2.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "powerful-mario": {
@@ -326,6 +434,10 @@
      "lufs": -13.9,
      "peak": -0.3,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "race-fanfare": {
@@ -337,6 +449,10 @@
      "lufs": -18.9,
      "peak": -6,
      "synth": -8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "slider": {
@@ -348,6 +464,10 @@
      "lufs": -16.2,
      "peak": -3.4,
      "synth": -4.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "snow-mountain": {
@@ -359,6 +479,10 @@
      "lufs": -17.2,
      "peak": -2.4,
      "synth": -5.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "staff-roll": {
@@ -370,6 +494,10 @@
      "lufs": -13.5,
      "peak": 2.2,
      "synth": -4.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "stage-boss": {
@@ -381,6 +509,10 @@
      "lufs": -13.4,
      "peak": 2.3,
      "synth": -5.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "star-catch-fanfare": {
@@ -392,6 +524,10 @@
      "lufs": -19.1,
      "peak": -4.6,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "title-theme": {
@@ -403,6 +539,10 @@
      "lufs": -18,
      "peak": -1.5,
      "synth": -10.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "toad-s-message": {
@@ -414,6 +554,10 @@
      "lufs": -15.7,
      "peak": -3.4,
      "synth": -7.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "ultimate-koopa-clear": {
@@ -425,6 +569,10 @@
      "lufs": -11.7,
      "peak": 1.5,
      "synth": -2
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    },
    "ultimate-koopa": {
@@ -436,6 +584,10 @@
      "lufs": -14.9,
      "peak": -2.1,
      "synth": -6
+    },
+    "cap": {
+     "v": 2,
+     "code": "de806413"
     }
    }
   },
