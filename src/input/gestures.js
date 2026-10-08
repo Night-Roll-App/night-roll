@@ -82,6 +82,7 @@ import { cycleSecDepth } from "../ui/chrome.js";
 import { LANE_H } from "../render/roll.js";
 import { openEditor } from "../ui/note-editor.js";
 import { annoUndoEntry } from "../ui/note-editor.js";
+import { editorFollowSelection, editorFollowBand } from "../ui/note-editor.js";
 import { isUndrawnAnno } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { openAnalyzeSheet } from "../ui/sheets.js";
@@ -744,6 +745,7 @@ export function endPointer(e) {
   else if (S.drag.ruler && !S.drag.rulerRange) tap(S.drag.spos); // a wobbly ruler tap still just places the cursor
   else if (!S.drag.moved) tap(evtPos(e));
   S.drag = null;
+  editorFollowSelection(); // a docked annotation window follows whatever this gesture did to the selection
   if (S.viewMode === "score" && S.scoreModel && S.scoreZoom !== S.view.pxq) draw(); // re-engrave after pinch
 }
 export function tap(pos) {
@@ -849,6 +851,7 @@ export function tap(pos) {
         S.tapBand = {n: sec, t: performance.now()};
         if (showRulerHl()) S.rangeSel = {a: sec.start, b: sec.end}; // View › Display → Ruler highlight off: the tap only reads out (Josh #243)
         S.playCursor = sec.start;
+        editorFollowBand(sec); // docked: one tap loads it, highlight or not (plan R1/R13)
         setInfo((sec.chord ? "chord " : "section ") + sec.text + " · bar " + sec.b1 + "–" + (sec.b2 || sec.b1) +
                 (sec.cnote ? " · ✱ " + sec.cnote.split("\n")[0] : "") +
                 (sec.stale ? " · notes here now read " + sec.stale + " — rename in ☰ Notes if you agree" : ""));

@@ -69,6 +69,7 @@ export const CONTROLS = {
   vwGrid: {icon: "gridOn", cls: "", label: "  Grid…", prefix: "   "},
   // the on-screen keyboard's bar (2026-10-04): only the lock swaps its glyph
   // (🔓 → 🔒), the rest are registered so their wording lives here too
+  ncancel: {label: "Cancel", aria: null}, // the annotation window's Cancel reads Clear while docked (editorRender)
   instplay: {label: "Play", aria: null},
   instscroll: {label: "Scroll", aria: null},
   instoctdn: {glyph: "‹", cls: "", label: "", aria: "Keyboard down an octave"},

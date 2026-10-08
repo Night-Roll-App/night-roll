@@ -2997,6 +2997,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Docked annotation window", "follows what you select",
     "Every undo and redo says what it took back",
     "Ruler highlight",
     "Chip / MIDI switch",
@@ -10234,7 +10235,7 @@ test("tapping a note leaves the playhead alone by default; the old tap-to-move i
   run(`localStorage.setItem("ff1roll-notetapcursor", "1");`);
   assert.equal(val(`noteTapMovesCursor()`), true);
   run(`localStorage.removeItem("ff1roll-notetapcursor");`);
-  assert.match(val(`String(openEditor)`), /const at0 = .*!note && S\.selNote/, "+ Note anchors at the tapped note");
+  assert.match(val(`String(editorFill)`), /const at0 = .*!note && S\.selNote/, "+ Note anchors at the tapped note"); // openEditor's fill half (both window modes use it)
 });
 
 test("Send after ■ Stop: the stopped dictation's late words can't refill the emptied box", () => {
@@ -13647,7 +13648,7 @@ test("one-song publish: a song-list (README) warning stays on screen — status 
 
 test("windows open at the last launch reopen through their own openers, once, after the first song (Josh, 2026-10-04, Terminal #119)", () => {
   installSong();
-  assert.deepEqual(val(`Object.keys(wmOpeners)`).sort(), ["asksheet", "instsheet", "jobssheet", "mixersheet", "notelistsheet", "studysheet", "syncsheet"]);
+  assert.deepEqual(val(`Object.keys(wmOpeners)`).sort(), ["asksheet", "instsheet", "jobssheet", "mixersheet", "noteeditor", "notelistsheet", "studysheet", "syncsheet"]);
   run(`globalThis.__opened = []; globalThis.__keep = Object.assign({}, wmOpeners); for (const id of Object.keys(wmOpeners)) wmOpeners[id] = () => __opened.push(id);
        for (const id of ["asksheet", "mixersheet"]) document.getElementById(id).classList.remove("on"); // earlier tests may have left them open; an open window is skipped
        wmRestored = false; localStorage.setItem(WM_OPEN_KEY, JSON.stringify(["asksheet", "mixersheet", "nosuchsheet"]));`);
@@ -15090,10 +15091,10 @@ test("note editor (Josh #227): picking Section puts the cursor in the label, not
   run(`for (const id of ["nsectlabel", "ntext"]) delete document.getElementById(id).focus; pickEditorType("note");`);
 });
 
-test("the annotation window is dockable (Josh #236) but never reopened empty by a relaunch", () => {
+test("the annotation window is dockable (Josh #236); a relaunch brings back only a DOCKED one (Terminal #245, plan R17)", () => {
   installSong();
   assert.equal(run(`WM_WINDOWS.noteeditor && WM_WINDOWS.noteeditor.dockable`), true);
-  assert.equal(run(`typeof S.wmOpeners.noteeditor`), "undefined", "no opener: wmRestoreOpen skips it");
+  assert.equal(run(`S.wmOpeners.noteeditor === editorRelaunchOpen`), true, "registered: wmRestoreOpen reopens it");
 });
 
 test("View › Display \"Ruler highlight\" (Josh #243): on by default a band tap selects its bars; off, the tap only reads out and clears any highlight", () => {
@@ -15113,7 +15114,7 @@ test("annotation window: Save and Delete are ONE undo step each for every type, 
   installSong();
   run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym"]) document.getElementById(id).focus = () => {}; isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 8); rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; document.getElementById("noteeditor").classList.remove("docked");`);
   const bt = val(`barTicks()`);
-  run(`globalThis.__keepSetInfo = setInfo; globalThis.__info = ""; setInfo = m => { __info = m; };`); // an earlier test leaves setInfo stubbed — read what it was handed
+  run(`globalThis.__info = ""; setInfo = m => { __info = m; };`); // an earlier test leaves setInfo stubbed anyway — read what it is handed
   const info = () => val(`__info`);
   const save = () => run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   // a new chord from a ruler span
@@ -15160,5 +15161,218 @@ test("annotation window: Save and Delete are ONE undo step each for every type, 
   // Ask's undo names it the same way
   run(`setChordWidget("Dm"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   assert.match(val(`askUndoDescribe(editUndo[editUndo.length - 1])`), /chord Dm · bar 2 \(edited\)/);
-  run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null; rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; annoFlash = null; setInfo = __keepSetInfo;`);
+  run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = null; rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; annoFlash = null;`);
+});
+
+// ---- docked annotation window that follows the selection (docs/plans/2026-10-07-docked-annotation-window.md)
+function dockSetup() {
+  installSong();
+  run(`for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym"]) document.getElementById(id).focus = () => {};`);
+  app.tick(10000); // an earlier test's floating open left its 50 ms focus timer queued on the fake clock
+  run(`if (!document.querySelectorAll) document.querySelectorAll = () => [];
+    globalThis.__fx = []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym"]) document.getElementById(id).focus = () => __fx.push(id);
+    isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 16); editUndo = []; editRedo = []; rangeSel = null; lassoAnno = null;
+    window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; document.getElementById("noteeditor").classList.add("on"); wmLayoutAll(); // docked for real: the window manager's own layout sets the class
+    showRulerHl.v = true; edFollow.lastSaved = "chord"; edFollow.prePick = null; edFollow.pending = null; edFollow.mode = "idle"; edFollow.songKey = songKey; edFollow.sig = null;
+    rollnotes = deriveNoteTypes([{b1: 9, q1: 1, b2: 10, q2: 4, text: "chord: G7", added: true}, {b1: 11, q1: 1, b2: 12, q2: 4, text: "chord: C", added: true}]).map(resolveNote); finalizeNotes();`);
+  return val(`barTicks()`);
+}
+function dockTeardown() {
+  run(`document.getElementById("noteeditor").classList.remove("on"); wm = {}; wmLayoutAll();
+    rangeSel = null; lassoAnno = null; rollnotes = []; editingNote = null; finalizeNotes(); edFollow.mode = "idle"; edFollow.pending = null; edFollow.lastSaved = null; edFollow.prePick = null;
+    editUndo = []; editRedo = []; rollnotesReadOnly = false; showRulerHl.v = true;`);
+}
+const fld = id => val(`document.getElementById(${JSON.stringify(id)}).value`);
+const follow = (a, b) => run(`rangeSel = ${a === null ? "null" : `{a: ${a}, b: ${b}, cycle: true}`}; editorFollowSelection();`);
+
+test("docked annotation window: a band tap loads it; a span matching or inside one chord loads it; several or a partial overlap list them with \"New chord over the whole span anyway\"; empty bars give a blank chord with the span's bars (plan R1–R4)", () => {
+  const bt = dockSetup();
+  run(`const g = rollnotes.find(n => n.text === "G7"); rangeSel = {a: g.start, b: g.end}; editorFollowBand(g);`); // what tap() does with Ruler highlight on
+  assert.equal(val(`edFollow.mode`), "editing");
+  assert.equal(val(`editingNote && editingNote.text`), "G7");
+  assert.deepEqual([fld("nchordsym"), fld("nb1"), fld("nb2")], ["G7", "9", "11"], "G7 from 9, ending at 11 beat 1");
+  assert.equal(val(`document.getElementById("ndelete").style.display`), "");
+  follow(null);
+  assert.equal(val(`edFollow.mode`), "idle", "the span went away: Idle");
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /Select bars in the ruler, or tap a chord or section\./);
+  assert.equal(val(`document.getElementById("nsave").disabled`), true, "Idle: Save off");
+  follow(8 * bt, 10 * bt);
+  assert.equal(val(`editingNote && editingNote.text`), "G7", "a span matching G7 loads it");
+  follow(8 * bt, 9 * bt);
+  assert.equal(val(`editingNote && editingNote.text`), "G7", "a span inside G7 loads it");
+  follow(8 * bt, 14 * bt);
+  assert.equal(val(`edFollow.mode`), "several");
+  assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`),
+    ["chord G7 · bar 9–10", "chord C · bar 11–12", "New chord over the whole span anyway"]);
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^2 chords in this span:/);
+  assert.equal(val(`document.getElementById("nsave").disabled`), true);
+  run(`document.getElementById("nseveral").children[1].dispatchEvent({type: "click"});`);
+  assert.equal(val(`editingNote && editingNote.text`), "C", "a row loads that chord");
+  assert.deepEqual(val(`[rangeSel.a, rangeSel.b]`), [10 * bt, 12 * bt], "and the highlight moves to it");
+  follow(11 * bt, 13 * bt);
+  assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`),
+    ["chord C · bar 11–12", "New chord over the whole span anyway"], "partly over one chord: a one-row list, never a silent overlap");
+  run(`document.getElementById("nseveral").children[1].dispatchEvent({type: "click"});`);
+  assert.equal(val(`edFollow.mode`), "new");
+  assert.deepEqual([fld("nb1"), fld("nb2")], ["12", "14"]);
+  follow(12 * bt, 14 * bt);
+  assert.equal(val(`edFollow.mode`), "new", "empty bars: New");
+  assert.equal(val(`editorType()`), "chord", "the last type saved");
+  assert.deepEqual([fld("nchordsym"), fld("nb1"), fld("nb2"), fld("nq2")], ["", "13", "15", "1"], "blank chord, from/end from the span — nothing from the music");
+  assert.equal(val(`editingNote`), null);
+  assert.equal(val(`document.getElementById("nsave").disabled`), false);
+  assert.deepEqual(val(`__fx`), [], "docked: no field ever took focus");
+  assert.match(readFileSync(new URL("../src/input/gestures.js", import.meta.url), "utf8"), /S\.playCursor = sec\.start;\s*\n\s*editorFollowBand\(sec\);/, "the band tap itself feeds the docked window, whatever Ruler highlight says");
+  dockTeardown();
+});
+
+test("docked annotation window: Save keeps it open, says \"Saved Am · bar 13–14\", keeps the span, goes Idle; Delete the same; undo re-reads the span (plan R5/R9/R10)", () => {
+  const bt = dockSetup();
+  follow(12 * bt, 14 * bt);
+  run(`setChordWidget("Am"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => n.text).sort()`), ["Am", "C", "G7"]);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "still open");
+  assert.deepEqual(val(`[rangeSel.a, rangeSel.b]`), [12 * bt, 14 * bt], "the span stays where he just wrote");
+  assert.equal(val(`edFollow.mode`), "idle");
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^Saved Am · bar 13–14\. Select bars/);
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editorFollowSelection();`);
+  assert.equal(val(`edFollow.mode`), "idle", "the same span doesn't reload what it just saved");
+  run(`editUndoPop();`);
+  assert.equal(val(`edFollow.mode`), "new", "undo took Am out: the span is empty bars again");
+  run(`editRedoPop();`);
+  assert.equal(val(`editingNote && editingNote.text`), "Am", "redo: the span sits on Am again");
+  run(`document.getElementById("ndelete").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`rollnotes.some(n => n.text === "Am")`), false);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true);
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^Deleted Am · bar 13–14\./);
+  assert.deepEqual(val(`__fx`), []);
+  dockTeardown();
+});
+
+test("docked annotation window: unsaved work is never dropped or auto-saved — a new draft follows a span fix; any other move holds behind \"Unsaved … Save · Discard\" (plan R6/R7)", () => {
+  const bt = dockSetup();
+  const strip = () => val(`document.getElementById("nunsaved").style.display === "" ? document.getElementById("nunsavedtxt").textContent : null`);
+  follow(12 * bt, 14 * bt);
+  run(`setChordWidget("Am");`);
+  follow(12 * bt, 15 * bt);
+  assert.deepEqual([fld("nchordsym"), fld("nb2"), strip()], ["Am", "16", null], "fixing the span of a new chord: the chord stays, the end follows, no strip");
+  follow(null);
+  assert.equal(fld("nchordsym"), "Am", "clearing the span keeps the draft (R7)");
+  follow(8 * bt, 10 * bt);
+  assert.equal(strip(), "Unsaved Am (bar 13–15)", "moved onto G7: held");
+  assert.equal(fld("nchordsym"), "Am");
+  follow(10 * bt, 12 * bt);
+  assert.equal(strip(), "Unsaved Am (bar 13–15)", "the strip stays put; the newest selection waits");
+  assert.equal(val(`rollnotes.filter(n => n.chord).length`), 2, "never auto-saved");
+  run(`document.getElementById("nunsaveddiscard").dispatchEvent({type: "click"});`);
+  assert.equal(val(`editingNote && editingNote.text`), "C", "Discard loads the newest selection");
+  assert.equal(strip(), null);
+  run(`setChordWidget("C7"); editorFollowBand(rollnotes.find(n => n.text === "G7"));`);
+  assert.equal(strip(), "Unsaved C7 (bar 11–12)", "an edited chord held when he taps another band");
+  run(`document.getElementById("nunsavedsave").dispatchEvent({type: "click"});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => n.text).sort()`), ["C7", "G7"], "Save wrote C7 over C");
+  assert.equal(val(`editingNote && editingNote.text`), "G7", "then the waiting selection loaded");
+  assert.equal(val(`editUndo.length`), 1);
+  // ✕ with unsaved changes asks the same way
+  run(`setChordWidget("G9"); wmCloseWindow(document.getElementById("noteeditor"));`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "✕ held");
+  assert.equal(strip(), "Unsaved G9 (bar 9–10)");
+  run(`document.getElementById("nunsaveddiscard").dispatchEvent({type: "click"});`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "Discard, then it closes");
+  assert.deepEqual(val(`__fx`), []);
+  dockTeardown();
+});
+
+test("docked annotation window: never focuses a field (Josh #250) — + Note, a span, a type chip; Cancel reads Clear; Esc never closes it and only drops a field's keyboard (plan R8/R11)", () => {
+  const bt = dockSetup();
+  run(`openEditor(null);`);
+  run(`rangeSel = {a: ${12 * bt}, b: ${14 * bt}, cycle: true}; openEditor(null, "chord"); pickEditorType("section"); pickEditorType("chord");`);
+  app.tick(200);
+  assert.deepEqual(val(`__fx`), [], "nothing focused, so the iPad keyboard never comes up by itself");
+  assert.equal(val(`edFollow.prePick`), "chord", "a chip tapped while drafting is kept for the next new entry");
+  assert.equal(val(`document.getElementById("ncancel").textContent`), "Clear");
+  run(`setChordWidget("Am"); document.getElementById("ncancel").dispatchEvent({type: "click"});`);
+  assert.equal(fld("nchordsym"), "", "Clear drops the draft and re-reads the span");
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true);
+  run(`globalThis.__blur = 0; const f = document.getElementById("nchordsym"); f.tagName = "INPUT"; f.blur = () => __blur++;
+    document.getElementById("noteeditor").dispatchEvent({type: "keydown", key: "Escape", target: f, preventDefault() {}});`);
+  assert.equal(val(`__blur`), 1, "Esc in a field blurs it");
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true);
+  assert.match(readFileSync(new URL("../src/ui/wm.js", import.meta.url), "utf8"), /!\(o\.id === "noteeditor" && o\.classList\.contains\("docked"\)\)/, "the topmost-overlay Esc skips a docked annotation window");
+  // floating stays the pop-up it was
+  run(`document.getElementById("noteeditor").classList.remove("on"); wm = {}; wmLayoutAll(); rangeSel = null; openEditor(null);`);
+  assert.equal(val(`document.getElementById("ncancel").textContent`), "Cancel");
+  assert.equal(val(`document.getElementById("nfollow").style.display`), "none");
+  dockTeardown();
+});
+
+test("docked annotation window: a relaunch reopens a DOCKED one Idle, nothing focused (a floating one stays closed); a background tab follows unseen; Ruler highlight off still loads a tapped band; a locked song is read-only; Ask's select is followed; a song change drops an unsaved draft by name (plan R12–R17)", async () => {
+  const bt = dockSetup();
+  run(`document.getElementById("noteeditor").classList.remove("on"); wm = {}; wmLayoutAll();
+    window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; wmLayoutAll(); editorRelaunchOpen();`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "docked at quit: back");
+  assert.equal(val(`edFollow.mode`), "idle");
+  assert.deepEqual(val(`__fx`), []);
+  run(`document.getElementById("noteeditor").classList.remove("on"); rangeSel = {a: ${8 * bt}, b: ${10 * bt}}; editorRelaunchOpen();`);
+  assert.equal(val(`editingNote && editingNote.text`), "G7", "the song's restored span is read at once");
+  assert.deepEqual(val(`__fx`), []);
+  run(`document.getElementById("noteeditor").classList.remove("on"); wm = {}; wmLayoutAll(); editorRelaunchOpen();`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "floating at quit: stays closed");
+  // a background tab of a side group follows without coming forward
+  run(`wm = {right: {ids: ["asksheet", "noteeditor"], active: "asksheet", w: 360, mode: "full"}}; document.getElementById("asksheet").classList.add("on"); wmLayoutAll();`);
+  follow(10 * bt, 12 * bt);
+  assert.equal(val(`editingNote && editingNote.text`), "C");
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "the AI tab stays in front");
+  run(`document.getElementById("asksheet").classList.remove("on"); window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; document.getElementById("noteeditor").classList.add("on"); wmLayoutAll();`);
+  // Ruler highlight off: the tapped band still loads
+  run(`showRulerHl.v = false; rangeSel = null; editorFollowSelection(); editorFollowBand(rollnotes.find(n => n.text === "G7"));`);
+  assert.equal(val(`editingNote && editingNote.text`), "G7");
+  run(`showRulerHl.v = true;`);
+  // a locked (newer-format) song: read-only, still following
+  run(`rollnotesReadOnly = true; editorFollowBand(rollnotes.find(n => n.text === "C"));`);
+  assert.equal(val(`edFollow.mode`), "readonly");
+  assert.equal(fld("nchordsym"), "C", "he can still read it");
+  assert.equal(val(`document.getElementById("nsave").disabled`), true);
+  run(`rollnotesReadOnly = false; rangeSel = null; editorFollowSelection();`);
+  // Ask's select moves the span through the same hook
+  await run(`songEndTick = barTicks() * 16; askAct({do: [{action: "select", from_bar: 13, to_bar: 14}]})`);
+  assert.equal(val(`edFollow.mode`), "new");
+  assert.deepEqual([fld("nb1"), fld("nb2")], ["13", "15"]);
+  // a song change drops an unsaved draft, by name
+  run(`setChordWidget("Am"); editorBeforeSongChange(); songKey = "midi/other.mid"; editorAfterNotesChange();`);
+  assert.equal(fld("nchordsym"), "", "the draft is gone");
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^Unsaved Am \(bar 13–14\) on .+ was dropped/);
+  run(`songKey = "midi/test.mid";`);
+  assert.deepEqual(val(`__fx`), []);
+  dockTeardown();
+});
+
+test("docked annotation window: a lasso reaching into the ruler counts as a selection (one → that band, several → the list, cleared by a note tap → no change); dragging the loaded band's edge moves its from/end with no strip; docking an open pop-up switches it to follow mode (plan R14, edge cases 6–7)", () => {
+  const bt = dockSetup();
+  run(`globalThis.__keepLasso = S.hooks.lassoedAnnos; S.hooks.lassoedAnnos = () => rollnotes.filter(n => n.chord); lassoAnno = {t0: 0, t1: ${12 * bt}, y0: 0, y1: 40};`);
+  run(`editorFollowSelection();`);
+  assert.equal(val(`edFollow.mode`), "several");
+  assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`), ["chord G7 · bar 9–10", "chord C · bar 11–12"], "a lasso list has no \"anyway\" row: it is not a span");
+  run(`S.hooks.lassoedAnnos = () => rollnotes.filter(n => n.text === "C"); lassoAnno = {t0: ${10 * bt}, t1: ${12 * bt}, y0: 0, y1: 40}; editorFollowSelection();`);
+  assert.equal(val(`editingNote && editingNote.text`), "C");
+  run(`lassoAnno = null; editorFollowSelection();`);
+  assert.equal(val(`editingNote && editingNote.text`), "C", "tapping notes (which clears the lasso) never changes the window");
+  run(`S.hooks.lassoedAnnos = __keepLasso;`);
+  // edge case 6: the loaded band's own edge drag
+  run(`const c = editingNote; setEndBQ(c, ${13 * bt}); resolveNote(c); editorFollowSelection();`);
+  assert.equal(fld("nb2"), "14", "from/end follow the drag");
+  assert.equal(val(`document.getElementById("nunsaved").style.display`), "none", "its own edit: no strip");
+  assert.equal(val(`editorDirty()`), false);
+  // docking a pop-up that is open on a chord: it now follows
+  run(`wm = {}; wmLayoutAll(); openEditor(rollnotes.find(n => n.text === "G7"));`);
+  assert.equal(val(`document.getElementById("nfollow").style.display`), "none", "floating: no follow chrome");
+  run(`window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; wmLayoutAll();`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("docked")`), true);
+  assert.equal(val(`edFollow.mode`), "editing");
+  assert.equal(val(`document.getElementById("ncancel").textContent`), "Clear");
+  follow(14 * bt, 15 * bt); // C now reaches bar 13
+  assert.equal(val(`edFollow.mode`), "new", "and follows the next span");
+  run(`wm = {}; wmLayoutAll();`);
+  dockTeardown();
 });

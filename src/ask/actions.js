@@ -9,6 +9,7 @@ import { jumpToTick } from "../input/gestures.js";
 import { jumpBarCap } from "../input/gestures.js";
 import { editUndoPop } from "../ui/note-editor.js";
 import { editRedoPop } from "../ui/note-editor.js";
+import { editorFollowSelection } from "../ui/note-editor.js";
 import { drawImpl as draw } from "../ui/chrome.js";
 import { askWritableGate } from "./tools.js";
 import { askBarsCount } from "./tools.js";
@@ -110,13 +111,14 @@ export const ASK_ACTIONS = [
    example: "Loop bars 5 to 12.", say: "Say the first and last bar; \"select\" instead of \"loop\", or \"no cycle\", marks them without looping; \"clear the selection\" drops it.",
    spec: "select {from_bar, to_bar?, cycle?, clear?}: selects whole bars on the ruler, from_bar..to_bar inclusive (to_bar omitted = that one bar). cycle defaults to true — Play loops the selection, like a drag on the ruler; cycle: false only marks the range (the context block then follows it). clear: true drops the selection.",
    run(a) {
-     if (askActTruthy(a.clear)) { const had = !!S.rangeSel; S.rangeSel = null; draw(); return had ? "selection cleared" : "no selection to clear"; }
+     if (askActTruthy(a.clear)) { const had = !!S.rangeSel; S.rangeSel = null; editorFollowSelection(); draw(); return had ? "selection cleared" : "no selection to clear"; }
      const nBars = askBarsCount();
      const from = askActInt(a.from_bar, "from_bar", 1, nBars, nBars);
      const to = askActGiven(a.to_bar) ? askActInt(a.to_bar, "to_bar", from, nBars, nBars) : from;
      const cycle = askActGiven(a.cycle) ? askActTruthy(a.cycle) : true;
      const bt = barTicks();
      S.rangeSel = {a: (from - 1) * bt, b: to * bt, cycle};
+     editorFollowSelection(); // a docked annotation window follows it, as it follows a ruler drag
      draw(); // drawImpl persists the selection per song (rangeSelPersist), as a ruler drag does
      return "selected bar" + (from === to ? " " + from : "s " + from + "–" + to) + (cycle ? " — ▶ loops them" : "");
    }},

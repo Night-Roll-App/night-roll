@@ -180,7 +180,11 @@ document.getElementById("ntext").addEventListener("input", () => {
 (function buildChordWidget() {
 nmic.addEventListener("click", () =>
 document.getElementById("notebtn").addEventListener("click", () => {
-document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
+document.getElementById("ncancel").addEventListener("click", () => { micStop(true); if (editorDocked()) editorClear(); else editor.classList.remove("on"); });
+document.getElementById("nunsavedsave").addEventListener("click", () => document.getElementById("nsave").dispatchEvent(new Event("click")));
+document.getElementById("nunsaveddiscard").addEventListener("click", editorStripDiscard);
+editor.addEventListener("keydown", e => {
+S.wmCloseGuards.noteeditor = editorCloseGuard;
 document.getElementById("ntext").addEventListener("keydown", e => {
 const nsaveBody = () => {
 document.getElementById("nsave").addEventListener("click", () => editorSaveRun(nsaveBody));

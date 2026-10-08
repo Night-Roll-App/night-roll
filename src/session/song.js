@@ -49,6 +49,7 @@ import { updateSubtitleImpl as updateSubtitle } from "../ui/chrome.js";
 import { drawImpl as draw } from "../ui/chrome.js";
 import { songShareURL } from "../platform/base.js";
 import { syncDurSeg } from "../ui/note-editor.js";
+import { editorBeforeSongChange, editorAfterNotesChange } from "../ui/note-editor.js";
 import { stop } from "../audio/transport.js";
 import { play } from "../audio/transport.js";
 import { localDraftTracks } from "../model/versions.js";
@@ -233,6 +234,7 @@ export function finalizeNotesImpl() {
             (songHasAudio() ? AUDIO_STRIP_H : 0); // clip spans ride under the ruler in every view
   S.RULER_H = S.STRIP_Y + STRIP_H; // + the playhead strip, always present, right above the notes
   studyAfterNotesChange(); // an open Analysis sheet follows every change to the layer (edit, undo, a song's notes landing)
+  editorAfterNotesChange(); // so does a docked annotation window (a song's notes landing, an undo that removed what it shows)
 }
 finalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export async function loadNotes() {
@@ -375,6 +377,7 @@ export async function loadSongInner(path) {
 }
 export function setSong(parsed, key) {
   studyBeforeSongChange(); // FIRST, while S.songKey/S.rollnotes are still the outgoing song's: an open Analysis-sheet answer box is committed to the song it was written on, never the next one
+  editorBeforeSongChange(); // likewise first: an unsaved docked annotation draft is dropped by name, never carried to the next song's bars
   S.loadGen++; // covers the local-file path: invalidate any in-flight catalog load
   S.cmp = null; if (typeof cmpBar === "function") cmpBar(); // compare belongs to one song
   S.song = parsed;

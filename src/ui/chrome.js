@@ -163,6 +163,7 @@ import { stretchEnsureAll } from "../audio/clips.js";
 import { updateSongMetaImpl as updateSongMeta } from "../session/song.js";
 import { tickToSec } from "../midi/parse.js";
 import { openEditor } from "./note-editor.js";
+import { editorFollowSelection } from "./note-editor.js";
 import { BENIGN_ERRORS } from "../model/jobs.js";
 import { logLine } from "../model/jobs.js";
 import { askCopyText } from "./sheets.js";
@@ -1170,7 +1171,7 @@ export function showRulerHl() {
 export function setRulerHl(on) {
   showRulerHl.v = !!on;
   try { localStorage.setItem("ff1roll-ruler-hl", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
-  if (!on && S.rangeSel) { S.rangeSel = null; draw(); } // turning it off clears the one showing now
+  if (!on && S.rangeSel) { S.rangeSel = null; editorFollowSelection(); draw(); } // turning it off clears the one showing now
 }
 export function showBeatSub() {
   if (showBeatSub.v === undefined) {
@@ -2017,7 +2018,7 @@ export function initChrome11() {
     if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
     if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
     if (k === "x") { toggleMixer(); e.preventDefault(); return; } // Logic's mixer key
-    if (e.key === "Escape" && S.rangeSel) { S.rangeSel = null; setInfo("range cleared"); draw(); return; }
+    if (e.key === "Escape" && S.rangeSel) { S.rangeSel = null; setInfo("range cleared"); editorFollowSelection(); draw(); return; }
     if (k === "c" && S.rangeSel && S.rangeSel.cycle && S.rangeSel.b > S.rangeSel.a) { S.rangeSel.off = !S.rangeSel.off; setInfo(S.rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
     if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }
     if (k === "q") { // Logic's Q: quantize the selection — only on your own songs

@@ -1,3 +1,5 @@
+import { editorRelaunchOpen } from "./note-editor.js";
+import { editorDockChanged } from "./note-editor.js";
 import { S } from "../state.js";
 import { resize } from "./chrome.js";
 import { askScrollEnd } from "../ask/sheet.js";
@@ -447,6 +449,8 @@ export function wmLayoutTabs(side, targetCell, ids, activeId) {
 // IntelliJ/VS Code tab) so the strip never shows a tab that opens nothing;
 // a lone docked window just closes and keeps its dock for next time.
 export function wmCloseWindow(ov) {
+  const guard = ov && ov.id && S.wmCloseGuards[ov.id];
+  if (guard && guard() === false) return;
   const where = ov && ov.id && wmWhereIs(S.wm, ov.id);
   if (where && where.dock !== "bottom" && S.wm[where.dock] && S.wm[where.dock].ids && S.wm[where.dock].ids.length > 1) {
     S.wm = wmRemoveSideTab(S.wm, where.dock, ov.id);
@@ -470,6 +474,7 @@ export function wmLayoutAll() {
   wmSyncDockButtons();
   if (typeof resize === "function") resize(); // same path a real window resize takes
   if (typeof askScrollEnd === "function" && wmWhereIs(S.wm, "asksheet")) askScrollEnd(); // re-parenting must not strand the chat mid-scroll
+  editorDockChanged(); // the annotation window follows the selection only while docked
 }
 // ---- action functions: the Dock menu, the tab strip, drag-to-dock, and the
 // tests all call these directly. Each keeps the "a window is docked in at
@@ -791,7 +796,7 @@ export function initWm1() {
   makeWindow("syncsheet", {dockable: true}); // the Publish window (Terminal #111, 2026-10-04): a list worth keeping beside the roll while working
   makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
   makeWindow("studysheet", {dockable: true}); // the Analysis sheet (src/ui/study-sheet.js): a tab beside AI on the iPad
-  makeWindow("noteeditor", {dockable: true}); // the annotation window (Josh #236): docked beside the roll while annotating; no opener, so a relaunch never reopens an empty one
+  makeWindow("noteeditor", {dockable: true}); // the annotation window (Josh #236): docked beside the roll while annotating, following the selection; a relaunch brings back a DOCKED one only (editorRelaunchOpen)
   // the publish job dialog was dockable until 2026-10-04 (Terminal #111: "a
   // very temporary window") — registered, floating only; initWm1 above
   // purges a saved dock for it
@@ -881,6 +886,7 @@ export function initWm2() {
     asksheet: openAsk, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer, studysheet: openStudySheet,
     instsheet: () => document.getElementById("fileinst").click(),
     jobssheet: () => document.getElementById("jobsbtn").click(),
+    noteeditor: editorRelaunchOpen,
   });
   if (typeof document.querySelectorAll === "function") { // vm harness stubs document
   // A sheet keeps the scroll position it had when it was last closed, so
@@ -980,7 +986,7 @@ export function initWm2() {
   }
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
-    const open = [...document.querySelectorAll(".overlay.on")].filter(o => !MODAL_KEEP.has(o.id));
+    const open = [...document.querySelectorAll(".overlay.on")].filter(o => !MODAL_KEEP.has(o.id) && !(o.id === "noteeditor" && o.classList.contains("docked"))); // a docked annotation window stays (plan R8): it is a panel, not a pop-up
     if (!open.length) return;
     open[open.length - 1].classList.remove("on"); // topmost only, so Esc unstacks
     e.preventDefault();

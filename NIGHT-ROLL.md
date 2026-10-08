@@ -6928,6 +6928,55 @@ bottom dock is untouched — it stays a two-slot split, never a tab group
   but there's no VISUAL cue in the tab strip that a background tab exists
   until it's opened.
 
+## Docked annotation window — follows the selection (2026-10-08)
+
+Spec: docs/plans/2026-10-07-docked-annotation-window.md (rules R1–R17,
+defaults Q1 strip / Q2 never focus / Q3 no Next). Code: the "docked follow
+mode" block in src/ui/note-editor.js; state on `S.edFollow`.
+
+- **Two modes, chosen only by where the window is.** `editorDocked()` =
+  `#noteeditor` has the window manager's `.docked` class. Floating, it is
+  the old pop-up (`openEditor` → `editorFill` + show + the floating-only
+  focus rules). Docked, `openEditor` routes to `editorDockedOpen`, and
+  nothing ever focuses a field (Josh #250 — the iPad keyboard).
+  `editorDockChanged()` (wmLayoutAll's tail) switches modes in place.
+- **`editorFill(note, presetType, opts)`** fills every field and returns the
+  type; it never shows the window or focuses. Both modes use it.
+- **One hook.** `editorFollowSelection(force)` compares `editorSelSig()`
+  (rangeSel a-b | lassoAnno box) with `S.edFollow.sig` and acts only on a
+  change; called from `endPointer`'s tail (ruler drags, edges, slides, taps,
+  lasso, band-edge drags), Esc, `setRulerHl(false)`, Ask `select`, undo/redo
+  (`editorAfterUndo`), and a song's notes landing (`editorAfterNotesChange`
+  from finalizeNotes). A band tap calls `editorFollowBand(sec)` directly, so
+  it loads whatever Ruler highlight says. A cleared lasso changes nothing
+  (tapping notes to hear them is the core loop).
+- **`editorSelTarget`** decides R1–R4 against the type a NEW entry would get
+  (`editorNewType`: a chip picked first, else the last type saved, #160 only
+  when the last Save wasn't a chord): `none` → Idle, one chord matched
+  (edges within a beat) or containing the span → Editing, several or a
+  partial overlap → Several (rows + "New … over the whole span anyway"),
+  nothing → New with the span's from/end.
+- **Unsaved** = `editorDirty()`: the fields (`ED_FIELD_IDS` + song kind +
+  `chordSel`; type too while Editing) or the from/end rows differ from what
+  `editorLoad` marked. A dirty New draft follows a move to other empty bars;
+  any other move parks the target in `S.edFollow.pending` behind the
+  `#nunsaved` strip (Save · Discard). ✕ asks the same way through
+  `S.wmCloseGuards.noteeditor` (wmCloseWindow honours it). **A field a later
+  build adds to the window belongs in `ED_FIELD_IDS`** or edits to it won't
+  count as unsaved.
+- **Save/Delete** (`editorSaveRun`/`editorDeleteRun` around the old bodies,
+  `nsaveBody`/`ndeleteBody`): one undo step each, both modes, labelled by
+  `annoUndoEntry` so undo says what it took back and flashes it
+  (`revealEdit`, `S.annoFlash`). Docked: the window stays, the span stays,
+  Idle with "Saved G7 · bar 13–14" (`#nfollowmsg`).
+- **Esc** never closes a docked annotation window (wm.js's topmost-overlay
+  Esc skips it); in a field it blurs. Cancel reads Clear (registered
+  control `ncancel`).
+- **Relaunch:** `S.wmOpeners.noteeditor = editorRelaunchOpen` — only when the
+  saved layout docks it; it opens Idle and reads the restored span.
+- **Song change:** `editorBeforeSongChange` (setSong's start) drops a dirty
+  draft and says so by name on the next song.
+
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
 **"Edited since last save" means "differs from the published copy" (2026-09-29).**

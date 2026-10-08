@@ -94,6 +94,15 @@ import { setSelectionShape } from "../model/noteshape.js";
 import { SHAPE_ROOM_V } from "../model/noteshape.js";
 import { SHAPE_PRESETS } from "../model/noteshape.js";
 import { askUndoDescribe } from "../ask/actions.js";
+import { noteIdentity } from "../model/edits.js";
+import { setControl } from "./controls.js";
+import { wmWhereIs } from "./wm.js";
+import { wmCloseWindow } from "./wm.js";
+import { wmAllowed } from "./wm.js";
+import { wmInnerWidth } from "./wm.js";
+import { wmLayoutAll } from "./wm.js";
+import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
+import { showRulerHl } from "./chrome.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
 
@@ -214,6 +223,10 @@ export function pickEditorType(v) {
   S.ntypeGuess = null;
   document.getElementById("ntype").value = v;
   applyEditorType();
+  if (editorDocked()) { // docked: no field ever takes focus (Josh #250); a pick before/while drafting carries to the next new entry
+    if (S.edFollow.mode === "idle" || S.edFollow.mode === "new") S.edFollow.prePick = v;
+    return;
+  }
   // Section: the label is what he types first, and usually all (Josh #227) — the cursor goes there, not the text box
   if (v === "section") document.getElementById("nsectlabel").focus();
 }
@@ -371,6 +384,26 @@ export function getBeatPair(qid, sid) {
 }
 export function openEditor(note, presetType, opts) { // opts.atStart: a new note anchors at bar 1 beat 1, ignoring the cursor/selection
   if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  // docked, every way in (+ Note, a ☰ Notes row, a flag, the LCD) loads into
+  // the docked window and never focuses a field (plan R11/R18; Josh #250)
+  if (editorDocked()) { editorDockedOpen({kind: "open", note: note || null, presetType, opts}); return; }
+  const type = editorFill(note, presetType, opts);
+  editorRender();
+  editor.classList.add("on");
+  if (!note && S.rangeSel) setTimeout(() =>
+    document.getElementById(type === "chord" ? "nchordsym" : "ntext").focus(), 50);
+  // the text box gets focus only for a NEW text note, where typing is the
+  // next thing — opening an existing one (any kind) must not raise the iPad
+  // keyboard over half the screen (Josh, 2026-10-03)
+  if (type === "note" && !note) document.getElementById("ntext").focus();
+  else if (type === "section" && !note) document.getElementById("nsectlabel").focus(); // a new section starts with its label (Josh #227)
+  else if (type === "song" && !note) document.getElementById("nsongtitle").focus(); // a new song note starts with its title
+  else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
+}
+// fills every field for `note` (or a new entry); never shows the window and
+// never focuses a field — openEditor (floating) and the docked follow mode
+// each decide that for themselves. Returns the type it filled.
+export function editorFill(note, presetType, opts) {
   micStop(true);
   S.editingNote = note || null;
   fillBarBeatSelects();
@@ -415,8 +448,6 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
     document.getElementById("ntsden").value = String(note.tsdir[1]);
   }
   S.rebarArmed = false; // any editor open resets the two-tap warning
-  if (!note && S.rangeSel) setTimeout(() =>
-    document.getElementById(type === "chord" ? "nchordsym" : "ntext").focus(), 50);
   if (type === "loop" && note) {
     const lbt = barTicks();
     document.getElementById("nlb").value = String(Math.floor(note.loopTo / lbt) + 1);
@@ -462,14 +493,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   document.getElementById("nstatus").textContent = note && !note.added
     ? "Synced note — edits and deletes become permanent when you Sync." : "";
   applyEditorType();
-  editor.classList.add("on");
-  // the text box gets focus only for a NEW text note, where typing is the
-  // next thing — opening an existing one (any kind) must not raise the iPad
-  // keyboard over half the screen (Josh, 2026-10-03)
-  if (type === "note" && !note) document.getElementById("ntext").focus();
-  else if (type === "section" && !note) document.getElementById("nsectlabel").focus(); // a new section starts with its label (Josh #227)
-  else if (type === "song" && !note) document.getElementById("nsongtitle").focus(); // a new song note starts with its title
-  else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
+  return type;
 }
 export function updateEditButtons() { // disabled = "this can't do anything right now"
   const locked = lockedAnnoSong(); // notes locked: Copy/Paste carry annotations only, so lassoed notes don't enable them
@@ -625,6 +649,7 @@ export function editRedoPop() {
   S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
   applyEditEntry(r);
   revealEdit(r, "redid");
+  if (r.kind === "anno") editorAfterUndo();
 }
 export function editUndoPop() {
   const u = S.editUndo.pop();
@@ -632,6 +657,7 @@ export function editUndoPop() {
   S.editRedo.push(invertEdit(u));
   applyEditEntry(u);
   revealEdit(u, "undid");
+  if (u.kind === "anno") editorAfterUndo();
 }
 // An annotation undo step names what it holds and where (Josh, Terminal #247:
 // undoing "a few times" must never silently take a text note he can't see).
@@ -744,16 +770,27 @@ export function applyEditEntry(u) {
 // annotation it had already lifted out for replacement goes back.
 export function editorSaveRun(body) {
   if (S.rollnotesReadOnly) { body(); return null; } // the body says why
-  const before = annoSnapshot(), retired = S.editingNote, idx = retired ? S.rollnotes.indexOf(retired) : -1;
-  const made = body();
+  const before = annoSnapshot(), retired = S.editingNote, idx = retired ? S.rollnotes.indexOf(retired) : -1, type = editorType();
+  let made;
+  S.edFollow.busy = true; // finalizeNotes runs mid-save: the follow hook must not read the half-written layer
+  try { made = body(); } finally { S.edFollow.busy = false; }
   if (!made) {
     if (retired && idx >= 0 && !S.rollnotes.includes(retired)) { S.rollnotes.splice(Math.min(idx, S.rollnotes.length), 0, retired); pruneTombstones(); finalizeNotes(); saveLocalNotes(); }
     return null;
   }
-  pushUndo(annoUndoEntry(before, made.start === undefined && !made.songnote ? resolveNote(made) : made, retired ? "edited" : "saved"));
+  pushUndo(annoUndoEntry(before, made, retired ? "edited" : "saved"));
   S.editingNote = null;
-  S.rangeSel = null;
-  editor.classList.remove("on");
+  if (editorDocked()) { // R5: the window stays, the span stays, the next drag replaces it
+    const f = S.edFollow, next = f.pending;
+    f.lastSaved = type; f.prePick = null;
+    const msg = "Saved " + editorShortLabel(made);
+    f.sig = editorSelSig();
+    if (next && next.kind === "close") { editorLoad({kind: "none"}, msg); wmCloseWindow(editor); }
+    else editorLoad(next || {kind: "none"}, msg);
+  } else {
+    S.rangeSel = null;
+    editor.classList.remove("on");
+  }
   updateEditButtons();
   draw();
   return made;
@@ -761,14 +798,287 @@ export function editorSaveRun(body) {
 export function editorDeleteRun(body) {
   if (S.rollnotesReadOnly) { body(); return null; }
   const before = annoSnapshot();
-  const gone = body();
+  let gone;
+  S.edFollow.busy = true;
+  try { gone = body(); } finally { S.edFollow.busy = false; }
   if (!gone) return null;
   pushUndo(annoUndoEntry(before, gone, "deleted"));
   S.editingNote = null;
-  editor.classList.remove("on");
+  if (editorDocked()) { S.edFollow.sig = editorSelSig(); editorLoad({kind: "none"}, "Deleted " + editorShortLabel(gone)); } // R9
+  else editor.classList.remove("on");
   updateEditButtons();
   draw();
   return gone;
+}
+// ---- docked follow mode (docs/plans/2026-10-07-docked-annotation-window.md).
+// Docked, the window follows the ruler selection and band taps; floating, it
+// stays the pop-up it always was. State lives on S.edFollow: mode is idle |
+// new | editing | several | readonly; base/baseSpan are the fields as loaded
+// (unsaved = they differ); sig is the selection last acted on; pending is the
+// selection held behind the "Unsaved … Save · Discard" strip.
+export const ED_FIELD_IDS = ["ntext", "nsectlabel", "nchordsym", "nchordbass", "nkeysel", "nkeymode", "ntempo",
+  "ntsnum", "ntsden", "nlb", "nlq", "nls", "nchopmode", "nsongtitle"];
+export const ED_SPAN_IDS = ["nb1", "nq1", "ns1", "nb2", "nq2", "ns2"];
+export function editorDocked() { return !!(editor && editor.classList && editor.classList.contains("docked")); }
+export function editorFollowing() {
+  if (!editorDocked()) return false;
+  if (editor.classList.contains("on")) return true;
+  const w = wmWhereIs(S.wm, "noteeditor"); // a background tab of a side group follows unseen — a span tap never brings it forward
+  return !!(w && w.dock !== "bottom" && S.wm[w.dock] && S.wm[w.dock].ids.length > 1);
+}
+export function editorFieldsKey(withType) {
+  return JSON.stringify([withType ? editorType() : "", ED_FIELD_IDS.map(id => document.getElementById(id).value), editorSongKind(), chordSel]);
+}
+export function editorSpanKey() { return ED_SPAN_IDS.map(id => document.getElementById(id).value).join(","); }
+export function editorMark() { S.edFollow.base = editorFieldsKey(S.edFollow.mode === "editing"); S.edFollow.baseSpan = editorSpanKey(); }
+export function editorDirty() {
+  const f = S.edFollow;
+  if (f.mode !== "new" && f.mode !== "editing") return false;
+  return editorFieldsKey(f.mode === "editing") !== f.base || editorSpanKey() !== f.baseSpan;
+}
+export function editorSelSig() {
+  const r = S.rangeSel, L = S.lassoAnno;
+  return (r ? r.a + "-" + r.b : "") + "|" + (L ? [L.t0, L.t1, L.y0, L.y1].join(",") : "");
+}
+// the type a NEW entry over a..b gets: a chip picked first, else the last
+// type saved (a peek at a section doesn't flip a chord run); the #160
+// "over two bars is a section" rule only when the last Save wasn't a chord
+export function editorNewType(a, b) {
+  const f = S.edFollow;
+  if (f.prePick) return f.prePick;
+  if (f.lastSaved !== "chord" && b - a > 2 * barTicks()) return "section";
+  if (f.lastSaved === "chord" || f.lastSaved === "section") return f.lastSaved;
+  return localStorage.getItem("ff1roll-dragtype") || "section";
+}
+export function editorShortLabel(n) { // "G7 · bar 13–14": a band's own text, anything else its full label
+  return n.chord || n.section ? n.text + annoLabel(n).slice(annoLabel(n).lastIndexOf(" · bar")) : annoLabel(n);
+}
+export function editorDraftLabel() { // what the strip names: the draft as the fields hold it now
+  const t = editorType(), v = id => document.getElementById(id).value.trim();
+  const what = t === "chord" ? v("nchordsym") || "chord" : t === "section" ? v("nsectlabel") || "section"
+    : t === "note" ? "note \u201c" + v("ntext").slice(0, 24) + "\u201d" : (NTYPE_CHIPS.find(c => c[0] === t) || [t, t])[1];
+  const b1 = +document.getElementById("nb1").value || 1, b2 = +document.getElementById("nb2").value;
+  const through = b2 ? (getBeatPair("nq2", "ns2") === 1 ? b2 - 1 : b2) : b1;
+  return what + " (bar " + b1 + (through > b1 ? "–" + through : "") + ")";
+}
+// R1–R4: what the selection asks for. useLasso: the lasso is what moved.
+export function editorSelTarget(useLasso) {
+  if (useLasso) {
+    if (!S.lassoAnno) return null; // a lasso cleared by tapping notes changes nothing (R14)
+    const hits = lassoedAnnos().filter(n => !n.songnote).sort((x, y) => x.start - y.start);
+    if (!hits.length) return null;
+    return hits.length === 1 ? {kind: "anno", n: hits[0]} : {kind: "several", list: hits, a: null, b: null, type: null};
+  }
+  const r = S.rangeSel;
+  if (!r || !(r.b > r.a)) return {kind: "none"};
+  const type = editorNewType(r.a, r.b), q = beatTicks(), endOf = n => typeof n.end === "number" ? n.end : n.start;
+  const hits = visibleNotes().filter(n => n[type] && n.start < r.b && endOf(n) > r.a).sort((x, y) => x.start - y.start); // visibleNotes: his own only in Learning
+  if (!hits.length) return {kind: "empty", a: r.a, b: r.b, type};
+  if (hits.length === 1) {
+    const n = hits[0], e = endOf(n);
+    if ((Math.abs(n.start - r.a) <= q && Math.abs(e - r.b) <= q) || (r.a >= n.start && r.b <= e)) return {kind: "anno", n};
+  }
+  return {kind: "several", list: hits, a: r.a, b: r.b, type};
+}
+// the one hook every selection writer reaches (endPointer, Esc, the Ruler
+// highlight switch, Ask's select, undo/redo, a song's notes landing)
+export function editorFollowSelection(force) {
+  if (!S.song || !editorFollowing() || S.edFollow.busy) return;
+  const f = S.edFollow, sig = editorSelSig(), was = f.sig === null ? null : f.sig.split("|");
+  editorTrackEdited();
+  if (!force && sig === f.sig) return;
+  const now = sig.split("|"), rangeMoved = force || !was || was[0] !== now[0], lassoMoved = !was || was[1] !== now[1];
+  f.sig = sig;
+  // the lasso decides when it is what moved (a cleared lasso changes nothing);
+  // otherwise the ruler span does
+  const t = editorSelTarget(!rangeMoved || (lassoMoved && !!S.lassoAnno && !S.rangeSel));
+  if (t) editorApply(t);
+}
+export function editorFollowBand(n) { // a single tap on a band loads it, highlight switch on or off (R1, R13)
+  if (!editorFollowing()) return;
+  S.edFollow.sig = editorSelSig();
+  editorApply({kind: "anno", n});
+}
+export function editorApply(t) { // R6/R7: unsaved work is never dropped by a selection move
+  const f = S.edFollow;
+  if (editorDirty()) {
+    if (t.kind === "none") return; // the span went away: the draft stays
+    if (t.kind === "anno" && t.n === S.editingNote) return;
+    if (f.mode === "new" && t.kind === "empty" && !f.pending) { editorSetSpan(t.a, t.b); f.baseSpan = editorSpanKey(); return; } // fixing a new entry's span: the draft follows it
+    f.pending = t;
+    editorRender();
+    return;
+  }
+  editorLoad(t);
+}
+export function editorSetSpan(a, b) { // from/end rows from ticks, to the 16th
+  const bt = barTicks(), qt = beatTicks();
+  document.getElementById("nb1").value = String(Math.floor(a / bt) + 1);
+  setBeatPair("nq1", "ns1", (a % bt) / qt + 1);
+  if (b > a) { document.getElementById("nb2").value = String(Math.floor(b / bt) + 1); setBeatPair("nq2", "ns2", (b % bt) / qt + 1); }
+}
+export function editorTrackEdited() { // edge case 6: dragging the loaded band's edge moves its from/end live, no strip
+  const f = S.edFollow, n = S.editingNote;
+  if (f.mode !== "editing" || !n || !S.rollnotes.includes(n) || !(n.chord || n.section)) return;
+  const k = n.start + ":" + n.end;
+  if (k === f.noteSpan) return;
+  f.noteSpan = k;
+  const clean = !editorDirty();
+  editorSetSpan(n.start, n.end);
+  if (clean) f.baseSpan = editorSpanKey();
+}
+export function editorLoad(t, msg) {
+  const f = S.edFollow, ro = !!(S.rollnotesReadOnly || LINK_SONGS);
+  f.pending = null;
+  micStop(true); // a late dictation result must not land in the next entry (edge case 11)
+  if (t.kind === "anno" || (t.kind === "open" && t.note)) {
+    const n = t.kind === "anno" ? t.n : t.note;
+    editorFill(n, undefined, t.opts);
+    f.mode = ro ? "readonly" : "editing";
+    f.ident = noteIdentity(n);
+    f.noteSpan = n.start + ":" + n.end;
+  } else if (t.kind === "empty" || t.kind === "open") {
+    editorFill(null, t.kind === "empty" ? t.type : t.presetType, t.opts);
+    f.mode = ro ? "readonly" : "new";
+    f.ident = null;
+  } else { // none / several: blank fields, Save off
+    editorFill(null, editorNewType(0, 0));
+    S.editingNote = null;
+    f.mode = t.kind === "several" ? "several" : "idle";
+    f.ident = null;
+  }
+  f.list = t.kind === "several" ? t.list : [];
+  f.listSpan = t.kind === "several" && t.a !== null ? {a: t.a, b: t.b, type: t.type} : null;
+  f.msg = msg || "";
+  f.songKey = S.songKey;
+  editorMark();
+  if (document.activeElement && editor.contains(document.activeElement) && typeof document.activeElement.blur === "function") document.activeElement.blur(); // R11: a keyboard up for the last entry goes down
+  editorRender();
+}
+export function editorPick(n) { // a row of the Several list: load it, and the highlight moves to it
+  if (showRulerHl()) S.rangeSel = {a: n.start, b: n.end};
+  S.edFollow.sig = editorSelSig();
+  editorLoad({kind: "anno", n});
+  draw();
+}
+export function editorRender() {
+  const f = S.edFollow, docked = editorDocked();
+  setControl("ncancel", {label: docked ? "Clear" : "Cancel"});
+  const box = document.getElementById("nfollow"), save = document.getElementById("nsave"), del = document.getElementById("ndelete");
+  editor.classList.toggle("edidle", docked && (f.mode === "idle" || f.mode === "several"));
+  editor.classList.toggle("edro", docked && f.mode === "readonly");
+  if (!docked) { box.style.display = "none"; save.disabled = false; del.disabled = false; return; }
+  box.style.display = "";
+  save.disabled = !(f.mode === "new" || f.mode === "editing");
+  del.disabled = f.mode === "readonly";
+  const kinds = f.list.length && f.list.every(n => n.chord) ? "chords" : f.list.length && f.list.every(n => n.section) ? "sections" : "annotations";
+  document.getElementById("nfollowmsg").textContent =
+    f.mode === "idle" ? (f.msg ? f.msg + ". " : "") + "Select bars in the ruler, or tap a chord or section."
+    : f.mode === "several" ? f.list.length + " " + kinds + " in this span:"
+    : f.mode === "readonly" ? (LINK_SONGS ? "Someone else's song: annotations are theirs — open your own copy to write." : S.rollnotesLockReason || ROLLNOTES_LOCK_MSG)
+    : f.msg;
+  const list = document.getElementById("nseveral");
+  list.textContent = "";
+  list.style.display = f.mode === "several" ? "flex" : "none";
+  if (f.mode === "several") {
+    for (const n of f.list) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = annoLabel(n);
+      b.addEventListener("click", () => editorPick(n));
+      list.appendChild(b);
+    }
+    if (f.listSpan && !S.rollnotesReadOnly) { // R3: never automatic — saving it makes overlapping bands
+      const b = document.createElement("button"), sp = f.listSpan;
+      b.type = "button"; b.textContent = "New " + (NTYPE_CHIPS.find(c => c[0] === sp.type) || [sp.type, sp.type])[1].toLowerCase() + " over the whole span anyway";
+      b.addEventListener("click", () => editorLoad({kind: "empty", a: sp.a, b: sp.b, type: sp.type}));
+      list.appendChild(b);
+    }
+  }
+  document.getElementById("nunsaved").style.display = f.pending ? "" : "none";
+  if (f.pending) document.getElementById("nunsavedtxt").textContent = "Unsaved " + editorDraftLabel();
+}
+export function editorStripDiscard() {
+  const t = S.edFollow.pending || {kind: "none"};
+  if (t.kind === "close") { editorLoad({kind: "none"}); wmCloseWindow(editor); return; }
+  editorLoad(t);
+}
+export function editorClear() { // docked Cancel reads Clear (R8): drop the draft, back to what the selection says
+  S.edFollow.sig = editorSelSig();
+  editorLoad(editorSelTarget(false) || {kind: "none"});
+}
+export function editorDockedOpen(t) { // R18: + Note, a list row, a flag — into the docked window, never a second copy
+  const f = S.edFollow, wasOn = editor.classList.contains("on");
+  editor.classList.add("on");
+  if (wasOn && editorDirty() && !(t.note && t.note === S.editingNote)) { f.pending = t; editorRender(); return; }
+  f.sig = editorSelSig();
+  editorLoad(t);
+}
+export function editorCloseGuard() { // S.wmCloseGuards.noteeditor: ✕ with unsaved changes asks first, inline (R8)
+  if (!editorDocked() || !editorDirty()) return true;
+  S.edFollow.pending = {kind: "close"};
+  editorRender();
+  return false;
+}
+export function editorAfterUndo() { // R10: after an undo/redo, a docked window re-reads the selection
+  if (!editorFollowing() || editorDirty()) return;
+  S.edFollow.sig = editorSelSig();
+  const t = editorSelTarget(false);
+  if (t) editorLoad(t);
+}
+export function editorBeforeSongChange() { // R16: a chord belongs to its song's bars — an unsaved one is dropped, and said so
+  const f = S.edFollow;
+  if (!editorFollowing()) return;
+  f.dropped = editorDirty() ? "Unsaved " + editorDraftLabel() + " on " + songTitleOf(S.songKey) + " was dropped" : "";
+  f.pending = null;
+  f.mode = "idle";
+  S.editingNote = null;
+}
+export function editorAfterNotesChange() { // finalizeNotes' tail
+  const f = S.edFollow;
+  if (f.busy || !S.song || !editorFollowing()) return;
+  if (f.songKey !== S.songKey) { // a new song's notes have landed: read its restored span
+    const msg = f.dropped;
+    f.dropped = "";
+    f.sig = editorSelSig();
+    const t = editorSelTarget(false);
+    editorLoad(t || {kind: "none"}, msg);
+    return;
+  }
+  if (f.mode === "editing" && S.editingNote && !S.rollnotes.includes(S.editingNote)) { // undo/Ask replaced or removed it: never a ghost
+    const again = f.ident && S.rollnotes.find(n => noteIdentity(n) === f.ident);
+    if (again && editorDirty()) { S.editingNote = again; return; }
+    f.sig = editorSelSig();
+    editorLoad(again ? {kind: "anno", n: again} : editorSelTarget(false) || {kind: "none"});
+    return;
+  }
+  editorTrackEdited();
+}
+export function editorDockChanged() { // wmLayoutAll's tail: docking or floating the window switches its mode in place
+  const d = editorDocked(), f = S.edFollow;
+  if (d === f.wasDocked) return;
+  f.wasDocked = d;
+  if (d) {
+    f.pending = null;
+    f.songKey = S.songKey;
+    f.sig = editorSelSig();
+    f.mode = !editor.classList.contains("on") ? "idle" : S.editingNote ? (S.rollnotesReadOnly ? "readonly" : "editing") : "new";
+    if (S.editingNote) { f.ident = noteIdentity(S.editingNote); f.noteSpan = S.editingNote.start + ":" + S.editingNote.end; }
+    editorMark();
+  }
+  editorRender();
+}
+export function editorRelaunchOpen() { // S.wmOpeners.noteeditor (R17): only a DOCKED one returns, Idle, nothing focused
+  if (!wmWhereIs(S.wm, "noteeditor") || !wmAllowed(wmInnerWidth())) return;
+  editor.classList.add("on");
+  if (!editorDocked()) wmLayoutAll();
+  if (!editorDocked()) { editor.classList.remove("on"); return; }
+  S.edFollow.sig = null;
+  editorLoad({kind: "none"});
+  editorFollowSelection(true);
+  // wmRestoreOpen runs once the song is in, which can be before its notes
+  // are: read the restored span again when they land (unless he started)
+  const ready = S.song && S.song.notesReady, key = S.songKey;
+  if (ready && typeof ready.then === "function") ready.then(() => { if (S.songKey === key && !editorDirty()) editorFollowSelection(true); }, () => {});
 }
 export function initNoteEditor1() {
   renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
@@ -922,7 +1232,15 @@ export function initNoteEditor4() {
     // overwrite. + Note adds; editing an existing one is a tap in ☰ Notes.
     openEditor(null);
   });
-  document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
+  document.getElementById("ncancel").addEventListener("click", () => { micStop(true); if (editorDocked()) editorClear(); else editor.classList.remove("on"); });
+  document.getElementById("nunsavedsave").addEventListener("click", () => document.getElementById("nsave").dispatchEvent(new Event("click")));
+  document.getElementById("nunsaveddiscard").addEventListener("click", editorStripDiscard);
+  editor.addEventListener("keydown", e => { // docked, Esc never closes the window: in a field it drops the keyboard (R8)
+    if (e.key !== "Escape" || !editorDocked()) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT") && typeof t.blur === "function") { t.blur(); e.preventDefault(); }
+  });
+  S.wmCloseGuards.noteeditor = editorCloseGuard;
    document.getElementById("ntext").addEventListener("keydown", e => {
     // sections are one-line labels: Enter = save. Text notes keep Enter = newline
     if (e.key === "Enter" && editorType() === "section") {

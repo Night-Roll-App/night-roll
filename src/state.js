@@ -68,6 +68,9 @@ export const S = {
   rollnotesOrigin: null,
   playCursor: 0,
   editingNote: null,
+  // the docked annotation window's follow state (src/ui/note-editor.js editorLoad and friends)
+  edFollow: {mode: "idle", base: "", baseSpan: "", sig: null, pending: null, ident: null, noteSpan: "", songKey: null,
+             lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false},
   annoFlash: null, // {a, b, until}: the span an annotation undo/redo just changed, flashed in the ruler (revealEdit)
   rangeSel: null,
   tapBand: {n: null, t: 0},
@@ -305,6 +308,7 @@ export const S = {
   askResumeTimer: null,
   wm: null,
   wmOpeners: {},
+  wmCloseGuards: {}, // id -> () => false to keep a window open on ✕ (the annotation window's unsaved strip)
   wmRestored: false,
   wmSideMembers: {left: [], right: []},
   wmBottomEls: [],

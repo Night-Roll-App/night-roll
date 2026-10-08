@@ -765,6 +765,19 @@
      auto) sends that extra height to #ntext alone; the 84px floor above is
      untouched, so the no-resize default is exactly as before. */
   #noteeditor #ntext { flex: 1 1 auto; }
+  /* docked follow mode: Idle/Several have nothing to edit yet (the type chips
+     stay live for a pre-pick); Read-only shows the fields greyed */
+  #noteeditor.edidle #nfromrow, #noteeditor.edidle #ntorow, #noteeditor.edidle #nchordbox,
+  #noteeditor.edidle #nsectrow, #noteeditor.edidle #ntext, #noteeditor.edidle #nkeyrow,
+  #noteeditor.edidle #ntemporow, #noteeditor.edidle #ntsrow, #noteeditor.edidle #nlooprow,
+  #noteeditor.edidle #nchoprow, #noteeditor.edidle #nsongrow, #noteeditor.edidle #nsongkindrow,
+  #noteeditor.edro #nfromrow, #noteeditor.edro #ntorow, #noteeditor.edro #nchordbox, #noteeditor.edro #nsectrow,
+  #noteeditor.edro #ntext, #noteeditor.edro #nkeyrow, #noteeditor.edro #ntemporow, #noteeditor.edro #ntsrow,
+  #noteeditor.edro #nlooprow, #noteeditor.edro #nchoprow, #noteeditor.edro #nsongrow, #noteeditor.edro #nsongkindrow {
+    opacity: 0.45; pointer-events: none;
+  }
+  #nfollow #nunsaved { gap: 8px; align-items: center; }
+  #nfollow #nseveral button { text-align: left; }
   .sheet .lbl { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
   #filesheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); } /* match the .fitem rows */
   .sheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); min-height: 14px; }
