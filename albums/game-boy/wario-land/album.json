@@ -31,6 +31,10 @@
      "lufs": -17.1,
      "peak": -2.4,
      "synth": -15.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bonus-results": {
@@ -42,6 +46,10 @@
      "lufs": -15.2,
      "peak": -2.8,
      "synth": -9.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "bonus-select": {
@@ -53,6 +61,10 @@
      "lufs": -15.2,
      "peak": -2.5,
      "synth": -11.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-almost-defeated": {
@@ -64,6 +76,10 @@
      "lufs": -15.7,
      "peak": -4.4,
      "synth": -14.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-battle": {
@@ -75,6 +91,10 @@
      "lufs": -18,
      "peak": -3.7,
      "synth": -10.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "boss-defeated": {
@@ -86,6 +106,10 @@
      "lufs": -12.7,
      "peak": -3,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "end-credits": {
@@ -97,6 +121,10 @@
      "lufs": -14.1,
      "peak": -4,
      "synth": -8.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "file-select": {
@@ -130,6 +158,10 @@
      "lufs": -17.8,
      "peak": -5.7,
      "synth": -14.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "intro": {
@@ -141,6 +173,10 @@
      "lufs": -20.2,
      "peak": -6,
      "synth": -10
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "invincible-wario": {
@@ -152,6 +188,10 @@
      "lufs": -15.1,
      "peak": -4.6,
      "synth": -11.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "kitchen-island": {
@@ -163,6 +203,10 @@
      "lufs": -18.5,
      "peak": -3.5,
      "synth": -13
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "last-fight": {
@@ -174,6 +218,10 @@
      "lufs": -15.6,
      "peak": -0.6,
      "synth": -11.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "last-stage": {
@@ -185,6 +233,10 @@
      "lufs": -23.1,
      "peak": -3.9,
      "synth": -14.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "level-selected": {
@@ -196,6 +248,10 @@
      "lufs": -14.1,
      "peak": -6.2,
      "synth": -7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "lose-a-life": {
@@ -218,6 +274,10 @@
      "lufs": -22.5,
      "peak": -6.1,
      "synth": -12.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "mystery-theme": {
@@ -229,6 +289,10 @@
      "lufs": -19,
      "peak": -11.3,
      "synth": -12.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "parsley-woods": {
@@ -251,6 +315,10 @@
      "lufs": -18,
      "peak": -13.4,
      "synth": -6.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "rice-beach": {
@@ -262,6 +330,10 @@
      "lufs": -21.2,
      "peak": -7.4,
      "synth": -18.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "secret-room-found": {
@@ -273,6 +345,10 @@
      "lufs": -21.2,
      "peak": -10,
      "synth": -16.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "sherbet-land": {
@@ -295,6 +371,10 @@
      "lufs": -22,
      "peak": -10.5,
      "synth": -16.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-clear": {
@@ -306,6 +386,10 @@
      "lufs": -13.3,
      "peak": -7.1,
      "synth": -7.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-i": {
@@ -317,6 +401,10 @@
      "lufs": -19.5,
      "peak": -3.2,
      "synth": -10.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-ii": {
@@ -328,6 +416,10 @@
      "lufs": -21.8,
      "peak": -11.9,
      "synth": -15.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-iii": {
@@ -339,6 +431,10 @@
      "lufs": -20.2,
      "peak": -8.7,
      "synth": -12.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-iv": {
@@ -350,6 +446,10 @@
      "lufs": -26,
      "peak": -7.9,
      "synth": -17.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-ix": {
@@ -361,6 +461,10 @@
      "lufs": -19.5,
      "peak": -5.3,
      "synth": -16.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-v": {
@@ -372,6 +476,10 @@
      "lufs": -23.6,
      "peak": -6,
      "synth": -18.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-vi": {
@@ -383,6 +491,10 @@
      "lufs": -21.8,
      "peak": -12,
      "synth": -6.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-vii": {
@@ -394,6 +506,10 @@
      "lufs": -20.9,
      "peak": -6.5,
      "synth": -14.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-viii": {
@@ -416,6 +532,10 @@
      "lufs": -17.7,
      "peak": -5.9,
      "synth": -12.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stage-theme-xi": {
@@ -427,6 +547,10 @@
      "lufs": -19.2,
      "peak": -3.8,
      "synth": -10.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "stove-canyon": {
@@ -460,6 +584,10 @@
      "lufs": -27.4,
      "peak": -25.9,
      "synth": -19.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "syrup-castle": {
@@ -471,6 +599,10 @@
      "lufs": -19.5,
      "peak": -10.3,
      "synth": -12.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "that-s-not-what-i-call-a-castle": {
@@ -482,6 +614,10 @@
      "lufs": -17.6,
      "peak": -5.1,
      "synth": -10.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "title": {
@@ -493,6 +629,10 @@
      "lufs": -16.5,
      "peak": -6.9,
      "synth": -11
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "treasure-found": {
@@ -504,6 +644,10 @@
      "lufs": -12.7,
      "peak": -6.6,
      "synth": -8.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "unknown-jingle": {
@@ -515,6 +659,10 @@
      "lufs": -20.6,
      "peak": -7.1,
      "synth": -12.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "unknown-song-1": {
@@ -526,6 +674,10 @@
      "lufs": -21.5,
      "peak": -8.3,
      "synth": -16.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "unknown-song-2": {
@@ -548,6 +700,10 @@
      "lufs": -17,
      "peak": -10.1,
      "synth": -13.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "summoning-the-genie-recapture": {
@@ -556,7 +712,7 @@
     "track": 41,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "6495f9af"
     },
     "loud": {
      "v": 1,
