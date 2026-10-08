@@ -42,6 +42,7 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `run-tests.mjs` | `npm test`: every vm test file, one at a time, every file even after a failure. |
 | `fix_keysigs.py`, `strip_tracks.py`, `trim_loops.py` | MIDI utilities: rewrite key-signature metas, delete tracks by app-visible index, trim a file to its first pass. |
 | `icon-1024.swift` | Redraws the app icon at 1024 px. |
+| `brand/make-icons.mjs [name] [--ios dir]` | Draws every app icon size and `icons/mark.svg` (the header mark) from one mascot in `docs/brand/mascots/sprites.json` (default Maestro); `--ios` also writes the iPad AppIcon. |
 
 ## Console audio
 

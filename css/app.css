@@ -77,6 +77,9 @@
     white-space: nowrap;
   }
   .brand span { color: var(--dim); }
+  /* Maestro, the mascot (Josh, Terminal #283; docs/brand/mascots/), drawn by tools/brand/make-icons.mjs */
+  .brand { display: inline-flex; align-items: center; gap: 8px; }
+  .brandmark { width: 28px; height: 28px; image-rendering: pixelated; flex: none; }
   select, button, label.filebtn {
     font-family: var(--mono);
     font-size: 0.8125rem;
