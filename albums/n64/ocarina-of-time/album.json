@@ -578,6 +578,12 @@
     "cap": {
      "v": 2,
      "code": "6495f9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -3.6,
+     "synth": -7.2
     }
    },
    "hyrule-field-main-theme": {
@@ -587,6 +593,12 @@
     "cap": {
      "v": 2,
      "code": "6495f9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -3.6,
+     "synth": -6.2
     }
    },
    "hyrule-field-morning-theme": {
@@ -611,6 +623,12 @@
     "cap": {
      "v": 2,
      "code": "6495f9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -3.6,
+     "synth": -5.3
     }
    },
    "hyrule-field": {
