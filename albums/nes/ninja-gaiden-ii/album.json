@@ -36,6 +36,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.2,
+     "synth": -10.5
     }
    },
    "battling-precariously-2-2-4-2-5-1a-7-2": {
@@ -45,6 +51,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -5.6,
+     "synth": -10.7
     }
    },
    "blazing-inferno-4-1": {
@@ -54,6 +66,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -5.6,
+     "synth": -9.3
     }
    },
    "credits": {
@@ -63,6 +81,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -5.4,
+     "synth": -9.9
     }
    },
    "cruel-laughter-pre-maze-cutscene": {
@@ -72,6 +96,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -5.5,
+     "synth": -10.6
     }
    },
    "cunning-enemy-ashtar-jaquio-battles": {
@@ -81,6 +111,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -4.9,
+     "synth": -9.2
     }
    },
    "deep-within-the-heart-5-1b-7-1": {
@@ -90,6 +126,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -6.2,
+     "synth": -10.5
     }
    },
    "determined-spirit-tower-rises": {
@@ -99,6 +141,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -6.6,
+     "synth": -9.3
     }
    },
    "domination-of-darkness-3-1": {
@@ -108,6 +156,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -6.2,
+     "synth": -11.5
     }
    },
    "final-confrontation-ryu-vs-jaquio": {
@@ -117,6 +171,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -5.3,
+     "synth": -10.6
     }
    },
    "impending-doom": {
@@ -126,6 +186,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.1,
+     "peak": -5.2,
+     "synth": -10.3
     }
    },
    "inevitable-unused-final-boss-battle": {
@@ -135,6 +201,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.8,
+     "peak": -5.5,
+     "synth": -9.3
     }
    },
    "irene-lives-ending-ii": {
@@ -144,6 +216,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.3,
+     "peak": -5.5,
+     "synth": -11.2
     }
    },
    "lord-of-darkness-ashtar-cutscenes": {
@@ -153,6 +231,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -6.5,
+     "synth": -10.7
     }
    },
    "lurking-creatures-cutscene": {
@@ -162,6 +246,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.2,
+     "peak": -12,
+     "synth": -22.9
     }
    },
    "military-man-robert-cutscene": {
@@ -171,6 +261,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -7.4,
+     "synth": -11.4
     }
    },
    "minions-of-evil-boss-battle": {
@@ -180,6 +276,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -6.2,
+     "synth": -10.5
     }
    },
    "motion-of-the-ninja-1-1-7-2-interlude": {
@@ -189,6 +291,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.4,
+     "peak": -5.5,
+     "synth": -10
     }
    },
    "mysterious-foes-cutscenes": {
@@ -198,6 +306,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -7.2,
+     "synth": -13
     }
    },
    "puppetmaster-cutscenes": {
@@ -207,6 +321,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -6.5,
+     "synth": -9.5
     }
    },
    "rushing-foward-2-1-5-2-7-2": {
@@ -216,6 +336,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -5.8,
+     "synth": -10.8
     }
    },
    "tearful-reunion-rescue-cutscenes": {
@@ -225,6 +351,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -6.5,
+     "synth": -12.4
     }
    },
    "they-got-irene": {
@@ -234,6 +366,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -10.3,
+     "synth": -10
     }
    },
    "time-is-critical": {
@@ -243,6 +381,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -6.6,
+     "synth": -9.8
     }
    },
    "tower-of-lahja-3-2-7-2": {
@@ -252,6 +396,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -4.8,
+     "synth": -10.4
     }
    },
    "triumphant-ending-i": {
@@ -261,6 +411,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -6.8,
+     "synth": -10.1
     }
    }
   }
