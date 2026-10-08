@@ -267,7 +267,16 @@ test("double-tap a band opens its annotation editor", async ({ page }) => {
   // evaluate() between the taps outlasted the window and the pair never counted
   await page.mouse.click(mid.x, mid.y);
   await page.mouse.click(mid.x, mid.y);
-  expect(await page.evaluate(() => document.getElementById("noteeditor").classList.contains("on"))).toBe(true);
+  const open = await page.evaluate(() => document.getElementById("noteeditor").classList.contains("on"));
+  if (!open) console.log("[double-tap diag] " + JSON.stringify(await page.evaluate(({x, y}) => {
+    const el = document.elementFromPoint(x, y);
+    return {at: el && (el.id || el.tagName + "." + el.className), mid: {x, y}, inner: [innerWidth, innerHeight],
+      canvas: (() => { const r = canvas.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })(),
+      band: rollnotes[0] && [rollnotes[0].start, rollnotes[0].end], pxq: view.pxq, vx: view.x,
+      tapBand: typeof tapBand !== "undefined" ? tapBand : "n/a", spanTapAt: typeof spanTapAt !== "undefined" ? spanTapAt : "n/a",
+      sheets: [...document.querySelectorAll(".on")].map(e => e.id).filter(Boolean).slice(0, 10)};
+  }, mid)));
+  expect(open).toBe(true);
 });
 
 test("LCD readouts open their annotations: tempo, meter, key", async ({ page }) => {
