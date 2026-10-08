@@ -791,6 +791,7 @@ export function initWm1() {
   makeWindow("syncsheet", {dockable: true}); // the Publish window (Terminal #111, 2026-10-04): a list worth keeping beside the roll while working
   makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
   makeWindow("studysheet", {dockable: true}); // the Analysis sheet (src/ui/study-sheet.js): a tab beside AI on the iPad
+  makeWindow("noteeditor", {dockable: true}); // the annotation window (Josh #236): docked beside the roll while annotating; no opener, so a relaunch never reopens an empty one
   // the publish job dialog was dockable until 2026-10-04 (Terminal #111: "a
   // very temporary window") — registered, floating only; initWm1 above
   // purges a saved dock for it

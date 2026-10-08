@@ -15019,3 +15019,9 @@ test("note editor (Josh #227): picking Section puts the cursor in the label, not
   assert.deepEqual(val(`__fx`), ["nsectlabel"]);
   run(`for (const id of ["nsectlabel", "ntext"]) delete document.getElementById(id).focus; pickEditorType("note");`);
 });
+
+test("the annotation window is dockable (Josh #236) but never reopened empty by a relaunch", () => {
+  installSong();
+  assert.equal(run(`WM_WINDOWS.noteeditor && WM_WINDOWS.noteeditor.dockable`), true);
+  assert.equal(run(`typeof S.wmOpeners.noteeditor`), "undefined", "no opener: wmRestoreOpen skips it");
+});

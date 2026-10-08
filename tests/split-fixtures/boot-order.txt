@@ -306,6 +306,7 @@ makeWindow("jobssheet", {dockable: true});
 makeWindow("syncsheet", {dockable: true});
 makeWindow("mixersheet", {dockable: true});
 makeWindow("studysheet", {dockable: true});
+makeWindow("noteeditor", {dockable: true});
 makeWindow("pubjobsheet", {dockable: false});
 makeWindow("infosheet", {dockable: false});
 makeWindow("importhub", {dockable: false});
