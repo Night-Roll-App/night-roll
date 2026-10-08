@@ -14,6 +14,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -12.6,
+     "synth": -16.9
     }
    },
    "boomer-kuwanger": {
@@ -23,6 +29,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -10.3,
+     "synth": -19.6
     }
    },
    "boss-battle": {
@@ -32,6 +44,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -12.2,
+     "synth": -18.6
     }
    },
    "boss-defeated": {
@@ -41,6 +59,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -11,
+     "synth": -14.7
     }
    },
    "boss-intro": {
@@ -50,6 +74,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.4,
+     "peak": -14.7,
+     "synth": -22.1
     }
    },
    "capcom-logo": {
@@ -59,6 +89,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.8,
+     "peak": -17.4,
+     "synth": -22.9
     }
    },
    "castings": {
@@ -68,6 +104,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -12.1,
+     "synth": -17.3
     }
    },
    "chill-penguin": {
@@ -77,6 +119,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -12.5,
+     "synth": -16.8
     }
    },
    "credits": {
@@ -86,6 +134,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -13.5,
+     "synth": -19.7
     }
    },
    "dr-light": {
@@ -95,6 +149,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.7,
+     "peak": -15.5,
+     "synth": -18.9
     }
    },
    "ending": {
@@ -104,6 +164,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.6,
+     "peak": -12.7,
+     "synth": -20.4
     }
    },
    "flame-mammoth": {
@@ -113,6 +179,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -12.3,
+     "synth": -19.2
     }
    },
    "intro-stage": {
@@ -122,6 +194,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -10.6,
+     "synth": -18.9
     }
    },
    "launch-octopus": {
@@ -131,6 +209,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -13.2,
+     "synth": -19.6
     }
    },
    "password-screen": {
@@ -140,6 +224,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.9,
+     "peak": -15.8,
+     "synth": -20.2
     }
    },
    "sigma-battle-2": {
@@ -149,6 +239,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -11.3,
+     "synth": -15.4
     }
    },
    "sigma-battle": {
@@ -158,6 +254,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -12,
+     "synth": -17.2
     }
    },
    "sigma-boss-battle": {
@@ -167,6 +269,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -12,
+     "synth": -17.6
     }
    },
    "sigma-fortress-1": {
@@ -176,6 +284,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.2,
+     "peak": -12.9,
+     "synth": -20.3
     }
    },
    "sigma-fortress-2": {
@@ -185,6 +299,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -12.1,
+     "synth": -21.7
     }
    },
    "sigma-fortress-3": {
@@ -194,6 +314,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -11.5,
+     "synth": -18.3
     }
    },
    "sigma-intro-1": {
@@ -203,6 +329,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -14.5,
+     "synth": -16.3
     }
    },
    "sigma-intro-2": {
@@ -212,6 +344,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -31.9,
+     "peak": -16.6,
+     "synth": -26
     }
    },
    "spark-mandrill": {
@@ -221,6 +359,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -10.9,
+     "synth": -18.1
     }
    },
    "stage-intro": {
@@ -230,6 +374,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -12.7,
+     "synth": -16.9
     }
    },
    "stage-select-1": {
@@ -239,6 +389,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -11.5,
+     "synth": -19.2
     }
    },
    "stage-select-2": {
@@ -248,6 +404,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -15.4,
+     "synth": -20.2
     }
    },
    "stigma-defeated": {
@@ -257,6 +419,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -11.9,
+     "synth": -15.4
     }
    },
    "sting-chameleon": {
@@ -266,6 +434,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -12.3,
+     "synth": -19
     }
    },
    "storm-eagle": {
@@ -275,6 +449,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -10.2,
+     "synth": -18.5
     }
    },
    "test-track": {
@@ -284,6 +464,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29.3,
+     "peak": -20.3,
+     "synth": -21.5
     }
    },
    "title-screen": {
@@ -293,6 +479,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.2,
+     "peak": -13.9,
+     "synth": -19.5
     }
    },
    "weapon-screen": {
@@ -302,6 +494,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -13.1,
+     "synth": -18.7
     }
    },
    "zero-1": {
@@ -311,6 +509,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -10.7,
+     "synth": -20.2
     }
    },
    "zero-2": {
@@ -320,6 +524,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -13.5,
+     "synth": -20.5
     }
    }
   },
