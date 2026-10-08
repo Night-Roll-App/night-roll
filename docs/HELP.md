@@ -60,7 +60,7 @@ Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — nev
 Back to bar 1 — or, while a ruler selection is cycling, back to the selection's start, with the view scrolled there. A span you've switched off is ignored. **Return** does the same.
 
 **Chip / MIDI switch**
-Bottom left, beside the view button, on any song that has a console voice: tap **Chip** to hear the MIDI on synth voices instead (it then reads **MIDI**); tap again to go back. A playing song carries on from the same spot. Same switch as View ▾ → Mode → Hear the MIDI. Ask: set_pref sound chip|midi.
+Bottom left, beside the view button, on any song that has a console voice: two halves, **Chip | MIDI** — the lit one is what you hear (Chip = the console's own voice, MIDI = the notes on synth voices); tap the other half to switch. A playing song carries on from the same spot. Same switch as View ▾ → Mode → Hear the MIDI. Ask: set_pref sound chip|midi.
 
 **Speed slider**
 Tap the **speedometer icon** in the top row to open it (the button shows the % when you're off 100): 25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.

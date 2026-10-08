@@ -1159,11 +1159,11 @@ export function updateSoundBtn() {
   if (!b || !S.song) return;
   const k = S.songKey;
   const has = !!k && ((chip.key === k && !!(chip.pcm || chip.buffers || chip.stream)) || chip.rendering === k || !!(chip.resolving && chip.resolving.key === k));
-  const label = hearMidi() ? "MIDI" : "Chip";
   if (b.style.display !== (has ? "" : "none")) b.style.display = has ? "" : "none";
-  if (b.textContent !== label) {
-    b.textContent = label;
-    b.setAttribute("aria-label", hearMidi() ? "Sound: the MIDI on synth voices — tap for the console voice" : "Sound: console voice — tap for the MIDI");
+  const midi = hearMidi(), c = document.getElementById("soundchip"), m = document.getElementById("soundmidi");
+  if (c.classList.contains("on") === midi) { // only touch the DOM when it flips
+    c.classList.toggle("on", !midi); m.classList.toggle("on", midi);
+    c.setAttribute("aria-pressed", String(!midi)); m.setAttribute("aria-pressed", String(midi));
   }
 }
 export function updateLCD() {
@@ -2049,7 +2049,9 @@ export function initChrome11() {
     // (the "on" wrapper) so the ▸/▾ + current-view label stay in sync.
     on("vwRoll", () => setViewMode("roll"));
     on("vwScore", () => setViewMode("score"));
-    on("soundbtn", () => document.getElementById("vwHearMidi").click()); // the footer's one-tap copy (Josh #204)
+    // the footer's two halves (Josh #204/#211): tap the side you want; the lit one is what you hear
+    on("soundchip", () => { if (hearMidi()) document.getElementById("vwHearMidi").click(); });
+    on("soundmidi", () => { if (!hearMidi()) document.getElementById("vwHearMidi").click(); });
     on("vwHearMidi", () => { // flip what you hear; a playing song picks up from the same spot
       setHearMidi(!hearMidi());
       setInfo(hearMidi() ? "hearing the MIDI — every track on synth voices" : "hearing the console voice where the song has one");

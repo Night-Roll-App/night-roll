@@ -314,7 +314,7 @@
        as a hidden node so vwSub's own display-state reads still work. -->
   <button id="subbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-pressed="true" aria-label="Notes strip">💬</button>
   <!-- #soundbtn (Josh #204): what you hear, one tap — the console's own voice or the MIDI on synth voices; shown only on a song that has a console voice (same switch as View ▾ → Mode → Hear the MIDI) -->
-  <button id="soundbtn" style="display:none" aria-label="Sound: console voice — tap for the MIDI">Chip</button>
+  <span id="soundbtn" class="seg2" style="display:none" role="group" aria-label="What you hear"><button id="soundchip" aria-pressed="true">Chip</button><button id="soundmidi" aria-pressed="false">MIDI</button></span>
   <button id="lassobtn" aria-pressed="false"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z"/></svg><span class="ftxt">Lasso</span></button>
   <button id="instbtn" aria-label="Instrument panel" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 11.5h.25V19h-4.5v-4.5H10c.55 0 1-.45 1-1V5h2v8.5c0 .55.45 1 1 1zM5 5h2v8.5c0 .55.45 1 1 1h.25V19H5V5zm14 14h-3.25v-4.5H16c.55 0 1-.45 1-1V5h2v14z"/></svg></button>
   <!-- #readline (chrome density pass, 2026-10-01): back INTO the button row,

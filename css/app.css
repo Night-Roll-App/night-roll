@@ -202,6 +202,10 @@
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   /* the metronome and its ⚙ read as one control (Josh #198) */
+  /* Chip | MIDI (Josh #211): two halves, the one you hear lit */
+  .seg2 { display: inline-flex; border: 1px solid var(--grid); border-radius: 10px; overflow: hidden; }
+  .seg2 button { border: 0; border-radius: 0; margin: 0; min-height: 40px; padding: 4px 12px; background: none; color: var(--dim); }
+  .seg2 button.on { background: var(--accent); color: #fff; }
   .metgroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--grid); border-radius: 10px; }
   /* ⏱ and ⚙ the same size (Josh #200): both SVG icons in equal boxes */
   #timectl #metbtn, #timectl #metcfg { min-height: 34px; min-width: 38px; padding: 4px 8px; margin-left: 0; font-size: inherit; }

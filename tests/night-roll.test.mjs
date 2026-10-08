@@ -14849,17 +14849,20 @@ test("play gate (Josh #203): one loading count that never goes backwards — fil
   run(`chip.rendering = null; chip.progress = 0;`);
 });
 
-test("footer Chip / MIDI switch (Josh #204): hidden on a song with no console voice; shown once it exists; one tap flips what you hear and the label", () => {
+test("footer Chip | MIDI switch (Josh #204/#211): hidden on a song with no console voice; two halves, the one you hear lit; tapping a half picks it", () => {
   installSong();
   run(`songKey = "albums/nes/x/y.mid"; chip.key = null; chip.pcm = null; chip.buffers = null; chip.stream = null; chip.rendering = null; chip.resolving = null; setHearMidi(false); updateSoundBtn();`);
   assert.equal(app.el("soundbtn").style.display, "none", "no console voice: no switch");
   run(`chip.key = songKey; chip.pcm = {}; updateSoundBtn();`);
   assert.equal(app.el("soundbtn").style.display, "");
-  assert.equal(app.el("soundbtn").textContent, "Chip");
-  run(`document.getElementById("soundbtn").dispatchEvent({type: "click"});`);
+  const lit = () => [app.el("soundchip").classList.contains("on"), app.el("soundmidi").classList.contains("on")];
+  assert.deepEqual(lit(), [true, false], "the game voice: Chip lit");
+  run(`document.getElementById("soundchip").dispatchEvent({type: "click"});`);
+  assert.equal(run(`hearMidi()`), false, "tapping the lit half changes nothing");
+  run(`document.getElementById("soundmidi").dispatchEvent({type: "click"});`);
   assert.equal(run(`hearMidi()`), true);
-  assert.equal(app.el("soundbtn").textContent, "MIDI");
-  run(`document.getElementById("soundbtn").dispatchEvent({type: "click"});`);
+  assert.deepEqual(lit(), [false, true]);
+  run(`document.getElementById("soundchip").dispatchEvent({type: "click"});`);
   assert.equal(run(`hearMidi()`), false);
   run(`chip.key = null; chip.pcm = null; setHearMidi(false);`);
 });
