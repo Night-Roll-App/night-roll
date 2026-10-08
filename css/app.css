@@ -776,7 +776,12 @@
   #noteeditor.edro #nlooprow, #noteeditor.edro #nchoprow, #noteeditor.edro #nsongrow, #noteeditor.edro #nsongkindrow {
     opacity: 0.45; pointer-events: none;
   }
-  #nfollow #nunsaved { gap: 8px; align-items: center; }
+  /* red, not a quiet line: a tap held behind it looked like a dead tap (Josh #258/#260) */
+  #nfollow #nunsaved { gap: 8px; align-items: center; flex-wrap: wrap; border-left: 4px solid #e66767; padding: 6px 8px;
+    background: rgba(230, 103, 103, 0.16); border-radius: 4px; }
+  #nfollow #nunsavedtxt { color: #f0a0a0; font-weight: 600; }
+  #nfollow #nunsaved.flash { animation: unsavedflash 0.9s ease-out; }
+  @keyframes unsavedflash { 0%, 40% { background: rgba(230, 103, 103, 0.5); } 100% { background: rgba(230, 103, 103, 0.16); } }
   #nfollow #nseveral button { text-align: left; }
   .sheet .lbl { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
   #filesheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); } /* match the .fitem rows */

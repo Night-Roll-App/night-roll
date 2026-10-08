@@ -15261,16 +15261,17 @@ test("docked annotation window: unsaved work is never dropped or auto-saved — 
   follow(null);
   assert.equal(fld("nchordsym"), "Am", "clearing the span keeps the draft (R7)");
   follow(8 * bt, 10 * bt);
-  assert.equal(strip(), "Unsaved Am (bar 13–15)", "moved onto G7: held");
+  assert.equal(strip(), "Unsaved Am (bar 13–15). Save or Discard, then tap again", "moved onto G7: held");
+  assert.equal(val(`document.getElementById("nunsaved").classList.contains("flash")`), true, "a held tap flashes the strip (Josh #258)");
   assert.equal(fld("nchordsym"), "Am");
   follow(10 * bt, 12 * bt);
-  assert.equal(strip(), "Unsaved Am (bar 13–15)", "the strip stays put; the newest selection waits");
+  assert.equal(strip(), "Unsaved Am (bar 13–15). Save or Discard, then tap again", "the strip stays put; the newest selection waits");
   assert.equal(val(`rollnotes.filter(n => n.chord).length`), 2, "never auto-saved");
   run(`document.getElementById("nunsaveddiscard").dispatchEvent({type: "click"});`);
   assert.equal(val(`editingNote && editingNote.text`), "C", "Discard loads the newest selection");
   assert.equal(strip(), null);
   run(`setChordWidget("C7"); editorFollowBand(rollnotes.find(n => n.text === "G7"));`);
-  assert.equal(strip(), "Unsaved C7 (bar 11–12)", "an edited chord held when he taps another band");
+  assert.equal(strip(), "Unsaved C7 (bar 11–12). Save or Discard, then tap again", "an edited chord held when he taps another band");
   run(`document.getElementById("nunsavedsave").dispatchEvent({type: "click"});`);
   assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => n.text).sort()`), ["C7", "G7"], "Save wrote C7 over C");
   assert.equal(val(`editingNote && editingNote.text`), "G7", "then the waiting selection loaded");
@@ -15278,7 +15279,7 @@ test("docked annotation window: unsaved work is never dropped or auto-saved — 
   // ✕ with unsaved changes asks the same way
   run(`setChordWidget("G9"); wmCloseWindow(document.getElementById("noteeditor"));`);
   assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "✕ held");
-  assert.equal(strip(), "Unsaved G9 (bar 9–10)");
+  assert.equal(strip(), "Unsaved G9 (bar 9–10). Save or Discard to close");
   run(`document.getElementById("nunsaveddiscard").dispatchEvent({type: "click"});`);
   assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "Discard, then it closes");
   assert.deepEqual(val(`__fx`), []);

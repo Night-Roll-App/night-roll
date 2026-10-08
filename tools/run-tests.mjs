@@ -17,12 +17,21 @@ const FILES = [
 ];
 const FORCE_EXIT = new Set(["night-roll"]); // its harness leaves timers behind
 
-const only = process.argv.slice(2);
+// a name or a path ("tests/night-roll.test.mjs"); an unknown one is an error —
+// a path once filtered to zero files and still printed "all test files passed"
+const only = process.argv.slice(2).map(a => a.replace(/^.*\//, "").replace(/\.test\.mjs$/, ""));
+const unknown = only.filter(x => !FILES.includes(x));
+if (unknown.length) {
+  console.error(`✖ unknown test file(s): ${unknown.join(", ")}`);
+  process.exit(1);
+}
 const failed = [];
 for (const f of only.length ? FILES.filter(x => only.includes(x)) : FILES) {
   const args = ["--experimental-vm-modules", "--test", ...(FORCE_EXIT.has(f) ? ["--test-force-exit"] : []), `tests/${f}.test.mjs`];
-  const r = spawnSync(process.execPath, args, {stdio: "inherit"});
-  if (r.status !== 0) failed.push(f);
+  // a file that wedges (a failed assertion skipping a teardown once hung
+  // night-roll with no failure printed) is killed and counted as failed
+  const r = spawnSync(process.execPath, args, {stdio: "inherit", timeout: 300000, killSignal: "SIGKILL"});
+  if (r.status !== 0) { failed.push(f); if (r.signal) console.error(`\n✖ ${f}: killed (${r.signal}) — wedged or over 300 s`); }
 }
 if (failed.length) {
   console.error(`\n✖ ${failed.length} test file(s) failed: ${failed.join(", ")}`);

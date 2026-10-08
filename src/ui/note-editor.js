@@ -909,9 +909,17 @@ export function editorApply(t) { // R6/R7: unsaved work is never dropped by a se
     if (f.mode === "new" && t.kind === "empty" && !f.pending) { editorSetSpan(t.a, t.b); f.baseSpan = editorSpanKey(); return; } // fixing a new entry's span: the draft follows it
     f.pending = t;
     editorRender();
+    editorStripFlash();
     return;
   }
   editorLoad(t);
+}
+export function editorStripFlash() { // a tap held behind the strip must visibly land somewhere (Josh #258: "clicking … not working")
+  const el = document.getElementById("nunsaved");
+  if (!el || !el.classList) return;
+  el.classList.remove("flash");
+  void el.offsetWidth;
+  el.classList.add("flash");
 }
 export function editorSetSpan(a, b) { // from/end rows from ticks, to the 16th
   const bt = barTicks(), qt = beatTicks();
@@ -991,7 +999,7 @@ export function editorRender() {
     }
   }
   document.getElementById("nunsaved").style.display = f.pending ? "" : "none";
-  if (f.pending) document.getElementById("nunsavedtxt").textContent = "Unsaved " + editorDraftLabel();
+  if (f.pending) document.getElementById("nunsavedtxt").textContent = "Unsaved " + editorDraftLabel() + (f.pending.kind === "close" ? ". Save or Discard to close" : ". Save or Discard, then tap again");
 }
 export function editorStripDiscard() {
   const t = S.edFollow.pending || {kind: "none"};
@@ -1005,7 +1013,7 @@ export function editorClear() { // docked Cancel reads Clear (R8): drop the draf
 export function editorDockedOpen(t) { // R18: + Note, a list row, a flag — into the docked window, never a second copy
   const f = S.edFollow, wasOn = editor.classList.contains("on");
   editor.classList.add("on");
-  if (wasOn && editorDirty() && !(t.note && t.note === S.editingNote)) { f.pending = t; editorRender(); return; }
+  if (wasOn && editorDirty() && !(t.note && t.note === S.editingNote)) { f.pending = t; editorRender(); editorStripFlash(); return; }
   f.sig = editorSelSig();
   editorLoad(t);
 }
@@ -1013,6 +1021,7 @@ export function editorCloseGuard() { // S.wmCloseGuards.noteeditor: ✕ with uns
   if (!editorDocked() || !editorDirty()) return true;
   S.edFollow.pending = {kind: "close"};
   editorRender();
+  editorStripFlash();
   return false;
 }
 export function editorAfterUndo() { // R10: after an undo/redo, a docked window re-reads the selection
