@@ -49,6 +49,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -10.6,
+     "synth": -13.7
     }
    },
    "aria-de-mezzo-carattere": {
@@ -59,6 +65,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -10.2,
+     "synth": -12
     }
    },
    "awakening": {
@@ -69,6 +81,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.3,
+     "peak": -12.5,
+     "synth": -14.6
     }
    },
    "battle-theme": {
@@ -79,6 +97,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.1,
+     "peak": -9.7,
+     "synth": -12.4
     }
    },
    "blackjack": {
@@ -89,6 +113,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -9.7,
+     "synth": -13.4
     }
    },
    "blazing-fire": {
@@ -98,6 +128,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -33.3,
+     "peak": -21.6,
+     "synth": -29.1
     }
    },
    "catastrophe": {
@@ -108,6 +144,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -9.7,
+     "synth": -11.9
     }
    },
    "celes": {
@@ -118,6 +160,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -11,
+     "synth": -11.6
     }
    },
    "coin-song": {
@@ -128,6 +176,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -12.1,
+     "synth": -14.6
     }
    },
    "cyan": {
@@ -138,6 +192,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -9.2,
+     "synth": -11.5
     }
    },
    "dancing-mad-full": {
@@ -147,6 +207,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -9,
+     "synth": -13.9
     }
    },
    "dancing-mad-part-1": {
@@ -157,6 +223,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -8.9,
+     "synth": -13.8
     }
    },
    "dancing-mad-part-2": {
@@ -167,6 +239,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -11.1,
+     "synth": -13.6
     }
    },
    "dancing-mad-part-3": {
@@ -177,6 +255,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -8.7,
+     "synth": -22.4
     }
    },
    "dancing-mad-part-4": {
@@ -187,6 +271,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -8.7,
+     "synth": -13.4
     }
    },
    "dancing-mad-part-5": {
@@ -197,6 +287,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.5,
+     "peak": -8.2,
+     "synth": -14.2
     }
    },
    "dark-world": {
@@ -207,6 +303,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -8.5,
+     "synth": -15.2
     }
    },
    "devil-s-lab": {
@@ -217,6 +319,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -9.7,
+     "synth": -13
     }
    },
    "edgar-and-sabin": {
@@ -227,6 +335,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -11.7,
+     "synth": -12.1
     }
    },
    "ending-theme-part-1": {
@@ -237,6 +351,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -8.8,
+     "synth": -14.7
     }
    },
    "ending-theme-part-2": {
@@ -247,6 +367,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -8.6,
+     "synth": -11.8
     }
    },
    "epitaph": {
@@ -257,6 +383,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -12.3,
+     "synth": -13.5
     }
    },
    "fanatics": {
@@ -267,6 +399,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -8.7,
+     "synth": -11.4
     }
    },
    "fanfare": {
@@ -277,6 +415,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -9.7,
+     "synth": -13.9
     }
    },
    "forever-rachel": {
@@ -287,6 +431,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -10.6,
+     "synth": -15.4
     }
    },
    "gau": {
@@ -297,6 +447,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -12,
+     "synth": -14.5
     }
    },
    "gogo": {
@@ -307,6 +463,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -9.1,
+     "synth": -16.5
     }
    },
    "good-night": {
@@ -316,6 +478,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.2,
+     "peak": -16.9,
+     "synth": -18.2
     }
    },
    "grand-finale-part-1": {
@@ -326,6 +494,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -35,
+     "peak": -20.6,
+     "synth": -18.4
     }
    },
    "grand-finale-part-2": {
@@ -336,6 +510,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -11,
+     "synth": -12.1
     }
    },
    "johnny-c-bad": {
@@ -346,6 +526,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.2,
+     "peak": -9.7,
+     "synth": -14.5
     }
    },
    "kefka": {
@@ -356,6 +542,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -9.9,
+     "synth": -12.9
     }
    },
    "kids-run-through-the-city": {
@@ -366,6 +558,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -9.7,
+     "synth": -12.5
     }
    },
    "last-dungeon": {
@@ -376,6 +574,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -11.4,
+     "synth": -14.1
     }
    },
    "locke": {
@@ -386,6 +590,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -10.4,
+     "synth": -13.2
     }
    },
    "metamorphasis": {
@@ -396,6 +606,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -10.4,
+     "synth": -12.1
     }
    },
    "mog": {
@@ -406,6 +622,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.9,
+     "peak": -10,
+     "synth": -15.2
     }
    },
    "mt-koltz": {
@@ -416,6 +638,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -10,
+     "synth": -14
     }
    },
    "new-continent": {
@@ -426,6 +654,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.5,
+     "peak": -9.6,
+     "synth": -12.9
     }
    },
    "opening-theme-part-1": {
@@ -436,6 +670,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -8.3,
+     "synth": -15.6
     }
    },
    "opening-theme-part-2": {
@@ -446,6 +686,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -8,
+     "synth": -11.8
     }
    },
    "opening-theme-part-3": {
@@ -456,6 +702,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24,
+     "peak": -10.4,
+     "synth": -12.8
     }
    },
    "overture-part-1": {
@@ -466,6 +718,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.8,
+     "peak": -13.5,
+     "synth": -14.8
     }
    },
    "overture-part-2": {
@@ -476,6 +734,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -13.4,
+     "synth": -11.5
     }
    },
    "overture-part-3": {
@@ -486,6 +750,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27,
+     "peak": -12.6,
+     "synth": -14.3
     }
    },
    "quiet-beach": {
@@ -495,6 +765,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -39.9,
+     "peak": -30.2,
+     "synth": -29.8
     }
    },
    "relm": {
@@ -505,6 +781,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -11.3,
+     "synth": -15.8
     }
    },
    "rest-in-peace": {
@@ -515,6 +797,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -14,
+     "synth": -15.5
     }
    },
    "returners": {
@@ -525,6 +813,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -11.9,
+     "synth": -14.6
     }
    },
    "save-them": {
@@ -535,6 +829,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -11.1,
+     "synth": -11.9
     }
    },
    "searching-for-friends": {
@@ -545,6 +845,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -10.6,
+     "synth": -14.1
     }
    },
    "setzer": {
@@ -555,6 +861,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -10.5,
+     "synth": -11
     }
    },
    "shadow": {
@@ -565,6 +877,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -9.9,
+     "synth": -10.3
     }
    },
    "slam-shuffle": {
@@ -575,6 +893,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -10.9,
+     "synth": -16.2
     }
    },
    "spinach-rag": {
@@ -585,6 +909,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -9.7,
+     "synth": -12.8
     }
    },
    "strago": {
@@ -595,6 +925,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.7,
+     "peak": -12,
+     "synth": -18.7
     }
    },
    "strong-wind": {
@@ -604,6 +940,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -30.7,
+     "peak": -19.4,
+     "synth": -24
     }
    },
    "techno-de-chocobo": {
@@ -614,6 +956,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.2,
+     "peak": -10.4,
+     "synth": -15.6
     }
    },
    "terra": {
@@ -624,6 +972,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.4,
+     "peak": -10,
+     "synth": -12.6
     }
    },
    "the-day-after": {
@@ -634,6 +988,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.6,
+     "peak": -10.5,
+     "synth": -15
     }
    },
    "the-decisive-battle": {
@@ -644,6 +1004,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.3,
+     "peak": -10.2,
+     "synth": -13.1
     }
    },
    "the-empire-gestahl": {
@@ -654,6 +1020,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -10.1,
+     "synth": -13.3
     }
    },
    "the-fierce-battle": {
@@ -664,6 +1036,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -9.8,
+     "synth": -11.4
     }
    },
    "the-magic-house": {
@@ -674,6 +1052,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.8,
+     "peak": -12.6,
+     "synth": -17.3
     }
    },
    "the-mines-of-narshe": {
@@ -684,6 +1068,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.6,
+     "peak": -10.5,
+     "synth": -14.3
     }
    },
    "the-phantom-forest": {
@@ -694,6 +1084,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -8.7,
+     "synth": -11.5
     }
    },
    "the-phantom-train": {
@@ -704,6 +1100,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -10.9,
+     "synth": -12.9
     }
    },
    "the-prelude": {
@@ -714,6 +1116,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -29,
+     "peak": -16.3,
+     "synth": -17.1
     }
    },
    "the-serpent-trench": {
@@ -724,6 +1132,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.1,
+     "peak": -14.9,
+     "synth": -18.4
     }
    },
    "the-unforgiven": {
@@ -734,6 +1148,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -9.3,
+     "synth": -13.2
     }
    },
    "the-wedding-waltz-duel-part-1": {
@@ -744,6 +1164,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.2,
+     "peak": -13.2,
+     "synth": -16.8
     }
    },
    "the-wedding-waltz-duel-part-2": {
@@ -754,6 +1180,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.8,
+     "peak": -13.9,
+     "synth": -14.5
     }
    },
    "the-wedding-waltz-duel-part-3": {
@@ -764,6 +1196,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.7,
+     "peak": -10.1,
+     "synth": -12.1
     }
    },
    "the-wedding-waltz-duel-part-4": {
@@ -774,6 +1212,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.6,
+     "peak": -14.4,
+     "synth": -14.1
     }
    },
    "train": {
@@ -783,6 +1227,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -35.9,
+     "peak": -18.6,
+     "synth": -19.7
     }
    },
    "troops-march-on": {
@@ -793,6 +1243,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -8.4,
+     "synth": -13.6
     }
    },
    "umaro": {
@@ -803,6 +1259,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -10.8,
+     "synth": -14.3
     }
    },
    "under-martial-law": {
@@ -813,6 +1275,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.1,
+     "peak": -8.8,
+     "synth": -17.1
     }
    },
    "untitled": {
@@ -823,6 +1291,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -33.4,
+     "peak": -15.7,
+     "synth": -20.4
     }
    },
    "unused-fanfare": {
@@ -832,6 +1306,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -16,
+     "synth": -15.3
     }
    },
    "wild-west": {
@@ -842,6 +1322,12 @@
     "cap": {
      "v": 2,
      "code": "b28173b8"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -9.2,
+     "synth": -12.5
     }
    }
   },
