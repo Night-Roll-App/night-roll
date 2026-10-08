@@ -160,7 +160,25 @@ export function askPasteInsert(text) { // at the caret when the box already has 
 export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
 export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
-export function askRenderImpl() { aiRenderLog(askHost()); askCarryChip(); } // the draft, the greeting (askGreeting), each message with its mode tag (askMsgTag), pending bubbles, the earlier block (askRenderEarlier) — then this app's carried-over chip, if one waits here
+export function askRenderImpl() { aiRenderLog(askHost()); askCarryChip(); askMarkQuestions(); }
+// a note's QUESTION: line gets its own highlight (Josh #224) — the rest reads like any reply
+export function askMarkQuestions() {
+  if (typeof asklog === "undefined" || !asklog || !asklog.querySelectorAll) return;
+  for (const div of asklog.querySelectorAll(".askmsg.note")) {
+    if (div.dataset.q || typeof div.replaceChildren !== "function") continue;
+    div.dataset.q = "1";
+    for (const node of [...div.childNodes]) {
+      if (node.nodeType !== 3 || !/QUESTION:/.test(node.textContent)) continue;
+      const frag = [];
+      for (const part of node.textContent.split(/(^QUESTION:.*$)/m)) {
+        if (!part) continue;
+        if (/^QUESTION:/.test(part)) { const s = document.createElement("span"); s.className = "askq"; s.textContent = part; frag.push(s); }
+        else frag.push(document.createTextNode(part));
+      }
+      node.replaceWith(...frag);
+    }
+  }
+} // the draft, the greeting (askGreeting), each message with its mode tag (askMsgTag), pending bubbles, the earlier block (askRenderEarlier) — then this app's carried-over chip, if one waits here
 export function askCarryChip() { // open_song carried a request into a chat that held an unsent draft (docs/ai-parity.md §4): one tap sends it, the draft untouched; nothing is stored — a relaunch drops it, the words are in the ↪ line
   const c = S.askCarry;
   if (!c || c.key !== askStoreKey()) return;
