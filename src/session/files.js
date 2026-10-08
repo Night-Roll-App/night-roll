@@ -13,6 +13,7 @@ import { isUnsaved } from "../model/provenance.js";
 import { slugify } from "../model/provenance.js";
 import { draftStoreKey } from "../platform/storage.js";
 import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
+import { softFocus } from "../ui/chrome.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { idbDraftDelete } from "../platform/storage.js";
 import { finalizeNotesImpl as finalizeNotes } from "./song.js";
@@ -165,13 +166,9 @@ export function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" 
   // touch screens never get the name focused on open: focus raises the on-screen
   // keyboard over half the iPad (Josh #192, "I hate when touching anything by
   // default brings up the keyboard") — tap the name to rename. A mouse/trackpad
-  // keeps focus + select-all, so retyping the defaulted title is one keystroke.
-  let fine = false;
-  try { fine = !!(window.matchMedia && matchMedia("(pointer: fine)").matches); } catch (err) { /* old engines: treat as touch */ }
-  if (fine) {
-    inp.focus();
-    if (mode === "editcopy") inp.select?.();
-  }
+  // (or View › Display → Jump into text boxes) keeps focus + select-all, so
+  // retyping the defaulted title is one keystroke.
+  softFocus(inp, mode === "editcopy");
 }
 export function localFolders() { // folder → this device's copies (draft keys), sorted
   const m = {};

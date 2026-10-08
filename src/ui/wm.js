@@ -1,5 +1,6 @@
 import { editorRelaunchOpen } from "./note-editor.js";
 import { editorDockChanged } from "./note-editor.js";
+import { softFocus } from "./chrome.js";
 import { S } from "../state.js";
 import { resize } from "./chrome.js";
 import { askScrollEnd } from "../ask/sheet.js";
@@ -919,7 +920,7 @@ export function initWm2() {
         if (m.target._srReturnFocus) {
           const back = m.target._srReturnFocus;
           m.target._srReturnFocus = null;
-          if (typeof back.focus === "function") try { back.focus(); } catch (err) {}
+          if (typeof back.focus === "function") try { if (back.tagName === "INPUT" || back.tagName === "TEXTAREA") softFocus(back); else back.focus(); } catch (err) {} // a text box gets it back only where that raises no keyboard unasked
         }
         continue;
       }

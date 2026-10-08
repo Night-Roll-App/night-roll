@@ -55,6 +55,7 @@ export const CONTROLS = {
   vwAdded: {glyph: "┄", cls: "", label: "  Outline new notes", prefix: "   "},
   vwBeatSub: {glyph: "&", cls: "", label: "  Beat subdivisions", prefix: "   "},
   vwRulerHl: {glyph: "▭", cls: "", label: "  Ruler highlight", prefix: "   "},
+  vwTextJump: {glyph: "⌨", cls: "", label: "  Jump into text boxes", prefix: "   "},
   vwVolume: {icon: "volumeUp", cls: "", label: "Volume slider", prefix: "   "},
   vwFooter: {icon: "viewAgenda", cls: "", label: "Bottom bar", prefix: "   "},
   vwInst: {icon: "piano", cls: "", label: "Instrument panel", prefix: "   "},

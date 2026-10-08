@@ -1,5 +1,6 @@
 import { canvas } from "../render/roll.js";
 import { showRulerHl } from "../ui/chrome.js";
+import { softFocus } from "../ui/chrome.js";
 import { tombstone } from "../model/edits.js";
 import { S } from "../state.js";
 import { pxPerTick } from "../render/roll.js";
@@ -506,8 +507,7 @@ export function openBarJump() {
   inp.max = String(bars);
   document.getElementById("bjof").textContent = "of " + bars;
   document.getElementById("barjumpsheet").classList.add("on");
-  if (typeof inp.focus === "function") inp.focus();
-  if (typeof inp.select === "function") inp.select(); // digits replace the old bar
+  softFocus(inp, true); // digits replace the old bar — with a keyboard; on touch, a tap on the box (View › Display → Jump into text boxes)
 }
 export function jumpBarCap() { return askBarsCount() + (editableSong() ? PAN_TAIL_BARS : 0); }
 export function jumpToTick(tick) { // Go to bar's tail, shared with Ask's go_to action (src/ask/actions.js): seek (restart there while playing), then bring an off-screen cursor into view

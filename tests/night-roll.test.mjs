@@ -2997,6 +2997,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Jump into text boxes",
     "Docked annotation window", "follows what you select",
     "Every undo and redo says what it took back",
     "Ruler highlight",
@@ -15085,10 +15086,10 @@ test("album play survives a relaunch (Josh #205/#206): a live run is remembered;
 
 test("note editor (Josh #227): picking Section puts the cursor in the label, not the text box", () => {
   installSong();
-  run(`globalThis.__fx = []; for (const id of ["nsectlabel", "ntext"]) document.getElementById(id).focus = () => __fx.push(id);`);
+  run(`globalThis.__fx = []; for (const id of ["nsectlabel", "ntext"]) document.getElementById(id).focus = () => __fx.push(id); setTextJump(true);`); // the cursor jumps only where that raises no keyboard unasked (Josh #251)
   run(`pickEditorType("section");`);
   assert.deepEqual(val(`__fx`), ["nsectlabel"]);
-  run(`for (const id of ["nsectlabel", "ntext"]) delete document.getElementById(id).focus; pickEditorType("note");`);
+  run(`for (const id of ["nsectlabel", "ntext"]) document.getElementById(id).focus = () => {}; pickEditorType("note"); try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {} textJumpOn.v = undefined;`);
 });
 
 test("the annotation window is dockable (Josh #236); a relaunch brings back only a DOCKED one (Terminal #245, plan R17)", () => {
@@ -15375,4 +15376,42 @@ test("docked annotation window: a lasso reaching into the ruler counts as a sele
   assert.equal(val(`edFollow.mode`), "new", "and follows the next span");
   run(`wm = {}; wmLayoutAll();`);
   dockTeardown();
+});
+
+test("Jump into text boxes (Josh, Terminal #251/#253): every programmatic text-box focus goes through softFocus — off by default on touch, on with a mouse/trackpad, a View › Display switch either way; Ask set_pref text_jump", () => {
+  installSong();
+  run(`for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fnbpm", "fsname", "fsnewfolder", "fmnewfolder"]) document.getElementById(id).focus = () => {};`);
+  app.tick(10000); // an earlier floating open's 50 ms focus timer may still be queued
+  run(`globalThis.__fx = []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fnbpm", "fsname", "fsnewfolder", "fmnewfolder"]) { const el = document.getElementById(id); el.focus = () => __fx.push(id); el.select = () => {}; }
+    if (!document.querySelectorAll) document.querySelectorAll = () => []; document.getElementById("noteeditor").classList.remove("docked");
+    globalThis.__keepMM = window.matchMedia; try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {}`);
+  const sites = () => run(`rangeSel = null; openEditor(null); openEditor(null, "song"); pickEditorType("section"); rangeSel = {a: 0, b: barTicks(), cycle: true}; openEditor(null, "chord"); rangeSel = null;
+    openBarJump(); document.getElementById("filerename").dispatchEvent({type: "click"}); document.getElementById("filenew").dispatchEvent({type: "click"});
+    document.getElementById("noteeditor").classList.remove("on"); document.getElementById("barjumpsheet").classList.remove("on");`);
+  // a touch screen (coarse pointer), nothing saved: nothing focuses
+  run(`window.matchMedia = q => ({matches: false}); textJumpOn.v = undefined; songKey = "midi/test.mid";`);
+  assert.equal(val(`textJumpOn()`), false, "touch: off by default");
+  sites(); app.tick(200);
+  assert.deepEqual(val(`__fx`), [], "touch: + Note, a song note, the Section chip, a span's chord box, Go to bar, Rename, New song — none raise the keyboard");
+  // a mouse/trackpad: on by default, the old behaviour
+  run(`window.matchMedia = q => ({matches: /pointer: fine/.test(q)}); textJumpOn.v = undefined; __fx = [];`);
+  assert.equal(val(`textJumpOn()`), true, "fine pointer: on by default");
+  sites(); app.tick(200);
+  assert.deepEqual(val(`[...new Set(__fx)].sort()`), ["bjbar", "fnbpm", "frname", "nchordsym", "nsectlabel", "nsongtitle", "ntext"].sort());
+  // the switch wins over the pointer, remembered on this device
+  run(`setTextJump(false); textJumpOn.v = undefined; __fx = [];`);
+  assert.equal(val(`textJumpOn()`), false, "turned off with a mouse: stays off");
+  run(`window.matchMedia = q => ({matches: false}); setTextJump(true); textJumpOn.v = undefined;`);
+  assert.equal(val(`textJumpOn()`), true, "an iPad with a hardware keyboard turns it on");
+  assert.equal(val(`askSetPref({name: "text_jump", value: false}).ok`), true);
+  assert.equal(val(`textJumpOn()`), false);
+  assert.match(val(`String(renderViewMenu)`), /set\("vwTextJump", textJumpOn\(\)\)/, "View › Display shows it");
+  // no bare .focus() on a text box anywhere in src/, but moving on from a box he is typing in
+  const bare = [];
+  for (const f of readdirSync(new URL("../src/", import.meta.url), {recursive: true}).filter(p => String(p).endsWith(".js"))) {
+    const src = readFileSync(new URL("../src/" + f, import.meta.url), "utf8");
+    for (const line of src.split("\n")) if (/\.focus\(\)/.test(line) && !/^\s*\/\//.test(line) && !/e\.key === "Enter"/.test(line) && !/el\.focus\(\);$/.test(line.trim()) && !/back\.focus\(\)/.test(line)) bare.push(f + ": " + line.trim());
+  }
+  assert.deepEqual(bare, []);
+  run(`window.matchMedia = __keepMM; try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {} textJumpOn.v = undefined;`);
 });

@@ -103,6 +103,7 @@ import { wmInnerWidth } from "./wm.js";
 import { wmLayoutAll } from "./wm.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { showRulerHl } from "./chrome.js";
+import { softFocus } from "./chrome.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
 
@@ -228,7 +229,7 @@ export function pickEditorType(v) {
     return;
   }
   // Section: the label is what he types first, and usually all (Josh #227) — the cursor goes there, not the text box
-  if (v === "section") document.getElementById("nsectlabel").focus();
+  if (v === "section") softFocus(document.getElementById("nsectlabel"));
 }
 // what the typed words look like — only the WHOLE text, only these four
 // shapes; anything else stays a note. Reads his own words, never the music.
@@ -391,13 +392,14 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
   editorRender();
   editor.classList.add("on");
   if (!note && S.rangeSel) setTimeout(() =>
-    document.getElementById(type === "chord" ? "nchordsym" : "ntext").focus(), 50);
+    softFocus(document.getElementById(type === "chord" ? "nchordsym" : "ntext")), 50);
   // the text box gets focus only for a NEW text note, where typing is the
   // next thing — opening an existing one (any kind) must not raise the iPad
-  // keyboard over half the screen (Josh, 2026-10-03)
-  if (type === "note" && !note) document.getElementById("ntext").focus();
-  else if (type === "section" && !note) document.getElementById("nsectlabel").focus(); // a new section starts with its label (Josh #227)
-  else if (type === "song" && !note) document.getElementById("nsongtitle").focus(); // a new song note starts with its title
+  // keyboard over half the screen (Josh, 2026-10-03); and only where focus
+  // raises no keyboard unasked (softFocus, Josh #251)
+  if (type === "note" && !note) softFocus(document.getElementById("ntext"));
+  else if (type === "section" && !note) softFocus(document.getElementById("nsectlabel")); // a new section starts with its label (Josh #227)
+  else if (type === "song" && !note) softFocus(document.getElementById("nsongtitle")); // a new song note starts with its title
   else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
 }
 // fills every field for `note` (or a new entry); never shows the window and

@@ -2432,6 +2432,14 @@ sync (GitHub Contents API, 409 retry) · key dial · help sheet.
   material, glossary.md); docs/design/ (score-view-plan.md = score
   history/limitations, and the other design records); docs/README.md is
   the index.
+- **No bare `.focus()` on a text box** (Josh, Terminal #251/#253): a focus
+  raises the iPad's on-screen keyboard. Every programmatic focus of an
+  input/textarea goes through `softFocus(el, select?)` (src/ui/chrome.js),
+  which acts only when `textJumpOn()` — View › Display "Jump into text
+  boxes", device-local `ff1roll-textjump`, unset = on with a fine pointer
+  (mouse/trackpad), off on touch; Ask `set_pref text_jump`. The one
+  exception: Enter moving on from a box he is already typing in (the
+  keyboard is up anyway). A night-roll test scans src/ for bare focuses.
 
 ## Tracks/Arrange view (advisor-designed, 2026-08-22)
 

@@ -555,6 +555,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwAdded: {glyph: "┄", text: "Outline new notes"},
     vwBeatSub: {glyph: "&", text: "Beat subdivisions"},
     vwRulerHl: {glyph: "▭", text: "Ruler highlight"},
+    vwTextJump: {glyph: "⌨", text: "Jump into text boxes"},
     vwVolume: {icon: "volumeUp", text: "Volume slider"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
     vwInst: {icon: "piano", text: "Instrument panel"},
@@ -622,6 +623,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwAdded", showAddedOutline());
   set("vwBeatSub", showBeatSub());
   set("vwRulerHl", showRulerHl());
+  set("vwTextJump", textJumpOn());
   set("vwVolume", volBtnShown());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
   set("vwSub", S.subOn);
@@ -1172,6 +1174,33 @@ export function setRulerHl(on) {
   showRulerHl.v = !!on;
   try { localStorage.setItem("ff1roll-ruler-hl", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
   if (!on && S.rangeSel) { S.rangeSel = null; editorFollowSelection(); draw(); } // turning it off clears the one showing now
+}
+// "Jump into text boxes" (Josh, Terminal #251/#253): whether the app may put
+// the cursor in a text box by itself. A focus is what raises the iPad's
+// on-screen keyboard over half the screen, so it is off by default on touch
+// and on with a mouse/trackpad (the Save sheet's old pointer: fine rule); a
+// hardware keyboard on the iPad turns it on in View › Display. Device-local.
+export function textJumpOn() {
+  if (textJumpOn.v === undefined) { // the saved switch; null = never set, so the pointer decides each time (a trackpad attached later counts)
+    let saved = null;
+    try { saved = localStorage.getItem("ff1roll-textjump"); } catch (err) { /* private mode */ }
+    textJumpOn.v = saved === "1" ? true : saved === "0" ? false : null;
+  }
+  if (textJumpOn.v !== null) return textJumpOn.v;
+  try { return !!(typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: fine)").matches); } catch (err) { return false; } // old engines: treat as touch
+}
+export function setTextJump(on) {
+  textJumpOn.v = !!on;
+  try { localStorage.setItem("ff1roll-textjump", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+}
+// every programmatic focus of a text box goes through here — never a bare
+// .focus() on an input/textarea, except to move on from a box he is already
+// typing in (the keyboard is up anyway). select: also select its text.
+export function softFocus(el, select) {
+  if (!el || typeof el.focus !== "function" || !textJumpOn()) return false;
+  el.focus();
+  if (select && typeof el.select === "function") el.select();
+  return true;
 }
 export function showBeatSub() {
   if (showBeatSub.v === undefined) {
@@ -2116,6 +2145,7 @@ export function initChrome11() {
     on("vwVolume", () => setVolBtnShown(!volBtnShown())); // the top bar's 🔊 (Josh #187: hidden by default)
     on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
     on("vwRulerHl", () => { setRulerHl(!showRulerHl()); renderViewMenu(); });
+    on("vwTextJump", () => { setTextJump(!textJumpOn()); renderViewMenu(); });
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());
     on("vwSub", () => toggleSubtitle());
@@ -2238,7 +2268,7 @@ export function initChrome11() {
   document.getElementById("fmdest").addEventListener("change", () => {
     const isNew = document.getElementById("fmdest").value === "__new__";
     document.getElementById("fmnewfolder").style.display = isNew ? "" : "none";
-    if (isNew) document.getElementById("fmnewfolder").focus();
+    if (isNew) softFocus(document.getElementById("fmnewfolder"));
   });
   document.getElementById("fmgo").addEventListener("click", e => {
     const folder = chosenFolder(document.getElementById("fmdest"), document.getElementById("fmnewfolder"));
@@ -2280,7 +2310,7 @@ export function initChrome12() {
   document.getElementById("filenew").addEventListener("click", () => {
     document.getElementById("filenewform").style.display = "";
     document.getElementById("filesaveasform").style.display = "none";
-    document.getElementById("fnbpm").focus();
+    softFocus(document.getElementById("fnbpm"));
   });
   document.getElementById("fncreate").addEventListener("click", () => {
     stop();
@@ -2300,15 +2330,15 @@ export function initChrome12() {
   document.getElementById("fsfolder").addEventListener("change", () => {
     const isNew = document.getElementById("fsfolder").value === "__new__";
     document.getElementById("fsnewfolder").style.display = isNew ? "" : "none";
-    if (isNew) document.getElementById("fsnewfolder").focus();
+    if (isNew) softFocus(document.getElementById("fsnewfolder"));
   });
   document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) openSaveForm("fork"); });
   document.getElementById("fsgo").addEventListener("click", async () => {
     const form = document.getElementById("filesaveasform");
     const name = document.getElementById("fsname").value;
     const folder = chosenFolder(document.getElementById("fsfolder"), document.getElementById("fsnewfolder"));
-    if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); document.getElementById("fsnewfolder").focus(); return; }
-    if (!name.trim()) { fileStatus("⚠ Name the song."); document.getElementById("fsname").focus(); return; }
+    if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); softFocus(document.getElementById("fsnewfolder")); return; }
+    if (!name.trim()) { fileStatus("⚠ Name the song."); softFocus(document.getElementById("fsname")); return; }
     stop();
     if (form.dataset.mode === "editcopy") {
       makeItMine(name, folder);
@@ -2340,8 +2370,7 @@ export function initChrome12() {
     document.getElementById("filesaveasform").style.display = "none";
     const inp = document.getElementById("frname");
     inp.value = songTitleOf(S.songKey);
-    inp.focus();
-    inp.select();
+    softFocus(inp, true);
   });
   document.getElementById("frname").addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); document.getElementById("frgo").click(); }
