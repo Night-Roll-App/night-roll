@@ -231,5 +231,6 @@ Volume at onset (`vol`, 0–15) is the envelope's initial volume — accent
 data straight from the ROM, as on the NES; `volEnd` records where the
 hardware envelope (or a software volume walk) leaves it, so playback can
 ramp. Duty rides as before (CC70). Sweep is applied to the pitch the
-renderer plays but the reconstructor reports the *written* period plus a
-`sweep` field; a sweep glide is one note, not a chain.
+renderer plays; the reconstructor judges notes on the *written* period, so
+a sweep glide is one note, not a chain, and capture v2 records the swept
+pitch as that note's bend (NIGHT-ROLL.md "Game Boy capture v2").

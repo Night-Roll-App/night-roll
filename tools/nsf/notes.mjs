@@ -183,9 +183,16 @@ export function collapseSlides(events) {
           if (list[j].dutySeries) list[j].dutySeries = list[j].dutySeries.map(([f, v], k) => [k ? f + early : 0, v]);
           if (list[j].bendSeries) list[j].bendSeries = slideBend(list, i, j, list[j]);
           list[j].startFrame = list[i].startFrame;
+          // GB capture v2's glide link: it now starts where the chain did, so it
+          // takes the link of the chain's first piece that sounded (a 0-frame
+          // piece is a register write's setup and never played)
+          const head = list.slice(i, j).find(e => e.endFrame > e.startFrame);
+          if (head) { if (head.lg) list[j].lg = true; else delete list[j].lg; }
           for (let k = i; k < j; k++) dead.add(list[k]);
         } else {              // pure ornament: first pitch, whole span
           if (list[i].bendSeries) list[i].bendSeries = slideBend(list, i, j, list[i]);
+          const head = list.slice(i, j + 1).find(e => e.endFrame > e.startFrame); // the glide link, as above
+          if (head && head !== list[i]) { if (head.lg) list[i].lg = true; else delete list[i].lg; }
           list[i].endFrame = list[j].endFrame;
           for (let k = i + 1; k <= j; k++) dead.add(list[k]);
         }

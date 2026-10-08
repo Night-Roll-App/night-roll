@@ -7717,6 +7717,78 @@ FF7 "You Can Hear the Cry of the Planet" when the rip file is on disk
 (`PS1_RIPS=<dir>` or /tmp/recap/rips/ps1): 879 links, bends, CC91, programs,
 no note moved.
 
+## Game Boy capture v2 — envelopes, pan, wave programs, sweep and slide bends, glide links, duty (2026-10-07)
+
+docs/plans/2026-10-07-capture-audit-2-and-glide.md §1 "Game Boy" and §3.2,
+on the NES v2 model and the same makeMidi event path. What a GBS capture
+now writes on top of v1, every value read from the APU registers the same
+way for every game (no per-game table). The notes — start, length, pitch,
+velocity, `ve`, duty at the attack, track order and names, tempo, loop —
+are v1's: `reconstruct` (tools/gbs/notes.mjs) makes exactly v1's note
+decisions and hangs series on each event, `[[frames from its start, value]…]`
+like the NES ones, so the t0 shift and loop backport carry them along.
+
+- **Volume envelope (NRx2) → `n.env`.** `volSeries` takes the level at each
+  change: hardware envelope steps up or down (64 Hz frame sequencer), a
+  software fade's same-pitch retrigger at a lower level, the wave channel's
+  NR32 level (100/50/25%). makeMidi uses `GB_SHAPE` (`{falls: true, tol: 1,
+  floor: 8}`; `CHIPS.gbs.midiOpts` passes it). A series is dropped when it is
+  a plain fall at a steady rate (within one level of the straight line from
+  start to end): that is what v1's `ve` already plays (one linear ramp), so
+  a decaying note writes the bytes it always did. A rise, a stepped fade or a
+  level walk is a shape. An envelope that starts at level 0 and rises still
+  opens the note at its first audible step (v1), now with the climb.
+- **NR51 → CC10.** Left only 1, both 64, right only 127, per channel; a move
+  while a note holds lands inside it. Centre writes nothing; a still side is
+  one CC10 (→ `midiPan`); a moving one stays CC10 events in `tr.ctl`. Both
+  bits clear is still "unrouted" (ends the note, v1).
+- **Wave RAM → program.** Each distinct 32-sample table is a program number
+  in first-use order within the song (`e.prog`; makeMidi reads `e.prog`
+  before the SNES's `srcn`), at tick 0 and then where the table changes. The
+  audit's `wave:<32 hex>` meta is NOT written: parseMidi reads no such meta,
+  so publish would drop it. Programs are stored, never played.
+- **Pitch → bend.** `bendSeries` = cents from the pitch the note settled on
+  in its first frame (a period write in that frame is setup, as NES duty):
+  every period move the 70-cent guard keeps inside the note (vibrato,
+  detune, slide steps), and **pulse 1's sweep (NR10)** as the hardware
+  clocks it (128 Hz, shadow register, add/subtract, apu-render.mjs's model;
+  `c.eff` is the sounding period, v1's `c.period` the written one). A sweep
+  never changes the notes: v1 judged them on the written period and still
+  does; past 2047 the bend stops following (the chip silences pulse 1 there,
+  and v1's note stays — an existing v1 fact). RPN range past ±2 as on the NES.
+- **Glide links (`lg`).** A note that opens on a period change with NO
+  trigger (NRx4 bit 7 clear) while the channel sounds is a continuation:
+  `e.lg`, and makeMidi writes CC84 + chain-relative bends ("Glide (CC84)").
+  Never on noise, never in a frame that triggered the channel (FFL and SML
+  trigger on the stale period and then write NR13/NR14), and a note that
+  replaces one opened in the same frame keeps that note's link or lack of
+  one (NR13 then NR14 without a trigger is still one continuation); a
+  trigger in a note's own opening frame that v1 reads as a fade clears it
+  (Pokémon: NR13, then NR14 with bit 7). `collapseSlides` (shared with the
+  NES; NES events never carry `lg`) gives a merged note the link of the
+  chain's first piece that sounded — a 0-frame piece is setup.
+- **Duty inside a note → CC70** (`dutySeries` → `n.duties`, NES v2's path);
+  a write in the note's first frame is setup, `duty` stays the attack's.
+- **Not in v2:** NR50 master volume/fades (CC7: trackBytes has no CC7
+  timeline yet), noise 7-bit mode, the console voice's NR51 stereo (§3.3,
+  renderer side).
+
+Re-capture verdicts (main's capture vs v2, tools/capture-diff.mjs; scratch
+trees in /tmp, nothing under albums/ written): open-items "Game Boy capture v2".
+
+Tests: tests/gbs.test.mjs "GB capture v2 …" — `makeScriptGBS(writes)`
+(make-test-gbs.mjs: an SM83 PLAY routine that replays [[frame, addr,
+value]…]) for each feature (envelope up → rising shape, steady fall →
+v1's bytes; software fade and NR32 walk → falling shape; NR51 one side /
+moving / centre; wave tables → programs; sweep up and down → bend on one
+note; no-trigger move → CC84, trigger and both setup orders → none, noise
+never; duty → CC70), everything at once against the v1 view through
+capture-diff (VELOCITY, gains listed), the app's own captureChipTrack +
+parseMidi + publish re-encode (links, bends, pan, programs, shapes, duty;
+notes identical to the capture with v2's fields removed), and Link's
+Awakening "Main Theme" when the rip is cached (`GB_RIPS=<dir>` or
+/tmp/recap/rips/game-boy; the guard checks the file).
+
 ## Patches — the track's own instrument (patches v1, 2026-10-06)
 
 Josh approved "patches v1" (docs/plans/2026-10-06-envelopes-lfo-review.md
@@ -7942,7 +8014,7 @@ plays as one sound with its predecessor.
   strings, bell, pluck (they strike), drums, game/sf2 instruments
   (scheduleGameNote bakes each note's envelope — a render-the-chain pass is
   later), or the console voice (it replays the rip).
-- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2".
+- **Captures that mark `lg`:** PS1 (AKAO) — "PS1 capture v2"; Game Boy — "Game Boy capture v2".
 - **Not in this step:** the other captures marking `lg` (the per-console builders,
   §3.2), continuation velocity from the chip's real level, the optional
   connector line between linked notes (Q4), linking notes by hand (that

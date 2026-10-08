@@ -345,7 +345,8 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     // an SRCN past 127 has no program number (never folded onto another's)
     const pan = e.panSeries ? ccFromSeries(e.panSeries, d, tpf) : undefined;
     const rev = e.echoSeries ? ccFromSeries(e.echoSeries, d, tpf) : undefined;
-    const prog = e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined ? e.srcn : undefined;
+    const prog = e.prog !== undefined ? e.prog // a chip's own timbre number (Game Boy wave table, capture v2)
+      : e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined ? e.srcn : undefined;
     (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
       ...(pan ? {pan} : {}), ...(rev ? {rev} : {}), ...(prog !== undefined ? {prog} : {}),
       ...(e.channel === "dpcm" ? {sample: e.midi} : {}),

@@ -184,7 +184,8 @@ curve. Renders at roughly 300–400× realtime in Node.
   `volEnd` < `vol`. Wave-channel retriggers are always new notes.
 - **Sweep.** The reconstructor reports the WRITTEN period; a pulse-1
   sweep glide is one note at its starting pitch (the renderer plays the
-  glide). Kick drums made from pulse sweeps show as one low note.
+  glide). Kick drums made from pulse sweeps show as one low note. Since
+  capture v2 the swept pitch rides on that note as pitch bend.
 - **Sub-frame notes are dropped.** A note that starts and ends within one
   PLAY call (e.g. a 1-tick length of 3.9 ms) has zero frames and is
   filtered — the NSF path's granularity too.

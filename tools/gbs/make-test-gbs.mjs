@@ -73,3 +73,52 @@ export function makeTestGBS() {
   out.set(code, 0x70);
   return out;
 }
+
+// A GBS whose PLAY replays a register script, [[frame, addr, value]…] with
+// frame ≥ 1 (the Nth PLAY call is frame N, runGBS's numbering) and addr in
+// $FF10-$FF3F — the GB twin of make-test-nsf.mjs's makeScriptNSF, so the
+// capture v2 tests can drive any register sequence through the real CPU.
+// The player has already powered the APU (NR52/NR50/NR51) before INIT.
+export function makeScriptGBS(writes, name = "Night Roll script test") {
+  const LOAD = 0x0400;
+  const code = [];
+  const emit = (...bytes) => code.push(...bytes);
+  const jr = (op) => { emit(op, 0); return code.length - 1; };
+  // ---- init: frame counter $C000/$C001 = 1, table pointer $C002/$C003 (patched)
+  emit(0x3E, 1, 0xEA, 0x00, 0xC0, 0xAF, 0xEA, 0x01, 0xC0);
+  const ptrLo = code.length; emit(0x3E, 0, 0xEA, 0x02, 0xC0);
+  const ptrHi = code.length; emit(0x3E, 0, 0xEA, 0x03, 0xC0);
+  emit(0xC9);
+  const playOff = code.length;
+  // ---- play: while the entry's frame == the counter, LD ($FF00+port),value; advance 4
+  const loop = code.length;
+  emit(0xFA, 0x02, 0xC0, 0x6F, 0xFA, 0x03, 0xC0, 0x67); // HL = pointer
+  emit(0x2A, 0x47, 0xFA, 0x00, 0xC0, 0xB8);             // LD A,(HL+) / LD B,A / LD A,($C000) / CP B
+  const j1 = jr(0x20);                                  // JR NZ,done
+  emit(0x2A, 0x47, 0xFA, 0x01, 0xC0, 0xB8);
+  const j2 = jr(0x20);
+  emit(0x2A, 0x4F, 0x2A, 0xE2);                         // port -> C, value -> LD (C),A
+  emit(0x7D, 0xEA, 0x02, 0xC0, 0x7C, 0xEA, 0x03, 0xC0); // pointer = HL
+  const j3 = jr(0x18);                                  // JR loop
+  code[j3] = (loop - (j3 + 1)) & 0xFF;
+  const done = code.length;
+  code[j1] = done - (j1 + 1); code[j2] = done - (j2 + 1);
+  emit(0xFA, 0x00, 0xC0, 0x3C, 0xEA, 0x00, 0xC0, 0xC0); // counter lo++ / RET NZ
+  emit(0xFA, 0x01, 0xC0, 0x3C, 0xEA, 0x01, 0xC0, 0xC9); // counter hi++ / RET
+  const table = code.length;
+  for (const [f, a, v] of [...writes].sort((x, y) => x[0] - y[0])) emit(f & 0xFF, f >> 8, a & 0xFF, v);
+  emit(0xFF, 0xFF, 0, 0); // a frame the counter never reaches
+  code[ptrLo + 1] = (LOAD + table) & 0xFF;
+  code[ptrHi + 1] = (LOAD + table) >> 8;
+  const header = new Uint8Array(0x70);
+  header[0] = 0x47; header[1] = 0x42; header[2] = 0x53; header[3] = 1; header[4] = 1; header[5] = 1;
+  header[0x06] = LOAD & 0xFF; header[0x07] = LOAD >> 8;
+  header[0x08] = LOAD & 0xFF; header[0x09] = LOAD >> 8;
+  header[0x0A] = (LOAD + playOff) & 0xFF; header[0x0B] = (LOAD + playOff) >> 8;
+  header[0x0C] = 0xFE; header[0x0D] = 0xFF;
+  for (let i = 0; i < Math.min(31, name.length); i++) header[0x10 + i] = name.charCodeAt(i);
+  const out = new Uint8Array(0x70 + code.length);
+  out.set(header, 0);
+  out.set(code, 0x70);
+  return out;
+}

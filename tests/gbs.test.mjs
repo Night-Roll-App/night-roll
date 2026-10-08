@@ -4,10 +4,12 @@
 // tests/nsf.test.mjs.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeTestGBS } from "../tools/gbs/make-test-gbs.mjs";
+import { makeTestGBS, makeScriptGBS } from "../tools/gbs/make-test-gbs.mjs";
+import { existsSync, readFileSync } from "node:fs";
+import { readSmf, captureDiff } from "../tools/capture-diff.mjs";
 import { parseGBS, runGBS } from "../tools/gbs/gbs.mjs";
 import { SM83 } from "../tools/gbs/cpu-sm83.mjs";
-import { reconstruct, toNotesTxt, pitchName, makeMidi, waveCycles } from "../tools/gbs/notes.mjs";
+import { reconstruct, toNotesTxt, pitchName, makeMidi, waveCycles, GB_CHANNELS, gbNoiseDrum, GB_SHAPE } from "../tools/gbs/notes.mjs";
 import { renderApu } from "../tools/gbs/apu-render.mjs";
 
 test("GBS pipeline: synthetic tune comes back note-perfect with channel identity", () => {
@@ -412,4 +414,213 @@ test("GBS runner: the player powers the APU before INIT, so a driver that never 
   assert.ok(!apuLog.slice(3).some(w => w.addr === 0xFF26), "the patched driver writes none");
   const pulse1 = reconstruct(apuLog, frames, frameSec).filter(e => e.channel === "pulse1").map(e => pitchName(e.midi));
   assert.deepEqual(pulse1, ["C4", "E4", "G4", "C5"]);
+});
+
+// ---------------------------------------------------------------- capture v2
+// NIGHT-ROLL.md "Game Boy capture v2": each feature from a register script
+// played through the real SM83 (makeScriptGBS), then makeMidi + readSmf.
+const P1 = {vol: 0xFF12, lo: 0xFF13, hi: 0xFF14, duty: 0xFF11, sweep: 0xFF10};
+const P2 = {vol: 0xFF17, lo: 0xFF18, hi: 0xFF19, duty: 0xFF16};
+const note = (ch, f, x, {vol = 0xF0, trig = true} = {}) => [[f, ch.vol, vol], [f, ch.lo, x & 0xFF], [f, ch.hi, (trig ? 0x80 : 0) | (x >> 8)]];
+const pitchTo = (ch, f, x) => [[f, ch.lo, x & 0xFF], [f, ch.hi, x >> 8]]; // no trigger bit
+const TRI = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10];
+const SQR = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+const waveNote = (f, x, table, level = 0x20) => [[f, 0xFF1A, 0x00], ...table.map((b, i) => [f, 0xFF30 + i, b]), [f, 0xFF1A, 0x80], [f, 0xFF1C, level], [f, 0xFF1D, x & 0xFF], [f, 0xFF1E, 0x80 | (x >> 8)]];
+const capScript = (writes, secs = 3) => {
+  const r = runGBS(parseGBS(makeScriptGBS(writes).buffer), 1, secs);
+  return {...r, events: reconstruct(r.apuLog, r.frames, r.frameSec)};
+};
+const V2_FIELDS = ["volSeries", "bendSeries", "dutySeries", "panSeries", "prog", "lg"];
+const v1View = evs => evs.map(e => { const o = {...e}; for (const k of V2_FIELDS) delete o[k]; return o; });
+const smfOf = (events, frameSec) => readSmf(Buffer.from(makeMidi(events, {bpm: 120, frameSec})));
+const kinds = (smf, name, kind) => smf.tracks.find(t => t.name === name).other.filter(e => e.kind === kind);
+const A4 = 1750, C5 = 1797, D5 = 1825, C3W = 0x60B;
+
+test("GB capture v2: an envelope going UP is a rising shape; a steady fall stays v1's `ve` alone, byte for byte", () => {
+  const {events, frameSec} = capScript([
+    ...note(P1, 1, A4, {vol: 0x1D}),  // level 1, up, pace 5: 1 → 15
+    [100, P1.vol, 0x00],
+    ...note(P2, 1, C5, {vol: 0xF3}),  // level 15, down, pace 3: falls to silence at a steady rate
+  ]);
+  const up = events.find(e => e.channel === "pulse1"), down = events.find(e => e.channel === "pulse2");
+  assert.equal(up.vol, 1, "v1: the note opens at the envelope's first audible level");
+  assert.ok(up.volSeries && up.volSeries.at(-1)[1] === 15, "the series climbs to 15: " + JSON.stringify(up.volSeries));
+  assert.equal(down.volSeries, undefined, "a hardware fall at its steady rate is what `ve` already plays");
+  const smf = smfOf(events, frameSec);
+  const shape = kinds(smf, "pulse1", "shape").map(e => +e.key.split(":")[2]);
+  assert.ok(shape.length >= 1 && shape.every((v, k) => !k || v >= shape[k - 1]) && shape.at(-1) > 100, "rising in-note aftertouch: " + shape);
+  assert.ok(smf.tracks.find(t => t.name === "pulse1").notes[0].v < 16, "from the quiet attack (velocity = level 1)");
+  const fallOnly = capScript(note(P2, 1, C5, {vol: 0xF3}));
+  assert.deepEqual([...makeMidi(fallOnly.events, {bpm: 120, frameSec})], [...makeMidi(v1View(fallOnly.events), {bpm: 120, frameSec})], "nothing v2 adds to a plain decaying note");
+});
+
+test("GB capture v2: a software fade's steps and an NR32 level walk are falling shapes", () => {
+  const {events, frameSec} = capScript([
+    ...note(P1, 1, A4, {vol: 0xF0}), ...note(P1, 20, A4, {vol: 0xA0}), ...note(P1, 40, A4, {vol: 0x50}), [60, P1.vol, 0x00],
+    ...waveNote(1, C3W, TRI), [30, 0xFF1C, 0x40], [60, 0xFF1C, 0x60], [90, 0xFF1A, 0x00],
+  ]);
+  const p1 = events.filter(e => e.channel === "pulse1"), w = events.filter(e => e.channel === "wave");
+  assert.equal(p1.length, 1, "v1: a same-pitch retrigger at a lower level is a fade, one note");
+  assert.deepEqual(p1[0].volSeries.map(q => q[1]), [15, 10, 5]);
+  assert.equal(w.length, 1);
+  assert.deepEqual(w[0].volSeries.map(q => q[1]), [15, 8, 4], "NR32 100% → 50% → 25%");
+  const smf = smfOf(events, frameSec);
+  const lv = name => kinds(smf, name, "shape").map(e => +e.key.split(":")[2]);
+  assert.deepEqual(lv("pulse1").filter((v, k, a) => !k || v !== a[k - 1]).slice(-2), [85, 42], "10/15 and 5/15 of the attack");
+  assert.ok(lv("wave").includes(68) && lv("wave").includes(34), "8/15 and 4/15: " + lv("wave"));
+});
+
+test("GB capture v2: NR51 left/right is CC10 — one still side is one event, a move is a timeline, centre writes none", () => {
+  const {events, frameSec} = capScript([
+    [1, 0xFF25, 0xFE],                 // pulse1 left only
+    ...note(P1, 1, A4), ...note(P2, 1, C5), ...note(P1, 60, C5),
+    [30, 0xFF25, 0xDE],                // pulse2 right only, mid-note
+    ...waveNote(1, C3W, TRI),
+  ]);
+  const smf = smfOf(events, frameSec);
+  assert.deepEqual(kinds(smf, "pulse1", "cc10").map(e => e.key), ["0:1"], "left = 1, written once at tick 0");
+  const p2 = kinds(smf, "pulse2", "cc10");
+  assert.deepEqual(p2.map(e => e.key), ["1:64", "1:127"], "centre, then right inside the held note");
+  assert.ok(p2[1].t > 0);
+  assert.deepEqual(kinds(smf, "wave", "cc10"), [], "a centred channel writes nothing");
+  assert.equal(events.filter(e => e.channel === "pulse2").length, 1, "a pan move is not a new note");
+});
+
+test("GB capture v2: each wave RAM table is a program, numbered in first use; `wave:` is not written (parseMidi reads no such meta)", () => {
+  const {events, frameSec} = capScript([
+    ...waveNote(1, C3W, TRI), ...waveNote(21, C3W, SQR), ...waveNote(41, C3W, TRI), [60, 0xFF1A, 0x00],
+  ]);
+  const w = events.filter(e => e.channel === "wave");
+  assert.deepEqual(w.map(e => e.prog), [0, 1, 0]);
+  const smf = smfOf(events, frameSec);
+  assert.deepEqual(kinds(smf, "wave", "program").map(e => e.key), ["2:0", "2:1", "2:0"]);
+  assert.ok(!smf.tracks.some(t => t.other.some(e => e.kind === "meta01" && /^wave:/.test(e.key))));
+});
+
+test("GB capture v2: pulse 1's sweep (NR10) is pitch bend on the ONE note v1 wrote, up and down", () => {
+  for (const [nr10, sign] of [[0x27, 1], [0x2F, -1]]) { // pace 2, shift 7, add / subtract
+    const {events, frameSec} = capScript([[1, P1.sweep, nr10], ...note(P1, 1, 1024), [40, P1.vol, 0x00]]);
+    const p1 = events.filter(e => e.channel === "pulse1");
+    assert.equal(p1.length, 1, "v1 judges the written period: still one note");
+    const cents = p1[0].bendSeries.map(q => q[1]);
+    assert.ok(cents.every((c, k) => !k || sign * (c - cents[k - 1]) >= 0), "monotonic: " + cents);
+    assert.ok(sign * cents.at(-1) > 150, "the sweep moved it: " + cents.at(-1));
+    const smf = smfOf(events, frameSec);
+    assert.ok(kinds(smf, "pulse1", "bend").length >= 3, "written as pitch bend");
+  }
+  const flat = capScript([[1, P1.sweep, 0x00], ...note(P1, 1, 1024), [40, P1.vol, 0x00]]);
+  assert.equal(flat.events[0].bendSeries, undefined, "NR10 off: no bend");
+});
+
+test("GB capture v2: a period move with no trigger is a glide link (CC84); a trigger is not; a trigger's same-frame setup is not either", () => {
+  const vib = [];
+  for (let f = 2; f < 20; f++) vib.push(...pitchTo(P1, f, A4 + (f % 4 < 2 ? 2 : -2))); // ±~20 cents: inside the note
+  const {events, frameSec} = capScript([
+    ...note(P1, 1, A4), ...vib, [20, P1.lo, A4 & 0xFF],
+    ...pitchTo(P1, 21, C5),                                      // no trigger: the chip plays on
+    ...note(P1, 41, D5),                                         // trigger
+    [61, P1.vol, 0xF0], [61, P1.hi, 0x80 | (A4 >> 8)], [61, P1.lo, C5 & 0xFF], [61, P1.hi, C5 >> 8], // FFL's order: trigger on the stale period, then the new one
+    [70, P1.vol, 0x90], [70, P1.lo, 0x39], [70, P1.hi, 0x87],  // Pokémon's order: NR13 to E5 first, then a trigger at a lower level (v1 reads it as a fade, one note)
+    [80, P1.vol, 0x00],
+  ]);
+  const p1 = events.filter(e => e.channel === "pulse1");
+  assert.deepEqual(p1.map(e => pitchName(e.midi)), ["A4", "C5", "D5", "C5", "E5"], "slides stay separate notes on screen");
+  assert.deepEqual(p1.map(e => !!e.lg), [false, true, false, false, false], "a trigger in the frame a note opened is a restart");
+  assert.ok(p1[0].bendSeries && p1[0].bendSeries.length > 4, "the vibrato rides as bend");
+  const smf = smfOf(events, frameSec), tr = smf.tracks.find(t => t.name === "pulse1");
+  const links = kinds(smf, "pulse1", "cc84");
+  assert.equal(links.length, 1);
+  assert.equal(links[0].key, "0:69", "CC84 = the key it continues from");
+  assert.equal(links[0].t, tr.notes[1].t, "at the continuation's own tick");
+  const noise = capScript([[1, 0xFF21, 0xF0], [1, 0xFF22, 0x40], [1, 0xFF23, 0x80], [10, 0xFF22, 0x10], [30, 0xFF21, 0]]);
+  assert.ok(noise.events.length === 2 && !noise.events.some(e => e.lg), "noise never links");
+});
+
+test("GB capture v2: a duty change inside a held pulse note is CC70 there; the first frame's write is setup", () => {
+  const {events, frameSec} = capScript([[1, P1.duty, 0x40], ...note(P1, 1, A4), [1, P1.duty, 0x80], [20, P1.duty, 0xC0], [40, P1.vol, 0x00]]);
+  const p1 = events.filter(e => e.channel === "pulse1");
+  assert.equal(p1.length, 1);
+  assert.equal(p1[0].duty, 1, "the duty at the trigger (v1); the same-frame rewrite is setup");
+  assert.deepEqual(p1[0].dutySeries, [[0, 1], [19, 3]]);
+  const cc70 = kinds(smfOf(events, frameSec), "pulse1", "cc70");
+  assert.deepEqual(cc70.map(e => e.key), ["0:1", "0:3"]);
+  assert.ok(cc70[1].t > 0);
+});
+
+test("GB capture v2: every feature at once moves no note — capture-diff against the v1 view says VELOCITY, with the gains", () => {
+  const vib = [];
+  for (let f = 2; f < 20; f++) vib.push(...pitchTo(P2, f, C5 + (f % 4 < 2 ? 2 : -2)));
+  const {events, frameSec} = capScript([
+    [1, 0xFF25, 0xDE], [1, P1.sweep, 0x27], ...note(P1, 1, 1024), [10, P1.duty, 0xC0], [20, P1.duty, 0x40], [29, P1.sweep, 0x00], ...note(P1, 30, A4, {vol: 0x1D}), [70, P1.vol, 0],
+    ...note(P2, 1, C5), ...vib, ...pitchTo(P2, 21, D5), [50, 0xFF25, 0xFF], [60, P2.vol, 0],
+    ...waveNote(1, C3W, TRI), ...waveNote(30, C3W, SQR), [30, 0xFF1C, 0x20], [45, 0xFF1C, 0x40], [70, 0xFF1A, 0],
+    [1, 0xFF21, 0xF1], [1, 0xFF22, 0x40], [1, 0xFF23, 0x80],
+  ]);
+  const before = smfOf(v1View(events), frameSec), after = smfOf(events, frameSec);
+  const r = captureDiff(before, after);
+  assert.equal(r.verdict, "VELOCITY", r.reasons.join("; "));
+  for (const k of ["cc84", "bend", "cc10", "program", "shape", "cc70"]) assert.ok(r.gained[k] > 0, k + " gained: " + JSON.stringify(r.gained));
+  assert.deepEqual(r.lost, {});
+});
+
+// real rip, when the dry-run cache has it (GB_RIPS=<dir> or tools/recapture.mjs's
+// /tmp/recap/rips/game-boy); the guard checks the FILE, so an empty cache skips
+const GB_RIP_DIR = process.env.GB_RIPS || "/tmp/recap/rips/game-boy";
+const laRip = GB_RIP_DIR + "/links-awakening.gbs";
+test("GB capture v2 on Link's Awakening \"Main Theme\" (real rip): shapes, bends and the wave program, notes as v1", {skip: !existsSync(laRip) && "no Link's Awakening rip cached"}, () => {
+  const gbs = parseGBS(readFileSync(laRip).buffer);
+  const r = runGBS(gbs, 2, 20); // album.json: main-theme = song 2
+  const events = reconstruct(r.apuLog, r.frames, r.frameSec);
+  assert.ok(events.length > 50);
+  assert.ok(events.some(e => e.bendSeries), "vibrato/slides as bend");
+  assert.ok(events.some(e => e.volSeries), "envelope shapes");
+  assert.ok(events.some(e => e.prog !== undefined), "the wave table as a program");
+  const res = captureDiff(smfOf(v1View(events), r.frameSec), smfOf(events, r.frameSec));
+  assert.equal(res.verdict, "VELOCITY", res.reasons.join("; "));
+});
+
+test("GB capture v2 in the app's own capture (captureChipTrack + parseMidi + the publish re-encode): links, bends, pan, programs, shapes and duty all arrive", async () => {
+  const { createApp } = await import("./harness.mjs");
+  const mods = await Promise.all(["gbs/gbs", "gbs/notes", "nsf/notes", "nsf/midi-write"].map(f => import("../tools/" + f + ".mjs")));
+  const gb = mods[1];
+  const app = await createApp();
+  const C = app.context;
+  C.setTimeout = setTimeout; C.clearTimeout = clearTimeout;
+  C.__M = Object.assign({}, ...mods, {reconstruct: gb.reconstruct, toNotesTxt: gb.toNotesTxt}); // the browser's merge (chipModules)
+  const vib = [];
+  for (let f = 2; f < 30; f++) vib.push(...pitchTo(P2, f, C5 + (f % 4 < 2 ? 2 : -2)));
+  const bar = [];
+  for (let k = 0; k < 4; k++) { // four bars of quarter notes, so the tempo fit and the loop-less path see music
+    const f0 = 1 + k * 120;
+    bar.push(...note(P1, f0, A4, {vol: 0x1D}), [f0 + 15, P1.duty, 0xC0], [f0 + 29, P1.duty, 0x80], ...note(P1, f0 + 30, C5), ...pitchTo(P1, f0 + 60, D5), ...note(P1, f0 + 90, A4));
+    bar.push(...waveNote(f0, C3W, k % 2 ? SQR : TRI), [f0 + 60, 0xFF1C, 0x40]);
+  }
+  C.__gbs = parseGBS(makeScriptGBS([[1, 0xFF25, 0xDE], ...bar, ...note(P2, 1, C5), ...vib, [200, 0xFF25, 0xFF], [470, P1.vol, 0], [470, P2.vol, 0], [470, 0xFF1A, 0]]).buffer);
+  const cap = await app.run("captureChipTrack('gbs', __M, __gbs, 1, 10, null)");
+  C.__b = cap.bytes;
+  const got = JSON.parse(app.run(`JSON.stringify((() => {
+    const a = parseMidi(__b.buffer);
+    const b = parseMidi(writeMidi({ppq: a.ppq, timesig: a.timesig, tempos: a.tempos, tracks: a.tracks.map(t => ({...t}))}).buffer);
+    const sum = s => s.tracks.map(t => ({name: t.name, midiPan: t.midiPan, ctl: (t.ctl || []).map(c => c.c),
+      lg: t.notes.filter(n => n.lg).length, env: t.notes.filter(n => n.env).length, duties: t.notes.filter(n => n.duties).length, notes: t.notes.map(n => [n.t, n.d, n.p, n.v])}));
+    return {a: sum(a), b: sum(b)};
+  })())`));
+  const tr = (s, n) => s.find(t => t.name === n);
+  assert.deepEqual(got.b, got.a, "the publish hop keeps every v2 event");
+  const p1 = tr(got.a, "pulse1"), p2 = tr(got.a, "pulse2"), w = tr(got.a, "wave");
+  assert.ok(p1.lg >= 3, "glide links read back as n.lg: " + p1.lg);
+  assert.ok(p1.env >= 3, "the rising envelope as n.env: " + p1.env);
+  assert.ok(p1.duties >= 3, "duty inside a note as n.duties: " + p1.duties);
+  assert.ok(p2.ctl.includes("pb"), "the vibrato as bend in tr.ctl");
+  assert.ok(p2.ctl.filter(c => c === 10).length >= 2, "pan moving → CC10 events in tr.ctl: " + p2.ctl);
+  assert.ok(w.ctl.filter(c => c === "pg").length >= 2, "wave tables → program changes: " + w.ctl);
+  assert.ok(w.env >= 1, "the NR32 level walk as a shape");
+  // and the notes are exactly what the same capture writes with v2's fields taken away
+  const stripped = Object.assign({}, C.__M, {reconstruct: (...a) => v1View(gb.reconstruct(...a))});
+  C.__M1 = stripped;
+  const cap1 = await app.run("captureChipTrack('gbs', __M1, __gbs, 1, 10, null)");
+  C.__b1 = cap1.bytes;
+  const notes1 = JSON.parse(app.run("JSON.stringify(parseMidi(__b1.buffer).tracks.map(t => ({name: t.name, notes: t.notes.map(n => [n.t, n.d, n.p, n.v])})))"));
+  assert.deepEqual(got.a.map(t => ({name: t.name, notes: t.notes})), notes1, "same tracks, ticks, lengths, pitches, velocities");
+  assert.equal(cap.bpm, cap1.bpm);
 });

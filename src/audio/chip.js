@@ -552,7 +552,7 @@ export const CHIPS = {
   gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
         channels: ["pulse1", "pulse2", "wave", "noise"],
         files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
-        parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum})},
+        parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum, shape: M.GB_SHAPE})}, // GB_SHAPE: capture v2 writes envelope falls as well as rises
   // Super Nintendo (2026-09-27, Josh from bed with the Chrono Trigger zip:
   // "can he just get the Super Nintendo stuff merged so I can test it").
   // ONE .spc PER TRACK (perFile): the picker takes the whole set, rows are
