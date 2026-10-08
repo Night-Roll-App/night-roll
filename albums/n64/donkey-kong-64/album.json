@@ -44,7 +44,14 @@
   "unknown-5": "Unknown (5)",
   "unknown-6": "Unknown (6)",
   "unknown-7": "Unknown (7)",
-  "unknown-8": "Unknown (8)"
+  "unknown-8": "Unknown (8)",
+  "100-bananas-recapture": "100 Bananas (re-capture)",
+  "tag-barrel-chunky-recapture": "Tag Barrel Chunky (re-capture)",
+  "tag-barrel-diddy-recapture": "Tag Barrel Diddy (re-capture)",
+  "tag-barrel-donkey-recapture": "Tag Barrel Donkey (re-capture)",
+  "tag-barrel-lanky-recapture": "Tag Barrel Lanky (re-capture)",
+  "tag-barrel-tiny-recapture": "Tag Barrel Tiny (re-capture)",
+  "wrinkly-kong-recapture": "Wrinkly Kong (re-capture)"
  },
  "nsf": {
   "vault": "n64/donkey-kong-64/",
@@ -2850,6 +2857,124 @@
      "v": 2,
      "code": "51127d50"
     }
+   },
+   "100-bananas-recapture": {
+    "n": 1,
+    "secs": 124.8,
+    "track": 157,
+    "loud": {
+     "v": 1,
+     "lufs": -8.9,
+     "peak": 5.8,
+     "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "100-bananas"
+   },
+   "tag-barrel-chunky-recapture": {
+    "n": 1,
+    "secs": 23.863636363636363,
+    "track": 21,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "tag-barrel-chunky"
+   },
+   "tag-barrel-diddy-recapture": {
+    "n": 1,
+    "secs": 23.863636363636363,
+    "track": 18,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "tag-barrel-diddy"
+   },
+   "tag-barrel-donkey-recapture": {
+    "n": 1,
+    "secs": 23.863636363636363,
+    "track": 17,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "tag-barrel-donkey"
+   },
+   "tag-barrel-lanky-recapture": {
+    "n": 1,
+    "secs": 23.863636363636363,
+    "track": 19,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "tag-barrel-lanky"
+   },
+   "tag-barrel-tiny-recapture": {
+    "n": 1,
+    "secs": 23.863636363636363,
+    "track": 20,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -5.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "tag-barrel-tiny"
+   },
+   "wrinkly-kong-recapture": {
+    "n": 1,
+    "secs": 21.6,
+    "track": 23,
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 3.3,
+     "synth": -7.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "8d546d30"
+    },
+    "rip": "wrinkly-kong"
    }
   },
   "chip": "usf",

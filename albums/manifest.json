@@ -2735,6 +2735,10 @@
     "path": "albums/n64/donkey-kong-64/100-bananas.mid"
    },
    {
+    "title": "100 Bananas (re-capture)",
+    "path": "albums/n64/donkey-kong-64/100-bananas-recapture.mid"
+   },
+   {
     "title": "Angry Aztec",
     "path": "albums/n64/donkey-kong-64/angry-aztec.mid"
    },
@@ -3371,20 +3375,40 @@
     "path": "albums/n64/donkey-kong-64/tag-barrel-chunky.mid"
    },
    {
+    "title": "Tag Barrel Chunky (re-capture)",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-chunky-recapture.mid"
+   },
+   {
     "title": "Tag Barrel Diddy",
     "path": "albums/n64/donkey-kong-64/tag-barrel-diddy.mid"
+   },
+   {
+    "title": "Tag Barrel Diddy (re-capture)",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-diddy-recapture.mid"
    },
    {
     "title": "Tag Barrel Donkey",
     "path": "albums/n64/donkey-kong-64/tag-barrel-donkey.mid"
    },
    {
+    "title": "Tag Barrel Donkey (re-capture)",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-donkey-recapture.mid"
+   },
+   {
     "title": "Tag Barrel Lanky",
     "path": "albums/n64/donkey-kong-64/tag-barrel-lanky.mid"
    },
    {
+    "title": "Tag Barrel Lanky (re-capture)",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-lanky-recapture.mid"
+   },
+   {
     "title": "Tag Barrel Tiny",
     "path": "albums/n64/donkey-kong-64/tag-barrel-tiny.mid"
+   },
+   {
+    "title": "Tag Barrel Tiny (re-capture)",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-tiny-recapture.mid"
    },
    {
     "title": "Tiny's Saxophone Slam",
@@ -3441,6 +3465,10 @@
    {
     "title": "Wrinkly Kong",
     "path": "albums/n64/donkey-kong-64/wrinkly-kong.mid"
+   },
+   {
+    "title": "Wrinkly Kong (re-capture)",
+    "path": "albums/n64/donkey-kong-64/wrinkly-kong-recapture.mid"
    }
   ]
  },
