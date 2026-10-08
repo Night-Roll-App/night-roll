@@ -7,7 +7,7 @@
   {"at":[3,1],"to":[3,2],"type":"chord","chord":"Bb"},
   {"at":[3,3],"to":[3,4],"type":"chord","chord":"G"},
   {"at":[3,3],"text":"This G maj has no 5th"},
-  {"at":[3,3],"to":[3,4],"type":"chord","chord":"G7/B","note":"no 5th"},
+  {"at":[3,3],"to":[3,4],"type":"chord","chord":"G7/B","no5":true},
   {"at":[4,1],"to":[4,2],"type":"chord","chord":"Fsus4/C"},
   {"at":[4,3],"to":[4,4],"type":"chord","chord":"C"},
   {"at":[5,1],"to":[5,2],"type":"chord","chord":"Gm/Bb"},

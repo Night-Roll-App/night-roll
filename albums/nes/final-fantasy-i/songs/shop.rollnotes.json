@@ -10,7 +10,7 @@
   {"at":[7,1],"to":[7,3],"type":"chord","chord":"C"},
   {"at":[8,1],"to":[8,3],"type":"chord","chord":"A"},
   {"at":[9,1],"to":[9,3],"type":"chord","chord":"Dm"},
-  {"at":[10,1],"to":[10,3],"type":"chord","chord":"Bb/D","note":"No 5"},
+  {"at":[10,1],"to":[10,3],"type":"chord","chord":"Bb/D","no5":true},
   {"at":[11,1],"to":[11,3],"type":"chord","chord":"Bm/D"},
   {"at":[12,1],"to":[12,2],"type":"chord","chord":"Gsus4"},
   {"at":[12,3],"to":[12,3],"type":"chord","chord":"G"},

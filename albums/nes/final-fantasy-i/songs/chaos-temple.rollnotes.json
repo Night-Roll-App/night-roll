@@ -8,7 +8,7 @@
   {"at":[4,3],"to":[4,4],"type":"chord","chord":"D"},
   {"at":[5,1],"to":[5,4],"type":"chord","chord":"Em"},
   {"at":[6,1],"to":[6,4],"type":"chord","chord":"D"},
-  {"at":[7,1],"to":[7,4],"type":"chord","chord":"C#m7","note":"No 5th. Passing chord on the descending bass E-D-C#-C; also borrowed from E major."},
+  {"at":[7,1],"to":[7,4],"type":"chord","chord":"C#m7","no5":true,"note":"No 5th. Passing chord on the descending bass E-D-C#-C; also borrowed from E major."},
   {"at":[8,1],"to":[8,4],"type":"chord","chord":"Cmaj7"},
   {"at":[9,1],"to":[9,4],"type":"chord","chord":"G"},
   {"at":[9,1],"to":[14,4],"type":"section","label":"B"},
