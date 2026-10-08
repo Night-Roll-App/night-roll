@@ -52,1024 +52,2092 @@
    "100-bananas": {
     "n": 1,
     "secs": 124.8,
-    "track": 157
+    "track": 157,
+    "loud": {
+     "v": 1,
+     "lufs": -8.9,
+     "peak": 5.8,
+     "synth": -4.1
+    }
    },
    "angry-aztec-barrel-course": {
     "n": 1,
     "secs": 84,
     "track": 42,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 0.7,
+     "synth": -8.4
+    }
    },
    "angry-aztec-boss-dogadon": {
     "n": 1,
     "secs": 111,
     "track": 48,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 6.3,
+     "synth": -2.6
+    }
    },
    "angry-aztec-caves": {
     "n": 1,
     "secs": 201.6,
     "track": 38,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.6,
+     "peak": 0.9,
+     "synth": -10.4
+    }
    },
    "angry-aztec-lobby": {
     "n": 1,
     "secs": 69.38888888888889,
     "track": 37,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.4,
+     "peak": 0.9,
+     "synth": -7.7
+    }
    },
    "angry-aztec-race": {
     "n": 1,
     "secs": 70.8,
     "track": 45,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.4,
+     "peak": 4.8,
+     "synth": -5.5
+    }
    },
    "angry-aztec-room": {
     "n": 1,
     "secs": 62.76923076923077,
     "track": 43,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.2,
+     "peak": 3.7,
+     "synth": -5.4
+    }
    },
    "angry-aztec-temple": {
     "n": 1,
     "secs": 142.63392857142858,
     "track": 44,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": 4.8,
+     "synth": -5.4
+    }
    },
    "angry-aztec-underground": {
     "n": 1,
     "secs": 132,
     "track": 41,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": 1.3,
+     "synth": -9.2
+    }
    },
    "angry-aztec": {
     "n": 1,
     "secs": 141.82954545454547,
     "track": 39,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.1,
+     "peak": 6.4,
+     "synth": -3.5
+    }
    },
    "baboon-balloon": {
     "n": 1,
     "secs": 20.052083333333332,
-    "track": 171
+    "track": 171,
+    "loud": {
+     "v": 1,
+     "lufs": -14.1,
+     "peak": 0.2,
+     "synth": -4.7
+    }
    },
    "banana-fairy-isle": {
     "n": 1,
     "secs": 86.25,
     "track": 49,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.7,
+     "peak": 1,
+     "synth": -4.7
+    }
    },
    "banana-fairy-photo": {
     "n": 1,
     "secs": 2.0923003347680535,
-    "track": 159
+    "track": 159,
+    "loud": {
+     "v": 1,
+     "lufs": -16.8,
+     "peak": -3.6,
+     "synth": -2
+    }
    },
    "banana-fairy": {
     "n": 1,
     "secs": 18,
-    "track": 158
+    "track": 158,
+    "loud": {
+     "v": 1,
+     "lufs": -9.5,
+     "peak": 2.2,
+     "synth": -2.7
+    }
    },
    "banana-medal": {
     "n": 1,
     "secs": 3.853484388379928,
-    "track": 156
+    "track": 156,
+    "loud": {
+     "v": 1,
+     "lufs": -6.5,
+     "peak": 4.8,
+     "synth": -3.3
+    }
    },
    "barrel-course-complete": {
     "n": 1,
     "secs": 5.821759775538955,
-    "track": 160
+    "track": 160,
+    "loud": {
+     "v": 1,
+     "lufs": -10.8,
+     "peak": -2.3,
+     "synth": -12.3
+    }
    },
    "battle-arena": {
     "n": 1,
     "secs": 64.00833333333334,
     "track": 5,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.7,
+     "peak": 4.2,
+     "synth": -2.2
+    }
    },
    "beach-ambience": {
     "n": 1,
     "secs": 134,
-    "track": 148
+    "track": 148,
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": -0.6,
+     "synth": -8.3
+    }
    },
    "bonus-barrel-introduction": {
     "n": 1,
     "secs": 8.125,
     "track": 9,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.6,
+     "peak": -0.9,
+     "synth": -6.8
+    }
    },
    "bonus-barrel": {
     "n": 1,
     "secs": 60.93150862595,
     "track": 10,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11,
+     "peak": 3.2,
+     "synth": -5.1
+    }
    },
    "boss-introduction": {
     "n": 1,
     "secs": 60,
     "track": 115,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -11.8,
+     "peak": 2.1,
+     "synth": -5.9
+    }
    },
    "boss-unlock": {
     "n": 1,
     "secs": 12.278846153846153,
     "track": 113,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 5.7,
+     "synth": -3.3
+    }
    },
    "candy-s-music-store": {
     "n": 1,
     "secs": 66.63157894736842,
     "track": 40,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.5,
+     "peak": 0.1,
+     "synth": -7.3
+    }
    },
    "chunky-s-triangle-trample": {
     "n": 1,
     "secs": 4.4772727272727275,
-    "track": 166
+    "track": 166,
+    "loud": {
+     "v": 1,
+     "lufs": -7.2,
+     "peak": 1.7,
+     "synth": -1.9
+    }
    },
    "collect-banana-token": {
     "n": 1,
     "secs": 0.46153846153846156,
-    "track": 146
+    "track": 146,
+    "loud": {
+     "v": 1,
+     "lufs": -8.3,
+     "peak": 4.5,
+     "synth": -5.6
+    }
    },
    "collect-blue-print": {
     "n": 1,
     "secs": 1.8833333333333333,
-    "track": 153
+    "track": 153,
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": -2.7,
+     "synth": -6.7
+    }
    },
    "collect-bonus-token": {
     "n": 1,
     "secs": 0.6153846153846154,
-    "track": 144
+    "track": 144,
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -1,
+     "synth": -12.2
+    }
    },
    "collect-crystal-coconut": {
     "n": 1,
     "secs": 0.6774193548387096,
-    "track": 167
+    "track": 167,
+    "loud": {
+     "v": 1,
+     "lufs": -8.3,
+     "peak": -3,
+     "synth": -12
+    }
    },
    "collect-golden-banana": {
     "n": 1,
     "secs": 3.875,
-    "track": 155
+    "track": 155,
+    "loud": {
+     "v": 1,
+     "lufs": -6.4,
+     "peak": 6.9,
+     "synth": -2.4
+    }
    },
    "collect-melon-piece": {
     "n": 1,
     "secs": 0.875,
-    "track": 151
+    "track": 151,
+    "loud": {
+     "v": 1,
+     "lufs": -7.9,
+     "peak": 0.6,
+     "synth": -8
+    }
    },
    "collect-multi-banana-token": {
     "n": 1,
     "secs": 1.0769230769230769,
-    "track": 147
+    "track": 147,
+    "loud": {
+     "v": 1,
+     "lufs": -5.4,
+     "peak": 5.3,
+     "synth": -7.6
+    }
    },
    "collect-pearl": {
     "n": 1,
     "secs": 0.7426470588235294,
     "track": 66,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.6,
+     "peak": -0.2,
+     "synth": -10.8
+    }
    },
    "cranky-s-lab": {
     "n": 1,
     "secs": 62.11764705882353,
     "track": 8,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.5,
+     "peak": -1.1,
+     "synth": -6.7
+    }
    },
    "cranky-s-potion": {
     "n": 1,
     "secs": 10.157360138940057,
     "track": 13,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 0.9,
+     "synth": -4.2
+    }
    },
    "credits": {
     "n": 1,
     "secs": 156.8,
     "track": 131,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8.4,
+     "peak": 4.5,
+     "synth": -2.8
+    }
    },
    "creepy-castle-ballroom": {
     "n": 1,
     "secs": 65.45454545454545,
     "track": 107,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.1,
+     "peak": 4.4,
+     "synth": -3.4
+    }
    },
    "creepy-castle-barrel-course": {
     "n": 1,
     "secs": 88.27586206896552,
     "track": 98,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 1.5,
+     "synth": -8.7
+    }
    },
    "creepy-castle-boss-king-kut-out": {
     "n": 1,
     "secs": 88,
     "track": 116,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 8.8,
+     "synth": -0.7
+    }
    },
    "creepy-castle-caves": {
     "n": 1,
     "secs": 79.02439024390245,
     "track": 101,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15,
+     "peak": -1.9,
+     "synth": -10.4
+    }
    },
    "creepy-castle-dungeons": {
     "n": 1,
     "secs": 135.52941176470588,
     "track": 100,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": 0.3,
+     "synth": -9.3
+    }
    },
    "creepy-castle-greenhouse": {
     "n": 1,
     "secs": 82.47619047619048,
     "track": 102,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.3,
+     "peak": 3.1,
+     "synth": -7.3
+    }
    },
    "creepy-castle-library-alternate": {
     "n": 1,
     "secs": 93.81818181818181,
     "track": 106,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -1.2,
+     "synth": -8.9
+    }
    },
    "creepy-castle-library": {
     "n": 1,
     "secs": 93.81818181818181,
     "track": 105,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 0,
+     "synth": -8.6
+    }
    },
    "creepy-castle-lobby": {
     "n": 1,
     "secs": 89.45454545454545,
     "track": 96,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.5,
+     "peak": 0.7,
+     "synth": -5.7
+    }
    },
    "creepy-castle-mine-cart": {
     "n": 1,
     "secs": 100.11428571428571,
     "track": 111,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -6.9,
+     "peak": 7.3,
+     "synth": -2
+    }
    },
    "creepy-castle-museum": {
     "n": 1,
     "secs": 115.5,
     "track": 104,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 0.3,
+     "synth": -6.5
+    }
    },
    "creepy-castle-rubbish-bin": {
     "n": 1,
     "secs": 57.88235294117647,
     "track": 103,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.3,
+     "peak": 2.3,
+     "synth": -6.4
+    }
    },
    "creepy-castle-tree-trunk": {
     "n": 1,
     "secs": 98.66666666666667,
     "track": 99,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 3.1,
+     "synth": -6.8
+    }
    },
    "creepy-castle-wind-tower": {
     "n": 1,
     "secs": 69,
     "track": 108,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.5,
+     "peak": 1.6,
+     "synth": -5.9
+    }
    },
    "creepy-castle": {
     "n": 1,
     "secs": 189.92105263157896,
     "track": 97,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": 3.7,
+     "synth": -6.4
+    }
    },
    "crystal-caves-barrel-course": {
     "n": 1,
     "secs": 80.84210526315789,
     "track": 89,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": 0.5,
+     "synth": -8.7
+    }
    },
    "crystal-caves-board-game": {
     "n": 1,
     "secs": 68.57142857142857,
     "track": 91,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.6,
+     "peak": 2.2,
+     "synth": -8
+    }
    },
    "crystal-caves-boss-army-dillo": {
     "n": 1,
     "secs": 123.24324324324324,
     "track": 95,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7.5,
+     "peak": 5.5,
+     "synth": -1.8
+    }
    },
    "crystal-caves-earthquake": {
     "n": 1,
     "secs": 6.425,
     "track": 88,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7.6,
+     "peak": 3.6,
+     "synth": -3.3
+    }
    },
    "crystal-caves-igloo": {
     "n": 1,
     "secs": 72,
     "track": 90,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 1.2,
+     "synth": -5.3
+    }
    },
    "crystal-caves-indoors": {
     "n": 1,
     "secs": 74.16666666666667,
     "track": 93,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.9,
+     "peak": 2.4,
+     "synth": -7.2
+    }
    },
    "crystal-caves-lobby": {
     "n": 1,
     "secs": 70.29166666666667,
     "track": 86,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -1.9,
+     "synth": -7.3
+    }
    },
    "crystal-caves-race": {
     "n": 1,
     "secs": 57.142857142857146,
     "track": 94,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 4.8,
+     "synth": -5.4
+    }
    },
    "crystal-caves-rotating-room": {
     "n": 1,
     "secs": 59.4,
     "track": 92,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.9,
+     "peak": 0.9,
+     "synth": -8.7
+    }
    },
    "crystal-caves": {
     "n": 1,
     "secs": 123.5,
     "track": 87,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.8,
+     "peak": 5.1,
+     "synth": -6.9
+    }
    },
    "defeat-boss": {
     "n": 1,
     "secs": 5.358333333333333,
     "track": 117,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 6.4,
+     "synth": -1.3
+    }
    },
    "diddy-s-guitar-gazump": {
     "n": 1,
     "secs": 4,
-    "track": 163
+    "track": 163,
+    "loud": {
+     "v": 1,
+     "lufs": -5.2,
+     "peak": 3.5,
+     "synth": -5
+    }
    },
    "dk-isle": {
     "n": 1,
     "secs": 108.8,
     "track": 14,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.6,
+     "peak": 2.1,
+     "synth": -6.1
+    }
    },
    "dk-rap": {
     "n": 1,
     "secs": 216.6060606060606,
     "track": 2,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.3,
+     "peak": 4.4,
+     "synth": -9.8
+    }
    },
    "dk-s-treehouse": {
     "n": 1,
     "secs": 81.23076923076923,
     "track": 7,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 4.5,
+     "synth": -5.5
+    }
    },
    "donkey-s-bongo-blast": {
     "n": 1,
     "secs": 3.425,
-    "track": 162
+    "track": 162,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 2.3,
+     "synth": -8.8
+    }
    },
    "ending": {
     "n": 1,
     "secs": 100,
     "track": 132,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -13,
+     "peak": 2.4,
+     "synth": -6.5
+    }
    },
    "enguarde": {
     "n": 1,
     "secs": 57.47222222222222,
     "track": 63,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.5,
+     "peak": 1.5,
+     "synth": -5.4
+    }
    },
    "entrance": {
     "n": 1,
     "secs": 3.6923076923076925,
-    "track": 142
+    "track": 142,
+    "loud": {
+     "v": 1,
+     "lufs": -10.7,
+     "peak": -2.7,
+     "synth": -7.8
+    }
    },
    "exit": {
     "n": 1,
     "secs": 3.6923076923076925,
-    "track": 143
+    "track": 143,
+    "loud": {
+     "v": 1,
+     "lufs": -10.6,
+     "peak": -1.7,
+     "synth": -7.8
+    }
    },
    "failure": {
     "n": 1,
     "secs": 3.289473684210526,
     "track": 12,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 2,
+     "synth": -4.7
+    }
    },
    "find-blue-print": {
     "n": 1,
     "secs": 2.0854165570233145,
-    "track": 152
+    "track": 152,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 4.8,
+     "synth": -4.9
+    }
    },
    "find-golden-banana": {
     "n": 1,
     "secs": 3.25,
-    "track": 154
+    "track": 154,
+    "loud": {
+     "v": 1,
+     "lufs": -8.9,
+     "peak": 3,
+     "synth": -3.4
+    }
    },
    "find-melon-piece": {
     "n": 1,
     "secs": 1.141304347826087,
-    "track": 150
+    "track": 150,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 1.6,
+     "synth": -7.2
+    }
    },
    "frantic-factory-boss-mad-jack": {
     "n": 1,
     "secs": 116,
     "track": 58,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.7,
+     "peak": 5.9,
+     "synth": -3
+    }
    },
    "frantic-factory-car-race": {
     "n": 1,
     "secs": 104,
     "track": 57,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 3.7,
+     "synth": -5.1
+    }
    },
    "frantic-factory-conveyor-belt": {
     "n": 1,
     "secs": 57.333333333333336,
     "track": 55,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.9,
+     "peak": 3.5,
+     "synth": -3.6
+    }
    },
    "frantic-factory-lobby": {
     "n": 1,
     "secs": 93.81818181818181,
     "track": 52,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.8,
+     "peak": 0.7,
+     "synth": -4.2
+    }
    },
    "frantic-factory-production-room": {
     "n": 1,
     "secs": 110,
     "track": 54,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": 3,
+     "synth": -7
+    }
    },
    "frantic-factory-research-and-development": {
     "n": 1,
     "secs": 116,
     "track": 56,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": 1.4,
+     "synth": -9.3
+    }
    },
    "frantic-factory": {
     "n": 1,
     "secs": 135.27272727272728,
     "track": 53,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -0.4,
+     "synth": -9.2
+    }
    },
    "fungi-forest-barrel-course": {
     "n": 1,
     "secs": 59.07692307692308,
     "track": 80,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.7,
+     "peak": 0.3,
+     "synth": -9.7
+    }
    },
    "fungi-forest-bonus-room": {
     "n": 1,
     "secs": 70.08333333333333,
     "track": 81,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.8,
+     "peak": 0,
+     "synth": -8.4
+    }
    },
    "fungi-forest-boss-dogadon": {
     "n": 1,
     "secs": 122.18181818181819,
     "track": 85,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 5.7,
+     "synth": -1.3
+    }
    },
    "fungi-forest-day": {
     "n": 1,
     "secs": 155.6,
     "track": 74,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.2,
+     "peak": 3.4,
+     "synth": -6.4
+    }
    },
    "fungi-forest-giant-mushroom": {
     "n": 1,
     "secs": 66.78260869565217,
     "track": 79,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.7,
+     "peak": 2.6,
+     "synth": -9
+    }
    },
    "fungi-forest-indoors-1": {
     "n": 1,
     "secs": 62.9126213592233,
     "track": 75,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -16.6,
+     "peak": 0.4,
+     "synth": -9.4
+    }
    },
    "fungi-forest-indoors-2": {
     "n": 1,
     "secs": 81.64948453608247,
     "track": 77,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.9,
+     "peak": -1.7,
+     "synth": -9.3
+    }
    },
    "fungi-forest-lobby": {
     "n": 1,
     "secs": 67.2,
     "track": 73,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": -1.4,
+     "synth": -9.6
+    }
    },
    "fungi-forest-mine-cart": {
     "n": 1,
     "secs": 108,
     "track": 84,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.4,
+     "peak": 6,
+     "synth": -3.7
+    }
    },
    "fungi-forest-night": {
     "n": 1,
     "secs": 129,
     "track": 76,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 0.4,
+     "synth": -8.3
+    }
    },
    "fungi-forest-race": {
     "n": 1,
     "secs": 64.8,
     "track": 83,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.2,
+     "peak": 4.6,
+     "synth": -4.3
+    }
    },
    "fungi-forest-spider": {
     "n": 1,
     "secs": 61.89147939582128,
     "track": 78,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 2.3,
+     "synth": -5.9
+    }
    },
    "fungi-forest-tree-trunk": {
     "n": 1,
     "secs": 59.294117647058826,
     "track": 82,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.7,
+     "peak": 3.2,
+     "synth": -5.8
+    }
    },
    "funky-s-armoury": {
     "n": 1,
     "secs": 70,
     "track": 29,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.1,
+     "peak": 2.6,
+     "synth": -5.3
+    }
    },
    "game-over": {
     "n": 1,
     "secs": 27.428571428571427,
     "track": 124,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -6.7,
+     "peak": 7,
+     "synth": -2.8
+    }
    },
    "gloomy-galleon-barrel-course": {
     "n": 1,
     "secs": 169.26315789473685,
     "track": 62,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -1.3,
+     "synth": -9.9
+    }
    },
    "gloomy-galleon-boat-race": {
     "n": 1,
     "secs": 60.30769230769231,
     "track": 71,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 3.6,
+     "synth": -4.2
+    }
    },
    "gloomy-galleon-boss-puftoss": {
     "n": 1,
     "secs": 118.66666666666667,
     "track": 72,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.4,
+     "peak": 7.2,
+     "synth": -2.4
+    }
    },
    "gloomy-galleon-caves": {
     "n": 1,
     "secs": 128,
     "track": 60,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -16.1,
+     "peak": 1.7,
+     "synth": -8.2
+    }
    },
    "gloomy-galleon-lobby": {
     "n": 1,
     "secs": 72,
     "track": 59,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.8,
+     "peak": -0.6,
+     "synth": -8.6
+    }
    },
    "gloomy-galleon-mechanical-fish": {
     "n": 1,
     "secs": 62.270270270270274,
     "track": 67,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.2,
+     "peak": 1.6,
+     "synth": -8.7
+    }
    },
    "gloomy-galleon-pearl-treasure": {
     "n": 1,
     "secs": 48,
     "track": 65,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.1,
+     "peak": 1.6,
+     "synth": -7.6
+    }
    },
    "gloomy-galleon-ship-ruins": {
     "n": 1,
     "secs": 101.88888888888889,
     "track": 69,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -1.6,
+     "synth": -9.2
+    }
    },
    "gloomy-galleon-submarine": {
     "n": 1,
     "secs": 67.2,
     "track": 70,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -2.5,
+     "synth": -13.1
+    }
    },
    "gloomy-galleon-sunken-ship": {
     "n": 1,
     "secs": 72,
     "track": 68,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13,
+     "peak": 2.5,
+     "synth": -10.7
+    }
    },
    "gloomy-galleon": {
     "n": 1,
     "secs": 165.6,
     "track": 61,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.3,
+     "peak": 2.4,
+     "synth": -6.1
+    }
    },
    "gorilla-gone": {
     "n": 1,
     "secs": 16.052083333333332,
-    "track": 175
+    "track": 175,
+    "loud": {
+     "v": 1,
+     "lufs": -13.4,
+     "peak": 0.3,
+     "synth": -5.1
+    }
    },
    "happy-k-lumsy": {
     "n": 1,
     "secs": 10.104731329930004,
     "track": 126,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": 0.5,
+     "synth": -7.4
+    }
    },
    "hideout-helm-bonus-barrel": {
     "n": 1,
     "secs": 64,
     "track": 123,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9.4,
+     "peak": 4.1,
+     "synth": -3.7
+    }
    },
    "hideout-helm-completed": {
     "n": 1,
     "secs": 152.34782608695653,
     "track": 122,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -11.8,
+     "peak": 4.1,
+     "synth": -6
+    }
    },
    "hideout-helm-lobby": {
     "n": 1,
     "secs": 82,
     "track": 119,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -0.2,
+     "synth": -8.3
+    }
    },
    "hideout-helm": {
     "n": 1,
     "secs": 147.84615384615384,
     "track": 125,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -12.9,
+     "peak": 3.2,
+     "synth": -6.7
+    }
    },
    "hunky-chunky": {
     "n": 1,
     "secs": 57.23076923076923,
-    "track": 174
+    "track": 174,
+    "loud": {
+     "v": 1,
+     "lufs": -12.1,
+     "peak": 2.7,
+     "synth": -7.4
+    }
    },
    "instrument-refill": {
     "n": 1,
     "secs": 3.2371794871794872,
-    "track": 161
+    "track": 161,
+    "loud": {
+     "v": 1,
+     "lufs": -10.2,
+     "peak": 1,
+     "synth": -3.9
+    }
    },
    "introduction": {
     "n": 1,
     "secs": 292.375,
     "track": 6,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.6,
+     "peak": 6.2,
+     "synth": -3.9
+    }
    },
    "jungle-ambience": {
     "n": 1,
     "secs": 27.015625,
-    "track": 149
+    "track": 149,
+    "loud": {
+     "v": 1,
+     "lufs": -21.3,
+     "peak": -6.1,
+     "synth": -12.6
+    }
    },
    "jungle-japes-barrel-course": {
     "n": 1,
     "secs": 76.8,
     "track": 33,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -2.5,
+     "synth": -9.9
+    }
    },
    "jungle-japes-boss-army-dillo": {
     "n": 1,
     "secs": 108,
     "track": 36,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.6,
+     "peak": 5.9,
+     "synth": -4.6
+    }
    },
    "jungle-japes-caves-ambience": {
     "n": 1,
     "secs": 96,
     "track": 27,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -20.2,
+     "peak": -2.8,
+     "synth": -13.7
+    }
    },
    "jungle-japes-caves": {
     "n": 1,
     "secs": 172.36363636363637,
     "track": 26,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.2,
+     "peak": 1.8,
+     "synth": -6.4
+    }
    },
    "jungle-japes-lobby": {
     "n": 1,
     "secs": 60,
     "track": 24,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.7,
+     "peak": 4.5,
+     "synth": -5
+    }
    },
    "jungle-japes-mine-cart": {
     "n": 1,
     "secs": 102.66666666666667,
     "track": 35,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7.2,
+     "peak": 8.6,
+     "synth": -3.8
+    }
    },
    "jungle-japes-storm": {
     "n": 1,
     "secs": 62.4,
     "track": 31,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.4,
+     "peak": 3.5,
+     "synth": -7.4
+    }
    },
    "jungle-japes-underground": {
     "n": 1,
     "secs": 104.72727272727273,
     "track": 34,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.3,
+     "peak": 2.9,
+     "synth": -11.9
+    }
    },
    "jungle-japes": {
     "n": 1,
     "secs": 124.8,
     "track": 25,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.9,
+     "peak": 5.8,
+     "synth": -4.1
+    }
    },
    "k-lumsy-key": {
     "n": 1,
     "secs": 3.725,
     "track": 118,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -12.5,
+     "synth": -8.4
+    }
    },
    "k-lumsy": {
     "n": 1,
     "secs": 121.41176470588235,
     "track": 22,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -2.8,
+     "synth": -13.2
+    }
    },
    "k-rool-battle-introduction": {
     "n": 1,
     "secs": 57.6,
     "track": 128,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8.5,
+     "peak": 6.1,
+     "synth": -0.6
+    }
    },
    "k-rool-defeated": {
     "n": 1,
     "secs": 37.84375,
     "track": 130,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -12,
+     "peak": 1.9,
+     "synth": -8.1
+    }
    },
    "k-rool-duel": {
     "n": 1,
     "secs": 192,
     "track": 129,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -7.6,
+     "peak": 6.3,
+     "synth": -1.6
+    }
    },
    "k-rool-take-off": {
     "n": 1,
     "secs": 70.58823529411765,
     "track": 127,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -8.8,
+     "peak": 5.8,
+     "synth": -3.1
+    }
    },
    "k-rool": {
     "n": 1,
     "secs": 34,
     "track": 120,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -9.6,
+     "peak": 2,
+     "synth": -3.1
+    }
    },
    "krem-isle-snide-s-hq": {
     "n": 1,
     "secs": 70,
     "track": 51,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -14.6,
+     "peak": 0.7,
+     "synth": -7.5
+    }
    },
    "krem-isle": {
     "n": 1,
     "secs": 121.84615384615384,
     "track": 50,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 0.9,
+     "synth": -7.3
+    }
    },
    "lanky-s-trombone-tremor": {
     "n": 1,
     "secs": 5.053571428571429,
-    "track": 164
+    "track": 164,
+    "loud": {
+     "v": 1,
+     "lufs": -14.4,
+     "peak": 0.7,
+     "synth": -8.3
+    }
    },
    "logo": {
     "n": 1,
     "secs": 21.6,
     "track": 1,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 3.3,
+     "synth": -2.5
+    }
    },
    "lose-bonus-tokens": {
     "n": 1,
     "secs": 1.1477272727272727,
-    "track": 145
+    "track": 145,
+    "loud": {
+     "v": 1,
+     "lufs": -12.4,
+     "peak": -0.4,
+     "synth": -11
+    }
    },
    "lose-race": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 47,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": 5.7,
+     "synth": -3.9
+    }
    },
    "mad-maze-maul": {
     "n": 1,
     "secs": 59.2,
-    "track": 176
+    "track": 176,
+    "loud": {
+     "v": 1,
+     "lufs": -9,
+     "peak": 4.6,
+     "synth": -3.5
+    }
    },
    "main-menu": {
     "n": 1,
     "secs": 66.85714285714286,
     "track": 3,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7.9,
+     "peak": 8.3,
+     "synth": -2.8
+    }
    },
    "mermaid-palace": {
     "n": 1,
     "secs": 66.57142857142857,
     "track": 64,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.8,
+     "peak": 0.2,
+     "synth": -6.6
+    }
    },
    "mine-cart-carnage": {
     "n": 1,
     "secs": 62.11764705882353,
-    "track": 178
+    "track": 178,
+    "loud": {
+     "v": 1,
+     "lufs": -10,
+     "peak": 4.1,
+     "synth": -4.2
+    }
    },
    "mini-boss": {
     "n": 1,
     "secs": 70.15384615384616,
-    "track": 179
+    "track": 179,
+    "loud": {
+     "v": 1,
+     "lufs": -11.2,
+     "peak": 3.1,
+     "synth": -5.8
+    }
    },
    "mini-monkey": {
     "n": 1,
     "secs": 46.5,
-    "track": 173
+    "track": 173,
+    "loud": {
+     "v": 1,
+     "lufs": -12.2,
+     "peak": 6.4,
+     "synth": -5.4
+    }
    },
    "monkey-smash": {
     "n": 1,
     "secs": 114.46153846153847,
     "track": 4,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -10.4,
+     "peak": 6.1,
+     "synth": -4.8
+    }
    },
    "orangsprint": {
     "n": 1,
     "secs": 49.371428571428574,
-    "track": 172
+    "track": 172,
+    "loud": {
+     "v": 1,
+     "lufs": -10.8,
+     "peak": 2,
+     "synth": -5.4
+    }
    },
    "pause-menu": {
     "n": 1,
     "secs": 40.61538461538461,
     "track": 16,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -15.5,
+     "peak": -1.5,
+     "synth": -8.4
+    }
    },
    "pause": {
     "n": 1,
     "secs": 0.625,
     "track": 15,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.8,
+     "peak": -5.7,
+     "synth": -10.6
+    }
    },
    "rambi": {
     "n": 1,
     "secs": 43.885714285714286,
     "track": 32,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.1,
+     "peak": 3.2,
+     "synth": -5.3
+    }
    },
    "rocket-barrel-boost": {
     "n": 1,
     "secs": 44,
-    "track": 170
+    "track": 170,
+    "loud": {
+     "v": 1,
+     "lufs": -9.2,
+     "peak": 2.6,
+     "synth": -4.6
+    }
    },
    "snide-s-hq": {
     "n": 1,
     "secs": 72.5,
     "track": 121,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -1.3,
+     "synth": -10.4
+    }
    },
    "stealthy-snoop": {
     "n": 1,
     "secs": 74.18181818181819,
-    "track": 177
+    "track": 177,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 4.9,
+     "synth": -8
+    }
    },
    "strong-kong": {
     "n": 1,
     "secs": 30.545454545454547,
-    "track": 169
+    "track": 169,
+    "loud": {
+     "v": 1,
+     "lufs": -9.5,
+     "peak": 4.2,
+     "synth": -4.2
+    }
    },
    "success": {
     "n": 1,
     "secs": 2.1416666666666666,
     "track": 11,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -8.4,
+     "peak": 3.9,
+     "synth": -4.6
+    }
    },
    "tag-barrel-chunky": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 21,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -2.6
+    }
    },
    "tag-barrel-diddy": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 18,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -2.6
+    }
    },
    "tag-barrel-donkey": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 17,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -2.6
+    }
    },
    "tag-barrel-lanky": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 19,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -2.6
+    }
    },
    "tag-barrel-tiny": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 20,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -7,
+     "peak": 5.3,
+     "synth": -2.6
+    }
    },
    "tiny-s-saxophone-slam": {
     "n": 1,
     "secs": 4.222222222222222,
-    "track": 165
+    "track": 165,
+    "loud": {
+     "v": 1,
+     "lufs": -15.4,
+     "peak": -5,
+     "synth": -8.8
+    }
    },
    "transformation": {
     "n": 1,
     "secs": 5.916666666666667,
-    "track": 168
+    "track": 168,
+    "loud": {
+     "v": 1,
+     "lufs": -8,
+     "peak": 0.7,
+     "synth": -4.3
+    }
    },
    "troff-n-scoff": {
     "n": 1,
     "secs": 73.30434782608695,
     "track": 112,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.1,
+     "peak": 2.4,
+     "synth": -5.7
+    }
    },
    "unknown": {
     "n": 1,
     "secs": 3.2276343273632286,
-    "track": 133
+    "track": 133,
+    "loud": {
+     "v": 1,
+     "lufs": -9.3,
+     "peak": -2.1,
+     "synth": -8.6
+    }
    },
    "weapon-upgrade": {
     "n": 1,
     "secs": 1.5333333333333334,
     "track": 30,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -9.1,
+     "peak": 2.9,
+     "synth": -1.5
+    }
    },
    "win-race": {
     "n": 1,
     "secs": 23.863636363636363,
     "track": 46,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.6,
+     "peak": 3.9,
+     "synth": -3.6
+    }
    },
    "wrinkly-kong": {
     "n": 1,
     "secs": 21.6,
     "track": 23,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.2,
+     "peak": 3.3,
+     "synth": -2.5
+    }
    },
    "boss-unlock-2": {
     "n": 1,
     "secs": 64,
     "track": 114,
-    "disc": 1
+    "disc": 1,
+    "loud": {
+     "v": 1,
+     "lufs": -16.4,
+     "peak": -2.3,
+     "synth": -10.3
+    }
    },
    "creepy-castle-dungeons-2": {
     "n": 1,
     "secs": 96,
     "track": 109,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -13.3,
+     "peak": 0,
+     "synth": -7.8
+    }
    },
    "creepy-castle-dungeons-3": {
     "n": 1,
     "secs": 112.94117647058823,
     "track": 110,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -11.9,
+     "peak": 2.2,
+     "synth": -7.3
+    }
    },
    "jungle-japes-2": {
     "n": 1,
     "secs": 129.04569892473117,
     "track": 28,
-    "disc": 0
+    "disc": 0,
+    "loud": {
+     "v": 1,
+     "lufs": -12.4,
+     "peak": 5.5,
+     "synth": -6.6
+    }
    },
    "unknown-2": {
     "n": 1,
     "secs": 0.3942307692307692,
-    "track": 134
+    "track": 134,
+    "loud": {
+     "v": 1,
+     "lufs": -14,
+     "peak": -2.3,
+     "synth": -13.2
+    }
    },
    "unknown-3": {
     "n": 1,
     "secs": 2.04,
-    "track": 135
+    "track": 135,
+    "loud": {
+     "v": 1,
+     "lufs": -8.2,
+     "peak": -2,
+     "synth": -9.2
+    }
    },
    "unknown-4": {
     "n": 1,
     "secs": 0.6484375,
-    "track": 136
+    "track": 136,
+    "loud": {
+     "v": 1,
+     "lufs": -9.6,
+     "peak": -0.3,
+     "synth": -5.9
+    }
    },
    "unknown-5": {
     "n": 1,
     "secs": 0.9107142857142857,
-    "track": 137
+    "track": 137,
+    "loud": {
+     "v": 1,
+     "lufs": -13.5,
+     "peak": -3.8,
+     "synth": -14.6
+    }
    },
    "unknown-6": {
     "n": 1,
     "secs": 1.0673076923076923,
-    "track": 138
+    "track": 138,
+    "loud": {
+     "v": 1,
+     "lufs": -8.3,
+     "peak": 1.2,
+     "synth": -7
+    }
    },
    "unknown-7": {
     "n": 1,
     "secs": 3.051260776086507,
-    "track": 139
+    "track": 139,
+    "loud": {
+     "v": 1,
+     "lufs": -5.8,
+     "peak": -1.1,
+     "synth": -10.1
+    }
    },
    "unknown-8": {
     "n": 1,
     "secs": 6.893343606177817,
-    "track": 140
+    "track": 140,
+    "loud": {
+     "v": 1,
+     "lufs": -11,
+     "peak": 0.6,
+     "synth": -11
+    }
    }
   },
   "chip": "usf",
