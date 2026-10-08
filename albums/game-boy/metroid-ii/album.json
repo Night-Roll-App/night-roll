@@ -29,6 +29,10 @@
      "lufs": -27,
      "peak": -6.7,
      "synth": -21.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "caverns-2": {
@@ -40,6 +44,10 @@
      "lufs": -24.6,
      "peak": -6.7,
      "synth": -23.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "caverns-3": {
@@ -51,6 +59,10 @@
      "lufs": -28.8,
      "peak": -6.7,
      "synth": -15.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "caverns-4": {
@@ -73,6 +85,10 @@
      "lufs": -18.9,
      "peak": -8.6,
      "synth": -13.2
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "ending": {
@@ -84,6 +100,10 @@
      "lufs": -14.6,
      "peak": -1.5,
      "synth": -11.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "main-theme": {
@@ -95,6 +115,10 @@
      "lufs": -19.8,
      "peak": -4.5,
      "synth": -15.1
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-defeated": {
@@ -106,6 +130,10 @@
      "lufs": -17.2,
      "peak": -5.7,
      "synth": -5.6
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-fight": {
@@ -117,6 +145,10 @@
      "lufs": -17.8,
      "peak": -3.1,
      "synth": -13.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-hatchling": {
@@ -128,6 +160,10 @@
      "lufs": -17.3,
      "peak": -7.5,
      "synth": -11.7
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-nest": {
@@ -139,6 +175,10 @@
      "lufs": -19.9,
      "peak": -12.1,
      "synth": -18
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-queen-area": {
@@ -150,6 +190,10 @@
      "lufs": -16,
      "peak": -5.9,
      "synth": -13.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroid-queen-fight": {
@@ -161,6 +205,10 @@
      "lufs": -14.1,
      "peak": -1.8,
      "synth": -13.8
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "metroids-hatched": {
@@ -172,6 +220,10 @@
      "lufs": -18.1,
      "peak": -2.4,
      "synth": -14
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "missile-expansion": {
@@ -183,6 +235,10 @@
      "lufs": -16.2,
      "peak": -7.2,
      "synth": -5.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "omega-metroid-area": {
@@ -194,6 +250,10 @@
      "lufs": -21.8,
      "peak": -3.7,
      "synth": -16.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "samus-aran-arrives": {
@@ -205,6 +265,10 @@
      "lufs": -16.5,
      "peak": -6.2,
      "synth": -14.4
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "title": {
@@ -216,6 +280,10 @@
      "lufs": -14.5,
      "peak": 0.7,
      "synth": -12.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "upgrade-found": {
@@ -227,6 +295,10 @@
      "lufs": -13.5,
      "peak": -5.3,
      "synth": -5.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6495f9af"
     }
    },
    "caverns-4-recapture": {
@@ -235,7 +307,7 @@
     "track": 12,
     "cap": {
      "v": 2,
-     "code": "b28173b8"
+     "code": "6495f9af"
     },
     "loud": {
      "v": 1,
