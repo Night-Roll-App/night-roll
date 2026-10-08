@@ -5,7 +5,6 @@ import { visibleNotes } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { isComposition } from "../model/provenance.js";
-import { chordQualCompose } from "../theory/chords.js";
 import { parseChordSym } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
 import { micStop } from "./chrome.js";
@@ -57,7 +56,12 @@ import { openGridSheet } from "./sheets.js";
 import { editsKey } from "../model/edits.js";
 import { loadSong } from "../session/song.js";
 import { CHORD_BASES } from "../theory/chords.js";
-import { CHORD_EXTS } from "../theory/chords.js";
+import { CHORD_SEVENTHS } from "../theory/chords.js";
+import { CHORD_TENSIONS } from "../theory/chords.js";
+import { CHORD_ALTS } from "../theory/chords.js";
+import { chordPickParse } from "../theory/chords.js";
+import { chordPickCompose } from "../theory/chords.js";
+import { chordAltsAllowed } from "../theory/chords.js";
 import { ROMAN_DEGREES } from "../theory/chords.js";
 import { romanCompose } from "../theory/chords.js";
 import { romanParse } from "../theory/chords.js";
@@ -299,7 +303,7 @@ export function applyEditorType() {
 }
 export const BASS_SPELLINGS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
                         "G", "G#", "Ab", "A", "A#", "Bb", "B"];
-export const chordSel = {root: null, acc: "", base: "maj", exts: []};
+export const chordSel = {root: null, acc: "", base: "maj", sev: "", tens: [], alts: []};
 export function refreshChordChips() {
   for (const b of document.querySelectorAll("#nchordroot button"))
     b.classList.toggle("active", b.dataset.v === chordSel.root);
@@ -307,22 +311,47 @@ export function refreshChordChips() {
     b.classList.toggle("active", chordSel.root !== null && b.dataset.v === chordSel.acc);
   for (const b of document.querySelectorAll("#nchordqual button"))
     b.classList.toggle("active", chordSel.base !== null && b.dataset.v === chordSel.base);
-  for (const b of document.querySelectorAll("#nchordext button"))
-    b.classList.toggle("active", chordSel.base !== null && chordSel.exts.includes(b.dataset.v));
+  const known = chordSel.base !== null, altsOk = known && chordAltsAllowed(chordSel.base, chordSel.sev);
+  for (const b of document.querySelectorAll("#nchordext button, #nchordalt button")) {
+    const g = b.dataset.g, v = b.dataset.v;
+    b.classList.toggle("active", known && (g === "sev" ? chordSel.sev === v : g === "ten" ? chordSel.tens.includes(v) : altsOk && chordSel.alts.includes(v)));
+    if (g === "alt") { b.classList.toggle("dimmed", !altsOk); b.setAttribute("aria-disabled", altsOk ? "false" : "true"); }
+  }
+}
+export function setChordSelFrom(m) { // parseChordSym match (or null) → chordSel; an unknown quality stands the chips down
+  const q = m ? chordPickParse(m[3]) : null;
+  chordSel.root = m ? m[1] : null;
+  chordSel.acc = m ? m[2] : "";
+  chordSel.base = q ? q.base : m ? null : "maj";
+  chordSel.sev = q ? q.sev : "";
+  chordSel.tens = q ? q.tens : [];
+  chordSel.alts = q ? q.alts : [];
 }
 export function composeChord() {
   if (!chordSel.root || chordSel.base === null) return; // incomplete/unknown — leave the box alone
   const bass = document.getElementById("nchordbass").value;
   document.getElementById("nchordsym").value = chordSel.root + chordSel.acc +
-    chordQualCompose(chordSel.base, chordSel.exts) + (bass ? "/" + bass : "");
+    chordPickCompose(chordSel.base, chordSel.sev, chordSel.tens, chordSel.alts) + (bass ? "/" + bass : "");
+}
+export function chordTap(g, v) { // seventh: pick one · tensions: pick one under a seventh, stack as adds without · alterations: stack
+  const c = chordSel;
+  if (c.base === null) { c.base = "maj"; c.sev = ""; c.tens = []; c.alts = []; }
+  if (g === "sev") {
+    c.sev = c.sev === v ? "" : v;
+    if ((c.sev === "7" || c.sev === "maj7") && c.tens.length > 1) c.tens = c.tens.slice(-1); // the highest names it
+  } else if (g === "ten") {
+    if (c.tens.includes(v)) c.tens = c.tens.filter(x => x !== v);
+    else c.tens = c.sev === "7" || c.sev === "maj7" ? [v] : [...c.tens, v].sort((a, b) => a - b);
+  } else if (g === "alt") {
+    if (!chordAltsAllowed(c.base, c.sev)) return; // dimmed: nothing to alter yet
+    c.alts = c.alts.includes(v) ? c.alts.filter(x => x !== v) : CHORD_ALTS.filter(x => x === v || c.alts.includes(x));
+  }
+  if (!chordAltsAllowed(c.base, c.sev)) c.alts = [];
+  refreshChordChips(); composeChord();
 }
 export function setChordWidget(sym) {
   const m = parseChordSym(sym);
-  chordSel.root = m ? m[1] : null;
-  chordSel.acc = m ? m[2] : "";
-  const q = m ? chordQualParse(m[3]) : {base: "maj", exts: []};
-  chordSel.base = q ? q.base : null; // unknown quality: chips stand down
-  chordSel.exts = q ? q.exts : [];
+  setChordSelFrom(m);
   document.getElementById("nchordbass").value = m && m[4] ? m[4] : "";
   document.getElementById("nchordsym").value = sym || "";
   refreshChordChips();
@@ -332,14 +361,15 @@ export function setChordWidget(sym) {
 // key. The box is the truth (typing wins, like the symbol box); the chips
 // spell the common cases and stand down for anything else (V/V, It+6).
 export const romanSel = {acc: "", deg: null, qual: null, ext: ""};
-// upper-case row = major, lower-case row = minor (Josh #268: "I expected there
-// to be lowercase ones"); ° and ø spell lower-case, + upper-case
+// one degree row plus a major/minor toggle that sets the case (Josh #288,
+// replacing #268's second lower-case row); ° and ø are minor, + is major.
+// The toggle works before a degree too: it sets the case the next degree gets.
 export function romanLower() { return romanSel.qual === "min" || romanSel.qual === "dim" || romanSel.ext === "ø7"; }
 export function refreshRomanChips() {
-  const on = (g, v) => g === "deg" ? romanSel.deg === v && !romanLower() : g === "degl" ? romanSel.deg === v && romanLower()
+  const on = (g, v) => g === "deg" ? romanSel.deg === v : g === "case" ? (v === "min") === romanLower()
     : g === "acc" ? romanSel.acc === v : g === "qual" ? romanSel.deg !== null && romanSel.qual === v
     : romanSel.deg !== null && romanSel.ext === v;
-  for (const id of ["nromandeg", "nromandegl", "nromanmod"])
+  for (const id of ["nromandeg", "nromanmod"])
     for (const b of document.getElementById(id).children) b.classList.toggle("active", on(b.dataset.g, b.dataset.v));
   document.getElementById("nromansum").textContent = romanPretty(document.getElementById("nroman").value.trim()) || "—";
 }
@@ -361,15 +391,17 @@ export function setNo5(on) {
 }
 export function romanTap(g, v) { // one chip tap → the box (replacing anything typed there); a modifier tapped again comes off
   const sel = romanSel;
-  if (g === "deg") { sel.deg = v; sel.qual = sel.qual === "aug" ? "aug" : "maj"; if (sel.ext === "ø7") sel.ext = ""; }
-  else if (g === "degl") { sel.deg = v; sel.qual = sel.qual === "dim" || sel.ext === "ø7" ? sel.qual : "min"; }
-  else if (g === "acc") sel.acc = sel.acc === v ? "" : v;
-  else if (g === "qual") { // ° dim / + aug
+  if (g === "deg") { sel.deg = v; if (sel.qual === null && sel.ext !== "ø7") sel.qual = "maj"; }
+  else if (g === "case") {
+    if (v === "maj") { sel.qual = sel.qual === "aug" ? "aug" : "maj"; if (sel.ext === "ø7") sel.ext = ""; } // major clears ° and ø
+    else if (sel.ext !== "ø7") sel.qual = sel.qual === "dim" ? "dim" : "min"; // minor clears +
+  } else if (g === "acc") sel.acc = sel.acc === v ? "" : v;
+  else if (g === "qual") { // ° dim / + aug: each sets its own case
     sel.qual = sel.qual === v ? (v === "dim" ? "min" : "maj") : v;
     if (sel.ext === "ø7") sel.ext = "";
   } else if (g === "ext") {
-    sel.ext = sel.ext === v ? "" : v;
-    if (v === "ø7") sel.qual = sel.ext ? null : "min";
+    if (v === "ø7") { sel.ext = sel.ext === v ? "" : v; sel.qual = sel.ext ? null : "min"; } // ø replaces the seventh chip
+    else { if (sel.ext === "ø7") sel.qual = "min"; sel.ext = sel.ext === v ? "" : v; } // leaving ø keeps the lower case
   }
   const r = romanCompose(sel);
   if (r) document.getElementById("nroman").value = r;
@@ -1228,7 +1260,22 @@ export function initNoteEditor4() {
     mkRow("nchordroot", "CDEFGAB".split("").map(l => [l, l]));
     mkRow("nchordacc", [["b", "♭"], ["", "♮"], ["#", "♯"]]);
     mkRow("nchordqual", CHORD_BASES.map(q => [q, q]));
-    mkRow("nchordext", CHORD_EXTS.map(q => [q, q]));
+    const mkGroups = (id, groups) => { // [g, values] groups, a gap between; one listener per row
+      const row = document.getElementById(id);
+      groups.forEach(([g, vals], i) => {
+        if (i) { const sp = document.createElement("span"); sp.className = "gap"; row.appendChild(sp); }
+        for (const v of vals) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.dataset.g = g; b.dataset.v = v;
+          b.textContent = v;
+          row.appendChild(b);
+        }
+      });
+      row.addEventListener("click", e => { const b = e.target; if (b && b.dataset && b.dataset.g) chordTap(b.dataset.g, b.dataset.v); });
+    };
+    mkGroups("nchordext", [["sev", CHORD_SEVENTHS], ["ten", CHORD_TENSIONS]]);
+    mkGroups("nchordalt", [["alt", CHORD_ALTS]]);
     const bass = document.getElementById("nchordbass");
     const none = document.createElement("option");
     none.value = ""; none.textContent = "—";
@@ -1241,7 +1288,7 @@ export function initNoteEditor4() {
     document.getElementById("nchordroot").addEventListener("click", e => {
       if (!e.target.dataset.v) return;
       chordSel.root = e.target.dataset.v;
-      if (chordSel.base === null) { chordSel.base = "maj"; chordSel.exts = []; }
+      if (chordSel.base === null) { chordSel.base = "maj"; chordSel.sev = ""; chordSel.tens = []; chordSel.alts = []; }
       refreshChordChips(); composeChord();
     });
     document.getElementById("nchordacc").addEventListener("click", e => {
@@ -1251,26 +1298,17 @@ export function initNoteEditor4() {
     });
     document.getElementById("nchordqual").addEventListener("click", e => {
       if (!e.target.dataset.v) return;
+      if (chordSel.base === null) { chordSel.sev = ""; chordSel.tens = []; chordSel.alts = []; }
       chordSel.base = e.target.dataset.v;
-      if (chordSel.exts === null) chordSel.exts = [];
-      refreshChordChips(); composeChord();
-    });
-    document.getElementById("nchordext").addEventListener("click", e => { // extensions STACK
-      if (!e.target.dataset.v) return;
-      if (chordSel.base === null) chordSel.base = "maj";
-      const x = e.target.dataset.v, i = chordSel.exts.indexOf(x);
-      if (i >= 0) chordSel.exts.splice(i, 1); else chordSel.exts.push(x);
+      if (!chordAltsAllowed(chordSel.base, chordSel.sev)) chordSel.alts = [];
       refreshChordChips(); composeChord();
     });
     bass.addEventListener("change", composeChord);
     const sym = document.getElementById("nchordsym");
     sym.addEventListener("input", () => { // follow hand-edits without rewriting them
       const m = parseChordSym(sym.value);
-      chordSel.root = m ? m[1] : null;
-      chordSel.acc = m ? m[2] : "";
-      const q = m ? chordQualParse(m[3]) : null;
-      chordSel.base = q ? q.base : null;
-      chordSel.exts = q ? q.exts : [];
+      setChordSelFrom(m);
+      if (!m) chordSel.base = null;
       if (m) bass.value = m[4] || "";
       refreshChordChips();
     });
@@ -1290,10 +1328,9 @@ export function initNoteEditor4() {
       }
       row.addEventListener("click", e => { const b = e.target; if (b && b.dataset && b.dataset.g) romanTap(b.dataset.g, b.dataset.v); });
     };
-    mkRoman("nromandeg", ROMAN_DEGREES.map(d => ["deg", d, d]));
-    mkRoman("nromandegl", ROMAN_DEGREES.map(d => ["degl", d, d.toLowerCase()]));
-    mkRoman("nromanmod", [["acc", "b", "♭"], ["acc", "#", "♯"], null, ["qual", "dim", "° dim"], ["qual", "aug", "+ aug"], null,
-      ["ext", "7", "7"], ["ext", "maj7", "maj7"], ["ext", "ø7", "ø7"], ["ext", "6", "6"]]); // alter · quality · sevenths
+    mkRoman("nromandeg", [...ROMAN_DEGREES.map(d => ["deg", d, d]), null, ["case", "maj", "major"], ["case", "min", "minor"]]);
+    mkRoman("nromanmod", [["acc", "b", "♭"], ["acc", "#", "♯"], null, ["qual", "dim", "° dim"], ["ext", "ø7", "ø half-dim"], ["qual", "aug", "+ aug"], null,
+      ["ext", "7", "7"], ["ext", "maj7", "maj7"], ["ext", "6", "6"]]); // alter · quality · sevenths
     const rbox = document.getElementById("nroman");
     rbox.addEventListener("input", () => { setRomanSel(romanParse(rbox.value)); refreshRomanChips(); });
     rbox.addEventListener("keydown", e => {

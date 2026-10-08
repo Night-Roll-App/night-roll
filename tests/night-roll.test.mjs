@@ -3017,7 +3017,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "seventh picks one of 6, 7 or maj7", "alterations (b5 #5 b9 #9 #11 b13) stack", "the toggle re-cases the numeral", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "The beat cell counts the 16ths", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3783,6 +3783,86 @@ test("chord quality parse/compose: bases + stacked extensions round-trip", () =>
     assert.equal(val(`chordQualCompose(${JSON.stringify(base)}, ${JSON.stringify(exts)})`), q);
   }
   assert.equal(val(`chordQualParse("weird") || null`), null); // unknown: chips stand down
+});
+
+test("chord picker primitives (Josh, Terminal #287): seventh · tensions · alterations compose standard names and parse back", () => {
+  installSong();
+  const P = q => val(`chordPickParse(${JSON.stringify(q)})`);
+  const C = (base, sev, tens, alts) => val(`chordPickCompose(${JSON.stringify(base)}, ${JSON.stringify(sev)}, ${JSON.stringify(tens)}, ${JSON.stringify(alts)})`);
+  const rules = [ // [base, sev, tens, alts, symbol]
+    ["maj", "", [], [], ""], ["m", "", [], [], "m"], ["maj", "7", [], [], "7"], ["maj", "maj7", [], [], "maj7"],
+    ["maj", "7", ["9"], [], "9"], ["maj", "maj7", ["9"], [], "maj9"], ["m", "7", ["11"], [], "m11"], ["maj", "7", ["13"], [], "13"],
+    ["maj", "maj7", ["11"], [], "maj11"], ["m", "7", ["9"], [], "m9"],
+    ["maj", "", ["9"], [], "add9"], ["m", "", ["9"], [], "madd9"], ["maj", "", ["9", "13"], [], "add9add13"],
+    ["maj", "6", [], [], "6"], ["maj", "6", ["9"], [], "69"], ["m", "6", ["9"], [], "m69"],
+    ["maj", "7", [], ["b9"], "7b9"], ["maj", "7", [], ["#11"], "7#11"], ["maj", "7", [], ["#5", "b9"], "7#5b9"],
+    ["m", "maj7", [], [], "mmaj7"], ["m", "maj7", ["9"], [], "mmaj9"], ["m", "7", [], ["b5"], "m7b5"],
+    ["dim", "7", [], [], "dim7"], ["sus4", "7", [], [], "7sus4"], ["sus4", "7", ["9"], [], "9sus4"],
+    ["sus4", "", ["9"], [], "sus4add9"], ["sus2", "", [], [], "sus2"], ["5", "", [], [], "5"], ["aug", "7", [], [], "aug7"],
+  ];
+  for (const [base, sev, tens, alts, sym] of rules) {
+    assert.equal(C(base, sev, tens, alts), sym, JSON.stringify([base, sev, tens, alts]));
+    assert.deepEqual(P(sym), {base, sev, tens, alts}, sym);
+  }
+  assert.equal(C("maj", "7", ["9", "13"], []), "13", "under a seventh the highest tension names the chord");
+  assert.equal(C("maj", "7", [], ["b13", "b9", "#9"]), "7b9#9b13", "alterations in b5 #5 b9 #9 #11 b13 order");
+  assert.equal(C("maj", "", ["9"], ["b5"]), "add9", "no seventh, major: nothing to alter (Cb5 would read back as C♭)");
+  assert.equal(C("m", "", [], ["b5"]), "mb5", "a non-major base can be altered");
+  // the parse also reads the spellings the old chips (and his files) wrote
+  const respell = [["sus47", "7sus4"], ["7add9", "9"], ["maj7add9", "maj9"], ["m7add9", "m9"], ["6add9", "69"], ["79", "9"],
+                   ["7add13", "13"], ["9", "9"], ["sus27", "7sus2"]];
+  for (const [old, now] of respell) {
+    const p = P(old);
+    assert.ok(p, old);
+    assert.equal(C(p.base, p.sev, p.tens, p.alts), now, old);
+  }
+  assert.deepEqual(P("7sus4"), P("sus47"), "7sus4 and sus47 are the same chord");
+  for (const bad of ["weird", "m7ø", "ø7", "77", "maj7maj9", "add9add9", "611", "sus4sus2", "msus4", "b9b9", "add2"])
+    assert.equal(P(bad), null, bad + ": the chips stand down");
+  // every symbol the old 18-chip extension row could spell (any base, up to three chips): either the
+  // chips stand down, or the picker reads it to a state that composes and reads back to itself
+  const old = val(`(() => {
+    const EXTS = ["6", "7", "maj7", "9", "maj9", "11", "maj11", "13", "maj13", "add9", "add11", "add13", "b5", "#5", "b9", "#9", "#11", "b13"];
+    const subsets = [[]];
+    for (let i = 0; i < EXTS.length; i++) { subsets.push([i]); for (let j = i + 1; j < EXTS.length; j++) { subsets.push([i, j]); for (let k = j + 1; k < EXTS.length; k++) subsets.push([i, j, k]); } }
+    let read = 0, bad = [];
+    for (const base of CHORD_BASES) for (const s of subsets) {
+      const sym = chordQualCompose(base, s.map(i => EXTS[i]));
+      const p = chordPickParse(sym);
+      if (!p) continue;
+      read++;
+      const again = chordPickCompose(p.base, p.sev, p.tens, p.alts), q = chordPickParse(again);
+      const alts = chordAltsAllowed(p.base, p.sev) ? p.alts : [];
+      if (!q || JSON.stringify(q) !== JSON.stringify({...p, alts})) bad.push(sym + " → " + again);
+    }
+    return {read, bad};
+  })()`);
+  assert.deepEqual(old.bad, []);
+  assert.ok(old.read > 500, "most of the old chips' spellings still light the chips (" + old.read + ")");
+});
+
+test("chord picker vs every stored chord value (albums/**/*.rollnotes.json): parse → compose gives the same string, or a listed re-spelling", () => {
+  installSong();
+  const walk = d => readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? walk(d + "/" + e.name) : e.name.endsWith(".rollnotes.json") ? [d + "/" + e.name] : []);
+  const root = new URL("../albums", import.meta.url).pathname;
+  const syms = new Set();
+  for (const f of walk(root)) {
+    let j; try { j = JSON.parse(readFileSync(f, "utf8")); } catch { continue; }
+    for (const n of j.notes || []) if (typeof n.chord === "string") syms.add(n.chord);
+  }
+  assert.ok(syms.size > 50, "found the stored chords (" + syms.size + ")");
+  const got = val(`((syms) => {
+    const out = {};
+    for (const s of syms) {
+      const m = parseChordSym(s);
+      const p = m && chordPickParse(m[3]);
+      if (!p) continue; // the chips stand down; the box keeps it as typed
+      const again = m[1] + m[2] + chordPickCompose(p.base, p.sev, p.tens, p.alts) + (m[4] ? "/" + m[4] : "");
+      if (again !== s) out[s] = again;
+    }
+    return out;
+  })(${JSON.stringify([...syms])})`);
+  assert.deepEqual(got, {Dsus47: "D7sus4"}, "the only stored re-spelling (advisor review, 2026-10-08) — and only if he taps a chip");
 });
 
 test("transposeTrack: whole track ±12, one undo step, drums refuse", () => {
@@ -15418,6 +15498,57 @@ test("Jump into text boxes (Josh, Terminal #251/#253): every programmatic text-b
   run(`window.matchMedia = __keepMM; try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {} textJumpOn.v = undefined;`);
 });
 
+test("chord picker rows (Josh, Terminal #287): seventh / tensions / alterations taps spell the symbol; opening a stored chord leaves the box alone; alterations dim with nothing to alter", () => {
+  installSong();
+  run(`for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "nroman"]) document.getElementById(id).focus = () => {}; isComposition = () => true; rollnotesReadOnly = false; rollnotes = []; finalizeNotes(); document.getElementById("noteeditor").classList.remove("docked");
+    globalThis.__qsa = document.querySelectorAll;
+    document.querySelectorAll = sel => /nchordalt/.test(sel) ? [...document.getElementById("nchordext").children, ...document.getElementById("nchordalt").children].filter(b => b.dataset && b.dataset.g) : [];`);
+  const sym = () => val(`document.getElementById("nchordsym").value`);
+  const chips = id => val(`[...document.getElementById("${id}").children].filter(b => b.dataset && b.dataset.g).map(b => b.dataset.g + ":" + b.textContent)`);
+  assert.deepEqual(chips("nchordext"), ["sev:6", "sev:7", "sev:maj7", "ten:9", "ten:11", "ten:13"]);
+  assert.deepEqual(chips("nchordalt"), ["alt:b5", "alt:#5", "alt:b9", "alt:#9", "alt:#11", "alt:b13"]);
+  run(`openEditor(null, "chord"); setChordWidget("");`);
+  assert.equal(sym(), "", "a new chord opens empty");
+  run(`chordTap("sev", "7");`);
+  assert.equal(sym(), "", "no root yet: the box stays empty");
+  // the stub DOM doesn't bubble: a tap is the row's click with the chip as target
+  const tap = (row, v) => run(`(() => { const r = document.getElementById("${row}"), b = r.children.find(b => b.dataset && b.dataset.v === ${JSON.stringify(v)}); r.dispatchEvent({type: "click", target: b}); })()`);
+  tap("nchordroot", "G");
+  assert.equal(sym(), "G7");
+  tap("nchordext", "9");  assert.equal(sym(), "G9", "7 + 9 → 9");
+  tap("nchordext", "13"); assert.equal(sym(), "G13", "under a seventh the tension is pick-one");
+  tap("nchordext", "maj7"); assert.equal(sym(), "Gmaj13");
+  tap("nchordext", "maj7"); assert.equal(sym(), "Gadd13", "no seventh: the tension is an add");
+  tap("nchordext", "9"); assert.equal(sym(), "Gadd9add13", "adds stack, ascending");
+  assert.equal(val(`document.getElementById("nchordalt").children.find(b => b.dataset.v === "b9").classList.contains("dimmed")`), true, "major with no seventh: alterations dimmed");
+  tap("nchordalt", "b9"); assert.equal(sym(), "Gadd9add13", "a dimmed alteration does nothing");
+  tap("nchordext", "13"); tap("nchordext", "6"); assert.equal(sym(), "G69");
+  tap("nchordext", "6"); tap("nchordext", "9"); tap("nchordext", "7");
+  tap("nchordalt", "#11"); tap("nchordalt", "b9"); assert.equal(sym(), "G7b9#11", "alterations append in order");
+  assert.equal(val(`document.getElementById("nchordalt").children.find(b => b.dataset.v === "b9").classList.contains("active")`), true);
+  tap("nchordext", "7"); assert.equal(sym(), "G", "the seventh off: nothing left to alter, the alterations go");
+  tap("nchordqual", "m"); tap("nchordext", "7"); tap("nchordalt", "b5"); assert.equal(sym(), "Gm7b5", "half-diminished stays m7b5");
+  tap("nchordqual", "sus4"); tap("nchordalt", "b5"); assert.equal(sym(), "G7sus4");
+  tap("nchordqual", "dim"); assert.equal(sym(), "Gdim7");
+  tap("nchordqual", "m"); tap("nchordext", "maj7"); tap("nchordext", "9"); assert.equal(sym(), "Gmmaj9");
+  // opening a stored chord never rewrites it — the chips just light
+  for (const [s, st] of [["Dsus47", {base: "sus4", sev: "7", tens: [], alts: []}], ["Cm7add9", {base: "m", sev: "7", tens: ["9"], alts: []}],
+                         ["D9/A", {base: "maj", sev: "7", tens: ["9"], alts: []}], ["Absus4add2", {base: null, sev: "", tens: [], alts: []}]]) {
+    run(`setChordWidget(${JSON.stringify(s)});`);
+    assert.equal(sym(), s, s + " stays as stored");
+    assert.deepEqual(val(`({base: chordSel.base, sev: chordSel.sev, tens: chordSel.tens, alts: chordSel.alts})`), st, s);
+  }
+  run(`setChordWidget("Dsus47");`); tap("nchordext", "9");
+  assert.equal(sym(), "D9sus4", "a chip tap re-spells (sus47 → 7sus4 order)");
+  // typing wins: the chips follow, and stand down for what they can't spell
+  run(`const b = document.getElementById("nchordsym"); b.value = "Ebmaj9"; b.dispatchEvent(new Event("input"));`);
+  assert.deepEqual(val(`[chordSel.root, chordSel.acc, chordSel.base, chordSel.sev, chordSel.tens]`), ["E", "b", "maj", "maj7", ["9"]]);
+  run(`const b = document.getElementById("nchordsym"); b.value = "E7alt"; b.dispatchEvent(new Event("input"));`);
+  assert.equal(val(`chordSel.base`), null);
+  assert.equal(sym(), "E7alt");
+  run(`document.querySelectorAll = globalThis.__qsa;`);
+});
+
 test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — empty on a new chord, chips spell it, saved/loaded/round-tripped, shown on the band, Ask writes only what he dictates", () => {
   installSong();
   run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "nroman"]) document.getElementById(id).focus = () => {}; isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 8); rollnotes = []; finalizeNotes(); editUndo = []; editRedo = []; document.getElementById("noteeditor").classList.remove("docked");`);
@@ -15433,19 +15564,36 @@ test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — 
   run(`rangeSel = {a: ${bt}, b: ${3 * bt}, cycle: true}; openEditor(null, "chord"); setChordWidget("F#");`);
   assert.deepEqual(val(`[document.getElementById("nroman").value, document.getElementById("nno5").classList.contains("active")]`), ["", false]);
   assert.equal(val(`document.getElementById("nromanbox").open`), false, "folded away on a chord without one");
-  run(`romanTap("acc", "b"); romanTap("deg", "VII"); romanTap("qual", "maj"); document.getElementById("nno5").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`[...document.getElementById("nromandeg").children].filter(b => b.dataset.g).map(b => b.textContent)`),
+    ["I", "II", "III", "IV", "V", "VI", "VII", "major", "minor"], "one degree row plus the case toggle (Josh #288)");
+  const toggle = () => val(`["maj", "min"].filter(v => document.getElementById("nromandeg").children.find(b => b.dataset.g === "case" && b.dataset.v === v).classList.contains("active"))`);
+  assert.deepEqual(toggle(), ["maj"], "a new chord starts on major");
+  run(`romanTap("acc", "b"); romanTap("deg", "VII"); romanTap("case", "maj"); document.getElementById("nno5").dispatchEvent(new Event("click"));`);
   assert.equal(val(`document.getElementById("nroman").value`), "bVII");
-  // lower-case row is minor; ° / ø spell lower-case (Josh #268)
-  run(`romanTap("degl", "II");`);
+  // the toggle re-cases the numeral in the box; ° / ø spell lower-case
+  run(`romanTap("deg", "II"); romanTap("case", "min");`);
   assert.equal(val(`document.getElementById("nroman").value`), "bii");
+  assert.deepEqual(toggle(), ["min"]);
   run(`romanTap("acc", "b"); romanTap("qual", "dim");`);
   assert.equal(val(`document.getElementById("nroman").value`), "ii°", "♭ tapped again comes off; ° on");
-  run(`romanTap("deg", "V"); romanTap("ext", "7");`);
-  assert.equal(val(`document.getElementById("nroman").value`), "V7", "the upper-case row is major");
-  run(`romanTap("degl", "VII"); romanTap("ext", "ø7");`);
-  assert.equal(val(`document.getElementById("nroman").value`), "viiø7");
-  run(`romanTap("deg", "VII"); romanTap("acc", "b"); romanTap("ext", "7"); romanTap("ext", "7");`);
-  assert.equal(val(`document.getElementById("nroman").value`), "bVII");
+  run(`romanTap("case", "maj");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "II", "major clears °");
+  run(`romanTap("qual", "aug"); romanTap("case", "min");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "ii", "minor clears +");
+  run(`romanTap("case", "maj"); romanTap("deg", "V"); romanTap("ext", "7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "V7");
+  run(`romanTap("deg", "VII"); romanTap("ext", "ø7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "viiø7", "ø writes ø7 in place of the seventh chip");
+  assert.deepEqual(toggle(), ["min"], "ø switches the toggle to minor");
+  run(`romanTap("ext", "7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "vii7", "leaving ø keeps the lower case");
+  run(`romanTap("ext", "ø7"); romanTap("case", "maj"); romanTap("acc", "b"); romanTap("ext", "7"); romanTap("ext", "7");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "bVII", "major clears ø; a seventh tapped again comes off");
+  run(`romanTap("case", "min"); document.getElementById("nromanclear").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(toggle(), ["maj"], "Clear starts over on major");
+  run(`romanTap("case", "min"); romanTap("deg", "IV");`);
+  assert.equal(val(`document.getElementById("nroman").value`), "iv", "the toggle before a degree sets its case");
+  run(`document.getElementById("nromanclear").dispatchEvent(new Event("click")); romanTap("acc", "b"); romanTap("deg", "VII"); romanTap("case", "maj");`);
   run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
   const c = val(`(() => { const n = rollnotes.find(n => n.chord); return {text: n.text, roman: n.roman, no5: n.no5}; })()`);
   assert.deepEqual(c, {text: "F#", roman: "bVII", no5: true});

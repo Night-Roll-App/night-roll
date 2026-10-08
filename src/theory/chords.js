@@ -148,6 +148,64 @@ export function chordQualParse(rest) { // "m7add9" -> {base, exts} or null if an
 export function chordQualCompose(base, exts) {
   return (base === "maj" ? "" : base) + CHORD_EXTS.filter(x => exts.includes(x)).join("");
 }
+// The chord picker's primitives (Josh, Terminal #287): a seventh (pick one),
+// tensions, alterations. chordQualParse keeps its {base, exts} shape because
+// roman.js and the bassist read it; only the chord widget speaks this layer.
+// With a seventh the tension is pick-one and names the chord (7+9 → "9",
+// maj7+11 → "maj11"); without one tensions stack as adds, and 6+9 is "69"
+// because parseChordSym reads "/" as a slash bass. Half-diminished stays
+// "m7b5": ø never appears in a chord symbol.
+export const CHORD_SEVENTHS = ["6", "7", "maj7"];
+export const CHORD_TENSIONS = ["9", "11", "13"];
+export const CHORD_ALTS = ["b5", "#5", "b9", "#9", "#11", "b13"];
+const PICK_TOKENS = ["maj13", "maj11", "maj9", "maj7", "add13", "add11", "add9", "sus2", "sus4",
+  "#11", "b13", "b5", "#5", "b9", "#9", "13", "11", "9", "7", "6"];
+// an alteration needs something to alter: "C" + b5 would read back as a C♭ chord
+export function chordAltsAllowed(base, sev) { return !!sev || (base !== null && base !== "maj"); }
+export function chordPickParse(rest) { // "m7b5" → {base, sev, tens, alts}; anything the chips can't spell → null
+  rest = rest || "";
+  let base = "maj";
+  for (const b of CHORD_BASES) {
+    if (b !== "maj" && rest.startsWith(b) && !rest.startsWith("maj")) { base = b; rest = rest.slice(b.length); break; }
+  }
+  let sev = "";
+  const tens = [], alts = [];
+  const addTen = (t, picked) => { // a seventh's tension is pick-one; adds stack, once each
+    if (tens.includes(t) || (picked && tens.length)) return false;
+    tens.push(t); return true;
+  };
+  while (rest.length) {
+    const tok = PICK_TOKENS.find(t => rest.startsWith(t));
+    if (!tok) return null;
+    rest = rest.slice(tok.length);
+    if (tok === "6" || tok === "7" || tok === "maj7") { if (sev) return null; sev = tok; }
+    else if (tok.startsWith("maj")) { if (sev || !addTen(tok.slice(3), true)) return null; sev = "maj7"; }
+    else if (tok.startsWith("add")) { if (!addTen(tok.slice(3), sev === "7" || sev === "maj7")) return null; }
+    else if (tok.startsWith("sus")) { if (base !== "maj") return null; base = tok; }
+    else if (CHORD_ALTS.includes(tok)) { if (alts.includes(tok)) return null; alts.push(tok); }
+    else if (sev === "6") { if (tok !== "9" || !addTen("9", false)) return null; } // "69" only
+    else if (sev) { if (!addTen(tok, true)) return null; } // "79" → 9
+    else { sev = "7"; addTen(tok, true); } // a bare "9" is a ninth chord: 7 + 9
+  }
+  tens.sort((a, c) => a - c);
+  alts.sort((a, c) => CHORD_ALTS.indexOf(a) - CHORD_ALTS.indexOf(c));
+  return {base, sev, tens, alts};
+}
+export function chordPickCompose(base, sev, tens, alts) { // base · seventh-or-tension · sus · adds · alterations
+  const sus = base === "sus2" || base === "sus4";
+  const t = [...(tens || [])].sort((a, c) => a - c);
+  let core = "", adds = t;
+  if (sev === "7" || sev === "maj7") {
+    const top = t[t.length - 1];
+    core = (sev === "maj7" ? "maj" : "") + (top || "7");
+    adds = [];
+  } else if (sev === "6") {
+    core = t.includes("9") ? "69" : "6";
+    adds = t.filter(x => x !== "9");
+  }
+  const al = chordAltsAllowed(base, sev) ? CHORD_ALTS.filter(x => (alts || []).includes(x)) : [];
+  return (base === "maj" || sus ? "" : base) + core + (sus ? base : "") + adds.map(x => "add" + x).join("") + al.join("");
+}
 export function parseChordSym(sym) {
   return (sym || "").trim().match(/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?(?:\s+\((.*)\))?$/);
 }

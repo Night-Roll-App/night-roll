@@ -790,7 +790,8 @@
   #nromanbox > summary::before { content: "▸"; color: var(--dim); }
   #nromanbox[open] > summary::before { content: "▾"; }
   #nromanbox > summary #nromansum { color: var(--gold); font-weight: 600; }
-  #nromanmod .gap { flex: none; width: 10px; }
+  #nromanmod .gap, #nromandeg .gap, #nchordext .gap { flex: none; width: 10px; }
+  #nchordalt button.dimmed { opacity: 0.4; } /* nothing to alter until a seventh, a 6 or a non-major base */
   #nfollow #nunsaved.flash { animation: unsavedflash 0.9s ease-out; }
   @keyframes unsavedflash { 0%, 40% { background: rgba(230, 103, 103, 0.5); } 100% { background: rgba(230, 103, 103, 0.16); } }
   #nfollow #nseveral button { text-align: left; }
