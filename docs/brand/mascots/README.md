@@ -4,7 +4,8 @@ Josh's picks (Terminal #283–#285, 2026-10-08):
 
 - **The mascot:** #6 in `sprites.json`, the wizard with the note-topped staff. He is the app icon and the
   mark beside NIGHT // ROLL (`tools/brand/make-icons.mjs` draws both from the sprite).
-- **His name:** "Maestro" for now. **Nocturno** is the front-runner ("Maybe Nocturno", #285); not decided.
+- **His name:** **Nocturno** ("Maybe Nocturno", #285; "For now yes", #286). He was "Maestro" on the
+  sketch pages (`mascots.html`, `maestro-poses.*` keep that name as the record of what Josh saw).
 - **His companion:** #20 Echo, the bat. Not used in the app yet (ideas: splash, loading, about).
 - **High potential:** #1 Ember and #3 Vesper.
 

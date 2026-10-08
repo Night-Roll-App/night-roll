@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // tools/brand/make-icons.mjs — draws every app icon size, and the header
 // mark, from one mascot sprite in docs/brand/mascots/sprites.json (Josh,
-// Terminal #283: "let's use maestro … maestro first"). Pixel art scales only
+// Terminal #283: "maestro first"; named Nocturno in #285/#286). Pixel art scales only
 // by whole numbers, so each size picks the largest integer scale that fits
 // its safe area and centres the sprite on the app background.
-//   node tools/brand/make-icons.mjs [name=Maestro] [--ios <AppIcon.appiconset dir>]
+//   node tools/brand/make-icons.mjs [name=Nocturno] [--ios <AppIcon.appiconset dir>]
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import zlib from "node:zlib";
@@ -12,7 +12,7 @@ import zlib from "node:zlib";
 const args = process.argv.slice(2);
 const iosAt = args.indexOf("--ios");
 const iosDir = iosAt >= 0 ? args[iosAt + 1] : null;
-const name = args.find((a, i) => !a.startsWith("--") && i !== iosAt + 1) || "Maestro";
+const name = args.find((a, i) => !a.startsWith("--") && i !== iosAt + 1) || "Nocturno";
 const sprites = JSON.parse(readFileSync(new URL("../../docs/brand/mascots/sprites.json", import.meta.url), "utf8"));
 const s = sprites.find(x => x.name.toLowerCase() === name.toLowerCase());
 if (!s) { console.error("no mascot named " + name + " in docs/brand/mascots/sprites.json"); process.exit(1); }
