@@ -45,6 +45,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -3.2,
+     "synth": -13.7
     }
    },
    "bird-chirp": {
@@ -54,6 +60,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.8,
+     "peak": -16.6,
+     "synth": -13
     }
    },
    "bonus-perfect": {
@@ -63,6 +75,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -5.2,
+     "synth": -6.9
     }
    },
    "bonus": {
@@ -72,6 +90,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -15.8,
+     "peak": -5.6,
+     "synth": -6.8
     }
    },
    "boss": {
@@ -81,6 +105,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.5,
+     "peak": -2.6,
+     "synth": -9.6
     }
    },
    "butter-building-theme": {
@@ -90,6 +120,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -4.2,
+     "synth": -11.7
     }
    },
    "choices": {
@@ -99,6 +135,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -7.8,
+     "synth": -16.9
     }
    },
    "cloud-tops-intro": {
@@ -108,6 +150,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.1,
+     "peak": -3.3,
+     "synth": -12
     }
    },
    "cloud-tops": {
@@ -117,6 +165,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -2.7,
+     "synth": -11.8
     }
    },
    "crane-fever-intense": {
@@ -126,12 +180,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.2,
+     "peak": -9.5,
+     "synth": -14.3
     }
    },
    "crane-fever": {
     "n": 10,
     "secs": 25.598976,
-    "track": 42
+    "track": 42,
+    "loud": {
+     "v": 1,
+     "lufs": -20.6,
+     "peak": -9.6,
+     "synth": -16.1
+    }
    },
    "egg-catcher-intro": {
     "n": 20,
@@ -140,6 +206,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -4.5,
+     "synth": -13.2
     }
    },
    "egg-catcher": {
@@ -149,6 +221,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -3.9,
+     "synth": -12.1
     }
    },
    "epilogue": {
@@ -158,6 +236,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.7,
+     "peak": -3.6,
+     "synth": -10.4
     }
    },
    "fanfare-long": {
@@ -167,17 +251,35 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -3.5,
+     "synth": -9.7
     }
    },
    "fanfare-short": {
     "n": 9,
     "secs": 3.58319,
-    "track": 38
+    "track": 38,
+    "loud": {
+     "v": 1,
+     "lufs": -16.3,
+     "peak": -6.6,
+     "synth": -10.1
+    }
    },
    "fire": {
     "n": 26,
     "secs": 1.16662,
-    "track": 49
+    "track": 49,
+    "loud": {
+     "v": 1,
+     "lufs": -24.6,
+     "peak": -12.2,
+     "synth": -12.6
+    }
    },
    "first-you-draw-a-circle": {
     "n": 50,
@@ -186,6 +288,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.8,
+     "peak": -3.6,
+     "synth": -12.8
     }
    },
    "forest-trail-intro": {
@@ -195,6 +303,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.9,
+     "peak": -3,
+     "synth": -14.6
     }
    },
    "forest-trail": {
@@ -204,12 +318,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.8,
+     "peak": -3.6,
+     "synth": -14.5
     }
    },
    "fountain-of-dreams": {
     "n": 57,
     "secs": 51.981254,
-    "track": 30
+    "track": 30,
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -5.6,
+     "synth": -22.2
+    }
    },
    "game-over": {
     "n": 12,
@@ -218,6 +344,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.7,
+     "peak": -5,
+     "synth": -10.8
     }
    },
    "goal": {
@@ -227,6 +359,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.5,
+     "peak": -14.2,
+     "synth": -16.8
     }
    },
    "grape-garden-theme": {
@@ -236,6 +374,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -4.3,
+     "synth": -11.9
     }
    },
    "grassy-bluff": {
@@ -245,6 +389,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -3.7,
+     "synth": -11.4
     }
    },
    "green-fields-intro": {
@@ -254,6 +404,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -3.3,
+     "synth": -13.2
     }
    },
    "green-fields": {
@@ -263,6 +419,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -3.5,
+     "synth": -13.1
     }
    },
    "green-greens-intro": {
@@ -272,6 +434,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.3,
+     "peak": -4,
+     "synth": -11.7
     }
    },
    "green-greens": {
@@ -281,6 +449,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.7,
+     "peak": -4.6,
+     "synth": -11.1
     }
    },
    "gunshot": {
@@ -290,6 +464,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -6.6,
+     "synth": -16
     }
    },
    "high-hills-intro": {
@@ -299,6 +479,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -2.9,
+     "synth": -13
     }
    },
    "high-hills": {
@@ -308,6 +494,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.4,
+     "peak": -2.9,
+     "synth": -12.9
     }
    },
    "hit": {
@@ -317,6 +509,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -8.2,
+     "synth": -14.3
     }
    },
    "hyper": {
@@ -326,6 +524,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.5,
+     "peak": -2.9,
+     "synth": -9.8
     }
    },
    "ice-cream-island-theme": {
@@ -335,6 +539,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.8,
+     "peak": -6.1,
+     "synth": -15.6
     }
    },
    "island-paradise-intro": {
@@ -344,6 +554,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -2.1,
+     "synth": -10.9
     }
    },
    "island-paradise": {
@@ -353,6 +569,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.1,
+     "peak": -1.5,
+     "synth": -10.8
     }
    },
    "kirby-s-adventure": {
@@ -362,6 +584,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -1.6,
+     "synth": -10.7
     }
    },
    "miss": {
@@ -371,6 +599,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.8,
+     "peak": -7.3,
+     "synth": -10.5
     }
    },
    "nightmare-emerges": {
@@ -380,6 +614,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.1,
+     "peak": -9.2,
+     "synth": -13.5
     }
    },
    "nightmare": {
@@ -389,12 +629,24 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18,
+     "peak": -1.8,
+     "synth": -10.7
     }
    },
    "no-bonus": {
     "n": 47,
     "secs": 3.99984,
-    "track": 52
+    "track": 52,
+    "loud": {
+     "v": 1,
+     "lufs": -17.2,
+     "peak": -7,
+     "synth": -8.6
+    }
    },
    "open-waters-intro": {
     "n": 43,
@@ -403,6 +655,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -3.5,
+     "synth": -12.4
     }
    },
    "open-waters": {
@@ -412,6 +670,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.7,
+     "peak": -3.1,
+     "synth": -12.2
     }
    },
    "orange-ocean-theme": {
@@ -421,6 +685,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.3,
+     "peak": -5.3,
+     "synth": -12.7
     }
    },
    "penalty": {
@@ -430,6 +700,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.9,
+     "peak": -5.9,
+     "synth": -9.6
     }
    },
    "quick-draw": {
@@ -439,6 +715,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.6,
+     "peak": -7.6,
+     "synth": -10.8
     }
    },
    "rainbow-resort-theme": {
@@ -448,6 +730,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.7,
+     "peak": -4.1,
+     "synth": -13.3
     }
    },
    "spring-in-your-step-bad-rip": {
@@ -457,6 +745,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.2,
+     "peak": -2.9,
+     "synth": -12.2
     }
    },
    "starry-sky-intro": {
@@ -466,6 +760,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.9,
+     "peak": -3.5,
+     "synth": -12.8
     }
    },
    "starry-sky": {
@@ -475,6 +775,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.6,
+     "peak": -3.4,
+     "synth": -12.6
     }
    },
    "the-moon": {
@@ -484,6 +790,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20,
+     "peak": -5.3,
+     "synth": -14.1
     }
    },
    "tower-to-the-sky-intro": {
@@ -493,6 +805,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19,
+     "peak": -2.2,
+     "synth": -11.2
     }
    },
    "tower-to-the-sky": {
@@ -502,6 +820,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -18.9,
+     "peak": -1.8,
+     "synth": -11.1
     }
    },
    "vegetable-valley-theme": {
@@ -511,6 +835,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.4,
+     "peak": -4.6,
+     "synth": -17.5
     }
    },
    "yogurt-yard-theme": {
@@ -520,6 +850,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.4,
+     "peak": -4.2,
+     "synth": -14.7
     }
    },
    "fountain-of-dreams-recapture": {
@@ -529,6 +865,12 @@
     "cap": {
      "v": 2,
      "code": "0965b9af"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -5.6,
+     "synth": -17.7
     }
    }
   }
