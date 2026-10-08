@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maestro Poses</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
+  :root {
+    color-scheme: dark;
+    --bg: #0D1120; --panel: #161C30; --grid: #242C48; --lane: #1A2138;
+    --text: #C7D0E8; --dim: #7A86AE; --gold: #E4C36A; --blue: #5B8DEF;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --pix: "Silkscreen", "Courier New", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--mono); -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px max(16px, 3vw) 64px; }
+  .top { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .top .ref { background: var(--panel); border: 1px solid var(--grid); border-radius: 10px; padding: 8px; display: grid; justify-items: center; gap: 4px; }
+  .top .ref span { font-size: 11px; color: var(--dim); }
+  .eyebrow { font: 400 12px/1 var(--pix); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; margin: 0 0 8px; }
+  h1 { font: 700 clamp(26px, 5vw, 40px)/1.1 var(--pix); color: var(--gold); margin: 0; }
+  .lede { margin: 10px 0 0; max-width: 62ch; color: var(--text); }
+  section { margin-top: 40px; }
+  .ghead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--grid); padding-bottom: 10px; margin-bottom: 18px; }
+  .ghead h2 { font: 700 18px/1.2 var(--pix); color: var(--text); margin: 0; letter-spacing: .03em; }
+  .ghead p { margin: 0; color: var(--dim); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 232px), 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--grid); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .15s, transform .15s; }
+  .card:hover { border-color: #3A4670; transform: translateY(-2px); }
+  .stage { position: relative; display: grid; place-items: center; padding: 22px 0 18px;
+    background: repeating-linear-gradient(to bottom, transparent 0 11px, var(--lane) 11px 12px), radial-gradient(120% 90% at 50% 100%, #1E2748 0%, #121830 70%);
+    border-bottom: 1px solid var(--grid); }
+  .num { position: absolute; top: 10px; left: 10px; font: 700 13px/1 var(--pix); color: var(--bg); background: var(--gold); padding: 5px 7px 4px; border-radius: 3px; }
+  svg.sprite { display: block; image-rendering: pixelated; shape-rendering: crispEdges; }
+  svg.big { width: 144px; height: 144px; }
+  svg.mid { width: 64px; height: 64px; }
+  svg.small { width: 32px; height: 32px; flex: none; }
+  .body { padding: 14px 16px 16px; display: grid; gap: 10px; flex: 1; align-content: start; }
+  .body h3 { margin: 0; font: 700 16px/1.2 var(--pix); color: var(--text); }
+  .body p { margin: 0; font-size: 13.5px; color: #AEB8D4; }
+  .hdr { margin-top: auto; display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 10px; }
+  .hdr .word { font: 700 14px/1 var(--pix); color: var(--gold); white-space: nowrap; }
+  .hdr .cap { margin-left: auto; font-size: 11px; color: var(--dim); }
+  ol.names { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 10px; }
+  ol.names li { background: var(--panel); border: 1px solid var(--grid); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 2.4em 1fr; gap: 2px 10px; }
+  ol.names li.base { border-style: dashed; background: transparent; }
+  ol.names .i { grid-row: span 2; font: 700 14px/1.4 var(--pix); color: var(--dim); }
+  ol.names b { font: 700 17px/1.3 var(--pix); color: var(--gold); font-weight: 700; }
+  ol.names span.why { font-size: 13.5px; color: #AEB8D4; }
+  footer { margin-top: 40px; color: var(--dim); font-size: 12.5px; max-width: 70ch; }
+</style>
+<main>
+  <div class="top">
+    <div class="ref" id="ref"><span>the original</span></div>
+    <div>
+      <p class="eyebrow">Night Roll · mascot</p>
+      <h1>Maestro, with notes</h1>
+      <p class="lede">10 new poses of the same wizard: same hat, beard, staff and colours, every pose built around notes. Below them, 15 name ideas, with Maestro as option 0.</p>
+    </div>
+  </div>
+  <section>
+    <div class="ghead"><h2>Poses</h2><p>Each one is shown at 144px and at 32px beside the wordmark.</p></div>
+    <div class="grid" id="poses"></div>
+  </section>
+  <section>
+    <div class="ghead"><h2>Name ideas</h2><p>Musical, medieval and easy to say. Pick one, or keep Maestro.</p></div>
+    <ol class="names" id="names"></ol>
+  </section>
+  <footer>Pose 7 adds Echo's purple as a seventh colour; every other pose uses Maestro's six.</footer>
+</main>
+<script>
+(function () {
+  var POSES = [{"n":1,"name":"Downbeat","line":"Swinging the staff for the downbeat; the notes fly off the tip.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["..........k........kgkgk",".........kbk.......kgkgk","........kgbk...w..kggkk.",".......kbbbk.......kkk..","......kbgbbk....w...kokk","......kbbbbbk.......kokg",".....kbbbbbgk......kok.k","...kkbgbbbbbbkkkk..kok..","..kggggggggggggggkkok..w","...kksssssssskkkk.kok...","....kskssssksk...kok....","....kssssssssk..kkok....","...kwwwwwwwwwwkkssk.....","..kkkwwwwwwwwk.kssk.....",".kbbkwwwwwwwwk.kbbk.....",".kbbbkwwwwwwk.kbbbk.....",".kbbbbwwwwwwkkbbbbk.....",".kbbbbbwwwwkkbbbbbk.....",".kbbbbbbwwkkbbbbbbk.....",".kbbbbbbbk.kbbbbbbk.....",".kbbbbbbbbkkbbbbbbk.....",".kbbbbbbbbbbbbbbbbk.....","..kkkkkkkkkkkkkkkk......","........................"]},{"n":2,"name":"Eighth-note spell","line":"Casting a spell, and what comes out is a pair of beamed eighth notes.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["w.....w........k........",".kkkk.........kbk.......","kggggk.......kgbk.......","kgkkgk......kbbbk.......","kgkkgk.....kbgbbk.......","ggkggk.....kbbbbbk......","ggkggk....kbbbbbgk......","kk.kk...kkbgbbbbbbkkkk..","..kgk..kggggggggggggggk.","..kgk...kksssssssskkkk..","wkggk....kskssssksk.....",".kkkw....kksksskskk.....","kssk....kwwwwwwwwwwk....","ksskk..kkkwwwwwwwwk..kk.",".kbbbkkbbkwwwwwwwwk.kbbk","..kbbbbbbbkwwwwwwk.kbbbk","...kkbbbbbbwwwwwwkkbbbbk",".....kkbbbbbwwwwkkbbbbbk","......kbbbbbbwwkkbbbbbbk","......kbbbbbbbk.kbbbbbbk","......kbbbbbbbbkkbbbbbbk","......kbbbbbbbbbbbbbbbbk",".......kkkkkkkkkkkkkkkk.","........................"]},{"n":3,"name":"Reading the score","line":"Reading a glowing score; the note bars on the page are a piano roll.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["............k...........","...........kbk..........","..........kgbk..........",".........kbbbk..........","........kbgbbk..........","........kbbbbbk.........",".......kbbbbbgk.........",".....kkbgbbbbbbkkkk.....","....kggggggggggggggk....",".....kksssssssskkkk.....","......kssssssssk........","......kkksssskkk........","...g.kwwwwwwwwwwk...g...","....kkkwwwwgwwwkkkkk....","...kbwwwwwwoowwwwwwbk...","...kssggggwoowwwwwssk...","...ksswwwwwooggggwssk...","...kbwwgggwoowwwwwwbk...","..gkbwwwwwwoowgggwwbkg..","...kbwwwwwwoowwwwwwbk...","...kbbbbbbbbkkbbbbbbk...","...kbbbbbbbbbbbbbbbbk...","....kkkkkkkkkkkkkkkk....","........................"]},{"n":4,"name":"Orbit","line":"Notes circling him like moons while he works out the next phrase.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["...g........k...g...kgk.","...........kbk......kggk",".k........kgbk......kgkg","kgk......kbbbk.....kggkk","kgk.....kbgbbk.....kggk.","ggk.....kbbbbbk.....kk..","kk.....kbbbbbgk.....k...",".....kkbgbbbbbbkkkkkok..","g...kggggggggggggggkok..",".....kksksssskskkkkkok..","......kssssssssk...kok.g","..k...kssssssssk...kok..",".kgk.kwwwwwwwwwwk.kssk..",".kggkkkwwwwwwwwk..kssk..",".kgkgbkwwwwwwwwk.kbbokk.","kggkbbbkwwwwwwk.kbbbokgk","kggkbbbbwwwwwwkkbbbbokgk",".kkkbbbbbwwwwkkbbbbboggk","...kbbbbbbwwkkbbbbbbokk.","g..kbbbbbbbk.kbbbbbbok..","...kbbbbbbbbkkbbbbbbok..","...kbbbbbbbbbbbbbbbbok.g","....kkkkkkkkkkkkkkkkk...","........................"]},{"n":5,"name":"Note lantern","line":"Holding a single note up like a lantern to find his way through a dark track.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["...........k............","..........kbk..w...kk.w.",".........kgbk.....kggk..","........kbbbk.....kgggk.",".......kbgbbk.....kgkgk.",".......kbbbbbk....kgkk..","......kbbbbbgk..kkggk..w","....kkbgbbbbbbkkggggk...","...kggggggggggwgggggk...","...koksksssskskkkggk....","...kokssssssssk..kkk..w.","...kokssssssssk..kssk...","...ksswwwwwwwwwk.kssk...","...ksswwwwwwwwk..kssk...","..kbokwwwwwwwwk.kbbk....","..kbobkwwwwwwk.kbbbk....","..kbobbwwwwwwkkbbbbk....","..kbobbbwwwwkkbbbbbk....","..kbobbbbwwkkbbbbbbk....","..kbobbbbbk.kbbbbbbk....","..kbobbbbbbkkbbbbbbk....","..kbobbbbbbbbbbbbbbk....","...kkkkkkkkkkkkkkkk.....","........................"]},{"n":6,"name":"Sitting on a note","line":"Resting on a giant eighth note between takes.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["..........kgbk..........",".........kbbbk.....kk...","........kbgbbk....kggk..","........kbbbbbk...kgggk.",".......kbbbbbgk...kggggk",".....kkbgbbbbbbkkkkggkgk","....kggggggggggggggggkgk",".....kksssssssskkkkggkk.","......kskssssksk..kggk..","......kksksskskk..kggk..",".....kwwwwwwwwwwk.kggk..","....kkkwwwwwwwwk..kggk..","...kbbkwwwwwwwwk.kbbgk..","...kbbbkwwwwwwk.kbbbgk..","...kbbbbwwwwwwkkbbbbgk..","...kbbbbbwwwwkkbbbbbgk..","...kbbbbbbwgkkbbbbbbgk..","....kkgggggggggggkkggk..","...kgggwwgggggggggggk...","..kgggwgggggggggggggk...","..kgggggggggggggggggk...","...kgggggggggggggggk....","....kkgggggggggggkk.....","......kkkkkgkkkkk......."]},{"n":7,"name":"Duet with Echo","line":"A duet with Echo perched on the staff: he takes the low part, she takes the high.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A","v":"#3B3566"},"px":["..g.......k.......k.k...","..g......kbk...k.kvkvk.k",".gg.....kgbk..kvkkvvvkkv",".......kbbbk..kvvvgvgvvv","....w.kbgbbk...kvvkvkvvk","......kbbbbbk...kk.k.kk.",".....kbbbbbgk.....kok..g","...kkbgbbbbbbkkkk.kok.g.","..kggggggggggggggkkok.g.","...kksssssssskkkk.kok...","....kskssssksk....kok...","....kksksskskk...kkok...","...kwwwwwwwwwwk.kssok...","..kkkwwwwwwwwk..kssok...",".kbbkwwwwwwwwk.kbbkok...",".kbbbkwwwwwwk.kbbbkok...",".kbbbbwwwwwwkkbbbbkok...",".kbbbbbwwwwkkbbbbbkok...",".kbbbbbbwwkkbbbbbbkok...",".kbbbbbbbk.kbbbbbbkok...",".kbbbbbbbbkkbbbbbbkok...",".kbbbbbbbbbbbbbbbbkok...","..kkkkkkkkkkkkkkkk.k....","........................"]},{"n":8,"name":"Final bow","line":"Taking a bow as the last note fades, with the stars on his hat still lit.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["..k............kgk..k...",".kgk............k..kgk..",".kgk........k......kgk..","kggk.......kbk....kggk..",".kk.k.....kgbk.....kk...","...kgk...kbbbk.........w","....k...kbgbbk..........","........kbbbbbk.........","w......kbbbbbgk......k..",".....kkbgbbbbbbkkkk.kok.","....kggggggggggggggkkok.",".....kksssssssskkkk.kok.","..w...kssssssssk....kok.","....kkkkksssskkk..kkkok.","...kbbwwwwwwwwwwkkbssok.","...kbbbwwwwwwwwkkbbssok.","...kbbbwwwwwwwwkbbbbkok.","...kbbbbwwwwwwkbbbbbkok.","...kbbbbwwwwwwbbbbbbkok.","...kbbbbbwwwwkbbbbbbkok.","...kbbbbbbwwkkbbbbbbkok.","...kbbbbbbbbbbbbbbbbkok.","....kkkkkkkkkkkkkkkk.k..","........................"]},{"n":9,"name":"Asleep","line":"Dozing off mid-rehearsal; his Zs come out as notes, and they are still in key.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":[".................kggggk.","..........k.......kkgk..",".........kbk......kgkk..","........kgbk.....kggggk.",".......kbbbk....kgkkkkk.","......kbgbbk....kgk.kggk","......kbbbbbk..kggk..kgk",".....kbbbbbgk...kk..kggk","...kkbgbbbbbbkkkk.k..kk.","..kggggggggggggggkok....","...kksssssssskkkkkok....","....kssssssssk....kok...","....kkksssskkk....kok...","..kkwwwwwkkwwwk.kkkok...",".kbbkwwwwwwwwk.kbbkok...",".kbbbwwwwwwwwkkbbbkkok..",".kbbbbwwwwwwkkbbbbkkok..",".kbbbbwwwwwwkbbbbbkkok..",".kbbbbbwwwwkbbbbbbkkok..",".kbbbbbbwwkkbbbbbbk.kok.",".kbbbbbbbbkkbbbbbbk.kok.",".kbbbbbbbbbbbbbbbbk.kok.","..kkkkkkkkkkkkkkkk...k..","........................"]},{"n":10,"name":"Hello","line":"Waving hello when the app opens, staff in the other hand.","pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["..............k....kgk..",".............kbk...kggk.","............kgbk...kgkgk","...........kbbbk..kggkk.","..........kbgbbk..kggk..","..........kbbbbbk..kk...","w........kbbbbbgk.....k.",".kkk.w.kkbgbbbbbbkkkkkok","ksssk.kggggggggggggggkok","ksssk..kksssssssskkkkkok","ksssk...kskssssksk...kok","wkbbk...kksksskskk...kok","..kbbk.kwwwwwwwwwwk.kssk","..kbbkkkkwkkkwwwwk..kssk","...kbbbbkwwwwwwwwk.kbbok","....kbbbbkwwwwwwk.kbbbok",".....kbbbbwwwwwwkkbbbbok",".....kbbbbbwwwwkkbbbbbok",".....kbbbbbbwwkkbbbbbbok",".....kbbbbbbbk.kbbbbbbok",".....kbbbbbbbbkkbbbbbbok",".....kbbbbbbbbbbbbbbbbok","......kkkkkkkkkkkkkkkkk.","........................"]}];
+  var ORIG = {"pal":{"k":"#080B16","b":"#2E4A8A","s":"#EFC9A0","w":"#E8ECF8","o":"#9A6338","g":"#E4C36A"},"px":["............k......kgk..","...........kbk.....kggk.","..........kgbk.....kgkgk",".........kbbbk....kkgkk.","........kbgbbk...kgggk..","........kbbbbbk..kggk...",".......kbbbbbgk...kkk...",".....kkbgbbbbbbkkkkkok..","....kggggggggggggggkok..",".....kksssssssskkkkkok..","......kskssssksk...kok..","......kssssssssk...kok..",".....kwwwwsswwwwk.kssk..","....kkkwwwwwwwwk..kssk..","...kbbkwwwwwwwwk.kbbok..","...kbbbkwwwwwwk.kbbbok..","...kbbbbwwwwwwkkbbbbok..","...kbbbbbwwwwkkbbbbbok..","...kbbbbbbwwkkbbbbbbok..","...kbbbbbbbk.kbbbbbbok..","...kbbbbbbbbkkbbbbbbok..","...kbbbbbbbbbbbbbbbbok..","....kkkkkkkkkkkkkkkkk...","........................"]};
+  var NAMES = [["Maestro","The current name, kept here to compare against: a plain, warm title for a conductor."],["Presto","Both the fastest tempo marking and the word a wizard says as the spell goes off."],["Nocturne","A nocturne is a piece of night music, which is the whole idea of Night Roll."],["Fermata","The hold sign over a note; he lets the last note ring as long as he likes."],["Largo","Means slow and broad, which is the pace of a very old wizard."],["Allegro","Means bright and lively; the friendliest-sounding name on the list."],["Rubato","Means \"stolen time\": a wizard who bends the tempo to suit the phrase."],["Cadenza","The soloist’s showy flourish near the end, like the flourish of a spell."],["Octavius","Octave plus an old, grand-sounding name; it sounds like an archmage."],["Cantor","The medieval title for the singer who led the choir."],["Minim","The medieval name for a half note; short, old and a little bit funny."],["Basso","He sings the low part, so Echo can take the high one."],["Tremolo","A trembling, repeated note, like his beard when he laughs."],["Legato","Means smooth and connected; a calm wizard who never rushes."],["Ostinato","A pattern that repeats over and over: the loop he never gets tired of."]];
+  var NS = 'http://www.w3.org/2000/svg';
+  function sprite(s, cls, label) {
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('class', 'sprite ' + cls); svg.setAttribute('shape-rendering', 'crispEdges');
+    if (label) { svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', label); } else svg.setAttribute('aria-hidden', 'true');
+    s.px.forEach(function (row, y) {
+      var x = 0;
+      while (x < 24) {
+        var ch = row[x], run = 1;
+        while (x + run < 24 && row[x + run] === ch) run++;
+        if (ch !== '.') { var r = document.createElementNS(NS, 'rect');
+          r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', run); r.setAttribute('height', 1); r.setAttribute('fill', s.pal[ch]); svg.appendChild(r); }
+        x += run;
+      }
+    });
+    return svg;
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var ref = document.getElementById('ref'); ref.insertBefore(sprite(ORIG, 'mid', 'Maestro, the original sprite'), ref.firstChild);
+  var grid = document.getElementById('poses');
+  POSES.forEach(function (s) {
+    var card = el('article', 'card'), stage = el('div', 'stage');
+    stage.appendChild(el('span', 'num', String(s.n)));
+    stage.appendChild(sprite(s, 'big', 'Maestro pose ' + s.n + ': ' + s.name));
+    card.appendChild(stage);
+    var body = el('div', 'body');
+    body.appendChild(el('h3', null, s.name)); body.appendChild(el('p', null, s.line));
+    var hdr = el('div', 'hdr'); hdr.appendChild(sprite(s, 'small')); hdr.appendChild(el('span', 'word', 'Night Roll')); hdr.appendChild(el('span', 'cap', '32px'));
+    body.appendChild(hdr); card.appendChild(body); grid.appendChild(card);
+  });
+  var ol = document.getElementById('names');
+  NAMES.forEach(function (n, i) {
+    var li = el('li', i === 0 ? 'base' : null);
+    li.appendChild(el('span', 'i', String(i))); li.appendChild(el('b', null, n[0])); li.appendChild(el('span', 'why', n[1]));
+    ol.appendChild(li);
+  });
+})();
+</script>
