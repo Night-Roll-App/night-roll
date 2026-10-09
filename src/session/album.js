@@ -99,8 +99,10 @@ export async function albumPlayIdx(idx) {
   await updateChipBtn(); // kicks the console render when there is one
   if (chip.rendering === S.songKey && chip.renderPromise) { // worth the wait: the chip is the real sound
     setInfo("rendering the console's voice for " + title + "…");
+    const said = S.statusSeq;
     await Promise.race([chip.renderPromise, new Promise(r => setTimeout(r, 15000))]);
     if (stale()) return;
+    if (S.statusSeq === said) setInfo(""); // done waiting: the line must not sit there through the song (Josh, Terminal #313); a newer line stays
   }
   if (songHasAudio()) { // same wait for a take's decode, or its first pass plays silent
     await Promise.race([audioReady(), new Promise(r => setTimeout(r, 15000))]);
