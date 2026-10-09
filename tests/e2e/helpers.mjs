@@ -65,6 +65,26 @@ export async function newComposition(page, name = "e2e-scratch") {
     createComposition(120, 4, 4); // Untitled until Save names it and picks its folder (2026-09-27)
     await saveSongAs("compositions/nightroll", n);
   }, name);
+  await settleLayout(page);
+}
+
+// Waits until the canvas stops moving: the track-chip row lands above the
+// roll after the song does (CI webkit: canvas top 110 -> 168 px), and a spec
+// that measured a point before that tapped a chip instead of the roll —
+// "double-tap a band" failed 10 of 30 runs on it (2026-10-09). Also waits out
+// the boot watchdog's panel, which covers everything.
+export async function settleLayout(page) {
+  let last = null, same = 0;
+  for (let i = 0; i < 100 && same < 3; i++) {
+    const now = await page.evaluate(() => {
+      if (document.getElementById("nr-boot-panel")) return "boot";
+      const r = canvas.getBoundingClientRect();
+      return [r.left, r.top, r.width, r.height].join(",");
+    });
+    same = now === last && now !== "boot" ? same + 1 : 0;
+    last = now;
+    await page.waitForTimeout(100);
+  }
 }
 
 export async function seedChord(page) { // C major at bar 1, quarter notes

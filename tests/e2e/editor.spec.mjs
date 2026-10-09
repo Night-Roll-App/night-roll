@@ -2,7 +2,7 @@
 // territory where the lasso-drag, id-collision, and off-screen-fill bugs
 // lived. Chromium = desktop; webkit ≈ iPad Safari.
 import { test, expect } from "@playwright/test";
-import { openApp, newComposition, seedChord, selectAll, noteXY, drag, notes, cleanup } from "./helpers.mjs";
+import { openApp, newComposition, seedChord, selectAll, noteXY, drag, notes, cleanup, settleLayout } from "./helpers.mjs";
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -263,6 +263,12 @@ test("double-tap a band opens its annotation editor", async ({ page }) => {
   await page.mouse.click(mid.x, mid.y);
   expect(await page.evaluate(() => document.getElementById("noteeditor").classList.contains("on"))).toBe(false);
   await page.waitForTimeout(500);
+  await settleLayout(page);
+  Object.assign(mid, await page.evaluate(() => { // re-measured: the first tap's point is stale if anything above the roll moved
+    const r = canvas.getBoundingClientRect();
+    return { x: r.left + RULER_W + (rollnotes[0].start + rollnotes[0].end) / 2 / song.ppq * view.pxq - view.x,
+             y: r.top + BASE_RULER_H + LANE_H / 2 };
+  }));
   // two taps back to back — no round trip between them: a slow CI runner's
   // evaluate() between the taps outlasted the window and the pair never counted
   await page.mouse.click(mid.x, mid.y);
