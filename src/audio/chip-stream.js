@@ -164,6 +164,7 @@ export function chipStreamOnChunk(c) {
     if (stereo) { buf.copyToChannel(stereo.l, 0); buf.copyToChannel(stereo.r, 1); bytes += stereo.l.byteLength + stereo.r.byteLength; }
     else { buf.copyToChannel(data, 0); bytes += data.byteLength; }
     buffers[name] = buf;
+    st.heard.add(name); st.silent.delete(name); // audible in this chunk: the console plays it from here on (chipStreamOnSilent says why)
   }
   st.cache.set(c.idx, {buffers, bytes, pinned: st.pinnedIdx.has(c.idx)});
   loudStreamChunk(c.idx, buffers, st.rate); // an unmeasured song: its first chunks stand in for the whole (audio/levels.js)
@@ -175,11 +176,16 @@ export function chipStreamOnChunk(c) {
 // {silent:{id, names}} -> chip.stream.silent, a live Set — chipHas() (and so
 // scheduleNote's chip guard) reads it the instant it updates: a track the
 // idle sweep found never audible lets the synth voice back in, same as the
-// whole-render path dropping a silent track from chip.pcm entirely.
+// whole-render path dropping a silent track from chip.pcm entirely. The
+// sweep only knows the chunks rendered so far — at open, the first window —
+// so a track that comes in later (FF7 The Prelude: tracks 1-10 enter at bar
+// 17, ~47 s) was reported silent and played on synth for the whole song
+// (Josh, Terminal #295-299). A track ever heard in a chunk (st.heard) is
+// never silent again, whichever message lands first.
 export function chipStreamOnSilent(s) {
   const st = chip.stream;
   if (!st || st.key !== s.id) return;
-  st.silent = new Set(s.names);
+  st.silent = new Set(s.names.filter(n => !st.heard.has(n)));
 }
 export function chipStreamRequestRange(from, to) {
   const st = chip.stream;
@@ -442,7 +448,7 @@ export async function chipStreamOpen(auto) {
   chip.stream = {
     key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
     tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
-    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(),
+    silent: new Set(), heard: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(),
     bytes: 0, peakBytes: 0, live: false, srcs: [],
   };
   chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;

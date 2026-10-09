@@ -2466,6 +2466,28 @@ test("chip stream mode: the synth guard reads chip.stream.live; a silent-track r
   run(`playing = false; chip.key = null; chip.stream = null; songKey = null; song.tracks[0].voice = undefined;`);
 });
 
+// The idle sweep only knows the chunks rendered so far — at open, the first
+// window — so a track that comes in later must not stay "silent" (Josh,
+// Terminal #295-299: FF7 The Prelude's tracks 1-10 enter at bar 17 and
+// played on synth all song on the iPad, the device that streams it).
+test("chip stream mode: a track heard in a later chunk leaves the silent set, and a stale sweep can't put it back", () => {
+  installSong();
+  run(`song.tracks = [{name: "harp", notes: []}, {name: "strings", notes: []}];
+       trackState = [{muted: false, solo: false}, {muted: false, solo: false}];
+       songKey = "albums/ps1/x/late.mid";
+       chip.key = songKey; chip.pcm = null; chip.buffers = null; ensureAudio();
+       chip.stream = {key: songKey, gen: 0, rate: 44100, tracks: ["harp", "strings"], silent: new Set(), heard: new Set(),
+                      cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(), bytes: 0, peakBytes: 0, live: true, srcs: []};
+       chipStreamOnChunk({id: songKey, gen: 0, idx: 0, tracks: {harp: new Float32Array(64)}});
+       chipStreamOnSilent({id: songKey, names: ["strings"]});`);
+  assert.equal(val(`chipHas("strings")`), false, "silent so far: the synth may carry it");
+  run(`chipStreamOnChunk({id: songKey, gen: 0, idx: 23, tracks: {harp: new Float32Array(64), strings: new Float32Array(64)}});`);
+  assert.equal(val(`chipHas("strings")`), true, "heard at bar 17's chunk: the console plays it");
+  run(`chipStreamOnSilent({id: songKey, names: ["strings"]});`);
+  assert.equal(val(`chipHas("strings")`), true, "a sweep reply that lands late doesn't re-silence a heard track");
+  run(`chip.key = null; chip.stream = null; songKey = null;`);
+});
+
 // Full protocol exercise for docs/streamed-render-plan.md step 3, own
 // createApp() (mutates chipWorker/Worker/CHIPS.psf — the same isolation
 // every other worker test in this file uses). The FAKE worker answers every
