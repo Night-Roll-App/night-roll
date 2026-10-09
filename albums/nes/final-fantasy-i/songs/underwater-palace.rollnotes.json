@@ -1,5 +1,23 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "underwater-palace", "origin": {"kind":"capture"}, "notes": [
-  {"at":[1,1],"to":[1,4],"type":"chord","chord":"G#m"},
+{ "format": "night-roll-annotations", "version": 2, "song": "underwater-palace", "origin": {"kind":"capture"}, "stamp": 1791577784958, "notes": [
   {"at":[1,1],"type":"key","key":"G#m"},
-  {"at":[2,1],"to":[2,4],"type":"chord","chord":"F#","roman":"bVII"}
+  {"at":[1,1],"to":[8,4],"type":"section","label":"A"},
+  {"at":[1,1],"type":"songnote","title":"Section C: calm or spooky?","kind":"question","note":"Section C (bars 13-16) slows the bass to one held note per bar, which calms the rhythm, but the harmony feels spooky. Which bar sounds spookiest and which most settled, and what is different about those chords?"},
+  {"at":[1,1],"to":[1,4],"type":"chord","chord":"G#m","roman":"i"},
+  {"at":[2,1],"to":[2,4],"type":"chord","chord":"F#","roman":"bVII"},
+  {"at":[3,1],"to":[3,4],"type":"chord","chord":"E","roman":"bVI","no5":true},
+  {"at":[4,1],"to":[4,4],"type":"chord","chord":"F#","roman":"bVII"},
+  {"at":[5,1],"to":[5,4],"type":"chord","chord":"G#m","roman":"i"},
+  {"at":[6,1],"to":[6,4],"type":"chord","chord":"F#","note":"bVII"},
+  {"at":[7,1],"to":[7,4],"type":"chord","chord":"E","roman":"VI","no5":true},
+  {"at":[8,1],"to":[8,4],"type":"chord","chord":"C#7/F"},
+  {"at":[9,1],"to":[12,4],"type":"section","label":"B"},
+  {"at":[9,1],"to":[9,4],"type":"chord","chord":"D#/G"},
+  {"at":[10,1],"to":[10,4],"type":"chord","chord":"G#m"},
+  {"at":[11,1],"to":[11,4],"type":"chord","chord":"F#7/A#"},
+  {"at":[12,1],"to":[12,4],"type":"chord","chord":"B"},
+  {"at":[13,1],"to":[16,4],"type":"section","label":"C"},
+  {"at":[13,1],"to":[13,4],"type":"chord","chord":"E"},
+  {"at":[14,1],"to":[14,4],"type":"chord","chord":"C#m7"},
+  {"at":[15,1],"to":[15,4],"type":"chord","chord":"D#"},
+  {"at":[16,1],"to":[16,4],"type":"chord","chord":"Edim7"}
 ] }
