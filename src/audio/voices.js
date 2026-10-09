@@ -551,6 +551,7 @@ export function glideTakeover(ti, n, when, durSec, v) {
 // the default NES/sampled voice path — used directly above, and as the
 // fallback (with the track's auto voice) when a game instrument can't render
 export function playSynthVoice(ti, n, when, durSec, v) {
+  S.synthNotes++;
   if (glideTakeover(ti, n, when, durSec, v)) return;
   const cx = noteCtl(ti, n, when, durSec);
   const g = S.audio.createGain();

@@ -34,6 +34,7 @@ import { recOpenEnded } from "../model/song.js";
 import { applyLevels } from "./levels.js";
 import { trackGain } from "./engine.js";
 import { chipActive } from "./chip.js";
+import { hearMidi } from "./chip.js";
 import { chipStreamStart } from "./chip-stream.js";
 import { chipStart } from "./chip.js";
 import { trackIsDrums } from "../model/grid.js";
@@ -288,6 +289,18 @@ export async function play(fromSec = 0, opts = {}) {
   applyLevels(); // the song gain for what is about to sound (console / synth / clip), then every fader — audio/levels.js
   S.song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
   if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport
+  // what actually sounds, 6 s in, in the debug log: "console voice ready" was
+  // logged on the iPad while the song played on synth (Josh, Terminal
+  // #314-318), and the log couldn't say which. Facts only, no fix.
+  S.synthNotes = 0;
+  const checkKey = S.songKey, checkT0 = S.playT0;
+  setTimeout(() => {
+    if (!S.playing || S.songKey !== checkKey || S.playT0 !== checkT0) return;
+    const con = hearMidi() ? "off (Hear the MIDI)" : chip.key !== S.songKey ? "off (no console render for this song)"
+      : chip.stream ? "stream, " + chip.stream.srcs.length + " chunk sources, live " + chip.stream.live + ", silent " + chip.stream.silent.size
+      : chip.srcs.length + " console tracks";
+    logDebug("play check: " + con + "; synth notes in the first 6 s: " + S.synthNotes);
+  }, 6000);
   S.schedIdx = S.schedEvents.findIndex(e => e.sec >= fromSec);
   if (S.schedIdx < 0) S.schedIdx = S.schedEvents.length;
   // chase: a note the cursor lands mid-way through still plays its remainder —

@@ -20,6 +20,7 @@ export const S = {
   laneOverride: null,
   _autoColorCache: { key: "", colors: [] },
   playRate: 1,
+  synthNotes: 0, // synth voices started since the last play() — the play check's count (audio/transport.js)
   song: null,
   songKey: null,
   songViewRedraw: null,
