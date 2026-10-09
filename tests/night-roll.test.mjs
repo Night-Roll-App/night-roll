@@ -2488,6 +2488,22 @@ test("chip stream mode: a track heard in a later chunk leaves the silent set, an
   run(`chip.key = null; chip.stream = null; songKey = null;`);
 });
 
+// A streamed song followed by one that renders whole: the old stream session
+// must not survive, or play() takes the stream path and the synth plays the
+// whole song (Josh, Terminal #322 — FF7 Staff Roll → Steal the Tiny Bronco!).
+test("chip: a whole render drops the previous song's stream session, so play() uses the whole render", () => {
+  installSong();
+  run(`song.tracks = [{name: "pulse1", notes: []}];
+       trackState = [{muted: false, solo: false}];
+       songKey = "albums/ps1/x/whole.mid";
+       chip.stream = {key: "albums/ps1/x/streamed.mid", gen: 0, srcs: [], silent: new Set(), heard: new Set(), live: false};
+       chip.key = "albums/ps1/x/streamed.mid";`);
+  assert.equal(val(`chipPublish(songKey, "psf", {pulse1: new Float32Array(32)}, 44100, 0, null, null)`), true);
+  assert.equal(val(`chip.stream`), null, "the stale stream session is gone");
+  assert.equal(val(`chipActive() && !chip.stream`), true, "play() takes chipStart, the whole render");
+  run(`chip.key = null; chip.pcm = null; chip.buffers = null; songKey = null;`);
+});
+
 // Full protocol exercise for docs/streamed-render-plan.md step 3, own
 // createApp() (mutates chipWorker/Worker/CHIPS.psf — the same isolation
 // every other worker test in this file uses). The FAKE worker answers every

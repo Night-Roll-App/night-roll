@@ -976,6 +976,10 @@ export function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) 
     logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
     return false;
   }
+  if (chip.stream) { // a streamed song's session outlived it: play() saw chip.stream, took the stream path, found nothing for THIS song, and the synth played everything (Josh, Terminal #314-322 — the play check: "stream, 0 chunk sources" after a 423 MB whole render)
+    for (const src of chip.stream.srcs) { try { src.stop(); } catch (err) { /* already done */ } }
+    chip.stream = null;
+  }
   chip.pcm = pcm; chip.pcmRate = sampleRate;
   chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
   chip.pan = pan && Object.keys(pan).length ? pan : null; // per-track static pan the memory budget downmixed to mono (planChipRender/chipStaticPan)
