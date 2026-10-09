@@ -226,3 +226,74 @@ your page and only your annotations.*
 Q7. **Should Claude ever read her comments?** Default: only when you ask
 ("what did Anna say about bar 5?"), and it repeats her words, never adds
 its own answer.
+
+## 11. A hosted database? (Josh's follow-up)
+
+Josh asked whether a database on Heroku (~$15/month) would help — here and
+in other features — so that it pays for itself.
+
+**What it would change for the coach.** Only the delivery step. Her 💬
+would save straight to the database, with no "Send to Josh" text and no
+GitHub token (it removes the Messages hop from Option A and the token from
+Option C). Josh would see her comments the moment he opened the song. Everything
+else stays the same: the review link, the anchoring, the Learning-mode wall.
+Catch: a database can't be called safely from a web page on its own, so it
+needs a small server in front of it **and a login for her**. So the
+"no account for her" advantage of Option A goes away.
+
+**Other features it could carry (each with an example):**
+- *Unsaved work across devices* — you edit on the iPad, sit at the Mac,
+  and your unpublished edits are there. Today they stay on each device
+  until Publish, and Publish to GitHub already does this one tap later.
+- *Quiz progress* — your spaced-repetition boxes follow you from iPad to
+  Mac. Queued as "Quiz platform" (open-items), awaiting your ruling. A
+  small JSON file in your repo would do the same.
+- *Ask chat history* — the same chat on every device. Chats already
+  publish to the repo (src/sync/publish.js:606-609).
+- *Reaching Claude away from home* — the database doesn't help here. Claude
+  runs on your Mac (the bridge). A hosted relay could stand in for Tailscale
+  (parked, "Tailscale drops on the iPad"), but that's a server holding your
+  Claude access, which is a bigger security question than the coach.
+- *Captures as background jobs* — no. Captures are heavy emulation, and the
+  rips can't live on a hosted server (they're kept off public hosting on
+  purpose).
+- *More coaches / students / other users later* — this is where a database
+  really helps: many people, each with their own login, comments and
+  notifications. That's a product decision, not a coaching one.
+
+**What it costs besides $15/month:**
+- *An always-on piece you look after.* Plan changes (Heroku has dropped
+  free tiers and changed prices before), database upgrades, backups, and an
+  outage that breaks comments while the rest of the app works.
+- *Logins.* Her account, a password reset, and yours on two devices. That's
+  new UI and new ways to get locked out.
+- *Security.* Anything the web page or the iPad app carries is readable by
+  anyone, so every rule about who can write what has to live on the server.
+  One mistake there means someone else can write to your data.
+- *The house rules.* "Annotations + the .mid are the only real state"
+  (CLAUDE.md) and "no server" (README.md) would both change. Each feature
+  would need an offline answer for the iPad, a test fake for the vm suite,
+  and new App Store privacy labels (currently "no data collected").
+- *A second place your work lives.* GitHub history and the database could
+  disagree. Two copies is how notes went missing before (6ad5eee).
+
+**Cheaper alternatives you already have:**
+- *GitHub, free:* public or private repos, Issues/Discussions with email
+  notifications, and the Contents API the app already publishes through. A
+  private repo for coach comments costs $0 (she'd need an account).
+- *The Mac bridge:* already an always-on server you run. It isn't reachable
+  by her (Tailscale is private), and making it public isn't worth the
+  risk for this.
+- *Free tiers* (e.g. Cloudflare D1/KV, Supabase free) if a hosted store is
+  ever truly needed — the same costs above except the $15.
+
+**Recommendation: not now.** Every feature on the list except "more
+users" is already handled by GitHub plus one tap. The coach feature works
+without it (Option A) and costs a login if it uses one. The real price is
+the upkeep, the logins and the security, not the $15. Revisit if any of
+these become true: (1) a second coach or regular user who won't touch
+GitHub, (2) you want comments and replies to show up live, with
+notifications, (3) the Messages round trip in Option A turns out to be the
+thing that stops her using it. If that happens, start with a free tier and
+keep GitHub as the real copy: the database holds comments only, and Josh's
+Publish copies them into the repo's `.comments.json`.
