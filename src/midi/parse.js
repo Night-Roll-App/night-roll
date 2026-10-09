@@ -192,7 +192,7 @@ export function parseMidi(buf, opts = {}) {
     }
     if (notes.length) {
       const tr = curPan === null ? {name, notes} : {name, notes, midiPan: curPan};
-      if (kit) tr.kit = true;
+      if (kit || (opts.foreign && notes.every(n => n.ch === 9))) tr.kit = true; // a foreign file's GM drum track ("Standard", "Track 10") is all channel 10 whatever its name: kept there on every save (percussion plan §10)
       if (ctl.length) tr.ctl = ctl;
       if (offset) tr.offset = offset;
       tracks.push(tr);

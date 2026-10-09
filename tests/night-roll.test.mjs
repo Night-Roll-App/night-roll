@@ -15787,3 +15787,22 @@ test("app: readData keeps a device copy — instant from the copy, refreshed in 
   assert.equal(await read(true), "v2", "GitHub fails on a bust read: the copy stands in");
   assert.equal(await read(false), "v2", "and a plain read never waits on GitHub");
 });
+
+// A dropped GM file's drum track whose name says nothing ("Standard") is all
+// channel 10: it stays there through the app's save (percussion plan §10,
+// advisor review — it came back off ch 10 and played pitched after a reload).
+// A capture (not foreign) never gets this: the ed929059 rule stands.
+test("a foreign .mid's all-channel-10 track is a kit on save, whatever its name; captures are untouched", () => {
+  const song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [
+    {name: "Piano", notes: [{t: 0, d: 480, p: 60, v: 90, ch: 0}]},
+    {name: "Standard", notes: [{t: 0, d: 120, p: 36, v: 90, ch: 9}, {t: 480, d: 120, p: 38, v: 90, ch: 9}]}]};
+  const bytes = JSON.stringify([...new Uint8Array(new Uint8Array(val(`Array.from(writeMidi(${JSON.stringify({...song, tracks: song.tracks.map(t => ({...t, kit: t.name === "Standard"}))})}))`)))]);
+  const foreign = JSON.parse(run(`JSON.stringify(parseMidi(new Uint8Array(${bytes}).buffer, {trust: true, foreign: true}).tracks.map(t => ({name: t.name, kit: !!t.kit})))`));
+  assert.deepEqual(foreign, [{name: "Piano", kit: false}, {name: "Standard", kit: true}]);
+  // the GM file as another app wrote it: no marker, drum track on ch 10
+  const plain = JSON.stringify([...new Uint8Array(val(`Array.from(writeMidi(${JSON.stringify({...song, tracks: [song.tracks[0], {...song.tracks[1], name: "drums"}]})}))`))]);
+  const reread = run(`(() => { const s = parseMidi(new Uint8Array(${plain}).buffer, {trust: true, foreign: true}); s.tracks[1].name = "Standard"; const back = parseMidi(writeMidi(s).buffer, {trust: true}); return JSON.stringify(back.tracks.map(t => [t.name, t.notes[0].ch, !!t.kit])); })()`);
+  assert.deepEqual(JSON.parse(reread), [["Piano", 0, false], ["Standard", 9, true]], "renamed to a name the regex doesn't know, it still saves on ch 10");
+  const capture = run(`JSON.stringify(parseMidi(new Uint8Array(${plain}).buffer, {trust: true}).tracks.map(t => !!t.kit))`);
+  assert.deepEqual(JSON.parse(capture), [false, false], "not foreign (a capture / the app's own file): no inference");
+});
