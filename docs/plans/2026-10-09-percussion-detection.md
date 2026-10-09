@@ -271,3 +271,37 @@ the old one. Default: yes.
   This is visible in the warning; no change is proposed.
 - **Learning mode.** Kit labels name drum sounds, not keys or chords, so
   they are allowed. The census reports facts only.
+
+## 10. Advisor review (2026-10-09, Opus — Fable was at its usage limit)
+
+ACCEPT-WITH-RESERVATIONS for fix 1. Confirmed: the writer drops ch 9 for
+kit groups not named kit/drum (ed929059); Racing Chocobos HEAD → 2c49891a
+grades VELOCITY (channel/CC/text-meta are soft); the app already plays ch-9
+notes as drums (voices.js:982, grid.js:89-95), so §2f is deferred except
+tools/query-lib.mjs:85.
+
+Changes to the plan:
+- **Seven track-map sites rebuild tracks field by field and would drop
+  `kit`** — all must carry it, in the same key position (musicSig is
+  JSON.stringify; order matters): src/import/capture.js:536,
+  src/model/versions.js:45-60 (draftDoc), src/sync/publish.js:431,
+  src/import/hub.js:430 and :688, src/session/files.js:197 (Save As),
+  src/session/song.js:465 (openDraftDoc). Check setSong keeps parsed track
+  objects (folder-mode writeMidi at versions.js:260,294).
+- **Namespaced marker** (`kit:1`, like `sounding:N`) so a foreign file's
+  own "kit" text event isn't consumed.
+- **N64 (§2e) out of fix 1** — its names already match.
+- **Q-A caveat:** the dry run only stays VELOCITY when nothing else drifted
+  since 10/07 (CC91/CC84/program drift → MOVED → annotated songs get copies).
+- **Adjacent existing bug:** a foreign GM .mid whose drum track isn't named
+  drum/kit loses ch 10 on its first save (hub → draft → writeMidi). Option:
+  non-trust parses set `tr.kit` when every note is on ch 9. Queued.
+
+Fix 1 build checklist: (1) midi-write.mjs kitMetaEvent + isKit uses tr.kit;
+(2) src/midi/write.js identical; (3) parse.js consumes the marker → tr.kit;
+(4) the seven maps; (5) psx/notes.mjs trackBytes/emit pass g.kit;
+(6) query-lib isDrumTrack reads tr.kit; (7) vm tests: extend :783 with a
+kit "ch 8 prog 7" track, a parse→draft→openDraftDoc→draftDoc→both-writers
+round trip, :10448 stays green, a foreign "kit" text stays untouched;
+(8) split check + run-tests; (9) NIGHT-ROLL :450 + open-items; (10) only then
+the recapture dry run, FF7 first.
