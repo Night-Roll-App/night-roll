@@ -694,6 +694,9 @@ First heard on DKR Title Theme now that the Chip | MIDI switch exists. Gap close
 ## 2026-10-09 CI webkit flake — FIXED (0a0d418), two leads left
 12 of 30 tests runs failed (webkit editor specs, 10 on "double-tap a band"): taps measured before the track-chip row landed and pushed the roll down 58 px (canvas top 110 -> 168). settleLayout (tests/e2e/helpers.mjs) waits it out; 4/4 runs green after. QUEUED: (1) is that 58 px jump visible to Josh on a song open (the roll moving under his finger)? If so, reserve the chip row's height up front. (2) One retry hit the boot watchdog panel (boot > 10 s on CI webkit) — watch for a repeat before acting.
 
+## 2026-10-09 iPad album play: Next stopped everything (Josh, Terminal #304/#305) — NOT REPRODUCED
+FF7 album play on the iPad, after the stream fixes (13d567f build): Next during play stopped playback without advancing ("couldn't open Oppressed People — Fetch is aborted"), the next Next opened Parochial Town but it "didn't work properly" (stuck on "rendering the console's voice…"); an app restart fixed it. No app code aborts a song fetch (no AbortController in song/chip/album paths), so the abort came from WKWebView itself — memory pressure is the first suspect (long streamed PS1 songs back to back; cf. 301d05d4's SNES stall). Next time: capture the debug log (Settings → Debug log) before restarting, and note which songs played before it. Then measure stream-session memory across song changes (worker + chip.stream.cache freed?).
+
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q23. (LATER — Josh, 2026-10-09: "not right now", music first) Nocturno icon: which pose?
 Q24. (LATER — same) Echo: does it appear anywhere yet?
