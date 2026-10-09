@@ -1284,7 +1284,11 @@ is keyed by the chunk's ANCHOR (`segment.when + (chunkTapeStart -
 segment.tapeFrom) / playRate`, unclamped, constant across ticks; 50 ms
 tolerance), never by `when`: the playhead chunk's `when` is "now", new every
 tick, and keying by it restarted that chunk each tick — dozens of offset
-copies, FF7 on the iPad (Josh, Terminal #292–294, fixed 2026-10-09). Overlap-add between adjacent chunks' baked fades (step 2) needs no
+copies, FF7 on the iPad (Josh, Terminal #292–294, fixed 2026-10-09). The {idle} sweep's
+silent list only covers chunks rendered so far, so `chip.stream.heard` (every
+name a chunk has delivered) overrides it: a track that enters late (FF7 The
+Prelude's tracks 1–10 at bar 17) is never handed to the synth (Terminal
+#295–302). Overlap-add between adjacent chunks' baked fades (step 2) needs no
 special handling here — both chunks are simply scheduled at their own
 natural tape alignment and the Web Audio graph sums them. Evicts cached
 chunks behind the playhead (one chunk of slack for the overlap tail still
