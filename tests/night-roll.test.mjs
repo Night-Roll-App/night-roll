@@ -2485,6 +2485,13 @@ test("chip stream mode: a track heard in a later chunk leaves the silent set, an
   assert.equal(val(`chipHas("strings")`), true, "heard at bar 17's chunk: the console plays it");
   run(`chipStreamOnSilent({id: songKey, names: ["strings"]});`);
   assert.equal(val(`chipHas("strings")`), true, "a sweep reply that lands late doesn't re-silence a heard track");
+  // its level follows: console level once heard, not the synth's it got at play()
+  run(`chip.loud = {v: 1, lufs: -20, peak: -6, synth: -5}; chip.kind = "psf";
+       chip.stream.heard = new Set(["harp"]); chip.stream.silent = new Set(["strings"]); applyLevels();`);
+  assert.equal(val(`levels.chipTracks.has(1)`), false, "silent so far: synth level");
+  run(`chipStreamOnChunk({id: songKey, gen: 0, idx: 30, tracks: {strings: new Float32Array(64)}});`);
+  assert.equal(val(`levels.chipTracks.has(1)`), true, "heard: the console level, re-applied mid-song");
+  run(`chip.loud = null; levels = null;`);
   run(`chip.key = null; chip.stream = null; songKey = null;`);
 });
 

@@ -16,6 +16,7 @@ import { chipRender } from "./chip.js";
 import { chipLoudPending } from "./chip.js";
 import { loudStreamChunk } from "./levels.js";
 import { loudCacheGet } from "./levels.js";
+import { applyLevels } from "./levels.js";
 import { LOUD_VERSION } from "./loudness.js";
 
 // -------------------------------------------- chip stream mode (step 3) ---
@@ -152,7 +153,7 @@ export function chipStreamIdxForTapeSec(tapeSec) { return Math.max(0, Math.floor
 export function chipStreamOnChunk(c) {
   const st = chip.stream;
   if (!st || st.key !== c.id || st.gen !== c.gen) return;
-  const buffers = {}; let bytes = 0;
+  const buffers = {}; let bytes = 0, unsilenced = false;
   for (const [name, data] of Object.entries(c.tracks)) {
     const stereo = data && data.l ? data : null;
     const len = stereo ? stereo.l.length : (data ? data.length : 0);
@@ -164,9 +165,10 @@ export function chipStreamOnChunk(c) {
     if (stereo) { buf.copyToChannel(stereo.l, 0); buf.copyToChannel(stereo.r, 1); bytes += stereo.l.byteLength + stereo.r.byteLength; }
     else { buf.copyToChannel(data, 0); bytes += data.byteLength; }
     buffers[name] = buf;
-    st.heard.add(name); st.silent.delete(name); // audible in this chunk: the console plays it from here on (chipStreamOnSilent says why)
+    st.heard.add(name); if (st.silent.delete(name)) unsilenced = true; // audible in this chunk: the console plays it from here on (chipStreamOnSilent says why)
   }
   st.cache.set(c.idx, {buffers, bytes, pinned: st.pinnedIdx.has(c.idx)});
+  if (unsilenced && S.levels) applyLevels(); // its level too: play() set it from the silent list, so a late-entering track kept the synth's level all song (Josh, Terminal #323-325 — The Birth of God, ~15 dB quiet)
   loudStreamChunk(c.idx, buffers, st.rate); // an unmeasured song: its first chunks stand in for the whole (audio/levels.js)
   st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
   st.peakBytes = Math.max(st.peakBytes, st.bytes);
@@ -186,6 +188,7 @@ export function chipStreamOnSilent(s) {
   const st = chip.stream;
   if (!st || st.key !== s.id) return;
   st.silent = new Set(s.names.filter(n => !st.heard.has(n)));
+  if (S.levels) applyLevels(); // console vs synth level follows the list (chipSoundingTracks)
 }
 export function chipStreamRequestRange(from, to) {
   const st = chip.stream;
