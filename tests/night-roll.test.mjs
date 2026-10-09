@@ -2129,6 +2129,7 @@ test("Import hub: 'New song from a recording' — a picked audio file with no so
   assert.ok(audioTrack, "the recording landed as its own track");
   assert.equal(audioTrack.clips[0].file, "riff-idea.wav");
   assert.equal(run(`infoFull`), "new song — Edit → Pencil to write notes against the recording. It lives on this device until Save.");
+  for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r)); // the clip's background load finishes before the song goes away (it read song.ppq after teardown once readData gained a step)
   run(`song = null; songKey = null; rollnotes = []; editUndo = [];`);
 });
 
@@ -15702,4 +15703,41 @@ test("chord Roman numeral + no 5 (Josh, Terminal #228/#230): his entry only — 
   run(`document.getElementById("nroman").value = "V7/IV";`);
   assert.equal(val(`editorDirty()`), true);
   run(`document.getElementById("noteeditor").classList.remove("docked"); S.edFollow.mode = "idle";`);
+});
+
+// The app (no service worker) keeps a device copy of each published file it
+// reads: a plain read answers from the copy and refreshes it in the
+// background; a bust read asks GitHub first and falls back to the copy
+// (Josh, Terminal #304/#308/#309 — every open went to GitHub; past 12 s it
+// failed with "Fetch is aborted").
+test("app: readData keeps a device copy — instant from the copy, refreshed in the background, the copy stands in when GitHub fails", async () => {
+  const a = await createApp({edition: "app"});
+  a.run(`
+    globalThis.__idb = new Map();
+    globalThis.indexedDB = { open() {
+      const rq = {};
+      const store = { get(k) { const r = {}; Promise.resolve().then(() => { r.result = __idb.has(k) ? __idb.get(k) : undefined; r.onsuccess && r.onsuccess(); }); return r; },
+                      put(v, k) { __idb.set(k, v); }, delete(k) { __idb.delete(k); } };
+      const db = { objectStoreNames: { contains: () => true }, close() {},
+                   transaction() { const tx = { objectStore: () => store }; Promise.resolve().then(() => tx.oncomplete && tx.oncomplete()); return tx; } };
+      Promise.resolve().then(() => { rq.result = db; rq.onsuccess && rq.onsuccess(); });
+      return rq;
+    } };
+    globalThis.__body = "v1"; globalThis.__fail = false; globalThis.__calls = 0;
+    globalThis.fetch = async () => { __calls++; if (__fail) throw new Error("Fetch is aborted");
+      const bytes = new TextEncoder().encode(__body).buffer; return {ok: true, status: 200, arrayBuffer: async () => bytes, text: async () => __body}; };
+  `);
+  const read = bust => a.run(`readData("songs", "albums/x/y/song.mid", ${bust}).then(r => r.text())`);
+  const settle = async () => { for (let i = 0; i < 200; i++) await Promise.resolve(); }; // the fakes resolve on microtasks only: no macrotask turn (a real-loop yield let an earlier test's stray promise throw inside this file)
+  assert.equal(await read(false), "v1", "first open: from GitHub");
+  await settle();
+  a.run(`__body = "v2"; __calls = 0;`);
+  assert.equal(await read(false), "v1", "second open: the device copy, at once");
+  await settle();
+  assert.equal(a.run(`__calls`), 1, "…and one background refresh");
+  assert.equal(await read(false), "v2", "the refreshed copy plays on the next open");
+  await settle();
+  a.run(`__fail = true;`);
+  assert.equal(await read(true), "v2", "GitHub fails on a bust read: the copy stands in");
+  assert.equal(await read(false), "v2", "and a plain read never waits on GitHub");
 });

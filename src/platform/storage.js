@@ -95,7 +95,7 @@ export const CONSOLE_OF = {nsf: "nes", gbs: "game-boy", spc: "snes", vgm: "genes
 // redistribution. Each device imports the NSF once.
 export function idbOpen() {
   return new Promise((res, rej) => {
-    const rq = indexedDB.open("ff1roll", 5); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes; v4: "drafts" = import drafts' notes; v5: "sf2" = imported SoundFont bytes
+    const rq = indexedDB.open("ff1roll", 6); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes; v4: "drafts" = import drafts' notes; v5: "sf2" = imported SoundFont bytes; v6: "repo" = the app's device copies of published files (folder.js readData)
     rq.onupgradeneeded = () => {
       const db = rq.result;
       if (!db.objectStoreNames.contains("nsf")) db.createObjectStore("nsf");
@@ -103,10 +103,20 @@ export function idbOpen() {
       if (!db.objectStoreNames.contains("audio")) db.createObjectStore("audio");
       if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts");
       if (!db.objectStoreNames.contains("sf2")) db.createObjectStore("sf2");
+      if (!db.objectStoreNames.contains("repo")) db.createObjectStore("repo");
     };
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
   });
+}
+// The app's device copy of a published file (.mid, album.json, annotations):
+// {bytes: ArrayBuffer, t} under "songs:<path>" / "analysis:<path>". A copy of
+// what the repo holds, never the only copy of anything (the repo is).
+export async function idbRepoGet(key) {
+  try { const db = await idbOpen(); const v = await new Promise(res => { const r = db.transaction("repo").objectStore("repo").get(key); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); db.close(); return v; } catch (err) { return null; }
+}
+export async function idbRepoPut(key, bytes) {
+  try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("repo", "readwrite"); if (bytes) tx.objectStore("repo").put({bytes, t: Date.now()}, key); else tx.objectStore("repo").delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); return true; } catch (err) { return false; }
 }
 export function idbNsfPut(slug, bytes, trackPatch, chipKind, libs) { // libs: {name: bytes} — a set's shared library (PS1 .psflib), merged in
   // serialized: rapid captures fired concurrent read-modify-writes and lost

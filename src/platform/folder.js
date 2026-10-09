@@ -3,6 +3,10 @@ import { analysisURL } from "./storage.js";
 import { songsURL } from "./storage.js";
 import { EDITION } from "../edition.js";
 import { idbFsGet } from "./storage.js";
+import { idbRepoGet } from "./storage.js";
+import { idbRepoPut } from "./storage.js";
+import { S } from "../state.js";
+import { logDebug } from "../hooks.js";
 
 // ---------------------------------------------------- local folder backend
 // Saving without GitHub (Josh, 2026-09-15: his son has no account, and
@@ -133,15 +137,56 @@ export async function readData(which, path, bust) {
   const url = (which === "analysis" ? analysisURL(path) : songsURL(path)) + (bust ? "?t=" + Date.now() : "");
   // a fetch that never settles used to lock the loader for good (open-items:
   // "song open hangs on a CDN blip"); 12 s then give up and say so
-  const init = {cache: "no-cache"};
-  if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) init.signal = AbortSignal.timeout(12000);
-  if (EDITION === "app" && bundledPath(path)) { // the app ships the starters: the repo copy (annotations published there) wins, the bundle answers otherwise
-    let r = null;
-    try { r = await fetch(url, init); } catch (err) { r = null; }
-    if (r && r.ok) return r;
-    return fetch(path + (bust ? "?t=" + Date.now() : ""), init); // relative: the <base> is the bundle
-  }
-  return fetch(url, init);
+  const net = async (ms) => {
+    const i = {cache: "no-cache"};
+    if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) i.signal = AbortSignal.timeout(ms || 12000);
+    if (EDITION === "app" && bundledPath(path)) { // the app ships the starters: the repo copy (annotations published there) wins, the bundle answers otherwise
+      let r = null;
+      try { r = await fetch(url, i); } catch (err) { r = null; }
+      if (r && r.ok) return r;
+      return fetch(path + (bust ? "?t=" + Date.now() : ""), i); // relative: the <base> is the bundle
+    }
+    return fetch(url, i);
+  };
+  if (EDITION === "app") return repoCopy(which + ":" + path, net, bust);
+  return net(); // the web: sw.js keeps its copies
+}
+// The app has no service worker (capacitor://), so every open went to GitHub
+// — slow, and past readData's 12 s a song failed with "Fetch is aborted"
+// (Josh, Terminal #304/#308/#309). Keep a device copy: a plain read answers
+// from it at once and refreshes it in the background (a re-capture arrives
+// on the next open); a bust read (annotations, a just-published file) asks
+// GitHub first — 4 s when a copy can stand in — then falls back to the copy.
+export async function repoCopy(key, net, bust) {
+  const hit = await idbRepoGet(key);
+  const answer = bytes => ({ok: true, status: 200, fromCopy: true, arrayBuffer: async () => bytes.slice(0),
+    text: async () => new TextDecoder().decode(bytes), json: async () => JSON.parse(new TextDecoder().decode(bytes))});
+  if (hit && !bust) { repoRefresh(key, net, hit.bytes); return answer(hit.bytes); }
+  let r = null, err0 = null;
+  try { r = await net(hit ? 4000 : 0); } catch (err) { err0 = err; }
+  if (r && r.ok) { if (typeof r.arrayBuffer !== "function") return r; const bytes = await r.arrayBuffer(); idbRepoPut(key, bytes); return answer(bytes); }
+  if (r && r.status === 404) { if (hit) idbRepoPut(key, null); return r; } // gone from the repo: so is the copy
+  if (hit) return answer(hit.bytes);
+  if (err0) throw err0;
+  return r;
+}
+export function repoRefresh(key, net, had) {
+  if (S.repoRefreshing.has(key)) return;
+  S.repoRefreshing.add(key);
+  (async () => {
+    try {
+      const r = await net();
+      if (r && r.status === 404) { idbRepoPut(key, null); return; }
+      if (!r || !r.ok || typeof r.arrayBuffer !== "function") return;
+      const bytes = await r.arrayBuffer();
+      const a = new Uint8Array(bytes), b = new Uint8Array(had);
+      let same = a.length === b.length;
+      for (let i = 0; same && i < a.length; i++) if (a[i] !== b[i]) same = false;
+      if (same) return;
+      await idbRepoPut(key, bytes);
+      logDebug("newer copy of " + key.replace(/^\w+:/, "") + " downloaded — the next open plays it");
+    } catch (err) { /* offline or slow: the copy stands */ } finally { S.repoRefreshing.delete(key); }
+  })();
 }
 export function bundledPath(path) { return /^albums\/starters\//.test(path); }
 export async function restoreFolder() { // boot: the remembered folder, or the OPFS sandbox on request
