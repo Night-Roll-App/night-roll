@@ -15,7 +15,7 @@ export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through 
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
 import { akaoRecord, akaoArtOf } from "./akao.mjs";
 import { pitchName } from "../nsf/notes.mjs";
-import { trackBytes, offsetMetaEvent, chainBends, shapeFromSeries, bendRangeMetas } from "../nsf/midi-write.mjs";
+import { trackBytes, offsetMetaEvent, kitMetaEvent, chainBends, shapeFromSeries, bendRangeMetas } from "../nsf/midi-write.mjs";
 
 const PPQ = 480; // Night Roll's MIDI resolution; SEQ ticks are rescaled to it
 
@@ -374,11 +374,12 @@ export function makeMidi(result, {offsets} = {}) {
   // an AKAO voice can switch drum mode on and off mid-track; its kit notes
   // go to a second MIDI track on channel 10 so neither side lies about
   // what it is
-  const emit = (name, evs, ch, offset) => {
-    if (akao) return emitAkao(name, evs, ch, offset);
-    if (ps2) return emitPs2(name, evs, ch, offset);
+  const emit = (name, evs, ch, offset, kit) => {
+    if (akao) return emitAkao(name, evs, ch, offset, kit);
+    if (ps2) return emitPs2(name, evs, ch, offset, kit);
     const out = [], cc = [];
     if (offset) cc.push(offsetMetaEvent(offset));
+    if (kit) cc.push(kitMetaEvent()); // channel 10 survives the app's re-write whatever the group's name
     // the track's pan as CC10: the first note's at tick 0, then one at every note whose pan differs from the last written
     let lastPan = null;
     for (const n of splitSlides(evs)) {
@@ -409,9 +410,10 @@ export function makeMidi(result, {offsets} = {}) {
   //   prog   the articulation each melodic note plays;
   //   rev    CC91: the voice's reverb switch × the song's depth;
   //   pan    CC10 at each note-on (as before) and along a 0xAB fade.
-  const emitAkao = (name, evs, ch, offset) => {
+  const emitAkao = (name, evs, ch, offset, kit) => {
     const out = [], cc = [];
     if (offset) cc.push(offsetMetaEvent(offset));
+    if (kit) cc.push(kitMetaEvent());
     let lastPan = null, head = null, prevEnd = null;
     const sec = tick => secondsAt(seq, tick);
     const paths = new Map();
@@ -521,9 +523,10 @@ export function makeMidi(result, {offsets} = {}) {
   const wetSend = rv && rv.mode && rv.depth ? Math.round(Math.min(1, Math.abs(rv.depth) / 0x7FFF) * 127) : 0;
   const unknownRange = new Set();
   let clamped = 0;
-  const emitPs2 = (name, evs, ch, offset) => {
+  const emitPs2 = (name, evs, ch, offset, kit) => {
     const out = [], cc = [];
     if (offset) cc.push(offsetMetaEvent(offset));
+    if (kit) cc.push(kitMetaEvent());
     const src = evs[0].ch, st = streams.get(src) || {cc: new Map(), off: [], rev: [], pbRaw: []};
     const pans = [];
     let lastPan = null, prevEnd = null, prevWhole = null;
@@ -602,7 +605,7 @@ export function makeMidi(result, {offsets} = {}) {
     for (const q of out) if (q.bend) q.bend = q.bend.map(b => ({t: b.t, v: Math.max(-8192, Math.min(8191, Math.round(b.c / (semis * 100) * 8192)))}));
     tracks.push(trackBytes(name, out, ch, semis > 2 ? [...cc, ...bendRangeMetas(ch, semis)] : cc));
   };
-  for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch), !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0);
+  for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch), !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0, g.kit);
   const warn = w => { const ws = seq.warnings || (seq.warnings = []); if (!ws.includes(w)) ws.push(w); };
   if (unknownRange.size) warn(`channel(s) ${[...unknownRange].map(c => c + 1).join(", ")} bend before their first bend range (0x5D): the driver's default range is not known, so those bends are not written`);
   if (clamped) warn(`${clamped} track(s) bend past ±24 semitones: their pitch bend is clipped at ±24 in the .mid`);

@@ -54,6 +54,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
         return on;
       })};
     if (tr.midiPan !== undefined) o.midiPan = tr.midiPan; // the .mid's own CC10 (a chip capture's channel) — writeMidi re-emits it
+    if (tr.kit) o.kit = true;
     if (tr.ctl && tr.ctl.length) o.ctl = ctlCopy(tr).ctl; // channel controllers (bend, CC7/11/64/1/91, pan events, program)
     if (tr.offset) o.offset = tr.offset; // tools/sounding.mjs
     if (tr.srcIndex !== undefined) o.srcIndex = tr.srcIndex; // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

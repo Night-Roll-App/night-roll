@@ -824,6 +824,12 @@ test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree 
          {index: 1, events: [{t: 0, bytes: [0xB0, 7, 100]}, {t: 240, bytes: [0xFF, 0x06, 5, 0x56, 0x65, 0x72, 0x73, 0x65]}]}, // CC7 + a marker, on the surviving track
        ]},
      tracks: [{name: "pulse1", srcIndex: 1, notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
+    // a capture's kit group, named by its channel and program: the "kit:1"
+    // marker (tr.kit) keeps it on channel 10, its CC10 and ctl there too
+    {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+     tracks: [{name: "ch 1 prog 3", notes: [{t: 0, d: 480, p: 60, v: 80, ch: 0}]},
+              {name: "ch 8 prog 7", kit: true, midiPan: 0.5, offset: -12, ctl: [{t: 0, ch: 9, c: 7, v: 100}],
+               notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 240, d: 120, p: 38, v: 90, ch: 9}]}]},
   ];
   for (const [i, s] of fixtures.entries()) {
     const app = bytesFromApp(s), tools = Array.from(writeSongMidi(s));
@@ -10457,6 +10463,46 @@ test("the writer keeps melodic tracks off the drum channel even when a capture's
     assert.equal(back[0].p, 85, "and keeps its pitch");
     assert.equal(back[1].ch, 9, "the kit still is");
   }
+});
+
+test("a capture's kit group keeps channel 10 through every app write: the \"kit:1\" marker, not the name (PS1 percussion, 2026-10-09)", async () => {
+  // structural: every track-copy site that carries midiPan carries kit too
+  for (const f of ["src/model/versions.js", "src/session/song.js", "src/session/files.js", "src/import/hub.js", "src/import/capture.js", "src/sync/publish.js"]) {
+    const src = readFileSync(new URL("../" + f, import.meta.url), "utf8");
+    const pans = (src.match(/midiPan: tr\.midiPan|o\.midiPan = tr\.midiPan/g) || []).length;
+    const kits = (src.match(/\(tr\.kit \? \{kit: true\} : \{\}\)|if \(tr\.kit\) o\.kit = true/g) || []).length;
+    assert.ok(pans > 0 && kits === pans, f + ": " + pans + " midiPan copies, " + kits + " kit copies");
+  }
+  installSong();
+  const CAP = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [
+    {name: "ch 1 prog 3", midiPan: 0.25, notes: [{t: 0, d: 480, p: 60, v: 90, ch: 0}]},
+    {name: "ch 8 prog 7", kit: true, midiPan: -0.5, notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 480, d: 120, p: 38, v: 90, ch: 9}]}]};
+  const kitTrack = bytes => JSON.parse(run(`JSON.stringify((() => { const t = parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true}).tracks[1];
+    return {name: t.name, kit: t.kit, chs: t.notes.map(n => n.ch), ps: t.notes.map(n => n.p)}; })())`));
+  const want = {name: "ch 8 prog 7", kit: true, chs: [9, 9], ps: [36, 38]};
+  assert.deepEqual(kitTrack(writeSongMidi(CAP)), want, "the capture's own bytes");
+  // parse → the capture's draft map (src/import/capture.js) → openDraftDoc → draftDoc → both writers
+  app.context._capBytes = [...writeSongMidi(CAP)];
+  const d = val(`(() => { const p = parseMidi(new Uint8Array(_capBytes).buffer, {trust: true});
+    const draft = {savedStamp: 0, dirty: true, title: "kit test", capture: true, ppq: p.ppq, timesig: p.timesig || [4, 4], tempos: p.tempos,
+      tracks: p.tracks.map(tr => ({name: tr.name, ...(tr.offset ? {offset: tr.offset} : {}), ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+        ...(tr.kit ? {kit: true} : {}), ...ctlCopy(tr), notes: tr.notes.map(nt => ({t: nt.t, d: nt.d, p: nt.p, v: nt.v, ...(nt.ch !== undefined ? {ch: nt.ch} : {})}))}))};
+    openDraftDoc(draft, "midi/kit-test.mid");
+    const dd = draftDoc(false);
+    return {ppq: dd.ppq, timesig: dd.timesig, tempos: dd.tempos, tracks: dd.tracks}; })()`);
+  assert.equal(d.tracks[1].kit, true, "the draft keeps the marker");
+  assert.equal(d.tracks[0].kit, undefined, "a melodic track gets none");
+  const app1 = Array.from(new Uint8Array(val(`Array.from(writeMidi(${JSON.stringify(d)}))`)));
+  assert.deepEqual(app1, Array.from(writeSongMidi(d)), "writeMidi and writeSongMidi agree");
+  assert.deepEqual(kitTrack(app1), want, "the re-written bytes keep channel 10 and the marker");
+  // a foreign file's own plain "kit" text is the composer's: kept raw, not read as the marker
+  const M = await import("../tools/nsf/midi-write.mjs");
+  const foreign = Array.from(M.makeMidiTracks([{name: "lead", ch: 0, notes: [{t: 0, d: 480, p: 60, v: 90}],
+    metas: [{t: 0, o: -2, d: [0xFF, 0x01, 3, 0x6B, 0x69, 0x74]}]}]));
+  const f = JSON.parse(run(`JSON.stringify((() => { const s = parseMidi(new Uint8Array(${JSON.stringify(foreign)}).buffer, {foreign: true});
+    return {kit: s.tracks[0].kit, metas: (s.source && s.source.metas || []).flatMap(m => m.events.map(e => e.bytes))}; })())`));
+  assert.equal(f.kit, undefined, "a plain \"kit\" text is not the marker");
+  assert.ok(f.metas.some(b => b.join() === [0xFF, 0x01, 3, 0x6B, 0x69, 0x74].join()), "and stays the composer's raw text");
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

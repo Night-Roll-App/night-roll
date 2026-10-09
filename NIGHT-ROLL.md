@@ -455,7 +455,21 @@ length + &255 mask, which corrupted >127-byte or non-Latin-1 names).
 tests/night-roll.test.mjs ("writeMidi / writeSongMidi agree byte-for-byte"
 + round-trip tests) pins the two ports together; touching one without the
 other reintroduces the drift the audit found — commitImports silently
-dropping pan/duty/aftertouch/channel from every published capture. It
+dropping pan/duty/aftertouch/channel from every published capture.
+**Who may use channel 10:** only a kit track — one whose name matches
+`/drum|percussion|kit|noise|dpcm/` OR that carries `tr.kit` (since
+ed929059 a note's own ch 9 on any other track falls to the melodic
+cycle). `tr.kit` rides as a per-track Text meta **`kit:1`** (0xFF 0x01,
+`kitMetaEvent` beside `offsetMetaEvent`; both writers emit it, parseMidi
+consumes it into `track.kit` like `sounding:N`; a foreign file's plain
+"kit" text is not namespaced, so it stays raw). It exists because a PS1/PS2
+kit group is named by channel and program ("ch 8 prog 7" — the console
+render pairs tracks by that name, and a rename grades a re-capture MOVED):
+tools/psx/notes.mjs makeMidi writes the marker on every `g.kit` group, and
+every track-copy site that carries `midiPan` (draft, reopen, Save As,
+import ×2, capture, publish — the vm test counts them) carries `kit`
+beside it. tools/query-lib.mjs `isDrumTrack(tr)` reads it too.
+(docs/plans/2026-10-09-percussion-detection.md.) It
 still does NOT carry generic CCs, program changes, or multiple meters —
 see "Chip captures are locked" below. **Chip captures are
 locked** — Save refuses anything outside nightroll/ (regenerable

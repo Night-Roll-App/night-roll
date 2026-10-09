@@ -45,7 +45,7 @@ export function factsQuarters(doc, ticks) { return Math.round(ticks / doc.ppq * 
 
 // model/grid.js trackIsDrums, rule for rule: an audio take is never a kit,
 // a track already flagged `drums` wins, else the name or MIDI channel 10
-// (tools/query-lib.mjs isDrumTrack knows only the name — its docs carry
+// (tools/query-lib.mjs isDrumTrack knows the name and the "kit:1" marker — its docs carry
 // `ch` so the channel rule holds there too)
 export function factsIsDrums(track) {
   if (!track) return false;

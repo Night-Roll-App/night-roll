@@ -80,13 +80,14 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
   t0.push(...vlq(0), 0xFF, 0x2F, 0x00);
   const out = [track(t0)];
   s.tracks.forEach((tr, ti) => {
-    const kit = isKit(tr.name);
+    const kit = tr.kit === true || isKit(tr.name); // tr.kit: a capture's kit group ("ch 8 prog 7") — the "kit:1" marker, not the name, says so
     const ch0 = trackCh(ti, kit);
     const evs = [{t: 0, o: -3, d: textMeta(0x03, tr.name || "track" + (ti + 1))}];
     // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
     // written key by tr.offset semitones — round-trips through every save
     // (parseMidi reads it back into track.offset) so a tap keeps sounding right
     if (tr.offset) evs.push({t: 0, o: -2, d: textMeta(0x01, "sounding:" + tr.offset)});
+    if (tr.kit === true) evs.push({t: 0, o: -2, d: textMeta(0x01, "kit:1")}); // parseMidi reads it back into track.kit
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
     // annotation's pan (tr.pan) overrides it at playback (trackPan()) but
     // lives in rollnotes, never here — this is only what survives with no

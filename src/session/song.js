@@ -464,6 +464,7 @@ export function openDraftDoc(d, key) {
     tempos: d.tempos.map(t => ({...t})),
     tracks: d.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // so previewing a draft sounds the way the publish will
+      ...(tr.kit ? {kit: true} : {}),
       ...ctlCopy(tr), // channel controllers, likewise
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

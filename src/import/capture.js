@@ -536,6 +536,7 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
       tracks: parsed.tracks.map(tr => ({name: tr.name,
         ...(tr.offset ? {offset: tr.offset} : {}), // tools/sounding.mjs: the roll shows the sounding pitch — carried through so a tap keeps sounding right, and so commitImports' re-serialized .mid keeps it
         ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 — the capture's own channel pan (open-items.md "FORMATS AUDIT" #1: commitImports used to drop this)
+        ...(tr.kit ? {kit: true} : {}), // the capture's "kit:1" marker: a kit group ("ch 8 prog 7") keeps channel 10 whatever its name
         ...ctlCopy(tr), // bend, CC7/11/64/1/91, pan events, programs (capture audit §3: the publish re-encode used to drop them)
         notes: tr.notes.map(nt => {
           const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};

@@ -13,7 +13,7 @@ if (!songArg) { console.error("usage: pitch-census.mjs <song> [--track T] [--jso
 
 const doc = await loadSong(songArg);
 const tracks = doc.tracks.filter((tr, i) =>
-  trackArg === null ? !isDrumTrack(tr.name) // kit pieces aren't pitch classes
+  trackArg === null ? !isDrumTrack(tr) // kit pieces aren't pitch classes
   : (tr.name === trackArg || String(i) === trackArg));
 const census = PC_NAMES.map(pc => ({pc, count: 0, quarters: 0}));
 for (const tr of tracks) for (const n of tr.notes) {

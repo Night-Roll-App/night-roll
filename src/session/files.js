@@ -196,6 +196,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
     tempos: S.song.tempos.map(t => ({...t})),
     tracks: S.song.tracks.map((tr, ti) => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // a capture's own CC10 — Save As shouldn't silently strip it
+      ...(tr.kit ? {kit: true} : {}),
       ...ctlCopy(tr), // nor its bends, volumes, sustain, reverb sends
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

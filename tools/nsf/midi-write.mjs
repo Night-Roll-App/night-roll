@@ -40,6 +40,18 @@ export function offsetMetaEvent(offset) {
   return {t: 0, o: -2, d: [0xFF, 0x01, bytes.length, ...bytes]};
 }
 
+// A kit track's marker, a Text meta "kit:1" beside "sounding:N": the capture
+// says this track is percussion, so every writer keeps it on channel 10
+// whatever its name — a kit group is named "ch 8 prog 7" so the console
+// render still pairs it by name, and a rename would grade a re-capture MOVED
+// (docs/plans/2026-10-09-percussion-detection.md). Namespaced so a foreign
+// file's own "kit" text stays the composer's. parseMidi reads it into
+// `track.kit`.
+export function kitMetaEvent() {
+  const bytes = [..."kit:1"].map(c => c.charCodeAt(0));
+  return {t: 0, o: -2, d: [0xFF, 0x01, bytes.length, ...bytes]};
+}
+
 // ---------------------------------------------------------------- glide (CC84)
 // NIGHT-ROLL.md "Glide (CC84)". A note with `lg` is a CONTINUATION: the chip
 // did not re-key it, so it plays on from the note before it on the same voice
@@ -490,12 +502,13 @@ export function writeSongMidi(song) {
   conductor.push(0, 0xFF, 0x2F, 0);
   const tracks = [conductor];
   (song.tracks || []).forEach((tr, ti) => {
-    const isKit = isKitTrackName(tr.name);
+    const isKit = tr.kit === true || isKitTrackName(tr.name); // tr.kit: the "kit:1" marker (kitMetaEvent)
     const ch0 = trackChannel(ti, isKit);
     const evs = [{t: 0, o: -3, d: textMetaEvent(0x03, tr.name || "track" + (ti + 1))}];
     // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
     // written key by tr.offset semitones — round-trips through every save
     if (tr.offset) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, "sounding:" + tr.offset)});
+    if (tr.kit === true) evs.push(kitMetaEvent());
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
     // annotation's pan (tr.pan) overrides it at playback but lives in
     // rollnotes, never here — this is only what survives with no annotation

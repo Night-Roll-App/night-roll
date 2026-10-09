@@ -71,6 +71,7 @@ export function parseMidi(buf, opts = {}) {
     let j = i + 8, t = 0, running = null, name = "", curDuty, curPan = null; // CC10: where the game put this channel (−1 left … +1 right)
     const glideAt = {}; // ch -> {t, k}: CC84s at tick t still owed to the note-ons that follow at that tick (NIGHT-ROLL.md "Glide (CC84)")
     const ctl = []; // owned channel controllers [{t, ch, c, v}] (CTL_CCS, "pb" bend, "pg" program) — NIGHT-ROLL.md "MIDI support"
+    let kit = false; // a "kit:1" Text meta (writeMidi/writeSongMidi): this track is percussion
     let offset = 0; // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the written key by this many semitones (a Text meta, "sounding:-12")
     const open = {}, notes = [];
     const raw = []; // phase 2: this track's unmodeled events, [{t, bytes}] — bundled into source.metas only when this parse turns out foreign
@@ -89,6 +90,7 @@ export function parseMidi(buf, opts = {}) {
             const text = decodeMetaText(data);
             const m = /^sounding:(-?\d+)$/.exec(text);
             if (m) offset = +m[1];
+            else if (text === "kit:1") kit = true; // the writers' kit-track marker: channel 10 whatever the name (a plain "kit" text is the composer's, kept raw)
             else if (text === "source:file") sawSourceMarker = true; // writeMidi/writeSongMidi's own round-trip marker (conductor track, tick 0)
             else raw.push({t, bytes: Array.from(d.subarray(evStart, j))}); // the composer's own text — not ours to read, phase 2 just keeps it
           }
@@ -190,6 +192,7 @@ export function parseMidi(buf, opts = {}) {
     }
     if (notes.length) {
       const tr = curPan === null ? {name, notes} : {name, notes, midiPan: curPan};
+      if (kit) tr.kit = true;
       if (ctl.length) tr.ctl = ctl;
       if (offset) tr.offset = offset;
       tracks.push(tr);

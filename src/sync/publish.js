@@ -430,6 +430,7 @@ export async function publishSong(key, h, report) {
              ...(bakesMeter(key) ? {timesigs: bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], resolved)} : {}),
              tracks: d.tracks.map(tr => ({name: tr.name,
                ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+               ...(tr.kit ? {kit: true} : {}),
                ...ctlCopy(tr),
                ...(tr.offset ? {offset: tr.offset} : {}),
                ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

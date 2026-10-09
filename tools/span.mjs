@@ -15,7 +15,7 @@ const pcs = new Set();
 const out = {song: doc.path, from: fromArg, to: toArg, tracks: [], pitchClassSet: []};
 for (const tr of doc.tracks) {
   const hits = tr.notes.filter(n => n.t < t1 && n.t + n.d > t0);
-  if (!isDrumTrack(tr.name)) hits.forEach(n => pcs.add(n.p % 12)); // kit pieces aren't pitch classes
+  if (!isDrumTrack(tr)) hits.forEach(n => pcs.add(n.p % 12)); // kit pieces aren't pitch classes
   if (hits.length) out.tracks.push({track: tr.name, notes: hits.map(n =>
     ({pitch: pitchName(n.p), onset: fmtBQ(doc, n.t), durQ: +(n.d / doc.ppq).toFixed(3), vel: n.v, ...(n.shape ? {shape: n.shape} : {})}))});
 }
