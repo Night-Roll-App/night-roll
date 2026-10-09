@@ -703,6 +703,7 @@ FF7 "Racing Chocobos ~ Place Your Bets!": in Hear the MIDI the drums sound like 
 
 ## 2026-10-09 Keep songs on the iPad (Josh, Terminal #308) — QUEUED
 Rips are already kept (IndexedDB after first fetch, src/audio/chip.js idbNsfPut). The .mid files: the web's service worker warms every catalog song, but the iPad app (capacitor://, WKWebView) most likely has no service worker, so each open fetches from the network — VERIFY on the device first (navigator.serviceWorker in the app). Sizes are small (a game's rips ≈ 1 MB; FF7 ≈ 0.7 MB). Options: bundle albums/** into the app at build time (build-ipad.sh), or cache each .mid in IndexedDB on first open with a background revalidate. The real Play delay is the console render (300–700 MB of audio per song — not cacheable at that size).
+Josh's design (#309): play the kept copy at once, and check GitHub for a newer version — at open/Play or ahead of time — so re-captures and published annotation edits still arrive. Cheap check: albums/manifest.json (or a per-album hash) compared to what's kept; fetch only songs that changed.
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q23. (LATER — Josh, 2026-10-09: "not right now", music first) Nocturno icon: which pose?
