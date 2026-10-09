@@ -4,7 +4,7 @@
 // `a && b && …` chain stopped at the first failing file, so a missing local
 // rip (ps2-real) silently skipped gestures, bridge, modules… (2026-10-03).
 // Exit code: 1 if any file failed, after printing which ones.
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,13 +35,28 @@ if (unknown.length) {
 }
 const failed = [];
 const tmp = mkdtempSync(join(tmpdir(), "nr-tests-"));
+// Every file runs in its own process group, and anything that ends this
+// runner kills that whole group: `node --test` runs the file in a CHILD
+// process, so killing only the direct child (spawnSync's timeout, or a perl
+// alarm on this runner) left a wedged test spinning on its own. Four of them
+// ran at 100% CPU for 1–4 days and took ~95 GB until Josh found them (2026-10-09).
+let current = null;
+const killGroup = () => { if (current && current.exitCode === null) { try { process.kill(-current.pid, "SIGKILL"); } catch { /* already gone */ } } };
+for (const sig of ["SIGALRM", "SIGTERM", "SIGINT", "SIGHUP"]) process.on(sig, () => { killGroup(); rmSync(tmp, {recursive: true, force: true}); process.exit(1); });
+process.on("exit", killGroup);
+const runFile = (args, env) => new Promise(resolve => {
+  current = spawn(process.execPath, args, {stdio: "inherit", env, detached: true});
+  let timedOut = false;
+  // a file that wedges (a failed assertion skipping a teardown once hung
+  // night-roll with no failure printed) is killed and counted as failed
+  const t = setTimeout(() => { timedOut = true; killGroup(); }, 300000);
+  current.on("exit", (status, signal) => { clearTimeout(t); killGroup(); resolve({status, signal: timedOut ? "SIGKILL (timeout)" : signal}); });
+});
 for (const f of only.length ? FILES.filter(x => only.includes(x)) : FILES) {
   const tap = join(tmp, `${f}.tap`), countFile = join(tmp, `${f}.count`);
   const args = ["--experimental-vm-modules", "--test", "--test-reporter=spec", "--test-reporter-destination=stdout",
     "--test-reporter=tap", `--test-reporter-destination=${tap}`, `tests/${f}.test.mjs`];
-  // a file that wedges (a failed assertion skipping a teardown once hung
-  // night-roll with no failure printed) is killed and counted as failed
-  const r = spawnSync(process.execPath, args, {stdio: "inherit", timeout: 300000, killSignal: "SIGKILL", env: {...process.env, NR_TEST_COUNT_FILE: countFile}});
+  const r = await runFile(args, {...process.env, NR_TEST_COUNT_FILE: countFile});
   if (r.status !== 0) { failed.push(f); if (r.signal) console.error(`\n✖ ${f}: killed (${r.signal}) — wedged or over 300 s`); continue; }
   if (!COUNTED.has(f)) continue;
   const registered = existsSync(countFile) ? +readFileSync(countFile, "utf8") : NaN;
