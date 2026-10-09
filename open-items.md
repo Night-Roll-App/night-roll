@@ -691,6 +691,9 @@ Each song measures itself on first play (device cache) until album.json carries 
 ## 2026-10-07 MIDI should sound closer to Chip (Josh #217: "the chip sounds good the midi does not sound great… not that important… as long as the chip works… but having the midi sound good would be ideal")
 First heard on DKR Title Theme now that the Chip | MIDI switch exists. Gap closers, in order: N64 capture v2 (shapes, vibrato, CC91, programs — audit-2 build list), then default the MIDI's tracks to the game's own instrument samples ("game:" voices) where a rip's bank is available, falling back to synth voices.
 
+## 2026-10-09 CI webkit flake — FIXED (0a0d418), two leads left
+12 of 30 tests runs failed (webkit editor specs, 10 on "double-tap a band"): taps measured before the track-chip row landed and pushed the roll down 58 px (canvas top 110 -> 168). settleLayout (tests/e2e/helpers.mjs) waits it out; 4/4 runs green after. QUEUED: (1) is that 58 px jump visible to Josh on a song open (the roll moving under his finger)? If so, reserve the chip row's height up front. (2) One retry hit the boot watchdog panel (boot > 10 s on CI webkit) — watch for a repeat before acting.
+
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q23. (LATER — Josh, 2026-10-09: "not right now", music first) Nocturno icon: which pose?
 Q24. (LATER — same) Echo: does it appear anywhere yet?
