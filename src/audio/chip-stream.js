@@ -321,8 +321,9 @@ export function chipStreamPump(nowCtx) {
   const horizon = (typeof document !== "undefined" && document.hidden) ? CHIP_STREAM_HORIZON_HIDDEN : CHIP_STREAM_HORIZON_VISIBLE;
   const until = nowCtx + horizon;
   const curSec = playSec();
-  const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (nowCtx - S.playT0);
-  const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, nowCtx);
+  const t0 = Math.max(nowCtx, S.playT0); // before playT0 (the start lead, a count-in) playSec holds at playOffset: the first segment starts AT playT0, not now
+  const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (t0 - S.playT0);
+  const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, t0);
   let anyLive = false;
   for (const seg of segs) {
     if (seg.when >= until) break;

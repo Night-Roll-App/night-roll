@@ -2564,6 +2564,11 @@ test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{err
   assert.ok(a.run(`new Set(chip.stream.srcs.map(s => s.buffer)).size`) >= 6, "chunks the playhead reaches still schedule");
   a.run(`chipStreamStart(0);`);
   assert.equal(dupes(), 0, "a restart (seek) schedules afresh, once");
+  // play() starts slightly ahead (playT0 > now): ticks before and after it are one schedule
+  a.run(`playT0 = audio.currentTime + 0.064; playOffset = 0.88; chipStreamStart(0.88);`);
+  for (let k = 0; k < 4; k++) { a.tick(40); a.run(`chipStreamPump(audio.currentTime)`); }
+  a.run(`playOffset = 0;`);
+  assert.equal(dupes(), 0, "the start lead doesn't schedule the playhead chunk twice");
 
   // --- cache stays bounded over a long play (200 s) -----------------------
   // real audio.currentTime never advances in the vm (no tick()); playT0 is
