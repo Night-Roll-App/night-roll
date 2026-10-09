@@ -228,16 +228,25 @@ export function chipStreamEvict(curSec) {
   if (!st) return;
   const curIdx = chipStreamIdxForTapeSec(chip.lead + curSec * S.playRate);
   for (const [idx, entry] of st.cache) if (!entry.pinned && idx < curIdx - 1) st.cache.delete(idx);
+  for (const idx of st.scheduled.keys()) if (idx < curIdx - 1 && !st.pinnedIdx.has(idx)) st.scheduled.delete(idx); // a played chunk's anchors (chipStreamScheduled)
   st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
 }
-export function chipStreamScheduled(idx, when) { return chip.stream.scheduled.has(idx + "@" + Math.round(when * 1000)); }
+// Keyed by the chunk's ANCHOR — the context time its first sample plays in
+// this segment (past for the chunk under the playhead) — not by the clamped
+// start: the playhead chunk's start is "now", new every tick, so a start-time
+// key rescheduled it each tick and dozens of copies of one chunk played over
+// each other (Josh, Terminal #292-294: FF7 on the iPad, the only device whose
+// budget streams it). The tolerance absorbs playSec/currentTime jitter; a loop
+// wrap's repeat lands a whole loop body later and still schedules.
+export const CHIP_STREAM_ANCHOR_TOL = 0.05;
+export function chipStreamScheduled(idx, anchor) { const a = chip.stream.scheduled.get(idx); return !!a && a.some(x => Math.abs(x - anchor) < CHIP_STREAM_ANCHOR_TOL); }
 // Schedules one AudioBufferSourceNode per track for chunk `idx`'s buffer,
 // wired EXACTLY like chipStart's own sources (src -> [chip.pan panner, if
 // any] -> trackGain(ti)) so mute/solo/volume/pan and the Mixer meters all
 // keep working unchanged. `when`/`offset`/`dur` are already resolved by the
 // caller (chipStreamPump) to the exact slice of this chunk's buffer that
 // belongs to the current segment — see the comment there for the formula.
-export function chipStreamScheduleChunk(idx, entry, when, offset, dur) {
+export function chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor) {
   const st = chip.stream;
   for (const [name, buffer] of Object.entries(entry.buffers)) {
     const ti = S.song.tracks.findIndex(tr => (tr.name || "") === name);
@@ -255,7 +264,7 @@ export function chipStreamScheduleChunk(idx, entry, when, offset, dur) {
     src.onended = () => { const i = st.srcs.indexOf(src); if (i >= 0) st.srcs.splice(i, 1); };
     st.srcs.push(src);
   }
-  st.scheduled.add(idx + "@" + Math.round(when * 1000));
+  const at = anchor === undefined ? when : anchor, a = st.scheduled.get(idx); if (a) a.push(at); else st.scheduled.set(idx, [at]);
 }
 // previewNote's register-chip path (nsf/gbs/spc — above, chipPreviewBuffer
 // has no per-note renderer for these). Finds the tapped note — tick+pitch
@@ -324,12 +333,13 @@ export function chipStreamPump(nowCtx) {
       const entry = st.cache.get(idx);
       if (!entry) continue; // not back from the worker yet — the next tick retries
       const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
-      const when = seg.when + Math.max(0, chunkTapeStart - seg.tapeFrom) / S.playRate;
+      const anchor = seg.when + (chunkTapeStart - seg.tapeFrom) / S.playRate; // the same every tick (chipStreamScheduled says why)
+      const when = Math.max(seg.when, anchor);
       if (when >= until) continue; // this tick's window doesn't reach it yet
-      if (chipStreamScheduled(idx, when)) continue; // already scheduled on an earlier tick
+      if (chipStreamScheduled(idx, anchor)) continue; // already scheduled on an earlier tick
       const offset = Math.max(0, seg.tapeFrom - chunkTapeStart); // mid-chunk resume (a seek that doesn't land on a chunk boundary)
       const dur = Math.max(0, seg.tapeTo - Math.max(seg.tapeFrom, chunkTapeStart)); // trims the LAST chunk of a segment at the loop wrap / album end: a hard splice, no bleed into the next segment
-      chipStreamScheduleChunk(idx, entry, when, offset, dur);
+      chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor);
       anyLive = true;
     }
   }
@@ -346,7 +356,7 @@ export function chipStreamStart(fromSec) {
   const st = chip.stream;
   if (!st) return;
   for (const s of st.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
-  st.srcs = []; st.scheduled = new Set(); st.live = false;
+  st.srcs = []; st.scheduled = new Map(); st.live = false;
   st.gen++;
   if (S.chipWorker) S.chipWorker.postMessage({seek: {id: st.key, gen: st.gen, idx: chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate)}});
   chipStreamPump(S.audio.currentTime);
@@ -431,7 +441,7 @@ export async function chipStreamOpen(auto) {
   chip.stream = {
     key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
     tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
-    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Set(), waiters: new Map(),
+    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(),
     bytes: 0, peakBytes: 0, live: false, srcs: [],
   };
   chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;

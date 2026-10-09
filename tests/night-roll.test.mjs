@@ -2554,6 +2554,17 @@ test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{err
   assert.deepEqual(JSON.parse(a.run(`JSON.stringify([...new Set(__gainsSeen)].sort())`)), [0, 1], "both tracks' sources connected via trackGain(ti)");
   assert.equal(a.run(`chip.stream.live`), true, "the synth guard's own flag follows a real chunk landing");
 
+  // --- one source per track per chunk, however often the pump ticks -----
+  // (Josh, Terminal #292-294: the playhead chunk's start is "now", new every
+  // tick; keyed by start time it was rescheduled each tick and dozens of
+  // copies of it played over each other — FF7 on the iPad)
+  const dupes = () => a.run(`chip.stream.srcs.length - new Set(chip.stream.srcs.map(s => s.buffer)).size`);
+  a.run(`for (let t = 0.05; t < 6; t += 0.05) { playT0 = -t; chipStreamPump(t); }`); // nowCtx moves with the playhead, as a real clock does
+  assert.equal(dupes(), 0, "no chunk's buffer started twice over 6 s of 50 ms ticks");
+  assert.ok(a.run(`new Set(chip.stream.srcs.map(s => s.buffer)).size`) >= 6, "chunks the playhead reaches still schedule");
+  a.run(`chipStreamStart(0);`);
+  assert.equal(dupes(), 0, "a restart (seek) schedules afresh, once");
+
   // --- cache stays bounded over a long play (200 s) -----------------------
   // real audio.currentTime never advances in the vm (no tick()); playT0 is
   // walked backward instead so playSec() (audio.currentTime - playT0) reads
