@@ -1197,7 +1197,7 @@
   <button class="fitem" id="fileabout">About</button>
   <div id="filenewform" style="display:none">
     <div class="row">
-      <input type="number" id="fnbpm" value="120" min="20" max="300" style="width:72px;min-height:40px" aria-label="Tempo">
+      <select id="fnbpm" aria-label="Tempo (bpm)"><option>60</option><option>65</option><option>70</option><option>75</option><option>80</option><option>85</option><option>90</option><option>95</option><option>100</option><option>105</option><option>110</option><option>115</option><option selected>120</option><option>125</option><option>130</option><option>135</option><option>140</option><option>145</option><option>150</option><option>155</option><option>160</option><option>165</option><option>170</option><option>175</option><option>180</option></select><span class="lbl">bpm</span><!-- 60–180 by 5 (Josh, Terminal #333): any other tempo after the fact -->
       <select id="fnnum"></select><span class="lbl">/</span>
       <select id="fnden"><option>2</option><option selected>4</option><option>8</option><option>16</option></select>
       <button class="primary" id="fncreate">Create</button>

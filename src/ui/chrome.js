@@ -2310,7 +2310,6 @@ export function initChrome12() {
   document.getElementById("filenew").addEventListener("click", () => {
     document.getElementById("filenewform").style.display = "";
     document.getElementById("filesaveasform").style.display = "none";
-    softFocus(document.getElementById("fnbpm"));
   });
   document.getElementById("fncreate").addEventListener("click", () => {
     stop();

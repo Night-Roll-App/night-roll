@@ -15578,9 +15578,9 @@ test("docked annotation window: a lasso reaching into the ruler counts as a sele
 
 test("Jump into text boxes (Josh, Terminal #251/#253): every programmatic text-box focus goes through softFocus — off by default on touch, on with a mouse/trackpad, a View › Display switch either way; Ask set_pref text_jump", () => {
   installSong();
-  run(`for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fnbpm", "fsname", "fsnewfolder", "fmnewfolder"]) document.getElementById(id).focus = () => {};`);
+  run(`for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fsname", "fsnewfolder", "fmnewfolder"]) document.getElementById(id).focus = () => {};`);
   app.tick(10000); // an earlier floating open's 50 ms focus timer may still be queued
-  run(`globalThis.__fx = []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fnbpm", "fsname", "fsnewfolder", "fmnewfolder"]) { const el = document.getElementById(id); el.focus = () => __fx.push(id); el.select = () => {}; }
+  run(`globalThis.__fx = []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym", "bjbar", "frname", "fsname", "fsnewfolder", "fmnewfolder"]) { const el = document.getElementById(id); el.focus = () => __fx.push(id); el.select = () => {}; }
     if (!document.querySelectorAll) document.querySelectorAll = () => []; document.getElementById("noteeditor").classList.remove("docked");
     globalThis.__keepMM = window.matchMedia; try { localStorage.removeItem("ff1roll-textjump"); } catch (e) {}`);
   const sites = () => run(`rangeSel = null; openEditor(null); openEditor(null, "song"); pickEditorType("section"); rangeSel = {a: 0, b: barTicks(), cycle: true}; openEditor(null, "chord"); rangeSel = null;
@@ -15595,7 +15595,7 @@ test("Jump into text boxes (Josh, Terminal #251/#253): every programmatic text-b
   run(`window.matchMedia = q => ({matches: /pointer: fine/.test(q)}); textJumpOn.v = undefined; __fx = [];`);
   assert.equal(val(`textJumpOn()`), true, "fine pointer: on by default");
   sites(); app.tick(200);
-  assert.deepEqual(val(`[...new Set(__fx)].sort()`), ["bjbar", "fnbpm", "frname", "nchordsym", "nsectlabel", "nsongtitle", "ntext"].sort());
+  assert.deepEqual(val(`[...new Set(__fx)].sort()`), ["bjbar", "frname", "nchordsym", "nsectlabel", "nsongtitle", "ntext"].sort());
   // the switch wins over the pointer, remembered on this device
   run(`setTextJump(false); textJumpOn.v = undefined; __fx = [];`);
   assert.equal(val(`textJumpOn()`), false, "turned off with a mouse: stays off");
@@ -15805,4 +15805,14 @@ test("a foreign .mid's all-channel-10 track is a kit on save, whatever its name;
   assert.deepEqual(JSON.parse(reread), [["Piano", 0, false], ["Standard", 9, true]], "renamed to a name the regex doesn't know, it still saves on ch 10");
   const capture = run(`JSON.stringify(parseMidi(new Uint8Array(${plain}).buffer, {trust: true}).tracks.map(t => !!t.kit))`);
   assert.deepEqual(JSON.parse(capture), [false, false], "not foreign (a capture / the app's own file): no inference");
+});
+
+// New song's tempo is a dropdown, 60–180 by 5, 120 preselected (Josh, Terminal #333)
+test("New song: the tempo is a 60–180 dropdown in steps of 5, 120 by default, and Create uses it", () => {
+  const sel = /<select id="fnbpm"[^>]*>([\s\S]*?)<\/select>/.exec(readFileSync(new URL("../index.html", import.meta.url), "utf8"));
+  assert.ok(sel, "fnbpm is a <select>");
+  const vals = [...sel[1].matchAll(/<option( selected)?>(\d+)<\/option>/g)].map(m => +m[2]);
+  assert.equal(vals[0], 60); assert.equal(vals[vals.length - 1], 180); assert.equal(vals.length, 25);
+  assert.ok(vals.every((v, i) => !i || v - vals[i - 1] === 5));
+  assert.match(sel[1], /<option selected>120<\/option>/);
 });
