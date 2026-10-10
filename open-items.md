@@ -718,10 +718,11 @@ Josh has a composition coach lined up: he annotates/analyzes a song, gives it to
 ## 2026-10-09 Plugins (AUv3) and a native app (Josh, Terminal #337/#338) — DESIGN WRITTEN
 docs/plans/2026-10-09-plugins-and-native.md (advisor, unsteered). Recommends hosting AUv3s inside today's iPad app via a Swift plugin; a ~1-week spike first (one AUv3 plays one track of a scratch/FF1 song; the test is whether it stays in time with the rest, by ear). A full native rewrite later only if measured WebView pain justifies it (6–12+ months, everything built twice). VST: impossible on iPad; Mac-only via JUCE. Questions: Q37 (the doc's 8 questions).
 
-## 2026-10-10 Note movement — review against DAWs (Josh, Terminal #352/#353) — QUEUED
+## 2026-10-10 Note movement — review against DAWs (Josh, Terminal #352/#353/#359) — PLAN WRITTEN (docs/plans/2026-10-10-note-movement.md), waiting on Q40–Q45
 "I really hate our movement ... we need to review how the other DAWs do it. Something feels wrong." Quick fix shipped (triplet moves/resizes in 16th-triplet steps; a T switched off by hand stays off). Still to do: an advisor review of moving/resizing notes vs Logic / GarageBand / FL (snap to grid vs relative moves, a modifier or second finger for no-snap fine moves, how the grid follows a selection), then a plan.
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
+Q40–Q45. Note movement — docs/plans/2026-10-10-note-movement.md §6 Q1–Q6: a note between grid lines keeps its spot when slid? the grid gets finer as you zoom in? the note-length buttons still decide how far a drag moves? T switches on by itself when you grab a triplet? second finger down mid-drag = no grid? a straight up/down drag locks to pitch only?
 Q38. (drum plan §13 Q-F) FF8 Choir Chant: 16 choir recordings the game plays from its drum table. Show each note at the pitch its recording actually sings (default — e.g. one at G3, the next at A3), or all 16 on one line, the way the game's table lists them?
 Q39. (drum plan §13 Q-G) FF9 Hunter's Chance: one drum sound played at five pitches. Treat it as drums (default), or as a little tune?
 Q37. (Josh #340: owns Positive Grid BIAS FX — an AUv3 EFFECT; no instruments yet, open to free ones; the spike needs an instrument) Plugins + native app — docs/plans/2026-10-09-plugins-and-native.md, its questions section (8, plain words, an example each). Biggest: run the 1-week spike? which AUv3 instrument you own to test with? where a plugin's settings live (new song data — CLAUDE.md rule)?
