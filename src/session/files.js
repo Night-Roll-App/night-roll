@@ -305,34 +305,33 @@ export function makeItMine(name, folder) {
 }
 
 export async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not.
-  // Reverts EVERYTHING unpublished for this song, chat included (Josh,
-  // 2026-09-30, ruling on the "N chat messages + Revert does nothing" bug) —
-  // the confirm/button name what's dropped so a chat-only revert isn't silent.
+  // Music + annotations go back; the AI chat stays (Josh, 2026-10-10: losing it
+  // on a revert was "really annoying") — EXCEPT when the chat is the only thing
+  // pending: then Revert drops it, or the row's Revert would do nothing (Josh,
+  // 2026-09-30, the "N chat messages + Revert does nothing" bug).
   const chatKey = "ff1roll-ask-" + key;
   const chatN = askUnsavedCount(chatKey);
   const chatPhrase = chatN ? chatN + " chat message" + (chatN === 1 ? "" : "s") : "";
   let notes = [];
   try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* corrupt: treat as none */ }
   const hasEdits = !!draftDirtyState(key) || notes.length > 0;
-  const drops = hasEdits && chatPhrase ? "your edits and " + chatPhrase
-              : hasEdits ? "your edits"
-              : chatPhrase ? chatPhrase
-              : "";
+  const dropChat = !hasEdits && !!chatPhrase;
+  const drops = hasEdits ? "your edits" : chatPhrase;
   const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
-    "Discards this device's unpublished changes to this song" + (hasEdits ? " — music, unsynced annotations, deletions" : "") +
-    (chatPhrase ? (hasEdits ? ", and " + chatPhrase : " — " + chatPhrase) : "") + ". " +
+    (hasEdits ? "Discards this device's unpublished changes to this song — music, unsynced annotations, deletions. Your AI chat stays. "
+              : dropChat ? "Discards this song's " + chatPhrase + " — the only unpublished thing here. " : "") +
     "The published copy becomes what you see. Your current state is kept as a version first — File → Versions… brings it back.",
     "Revert" + (drops ? " — drops " + drops : ""), "Cancel");
   if (!ok) return;
   dropLocalSong(key);
-  askRevertToSaved(chatKey);
+  if (dropChat) askRevertToSaved(chatKey);
   pubCheck.delete(key);
   if (key === S.songKey) { S.editUndo = []; S.editRedo = []; S.songKey = null; await loadSong(key); }
   updateSyncBtn();
   updateSongBtn();
   if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
   if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender(); // chat sheet open on this song: reflect the drop live
-  setInfo("reverted " + songTitleOf(key) + (chatPhrase ? " and dropped " + chatPhrase : "") + " — this device now has the published copy");
+  setInfo("reverted " + songTitleOf(key) + (dropChat ? " — dropped " + chatPhrase : chatPhrase ? " — your chat stays" : "") + " — this device now has the published copy");
 }
 export async function moveComposition(destDir) {
   const oldKey = S.songKey;

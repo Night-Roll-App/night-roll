@@ -9338,7 +9338,7 @@ test("One song, one motion (Terminal #112): a row's Publish keeps the Publish wi
        for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);`);
 });
 
-test("Revert drops EVERYTHING unpublished for a song, chat included (Josh, 2026-09-30 — it used to show \"N chat messages\" and a Revert that did nothing to the chat): chat-only revert empties the log and clears the pending row; edits+chat revert drops both; the confirm names what it drops", async () => {
+test("Revert: a chat-only revert empties the log and clears the pending row (Josh, 2026-09-30); edits+chat reverts the music and KEEPS the chat (Josh, 2026-10-10: losing it was \"really annoying\"); the confirm names what it drops", async () => {
   const C = "albums/compositions/nightroll/row-chat-only.mid", D = "albums/compositions/nightroll/row-edits-chat.mid";
   const chatC = "ff1roll-ask-" + C, chatD = "ff1roll-ask-" + D;
   run(`globalThis.__realConfirm = appConfirm; globalThis.__confirmArgs = null;
@@ -9354,19 +9354,18 @@ test("Revert drops EVERYTHING unpublished for a song, chat included (Josh, 2026-
   assert.equal(val(`askUnsavedCount("${chatC}")`), 0, "the unsaved chat is gone");
   assert.equal(val(`JSON.parse(localStorage.getItem("${chatC}")).msgs.length`), 0, "no published chat to fall back to: revert clears it, like Clear chat");
   assert.ok(!val(`pendingAll()`).includes(C), "no longer in the pending list");
-  // edits + chat: both drop, and the confirm names both
+  // edits + chat: the music goes back, the chat stays (2026-10-10)
   run(`localStorage.setItem(draftStoreKey("${D}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
        localStorage.setItem("${chatD}", JSON.stringify({lastUsed: 1, saved: 1, msgs: [{role: "user", content: "q1"}, {role: "assistant", content: "a1"}, {role: "user", content: "q2"}], trimmed: false}));`);
   assert.equal(val(`askUnsavedCount("${chatD}")`), 2, "saved: 1 of 3 messages — 2 unsaved");
   assert.ok(val(`pendingSongs()`).includes(D));
   await run(`revertSongToRepo("${D}")`);
-  assert.equal(val(`__confirmArgs.ok`), "Revert — drops your edits and 2 chat messages");
-  assert.equal(val(`localStorage.getItem(draftStoreKey("${D}"))`), null, "music reverted too");
-  assert.equal(val(`askUnsavedCount("${chatD}")`), 0);
-  const stD = val(`JSON.parse(localStorage.getItem("${chatD}"))`);
-  assert.equal(stD.msgs.length, 1, "kept exactly the 1 message already in <song>.ask.md");
-  assert.equal(stD.saved, 1, "saved count untouched — those messages are the published state");
-  assert.ok(!val(`pendingSongs()`).includes(D), "no longer in the pending list");
+  assert.equal(val(`__confirmArgs.ok`), "Revert — drops your edits");
+  assert.match(val(`__confirmArgs.b`), /Your AI chat stays/);
+  assert.equal(val(`localStorage.getItem(draftStoreKey("${D}"))`), null, "music reverted");
+  assert.equal(val(`askUnsavedCount("${chatD}")`), 2, "the chat is untouched");
+  assert.equal(val(`JSON.parse(localStorage.getItem("${chatD}")).msgs.length`), 3, "all 3 messages kept");
+  assert.ok(!val(`pendingSongs()`).includes(D), "no longer a pending song (the chat stays pending as a chat)");
   run(`appConfirm = globalThis.__realConfirm; delete globalThis.__realConfirm; delete globalThis.__confirmArgs;
        for (const k of ["${C}", "${D}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);
        localStorage.removeItem("${chatC}"); localStorage.removeItem("${chatD}");`);

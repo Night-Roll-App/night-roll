@@ -8040,6 +8040,6 @@ Questions for the terminal:
 
 Josh lassoed everything in his own song (notes AND annotations visible) and dragged it left. The notes moved; the annotations did not go with them, which he found "really annoying". He expects a select-all move to carry the chord/section annotations along (at least those inside the selection). Ask moved them back by hand (2 beats left) with edit_annotation. Needs: reproduce in a scratch composition (not his song), decide whether lasso-move should shift annotations in the selected span, ship with a test.
 
-## 2026-10-10 — BUG from Josh (via Ask chat, sunny-day): reverting to the published copy wipes the Ask chat
+## 2026-10-10 — BUG from Josh (via Ask chat, sunny-day): reverting to the published copy wipes the Ask chat — FIXED 2026-10-10: both reverts keep the chat (a Publish-row Revert with ONLY chat pending still clears it, per the 2026-09-30 ruling)
 
 Josh, in his words: "When I reverted to the repository version I lost our chat and that is really annoying." The status line read "back to the published copy and dropped 4 chat messages — your previous state is saved as a version too". The song state is kept as a version, but the chat messages are dropped. He wants the chat kept (or recoverable) when he reverts. Questions: can the dropped messages be recovered from the song's .ask.md or the bridge session? Should revert leave the chat alone, since the chat is a conversation and not song state?

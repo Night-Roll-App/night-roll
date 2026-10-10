@@ -1298,23 +1298,19 @@ export function renderVersionsSheet() {
     row(versionLabel(v), () => goBackToVersion(key, i));
   }
 }
-export async function goBackToPublished(key) { // same door as the Publish sheet's Revert (revertSongToRepo) — same contract: chat included
-  const chatKey = "ff1roll-ask-" + key;
-  const chatN = askUnsavedCount(chatKey);
+export async function goBackToPublished(key) { // the music + annotations go back; the AI chat stays — it's a conversation, not song state (Josh, 2026-10-10 via Ask: "I lost our chat and that is really annoying")
   const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
-    "Your current state is kept as a version first." + (chatN ? " Drops " + chatN + " unsaved chat message" + (chatN === 1 ? "" : "s") + " too." : ""),
+    "Your current state is kept as a version first. Your AI chat stays.",
     "Go back to this", "Cancel");
   if (!ok) return;
   dropLocalSong(key);
-  askRevertToSaved(chatKey);
   pubCheck.delete(key);
   S.editUndo = []; S.editRedo = [];
   if (key === S.songKey) { S.songKey = null; await loadSong(key); }
   updateSyncBtn();
   updateSongBtn();
-  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender();
   document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
+  setInfo("back to the published copy — your chat is untouched, and your previous state is saved as a version too");
 }
 export function openGridSheet() {
   const row = document.getElementById("gridchips");
