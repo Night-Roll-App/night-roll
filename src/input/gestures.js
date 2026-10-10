@@ -1303,7 +1303,9 @@ export function initGestures1() {
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
           const dTr = (p.x - S.drag.spos.x) / pxPerTick();
-          const dMove = snapTickAbs(go.t + dTr) - go.t;
+          // no sideways intent (under half a grid step) = no time change: a straight up/down drag
+          // of an off-grid note (a triplet with T off) must not snap it sideways (Josh, Terminal #358)
+          const dMove = Math.abs(dTr) < moveSnapTicks() / 2 ? 0 : snapTickAbs(go.t + dTr) - go.t;
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
             it.n.t = Math.max(0, o.t + dMove);

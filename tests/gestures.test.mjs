@@ -400,6 +400,18 @@ test("gesture: a note's right edge stretches by a 32nd (Josh, Terminal #354/#355
   assert.equal(notes(app)[0].d, 300, "a 32nd longer — 16th lines would have jumped to 360 or stayed at 240");
 });
 
+test("gesture: dragging an off-grid note straight down changes only its pitch (Josh, Terminal #358)", async () => {
+  const app = await boot("vm-gest-straight-down");
+  app.run(`song.tracks[0].notes = [{t: 160, d: 160, p: 64, v: 80}]; multiSel = [{ti:0,ni:0}];
+           multiSelKey = new Set(["0:0"]); mode = "select"; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25; tripletOffByHand = true; draw();`);
+  const a = noteXY(app, 200, 64), b = noteXY(app, 200, 60);
+  drag(app, a, { x: b.x + 2, y: b.y });
+  const n = notes(app)[0];
+  assert.equal(n.p, 60, "moved down");
+  assert.equal(n.t, 160, "and stayed at its time — no snap to the nearest 16th");
+  app.run(`tripletOffByHand = false;`);
+});
+
 test("gesture: grabbing a note outside a stale selection moves ONLY that note", async () => {
   const app = await boot("vm-gest-stalesel");
   // three chord notes selected earlier (stale); a fourth note elsewhere
