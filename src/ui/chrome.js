@@ -1239,7 +1239,13 @@ export function updateLCD() {
   if (s === S.lcdCache) return;
   S.lcdCache = s;
   document.getElementById("lcdbar").textContent = String(bar);
-  document.getElementById("lcdbeat").textContent = beat;
+  const beatEl = document.getElementById("lcdbeat");
+  beatEl.textContent = beat;
+  // the & is a capital-height glyph: drawn smaller so it sits at e/a height (Josh, Terminal #356); text stays "2&"
+  if (/&$/.test(beat) && typeof beatEl.replaceChildren === "function" && typeof document.createElement === "function") {
+    const amp = document.createElement("span"); amp.className = "lcdamp"; amp.textContent = "&";
+    beatEl.replaceChildren(document.createTextNode(beat.slice(0, -1)), amp);
+  }
   const lbl = document.getElementById("lcdbeatlbl");
   lbl.textContent = pct ? "+" + pct + "%" : "beat";
   lbl.classList.toggle("off", !!pct);
