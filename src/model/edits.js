@@ -138,6 +138,7 @@ export function foldOldOverlay() {
   S.song.overlayFold = {key: S.songKey, raw, need};
 }
 export function saveEdits() {
+  S.editGen++; // a playing song hears the edit without stop/play (audio/transport.js picks it up)
   // label review is on-demand only (Josh, 2026-08-19: unsolicited verdicts are
   // not in the spirit of the project) — edits just retire any review flags
   S.rollnotes.forEach(n => { if (n.stale) delete n.stale; });

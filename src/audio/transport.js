@@ -289,6 +289,7 @@ export async function play(fromSec = 0, opts = {}) {
   applyLevels(); // the song gain for what is about to sound (console / synth / clip), then every fader — audio/levels.js
   S.song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
   if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport
+  S.schedGen = S.editGen; S.schedLastSec = fromSec - 1e-6;
   // what actually sounds, 6 s in, in the debug log: "console voice ready" was
   // logged on the iPad while the song played on synth (Josh, Terminal
   // #314-318), and the log couldn't say which. Facts only, no fix.
@@ -312,7 +313,7 @@ export async function play(fromSec = 0, opts = {}) {
     if (e.sec + e.dur > fromSec + 0.02 && !(e.n.ch === 9 || trackIsDrums(e.ti)))
       scheduleNote(e.ti, e.n, S.playT0, e.n._clip ? clipClamp(e.sec + e.dur - fromSec, S.loopSeg.end - fromSec) : e.sec + e.dur - fromSec);
   }
-  const wrapIdx = S.schedEvents.findIndex(e => e.sec >= S.loopSeg.start);
+  let wrapIdx = S.schedEvents.findIndex(e => e.sec >= S.loopSeg.start); // let: a live rebuild (edits while playing) recomputes it
   setPlayBtn("stop", "Stop");
   srAnnounce("Playing" + (S.albumRun && S.currentPath ? " — " + songTitleOf(S.currentPath) : ""));
   albumStrip(); // un-dims on resume
@@ -334,6 +335,13 @@ export async function play(fromSec = 0, opts = {}) {
       }
       if (now >= S.albumEndAbs) { albumAdvance(); return; }
     }
+    if (S.schedGen !== S.editGen) { // notes changed while playing: rebuild, carry on just past what's already handed out (Josh, Terminal #361 — edits used to wait for stop/play)
+      S.schedGen = S.editGen;
+      buildSchedule();
+      const k = S.schedEvents.findIndex(e => e.sec > S.schedLastSec + 1e-6);
+      S.schedIdx = k < 0 ? S.schedEvents.length : k;
+      wrapIdx = S.schedEvents.findIndex(e => e.sec >= S.loopSeg.start);
+    }
     for (;;) {
       // every pass ends at the loop point; material past it (a written-out
       // repeat, e.g. ship's bar 25.5 seam) is shown but never played
@@ -341,6 +349,7 @@ export async function play(fromSec = 0, opts = {}) {
         if (wrapIdx < 0 || !isFinite(S.loopSeg.end) || S.schedEvents[wrapIdx].sec >= S.loopSeg.end) break; // nothing inside the segment, or an open-ended take: no wrap
         S.loopPass++;
         S.schedIdx = wrapIdx;
+        S.schedLastSec = S.loopSeg.start - 1e-6;
         // chase across the wrap: a note straddling the loop target plays its
         // remainder (chip-capture ticks derive from real seconds, so ship's
         // C5 starts a hair before the 1.3 target and vanished on loop)
@@ -369,6 +378,7 @@ export async function play(fromSec = 0, opts = {}) {
         }
         if (d > 0) scheduleNote(e.ti, e.n, S.playT0 + abs, d);
       }
+      S.schedLastSec = e.sec;
       S.schedIdx++;
     }
   };

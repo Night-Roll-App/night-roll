@@ -22,6 +22,8 @@ export const S = {
   playRate: 1,
   repoRefreshing: new Set(), // device-copy keys with a background refresh in flight (platform/folder.js readData)
   tripletOffByHand: false, // T switched off by a tap: touching a triplet note doesn't switch it back on (Josh, Terminal #352) — until T is tapped on
+  editGen: 0, // bumped by every saveEdits — the playing scheduler rebuilds when it moves (Josh, Terminal #361)
+  schedGen: 0, schedLastSec: -Infinity, // the scheduler's view: the editGen its list was built from, and the last event it handed to the audio
   synthNotes: 0, // synth voices started since the last play() — the play check's count (audio/transport.js)
   song: null,
   songKey: null,

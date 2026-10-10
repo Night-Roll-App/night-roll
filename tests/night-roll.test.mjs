@@ -15823,3 +15823,22 @@ test("gridFollowNote: a T switched off by hand stays off when you grab a triplet
   assert.equal(val(`gridFollowNote({t: 160, d: 160})`), true, "T on again: the follow is back");
   run(`tripletOffByHand = false; pencilMod = 1; pencilNV = 16; pencilDur = 0.25; syncDurSeg = __realSDS;`);
 });
+
+// Josh, Terminal #361: "when I change the notes they don't take effect until I
+// stop and then play again" — an edit while playing is heard without stop/play
+test("an edit while playing is heard on its way, no stop/play needed", async () => {
+  const a = await createApp({intervals: true});
+  const r = (c) => a.run(c), v = (c) => JSON.parse(r(`JSON.stringify(${c})`));
+  for (let i = 0; i < 10; i++) { a.tick(50); await new Promise(res => setImmediate(res)); }
+  installTransportSong(r); // notes at 0 s and 2 s (t 1920)
+  r(`songEndTick = 8 * 480;`); // 4 s long: the scheduler stays in the first pass (a 2 s song wraps inside the look-ahead)
+  r(`globalThis.__p = 0; play(0, {noCountIn: true}).then(() => { globalThis.__p = 1; });`);
+  for (let i = 0; i < 100 && v(`globalThis.__p`) < 1; i++) { a.tick(50); await new Promise(res => setImmediate(res)); }
+  a.tick(100); // just started: the note at 0 is handed out, nothing at 1 s yet
+  const before = v(`synthNotes`);
+  r(`song.tracks[0].notes.push({t: 960, d: 240, p: 67, v: 80}); saveEdits();`); // a new note at 1 s
+  for (let i = 0; i < 30; i++) a.tick(50); // past 1.6 s: the 1 s note and the 2 s note are both due
+  assert.equal(v(`synthNotes`) - before, 2, "the added note AND the old one at 2 s were handed out (without the rebuild only the 2 s note would be)");
+  r(`stop();`);
+});
+
