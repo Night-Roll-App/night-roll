@@ -412,6 +412,59 @@ test("gesture: dragging an off-grid note straight down changes only its pitch (J
   app.run(`tripletOffByHand = false;`);
 });
 
+// "keep its spot, but lines pull" (docs/plans/2026-10-10-note-movement.md step 1): a dragged
+// point lands on the nearer of a grid line or its own spot plus whole grid steps
+const offGrid = (app, t, d) => app.run(`song.tracks[0].notes = [{t: ${t}, d: ${d}, p: 64, v: 80}]; multiSel = [{ti:0,ni:0}];
+  multiSelKey = new Set(["0:0"]); mode = "select"; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25; tripletOffByHand = true; draw();`);
+
+test("gesture (keep-spot a): an off-grid note dragged straight down, finger drifting under half a step, keeps its time", async () => {
+  const app = await boot("vm-gest-keep-a");
+  offGrid(app, 160, 160);
+  const a = noteXY(app, 200, 64), b = noteXY(app, 200, 60);
+  const px = app.run(`(60 / song.ppq) * view.pxq`) - 1; // just under half a 16th
+  drag(app, a, { x: b.x - px, y: b.y });
+  const n = notes(app)[0];
+  assert.equal(n.p, 60);
+  assert.equal(n.t, 160, "no sideways step taken, so no time change");
+  app.run(`tripletOffByHand = false;`);
+});
+
+test("gesture (keep-spot b): a triplet note with T off, dragged one 16th, slides by exactly a 16th and stays between lines", async () => {
+  const app = await boot("vm-gest-keep-b");
+  offGrid(app, 160, 160);
+  const a = noteXY(app, 200, 64), b = noteXY(app, 320, 64);
+  drag(app, a, b);
+  assert.equal(notes(app)[0].t, 280, "160 + 120, not snapped to 240 or 360");
+  app.run(`tripletOffByHand = false;`);
+});
+
+test("gesture (keep-spot c): an off-phase LEFT edge still lands on the beat line", async () => {
+  const app = await boot("vm-gest-keep-c");
+  offGrid(app, 1056, 384); // ends at 1440
+  drag(app, noteXY(app, 1056, 64), noteXY(app, 960, 64));
+  const n = notes(app)[0];
+  assert.equal(n.t, 960, "start on beat 3, phase notwithstanding");
+  assert.equal(n.t + n.d, 1440, "end stays put");
+  app.run(`tripletOffByHand = false;`);
+});
+
+test("gesture (keep-spot d): an off-grid end wobbled 3 px stays where it was", async () => {
+  const app = await boot("vm-gest-keep-d");
+  offGrid(app, 160, 400); // ends at 560, between 32nd lines
+  const e = noteXY(app, 560, 64);
+  drag(app, e, { x: e.x + 3, y: e.y });
+  assert.equal(notes(app)[0].d, 400, "no snap to the 32nd line at 540");
+  app.run(`tripletOffByHand = false;`);
+});
+
+test("gesture (keep-spot e): an off-grid end dragged one 32nd grows by exactly a 32nd", async () => {
+  const app = await boot("vm-gest-keep-e");
+  offGrid(app, 160, 400);
+  drag(app, noteXY(app, 560, 64), noteXY(app, 620, 64));
+  assert.equal(notes(app)[0].d, 460, "400 + 60, not snapped to the 600 line");
+  app.run(`tripletOffByHand = false;`);
+});
+
 test("gesture: grabbing a note outside a stale selection moves ONLY that note", async () => {
   const app = await boot("vm-gest-stalesel");
   // three chord notes selected earlier (stale); a fourth note elsewhere

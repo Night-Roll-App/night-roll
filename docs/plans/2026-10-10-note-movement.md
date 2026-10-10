@@ -2,7 +2,10 @@
 
 Advisor plan, 2026-10-10. Source: Josh, Terminal #352/#353/#355/#358/#359
 ("I really hate our movement ... review how the DAWs do it"). Quick fixes
-already shipped today: b24f139, b13cae7, aa02b1e. Nothing below is built.
+already shipped today: b24f139, b13cae7, aa02b1e. Status: step 1 (M2 —
+keep its spot, but lines pull — for moves and both edges) is built; the rest is not.
+Under half a step of sideways motion the point stays put (not "by construction":
+on a fine grid a wobble is nearer a line than the note's own spot).
 
 ## 1. How other DAWs do it
 

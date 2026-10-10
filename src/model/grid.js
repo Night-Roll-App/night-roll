@@ -49,6 +49,24 @@ export function snapTickAbs(tick) { // nearest grid LINE, honoring a custom grid
   const cell = barTicks() / S.gridDiv, a = gridAnchorTick();
   return Math.max(0, Math.round(a + Math.round((tick - a) / cell) * cell));
 }
+// "Keep its spot, but lines pull" (Ableton's rule; docs/plans/2026-10-10-note-movement.md M2):
+// a dragged point (note start, or an edge) lands on whichever is nearer the
+// finger — the nearest grid line (custom grid: from its anchor) or its own
+// spot plus whole steps of g. Under half a step of sideways motion it stays
+// put: an off-grid point would otherwise jump to a line on a wobble (#358).
+// Returns the delta in ticks.
+export function snapKeepSpot(orig, rawDelta, g) {
+  const k = Math.round(rawDelta / g);
+  if (k === 0) return 0;
+  const want = orig + rawDelta;
+  let line;
+  if (S.gridDiv) {
+    const cell = barTicks() / S.gridDiv, a = gridAnchorTick();
+    line = Math.round(a + Math.round((want - a) / cell) * cell);
+  } else line = Math.round(want / g) * g;
+  line = Math.max(0, line);
+  return Math.abs(line - want) <= Math.abs(orig + k * g - want) ? line - orig : k * g;
+}
 // Pencil placement off the roll (fall view, score): under a custom grid a tap
 // is one CELL — 6/bar gives quarter triplets, 12/bar eighth triplets — the
 // same rule the roll pencil already followed (Josh, 2026-09-12)

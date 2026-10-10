@@ -115,7 +115,7 @@ import { dispPitchExtent } from "../ui/chrome.js";
 import { ROLL_AIR } from "../ui/chrome.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { tracksLaneH } from "../render/tracks.js";
-import { snapTickAbs } from "../model/grid.js";
+import { snapKeepSpot } from "../model/grid.js";
 import { drumStepImpl as drumStep } from "../render/roll.js";
 import { sfShownAt } from "../model/song.js";
 import { curTick } from "../render/roll.js";
@@ -1295,17 +1295,15 @@ export function initGestures1() {
         }
         else if (S.drag.noteEdit.kind === "move") {
           const dP = Math.round((S.drag.spos.y - p.y) / S.view.rowH);
-          // absolute snap: the GRABBED note lands ON grid lines (an off-phase
-          // note — born on a custom grid — could never reach the "and of 1" by
-          // relative steps; Josh, 2026-08-24); mates keep their offsets
+          // the GRABBED note keeps its spot or lands on a line, whichever is nearer
+          // (snapKeepSpot) — an off-phase note still reaches the "and of 1" (Josh,
+          // 2026-08-24) and a straight up/down drag never moves it sideways
+          // (Terminal #358); mates keep their offsets
           const gi = S.drag.noteEdit.orig.findIndex((o, i) => {
             const it = S.drag.noteEdit.items[i]; return it.ti + ":" + it.ni === S.drag.noteEdit.hitKey;
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
-          const dTr = (p.x - S.drag.spos.x) / pxPerTick();
-          // no sideways intent (under half a grid step) = no time change: a straight up/down drag
-          // of an off-grid note (a triplet with T off) must not snap it sideways (Josh, Terminal #358)
-          const dMove = Math.abs(dTr) < moveSnapTicks() / 2 ? 0 : snapTickAbs(go.t + dTr) - go.t;
+          const dMove = snapKeepSpot(go.t, (p.x - S.drag.spos.x) / pxPerTick(), snap);
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
             it.n.t = Math.max(0, o.t + dMove);
@@ -1319,8 +1317,7 @@ export function initGestures1() {
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
           const fine = S.gridDiv ? snap : isTripletDur(S.pencilDur) ? Math.max(1, Math.round(S.song.ppq / 6)) : Math.max(1, Math.round(S.song.ppq / 8)); // the fine grid, same as the right edge (Terminal #355)
-          const edgeT = Math.round((go.t + (p.x - S.drag.spos.x) / pxPerTick()) / fine) * fine; // absolute: land ON lines
-          const dEdge = edgeT - go.t;
+          const dEdge = snapKeepSpot(go.t, (p.x - S.drag.spos.x) / pxPerTick(), fine);
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
             const nt = Math.max(0, Math.min(o.t + dEdge, o.t + o.d - minD));
@@ -1333,12 +1330,12 @@ export function initGestures1() {
             const it = S.drag.noteEdit.items[i]; return it.ti + ":" + it.ni === S.drag.noteEdit.hitKey;
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
-          // the edge lands ON lines (an off-phase end still reaches the beat — 2026-08-24), but on a
-          // FINE grid: 32nds, or 16th-triplets while T is on — "extend a note by a 16th or 32nd"
-          // (Josh, Terminal #354/#355); 16th lines overshot and never reached a 32nd. Custom grid: its cells.
+          // the edge keeps its spot or lands on a line (an off-phase end still reaches the beat —
+          // 2026-08-24), on a FINE grid: 32nds, or 16th-triplets while T is on — "extend a note by a
+          // 16th or 32nd" (Josh, Terminal #354/#355); 16th lines overshot and never reached a 32nd.
+          // Custom grid: its cells.
           const fine = S.gridDiv ? snap : isTripletDur(S.pencilDur) ? Math.max(1, Math.round(S.song.ppq / 6)) : Math.max(1, Math.round(S.song.ppq / 8));
-          const edgeT = Math.round((go.t + go.d + (p.x - S.drag.spos.x) / pxPerTick()) / fine) * fine;
-          const dEdge = edgeT - (go.t + go.d);
+          const dEdge = snapKeepSpot(go.t + go.d, (p.x - S.drag.spos.x) / pxPerTick(), fine);
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
             it.n.d = Math.max(minD, o.d + dEdge);
