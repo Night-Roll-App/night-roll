@@ -305,3 +305,21 @@ kit "ch 8 prog 7" track, a parse→draft→openDraftDoc→draftDoc→both-writer
 round trip, :10448 stays green, a foreign "kit" text stays untouched;
 (8) split check + run-tests; (9) NIGHT-ROLL :450 + open-items; (10) only then
 the recapture dry run, FF7 first.
+
+## 12. Census result (2026-10-09, docs/plans/2026-10-09-percussion-census.md) — §4 needs rework
+
+Every melodic-looking false positive the safety scan flagged (FF8 Choir
+Chant, FF9 Qu's Marsh ×4 and Hunter's Chance, Chrono Cross Time of the
+Dreamwatch and Zelbess) comes from **rule 1 — AKAO drum mode**, the
+driver's own flag, not rule 2 (one pitch ≥ 12). §4 keeps rule 1 and only
+guards rule 2, so as written it fixes none of them. Composers used AKAO
+drum mode as a multi-sample instrument (one rooted sample per key — a choir
+across 16 keys). Sample facts alone don't separate them: Racing Chocobos'
+real drums include looped and rooted samples (ch 8/9 looped unrooted, ch
+11/12 one-shot rooted); Choir Chant is 16 one-shot rooted samples. What
+separates the flagged set from real drums is the group's shape: many
+written keys (> 6), usually one program per key, rooted, versus 1–2 keys
+per real drum voice. Rule-2 pedal-tone candidates are few (FF7 6, FF8 3,
+CC 1, FF9 0, Dark Cloud 3). Dark Cloud's many-key groups are VAB kits that
+mostly look like real kits, except Divine Beast Dran ch 4/5 (+ alternate),
+all rooted and harmonic. Next: a reworked §4 for drum-mode groups.
