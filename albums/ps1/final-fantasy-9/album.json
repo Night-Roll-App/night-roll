@@ -58,7 +58,10 @@
   "wall-of-sacred-beasts": "Wall of Sacred Beasts",
   "we-are-thieves": "We Are Thieves!",
   "you-re-not-alone": "You're Not Alone!",
-  "zidane-s-theme": "Zidane's Theme"
+  "zidane-s-theme": "Zidane's Theme",
+  "garnet-s-song-1-recapture": "Garnet's Song 1 (re-capture)",
+  "qu-s-marsh-recapture": "Qu's Marsh (re-capture)",
+  "song-of-memories-recapture": "Song of Memories (re-capture)"
  },
  "nsf": {
   "vault": "ps1/final-fantasy-9/",
@@ -108,7 +111,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "ambush-attack": {
@@ -124,7 +127,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "assault-of-the-white-dragons": {
@@ -134,7 +137,7 @@
     "disc": 4,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -172,7 +175,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "battle-strategy-conference": {
@@ -188,7 +191,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "battle": {
@@ -198,7 +201,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -236,7 +239,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "black-waltz": {
@@ -246,7 +249,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -268,7 +271,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "ceremony-for-the-gods": {
@@ -278,7 +281,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -300,7 +303,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "cleyra-s-trunk": {
@@ -342,7 +345,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -374,7 +377,7 @@
     "disc": 4,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -428,7 +431,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "esto-gaza": {
@@ -460,7 +463,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "extraction": {
@@ -470,7 +473,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -492,7 +495,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "fanfare": {
@@ -508,7 +511,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "far-away-in-the-twilight": {
@@ -540,7 +543,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "final-battle": {
@@ -662,7 +665,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -696,7 +699,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "garnet-s-theme": {
@@ -712,7 +715,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "grieve-for-the-skies": {
@@ -744,7 +747,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "hidden-lips": {
@@ -760,7 +763,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "hunter-s-chance": {
@@ -770,7 +773,7 @@
     "disc": 2,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -792,7 +795,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "ice-caverns": {
@@ -802,7 +805,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -818,7 +821,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -840,7 +843,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "ipsen-s-castle": {
@@ -856,7 +859,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "jesters-of-the-moon": {
@@ -866,7 +869,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -920,7 +923,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "kuja-s-theme": {
@@ -968,7 +971,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "memories-of-that-day": {
@@ -1000,7 +1003,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "moogle-s-theme": {
@@ -1032,7 +1035,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "oeilvert": {
@@ -1048,7 +1051,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "one-problem-settled": {
@@ -1064,7 +1067,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "place-of-memory": {
@@ -1112,7 +1115,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "protecting-my-devotion": {
@@ -1128,7 +1131,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "qu-s-marsh": {
@@ -1160,7 +1163,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "quina-s-theme": {
@@ -1176,7 +1179,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "rebirth-of-the-evil-mist": {
@@ -1186,7 +1189,7 @@
     "disc": 4,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1224,7 +1227,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "run": {
@@ -1234,7 +1237,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1272,7 +1275,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "shinra-march-millennium-version": {
@@ -1288,7 +1291,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "slew-of-love-letters": {
@@ -1298,7 +1301,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1320,7 +1323,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "song-of-memories": {
@@ -1384,7 +1387,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "stolen-eyes": {
@@ -1400,7 +1403,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "successive-battles": {
@@ -1416,7 +1419,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "terra": {
@@ -1448,7 +1451,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "the-airship-hilda-garde": {
@@ -1458,7 +1461,7 @@
     "disc": 4,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1528,7 +1531,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "the-heart-of-melting-magic": {
@@ -1570,7 +1573,7 @@
     "disc": 3,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1608,7 +1611,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "tonight": {
@@ -1624,7 +1627,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "two-hearts-not-captured": {
@@ -1640,7 +1643,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "ukulele-de-chocobo": {
@@ -1656,7 +1659,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "unfathomed-reminiscence": {
@@ -1682,7 +1685,7 @@
     "disc": 1,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1704,7 +1707,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "wall-of-sacred-beasts": {
@@ -1736,7 +1739,7 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
    },
    "you-re-not-alone": {
@@ -1746,7 +1749,7 @@
     "disc": 4,
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     },
     "loud": {
      "v": 1,
@@ -1784,8 +1787,59 @@
     },
     "cap": {
      "v": 2,
-     "code": "29428861"
+     "code": "6768427c"
     }
+   },
+   "garnet-s-song-1-recapture": {
+    "n": 1,
+    "secs": 40.63593939583333,
+    "track": 35,
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -32.5,
+     "peak": -20,
+     "synth": -16.3
+    },
+    "cap": {
+     "v": 2,
+     "code": "6768427c"
+    },
+    "rip": "garnet-s-song-1"
+   },
+   "qu-s-marsh-recapture": {
+    "n": 1,
+    "secs": 95.998336,
+    "track": 38,
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -27.7,
+     "peak": -13.1,
+     "synth": -14.9
+    },
+    "cap": {
+     "v": 2,
+     "code": "6768427c"
+    },
+    "rip": "qu-s-marsh"
+   },
+   "song-of-memories-recapture": {
+    "n": 1,
+    "secs": 137.10902000000004,
+    "track": 33,
+    "disc": 2,
+    "loud": {
+     "v": 1,
+     "lufs": -27.2,
+     "peak": -12.4,
+     "synth": -12.5
+    },
+    "cap": {
+     "v": 2,
+     "code": "6768427c"
+    },
+    "rip": "song-of-memories"
    }
   },
   "chip": "psf",

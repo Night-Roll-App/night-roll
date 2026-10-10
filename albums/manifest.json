@@ -5443,6 +5443,10 @@
     "path": "albums/ps1/final-fantasy-9/garnet-s-song-1.mid"
    },
    {
+    "title": "Garnet's Song 1 (re-capture)",
+    "path": "albums/ps1/final-fantasy-9/garnet-s-song-1-recapture.mid"
+   },
+   {
     "title": "Garnet's Song 2",
     "path": "albums/ps1/final-fantasy-9/garnet-s-song-2.mid"
    },
@@ -5559,6 +5563,10 @@
     "path": "albums/ps1/final-fantasy-9/qu-s-marsh.mid"
    },
    {
+    "title": "Qu's Marsh (re-capture)",
+    "path": "albums/ps1/final-fantasy-9/qu-s-marsh-recapture.mid"
+   },
+   {
     "title": "Queen of the Abyss",
     "path": "albums/ps1/final-fantasy-9/queen-of-the-abyss.mid"
    },
@@ -5605,6 +5613,10 @@
    {
     "title": "Song of Memories (Alternate)",
     "path": "albums/ps1/final-fantasy-9/song-of-memories-alternate.mid"
+   },
+   {
+    "title": "Song of Memories (re-capture)",
+    "path": "albums/ps1/final-fantasy-9/song-of-memories-recapture.mid"
    },
    {
     "title": "Soulless Village",
