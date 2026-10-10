@@ -247,8 +247,8 @@ export function drawRangeTints(W, H) {
   }
   if (S.rangeSel && !S.rangeSel.off) { // parked cycle: body tint hides with it, back on re-arm
     const x = S.RULER_W + S.rangeSel.a * ppt - S.view.x;
-    ctx.fillStyle = css("--accent");
-    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = S.rangeSel.cycle ? "#E09A3E" : css("--accent"); // amber = ▶ loops it — shown here now that the ruler strip stays clear (Josh, Terminal #349/#350)
+    ctx.globalAlpha = S.rangeSel.cycle ? 0.16 : 0.12;
     ctx.fillRect(x, S.RULER_H, (S.rangeSel.b - S.rangeSel.a) * ppt, H);
     ctx.globalAlpha = 1;
   }
@@ -425,25 +425,10 @@ export function drawRuler(W, H) {
   ctx.globalAlpha = 0.7;
   drawTicks(-Infinity, Infinity);
   ctx.globalAlpha = 1;
-  if (S.rangeSel) {
-    // amber = Logic's cycle strip (▶ loops this); a band-tap selection keeps
-    // the quiet accent tint — it feeds + Note but never hijacks playback
-    const rsx = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.a) : S.RULER_W + S.rangeSel.a * ppt - S.view.x;
-    const rse = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.b) : S.RULER_W + S.rangeSel.b * ppt - S.view.x;
-    ctx.fillStyle = S.rangeSel.cycle ? "#E09A3E" : css("--accent");
-    ctx.globalAlpha = (S.rangeSel.cycle ? 0.75 : 0.3) * (S.rangeSel.off ? 0.35 : 1); // dimmed = parked, tap to re-arm
-    ctx.fillRect(rsx, 0, rse - rsx, BASE_RULER_H); // number strip only — lanes stay readable
-    ctx.globalAlpha = 1;
-    if (S.rangeSel.cycle && !S.rangeSel.off) { // the bright amber swallows the ticks and numbers: re-ink them black (Josh, 2026-09-07)
-      ctx.strokeStyle = "#000";
-      ctx.globalAlpha = 0.8;
-      drawTicks(rsx, rse);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#000";
-      ctx.font = "10px " + css("--mono"); // the tick pass doesn't touch it, but stay explicit
-      drawNumbers(rsx, rse);
-    }
-  }
+  // no selection fill in the ruler strip: it got in the way of working in
+  // the ruler (Josh, Terminal #349/#350 — "we just don't ever put the
+  // highlight in the ruler"); the tint over the notes shows it, amber when ▶
+  // loops it (drawRangeTints)
   // in score view, band edges follow the ENGRAVED positions (scoreTickToX,
   // the playhead's own map) — linear time put "A part" a hair off its notes
   const tickX = t => S.viewMode === "score" && S.scoreModel ? scoreTickToX(t) : S.RULER_W + t * ppt - S.view.x;
