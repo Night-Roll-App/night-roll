@@ -226,6 +226,10 @@ export function initSheet2() {
     S.dropUpOpen = menu;
   });
   document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true}); // the item's own handler still runs
+  // a long chat (the Terminal tab) took forever to scroll back down (Josh, Terminal #342): ↓ latest shows a screen or more above the end
+  const asklog = document.getElementById("asklog"), askjump = document.getElementById("askjump");
+  asklog.addEventListener("scroll", () => { askjump.style.display = asklog.scrollHeight - asklog.scrollTop - asklog.clientHeight > asklog.clientHeight ? "" : "none"; }, {passive: true});
+  askjump.addEventListener("click", () => { askjump.style.display = "none"; askScrollEnd(); });
   document.getElementById("askshot").addEventListener("click", askShotTake);
   document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
   document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());

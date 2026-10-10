@@ -3072,6 +3072,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "↓ latest",
     "Roman numeral and no 5",
     "Jump into text boxes",
     "Docked annotation window", "follows what you select",

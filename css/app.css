@@ -1162,6 +1162,7 @@
   #importsheet .sheetgrip { margin: -4px -8px -8px 0; margin-top: auto; bottom: -12px; }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
+  #askjump { align-self: flex-end; margin: -52px 12px 8px 0; position: relative; z-index: 2; min-height: 40px; padding: 6px 14px; border-radius: 20px; } /* floats over the log's bottom edge */
   .askmsg { font-size: 1.0625rem; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
             white-space: pre-wrap; max-width: 92%; }
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }

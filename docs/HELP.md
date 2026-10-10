@@ -431,6 +431,9 @@ On the Claude Code bridge, tap **＋** beside Speak, then **Screenshot of Night 
 **Terminal tab**
 Two pickers at its top choose the model the terminal gives its **advisors** (read-only reviews) and its **builders** (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The Terminal tab in AI sends your message **straight to Claude Code in the Mac's terminal** — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the **Now:** line shows what it's doing; if it's busy, your message waits in its queue. Screenshot works the same. If the Mac can't be reached, the message goes back into the box. Its log is the repo-level ask/terminal.ask.md, shipped from the PUBLISH sheet's Chats section with its own **Publish chat** button (Publish all is songs only; **Publish chats** covers it) — it is a chat, never a song.
 
+**↓ latest**
+Scrolled up in a long chat (the ⌨ Terminal tab grows fast)? A **↓ latest** button floats at the bottom of the conversation whenever you're a screen or more above the newest message — tap it to jump there. Any redraw of the chat also lands on the newest message, never the top.
+
 **The chat is part of the song**
 The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <song>.ask.md beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. **Clear chat** starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.
 

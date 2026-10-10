@@ -149,6 +149,7 @@ export function aiRenderLog(host) {
     if (m.pending) { const part = aiPartial(host)[m.pending]; aiBubble(host, "ai", part ? part + "\n\n" + aiText(host, "stillWriting") : aiText(host, "pendingHere")).dataset.job = m.pending; pendingSeen = true; }
   }
   if (pendingSeen) aiResumeSoon(host, 200);
+  aiScrollEnd(host); // a redraw lands on the latest message, never the top: a long chat redrawn while hidden or moving kept landing at the top — after layout
 }
 // ---- wiring for the controls the library draws into: Send, Stop, the box, the tabs
 export function aiWindowBind(host) {

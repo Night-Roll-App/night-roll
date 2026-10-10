@@ -291,6 +291,9 @@ document.getElementById("askcompact").addEventListener("click", async () => {
 if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
 document.getElementById("askattach").addEventListener("click", () => {
 document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true});
+const asklog = document.getElementById("asklog"), askjump = document.getElementById("askjump");
+asklog.addEventListener("scroll", () => { askjump.style.display = asklog.scrollHeight - asklog.scrollTop - asklog.clientHeight > asklog.clientHeight ? "" : "none"; }, {passive: true});
+askjump.addEventListener("click", () => { askjump.style.display = "none"; askScrollEnd(); });
 document.getElementById("askshot").addEventListener("click", askShotTake);
 document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
 document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());
