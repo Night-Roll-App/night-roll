@@ -200,7 +200,7 @@
   .lcdmid.lcdkey { color: var(--gold); }
   .lcdlbl { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
   #lcdbeat { min-width: 2ch; text-align: center; } /* "2" -> "2&" never re-widths the row */
-  #lcdbeat .lcdamp { font-size: 0.72em; } /* & is cap-height: shrunk to the e/a height (Josh, Terminal #356) */
+  #lcdbeat .lcdamp { display: inline-block; transform: scaleY(0.74); transform-origin: 50% 80%; } /* & is cap-height: squashed to the e/a height, same width and stroke (Josh, Terminal #356/#357 — a smaller font made it thinner) */
   #lcdbeatlbl.off { color: var(--gold); letter-spacing: 0.04em; } /* "+33%": how far into the 16th, off the e/&/a grid only */
   .lcdseg.tappable { cursor: pointer; }
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
