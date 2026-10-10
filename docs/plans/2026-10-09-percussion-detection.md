@@ -323,3 +323,106 @@ per real drum voice. Rule-2 pedal-tone candidates are few (FF7 6, FF8 3,
 CC 1, FF9 0, Dark Cloud 3). Dark Cloud's many-key groups are VAB kits that
 mostly look like real kits, except Divine Beast Dran ch 4/5 (+ alternate),
 all rooted and harmonic. Next: a reworked §4 for drum-mode groups.
+
+## 13. Drum mode used melodically — reworked §4 (advisor)
+
+**New fact** (scratch dump of each drum-mode note's table entry, `n.tone`):
+- Choir Chant plays all 16 slots at one entry key (53), each slot on its own
+  instrument (64–79).
+- Its written keys 36, 38, 40, 41… are white keys used as slot numbers, not a
+  scale. The pitch is inside each recording. The measured root plus the
+  renderer's ratio gives mostly 55–57, with octave-like outliers 45/63/65.
+- Qu's Marsh ch 12+13 has the same shape: 21 instruments, all at key 60,
+  measuring 46–56.
+- So for such a bank only the sample's own root carries the heard pitch.
+  Neither the written key nor the entry key does.
+
+### Rule (the capture's own data; no game names)
+1. **No table entry** (`drumEntry` null; Dreamwatch ch 1, keys 80–94).
+   - The render already plays the channel program at the written key
+     (spu-render.mjs:132,143), and the MIDI writes the same melodic note.
+   - Unverified against the driver; read it before building.
+2. **Bank**: the drum-table instruments, with channels joined when they
+   share one. Qu's Marsh ch 12/14/16/18 joins ch 13/15/17/19 via instrument
+   25. For a VAB/HD kit, the bank is the program's tones.
+3. **Melodic bank**: ≥ 6 instruments, AND every sample has a root
+   (`estimateRoot` non-null) and harmonicity ≥ 0.8 (census `sampleFacts`).
+   Anything else stays a kit, as today. Census margin: melodic minimum
+   r .61 / h .82.
+4. **Pitch** = measured root + akaoVoices' ratio in semitones (the VAB
+   melodic arithmetic, notes.mjs:75-78), remainder in `cents`. An entry ±12
+   from the bank median folds one octave toward it, and the warning says so.
+5. **Mixed channel**: channelGroups already splits `ch N prog …` from `ch N
+   prog … kit` (notes.mjs:300-302). Dreamwatch ch 1 becomes `prog 38` +
+   `prog 48 kit`.
+6. **Warning per bank, as a fact.** Example: `prog 64–79: 16 samples, all
+   pitched → melodic`, or `→ kit: 3 of 6 unpitched`.
+
+### Writing it; render pairing
+- **Where it runs.** Inside `kitify`, which is idempotent. channelGroups
+  calls it, and spu-render.mjs:334 uses channelGroups, so names pair by
+  construction.
+- **Melodic bank output:**
+  - no " kit" suffix, no `kit:1`, a melodic channel (makeMidi :364);
+  - `drum=false`, `pitch`/`cents` from step 4;
+  - `n.art` is already the entry instrument (akao.mjs:416), so emitAkao
+    writes a program per slot and its envelope.
+- Drop the bank's programs from kitify's `drumProgs` (notes.mjs:262).
+- **Required render guard.**
+  - spu-render.mjs:132,143 and notePan (notes.mjs:311) choose the table's
+    instrument, key and pan by `n.drum`. Clearing it would play the choir
+    at keys 36–62.
+  - Fix: set `n.table=true` at akao.mjs:416 and read that instead.
+  - Test: console PCM is byte-identical before and after (Choir Chant,
+    Racing Chocobos).
+
+### Census cases
+| Group | Verdict | Why |
+|---|---|---|
+| FF8 Choir Chant ch 1 (16 inst, all pitched) | melodic | rule 3 |
+| FF9 Qu's Marsh ch 12–19 (21 inst joined, all pitched) | melodic | rules 2+3 |
+| FF7 Racing Chocobos ch 10/11/12 (2/1/1 inst) | kit | < 6 |
+| CC Zelbess ch 15 (7 inst on keys 36–42, 5 unrooted) | **kit** | rule 3 |
+| CC Zelbess ch 11–14, 16–18 (1–2 inst each) | kit | < 6 |
+| CC Dreamwatch ch 1 | split | rule 1 + kit |
+| FF9 Hunter's Chance ch 26–30 (joined; unrooted + no-sample) | kit | rule 3 |
+| CC Hydra Marshes ch 27 (6 inst, 3 unrooted) | kit | rule 3 |
+| DC Divine Beast Dran ch 4/5 (+alt) (VAB, h ≥ .97) | melodic | rule 3 |
+
+- Zelbess ch 15 sits on GM kit keys (36 kick, 38 snare, 42 hat…) with noisy
+  samples, which supports kit.
+- Hunter's Chance ch 30 is one sample at five keys (58–65): tuned toms or a
+  line (Q-G).
+
+### Re-capture impact
+- **Unblocked:** FF8, FF9, Chrono Cross. Dark Cloud follows once rule 3 runs
+  on the PS2 VAB path.
+- **VELOCITY:** songs where only kits move to ch 10 + marker.
+- **MOVED:** Choir Chant, Qu's Marsh and Dran, whose pitches change (today's
+  files hold slot keys on a melodic channel). Also Dreamwatch, renamed by
+  the split. Annotated songs get "(re-capture)" copies.
+- **Safety scan:** "melodic bank on ch 10 = fail" replaces "> 6 keys". List
+  every melodic bank per album for Josh's ear first.
+
+### Risks
+- **`estimateRoot` octave errors** (Choir Chant 45 vs 56). The fold limits
+  them, but one note an octave off is a wrong fact in the roll (Learning
+  mode). Ear-check before apply.
+- **Thin margins** (h .82 vs .80), and joining can pull a bank into a kit.
+  Both fail toward a kit, which is today's behaviour.
+- **Hear the MIDI sound:** art 64–79 plays through the app's program map, so
+  the notes are right but the sound may not be a choir.
+- **Looped + rooted 1–2-slot drum-mode groups stay kit** (FF8 12, CC 22,
+  FF9 12; e.g. Dreamwatch ch 30, 407 notes, one key). They are the
+  drum-mode twin of §4's pedal-tone guard. Follow up only if they sound
+  wrong.
+
+### Questions for Josh
+- **Q-F.** Choir Chant plays 16 separate choir recordings, all at the same
+  key. What should the roll show?
+  - Option 1: each recording's measured pitch. Most land close together; a
+    few may be an octave off.
+  - Option 2: all 16 on one line, as the game's table says.
+  - Default: option 1.
+- **Q-G.** In Hunter's Chance, one drum sound plays at five different
+  pitches. Is that drums (tom-toms) or a tune? Default: drums.
