@@ -235,3 +235,45 @@ test("firstSEQ: a pQES whose version word no Sony tool writes is skipped and nam
   assert.deepEqual(firstSEQ(ram, [0x11]), {offset: null, parsed: null, skipped: [{offset: 0x11, error: "SEQ: unknown version ebf00101"}]});
   assert.equal(firstSEQ(ram, []), null);
 });
+
+test("percussion census: the kitify rule each group came from, and its samples' facts (tools/percussion-census.mjs)", async () => {
+  const C = await import("../tools/percussion-census.mjs");
+  // the rules, read from pre-kitify notes
+  const n = (program, pitch, drum = false) => ({program, pitch, key: pitch, drum});
+  const rules = C.kitRules([...Array(12)].map(() => n(5, 40)).concat([n(6, 40), n(6, 41), n(7, 30, true), n(7, 31), n(8, 24, true)]));
+  assert.equal(rules.get(5), "one pitch ≥12");
+  assert.equal(rules.get(6), null);              // two pitches: an ostinato, not a kit
+  assert.equal(rules.get(7), "drum-mode prog");  // in drum mode elsewhere in the song
+  assert.equal(rules.get(8), "drum mode");
+  assert.equal(C.kitRules([n(8, 36, true)], {vab: {}}).get(8), "VAB kit");
+
+  // the synthetic SEQ through its VAB: ch 1 a looped C4 sine, ch 2 a two-tone kit of one-shot noise
+  const {vh, vb} = makeTestVAB();
+  const seq = parseSEQ(makeTestSEQ()).sequences[0];
+  const result = seqNotes(seq, {vab: parseVAB(vh, vb)});
+  const rows = C.censusRows(result, {song: "tune", lookup: C.sampleLookup(result)});
+  assert.deepEqual(rows.map(r => [r.group, r.kit, r.rule, r.notes, r.keys]), [
+    ["ch 1 prog 0", false, null, 6, [60, 62, 64, 65, 67]],
+    ["ch 2 prog 1", true, "VAB kit", 2, [36, 38]],
+  ]);
+  const [mel, kit] = rows;
+  const [sine1] = mel.programs[0].samples;
+  assert.equal(sine1.oneShot, false);
+  assert.equal(sine1.root.midi, 60);
+  assert.ok(sine1.root.confidence > 0.9 && sine1.harmonicity > 0.9, JSON.stringify(sine1));
+  assert.equal(kit.programs[0].samples.length, 2);
+  for (const s of kit.programs[0].samples) { assert.equal(s.oneShot, true); assert.equal(s.root, null); }
+  assert.deepEqual(C.sampleShape(mel), {"lpR": 1, "lp-": 0, "osR": 0, "os-": 0, none: 0});
+  assert.deepEqual(C.sampleShape(kit), {"lpR": 0, "lp-": 0, "osR": 0, "os-": 2, none: 0});
+  assert.match(C.formatRow(kit), /^tune \| ch 2 prog 1 \| KIT VAB kit \| 2n \| 2k \{36,38\} \| 1p \| p1\[2n 2k: os r- /);
+  assert.throws(() => C.censusRows(result), /before kitify/); // kitify has run: its drum flags are no longer the capture's
+
+  // the false-positive shape: a looped pitched sample held at one key ×12 is promoted by rule 2, and the facts show it
+  const held = seqNotes(seq, {vab: parseVAB(vh, vb)});
+  const proto = held.notes.find(x => x.program === 0);
+  held.notes = [...Array(12)].map((_, i) => ({...proto, tick: i * 480, endTick: i * 480 + 240, key: 60, pitch: 60}));
+  const [row] = C.censusRows(held, {lookup: C.sampleLookup(held)});
+  assert.equal(row.kit, true);
+  assert.equal(row.rule, "one pitch ≥12");
+  assert.deepEqual(C.sampleShape(row), {"lpR": 1, "lp-": 0, "osR": 0, "os-": 0, none: 0});
+});
