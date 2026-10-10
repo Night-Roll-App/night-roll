@@ -8036,7 +8036,9 @@ Questions for the terminal:
 1. Today, does the bridge give each song its own Claude Code session (resumed on later turns), or does a song reuse/resume an older session? Ask itself could not tell: on matoyas-cave it saw no earlier turns of its own, only app-supplied history and terminal notes.
 2. If it is not strictly one fresh session per song, Josh wants it: a brand new session per song, to keep context small and tokens low. Please say what it does now and what it would take.
 
-## 2026-10-09 — BUG from Josh (via Ask chat, untitled-1): lasso-move leaves annotations behind
+## 2026-10-09 — BUG from Josh (via Ask chat, untitled-1): lasso-move leaves annotations behind — FIXED 2026-10-10
+
+FIXED: a lasso drag in the roll now moves the bands the lasso box took (gold-outlined) by the same distance as the notes, lengths kept, one undo for both; pitch-only drags and bands outside the box stay put (input/gestures.js endPointer; tests in tests/gestures.test.mjs "a lasso-move carries the bands…"). Likely cause of his case: a select-all drag left clamps notes at bar 1, so the move isn't rigid and the older whole-song carry (ridealongChordBands) bailed. Original report:
 
 Josh lassoed everything in his own song (notes AND annotations visible) and dragged it left. The notes moved; the annotations did not go with them, which he found "really annoying". He expects a select-all move to carry the chord/section annotations along (at least those inside the selection). Ask moved them back by hand (2 beats left) with edit_annotation. Needs: reproduce in a scratch composition (not his song), decide whether lasso-move should shift annotations in the selected span, ship with a test.
 

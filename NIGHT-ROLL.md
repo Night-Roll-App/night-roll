@@ -5335,6 +5335,14 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     end grows the song, as a drag does. The arrow keys' band-ride rule
     (`ridealongChordBands`) applies unchanged: a rigid move/transpose that
     covers every sounding note under a chord band carries the label.
+    A lasso DRAG in the roll adds one more rule (`endPointer`'s noteEdit
+    commit, 2026-10-09): the bands the box took (`lassoedAnnos`, read
+    before `selEditApply`) shift by the drag's own time delta
+    (`S.drag.noteEdit.dT`), lengths kept, published ones tombstoned, ones
+    `ridealongChordBands` already carried skipped; their `annoSnapshot`
+    joins the move's undo entry as a group and `S.lassoAnno` shifts with
+    them. Pitch-only drags and Tracks-view drags leave bands alone; Ask's
+    `move` has no box, so it doesn't carry them either.
   - `copy`: `at_bar`/`at_beat` (copy_bars' own destination names — `to_bar`
     is the range's end), `to_track`, `semitones`/`octaves` → `copySelection`
     then `pasteClipboard(at, {ti, dP})` — Paste to…'s exact call, so a note

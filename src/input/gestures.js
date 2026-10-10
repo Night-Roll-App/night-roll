@@ -93,7 +93,7 @@ import { cofCanvas } from "../render/cof.js";
 import { wrapSf } from "../render/cof.js";
 import { drawCof } from "../render/cof.js";
 import { logDebugImpl as logDebug } from "../ui/chrome.js";
-import { setAnchorBQImpl as setAnchorBQ } from "../ui/note-editor.js";
+import { setAnchorBQImpl as setAnchorBQ, lassoedAnnosImpl } from "../ui/note-editor.js";
 import { setEndBQ } from "../model/rollnotes.js";
 import { penInstant } from "../ui/sheets.js";
 import { duplicateSelectionInPlace } from "../model/selection.js";
@@ -707,7 +707,30 @@ export function endPointer(e) {
     const o = S.drag.noteEdit.orig;
     const changed = S.drag.noteEdit.items.some((it, i) =>
       it.n.t !== o[i].t || it.n.d !== o[i].d || it.n.p !== o[i].p);
+    // the bands the lasso took move with its notes, by the notes' own delta
+    // (Josh, 2026-10-09: a lasso-move left his chords behind). Read before
+    // selEditApply: its ridealongChordBands may carry some already
+    const dT = S.drag.noteEdit.kind === "move" && S.viewMode === "roll" ? S.drag.noteEdit.dT || 0 : 0;
+    const bands = changed && dT && !S.rollnotesReadOnly ? lassoedAnnosImpl() : [];
+    const annoBefore = bands.length ? annoSnapshot() : null, starts = bands.map(n => n.start);
     if (changed) selEditApply(S.drag.noteEdit.items, () => {}, o);
+    const ride = bands.filter((n, i) => n.start === starts[i]);
+    if (ride.length) {
+      for (const n of ride) {
+        const d = Math.max(dT, -n.start), end = n.end; // a band at the very start stops at 0, as notes do
+        if (!d) continue;
+        if (!n.added) tombstone(n); // a published band moved in place must be retired, or reload brings it back
+        setAnchorBQ(n, n.start + d);
+        if (n.b2) setEndBQ(n, end + d);
+        n.added = true;
+      }
+      const last = S.editUndo[S.editUndo.length - 1]; // joins the move's own entry: one undo brings both back
+      S.editUndo[S.editUndo.length - 1] = {kind: "group", entries: [last, {kind: "anno", json: annoBefore}]};
+      S.lassoAnno = {...S.lassoAnno, t0: S.lassoAnno.t0 + dT, t1: S.lassoAnno.t1 + dT}; // the box follows, so ⧉/✂ still take the same bands
+      finalizeNotes();
+      saveLocalNotes();
+      draw();
+    }
   }
   else if (S.drag.rangeEdge === "mid" && !S.drag.rangeMoved) tap(S.drag.spos); // a press inside the band that never slid: today's park / re-arm tap
   else if (S.drag.rangeEdge && S.drag.moved && S.playing && S.rangeSel && S.rangeSel.cycle) {
@@ -1304,6 +1327,7 @@ export function initGestures1() {
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
           const dMove = snapKeepSpot(go.t, (p.x - S.drag.spos.x) / pxPerTick(), snap);
+          S.drag.noteEdit.dT = dMove; // the lasso's bands ride this same delta on release
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
             it.n.t = Math.max(0, o.t + dMove);

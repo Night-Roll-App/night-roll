@@ -3130,6 +3130,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Turn the debug log on", // act: song_file/set_pref (docs/ai-parity.md §5 batch 8)
     "? Open questions", // a song note's kind (Josh, Terminal #225/#226)
     "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
+    "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));

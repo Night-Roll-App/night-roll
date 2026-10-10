@@ -1186,3 +1186,57 @@ test("gesture: song notes at 1.1 draw no ruler flag, and a tap there still opens
   assert.equal(app.run(`__opened && __opened.keydir`), 0, "the tap found the key marker, not a song note");
   assert.equal(app.run(`__opened.songnote`), undefined);
 });
+
+// ---- lasso-move carries the lasso's bands (Josh, 2026-10-09: a lasso-move
+// left his chords behind). The chord sits over no notes and the song has an
+// unselected note, so neither ridealongChordBands path carries it — only the
+// lasso does.
+test("gesture: a lasso-move carries the bands the lasso took, by the notes' delta — one undo; others stay", async () => {
+  const app = await boot("vm-gest-lasso-bands");
+  const bt = 1920;
+  app.run(`
+    mode = "select"; view.pxq = 60; view.x = 0; clampView();
+    song.tracks[0].notes = [{t: ${bt}, d: 480, p: 60, v: 80}, {t: ${bt}, d: 480, p: 64, v: 80}, {t: ${8 * bt}, d: 480, p: 67, v: 80}];
+    rollnotes = deriveNoteTypes([
+      {b1: 3, q1: 1, b2: 3, q2: 4, text: "chord: G7", added: true},
+      {b1: 2, q1: 1, b2: 3, q2: 4, text: "section: A", added: true},
+      {b1: 7, q1: 1, b2: 7, q2: 4, text: "chord: F", added: true},
+    ]).map(resolveNote);
+    finalizeNotes(); draw(); editUndo = [];
+    multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]);
+    lassoAnno = {t0: ${bt}, t1: ${4 * bt}, y0: 0, y1: 10000};
+  `);
+  const spans = () => JSON.parse(app.run(`JSON.stringify(Object.fromEntries(rollnotes.filter(n => n.chord || n.section).map(n => [(n.chord ? "chord: " : "section: ") + n.text.replace(/^(chord|section):\s*/, ""), [n.start, n.end]])))`));
+  const before = spans();
+  assert.equal(app.run(`lassoedAnnos().length`), 2, "the lasso holds G7 and section A");
+  const from = noteXY(app, bt + 240, 64);
+  drag(app, from, { x: from.x - app.run(`4 * view.pxq`), y: from.y }); // one bar left
+  assert.deepEqual(notes(app).map(n => n.t), [0, 0, 8 * bt], "the lassoed notes moved one bar");
+  const after = spans();
+  assert.deepEqual(after["chord: G7"], before["chord: G7"].map(t => t - bt), "G7 moved one bar, same length");
+  assert.deepEqual(after["section: A"], before["section: A"].map(t => t - bt), "section A moved one bar, same length");
+  assert.deepEqual(after["chord: F"], before["chord: F"], "a band outside the lasso stays");
+  assert.equal(app.run(`lassoAnno.t0`), 0, "the lasso box followed");
+  app.run(`editUndoPop()`);
+  assert.deepEqual(notes(app).map(n => n.t), [bt, bt, 8 * bt], "one undo: the notes are back");
+  assert.deepEqual(spans(), before, "the same undo: the bands are back");
+});
+
+test("gesture: a pitch-only lasso drag leaves the lasso's bands where they are", async () => {
+  const app = await boot("vm-gest-lasso-bands-pitch");
+  const bt = 1920;
+  app.run(`
+    mode = "select"; view.pxq = 60; view.x = 0; clampView();
+    song.tracks[0].notes = [{t: ${bt}, d: 480, p: 60, v: 80}, {t: ${8 * bt}, d: 480, p: 67, v: 80}];
+    rollnotes = deriveNoteTypes([{b1: 3, q1: 1, b2: 3, q2: 4, text: "chord: G7", added: true}]).map(resolveNote);
+    finalizeNotes(); draw(); editUndo = [];
+    multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);
+    lassoAnno = {t0: ${bt}, t1: ${4 * bt}, y0: 0, y1: 10000};
+  `);
+  const g7 = () => app.run(`rollnotes.find(n => n.chord).start`);
+  const s0 = g7();
+  const from = noteXY(app, bt + 240, 60);
+  drag(app, from, { x: from.x, y: from.y - app.run(`2 * view.rowH`) });
+  assert.equal(notes(app)[0].p, 62, "the note went up");
+  assert.equal(g7(), s0, "the chord stayed");
+});
