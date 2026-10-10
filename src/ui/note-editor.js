@@ -702,6 +702,7 @@ export function gridFollowNote(n) {
   const q = S.song.ppq, onLine = (t, g) => Math.abs(t / g - Math.round(t / g)) < 1e-6;
   const trip = (onLine(n.t, q / 3) && !onLine(n.t, q / 4)) || isTripletDur(n.d / q);
   if (trip === isTripletDur(S.pencilDur)) return false;
+  if (trip && S.tripletOffByHand) return false; // he turned T off: his choice holds (Terminal #352)
   if (trip) { S.pencilMod = 2 / 3; S.pencilNV = n.d / q >= 0.6 ? 4 : n.d / q >= 0.3 ? 8 : 16; }
   else { S.pencilMod = 1; S.pencilNV = 16; }
   S.pencilDur = (4 / S.pencilNV) * S.pencilMod;
@@ -1229,7 +1230,7 @@ export function initNoteEditor3() {
     if (!b) return;
     if (b.dataset.grid) { openGridSheet(); return; } // the ▦N chip: the grid sheet, from either mode
     if (b.dataset.nv) S.pencilNV = parseInt(b.dataset.nv, 10);
-    else if (b.dataset.mod) S.pencilMod = parseFloat(b.dataset.mod);
+    else if (b.dataset.mod) { S.pencilMod = parseFloat(b.dataset.mod); S.tripletOffByHand = S.pencilMod === 1; }
     else return;
     S.pencilDur = (4 / S.pencilNV) * S.pencilMod;
     syncDurSeg();

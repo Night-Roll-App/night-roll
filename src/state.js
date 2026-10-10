@@ -21,6 +21,7 @@ export const S = {
   _autoColorCache: { key: "", colors: [] },
   playRate: 1,
   repoRefreshing: new Set(), // device-copy keys with a background refresh in flight (platform/folder.js readData)
+  tripletOffByHand: false, // T switched off by a tap: touching a triplet note doesn't switch it back on (Josh, Terminal #352) — until T is tapped on
   synthNotes: 0, // synth voices started since the last play() — the play check's count (audio/transport.js)
   song: null,
   songKey: null,

@@ -24,7 +24,7 @@ export function moveSnapTicks() { // 16th grid normally; triplet steps while a T
   // spec: presence is the only trigger — to bootstrap, pencil a 32nd on the
   // beat and the whole grid upgrades so you can drag it to the offbeat)
   if (S.gridDiv) return Math.max(1, Math.round(barTicks() / S.gridDiv)); // custom grid outranks all
-  if (isTripletDur(S.pencilDur)) return Math.max(1, Math.round(S.song.ppq * S.pencilDur));
+  if (isTripletDur(S.pencilDur)) return Math.max(1, Math.round(S.song.ppq / 6)); // the finest triplet step (a 16th-triplet), not the picked length: triplets slide a little at a time (Josh, Terminal #352)
   // picking the 32nd duration upgrades the grid too, same as triplets do
   // (Josh, 2026-10-03: "with 32nd selected, notes still drag only in 16ths")
   if (S.pencilDur > 0 && S.pencilDur <= 0.125 + 1e-6) return Math.max(1, Math.round(S.song.ppq * 0.125));

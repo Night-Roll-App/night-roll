@@ -1333,7 +1333,7 @@ test("cursor on the ruler/strip: a tap lands on the nearest 8th, a drag steps in
   assert.equal(val(`cursorTapSnapTicks()`), 240, "tap: 8ths");
   assert.equal(val(`cursorDragSnapTicks()`), 60, "drag: 32nds");
   run(`pencilNV = 8; pencilMod = 2 / 3; pencilDur = 1 / 3;`);
-  assert.equal(val(`cursorDragSnapTicks()`), 160, "triplet picked: drag follows the triplet grid");
+  assert.equal(val(`cursorDragSnapTicks()`), 80, "triplet picked: drag follows the finest triplet step (Terminal #352)");
   assert.equal(val(`cursorTapSnapTicks()`), 240, "a tap stays on 8ths");
 });
 
@@ -1359,7 +1359,7 @@ test("gridFollowNote: the move grid follows the note you touch", () => {
   assert.equal(val(`moveSnapTicks()`), 120); // 16ths with a straight duration
   assert.equal(val(`gridFollowNote({t: 160, d: 160})`), true); // triplet-8th position + length
   assert.equal(val(`pencilDur`), 1 / 3);
-  assert.equal(val(`moveSnapTicks()`), 160);
+  assert.equal(val(`moveSnapTicks()`), 80, "triplets move in the finest triplet step, a 16th-triplet (Terminal #352)");
   assert.equal(val(`gridFollowNote({t: 480, d: 160})`), false); // on the beat but triplet-long: stays triplet
   assert.equal(val(`gridFollowNote({t: 480, d: 240})`), true); // straight note: back to 16ths
   assert.equal(val(`pencilDur`), 0.25);
@@ -15809,4 +15809,17 @@ test("New song: the tempo is a 60–180 dropdown in steps of 5, 120 by default, 
   assert.equal(vals[0], 60); assert.equal(vals[vals.length - 1], 180); assert.equal(vals.length, 25);
   assert.ok(vals.every((v, i) => !i || v - vals[i - 1] === 5));
   assert.match(sel[1], /<option selected>120<\/option>/);
+});
+
+// T switched off by hand stays off when a triplet note is touched (Josh, Terminal #352: "it reselected the T automatically")
+test("gridFollowNote: a T switched off by hand stays off when you grab a triplet note; tapping T on re-arms the follow", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
+       gridDiv = null; pencilNV = 8; pencilMod = 1; pencilDur = 0.5; tripletOffByHand = true;
+       globalThis.__realSDS = syncDurSeg; syncDurSeg = () => {};`);
+  assert.equal(val(`gridFollowNote({t: 160, d: 160})`), false, "his choice holds");
+  assert.equal(val(`moveSnapTicks()`), 120, "16ths: the triplet slides by 16ths");
+  run(`tripletOffByHand = false;`);
+  assert.equal(val(`gridFollowNote({t: 160, d: 160})`), true, "T on again: the follow is back");
+  run(`tripletOffByHand = false; pencilMod = 1; pencilNV = 16; pencilDur = 0.25; syncDurSeg = __realSDS;`);
 });
