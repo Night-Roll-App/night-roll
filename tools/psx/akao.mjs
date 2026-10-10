@@ -408,8 +408,16 @@ function runTrack(akao, ti, {condition, maxEvents}) {
         portaKey = key + slideNext;
         slideNext = 0;
         if (drum) {
+          // n.table: the note plays its drum-table entry (instrument, key,
+          // pan) whatever kitify later decides it is — the renderer reads
+          // this, not n.drum, so a drum table used as a melodic bank still
+          // sounds as the driver plays it
+          // An all-zero layout-3 entry (drumEntry null) is not skipped by the
+          // driver — Chrono Cross's key-on reads it unchecked: instrument 0
+          // at key 0. Not modelled: such a note keeps the channel program and
+          // stays a kit note.
           const e = drumEntry(key);
-          if (e) { n.program = e.instrument; n.art = e.instrument; n.tone = {instrument: e.instrument, key: e.key, vol: e.vol, pan: e.pan}; }
+          if (e) { n.program = e.instrument; n.art = e.instrument; n.table = true; n.tone = {instrument: e.instrument, key: e.key, vol: e.vol, pan: e.pan}; }
         } else if (split) {
           // a key outside every region plays the nearest one above it, the
           // last beyond the top (the driver covers the whole keyboard; FF9 and

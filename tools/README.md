@@ -19,7 +19,7 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `loop-targets.mjs <song>\|--all` | Loop point, target, and what every track plays at the target. |
 | `loop_target_bass.mjs` | Scores the "bass at the loop target is the tonic" hypothesis — only for songs whose key is already recorded (spoiler-safe). |
 | `sounding.mjs` | Sounding-pitch offsets for sequence-chip captures (PS1, N64): typed note vs what the sample plays. |
-| `percussion-census.mjs --album <console>/<slug>\|<files>` | PS1/PS2: per channel group, whether the capture's kitify marks it kit and by which rule, with each program's sample facts (one-shot, root confidence, flatness, harmonicity); rips cached like `recapture.mjs`. |
+| `percussion-census.mjs --album <console>/<slug>\|<files>` | PS1/PS2: per channel group, whether the capture's kitify marks it kit and by which rule (or `melodic bank`: a drum table kitify measured as pitched), with each program's sample facts (one-shot, root confidence, flatness, harmonicity); rips cached like `recapture.mjs`. |
 | `kit-guess.mjs` | Guesses which drum index is kick / snare / hats from rhythm alone. |
 | `query-lib.mjs` | The shared loader the query tools are built on. |
 | `vm-flag.mjs` | Import first in any directly-run tool: re-execs Node with `--experimental-vm-modules`. |

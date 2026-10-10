@@ -98,7 +98,7 @@ test("stereo: the SPU's linear pan — left (127 − p)/127, right p/127 — har
   const seq = {ppq: 48, tempoMap: [{tick: 0, usq: 500000}], timeSigs: [{tick: 0, num: 4, den: 4}], loop: null, warnings: [], endTick: 192};
   // three different keys, and the kit hit on another program: the one-pitch-program kit rule must not fire here
   const mk = (tick, pan, key = 72) => ({tick, endTick: tick + 48, ch: 1, key, vel: 100, program: 2, pitch: key, cents: 0, drum: false, tone: null, pan});
-  const result = {notes: [mk(0, 0), mk(48, 64, 74), mk(96, 127, 76), {...mk(144, 20), program: 3, drum: true, tone: {instrument: 3, key: 72, vol: 127, pan: 110}}], seq};
+  const result = {notes: [mk(0, 0), mk(48, 64, 74), mk(96, 127, 76), {...mk(144, 20), program: 3, drum: true, table: true, tone: {instrument: 3, key: 72, vol: 127, pan: 110}}], seq};
   const r = await renderSpu(result, {ram, table, bank, sampleRate: 22050});
   const names = Object.keys(r).filter(k => r[k] && r[k].l); assert.ok(names.length >= 1);
   const rmsAt = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * 22050); i < Math.floor(t1 * 22050); i++) s += a[i] * a[i]; return Math.sqrt(s / ((t1 - t0) * 22050)); };
@@ -185,4 +185,54 @@ test("SEQ + VAB render: each tone's VAG at 0x1000 × 2^((key − center + shift/
   const {out: out3} = await render(b => { b[0x20 + 1] = 64; });
   let a3 = 0, a1 = 0; const m3 = mono(out3[names[0]]); for (let i = 0; i < 22050; i++) { a3 += Math.abs(m3[i]); a1 += Math.abs(mel[i]); }
   assert.ok(Math.abs(a3 / a1 - 64 / 127) < 0.02, "program volume is linear: " + (a3 / a1));
+});
+
+// ---- AKAO drum table used as a melodic bank (docs/plans/2026-10-09-percussion-detection.md §13) ----
+// A layout-3 block whose header table (0x34) maps key 36+i to instrument i at
+// table key 60; sample set 7 holds the instruments (unity 60, so each plays
+// its sample as recorded). ch 1 plays instruments 0–2, ch 2 plays 2–5 (joined
+// by 2: one bank of 6), ch 3 plays 6 and 7 (a bank of 2).
+function drumBankRip(samples) {
+  const set = makeTestSampleSet({id: 7, dest: 0x20000, arts: samples.map(s => ({adpcm: encodeAdpcm(s), unity: 60}))});
+  const table = new Uint8Array(44 * 8);
+  for (let i = 0; i < 8; i++) table.set([i, 60, 0, 0, 0, 0, 127, 64], (36 + i) * 8);
+  const on = [0xFE, 0x04, 0xA5, 3];
+  const akao = makeTestAKAO({layout: 3, sampleSetId: 7, tail: table, voices: {
+    0: [...on, N(0, 1), N(1, 1), N(2, 1), 0xA0],
+    1: [...on, N(2, 1), N(3, 1), N(4, 1), N(5, 1), 0xA0],
+    2: [...on, N(6, 3), N(6, 3), N(7, 3), N(6, 3), 0xA0]}});
+  const tableAt = akao.length - table.length - 0x34;
+  akao.set([tableAt & 255, (tableAt >> 8) & 255, 0, 0], 0x34);
+  const ram = new Uint8Array(0x40000);
+  ram.set(set, 0x8000); ram.set(akao, 0x100);
+  return akaoNotes(parseAKAO(ram, 0x100));
+}
+const midiSine = m => sine(440 * Math.pow(2, (m - 69) / 12), 28 * 240);
+function noiseSamples(n, seed) { const s = new Int16Array(n); let x = seed; for (let i = 0; i < n; i++) { x = (x * 1103515245 + 12345) & 0x7FFFFFFF; s[i] = (x % 56000) - 28000; } return s; }
+
+test("kitify: a drum table of ≥ 6 rooted, harmonic samples is a melodic bank — each note at its sample's measured pitch; 1–2-instrument tables stay kits; the render is the same", async () => {
+  const r = drumBankRip([57, 59, 60, 62, 64, 76, 48, 50].map(midiSine));
+  assert.ok(r.notes.every(n => n.table && n.drum), "every note plays a table entry, flagged drum by the driver");
+  const before = await renderSpu({...r, notes: r.notes.map(n => ({...n})), kitGuess: [], seq: {...r.seq, warnings: []}}, {sampleRate: 44100}); // kitify skipped: every note as the driver flags it
+  const groups = channelGroups(r);
+  assert.deepEqual(groups.map(g => [g.name, g.kit]), [["ch 1 prog 0,1,2", false], ["ch 2 prog 2,3,4,5", false], ["ch 3 prog 6,7", true]]);
+  const mel = r.notes.filter(n => !n.drum).sort((a, b) => a.tone.instrument - b.tone.instrument || a.ch - b.ch);
+  assert.deepEqual(mel.map(n => [n.tone.instrument, n.key, n.pitch]), [[0, 36, 57], [1, 37, 59], [2, 38, 60], [2, 38, 60], [3, 39, 62], [4, 40, 64], [5, 41, 64]],
+    "the sample's pitch, not the slot key; instrument 5 (E5) sits over a tritone above the bank's middle and is written an octave down");
+  assert.ok(mel.every(n => Math.abs(n.cents) <= 10), "cents carry the remainder: " + mel.map(n => n.cents));
+  assert.ok(r.seq.warnings.some(w => /^drum-table bank prog 0–5: 6 samples, all pitched → melodic.*prog 5 measured over a tritone/.test(w)), r.seq.warnings.join("\n"));
+  assert.ok(r.notes.filter(n => n.ch === 2).every(n => n.drum), "the two-instrument table stays a kit");
+  // the MIDI: the bank's channels are melodic tracks with a program per entry; the kit keeps channel 10
+  const hex = [...makeMidi(r)].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  assert.match(hex, /c0 00/); assert.match(hex, /c1 05/);
+  assert.match(hex, /99 [0-9a-f]{2} /);
+  // the console render is unchanged: n.table, not n.drum, picks the entry
+  const after = await renderSpu(r, {sampleRate: 44100});
+  for (const g of groups) assert.deepEqual(after[g.name], before[g.name], g.name + " renders the same before and after kitify");
+
+  // one unpitched sample keeps the whole bank a kit, said as a fact
+  const k = drumBankRip([57, 59, 60, 62, 64].map(midiSine).concat([noiseSamples(28 * 240, 7), midiSine(48), midiSine(50)]));
+  const kg = channelGroups(k);
+  assert.ok(kg.every(g => g.kit), kg.map(g => g.name).join(", "));
+  assert.ok(k.seq.warnings.includes("drum-table bank prog 0–5: 6 samples, 1 unpitched → kit"), k.seq.warnings.join("\n"));
 });

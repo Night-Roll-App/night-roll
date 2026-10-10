@@ -18,6 +18,8 @@
 //   drum-mode prog a program that is in drum mode elsewhere in the song
 //   VAB kit        a VAB/HD program of 1–3-key tones on ≥ 2 samples (isDrumProgram)
 //   one pitch ≥12  a program held at one pitch over ≥ 12 notes
+// A group that is NOT kit but whose notes were in drum mode says `melodic
+// bank`: kitify's drum-table bank rule took it out of the kit (§13).
 // Per program, each sample a note plays (the renderer's own lookup:
 // spu-render.mjs akaoVoices, vab.mjs tonesFor/vagPcm), measured once:
 //   os/lp          one-shot vs looped (ADPCM end flag; AKAO record's loop offset)
@@ -34,10 +36,9 @@ import { loadPSFChain, assembleRam } from "./psx/psf.mjs";
 import { psfSong } from "./psx/capture.mjs";
 import { loadPSF2Chain, mergePSF2 } from "./ps2/psf2.mjs";
 import { ps2Song } from "./ps2/capture.mjs";
-import { channelGroups } from "./psx/notes.mjs";
-import { tonesFor, vagPcm, estimateRoot } from "./psx/vab.mjs";
+import { channelGroups, sampleFacts } from "./psx/notes.mjs";
+import { tonesFor, vagPcm } from "./psx/vab.mjs";
 import { akaoVoices } from "./psx/spu-render.mjs";
-import { measure } from "./instruments/name.mjs";
 
 const SPU_RATE = 44100;
 
@@ -56,23 +57,9 @@ export function kitRules(notes, {vab = null} = {}) {
   return out;
 }
 
-// one decoded sample ({pcm, loopStart, loopEnd, oneShot}) -> its facts
-export function sampleFacts(smp, rate = SPU_RATE) {
-  if (!smp || !smp.pcm || !smp.pcm.length) return null;
-  const oneShot = !!smp.oneShot || smp.loopStart == null;
-  const root = estimateRoot({pcm: smp.pcm, loopStart: smp.loopStart, loopEnd: smp.loopEnd, oneShot}, rate);
-  // held 1 s as the SPU plays it: through the sample, then round its loop
-  const len = oneShot ? smp.pcm.length : Math.max(smp.pcm.length, rate);
-  const x = new Float32Array(len);
-  const ls = smp.loopStart, le = smp.loopEnd != null ? smp.loopEnd : smp.pcm.length;
-  for (let i = 0; i < len; i++) {
-    const j = i < le || oneShot || le <= ls ? i : ls + ((i - ls) % (le - ls));
-    x[i] = j < smp.pcm.length ? smp.pcm[j] / 32768 : 0;
-  }
-  const m = measure(x, {rate, hold: 1, key: 60});
-  return {oneShot, root: root ? {midi: root.midi, confidence: root.confidence} : null,
-    seconds: +(smp.pcm.length / rate).toFixed(3), flatness: m ? m.flatness : null, harmonicity: m ? m.harmonicity : null};
-}
+// one decoded sample ({pcm, loopStart, loopEnd, oneShot}) -> its facts (the
+// capture's own measurement: kitify's drum-table bank rule reads the same)
+export { sampleFacts };
 
 // the sample each note plays, as the console render picks it -> n => {id, smp, rate} | null
 export function sampleLookup(result, song = {}) {
@@ -126,7 +113,7 @@ export function censusRows(result, {song = "", lookup = () => null} = {}) {
       progs.push({program: p, notes: evs.length, keys: [...new Set(evs.map(n => n.key))].sort((a, b) => a - b), samples: [...samples].map(([id, f]) => ({id, ...f}))});
     }
     const keys = [...new Set(g.notes.map(n => n.key))].sort((a, b) => a - b);
-    rows.push({song, group: g.name, kit: !!g.kit, rule: g.kit ? [...why].join("+") : null, notes: g.notes.length, keys, programs: progs});
+    rows.push({song, group: g.name, kit: !!g.kit, rule: g.kit ? [...why].join("+") : g.notes.some(n => pre.get(n)) ? "melodic bank" : null, notes: g.notes.length, keys, programs: progs});
   }
   return rows;
 }
@@ -157,7 +144,7 @@ export function formatRow(r) {
     const sm = p.samples.slice(0, 4).map(formatSample).join(" ");
     return `p${p.program}[${p.notes}n ${p.keys.length}k: ${sm || "no sample"}${p.samples.length > 4 ? " +" + (p.samples.length - 4) : ""}]`;
   }).join(" ");
-  return [r.song, r.group, r.kit ? "KIT " + r.rule : "mel", r.notes + "n", r.keys.length + "k {" + keyList(r.keys) + "}", r.programs.length + "p", progs].join(" | ");
+  return [r.song, r.group, r.kit ? "KIT " + r.rule : r.rule ? "mel " + r.rule : "mel", r.notes + "n", r.keys.length + "k {" + keyList(r.keys) + "}", r.programs.length + "p", progs].join(" | ");
 }
 
 // ---------------------------------------------------------------- capture one file

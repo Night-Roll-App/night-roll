@@ -16,8 +16,14 @@ import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
 import { akaoRecord, akaoArtOf } from "./akao.mjs";
 import { pitchName } from "../nsf/notes.mjs";
 import { trackBytes, offsetMetaEvent, kitMetaEvent, chainBends, shapeFromSeries, bendRangeMetas } from "../nsf/midi-write.mjs";
+import { measure } from "../instruments/measure.mjs";
+// a cycle (spu-render.mjs imports channelGroups/notePan from here): kitify
+// must hear a drum table's samples exactly as the render plays them. Only
+// called inside functions, so either module may load first.
+import { akaoVoices } from "./spu-render.mjs";
 
 const PPQ = 480; // Night Roll's MIDI resolution; SEQ ticks are rescaled to it
+const SPU_RATE = 44100;
 
 // A kit: several one-key (or near) tones on different samples. A single
 // sample spread across the keyboard is an instrument even if it is a drum.
@@ -256,18 +262,21 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
 //      crash. The guess is reported in result.kitGuess (and the warnings).
 // (Josh, 2026-09-27, FF7 Bombing Mission: "all the correct notes are there
 // in the right timing but there's some other noise going on".)
+// Before rule 1, a drum table used as a melodic bank leaves the kit (see
+// melodicBanks below).
 export function kitify(result) {
   const {notes, seq} = result;
   if (result.kitGuess) return result.kitGuess; // idempotent
+  const melodic = melodicBanks(result);
   const drumProgs = new Set(notes.filter(n => n.drum).map(n => n.program));
   const byProg = new Map();
-  for (const n of notes) (byProg.get(n.program) || byProg.set(n.program, []).get(n.program)).push(n);
+  for (const n of notes) if (!melodic.has(n)) (byProg.get(n.program) || byProg.set(n.program, []).get(n.program)).push(n);
   for (const [p, evs] of byProg) {
     if (drumProgs.has(p)) continue;
     const pitches = new Set(evs.map(n => n.pitch));
     if (evs.length >= 12 && pitches.size === 1) drumProgs.add(p);
   }
-  const perc = notes.filter(n => n.drum || drumProgs.has(n.program));
+  const perc = notes.filter(n => !melodic.has(n) && (n.drum || drumProgs.has(n.program)));
   const guess = [];
   if (!perc.length) { result.kitGuess = guess; return guess; }
   // a kit that already speaks GM (a VAB kit keyed 35+) keeps its keys; drum-mode
@@ -285,6 +294,106 @@ export function kitify(result) {
   result.kitGuess = guess;
   (seq.warnings || (seq.warnings = [])).push("kit guessed from rhythm: " + guess.map(g => "prog " + g.program + (drumProgs.size ? "" : "") + " K" + g.key + " → " + g.label).join(", "));
   return guess;
+}
+
+// One decoded sample ({pcm, loopStart, loopEnd, oneShot}) -> its facts:
+// one-shot, estimateRoot (midi, cents, confidence; null = no clear period),
+// its length, and tools/instruments/measure.mjs's flatness and harmonicity
+// over the sample held 1 s as the SPU plays it (through, then round its loop).
+export function sampleFacts(smp, rate = SPU_RATE) {
+  if (!smp || !smp.pcm || !smp.pcm.length) return null;
+  const oneShot = !!smp.oneShot || smp.loopStart == null;
+  const root = estimateRoot({pcm: smp.pcm, loopStart: smp.loopStart, loopEnd: smp.loopEnd, oneShot}, rate);
+  const len = oneShot ? smp.pcm.length : Math.max(smp.pcm.length, rate);
+  const x = new Float32Array(len);
+  const ls = smp.loopStart, le = smp.loopEnd != null ? smp.loopEnd : smp.pcm.length;
+  for (let i = 0; i < len; i++) {
+    const j = i < le || oneShot || le <= ls ? i : ls + ((i - ls) % (le - ls));
+    x[i] = j < smp.pcm.length ? smp.pcm[j] / 32768 : 0;
+  }
+  const m = measure(x, {rate, hold: 1, key: 60});
+  return {oneShot, root: root ? {midi: root.midi, cents: root.cents, confidence: root.confidence} : null,
+    seconds: +(smp.pcm.length / rate).toFixed(3), flatness: m ? m.flatness : null, harmonicity: m ? m.harmonicity : null};
+}
+
+// AKAO drum mode used as a multi-sample instrument (FF8 Choir Chant: sixteen
+// choir recordings, one per key, all played at one table key). The driver's
+// flag says "drum table", not "drum"; the samples say which. Facts only, no
+// game names (docs/plans/2026-10-09-percussion-detection.md §13):
+//   bank     the drum-table instruments, channels joined where they share one
+//            (FF9 Qu's Marsh: eight channels through instrument 25);
+//   melodic  ≥ BANK_MIN instruments, every one's sample rooted (estimateRoot)
+//            with harmonicity ≥ BANK_HARM — anything less stays a kit, as
+//            before (Racing Chocobos' drum voices are 1–2 instruments each);
+//   pitch    the sample's measured root + the render's playback ratio in
+//            semitones (the VAB path's arithmetic, seqNotes): neither the
+//            written key (a slot number) nor the table's key says what sounds;
+//   fold     an entry more than a tritone from the bank's median moves one
+//            octave toward it (estimateRoot's octave errors), said in the
+//            warning.
+// Each measured bank's verdict goes in the capture warnings. A melodic bank's
+// notes become melodic (drum = false); n.table keeps the render on the entry.
+// -> the Set of notes that left the kit
+const BANK_MIN = 6, BANK_HARM = 0.8;
+function melodicBanks(result) {
+  const out = new Set();
+  const table = result.notes.filter(n => n.table && n.tone);
+  if (!table.length || !result.instr) return out;
+  const parent = new Map(), at = new Map(); // channel -> channel (union-find); instrument -> a channel playing it
+  const find = c => { while (parent.get(c) !== c) c = parent.get(c); return c; };
+  for (const n of table) {
+    if (!parent.has(n.ch)) parent.set(n.ch, n.ch);
+    const i = n.tone.instrument;
+    if (!at.has(i)) at.set(i, n.ch);
+    else { const a = find(at.get(i)), b = find(n.ch); if (a !== b) parent.set(b, a); }
+  }
+  const banks = new Map();
+  for (const n of table) { const r = find(n.ch); (banks.get(r) || banks.set(r, []).get(r)).push(n); }
+  let voices;
+  const facts = new Map(); // sample -> sampleFacts
+  const warn = w => (result.seq.warnings || (result.seq.warnings = [])).push(w);
+  const progList = ps => { // 64,65,66,70 -> "64–66, 70"
+    const r = [];
+    for (const p of ps) { const last = r[r.length - 1]; if (last && p === last[1] + 1) last[1] = p; else r.push([p, p]); }
+    return r.map(([a, b]) => a === b ? a : `${a}–${b}`).join(", ");
+  };
+  for (const bank of banks.values()) {
+    const insts = [...new Set(bank.map(n => n.tone.instrument))].sort((a, b) => a - b);
+    if (insts.length < BANK_MIN) continue;
+    if (voices === undefined) {
+      const ctx = result.instr;
+      try { voices = akaoVoices(result, ctx.kind === "akao-sets" ? {} : {ram: ctx.ram, table: {offset: ctx.offset}}, SPU_RATE); } catch { voices = null; }
+    }
+    const entries = new Map(); // "instrument:table key" -> {inst, exact | null}
+    for (const n of bank) {
+      const k = n.tone.instrument + ":" + n.tone.key;
+      if (entries.has(k)) continue;
+      const v = voices ? voices(n)[0] : null;
+      if (v && v.smp && !facts.has(v.smp)) facts.set(v.smp, sampleFacts(v.smp));
+      const f = v && v.smp ? facts.get(v.smp) : null;
+      const pitched = !!(f && f.root && f.harmonicity >= BANK_HARM);
+      entries.set(k, {inst: n.tone.instrument, exact: pitched ? f.root.midi + f.root.cents / 100 + 12 * Math.log2(v.ratio) : null});
+    }
+    const unpitched = new Set([...entries.values()].filter(e => e.exact === null).map(e => e.inst));
+    if (unpitched.size) { warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, ${unpitched.size} unpitched → kit`); continue; }
+    const xs = [...entries.values()].map(e => e.exact).sort((a, b) => a - b);
+    const mid = xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2;
+    const folded = new Set();
+    for (const e of entries.values()) {
+      if (e.exact - mid > 6) { e.exact -= 12; folded.add(e.inst); }
+      else if (mid - e.exact > 6) { e.exact += 12; folded.add(e.inst); }
+    }
+    for (const n of bank) {
+      const exact = entries.get(n.tone.instrument + ":" + n.tone.key).exact;
+      n.drum = false;
+      n.pitch = Math.round(exact);
+      n.cents = Math.round((exact - n.pitch) * 100);
+      out.add(n);
+    }
+    warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, all pitched → melodic, each note at its sample's measured pitch` +
+      (folded.size ? `; prog ${progList([...folded].sort((a, b) => a - b))} measured over a tritone from the bank's middle, written an octave toward it` : ""));
+  }
+  return out;
 }
 
 // The MIDI's tracks, before bytes: one per source channel, a channel's kit
@@ -308,7 +417,7 @@ export function channelGroups(result) {
 // A note's pan, 0..127 (64 centre): the voice's 0xAA value at note-on; a kit
 // entry's own pan from the drum map. 64 when the score never says.
 export function notePan(n) {
-  const p = n.drum && n.tone && n.tone.pan != null ? n.tone.pan : n.pan;
+  const p = n.table && n.tone && n.tone.pan != null ? n.tone.pan : n.pan;
   return p == null ? 64 : Math.max(0, Math.min(127, p));
 }
 // offsets: {[group.name]: {offset, ...}} from tools/sounding.mjs, already

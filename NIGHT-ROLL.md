@@ -4298,6 +4298,26 @@ capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
 so a wrong guess is visible in the row's ⓘ. N64 sequences already put
 drums on channel 10 with GM-ish keys (50–59); untouched.
 
+**Drum mode used melodically (2026-10-09, plan §13).** Composers also used
+AKAO drum mode as a multi-sample instrument: FF8 Choir Chant plays sixteen
+choir recordings, one per written key, all at one table key. Before rule 1,
+kitify's `melodicBanks` groups the drum-table instruments into banks
+(channels sharing an instrument join: FF9 Qu's Marsh's eight channels) and
+measures each bank of ≥ 6 instruments: every sample rooted (`estimateRoot`)
+with harmonicity ≥ 0.8 (`tools/instruments/measure.mjs`, shared with the
+instrument namer) → melodic, else kit as before. A melodic bank's notes get
+`drum = false` and the pitch the render plays — measured root + the
+playback ratio in semitones, cents kept; an entry more than a tritone from
+the bank's median is written an octave toward it — and each measured bank's
+verdict is a capture warning ("drum-table bank prog 64–79: 16 samples, all
+pitched → melodic …"). Every drum-table note carries `n.table` (akao.mjs);
+the renderer (`akaoVoices`) and `notePan` pick the table's instrument, key
+and pan by it, not by `n.drum`, so the console render is byte-identical
+whatever kitify decides. A layout-3 key with an all-zero entry has no
+`drumEntry` and stays kit; Chrono Cross's driver reads that entry
+unchecked (instrument 0 at key 0) where the render plays the channel
+program — not modelled. VAB/HD kits (Dark Cloud) don't run the bank rule yet.
+
 ## PlayStation 2 import (milestone 3, 2026-09-28)
 
 PS2's PSF2/minipsf2 is PSF's container reshaped as a small virtual

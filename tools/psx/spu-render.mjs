@@ -129,7 +129,9 @@ export function akaoVoices(result, opts, sampleRate) {
     B = bank && bank.base != null ? bank.base : (findSampleBank(ram, table) || {}).base;
     if (B == null) throw new Error("no sample bank found for this driver");
     const recs = new Map();
-    recOf = n => { const p = n.drum && n.tone && n.tone.instrument != null ? n.tone.instrument : n.program; if (!recs.has(p)) recs.set(p, readInstr(d, table.offset, p)); return recs.get(p); };
+    // a drum-table note plays its entry's instrument (n.table: kitify may call
+    // it melodic); a kit-promoted key-split note keeps its region's
+    recOf = n => { const p = (n.table || n.drum) && n.tone && n.tone.instrument != null ? n.tone.instrument : n.program; if (!recs.has(p)) recs.set(p, readInstr(d, table.offset, p)); return recs.get(p); };
   }
   const samples = new Map();
   const sampleOf = rec => {
@@ -140,7 +142,7 @@ export function akaoVoices(result, opts, sampleRate) {
   return n => {
     const rec = recOf(n);
     if (!rec) return [];
-    const key = n.drum && n.tone && n.tone.key != null ? n.tone.key : n.key;
+    const key = n.table && n.tone && n.tone.key != null ? n.tone.key : n.key;
     let ratio;
     if (rec.pitches) ratio = (rec.pitches[((key % 12) + 12) % 12] || 0x1000) / 0x1000 * Math.pow(2, Math.floor(key / 12) - 6);
     else ratio = (rec.fineMult || 1) * Math.pow(2, (key - (rec.unity != null ? rec.unity : 60)) / 12);
