@@ -554,7 +554,6 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwEdit: {icon: "construction", text: "Edit toolbar"},
     vwAdded: {glyph: "┄", text: "Outline new notes"},
     vwBeatSub: {glyph: "&", text: "Beat subdivisions"},
-    vwRulerHl: {glyph: "▭", text: "Ruler highlight"},
     vwTextJump: {glyph: "⌨", text: "Jump into text boxes"},
     vwVolume: {icon: "volumeUp", text: "Volume slider"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
@@ -622,7 +621,6 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwFooter", !S.footerHidden);
   set("vwAdded", showAddedOutline());
   set("vwBeatSub", showBeatSub());
-  set("vwRulerHl", showRulerHl());
   set("vwTextJump", textJumpOn());
   set("vwVolume", volBtnShown());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
@@ -1161,20 +1159,6 @@ export function toggleHl() {
 // toggle, off by default (Josh #189: "it moves so fast that it's kind of
 // distracting... sometimes I really might wanna see it"). Off: the beat cell
 // shows the bare beat number. A function, not a top-level let (boot path).
-// tapping a chord/section band selects its bars as the ruler highlight — a
-// device-local View › Display switch, on by default (Josh #243: "it's tripping
-// me up" while selecting in the ruler); off, a band tap only shows its info line
-export function showRulerHl() {
-  if (showRulerHl.v === undefined) {
-    try { showRulerHl.v = localStorage.getItem("ff1roll-ruler-hl") !== "0"; } catch (err) { showRulerHl.v = true; }
-  }
-  return showRulerHl.v;
-}
-export function setRulerHl(on) {
-  showRulerHl.v = !!on;
-  try { localStorage.setItem("ff1roll-ruler-hl", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
-  if (!on && S.rangeSel) { S.rangeSel = null; editorFollowSelection(); draw(); } // turning it off clears the one showing now
-}
 // "Jump into text boxes" (Josh, Terminal #251/#253): whether the app may put
 // the cursor in a text box by itself. A focus is what raises the iPad's
 // on-screen keyboard over half the screen, so it is off by default on touch
@@ -2144,7 +2128,6 @@ export function initChrome11() {
     on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
     on("vwVolume", () => setVolBtnShown(!volBtnShown())); // the top bar's 🔊 (Josh #187: hidden by default)
     on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
-    on("vwRulerHl", () => { setRulerHl(!showRulerHl()); renderViewMenu(); });
     on("vwTextJump", () => { setTextJump(!textJumpOn()); renderViewMenu(); });
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());

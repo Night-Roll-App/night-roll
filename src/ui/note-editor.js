@@ -110,7 +110,6 @@ import { wmAllowed } from "./wm.js";
 import { wmInnerWidth } from "./wm.js";
 import { wmLayoutAll } from "./wm.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
-import { showRulerHl } from "./chrome.js";
 import { softFocus } from "./chrome.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
@@ -1059,8 +1058,7 @@ export function editorLoad(t, msg) {
   if (document.activeElement && editor.contains(document.activeElement) && typeof document.activeElement.blur === "function") document.activeElement.blur(); // R11: a keyboard up for the last entry goes down
   editorRender();
 }
-export function editorPick(n) { // a row of the Several list: load it, and the highlight moves to it
-  if (showRulerHl()) S.rangeSel = {a: n.start, b: n.end};
+export function editorPick(n) { // a row of the Several list: load it
   S.edFollow.sig = editorSelSig();
   editorLoad({kind: "anno", n});
   draw();

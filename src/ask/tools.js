@@ -28,7 +28,7 @@ import { saveLocalNotes } from "../model/edits.js";
 import { drawImpl as draw } from "../ui/chrome.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
-import { setBeatSub, renderViewMenu, setRulerHl, setTextJump } from "../ui/chrome.js";
+import { setBeatSub, renderViewMenu, setTextJump } from "../ui/chrome.js";
 import { setVolBtnShown } from "../ui/chrome.js";
 import { dropLocalKeyAt } from "../model/rollnotes.js";
 import { retireEdited } from "../model/edits.js";
@@ -1430,7 +1430,7 @@ export async function askSongFile(a) {
 // — Ask must never switch Josh into Normal; that switch is what keeps
 // answers his); the check runs before the whitelist lookup so a model that
 // guesses a learning-flavored name gets the real reason, not a generic one.
-const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound", "beat_subdivisions", "volume_slider", "ruler_highlight", "text_jump"];
+const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound", "beat_subdivisions", "volume_slider", "text_jump"];
 export function askSetPref(a) {
   a = a || {};
   const name = String(a.name || "").trim().toLowerCase();
@@ -1456,12 +1456,6 @@ export function askSetPref(a) {
     document.getElementById("cfgdebuglog").checked = askActTruthy(value);
     settingsPersist("cfgdebuglog"); // the Settings sheet's own dispatcher — reads the checkbox it just set
     return {ok: true, note: "debug log " + (askActTruthy(value) ? "on" : "off")};
-  }
-  if (name === "ruler_highlight") { // View › Display "Ruler highlight" (Josh #243): a band tap selects its bars, or only reads out
-    const on = askActTruthy(value);
-    setRulerHl(on);
-    renderViewMenu();
-    return {ok: true, note: "ruler highlight " + (on ? "on — tapping a band selects its bars" : "off — tapping a band only shows its info")};
   }
   if (name === "text_jump") { // View › Display "Jump into text boxes" (Josh #251/#253): may the app put the cursor in a text box by itself
     const on = askActTruthy(value);

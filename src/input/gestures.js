@@ -1,5 +1,4 @@
 import { canvas } from "../render/roll.js";
-import { showRulerHl } from "../ui/chrome.js";
 import { softFocus } from "../ui/chrome.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { tombstone } from "../model/edits.js";
@@ -850,7 +849,7 @@ export function tap(pos) {
           return;
         }
         S.tapBand = {n: sec, t: performance.now()};
-        if (showRulerHl()) S.rangeSel = {a: sec.start, b: sec.end}; // View › Display → Ruler highlight off: the tap only reads out (Josh #243)
+        // no highlight: a band tap reads out and loads the band, never selects its bars — the light-blue span is gone (Josh, Terminal #346–#351; was View › Display "Ruler highlight", #243). A ruler DRAG still selects (amber when cycling).
         S.playCursor = sec.start;
         editorFollowBand(sec); // docked: one tap loads it, highlight or not (plan R1/R13)
         setInfo((sec.chord ? "chord " : "section ") + chordBandText(sec) + " · bar " + sec.b1 + "–" + (sec.b2 || sec.b1) +

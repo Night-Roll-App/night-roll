@@ -3077,7 +3077,6 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Jump into text boxes",
     "Docked annotation window", "follows what you select",
     "Every undo and redo says what it took back",
-    "Ruler highlight",
     "Chip / MIDI switch",
     "speedometer icon",
     "their own full-width row under it",
@@ -15296,17 +15295,11 @@ test("the annotation window is dockable (Josh #236); a relaunch brings back only
   assert.equal(run(`S.wmOpeners.noteeditor === editorRelaunchOpen`), true, "registered: wmRestoreOpen reopens it");
 });
 
-test("View › Display \"Ruler highlight\" (Josh #243): on by default a band tap selects its bars; off, the tap only reads out and clears any highlight", () => {
-  installSong();
-  run(`try { localStorage.removeItem("ff1roll-ruler-hl"); } catch (e) {} showRulerHl.v = undefined;`);
-  assert.equal(run(`showRulerHl()`), true, "on by default");
-  run(`rangeSel = {a: 0, b: 480}; setRulerHl(false);`);
-  assert.equal(val(`rangeSel`), null, "turning it off clears the one showing");
-  run(`showRulerHl.v = undefined;`);
-  assert.equal(run(`showRulerHl()`), false, "remembered per device");
-  assert.equal(val(`askSetPref({name: "ruler_highlight", value: true}).ok`), true);
-  assert.equal(run(`showRulerHl()`), true);
-  run(`try { localStorage.removeItem("ff1roll-ruler-hl"); } catch (e) {} showRulerHl.v = undefined;`);
+test("a chord/section band tap never highlights its bars — the light-blue span is gone; a ruler drag still selects (Josh, Terminal #346–#351)", () => {
+  const src = readFileSync(new URL("../src/input/gestures.js", import.meta.url), "utf8");
+  assert.doesNotMatch(src, /rangeSel = \{a: sec\.start, b: sec\.end\}/, "a band tap never selects its span");
+  assert.doesNotMatch(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /vwRulerHl/, "no View menu switch");
+  assert.doesNotMatch(readFileSync(new URL("../src/ask/tools.js", import.meta.url), "utf8"), /ruler_highlight/, "no Ask preference");
 });
 
 test("annotation window: Save and Delete are ONE undo step each for every type, and every annotation undo/redo says what it changed and flashes where (plan R10; Josh, Terminal #247)", () => {
@@ -15372,14 +15365,14 @@ function dockSetup() {
     globalThis.__fx = []; for (const id of ["ntext", "nsectlabel", "nsongtitle", "nchordsym"]) document.getElementById(id).focus = () => __fx.push(id);
     isComposition = () => true; rollnotesReadOnly = false; songEndTick = Math.max(songEndTick, barTicks() * 16); editUndo = []; editRedo = []; rangeSel = null; lassoAnno = null;
     window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; document.getElementById("noteeditor").classList.add("on"); wmLayoutAll(); // docked for real: the window manager's own layout sets the class
-    showRulerHl.v = true; edFollow.lastSaved = "chord"; edFollow.prePick = null; edFollow.pending = null; edFollow.mode = "idle"; edFollow.songKey = songKey; edFollow.sig = null;
+    edFollow.lastSaved = "chord"; edFollow.prePick = null; edFollow.pending = null; edFollow.mode = "idle"; edFollow.songKey = songKey; edFollow.sig = null;
     rollnotes = deriveNoteTypes([{b1: 9, q1: 1, b2: 10, q2: 4, text: "chord: G7", added: true}, {b1: 11, q1: 1, b2: 12, q2: 4, text: "chord: C", added: true}]).map(resolveNote); finalizeNotes();`);
   return val(`barTicks()`);
 }
 function dockTeardown() {
   run(`document.getElementById("noteeditor").classList.remove("on"); wm = {}; wmLayoutAll();
     rangeSel = null; lassoAnno = null; rollnotes = []; editingNote = null; finalizeNotes(); edFollow.mode = "idle"; edFollow.pending = null; edFollow.lastSaved = null; edFollow.prePick = null;
-    editUndo = []; editRedo = []; rollnotesReadOnly = false; showRulerHl.v = true;`);
+    editUndo = []; editRedo = []; rollnotesReadOnly = false;`);
 }
 const fld = id => val(`document.getElementById(${JSON.stringify(id)}).value`);
 const follow = (a, b) => run(`rangeSel = ${a === null ? "null" : `{a: ${a}, b: ${b}, cycle: true}`}; editorFollowSelection();`);
@@ -15405,9 +15398,10 @@ test("docked annotation window: a band tap loads it; a span matching or inside o
     ["New chord here"], "one row: no line per band (Josh #257)");
   assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^2 chords in this span — tap one in the ruler/);
   assert.equal(val(`document.getElementById("nsave").disabled`), true);
+  const before = val(`rangeSel && [rangeSel.a, rangeSel.b]`);
   run(`editorPick(rollnotes.find(n => n.chord && n.text === "C"));`); // tapping that band in the ruler
   assert.equal(val(`editingNote && editingNote.text`), "C", "tapping one loads that chord");
-  assert.deepEqual(val(`[rangeSel.a, rangeSel.b]`), [10 * bt, 12 * bt], "and the highlight moves to it");
+  assert.deepEqual(val(`rangeSel && [rangeSel.a, rangeSel.b]`), before, "and no highlight moves (Terminal #347/#351)");
   follow(11 * bt, 13 * bt);
   assert.deepEqual(val(`document.getElementById("nseveral").children.map(b => b.textContent)`),
     ["New chord here"], "partly over one chord: one row, never a silent overlap");
@@ -15525,10 +15519,9 @@ test("docked annotation window: a relaunch reopens a DOCKED one Idle, nothing fo
   assert.equal(val(`editingNote && editingNote.text`), "C");
   assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "the AI tab stays in front");
   run(`document.getElementById("asksheet").classList.remove("on"); window.innerWidth = 1000; wm = {right: {ids: ["noteeditor"], active: "noteeditor", w: 360, mode: "full"}}; document.getElementById("noteeditor").classList.add("on"); wmLayoutAll();`);
-  // Ruler highlight off: the tapped band still loads
-  run(`showRulerHl.v = false; rangeSel = null; editorFollowSelection(); editorFollowBand(rollnotes.find(n => n.text === "G7"));`);
+  // a tapped band loads with nothing highlighted (Terminal #347/#351)
+  run(`rangeSel = null; editorFollowSelection(); editorFollowBand(rollnotes.find(n => n.text === "G7"));`);
   assert.equal(val(`editingNote && editingNote.text`), "G7");
-  run(`showRulerHl.v = true;`);
   // a locked (newer-format) song: read-only, still following
   run(`rollnotesReadOnly = true; editorFollowBand(rollnotes.find(n => n.text === "C"));`);
   assert.equal(val(`edFollow.mode`), "readonly");
