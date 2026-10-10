@@ -390,6 +390,16 @@ test("gesture: off-phase note's edge snaps TO the beat line (10-grid then 4-4)",
   assert.equal(n.t + n.d, 1440, "edge landed ON the beat, phase notwithstanding");
 });
 
+test("gesture: a note's right edge stretches by a 32nd (Josh, Terminal #354/#355: \"extend a note by like a 16th or 32nd\")", async () => {
+  const app = await boot("vm-gest-fine-edge");
+  app.run(`song.tracks[0].notes = [{t: 0, d: 240, p: 64, v: 80}]; multiSel = [{ti:0,ni:0}];
+           multiSelKey = new Set(["0:0"]); mode = "select"; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25; draw();`);
+  const edge = noteXY(app, 240, 64);
+  const target = noteXY(app, 300, 64); // one 32nd further
+  drag(app, edge, { x: target.x, y: target.y });
+  assert.equal(notes(app)[0].d, 300, "a 32nd longer — 16th lines would have jumped to 360 or stayed at 240");
+});
+
 test("gesture: grabbing a note outside a stale selection moves ONLY that note", async () => {
   const app = await boot("vm-gest-stalesel");
   // three chord notes selected earlier (stale); a fourth note elsewhere

@@ -10,6 +10,7 @@ import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { askBarsCount } from "../ask/tools.js";
 import { beatTicks } from "../model/grid.js";
+import { isTripletDur } from "../model/grid.js";
 import { posText } from "../model/grid.js";
 import { pitchName } from "../theory/chords.js";
 import { sfAt } from "../model/song.js";
@@ -1315,7 +1316,8 @@ export function initGestures1() {
             const it = S.drag.noteEdit.items[i]; return it.ti + ":" + it.ni === S.drag.noteEdit.hitKey;
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
-          const edgeT = Math.round((go.t + dT) / snap) * snap; // absolute: land ON lines
+          const fine = S.gridDiv ? snap : isTripletDur(S.pencilDur) ? Math.max(1, Math.round(S.song.ppq / 6)) : Math.max(1, Math.round(S.song.ppq / 8)); // the fine grid, same as the right edge (Terminal #355)
+          const edgeT = Math.round((go.t + (p.x - S.drag.spos.x) / pxPerTick()) / fine) * fine; // absolute: land ON lines
           const dEdge = edgeT - go.t;
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
@@ -1329,7 +1331,11 @@ export function initGestures1() {
             const it = S.drag.noteEdit.items[i]; return it.ti + ":" + it.ni === S.drag.noteEdit.hitKey;
           });
           const go = S.drag.noteEdit.orig[gi] || S.drag.noteEdit.orig[0];
-          const edgeT = Math.round((go.t + go.d + dT) / snap) * snap; // absolute: land ON lines
+          // the edge lands ON lines (an off-phase end still reaches the beat — 2026-08-24), but on a
+          // FINE grid: 32nds, or 16th-triplets while T is on — "extend a note by a 16th or 32nd"
+          // (Josh, Terminal #354/#355); 16th lines overshot and never reached a 32nd. Custom grid: its cells.
+          const fine = S.gridDiv ? snap : isTripletDur(S.pencilDur) ? Math.max(1, Math.round(S.song.ppq / 6)) : Math.max(1, Math.round(S.song.ppq / 8));
+          const edgeT = Math.round((go.t + go.d + (p.x - S.drag.spos.x) / pxPerTick()) / fine) * fine;
           const dEdge = edgeT - (go.t + go.d);
           for (let i = 0; i < S.drag.noteEdit.items.length; i++) {
             const it = S.drag.noteEdit.items[i], o = S.drag.noteEdit.orig[i];
