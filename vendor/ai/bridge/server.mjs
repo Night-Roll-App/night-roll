@@ -338,15 +338,20 @@ function firstJSONObject(t) {
   }
   return null;
 }
+// One "}" too MANY breaks it the same way (2026-10-11: a write_notes with a
+// replace came back "…}}}]}}}" — a "}" where the "]" was open). A closer that
+// doesn't match the bracket open there is dropped; the JSON.parse after it
+// still decides whether what's left is a call.
 function closeJSON(t) {
-  const open = []; let inStr = false, esc = false;
+  const open = []; let inStr = false, esc = false, out = "";
   for (const ch of t) {
-    if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+    if (inStr) { out += ch; if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
     if (ch === '"') inStr = true;
     else if (ch === "{" || ch === "[") open.push(ch === "{" ? "}" : "]");
-    else if ((ch === "}" || ch === "]") && open.length) open.pop();
+    else if (ch === "}" || ch === "]") { if (open[open.length - 1] !== ch) continue; open.pop(); }
+    out += ch;
   }
-  return inStr ? t : t + open.reverse().join("");
+  return inStr ? t : out + open.reverse().join("");
 }
 
 // ---------------------------------------------------------------- models
