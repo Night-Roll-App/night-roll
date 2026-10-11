@@ -267,7 +267,7 @@ export function notesTxtForDoc(doc, name, fromBar, toBar, maxChars, key) { // no
     }
     if (rows.length) { L.push("", "## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : "")); L.push(...rows); }
   });
-  if (cut !== null) L.push("# (cut at bar " + cut + " to fit — ask for a narrower range)");
+  if (cut !== null) L.push("# (cut at bar " + cut + " to fit — the rest: from_bar " + cut + (b1 < nBars ? ", to_bar " + b1 : "") + ")");
   return L.join("\n");
 }
 // askSongMatches / askSongPath (rewritten 2026-10-05, docs/ai-parity.md §4):
@@ -596,13 +596,27 @@ export function askListSongs() { // the catalog AND this device's drafts, the wa
   if (local.length) { L.push("on this device only:"); for (const k of local) L.push("  " + songTitleOf(k) + " — " + k); }
   return L.join("\n") || "(no songs listed yet)";
 }
-export async function askReadSong(a) { // another song's notes, notesTxtForDoc's shape, 6000 chars, optional bar range
+// A song split into numbered parts ("Cry in Sorrow (part 1)" is a 3-bar
+// intro, part 2 the song): the reply names the other parts, or a comparison
+// stops at the first file (Josh, Borrowed Tears chat, 2026-10-11).
+export function askSongParts(path) { // → [{title, path}] of the same album's OTHER "(part N)" files of this song
+  const stem = t => String(t || "").replace(/\s*[(\[]?\s*(part|pt\.?)\s*\d+\s*[)\]]?\s*$/i, "").trim().toLowerCase();
+  for (const songs of Object.values(S.CATALOG)) {
+    const me = songs.find(([, p]) => p === path);
+    if (!me || stem(me[0]) === me[0].trim().toLowerCase()) continue;
+    return songs.filter(([t, p]) => p !== path && stem(t) === stem(me[0])).map(([title, p]) => ({title, path: p}));
+  }
+  return [];
+}
+export async function askReadSong(a) { // another song's notes, notesTxtForDoc's shape, 12000 chars, optional bar range
   a = a || {};
   const path = askSongPath([a.path, a.song, a.title].find(v => v !== undefined && v !== null && v !== ""));
   const res = await readData("songs", path);
   if (!res.ok) throw new Error("could not read " + path);
   const doc = parseMidi(await res.arrayBuffer());
-  return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000, path);
+  const parts = askSongParts(path);
+  return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 12000, path) +
+    (parts.length ? "\n# other parts of this song (read them too before comparing): " + parts.map(q => q.title + " — " + q.path).join("; ") : "");
 }
 export async function askReadNotes(a) { // another song's saved annotations as "[b.q - b.q] type: value — note" lines
   a = a || {};

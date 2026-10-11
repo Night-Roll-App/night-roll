@@ -8042,6 +8042,18 @@ test("batch 3: reading and publishing through act — list_songs names albums, p
   } finally { run(`delete CATALOG["FF1"]; localStorage.removeItem(draftStoreKey("local/fold-test.mid"));`); }
 });
 
+test("read_song: a song split into parts names its other parts; a cut reply says where the rest starts (Josh, Borrowed Tears chat 2026-10-11: compared against a 3-bar intro)", () => {
+  run(`CATALOG["FF4"] = [["Cry in Sorrow (part 1)", "albums/snes/ff4/cry-1.mid"], ["Cry in Sorrow (part 2)", "albums/snes/ff4/cry-2.mid"], ["Cry", "albums/snes/ff4/cry.mid"]];`);
+  try {
+    assert.deepEqual(val(`askSongParts("albums/snes/ff4/cry-1.mid")`), [{title: "Cry in Sorrow (part 2)", path: "albums/snes/ff4/cry-2.mid"}]);
+    assert.deepEqual(val(`askSongParts("albums/snes/ff4/cry.mid")`), [], "a title with no part number has no parts");
+  } finally { run(`delete CATALOG["FF4"];`); }
+  const txt = val(`notesTxtForDoc({ppq: 480, timesig: [4, 4], tempos: [{usq: 500000}], tracks: [{name: "pulse1", notes: Array.from({length: 40}, (_, i) => ({t: i * 1920, d: 480, p: 60, v: 100}))}]}, "Probe", null, null, 600)`);
+  const m = txt.match(/the rest: from_bar (\d+)\)$/);
+  assert.ok(m, "the cut line names the bar to read on from: " + txt.split("\n").pop());
+  assert.match(txt, new RegExp("bar " + (+m[1] - 1) + ":"), "the bar before it was sent");
+});
+
 test("act: the Help sheet's AI commands rows are generated from the registry (node tools/build_ask_help.mjs) and the file matches it; every action and every standalone tool has a row with an example phrase", () => {
   const html = helpSource();
   const m = html.match(/<!-- ask-commands:begin[^>]*-->\n\s*([\s\S]*?)\n\s*<!-- ask-commands:end -->/);

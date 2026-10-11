@@ -182,7 +182,7 @@ export const ASK_ACTIONS = [
    run() { return askListSongs(); }},
   {name: "read_song", args: "path from_bar? to_bar?", gloss: "read another song's notes (optional bar range)", song: false,
    example: "Compare this to Ambush.", say: "Name the other song; add bars (\"bars 1 to 8 of Ambush\") to keep it short.",
-   spec: "read_song {path, from_bar?, to_bar?}: reads another song's notes (a title or path; an ambiguous name errors with the candidates) in the same text format as the context block, a bar range optional, capped at 6000 characters. Only when the user asks about another song; then answer under THE RULE as usual.",
+   spec: "read_song {path, from_bar?, to_bar?}: reads another song's notes (a title or path; an ambiguous name errors with the candidates) in the same text format as the context block, a bar range optional, capped at 12000 characters. Use it — never the repo's files — for any song the user names: it sees this device's drafts and unsaved copies too. To compare, read the WHOLE song: a cut reply ends with the rest: from_bar N — call again from there until no cut line; a song split into parts lists its other parts at the end — read those as well, and say which part and bars you read. Only when the user asks about another song; then answer under THE RULE as usual.",
    run(a) { return askReadSong(a); }},
   {name: "read_notes", args: "path", gloss: "read another song's annotations", song: false,
    example: "What did I write in Graveyard's notes?", say: "Name the song.",
