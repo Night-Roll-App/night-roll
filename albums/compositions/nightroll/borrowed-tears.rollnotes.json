@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "borrowed-tears", "origin": {"kind":"copy","from":"local/untitled-2.mid","at":"2026-10-11T14:33:31.835Z"}, "stamp": 1791732156764, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "borrowed-tears", "origin": {"kind":"copy","from":"local/untitled-2.mid","at":"2026-10-11T14:33:31.835Z"}, "stamp": 1791733195731, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"songnote","title":"Prog","note":"Min Maj Maj min min min Maj"},
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"Em"},
@@ -11,5 +11,7 @@
   {"at":[3,3],"to":[3,4],"type":"chord","chord":"Bm"},
   {"at":[4,1],"to":[4,1],"type":"chord","chord":"D/A"},
   {"at":[4,2],"to":[4,2],"type":"chord","chord":"Am"},
-  {"at":[4,3],"to":[4,3],"type":"chord","chord":"Em/G"}
+  {"at":[4,3],"to":[5,2],"type":"chord","chord":"Em/G"},
+  {"at":[5,3],"to":[5,3],"type":"chord","chord":"D/F#"},
+  {"at":[5,4],"to":[5,4],"type":"chord","chord":"Gmaj7"}
 ] }
