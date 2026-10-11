@@ -439,3 +439,9 @@ If other notes sound and only that Ab stays silent, tell me which bar and voice 
 **AI (claude-code-sonnet):** That's a real bug, and a useful clue: play works with the silent switch on, but tapping a note doesn't. The two sounds seem to go through different audio paths. I'll queue it for the terminal now.Queued, with the details: the tap registers in the status lines, the engine is running, and only the silent-switch case is affected. If you flip the silent switch off and a tapped note then sounds, that confirms it, and it would help to tell the terminal.
 
 **Mac (ask):** Josh: tapped note silent on iOS silent switch, Play audible. open-items 2026-10-02 13:05.
+
+### 2026-10-10 23:44 · bars 1–21 (in view)
+
+**Josh:** I know we have talked about this song at great length. But yet when I come here now there's nothing I see nothing in this conversation that seems like a horrible bug
+
+**AI (claude-code-sonnet):** ⚠ the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again
