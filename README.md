@@ -122,6 +122,7 @@ nightly; `node tools/split/check.mjs` enforces the module rules.
 
 - [Ambush](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush)
 - [Ambush 2 Saving B Part For Another Song](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush-2-saving-b-part-for-another-song)
+- [Borrowed Tears](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/borrowed-tears)
 - [Carnival](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/carnival)
 - [Cool Bmaj Progression](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/cool-bmaj-progression)
 - [Fanfare](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/fanfare)
