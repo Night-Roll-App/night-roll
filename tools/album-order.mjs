@@ -172,12 +172,12 @@ function namesMatch(candidate, albumSlug) {
 }
 
 // ---- where the rips live --------------------------------------------------
-// ~/work/ff/rips is the stable location; a session's /tmp/claude-<pid>/rips
+// ~/work/night-roll/rips is the stable location; a session's /tmp/claude-<pid>/rips
 // scratch copy is ephemeral (today's pid will not exist next session), so
 // it is discovered by glob, never hardcoded.
 function ripRoots() {
   const out = [];
-  const home = path.join(os.homedir(), "work/ff/rips");
+  const home = path.join(os.homedir(), "work/night-roll/rips");
   if (existsSync(home)) out.push(home);
   if (process.env.ALBUM_ORDER_RIPS && existsSync(process.env.ALBUM_ORDER_RIPS)) out.push(process.env.ALBUM_ORDER_RIPS);
   try {

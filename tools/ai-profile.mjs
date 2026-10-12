@@ -38,6 +38,6 @@ export const profile = {
   shapes: {
     route: "/shapes",
     dirEnv: "CHORD_SHAPES_WEB",
-    defaultDir: path.join(os.homedir(), "work/ff/chord-shapes/web"),
+    defaultDir: path.join(os.homedir(), "work/night-roll/chord-shapes/web"),
   },
 };
