@@ -14,3 +14,8 @@ Files:
 - `sheet.png`: their contact sheet.
 - `mascots.html`: the page Josh picked from.
 - `maestro-poses.json` / `.png` / `.html`: 10 poses of the wizard with notes, plus the name ideas.
+
+App icons for the native suite (Josh, 2026-10-12; candidates in `app-icons.json` / `app-icons.html`):
+- **Night Roll Guitar:** G6, Nocturno with a red electric superstrat (pointy RG-style headstock) where his staff stood ("G6 is killer"). He asked for an electric: "the juxtaposition makes it funny."
+- **Night Roll Tuner:** T1, Echo above a tuning fork ("I kind of like T1"; T3 and T4 "are cool" — kept).
+- `tools/brand/app-icon-ios.mjs <id> <AppIcon.appiconset dir>` writes the 1024 px icon into an app.

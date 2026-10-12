@@ -6,8 +6,8 @@ session start alongside the quiz.)
 
 ## 2026-10-12 Native suite: Night Roll Guitar + Night Roll Tuner (sibling repos in ~/work/night-roll/)
 Repos (private, org Night-Roll-App): night-roll-ear (shared Swift package: MPM detector, tracker, AVAudioSinkNode input; 38 tests), night-roll-guitar (M1: live note readout + Record take; plan docs/plans/2026-10-12-milestone-1-note-detection.md), night-roll-tuner (v1: note + cents needle; 12 tests). Pipeline per memory: Opus plan → Fable plan review → Sonnet build → Fable code review. Both apps installed on the iPad (tools/build-ipad.sh in each repo). Josh tuned with the guitar app on the iPad mic: "working great".
-WAITING ON JOSH: icon picks (G1–G4 / T1–T4, docs/brand/mascots/app-icons.html; my picks G3 + T3); hardware step 0 (Real Tone cable + interface listed in GarageBand); fixture takes for the detector gate (README in night-roll-ear/Fixtures/).
-QUEUED: guitar M2 (arpeggio drills on a fretboard, grading); tuner: alternate tunings (half step down, Drop D, open G), A4 calibration, which-string target, bass (E1 needs a longer window); Jamstik/MIDI input; floor-creep watch item (guitar code review #7).
+Icons DONE: guitar G6 (electric), tuner T1. Guitar M2a (arpeggio fretboard + lit played notes) installed 2026-10-12, Fable-reviewed. WAITING ON JOSH: hardware step 0 (Real Tone cable + interface listed in GarageBand); fixture takes for the detector gate (README in night-roll-ear/Fixtures/).
+QUEUED: guitar M2b (grading the arpeggio); tuner: alternate tunings (half step down, Drop D, open G), A4 calibration, which-string target, bass (E1 needs a longer window); Jamstik/MIDI input; floor-creep watch item (guitar code review #7).
 
 ## 2026-10-08 Name: stays Night Roll (Josh, Terminal #271–#274)
 "Retro DAW" and "8-bit DAW" are generic phrases that nobody can own; no app is named either. Josh picked "1 or 2": keep Night Roll, and use "a retro DAW for game music" as a tagline and/or App Store subtitle when it publishes. Nothing to build.
