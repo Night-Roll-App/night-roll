@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tools/brand/app-icon-sheet.mjs — contact sheet for the app-icon candidates in
 // docs/brand/mascots/app-icons.json: each sprite at 180 px and 60 px on the
-// app background, labelled G1-G4 / T1-T4. Zero dependencies (PNG writer copied
+// app background, labelled G1-G8 / T1-T4. Zero dependencies (PNG writer copied
 // from make-icons.mjs).
 //   node tools/brand/app-icon-sheet.mjs
 import { readFileSync, writeFileSync } from "node:fs";
@@ -13,14 +13,14 @@ const BG = "#0D1120", PANEL = "#161C30", TXT = "#C7D0E8";
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const N = 24, S180 = 180, S60 = 60, PAD = 16, LABEL = 22;
 const cols = 4, cellW = S180 + PAD * 2, cellH = LABEL + S180 + 10 + S60 + PAD * 2;
-const W = cols * cellW, H = 2 * cellH;
+const W = cols * cellW, H = Math.ceil(list.length / cols) * cellH;
 const buf = Buffer.alloc(W * H * 3);
 const put = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) buf.set(c, (y * W + x) * 3); };
 const rect = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) put(x + i, y + j, c); };
 rect(0, 0, W, H, hex("#080B16"));
 
 // tiny 3x5 font for labels
-const F = { G: "111100101101111", T: "111010010010010", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001" };
+const F = { G: "111100101101111", T: "111010010010010", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001001010010", 8: "111101111101111" };
 const glyph = (ch, x, y, sc, c) => { const g = F[ch]; if (!g) return; for (let r = 0; r < 5; r++) for (let q = 0; q < 3; q++) if (g[r * 3 + q] === "1") rect(x + q * sc, y + r * sc, sc, sc, c); };
 
 function icon(s, x0, y0, size) {

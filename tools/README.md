@@ -44,7 +44,8 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `fix_keysigs.py`, `strip_tracks.py`, `trim_loops.py` | MIDI utilities: rewrite key-signature metas, delete tracks by app-visible index, trim a file to its first pass. |
 | `icon-1024.swift` | Redraws the app icon at 1024 px. |
 | `brand/make-icons.mjs [name] [--ios dir]` | Draws every app icon size and `icons/mark.svg` (the header mark) from one mascot in `docs/brand/mascots/sprites.json` (default Nocturno); `--ios` also writes the iPad AppIcon. |
-| `brand/app-icon-sheet.mjs` | Renders `docs/brand/mascots/app-icons.png` (contact sheet) from `app-icons.json`: candidate icons for the suite's native apps (G = Night Roll Guitar, T = Night Roll Tuner). |
+| `brand/app-icon-sheet.mjs` | Renders `docs/brand/mascots/app-icons.png` (contact sheet) from `app-icons.json`: candidate icons for the suite's native apps (G = Night Roll Guitar, T = Night Roll Tuner; G5-G8 electric). |
+| `brand/app-icon-ios.mjs <id> <dir>` | Writes one candidate from `app-icons.json` (e.g. `T1`) as a single-size iOS `AppIcon.appiconset` (1024 px opaque PNG + Contents.json) into `<dir>`. |
 
 ## Console audio
 
