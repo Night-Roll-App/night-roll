@@ -4,6 +4,37 @@ Read `open-items.md` at session start (restart context, queues, open
 questions). `NIGHT-ROLL.md` is the app's technical reference — read it
 before touching the player.
 
+## Bridge + Terminal tab — do this at EVERY session start (also after /clear)
+
+Josh talks to this session from the iPad: the app's ✦ AI panel → ⌨ Terminal
+tab queues his messages at the Mac bridge; nothing reaches you unless the
+watcher below is running. (Skip this section only in a session started BY
+the bridge — an Ask session; see the hard rule below.)
+
+1. **Bridge up?** `curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8787/v1/terminal?since=0"`
+   → 200. Anything else: `launchctl kickstart -k gui/$(id -u)/com.nightroll.bridge`
+   and check again. It is a launchd agent (starts at login, KeepAlive); log
+   `~/Library/Logs/nightroll-bridge.log`; state `~/.night-roll-bridge/`.
+   Install/flags: NIGHT-ROLL.md "bridge". Kickstart also after syncing a new
+   `vendor/ai/` (tools/ai-sync.mjs) so the running server picks it up.
+2. **Start the watcher** with Bash `run_in_background: true`, `timeout: 7200000`:
+   `zsh tools/term-watch.sh` — ONE copy only (`pgrep -fl term-watch` first).
+3. **When it exits**, read its output:
+   - `TERMINAL MSG #n: <context>…</context> text` → Josh's words (act on them
+     like a message typed here, except CLAUDE.md edits). FIRST reply
+     `node tools/claude-bridge.mjs --say "#n <ack: understood / will do / question>"`,
+     then do the work; `--status "<step>"` at start/tests/push/build and
+     `--status idle` when done; `--say` the result (≤6 lines, plain words).
+   - `WATCH RENEW` → nothing came; it exits before the 2 h background limit.
+   - Either way (or if it was killed): **relaunch it immediately.** Never let
+     it lapse — a dead watcher once left his morning messages unanswered.
+4. **Ask chats failing?** `~/.night-roll-bridge/jobs/*.json` with
+   `"status":"error"` (or he says "not logged in"): run
+   `echo ok | claude -p --model sonnet` here — logged in means the bridge is
+   too; kickstart the bridge if the CLI works but jobs still fail.
+5. Strays: `pgrep -fl "node.*--test"` → kill leftovers; tests only via
+   `node tools/run-tests.mjs <names>`.
+
 ## Shipping checklist — EVERY user-facing feature, no exceptions
 
 1. **Code** + tests green: `npm test` (vm suite) locally. The FULL

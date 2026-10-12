@@ -60,6 +60,7 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | Script | Does |
 |---|---|
 | `claude-bridge.mjs` | Night Roll's shim onto the claude-bridge library in `vendor/ai/` — the server in front of local models and Claude Code, and its CLI (`--say`, `--status`, …). |
+| `term-watch.sh` | The terminal session's watcher for the app's ⌨ Terminal tab: waits on the bridge's `/v1/terminal`, prints new messages and exits (or `WATCH RENEW` after ~105 min); run in the background and relaunch every exit — CLAUDE.md "Bridge + Terminal tab". |
 | `ai-profile.mjs` | Night Roll's profile for that library: the system prompts and names the server used to hardcode. |
 | `ai-sync.mjs` | Vendors the library (`Night-Roll-App/claude-bridge`) into `vendor/ai/` as a plain copy. |
 | `launchd/` | Keeps the bridge running on macOS as a launch agent (`install.sh`, README). |
