@@ -1,0 +1,6 @@
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-battle-theme", "origin": {"kind":"copy","from":"local/untitled-3.mid","at":"2026-10-13T01:39:59.760Z"}, "stamp": 1791860671061, "notes": [
+  {"at":[1,1],"type":"timesig","timesig":"4/4"},
+  {"at":[1,1],"type":"tempo","bpm":175},
+  {"at":[1,1],"type":"key","key":"C"},
+  {"at":[33,1],"type":"loop","loop":"9.1"}
+] }
