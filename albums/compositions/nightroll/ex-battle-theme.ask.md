@@ -147,3 +147,15 @@ Calling it done is fine. You have an old guitar riff, a new melody written in mi
 **Josh:** Can you try to add the loop annotation in
 
 **AI (claude-code-sonnet):** The loop is in. It sits at bar 33 beat 1 and jumps back to 9.1, so the song plays through bar 32 and returns to bar 9. Hit play from the top and check that it turns around where you expect. The Save bug is still the terminal's to look at, but you don't need it for this song now.
+
+### 2026-10-12 23:26 · bars 27–28 (selected)
+
+**Josh:** I added drums too but I kinda wanna add like a fill or something in. Bars 27 and 28 underneath that arpeggio just think it needs a little bit of something but I'm having a little bit of trouble knowing what to put into the generator could you help me a little bit
+
+**AI (claude-code-sonnet):** The generator is the Drummer, and its main knobs are simple. Which bars it covers, energy (how loud and driving), busy (how many hits), hard (how aggressively it hits), fills (whether it adds fills at phrase ends), and feel. The "follow" setting makes it listen to another track, such as the bass.
+
+Before picking settings, know what you already have. Bars 27 and 28 have a kick-and-hat pattern with a snare on beat 3, and bar 28 ends with two snare hits right before bar 29, which is a small fill already. The bass is also dropping to two quick hits and a hold. So this section is where you wanted the energy low, and a big fill might fight that.
+
+I'd ask what you want the fill to do. Should it only mark the turn into bar 29, or should it add color across both bars under the arpeggio? For the first, run the Drummer on bar 28 alone with fills on and busy on the low side. For the second, run it over 27 to 28 at medium energy, with follow set to the triangle so the kick lines up with the bass hits. Either way it's one undo.
+
+Want me to run one of those and let you hear it? Tell me which, and whether to keep your current drum notes or replace them.
