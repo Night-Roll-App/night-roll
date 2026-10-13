@@ -9,7 +9,7 @@ import { fallActive, stripPlayheadX, TAG_HIT } from "../render/roll.js";
 import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { askBarsCount } from "../ask/tools.js";
-import { beatTicks } from "../model/grid.js";
+import { beatTicks, gridAnchorTick } from "../model/grid.js";
 import { isTripletDur } from "../model/grid.js";
 import { posText } from "../model/grid.js";
 import { pitchName } from "../theory/chords.js";
@@ -159,6 +159,21 @@ export function rulerSnapTick(t) {
   const bt = barTicks(), ppt = pxPerTick();
   const nearBar = Math.round(fine / bt) * bt;
   return Math.abs((nearBar - fine) * ppt) <= 14 ? Math.max(0, nearBar) : fine;
+}
+// cursor placement (Josh #372: "it should really feel like it's just gravity
+// around the bar"): bar lines pull the cursor within 18 SCREEN px at every
+// zoom; away from them it lands on `step` ticks, doubled until a step is at
+// least 6 px wide (capped at a bar), so a zoomed-out tap or drag is never
+// sub-pixel. A custom grid's anchor turns the bar magnet off, as everywhere.
+export function cursorSnapTick(t, step) {
+  const ppt = pxPerTick(), bt = barTicks();
+  if (!S.gridDiv || gridAnchorTick() === 0) {
+    const nearBar = Math.max(0, Math.round(t / bt) * bt);
+    if (Math.abs((nearBar - t) * ppt) <= 18) return nearBar;
+  }
+  let g = step;
+  while (g * ppt < 6 && g * 2 <= bt) g *= 2;
+  return Math.max(0, Math.round(t / g) * g);
 }
 export function tickAtX(x, snap) {
   const t = (x - S.RULER_W + S.view.x) / pxPerTick();
@@ -482,9 +497,8 @@ export function scoreLassoTap(pos) { // lasso-mode tap on the score: toggle the 
   draw();
 }
 export function scrubTo(pos) {
-  const snap = cursorDragSnapTicks(); // 32nds (triplet/custom grid while active) — the fine path
   const tick = (pos.x - S.RULER_W + S.view.x) / pxPerTick();
-  S.playCursor = Math.max(0, Math.round(tick / snap) * snap);
+  S.playCursor = cursorSnapTick(tick, cursorDragSnapTicks()); // 32nds (triplet/custom grid while active) — the fine path; bars pull
   updateSubtitle();
   draw();
 }
@@ -761,8 +775,7 @@ export function endPointer(e) {
     if (!S.drag.moved) {
       if (!S.drag.onCursor) { // a grabbed-and-released playhead stays exactly where it is
         const tick = (S.drag.spos.x - S.RULER_W + S.view.x) / pxPerTick();
-        const snap = cursorTapSnapTicks(); // a tap lands on the nearest 8th; drag for finer
-        seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap), {fromHere: true, noCountIn: true});
+        seekOrMoveCursor(cursorSnapTick(tick, cursorTapSnapTicks()), {fromHere: true, noCountIn: true}); // nearest 8th, bars pull; drag for finer
       }
     } else if (S.playing) seekOrMoveCursor(S.playCursor, {fromHere: true, noCountIn: true}); // a scrub while rolling: playback picks up where the finger lifted
   }
@@ -921,7 +934,7 @@ export function tap(pos) {
       S.tapBand = {n: hitMark, t: performance.now()};
     }
     const target = hitMark ? hitMark.start
-                 : Math.max(0, Math.round(tick / cursorTapSnapTicks()) * cursorTapSnapTicks()); // nearest 8th
+                 : cursorSnapTick(tick, cursorTapSnapTicks()); // nearest 8th, bars pull
     seekOrMoveCursor(target);
     return;
   }

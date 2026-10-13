@@ -4135,6 +4135,17 @@ test("Capture MIDI: the buffer keeps the last 60 s, empties on a song change, an
   run(`captureBuf = []; songKey = null;`);
 });
 
+test("cursorSnapTick: bars pull the cursor within 18 screen px at any zoom (#372)", () => {
+  installSong();
+  run(`view.pxq = 200; view.x = 0;`); // 1 bar = 800px
+  const at = (t, step) => val(`cursorSnapTick(${t}, ${step})`);
+  assert.equal(at(1920 - 60, 240), 1920); // 15px shy of bar 2: pulled
+  assert.equal(at(1920 - 200, 240), 1680); // 83px shy: its own 8th
+  run(`view.pxq = 12;`); // far out: 1 bar = 48px, a 16th = 3px, an 8th = 6px
+  assert.equal(at(1920 + 600, 240), 1920); // 15px past bar 2: pulled
+  assert.equal(at(2700, 120), 2640); // 19.5px from the bar: a 16th step (3px) doubles to an 8th (6px)
+  run(`songKey = null;`);
+});
 test("rulerSnapX: bar lines are magnetic in pixels; 16ths elsewhere", () => {
   installSong();
   run(`view.pxq = 200; view.x = 0;`); // 1 bar = 800px, 14px magnet ≈ 33 ticks
