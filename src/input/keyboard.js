@@ -2,6 +2,7 @@ import { guitarGeom } from "../render/instrument.js";
 import { GTR_FRETS } from "../render/instrument.js";
 import { GTR_TUNING } from "../render/instrument.js";
 import { ensureAudio } from "../audio/engine.js";
+import { tapSoundSession } from "../audio/voices.js";
 import { resumeAudio } from "../audio/engine.js";
 import { openMaster } from "../audio/engine.js";
 import { makeOsc } from "../audio/engine.js";
@@ -45,6 +46,7 @@ export function guitarHit(x, y, W, H) {
 // either way) never pass through here.
 export async function instPlay(p, ticket) {
   ensureAudio();
+  tapSoundSession(S.instSustain ? 7500 : 2000); // silent switch on: still audible, like a roll tap (#373); a sustained string rings 7 s
   await resumeAudio();
   if (ticket && !ticket.live) return; // the finger was let go (a chord that became a scroll) while the engine woke: nothing sounds
   openMaster();

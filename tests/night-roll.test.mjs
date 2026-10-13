@@ -9658,6 +9658,16 @@ test("audio session: switching back into Night Roll while idle returns to 'ambie
   } finally { run(`navigator.audioSession = __navAS; audio = __aud; resumeAudio = __ra; met.on = false; appErrors.length = 0; appDebug.length = 0;`); }
 });
 
+test("audio session: a piano/guitar panel tap is 'playback' like a roll tap, so the silent switch doesn't mute it (#373)", async () => {
+  run(`globalThis.__navAS = navigator.audioSession; navigator.audioSession = {type: "ambient"};
+       globalThis.__ra = resumeAudio; resumeAudio = async () => {}; globalThis.__ea = ensureAudio; ensureAudio = () => {};`);
+  try {
+    run(`instPlay(64, {live: false}).catch(() => {})`); // a let-go ticket: the session switch happens, nothing is built
+    await new Promise(r => setTimeout(r, 0));
+    assert.equal(val(`navigator.audioSession.type`), "playback");
+  } finally { run(`clearTimeout(tapSoundSession.ambientTimer); navigator.audioSession = __navAS; resumeAudio = __ra; ensureAudio = __ea; appErrors.length = 0; appDebug.length = 0;`); }
+});
+
 test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then resets if it never comes (Josh, 2026-10-02)", async () => {
   const app = await createApp({intervals: true}); const run = c => app.run(c);
   run(`deployWarn(12000)`);

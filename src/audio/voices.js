@@ -984,14 +984,18 @@ export function scheduleNote(ti, n, when, durSec) {
 }
 scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
+// a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
+// on — the idle "ambient" session silenced taps, Josh 2026-10-02; the piano/guitar panel's
+// taps too, #373), back to "ambient" `ms` after the last tap unless something else is
+// playing by then. Shared by every tap that sounds (previewNote, the instrument panel).
+export function tapSoundSession(ms = 2000) {
+  audioSessionType("playback");
+  clearTimeout(tapSoundSession.ambientTimer);
+  tapSoundSession.ambientTimer = setTimeout(() => { if (!S.playing && !S.albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, ms);
+}
 export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
   ensureAudio();
-  // a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
-  // on — the idle "ambient" session silenced taps, Josh 2026-10-02), back to "ambient" 2 s after
-  // the last tap unless something else is playing by then
-  audioSessionType("playback");
-  clearTimeout(previewNote.ambientTimer);
-  previewNote.ambientTimer = setTimeout(() => { if (!S.playing && !S.albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, 2000);
+  tapSoundSession();
   await resumeAudio(); // clock is frozen until the context actually runs
   openMaster(); // master may be faded out from the last stop
   const tr = S.song && S.song.tracks[ti];
