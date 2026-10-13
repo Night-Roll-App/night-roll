@@ -647,7 +647,9 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   child.on("close", code => {
     clearTimeout(timer);
     if (job.killed) return jobEnd(job, new Error("stopped"));
-    if (!sawText && code !== 0 && resumed && retry && /session|conversation|resume/i.test(err)) { // Claude Code lost the session (cleaned up, another machine): start this chat over, once
+    // a first turn stopped before Claude answered leaves the session file behind with turns still 0,
+    // so every later --session-id is "already in use": start the chat over under a new id, once
+    if (!sawText && code !== 0 && retry && (resumed ? /session|conversation|resume/i.test(err) : /already in use/i.test(err))) { // Claude Code lost the session (cleaned up, another machine): start this chat over, once
       sessionUpdate(songKey, {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), lost: err.trim().slice(0, 200)});
       job.notes.push("session restarted");
       return runClaude(job, body, songKey, model, ctxPartsHeader, false);
@@ -697,6 +699,7 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
     // warmed is still hot — fire-and-forget, in the background.
     if (COMPACT_AT > 0 && ctxTokens != null && ctxTokens > COMPACT_AT) startAutoCompact(songKey, model, ctxTokens);
   });
+  child.stdin.on("error", () => {}); // a child that exits at once (bad session) closes the pipe: EPIPE here crashed the whole bridge
   child.stdin.end(prompt);
 }
 // Compact: `claude -p --resume <id> … "/compact"` runs the real slash
@@ -729,6 +732,7 @@ function runCompact(sessionId, model) {
       if (!sawResult || pre == null) return reject(new Error((err || "claude exited " + code).trim().slice(0, 500) || "no compaction happened"));
       resolve({preTokens: pre, postTokens: post, cost});
     });
+    child.stdin.on("error", () => {});
     child.stdin.end();
   });
 }
