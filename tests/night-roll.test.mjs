@@ -5969,7 +5969,7 @@ test("AI attach: picked photos survive the input reset — WebKit's live FileLis
   assert.deepEqual(val(`__got`), ["shot.png"]);
 });
 
-test("boot watchdog: only errors from Night Roll's own files show the failure panel — a browser's injected script (Brave's __firefox__) doesn't (Josh, 2026-10-03)", async () => {
+test("boot watchdog: only errors from Night Roll's own files show the failure panel — a browser's injected script (Brave's __firefox__, Brave's wallet naming the page itself) doesn't (Josh, 2026-10-03, #374)", async () => {
   const vm = await import("node:vm");
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const src = html.match(/<script id="nr-boot-watchdog">([\s\S]*?)<\/script>/)[1];
@@ -5981,6 +5981,9 @@ test("boot watchdog: only errors from Night Roll's own files show the failure pa
     setTimeout: () => 1, URL});
   onError({message: "TypeError: undefined is not an object (evaluating 'window.__firefox__.refresh_youtube_quality_5CCF')", filename: ""});
   onError({message: "Script error.", filename: "https://cdn.example.com/x.js"});
+  // Brave's wallet script names the PAGE as its file (#374, 2026-10-12)
+  onError({message: "TypeError: undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')", filename: "https://night-roll-app.github.io/night-roll/"});
+  onError({message: "TypeError: x", filename: "https://night-roll-app.github.io/night-roll/index.html?song=a"});
   assert.equal(failed.length, 0, "foreign errors are ignored");
   onError({message: "SyntaxError: Unexpected token", filename: "https://night-roll-app.github.io/night-roll/src/app.js"});
   assert.equal(failed.length, 1, "our own file's error still shows the panel");
