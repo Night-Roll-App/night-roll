@@ -1,4 +1,4 @@
-# ex-battle-theme.mid — 4/4, 175bpm, 32 bars
+# ex-battle-theme.mid — 4/4? (not declared), 175bpm, 32 bars
 # Format: bar N: beat pitch duration-in-quarter-notes
 # duration is GATE TIME (how long the chip held the note), NOT a notated value.
 # RHYTHM comes from ONSET SPACING (the beat column), never from duration:
