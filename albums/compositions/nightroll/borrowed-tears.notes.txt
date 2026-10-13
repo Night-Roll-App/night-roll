@@ -1,4 +1,4 @@
-# borrowed-tears.mid — 4/4, 40bpm, 5 bars
+# borrowed-tears.mid — 4/4, 50bpm, 5 bars
 # Format: bar N: beat pitch duration-in-quarter-notes
 # duration is GATE TIME (how long the chip held the note), NOT a notated value.
 # RHYTHM comes from ONSET SPACING (the beat column), never from duration:
@@ -18,5 +18,3 @@ bar 2: 1 F3 0.13, 3 E3 0.13, 2 F3 0.13, 4 E3 0.13, 1.5 C5 0.13, 3.5 B4 0.13, 2.5
 bar 3: 1 A3 0.13, 3 B3 0.13, 2 A3 0.13, 4 B3 0.13, 1.5 E5 0.13, 3.5 F#5 0.13, 2.5 E5 0.13, 4.5 F#5 0.13, 1.25 C5 0.13, 3.25 D5 0.13, 2.25 C5 0.13, 4.25 D5 0.13, 1.75 C5 0.13, 3.75 D5 0.13, 2.75 C5 0.13, 4.75 D5 0.13
 bar 4: 1 A3 0.13, 2 A3 0.13, 1.5 F#5 0.13, 2.5 E5 0.13, 1.25 D5 0.13, 2.25 C5 0.13, 1.75 D5 0.13, 2.75 C5 0.13, 3.5 E5 0.13, 3.25 B4 0.13, 3.75 B4 0.13, 3 G3 0.13, 4.5 B5 0.13, 4.25 G5 0.13, 4.75 E6 0.13, 4 G3 0.13
 bar 5: 1.5 E5 0.13, 1.25 B4 0.13, 1.75 B4 0.13, 1 G3 0.13, 2.5 B5 0.13, 2.25 G5 0.13, 2.75 E6 0.13, 2 G3 0.13, 3.5 D5 0.13, 3.25 A4 0.13, 3.75 A4 0.13, 3 F#3 0.13, 4.5 G4 0.13, 4.25 B4 0.13, 4.75 F#4 0.13, 4 G3 0.13
-
-## track 3 (triangle)
