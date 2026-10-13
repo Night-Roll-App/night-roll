@@ -245,3 +245,19 @@ It's fine to take the win tonight, though. In July you were writing riffs and th
 **Josh:** I reverted that and I made some more minor changes. I think I'm just getting too tired and screwing around too much and I'm just gonna stop for now but what do you think about the B part base now
 
 **AI (claude-code-sonnet):** It's cleaner. Every bar of the bass now holds one note and plays it twice, so the bass keeps its pulse while the melody and the long notes above it do the moving. The line itself has a shape: it rises to C3 in bar 27, drops low to E2 in bar 28, then climbs through F2 in bar 29 to B2 in bar 30, and bar 31 lifts from there to D3. That low-to-high climb through the last three bars of the B part carries the push into the turn. I like it better than the version where the second hit moved. Stopping while you're tired is a good call. One thing I noticed: the section labels for A, B and Turn aren't in the annotation list I see now, only tempo, key and the loop. If that wasn't on purpose, undo may bring them back.
+
+### 2026-10-13 00:47 · bars 1–18 (in view)
+
+**Josh:** I transposed the song down 3/2 steps because. It was just too close to C7 and I didn't like it but then I noticed. That my annotations are gone. At least in the UI they're gone except the loop one is still there and the tempo is there and. Well see is still there but that should not. Be there anymore that should be a major or really I think if Sharp minor that's what we're really in here. We're not in a major the song is starts on a minor. Cord and returns to minor cord I think it's an extra minor but anyway that's not the point the point is my section annotations are gone and I don't know how that happened. Or when it happened. At least I don't see them showing up in the UU
+
+**AI (claude-code-sonnet):** Checking the saved file and its history to see when the section labels vanished.Now find which publish dropped the sections.Your section labels are recoverable, because they were saved once. I checked the song's history and the labels (A, A with "Harmony on pulse2", A with "Melody on pulse2", B, Turn) are in the save from 11:27 pm. The very next save, at 11:29 pm, doesn't have them, and none of the later saves do either. So they were lost about 45 minutes before the transpose, and the transpose isn't what removed them. The app kept showing them until around 12:18 am, so I can't tell you why the saved copy and what you saw disagreed. I've sent it to the terminal along with the history, since it looks like another annotation-saving bug, possibly related to the loop one.
+
+Do you want me to put the five labels back? I won't touch your song without your okay. Also, the key annotation still says C. If you've decided it's F# minor, tell me and I'll change it to match.
+
+### 2026-10-13 00:48 · bars 1–30 (in view)
+
+**Josh:** Yes please put them all back
+
+**AI (claude-code-sonnet):** All five section labels are back: A in bars 1 to 8, A in 9 to 16 with "Harmony on pulse2", A in 17 to 24 with "Melody on pulse2", B in 25 to 31, and Turn in bar 32. The result lines didn't echo the two comments back, so glance at the middle two A labels to make sure the notes show. The terminal hasn't answered about why they vanished. That "note" at the top of your message was just the copy of my own message to it.
+
+**Mac (ask):** Josh (Ask): his ex-battle-theme section annotations vanished. Saved file had 5 at 47ab1807 (23:27), none from the next save 8f339eae (23:29) on. Details in open-items 2026-10-13.
