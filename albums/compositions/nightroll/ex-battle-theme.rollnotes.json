@@ -1,11 +1,6 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "ex-battle-theme", "origin": {"kind":"copy","from":"local/untitled-3.mid","at":"2026-10-13T01:39:59.760Z"}, "stamp": 1791862071665, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-battle-theme", "origin": {"kind":"copy","from":"local/untitled-3.mid","at":"2026-10-13T01:39:59.760Z"}, "stamp": 1791862185915, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"key","key":"C"},
-  {"at":[1,1],"to":[8,4],"type":"section","label":"A"},
-  {"at":[9,1],"to":[16,4],"type":"section","label":"A","note":"Harmony on pulse2"},
-  {"at":[17,1],"to":[24,4],"type":"section","label":"A","note":"Melody on pulse2"},
-  {"at":[25,1],"to":[31,4],"type":"section","label":"B"},
-  {"at":[32,1],"to":[32,4],"type":"section","label":"Turn"},
   {"at":[33,1],"type":"loop","loop":"9.1"}
 ] }
