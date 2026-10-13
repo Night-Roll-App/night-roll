@@ -126,6 +126,7 @@ nightly; `node tools/split/check.mjs` enforces the module rules.
 - [Carnival](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/carnival)
 - [Cool Bmaj Progression](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/cool-bmaj-progression)
 - [Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-battle-theme)
+- [Ex Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-ex-battle-theme)
 - [Fanfare](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/fanfare)
 - [Graveyard](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/graveyard)
 - [Graveyard 2](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/graveyard-2)
