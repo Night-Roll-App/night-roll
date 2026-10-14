@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI, TEST_TICKS_PER_NOTE, TEST_TICK_TARGET } from "../tools/spc/make-test-spc.mjs";
 import { parseSPC, runSPC, parseXid6, parseTrackName } from "../tools/spc/spc.mjs";
-import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC, spcRebin, SPC_SHAPE, PAN_STEP, rootFallback } from "../tools/spc/notes.mjs";
+import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC, spcRebin, SPC_SHAPE, PAN_STEP, rootFallback, isSpcKitGroup, SPC_KIT_PER_VOICE, SPC_KIT_GM_KEYS } from "../tools/spc/notes.mjs";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -587,4 +587,95 @@ test("EarthBound Giygas' Static (real SPC): its two held voices land in MIDI ran
   assert.ok(r.warnings.some(w => /default root/.test(w)));
   const warnings = []; makeMidi(r.events, {bpm: 120, frameSec: r.frameSec, volMax: 127, shape: SPC_SHAPE, warnings});
   assert.deepEqual(warnings, [], "nothing dropped now");
+});
+
+// ---- SNES sampled drums (markSpcKits / isSpcKitGroup; docs/plans/2026-10-13-snes-drums-and-track-tools.md) ----
+// Hand-built DSP logs with real BRR samples in RAM (DIR page $10): srcn 0 is a
+// one-shot noise burst (no root), srcn 1 a looped sine (a clear root).
+function kitSamples() {
+  const ram = new Uint8Array(0x10000);
+  let seed = 4242;
+  const noise = Int16Array.from({length: 1024}, () => { seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF; return (seed >> 8 & 0x3FFF) - 0x2000; });
+  const sine = Int16Array.from({length: 64}, (_, i) => Math.round(9000 * Math.sin(2 * Math.PI * i / 32)));
+  ram.set(encodeBRR(noise), 0x2000);
+  ram.set(encodeBRR(sine, {loopStart: 0}), 0x3000);
+  const dir = [[0x2000, 0x2000], [0x3000, 0x3000]];
+  dir.forEach(([s, l], i) => { ram[0x1000 + i * 4] = s & 255; ram[0x1001 + i * 4] = s >> 8; ram[0x1002 + i * 4] = l & 255; ram[0x1003 + i * 4] = l >> 8; });
+  const instruments = new Map();
+  [[0, 0x2000, 0x2000], [1, 0x3000, 0x3000]].forEach(([srcn, start, loop], id) => {
+    const key = srcn + "@" + start.toString(16);
+    instruments.set(key, {id, key, srcn, ...decodeBRR(ram, start, loop), uses: 0, voices: new Set()});
+  });
+  return {ram, instruments};
+}
+// hits: [[voice, srcn, seconds, pitch]] — one KON per hit
+function kitCapture(hits, secs) {
+  const {ram, instruments} = kitSamples();
+  const writes = [];
+  for (const v of new Set(hits.map(h => h[0]))) writes.push(...voiceRegs(v, 0));
+  for (const [v, srcn, s, pitch] of hits) {
+    writes.push([s - 0.001, v * 16 + 4, srcn], [s - 0.001, v * 16 + 2, pitch & 255], [s - 0.001, v * 16 + 3, pitch >> 8], ...kon(v, s));
+  }
+  const cap = dspCapture(writes, secs);
+  cap.dsp0[0x5D] = 0x10; cap.ram = ram; cap.instruments = instruments;
+  return cap;
+}
+const every = (n, v, srcn, pitch = 0x1000, step = 0.25) => Array.from({length: n}, (_, i) => [v, srcn, 0.1 + i * step, typeof pitch === "function" ? pitch(i) : pitch]);
+
+test("SNES kits: isSpcKitGroup is the rule — one-shot unpitched, >= DRUM_MIN_HITS, short, <= 2 keys; the constants are Josh's final rulings", () => {
+  assert.equal(SPC_KIT_PER_VOICE, true); assert.equal(SPC_KIT_GM_KEYS, true);
+  const g = {n: 16, unpitched: 16, medianSec: 0.1, keys: 1};
+  assert.equal(isSpcKitGroup(g), true);
+  assert.equal(isSpcKitGroup({...g, n: DRUM_MIN_HITS - 1, unpitched: DRUM_MIN_HITS - 1}), false, "too few hits");
+  assert.equal(isSpcKitGroup({...g, unpitched: 15}), false, "one pitched note");
+  assert.equal(isSpcKitGroup({...g, medianSec: DRUM_MAX_MEDIAN_DUR_SEC}), false, "too long");
+  assert.equal(isSpcKitGroup({...g, keys: 3}), false, "three keys = a melodic one-shot");
+});
+
+test("SNES kits: a one-shot noisy sample hit 16 times is a kit — kit:1 + kitmap, channel 10, a GM key; the same sample hit 4 times is melodic", async () => {
+  const r = reconstruct(kitCapture(every(16, 2, 0), 4.5));
+  assert.equal(r.events.length, 16);
+  assert.ok(r.events.every(e => e.unpitched && e.kit), "kit-marked: " + r.events.filter(e => !e.kit).length + " not");
+  assert.ok(r.warnings.some(w => /voice2 sample 0: .*16 hits, 1 key → drum kit/.test(w)), r.warnings.join("|"));
+  const {a} = await publishHop(midiOf(appEvents(kitCapture(every(16, 2, 0), 4.5))));
+  const tr = a.tracks.find(t => t.name === "voice2");
+  assert.equal(tr.kit, true);
+  assert.ok(tr.notes.every(n => n.ch === 9 || n.ch === undefined) && tr.notes.every(n => n.p >= 35 && n.p <= 81), "GM percussion keys");
+  assert.equal(Object.keys(tr.kitFrom).length, 1, "kitmap keeps the captured key: " + JSON.stringify(tr.kitFrom));
+  assert.ok(!tr.notes.some(n => n.p === +Object.values(tr.kitFrom)[0] && n.p !== +Object.keys(tr.kitFrom)[0]));
+  const few = reconstruct(kitCapture(every(4, 2, 0), 1.5));
+  assert.ok(few.events.every(e => !e.kit), "below DRUM_MIN_HITS: melodic");
+});
+
+test("SNES kits: a looped pitched sample is melodic; a one-shot on three keys is melodic (key guard)", () => {
+  assert.ok(reconstruct(kitCapture(every(16, 1, 1), 4.5)).events.every(e => !e.kit), "looped sine");
+  const three = reconstruct(kitCapture(every(16, 0, 0, i => [0x1000, 0x2000, 0x0800][i % 3]), 4.5));
+  assert.ok(three.events.every(e => !e.kit), "three keys");
+  assert.ok(three.warnings.some(w => /3 keys → left melodic/.test(w)));
+});
+
+test("SNES kits: two kit voices never both become the snare; a mixed voice keeps its melody on voiceN and appends \"voiceN kit\" after the last voice", async () => {
+  const hits = [...every(16, 2, 0, 0x1000), ...every(16, 4, 0, 0x2000, 0.25), ...every(10, 3, 1, 0x1000, 0.4), ...every(9, 3, 0, 0x1000, 0.5).map(h => [h[0], h[1], h[2] + 0.05, h[3]])];
+  const {a} = await publishHop(midiOf(appEvents(kitCapture(hits, 5))));
+  const names = a.tracks.map(t => t.name);
+  assert.deepEqual(names.filter(n => n.startsWith("voice")), ["voice2", "voice3", "voice4", "voice3 kit"].sort((x, y) => names.indexOf(x) - names.indexOf(y)), "order: " + names);
+  assert.equal(names[names.length - 1], "voice3 kit", "appended last");
+  const t = n => a.tracks.find(x => x.name === n);
+  assert.equal(t("voice2").kit, true); assert.equal(t("voice4").kit, true); assert.equal(t("voice3 kit").kit, true);
+  assert.ok(!t("voice3").kit, "the melody stays melodic");
+  const keys = [t("voice2"), t("voice4"), t("voice3 kit")].map(x => new Set(x.notes.map(n => n.p)));
+  assert.equal(new Set(keys.flatMap(k => [...k])).size, keys.reduce((s, k) => s + k.size, 0), "GM keys unique per song: " + keys.map(k => [...k]));
+});
+
+test("SNES kits: a noise-generator voice is its own kit track (voiceN, kit:1, channel 10) — no merged \"drums\" track", async () => {
+  const cap = noiseVoiceCapture(6, 10, Array.from({length: 16}, (_, i) => ({start: i * 0.25, dur: 0.1})));
+  const {a} = await publishHop(midiOf(spcRebin(reconstruct(cap).events, 5)));
+  assert.deepEqual(a.tracks.map(t => t.name), ["voice6"]);
+  assert.equal(a.tracks[0].kit, true);
+});
+
+test("SNES kits: the census fixture (tests/fixtures/spc-kit-groups.json) — The Battle's drums are kit, its looped voices and What?'s long s32 are not", () => {
+  const fx = JSON.parse(readFileSync(new URL("./fixtures/spc-kit-groups.json", import.meta.url), "utf8"));
+  assert.ok(fx.groups.length >= 15);
+  for (const g of fx.groups) assert.equal(isSpcKitGroup(g), g.kit, `${g.song} ${g.voice} sample ${g.srcn}`);
 });

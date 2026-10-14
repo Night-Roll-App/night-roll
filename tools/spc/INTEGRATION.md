@@ -161,6 +161,17 @@ NON/PMON/VOL/MVOL/mute/KOFF, the 60 s timing budget).
 - Loop/tempo detection reused from NSF assumes its NES frame floor; see
   the table above for the two constants to revisit.
 
+### Sampled drums (2026-10-13, capture version 3)
+
+`reconstruct` marks a (voice, sample) group `e.kit` when `isSpcKitGroup` says
+so: every note a one-shot with no clear root, at least `DRUM_MIN_HITS` hits,
+median length under `DRUM_MAX_MEDIAN_DUR_SEC`, at most `SPC_KIT_MAX_KEYS` (2)
+keys. `makeMidi` writes those notes on channel 10 with GM keys, a `kit:1` meta
+and a `kitmap:<gm>=<captured>` meta; a voice that also plays melody gets an
+appended `voiceN kit` track. Josh #429: one kit track per voice, GM keys.
+Details and tests: NIGHT-ROLL.md "SNES capture v2" ("Sampled drums"). The real
+rip test (tests/spc-rip.test.mjs) reads `SPC_RIPS` (default /tmp/recap/rips/snes).
+
 ## 5. Real rips (2026-09-27)
 
 Josh's five albums, downloaded from Zophar's Domain

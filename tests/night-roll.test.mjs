@@ -830,11 +830,47 @@ test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree 
      tracks: [{name: "ch 1 prog 3", notes: [{t: 0, d: 480, p: 60, v: 80, ch: 0}]},
               {name: "ch 8 prog 7", kit: true, midiPan: 0.5, offset: -12, ctl: [{t: 0, ch: 9, c: 7, v: 100}],
                notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 240, d: 120, p: 38, v: 90, ch: 9}]}]},
+    // SNES sampled drums (capture-detected kit): kit:1 + kitmap:<gm>=<captured> in both writers
+    {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+     tracks: [{name: "voice5", kit: true, kitFrom: {38: 67, 40: 51}, notes: [{t: 0, d: 120, p: 38, v: 100, ch: 9}, {t: 240, d: 120, p: 40, v: 90, ch: 9}]},
+              {name: "voice3", notes: [{t: 0, d: 240, p: 60, v: 80}]},
+              {name: "voice3 kit", kit: true, kitFrom: {49: 72}, notes: [{t: 480, d: 120, p: 49, v: 90, ch: 9}]}]},
   ];
   for (const [i, s] of fixtures.entries()) {
     const app = bytesFromApp(s), tools = Array.from(writeSongMidi(s));
     assert.deepEqual(app, tools, "fixture " + i + " diverges between the two writers");
   }
+});
+
+test("kitmap round-trips: parseMidi reads kitmap:<gm>=<captured> into track.kitFrom, only on a kit track, and both writers re-emit it", () => {
+  installSong();
+  const back = val(`(() => {
+    const s = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [{name: "voice5", kit: true, kitFrom: {40: 51, 38: 67}, notes: [{t: 0, d: 120, p: 38, v: 100, ch: 9}]}, {name: "voice1", kitFrom: {1: 2}, notes: [{t: 0, d: 120, p: 60, v: 100}]}]};
+    const parsed = parseMidi(writeMidi(s).buffer);
+    return parsed.tracks.map(t => [t.name, !!t.kit, t.kitFrom || null]);
+  })()`);
+  assert.deepEqual(back, [["voice5", true, {38: 67, 40: 51}], ["voice1", false, null]]);
+});
+
+test("a \"voiceN kit\" track rides on voiceN's render: chipHas/chipNoteSlice resolve it, scheduleNote never drums it while the render sounds, and chipStart makes no extra source", async () => {
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`createComposition(120, 4, 4); ensureAudio();
+       song.tracks = [{name: "voice3", notes: [{t: 0, d: 240, p: 60, v: 100}]}, {name: "voice3 kit", kit: true, notes: [{t: 480, d: 120, p: 38, v: 90, ch: 9}]}];
+       chip.key = songKey; chip.lead = 2; chip.pcm = null; chip.buffers = {voice3: {duration: 100, _tag: "v3"}}; chip.buffersCtx = audio; chip.stream = null;
+       globalThis.__drum = 0; globalThis.__src = 0;
+       drumHit = () => { globalThis.__drum++; };
+       audio.createBufferSource = () => { globalThis.__src++; return {connect() {}, disconnect() {}, start() {}, stop() {}, buffer: null, playbackRate: {value: 1}}; };`);
+  assert.equal(val(`chipSourceName("voice3 kit")`), "voice3");
+  assert.equal(val(`chipSourceName("voice13")`), "voice13");
+  assert.equal(val(`chipHas("voice3 kit")`), true, "the kit track has console audio (voice3's)");
+  assert.equal(val(`chipHas("voice9 kit")`), false, "…only when voice9 is rendered");
+  assert.equal(val(`chipNoteSlice(song.tracks[1], 38, 480) !== null`), true, "a kit note slices voice3's buffer");
+  run(`chipStart(0)`);
+  assert.equal(val(`chip.srcs.length`), 1, "one source for the one rendered voice — voice3 does not start twice");
+  run(`scheduleNote(1, {p: 38, v: 90, t: 480, d: 120, ch: 9}, audio.currentTime + 0.01, 0.2);`);
+  assert.equal(val(`globalThis.__drum`), 0, "the kit track does not drum on top of the render");
+  run(`chipStopSrcs(); chip.key = null; chip.buffers = null; audio = null;`);
 });
 
 test("writeMidi round-trip: CC10 pan, CC70 duty, aftertouch (ve) and per-note channel survive", () => {

@@ -1,0 +1,175 @@
+{
+ "_about": "Census facts (643 SNES songs, 2026-10-13) for isSpcKitGroup: one (voice, sample) group per row. Plan amendment C1: What? voice0 s32 is melodic by its MEDIAN, voices 1/2 s32 are kit.",
+ "groups": [
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice5",
+   "srcn": 38,
+   "n": 143,
+   "unpitched": 143,
+   "medianSec": 0.17,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice5",
+   "srcn": 39,
+   "n": 84,
+   "unpitched": 84,
+   "medianSec": 0.168,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice7",
+   "srcn": 36,
+   "n": 357,
+   "unpitched": 357,
+   "medianSec": 0.062,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice7",
+   "srcn": 37,
+   "n": 25,
+   "unpitched": 25,
+   "medianSec": 0.168,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice6",
+   "srcn": 35,
+   "n": 11,
+   "unpitched": 0,
+   "medianSec": 1.329,
+   "keys": 1,
+   "kit": false
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice0",
+   "srcn": 32,
+   "n": 8,
+   "unpitched": 0,
+   "medianSec": 0.073,
+   "keys": 1,
+   "kit": false
+  },
+  {
+   "song": "FF5 The Battle",
+   "voice": "voice1",
+   "srcn": 32,
+   "n": 16,
+   "unpitched": 0,
+   "medianSec": 0.074,
+   "keys": 1,
+   "kit": false
+  },
+  {
+   "song": "FF5 What?",
+   "voice": "voice0",
+   "srcn": 32,
+   "n": 52,
+   "unpitched": 52,
+   "medianSec": 0.541,
+   "keys": 1,
+   "kit": false
+  },
+  {
+   "song": "FF5 What?",
+   "voice": "voice1",
+   "srcn": 32,
+   "n": 164,
+   "unpitched": 164,
+   "medianSec": 0.128,
+   "keys": 2,
+   "kit": true
+  },
+  {
+   "song": "FF5 What?",
+   "voice": "voice2",
+   "srcn": 32,
+   "n": 136,
+   "unpitched": 136,
+   "medianSec": 0.275,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF5 What?",
+   "voice": "voice4",
+   "srcn": 34,
+   "n": 286,
+   "unpitched": 286,
+   "medianSec": 0.122,
+   "keys": 2,
+   "kit": true
+  },
+  {
+   "song": "FF5 The Fierce Battle",
+   "voice": "voice0",
+   "srcn": 32,
+   "n": 186,
+   "unpitched": 186,
+   "medianSec": 0.342,
+   "keys": 10,
+   "kit": false
+  },
+  {
+   "song": "FF5 The Fierce Battle",
+   "voice": "voice6",
+   "srcn": 37,
+   "n": 698,
+   "unpitched": 698,
+   "medianSec": 0.045,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF4 Main Theme",
+   "voice": "voice7",
+   "srcn": 69,
+   "n": 1056,
+   "unpitched": 1056,
+   "medianSec": 0.097,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF4 Main Theme",
+   "voice": "voice6",
+   "srcn": 68,
+   "n": 180,
+   "unpitched": 180,
+   "medianSec": 0.205,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF4 Main Theme",
+   "voice": "voice6",
+   "srcn": 67,
+   "n": 88,
+   "unpitched": 88,
+   "medianSec": 0.266,
+   "keys": 1,
+   "kit": true
+  },
+  {
+   "song": "FF4 Main Theme (Ocean)",
+   "voice": "voice6",
+   "srcn": 0,
+   "n": 21,
+   "unpitched": 0,
+   "medianSec": 4.003,
+   "keys": 1,
+   "kit": false
+  }
+ ]
+}

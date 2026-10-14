@@ -4706,6 +4706,11 @@ first-off, as parseMidi does) and gives one verdict:
   channels or text metas differ.
 - **ADDED-TRACK**: as above for every old track, plus new tracks after them
   (a DPCM track). No existing track number moves.
+- **KIT**: a SNES sampled-drum rewrite (SNES capture v2 "Sampled drums",
+  below). The new file's kit tracks are folded back first (`voiceN kit`
+  merged onto `voiceN`, notes back to their `kitmap` captured keys, the
+  `kit:1`/`kitmap` metas and channel-10 moves dropped); if that folded pair is
+  SAME or VELOCITY, the verdict is KIT. No beat and no track number moved.
 - **MOVED**: anything else: a note's start, length or pitch; a track
   removed, renamed or inserted in front; ppq; the tempo map or meter as
   the player reads them (a meta restating what is already in force does
@@ -4747,12 +4752,23 @@ albums/{nes,game-boy,snes,ps1,ps2,n64}/) it does four things:
    published annotations (every `.rollnotes.json` entry except the loop
    line), and plans an action:
    - SAME → skip.
-   - VELOCITY / ADDED-TRACK → replace.
-   - MOVED without annotations → replace. If the loop point changed, the
-     song is held instead (`hold-loop-changed`), because its loop line
-     lives in the `.rollnotes.json`.
-   - MOVED with annotations → keep the old song and add the new one as
-     `<base>-recapture.mid`, "<title> (re-capture)".
+   - VELOCITY / ADDED-TRACK / KIT → replace.
+   - **Any other verdict whose timeline is unchanged (same bar count, meter
+     and tempo map; `timelineSame` in the diff) → replace in place, annotated
+     or not.** Josh #436 (2026-10-13): "annotated songs get a `-recapture`
+     copy only if the timeline changes... if the song is the same and only
+     the drums moved, the annotations still hold." #437: the rule applies to
+     ALL re-captures, not just the drums. The `.rollnotes.json` is never
+     touched either way. This supersedes the 2026-10-07 "beats moved: always
+     a copy" rule for songs whose bars did not move.
+   - A changed timeline → keep the old song and add the new one as
+     `<base>-recapture.mid`, "<title> (re-capture)" (annotated or not).
+     If the row is itself a `-recapture` copy it is held
+     (`hold-recapture-copy`) instead: a copy of a copy would be
+     `<base>-recapture-recapture.mid`; list it in open-items.
+   - If the loop point changed on a song without annotations, the song is
+     held (`hold-loop-changed`), because its loop line lives in the
+     `.rollnotes.json`.
 4. Writes `out/<console>/<slug>/<base>.mid`, `work/<console>--<slug>.json`,
    `logs/`, and `report.json` + `report.md`. The report is rebuilt from
    every album in `work/`, so a one-album rerun updates it.
@@ -4768,6 +4784,10 @@ a capture album only. It never writes compositions/, starters/ or any
 `.rollnotes.json`, never deletes, and never overwrites an existing
 `-recapture` file. Old files stay in git history. A keep-old+add-new song's
 loop annotation is printed for Josh to add by hand.
+
+Rollback of an applied album: `git revert <the album's commit>`, then
+`node tools/build_manifest.mjs`, push with the hash check
+(`git rev-parse HEAD origin/main`).
 
 ## ✦ Ask — in-app AI (P1a + P2a + P3 shipped 2026-09-25; P2a's ✦ Fill button removed 2026-10-02 in favor of the write_notes tool, below; design: docs/design/local-llm-design.md)
 
@@ -7713,9 +7733,42 @@ names, tempo, meter — are v1's; the same code serves File → Import
   `n.env` (noteShapeRamp), CC10 events (per-note panner), CC91 (the shared
   reverb bus), bend (detune). The console voice replays the rip.
 
+**Sampled drums (capture version 3, 2026-10-13; docs/plans/2026-10-13-snes-
+drums-and-track-tools.md).** Josh #415/#426: The Battle's drums were pitched
+G4/C5/D#3 notes. Rulings #429, final and pinned in tools/spc/notes.mjs as
+`SPC_KIT_PER_VOICE` and `SPC_KIT_GM_KEYS`: one drum track per game voice, and
+drum notes rewritten to General MIDI drum keys.
+- **Rule** (generic, no game table): `isSpcKitGroup({n, unpitched, medianSec,
+  keys})` over each (voice, sample) group: every note a one-shot with no
+  clear root (`unpitched`), at least `DRUM_MIN_HITS` (8) notes, median length
+  under `DRUM_MAX_MEDIAN_DUR_SEC` (0.5 s), and at most `SPC_KIT_MAX_KEYS` (2)
+  distinct keys. `markSpcKits` (after the noise rule, in `reconstruct`) sets
+  `e.kit`; each decision is a fact in the capture warnings (ⓘ on demand).
+  A surviving noise-generator voice is a kit too (per voice, no merged
+  `drums` track any more). The rule is pinned by tests/fixtures/
+  spc-kit-groups.json (census facts) and a real-rip test (spc-rip).
+- **Writer** (`makeMidi`): `e.kit` notes go to channel 10 with a `kit:1` text
+  meta and no program. `guessKit` runs once over the whole song, each
+  (voice, sample, captured key) one kit voice, so two voices never both
+  become "snare"; keys are made unique per song (`uniqueGmKeys`, shared with
+  the NES dpcm track). A text meta `kitmap:<gm>=<captured>,...` keeps the
+  game's own keys (`tr.kitFrom` in the app; both writers round-trip it).
+- **Naming.** A voice that plays only kit hits keeps its name `voiceN` (the
+  console render pairs by name; no track number moves). A voice that also
+  plays melody keeps its melody on `voiceN`, and its kit hits go to
+  `voiceN kit`, APPENDED after the last voice in voice order (the dpcm
+  precedent: no existing track number moves).
+- **Render pairing** (`chipSourceName`, chip.js): `voiceN kit` has no buffer;
+  its sound is inside `voiceN`'s. `chipHas`, `chipNoteSlice` and the pan lookup
+  resolve through it, so the kit track never drums on top of the render;
+  `chipStart` iterates the render's buffers and never resolves, so voiceN
+  never starts twice. Muting `voiceN kit` silences it only under Hear the
+  MIDI; in game sound its hits ride on `voiceN` (and muting `voiceN` mutes
+  them too) (Josh decided Q-A "OK for now").
+
 Re-capture verdicts (main's capture vs v2's, tools/capture-diff.mjs;
 scratch trees in /tmp, nothing under albums/ written): open-items "SNES
-capture v2".
+capture v2". The sampled-drum rewrite grades KIT, not MOVED.
 
 Tests: tests/spc.test.mjs "SNES capture v2 …" — hand-built DSP logs for
 each feature (ADSR decay + VOL step → shape; L/R → CC10 with the jitter
