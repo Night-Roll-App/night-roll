@@ -33,7 +33,7 @@ export function cmpDiff(repoTracks, curTracks) { // tick+pitch is a note's ident
   }
   return out;
 }
-export function drawCompare(ppt, rowH, W, H) { // outlines only: red = the saved copy's note, gold = yours; dashed = absent from what you hear
+export function drawCompare(ppt, rowH, W, H) { // outlines only: red = the saved copy's note, cyan = yours (gold is the lasso's, Josh #389); dashed = absent from what you hear
   const rect = (n, ti) => {
     const x = S.RULER_W + n.t * ppt - S.view.x, w = Math.max(3, n.d * ppt - 1);
     if (x + w < S.RULER_W || x > W) return null;
@@ -49,7 +49,7 @@ export function drawCompare(ppt, rowH, W, H) { // outlines only: red = the saved
     ctx.strokeStyle = "#e66767"; ctx.setLineDash(mine ? [4, 3] : []);
     for (const n of t.removed) stroke(n, t.ti);
     for (const c of t.changed) stroke(c.was, t.ti);
-    ctx.strokeStyle = css("--gold"); ctx.setLineDash(mine ? [] : [4, 3]);
+    ctx.strokeStyle = css("--cmp-mine"); ctx.setLineDash(mine ? [] : [4, 3]);
     for (const n of t.added) stroke(n, t.ti);
     for (const c of t.changed) stroke(c.now, t.ti);
   }

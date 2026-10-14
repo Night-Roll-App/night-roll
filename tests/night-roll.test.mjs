@@ -15878,3 +15878,13 @@ test("an edit while playing is heard on its way, no stop/play needed", async () 
   r(`stop();`);
 });
 
+
+test("Publish turns Compare off for the open song — the saved copy is now yours, nothing left to compare (Josh, Terminal #390)", async () => {
+  const KEY = "albums/compositions/nightroll/cmp-publish.mid";
+  const a = await pubApp();
+  useFakeFolder(a, "cmppub");
+  openComposition(a, KEY, {});
+  a.run(`cmp = {repo: song.tracks, showing: "mine", mine: null, diff: {tracks: [], added: 0, removed: 0, changed: 0}};`);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  assert.equal(a.run(`cmp`), null, "compare is off after Publish");
+});

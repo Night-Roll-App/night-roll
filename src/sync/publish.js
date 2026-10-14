@@ -45,6 +45,7 @@ import { filesMirror } from "../model/versions.js";
 import { filesMirrorFor } from "../model/versions.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { drawImpl as draw } from "../ui/chrome.js";
+import { cmpExit } from "../ui/chrome.js";
 import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
 import { renderSyncPending } from "../ui/sheets.js";
 import { clearTombstonesFor } from "../model/edits.js";
@@ -472,6 +473,7 @@ export async function publishSong(key, h, report) {
   if (hisMusic && doc) { if (isOpen) await filesMirror(); else await filesMirrorFor(key, doc, content).catch(() => {}); } // the iPad app: the Files copy follows every Publish, not just the open song's (Bugs found)
 
   markPublished(key, stamp, content, {midSig: doc ? midSig : undefined});
+  if (isOpen) cmpExit(); // published: the saved copy is now yours, nothing left to compare (Josh, Terminal #390)
   return {wroteMid};
 }
 // clips are addressed only by filename — audioDirFor(key) derives WHERE they

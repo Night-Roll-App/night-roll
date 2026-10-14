@@ -1071,7 +1071,7 @@ export function cmpBar() {
   txt.innerHTML = "";
   const add = (t, cls) => { const sp = document.createElement("span"); if (cls) sp.className = cls; sp.textContent = t; txt.appendChild(sp); };
   add("⇄ compare · hearing " + (mine ? "YOUR version" : "the SAVED copy") + " · ");
-  add("+" + d.added + " yours only", "gold"); add(" · ");
+  add("+" + d.added + " yours only", "mine"); add(" · ");
   add("−" + d.removed + " saved only", "red"); add(" · ");
   add("~" + d.changed + " changed" + (d.tracks.some(t => t.ti < 0) ? " · a deleted track is counted, not drawn" : ""));
   document.getElementById("cmpswap").textContent = mine ? "hear the saved copy" : "hear your version";
@@ -1356,7 +1356,7 @@ export async function cmpEnter() {
   cmpBar();
   draw();
   const d = S.cmp.diff;
-  setInfo(d.tracks.length ? "compare: gold = only in yours, red = only in the saved copy, dashed = not in what you hear" : "compare: your version matches the saved copy note for note");
+  setInfo(d.tracks.length ? "compare: cyan = only in yours, red = only in the saved copy, dashed = not in what you hear" : "compare: your version matches the saved copy note for note");
 }
 export function cmpExit() {
   if (!S.cmp) return;
