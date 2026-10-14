@@ -1045,7 +1045,9 @@ export async function hearTrackSound(ti) {
   const rep = pool.find(n => n.p === pitch);
   ensureAudio();
   tapSoundSession();
+  const songKey = S.songKey;
   await resumeAudio();
+  if (S.songKey !== songKey) return false; // the song changed during the await: tr/rep belong to the old one
   openMaster();
   const explicit = typeof tr.voice === "string" && tr.voice !== "auto";
   if (!explicit && live.length && isCaptureKey(S.songKey)) {
@@ -1063,7 +1065,7 @@ export async function hearTrackSound(ti) {
       const slice = chipNoteSlice(tr, pitch, rep.t);
       if (slice) { playChipSlice(ti, tr, slice); return true; }
     }
-    setInfo("game sound still loading — try again in a moment");
+    setInfo(chip.refusedKey === S.songKey ? "game sound isn't available for this song (too big for this device's memory)" : "game sound still loading — try again in a moment");
     return false;
   }
   scheduleNote(ti, {p: pitch, v: 90, ch: tr.kit === true ? 9 : 0, t: rep.t, d: rep.d, _preview: true}, S.audio.currentTime + 0.01, 0.5);

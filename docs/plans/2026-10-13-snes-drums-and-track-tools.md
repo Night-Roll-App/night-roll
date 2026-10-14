@@ -332,7 +332,7 @@ Check it against the render slice in a vm test:
 - envelope correlation ≥ 0.99, the bar `tools/instruments/verify.mjs`
   already uses.
 
-This also covers the iPad stream mode. Doc sweep: NIGHT-ROLL.md.
+SNES never streams (no `stream:` in RUNNERS.spc), so this does not touch iPad stream mode; a render the memory budget refuses gets the status "game sound isn't available for this song". Doc sweep: NIGHT-ROLL.md.
 
 ### Step 6 (scope decision first, Q-D): PS1 looped cymbals with no root
 
@@ -643,3 +643,29 @@ VAB with a looped noise sample via makeTestVAB({wash: true}), and a real-rip
 test for FF8 Dead End, skipped without a rip; NR_PS1_RIPS points it at a rip
 cache). Re-capture of published PS1/PS2 songs is NOT done here (KIT verdict,
 one album per push, tools/recapture.mjs): queued in open-items.
+
+### Step 6 follow-up: the ≥ 12-note branch (Fable review, 2026-10-14; facts only, no ear)
+
+Bug: a looped, rootless, noise-like sample struck 12+ times at ONE pitch with
+median ≥ 1 s went to `pedalProgram`, whose looped branch returns pedal
+regardless of root and harmonicity, so a crash on every downbeat stayed a
+"held C5". Fix: `kitify` tests `cymbalProgram` before `pedalProgram` in the
+≥ 12 branch (`cymbalProgram(...) || !pedalProgram(...)`). The branch still
+needs exactly one pitch, so a chord part (FF9 Hilda Garde 129, six pitches)
+cannot reach it; tests/psx.test.mjs covers it synthetically and on the real rip.
+
+Sizing, run BEFORE the code change: every PS1 album captured (rips from the
+archive), every non-kit program of exactly one pitch, ≥ 12 notes, that
+`pedalProgram` kept melodic, and whose first sample is looped / root null /
+harmonicity < 0.6 (median approximated from ticks at the first tempo, so the
+1 s and 6 s edges are approximate). Flips per album: FF7 4, FF8 1, FF9 0,
+Chrono Cross 0, Parasite Eve 0, Saga Frontier 11. Total 16 programs in 16
+songs, every one a single channel.
+
+Hand-checks (hits, pitch, notes, loop/root/harmonicity, beat positions):
+1. FF7 mako-reactor prog 7: 14 hits, one pitch, looped, no root, h 0.35, all on beat 0.
+2. FF7 one-winged-angel prog 54: 16 hits, one pitch, looped, no root, h 0.51, beats 2 and 3.
+3. FF7 still-more-fighting prog 65: 29 hits, one pitch, looped, no root, h 0.23, beats 0, 1, 3, 3.5.
+4. FF8 the-landing-demo prog 68: 20 hits, one pitch, looped, no root, h 0.14, beats 1.5 and 3.5.
+5. Saga Frontier battle-2 prog 21: 24 hits, one pitch, looped, no root, h 0.32 (the one 0.17 s noise loop shared by all 11), beats 0, 1, 2, 3.
+Saga Frontier's 11 are all program 21, the same sample as the under-12 flips.

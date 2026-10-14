@@ -32,7 +32,8 @@ export function isPedalTone({facts = null, medianSec}) {
 // noise-like spectrum (harmonicity under CYMBAL_HARM) is a cymbal wash, not a
 // pitch: its loop keeps it ringing, so it showed as a long held note at the
 // default pitch. A roll of minutes (an ambience bed) is a texture, left alone.
-// Looped + no root + noisy + ≥ 12 notes stays the pedal guard's call above.
+// Looped + no root + noisy wins over the pedal guard above at ≥ 12 notes of ONE pitch too
+// (kitify tests it first): a rootless noise loop is never a pedal tone.
 export const CYMBAL_HARM = 0.6;
 export const CYMBAL_MAX_SEC = 6;
 export const CYMBAL_MAX_PITCHES = 2; // two channels may strike the one wash at their own keys (FF9 Hilda Garde: 58 and 63); a rootless loop carries no melody anyway

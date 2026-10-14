@@ -22,7 +22,8 @@ import { loudFileHash } from "./loudness.js";
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-export const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null};
+export const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
+// refusedKey: the song key whose render the memory budget refused (planChipRender plan.refuse) — hear-sound says "not available" for it instead of "still loading"
 // kind/loud: the render's chip and its loudness ({lufs, peak, synth?, src}) for the song gain (audio/levels.js); pendingLoud: {key, loud, cacheKey} from chipSource, until the render publishes
 // no toggle: chip audio is automatic wherever a source resolves
 // stream: non-null only in stream mode (docs/streamed-render-plan.md step 3,
@@ -250,6 +251,8 @@ export function chipWorkerAvailable() { return typeof Worker !== "undefined" && 
 export const chipPreviewPending = new Map();
 // req → resolve, for one-note previews answered by the live worker
 export const chipPreviewCache = new Map();
+const CHIP_PREVIEW_CAP_BYTES = 24 * 1024 * 1024;
+function chipPreviewBytes() { let n = 0; for (const v of chipPreviewCache.values()) n += v.bytes || 0; return n; }
 // "song|track|midi[|p<prog>]" → AudioBuffer, so a repeated tap is instant
 export const chipPreviewProgAt = new Map();
 // the game's own instrument for ONE note, or null (synth then). offset:
@@ -285,8 +288,9 @@ export async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq, songS
   // took the group's FIRST note, so every tick shared one wrong-program key)
   if (tick != null && reply.prog != null) chipPreviewProgAt.set(S.songKey + "|" + name + "|" + tick, reply.prog);
   const finalKey = S.songKey + "|" + name + "|" + midi + (reply.prog != null ? "|p" + reply.prog : "");
-  if (chipPreviewCache.size > 300) { chipPreviewCache.clear(); chipPreviewProgAt.clear(); }
-  chipPreviewCache.set(finalKey, {ctx: S.audio, buf});
+  const bytes = buf.length * buf.numberOfChannels * 4;
+  if (chipPreviewCache.size && chipPreviewBytes() + bytes > CHIP_PREVIEW_CAP_BYTES) { chipPreviewCache.clear(); chipPreviewProgAt.clear(); } // cap by bytes: a SNES stereo reply is ~460 KB, a count of 300 would hold ~140 MB
+  chipPreviewCache.set(finalKey, {ctx: S.audio, buf, bytes});
   return buf;
 }
 // "Hear the MIDI" (Josh, 2026-10-06, #163): a device-local listening switch —
@@ -929,7 +933,7 @@ export async function chipRender() {
     const canStream = !!CHIPS[kind].stream;
     const stereo = !!CHIPS[kind].stereo && !(CHIPS[kind].stereoBudgetMin && budget < CHIPS[kind].stereoBudgetMin);
     const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: stereo ? 2 : 1, budget, canStream});
-    if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
+    if (plan.refuse) { chip.refusedKey = forKey; throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB"); }
     if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
     if (canStream) { // chunk by chunk, straight into the kept buffers (2026-09-30: peak ≈ kept + one chunk, not ~3x — chipRenderStreamed's own comment)
       let out;

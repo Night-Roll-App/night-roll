@@ -330,16 +330,33 @@ test("cymbal wash (step 6, Q-D): one pitch under 12 notes on a looped, rootless,
   assert.equal(channelGroups((kitify(two), two))[0].kit, true, "two pitches: a wash struck by two channels");
   const three = mk(3, 960, 480); three.notes[1].pitch = three.notes[1].key = 74; three.notes[2].pitch = three.notes[2].key = 76;
   assert.equal(channelGroups((kitify(three), three))[0].kit, false, "three pitches: not a wash");
-  const many = mk(12, 48000, 40000); // the ≥ 12 rule keeps its pedal guard: looped and held stays pitched
-  assert.equal(channelGroups((kitify(many), many))[0].kit, false, "12 held notes: the pedal guard's call, unchanged");
+  const many = mk(12, 2400, 1920); // ≥ 12 held notes of a rootless noise loop (a crash on every downbeat): never a pedal tone
+  assert.equal(channelGroups((kitify(many), many))[0].kit, true, "12 held notes of a rootless noise loop: a cymbal, not a held pitch");
+  assert.match(many.seq.warnings.join("\n"), /prog 0: one pitch ×12 on a looped sound with no root/);
+  const chord = mk(12, 2400, 1920); // the ≥ 12 rule needs ONE pitch: six pitches (a chord part) never flips
+  [60, 62, 64, 65, 67, 69].forEach((k, i) => { chord.notes[i].pitch = chord.notes[i].key = k; });
+  assert.equal(channelGroups((kitify(chord), chord))[0].kit, false, "6 pitches ×12 on a wash sample: a chord part, never a kit");
 });
 
-const HILDA = (process.env.NR_PS1_RIPS || "/tmp/recap/rips/ps1") + "/final-fantasy-8/dead-end.psf";
-test("cymbal wash, real rip: FF8 Dead End's program 66 (one pitch ×10, looped noise) is kit", {skip: existsSync(HILDA) ? false : "no rip at " + HILDA, timeout: 60000}, async () => {
+// FF9 The Airship Hilda Garde, program 129: six pitches, a chord part over the whole song — must never flip.
+const HILDA = (process.env.NR_PS1_RIPS || "/tmp/recap/rips/ps1") + "/final-fantasy-9/the-airship-hilda-garde.psf";
+test("cymbal wash, real rip: FF9 Hilda Garde program 129 (six pitches, chord part) stays melodic", {skip: existsSync(HILDA) ? false : "no rip at " + HILDA, timeout: 60000}, async () => {
   const { captureFile } = await import("../tools/percussion-census.mjs");
   const dir = HILDA.replace(/[^/]+$/, "");
   const lib = readdirSync(dir).find(x => /\.psflib$/.test(x));
-  const { result } = await captureFile(HILDA, {readLib: () => lib ? readFileSync(dir + lib) : null, name: "dead-end.psf"});
+  const { result } = await captureFile(HILDA, {readLib: n => { const f = readdirSync(dir).find(x => x.toLowerCase() === n.toLowerCase()); return f ? readFileSync(dir + f) : (lib ? readFileSync(dir + lib) : null); }, name: "the-airship-hilda-garde.psf"});
+  const ns = result.notes.filter(n => n.program === 129);
+  assert.ok(ns.length && new Set(ns.map(n => n.pitch)).size >= 6, "program 129 plays six or more pitches");
+  const groups = channelGroups(result);
+  assert.ok(ns.every(n => !groups.find(g => g.notes.includes(n)).kit), "program 129 is not a kit group");
+});
+
+const DEAD_END = (process.env.NR_PS1_RIPS || "/tmp/recap/rips/ps1") + "/final-fantasy-8/dead-end.psf";
+test("cymbal wash, real rip: FF8 Dead End's program 66 (one pitch ×10, looped noise) is kit", {skip: existsSync(DEAD_END) ? false : "no rip at " + DEAD_END, timeout: 60000}, async () => {
+  const { captureFile } = await import("../tools/percussion-census.mjs");
+  const dir = DEAD_END.replace(/[^/]+$/, "");
+  const lib = readdirSync(dir).find(x => /\.psflib$/.test(x));
+  const { result } = await captureFile(DEAD_END, {readLib: () => lib ? readFileSync(dir + lib) : null, name: "dead-end.psf"});
   const groups = channelGroups(result);
   for (const prog of [66]) {
     const ns = result.notes.filter(n => n.program === prog);

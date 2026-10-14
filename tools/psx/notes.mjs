@@ -313,7 +313,7 @@ export function kitify(result) {
   for (const [p, evs] of byProg) {
     if (drumProgs.has(p)) continue;
     const pitches = new Set(evs.map(n => n.pitch));
-    if (evs.length >= 12 ? pitches.size === 1 && !pedalProgram(result, evs) : pitches.size <= CYMBAL_MAX_PITCHES && cymbalProgram(result, evs)) drumProgs.add(p);
+    if (evs.length >= 12 ? pitches.size === 1 && (cymbalProgram(result, evs) || !pedalProgram(result, evs)) : pitches.size <= CYMBAL_MAX_PITCHES && cymbalProgram(result, evs)) drumProgs.add(p);
   }
   const perc = notes.filter(n => !melodic.has(n) && (n.drum || drumProgs.has(n.program)));
   const guess = [];

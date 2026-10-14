@@ -1,6 +1,6 @@
 import { play } from "../audio/transport.js";
 import { playSec } from "../audio/transport.js";
-import { setHearMidi } from "../audio/chip.js";
+import { setHearMidi, chip } from "../audio/chip.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
 import { FILE_UNDER } from "../model/rollnotes.js";
@@ -1321,7 +1321,7 @@ export async function askHearSound(a) {
   const name = S.song.tracks[ti].name || "track " + (ti + 1);
   if (S.song.tracks[ti].kind === "audio") throw new Error(name + " is a recording — it has no game sound to hear");
   const ok = await hearTrackSound(ti);
-  return {ok, note: ok ? "playing one note of " + name : "nothing played for " + name + " — " + (S.song.tracks[ti].notes.some(n => !n.gone) ? "game sound still loading — try again in a moment" : "no notes on it")};
+  return {ok, note: ok ? "playing one note of " + name : "nothing played for " + name + " — " + (S.song.tracks[ti].notes.some(n => !n.gone) ? (chip.refusedKey === S.songKey ? "game sound isn't available for this song (too big for this device's memory)" : "game sound still loading — try again in a moment") : "no notes on it")};
 }
 // mark_drums (voice menu: These are drums / Not drums): the track: directive's
 // `drums` field — the song's own mark, which sets the track aside from (or into)

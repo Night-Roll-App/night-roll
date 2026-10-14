@@ -3623,7 +3623,7 @@ voice plays that voice; a track that is not from a capture plays its synth
 voice. A capture whose game sound is not ready (render loading, stream chunk
 not cached, Genesis) plays NOTHING and the status line reads "game sound
 still loading — try again in a moment" (Josh's plan Q-E: no synth stand-in, it
-would mislead drum identification). The slice player is `playChipSlice`,
+would mislead drum identification). SNES never streams (no `stream:` in RUNNERS.spc), so the worker note answers there once the emulation run finishes; a song whose render the memory budget refused (`chip.refusedKey`, set by `plan.refuse`) never gets a render and no worker answer, and the line reads "game sound isn't available for this song (too big for this device's memory)" instead — there is no fallback renderer for it. `chipPreviewCache` is capped by bytes (24 MB), not entries. The slice player is `playChipSlice`,
 shared with `previewNote`.
 
 **SNES with no render (plan step 5, 2026-10-14).** The worker keeps a compact
