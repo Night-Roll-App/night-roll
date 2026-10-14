@@ -27,6 +27,10 @@
     "path": "albums/nes/final-fantasy-i/songs/epilogue.mid"
    },
    {
+    "title": "Ending Theme (re-capture)",
+    "path": "albums/nes/final-fantasy-i/songs/epilogue-recapture.mid"
+   },
+   {
     "title": "Floating Castle",
     "path": "albums/nes/final-fantasy-i/songs/floating-castle.mid"
    },

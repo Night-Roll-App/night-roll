@@ -12,7 +12,8 @@
   "menu": "Menu Screen",
   "epilogue": "Ending Theme",
   "game-over": "Dead Music",
-  "matoyas-cave": "Matoya's Cave"
+  "matoyas-cave": "Matoya's Cave",
+  "epilogue-recapture": "Ending Theme (re-capture)"
  },
  "nsf": {
   "vault": "nes/ff1.nsf",
@@ -67,8 +68,8 @@
     "secs": 60,
     "track": 4,
     "cap": {
-     "v": 2,
-     "code": "bfb0ea84"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -301,6 +302,22 @@
      "peak": -5.9,
      "synth": -9.4
     }
+   },
+   "epilogue-recapture": {
+    "n": 3,
+    "secs": 270,
+    "track": 18,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -16.2,
+     "peak": -7,
+     "synth": -8.3
+    },
+    "rip": "epilogue"
    }
   }
  }
