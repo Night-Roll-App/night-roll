@@ -5,7 +5,7 @@ import { romanPretty } from "../theory/chords.js";
 import { beatTicks } from "./grid.js";
 import { beatsPerBarDisp } from "./grid.js";
 import { snapBeat } from "./grid.js";
-import { tombKeyFor } from "./edits.js";
+import { tombKeyFor, tombstone } from "./edits.js";
 import { noteIdentity } from "./edits.js";
 import { retireEdited } from "./edits.js";
 import { saveLocalNotes } from "./edits.js";
@@ -608,8 +608,12 @@ export function notesTxtFor(doc, key) { // defaults to the open song; Publish al
 // true beat. Only an exact anchor collision is a replacement. The keyset
 // button always sets q1:1, so it still replaces the bar's downbeat key.
 export function dropLocalKeyAt(bar, q = 1) {
-  S.rollnotes = S.rollnotes.filter(n =>
-    !((n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q));
+  const isHit = n => (n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q;
+  // a PUBLISHED key (no `added`) dropped without a tombstone came straight back
+  // from the repo file on the next load/Publish — two keys at one anchor in a
+  // real song. tombstone() skips never-synced notes (they die with saveLocalNotes).
+  S.rollnotes.filter(isHit).forEach(tombstone);
+  S.rollnotes = S.rollnotes.filter(n => !isHit(n));
 }
 
 // subtract tombstoned deletions (docs/provenance-plan.md P2: factored out of

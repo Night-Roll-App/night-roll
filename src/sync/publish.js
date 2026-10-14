@@ -1,7 +1,8 @@
 import { S } from "../state.js";
 import { folderActive } from "../platform/folder.js";
 import { folderWrite } from "../platform/folder.js";
-import { repoApi } from "../platform/storage.js";
+import { repoApi, idbRepoPut } from "../platform/storage.js";
+import { EDITION } from "../edition.js";
 import { forEachClip } from "../audio/clips.js";
 import { idbAudioGet } from "../platform/storage.js";
 import { audioDirFor } from "../audio/clips.js";
@@ -136,7 +137,8 @@ export async function uploadAudioClipsFor(key, notes, h, report) {
 }
 export async function putMidAt(path, h, bytes) { // PUT a .mid (current song unless bytes given), one stale-sha retry
   if (folderActive()) { await folderWrite(path, bytes || writeMidi(S.song)); return {ok: true, status: 200}; }
-  const data = midiBase64(bytes || writeMidi(S.song));
+  bytes = bytes || writeMidi(S.song);
+  const data = midiBase64(bytes);
   const putOnce = async () => {
     let sha = null;
     const g = await fetch(repoApi("songs") + path + "?ref=main", {headers: h, cache: "no-store"});
@@ -148,6 +150,7 @@ export async function putMidAt(path, h, bytes) { // PUT a .mid (current song unl
   };
   let r = await putOnce();
   if (r.status === 409) r = await putOnce();
+  if (r.ok && EDITION === "app") await idbRepoPut("songs:" + path, new Uint8Array(bytes).buffer); // device copy = what was just published (see putRollnotes)
   return r;
 }
 // Returns true if the file is gone (deleted, or never there). A failed DELETE
@@ -264,6 +267,9 @@ export async function putRollnotes(path, content, headers) { // PUT with one sta
   };
   let r = await putOnce();
   if (r.status === 409) r = await putOnce();
+  // the app's repoCopy falls back to its device copy when GitHub is slow (>4 s):
+  // keep that copy exactly what this device just published, never older
+  if (r.ok && EDITION === "app") await idbRepoPut("analysis:" + path, new TextEncoder().encode(content).buffer);
   return r;
 }
 // opts.keepDraft: annotations went up without the .mid

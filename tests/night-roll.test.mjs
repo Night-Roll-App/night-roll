@@ -12728,6 +12728,63 @@ test("Publish: a deleted synced note isn't re-published, and its tombstone clear
   assert.equal(a.run(`localStorage.getItem("ff1roll-tombs-" + ${JSON.stringify(KEY)})`), null, "its tombstone cleared — the pushed file IS the post-deletion state");
 });
 
+test("Publish: replacing a PUBLISHED key annotation tombstones the old one — publish, replace, publish, reload leaves exactly one", async () => {
+  const KEY = "albums/nes/final-fantasy-i/songs/key-swap.mid";
+  const PATH = "albums/nes/final-fantasy-i/songs/key-swap.rollnotes.json";
+  const a = await pubApp();
+  useFakeFolder(a, "keyswap");
+  const published = '{ "version": 1, "song": "key-swap", "notes": [\n' +
+    '  {"at":[1,1],"text":"key: C"},\n  {"at":[5,1],"text":"a plain note"}\n] }\n';
+  await a.run(`folderWrite(${JSON.stringify(PATH)}, ${JSON.stringify(published)})`);
+  // the song is open with its published file loaded (synced: no added flag)
+  openComposition(a, KEY);
+  a.run(`rollnotes = parseRollnotes(${JSON.stringify(published)}).map(resolveNote); finalizeNotes();`);
+  assert.equal(a.run(`rollnotes.filter(n => n.keydir !== undefined).length`), 1, "the published key loaded");
+  // replace it: exactly what the key editor does
+  a.run(`
+    dropLocalKeyAt(1, 1);
+    const k = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "key: D"}])[0]);
+    k.added = true; rollnotes.push(k); finalizeNotes(); saveLocalNotes();
+  `);
+  assert.equal(a.run(`JSON.parse(localStorage.getItem("ff1roll-tombs-" + songKey) || "[]").length`), 1, "the replaced published key is tombstoned");
+  const keysIn = text => JSON.parse(text).notes.filter(n => n.type === "key").map(n => "key: " + n.key);
+  // a reload before any publish: repo copy - tombstones + local additions
+  assert.deepEqual(a.run(`mergeLocalAdditions(subtractTombstones(parseRollnotes(${JSON.stringify(published)}), songKey), songKey).filter(n => n.keydir !== undefined).map(n => n.text)`), ["key: D"], "reload before publishing: one key");
+  // publish as a song that is NOT open (builds from the repo file + tombstones + local additions)
+  a.run(`songKey = "midi/other.mid"; song = null;`);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  assert.deepEqual(keysIn(await folderText(a, PATH)), ["key: D"], "the file holds exactly one key after publish");
+  assert.deepEqual(a.run(`subtractTombstones(parseRollnotes(${JSON.stringify(await folderText(a, PATH))}), ${JSON.stringify(KEY)}).filter(n => n.keydir !== undefined).map(n => n.text)`), ["key: D"], "and after reload");
+});
+
+test("Publish (app): the device copy repoCopy falls back to is refreshed with the exact bytes published — annotations and .mid", async () => {
+  const a = await createApp({edition: "app"});
+  a.run(`__puts = []; __repo = {};
+    folderActive = () => false;
+    idbRepoPut = (k, b) => { __repo[k] = b; return Promise.resolve(true); };
+    fetch = async (u, o) => (o && o.method === "PUT")
+      ? (__puts.push(JSON.parse(o.body)), {ok: true, status: 200})
+      : {ok: false, status: 404};`);
+  const text = '{ "version": 2, "notes": [ {"at":[1,1],"text":"caf\u00e9"} ] }\n';
+  const r = await a.run(`putRollnotes("albums/x/y/z.rollnotes.json", ${JSON.stringify(text)}, {})`);
+  assert.ok(r.ok);
+  const got = a.run(`new TextDecoder().decode(__repo["analysis:albums/x/y/z.rollnotes.json"])`);
+  assert.equal(got, text, "the stored copy is the published text, byte for byte");
+  const midi = [77, 84, 104, 100, 0, 255, 128];
+  await a.run(`putMidAt("albums/x/y/z.mid", {}, new Uint8Array(${JSON.stringify(midi)}))`);
+  assert.deepEqual([...a.run(`new Uint8Array(__repo["songs:albums/x/y/z.mid"])`)].map(Number), midi, "the .mid copy too");
+  // a failed PUT leaves the old copy alone
+  a.run(`__repo = {}; fetch = async (u, o) => (o && o.method === "PUT") ? {ok: false, status: 500} : {ok: false, status: 404};`);
+  await a.run(`putRollnotes("albums/x/y/z.rollnotes.json", "x", {})`);
+  assert.equal(a.run(`Object.keys(__repo).length`), 0, "nothing stored when the publish failed");
+  // the web edition keeps no device copy
+  const w = await createApp();
+  w.run(`__repo = {}; folderActive = () => false; idbRepoPut = (k, b) => { __repo[k] = b; return Promise.resolve(true); };
+    fetch = async (u, o) => (o && o.method === "PUT") ? {ok: true, status: 200} : {ok: false, status: 404};`);
+  await w.run(`putRollnotes("albums/x/y/z.rollnotes.json", "x", {})`);
+  assert.equal(w.run(`Object.keys(__repo).length`), 0);
+});
+
 test("Publish: an Untitled (local/) song's tempo note plays — baking is not limited to songs with a repo path", async () => {
   const a = await pubApp();
   const KEY = "local/untitled-1.mid";
