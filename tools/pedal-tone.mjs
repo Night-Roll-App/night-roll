@@ -25,3 +25,17 @@ export function isPedalTone({facts = null, medianSec}) {
   if (medianSec < PEDAL_LONG_SEC) return false;
   return !facts.oneShot || !!(facts.root && facts.root.confidence >= PEDAL_CLARITY && facts.harmonicity >= PEDAL_HARM);
 }
+
+// The other side of the same facts (docs/plans/2026-10-13-snes-drums-and-track-tools.md
+// step 6, Josh Q-D): a program that plays at most CYMBAL_MAX_PITCHES pitches only a few times (under
+// the ≥ 12-note rule's reach) on a looped sample with NO measured root and a
+// noise-like spectrum (harmonicity under CYMBAL_HARM) is a cymbal wash, not a
+// pitch: its loop keeps it ringing, so it showed as a long held note at the
+// default pitch. A roll of minutes (an ambience bed) is a texture, left alone.
+// Looped + no root + noisy + ≥ 12 notes stays the pedal guard's call above.
+export const CYMBAL_HARM = 0.6;
+export const CYMBAL_MAX_SEC = 6;
+export const CYMBAL_MAX_PITCHES = 2; // two channels may strike the one wash at their own keys (FF9 Hilda Garde: 58 and 63); a rootless loop carries no melody anyway
+export function isCymbalLoop({facts = null, medianSec}) {
+  return !!facts && facts.oneShot === false && !facts.root && facts.harmonicity != null && facts.harmonicity < CYMBAL_HARM && medianSec <= CYMBAL_MAX_SEC;
+}

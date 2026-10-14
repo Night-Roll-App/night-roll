@@ -5,13 +5,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { makeTestSEQ, makeTestSEP, makeTestVAB, makeTestPSF, encodeAdpcm, sine, TEST_MELODY, TEST_KIT, TEST_END } from "../tools/psx/make-test-seq.mjs";
 import { parseSEQ, isSEQ, secondsAt, barBeat, bpmOf } from "../tools/psx/seq.mjs";
 import { parseVAB, isVAB, decodeAdpcm, estimateRoot, tonesFor } from "../tools/psx/vab.mjs";
-import { seqNotes, trimSeconds, toNotesTxt, makeMidi, isDrumProgram, channelGroups } from "../tools/psx/notes.mjs";
+import { seqNotes, trimSeconds, toNotesTxt, makeMidi, isDrumProgram, channelGroups, kitify } from "../tools/psx/notes.mjs";
 import { parsePSF, isPSF, inflatePSF, parseExe, scanMagic } from "../tools/psx/psf.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
 
@@ -303,6 +303,48 @@ test("pedal tone guard (Q27, tools/pedal-tone.mjs): a looped or clearly rooted s
   assert.equal(isPedalTone({facts: {oneShot: true, root: null, harmonicity: 0.1}, medianSec: 3}), false, "an unrooted one-shot is a drum however long");
   assert.equal(isPedalTone({medianSec: 2.5}), true, "no facts, held 2.5 s");
   assert.equal(isPedalTone({medianSec: 0.3}), false, "no facts, short");
+});
+
+test("cymbal wash (step 6, Q-D): one pitch under 12 notes on a looped, rootless, noise-like sample is a kit; rooted, long or many-note parts are not", async () => {
+  const { isCymbalLoop } = await import("../tools/pedal-tone.mjs");
+  const loopNoise = {oneShot: false, root: null, harmonicity: 0.3};
+  assert.equal(isCymbalLoop({facts: loopNoise, medianSec: 2}), true);
+  assert.equal(isCymbalLoop({facts: loopNoise, medianSec: 600}), false, "an ambience bed of minutes is a texture");
+  assert.equal(isCymbalLoop({facts: {...loopNoise, harmonicity: 0.7}, medianSec: 1}), false, "tonal");
+  assert.equal(isCymbalLoop({facts: {oneShot: false, root: {midi: 60, cents: 0, confidence: 0.95}, harmonicity: 0.3}, medianSec: 1}), false, "rooted");
+  assert.equal(isCymbalLoop({facts: {...loopNoise, oneShot: true}, medianSec: 1}), false, "a one-shot is not a loop");
+  assert.equal(isCymbalLoop({medianSec: 1}), false, "no facts, no verdict");
+  const { vh, vb } = makeTestVAB({wash: true});
+  const seq = parseSEQ(makeTestSEQ()).sequences[0];
+  const mk = (count, step, len) => {
+    const r = seqNotes(seq, {vab: parseVAB(vh, vb)});
+    const proto = r.notes.find(x => x.program === 0);
+    r.notes = [...Array(count)].map((_, i) => ({...proto, tick: i * step, endTick: i * step + len, key: 72, pitch: 72}));
+    return r;
+  };
+  const few = mk(3, 960, 480);
+  const [row] = (kitify(few), channelGroups(few));
+  assert.equal(row.kit, true, "3 hits of a looped noise wash are percussion");
+  assert.match(few.seq.warnings.join("\n"), /prog 0: one pitch ×3 on a looped sound with no root \(noise-like\) → drum kit/);
+  const two = mk(3, 960, 480); two.notes[1].pitch = two.notes[1].key = 74;
+  assert.equal(channelGroups((kitify(two), two))[0].kit, true, "two pitches: a wash struck by two channels");
+  const three = mk(3, 960, 480); three.notes[1].pitch = three.notes[1].key = 74; three.notes[2].pitch = three.notes[2].key = 76;
+  assert.equal(channelGroups((kitify(three), three))[0].kit, false, "three pitches: not a wash");
+  const many = mk(12, 48000, 40000); // the ≥ 12 rule keeps its pedal guard: looped and held stays pitched
+  assert.equal(channelGroups((kitify(many), many))[0].kit, false, "12 held notes: the pedal guard's call, unchanged");
+});
+
+const HILDA = (process.env.NR_PS1_RIPS || "/tmp/recap/rips/ps1") + "/final-fantasy-8/dead-end.psf";
+test("cymbal wash, real rip: FF8 Dead End's program 66 (one pitch ×10, looped noise) is kit", {skip: existsSync(HILDA) ? false : "no rip at " + HILDA, timeout: 60000}, async () => {
+  const { captureFile } = await import("../tools/percussion-census.mjs");
+  const dir = HILDA.replace(/[^/]+$/, "");
+  const lib = readdirSync(dir).find(x => /\.psflib$/.test(x));
+  const { result } = await captureFile(HILDA, {readLib: () => lib ? readFileSync(dir + lib) : null, name: "dead-end.psf"});
+  const groups = channelGroups(result);
+  for (const prog of [66]) {
+    const ns = result.notes.filter(n => n.program === prog);
+    assert.ok(ns.length && ns.every(n => groups.find(g => g.notes.includes(n)).kit), "program " + prog + " is a kit group");
+  }
 });
 
 // Chrono Cross (PS1 rip, fetched by tools/recapture.mjs into /tmp/recap/rips/ps1 — skipped when absent):

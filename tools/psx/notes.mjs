@@ -10,7 +10,7 @@
 // the sample has no clear period. Both readings are kept on the note.
 import { secondsAt, barBeat, bpmOf } from "./seq.mjs";
 import { guessKit } from "../kit-guess.mjs";
-import { isPedalTone } from "../pedal-tone.mjs";
+import { isPedalTone, isCymbalLoop, CYMBAL_MAX_PITCHES } from "../pedal-tone.mjs";
 import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
 export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
@@ -257,7 +257,11 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
 //   2. a program played at exactly one pitch over ≥ 12 notes is percussion
 //      (two pitches is an ostinato — Bombing Mission's bass runs on two),
 //      unless its sample is a pedal tone (tools/pedal-tone.mjs: a clear root,
-//      or looped and held) — that stays a pitched part;
+//      or looped and held) — that stays a pitched part. Under 12 notes, a
+//      program of at most two pitches on a looped sample with no root and a noise-like
+//      spectrum (tools/pedal-tone.mjs isCymbalLoop) is also percussion: a
+//      cymbal wash whose loop kept it ringing as a held note (step 6 of
+//      docs/plans/2026-10-13-snes-drums-and-track-tools.md, Josh Q-D);
 //   3. each percussion voice (program + source key) gets a GM key from its
 //      rhythm: the voice that sits on beats 2 and 4 is the snare, the one on
 //      1 and 3 the kick, the busiest remaining one the closed hat, then open
@@ -282,9 +286,19 @@ function programFacts(result, n) {
     return v && v.smp ? sampleFacts(v.smp) : null;
   } catch { return null; }
 }
-function pedalProgram(result, evs) {
+function medianSecOf(result, evs) {
   const durs = evs.map(n => secondsAt(result.seq, n.endTick) - secondsAt(result.seq, n.tick)).sort((a, b) => a - b);
-  const medianSec = durs[Math.floor(durs.length / 2)];
+  return durs[Math.floor(durs.length / 2)];
+}
+// a program of at most two pitches under the 12-note rule: a looped, rootless, noise-like sample is a cymbal wash (tools/pedal-tone.mjs isCymbalLoop)
+const pitchWords = evs => { const k = new Set(evs.map(n => n.pitch)).size; return k === 1 ? "one pitch" : k + " pitches"; };
+function cymbalProgram(result, evs) {
+  const cymbal = isCymbalLoop({facts: programFacts(result, evs[0]), medianSec: medianSecOf(result, evs)});
+  if (cymbal) (result.seq.warnings || (result.seq.warnings = [])).push(`prog ${evs[0].program}: ${pitchWords(evs)} ×${evs.length} on a looped sound with no root (noise-like) → drum kit`);
+  return cymbal;
+}
+function pedalProgram(result, evs) {
+  const medianSec = medianSecOf(result, evs);
   const pedal = isPedalTone({facts: programFacts(result, evs[0]), medianSec});
   if (pedal) (result.seq.warnings || (result.seq.warnings = [])).push(`prog ${evs[0].program}: one pitch ×${evs.length} on a pitched, held sound (a pedal tone) → left melodic`);
   return pedal;
@@ -299,7 +313,7 @@ export function kitify(result) {
   for (const [p, evs] of byProg) {
     if (drumProgs.has(p)) continue;
     const pitches = new Set(evs.map(n => n.pitch));
-    if (evs.length >= 12 && pitches.size === 1 && !pedalProgram(result, evs)) drumProgs.add(p);
+    if (evs.length >= 12 ? pitches.size === 1 && !pedalProgram(result, evs) : pitches.size <= CYMBAL_MAX_PITCHES && cymbalProgram(result, evs)) drumProgs.add(p);
   }
   const perc = notes.filter(n => !melodic.has(n) && (n.drum || drumProgs.has(n.program)));
   const guess = [];

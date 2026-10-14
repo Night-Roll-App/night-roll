@@ -96,9 +96,9 @@ function noise(n, seed = 1) {
 
 // Program 0: one tone across the keyboard on a C4 sine, `center` decides the
 // transposition (53 → a fifth up). Program 1: a two-key kit (36, 38).
-export function makeTestVAB({center = 53} = {}) {
+export function makeTestVAB({center = 53, wash = false} = {}) {
   const vagData = [
-    encodeAdpcm(sine(261.63, 6748)),            // 40 periods of C4
+    wash ? encodeAdpcm(noise(6748, 3)) : encodeAdpcm(sine(261.63, 6748)), // 40 periods of C4 (wash: a looped noise loop, the cymbal-wash case)
     encodeAdpcm(noise(112, 7), {loop: false}),
     encodeAdpcm(noise(112, 99), {loop: false}),
   ];

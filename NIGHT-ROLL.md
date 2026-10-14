@@ -4413,6 +4413,20 @@ capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
 so a wrong guess is visible in the row's ⓘ. N64 sequences already put
 drums on channel 10 with GM-ish keys (50–59); untouched.
 
+**Cymbal wash (2026-10-14, plan step 6, Josh Q-D).** Under the ≥ 12-note
+rule's reach, a program of at most two pitches (CYMBAL_MAX_PITCHES; two
+channels may strike one wash at their own keys) whose sample is looped, has
+NO measured root and a noise-like spectrum (harmonicity under CYMBAL_HARM
+0.6), with a median note of 6 s or less (CYMBAL_MAX_SEC; an ambience bed of
+minutes stays a texture), is percussion (`isCymbalLoop`, tools/pedal-tone.mjs;
+`cymbalProgram` in kitify; the capture says "… on a looped sound with no root
+(noise-like) → drum kit"). Its loop kept it ringing, so it showed as one long
+held note at the default pitch. The ≥ 12-note path and its pedal guard are
+unchanged. Census over the 470 PS1 songs in the archive (6 albums): 29
+programs in 29 songs flip (FF7 6, FF8 2, FF9 0, Chrono Cross 2, Parasite Eve 3,
+Saga Frontier 16) — plan doc "Step 6 census". Published songs change only on
+a re-capture (KIT verdict).
+
 **Drum mode used melodically (2026-10-09, plan §13).** Composers also used
 AKAO drum mode as a multi-sample instrument: FF8 Choir Chant plays sixteen
 choir recordings, one per written key, all at one table key. Before rule 1,

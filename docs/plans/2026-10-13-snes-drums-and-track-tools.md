@@ -605,3 +605,41 @@ detection (kit lane, lasso, facts, Ask context all gate on `trackIsDrums`);
 a one-tap "Hide drum tracks" toggle is not in it. Queue it in open-items
 with the default: a View-menu toggle that sets `hidden` on every
 `trackIsDrums` track for the session. Not built here.
+
+## Step 6 census and hand-checks (2026-10-14, builder; facts only, no ear)
+
+Method: `tools/percussion-census.mjs --album ps1/<album> --json` over the six
+PS1 albums (rips from the public archive, 470 songs captured; Chrono Cross
+"Drowning Valley" is 404 in the archive), then every non-kit program that
+plays at most two pitches SONG-WIDE (the way `kitify` groups) on a looped
+sample with no root. A first, per-channel pass over-counted: it flagged FF9
+"The Airship Hilda Garde" program 129, which looks like one hit per channel
+but is a six-channel chord part in the whole song. The rule therefore reads
+the program across the song, not the channel.
+
+Census (rule: ≤ 2 pitches, < 12 notes, looped, root null, harmonicity < 0.6,
+median note ≤ 6 s): 29 programs flip, one per song, in 29 of the 470 songs:
+FF7 6 (cinco-de-chocobo, fanfare, fiddle-de-chocobo, hurry,
+opening-bombing-mission, oppressed-people, …), FF8 2 (dead-end,
+the-landing-demo), Chrono Cross 2 (magical-dreamers main + variation),
+Parasite Eve 3, Saga Frontier 16 (one sample, program 21, a 0.17 s noise
+loop). The earlier "199 songs" figure counted the one-pitch, no-root groups
+without the song-wide and note-count tests.
+
+20 hand-checks (first 20 of the 29, read as facts: hits, pitches, channels,
+note lengths, sample length/harmonicity/flatness, beat positions): all 20
+are sparse strikes on bar positions (beats 0, 2, 3 or 3.5) of a 0.08–1.1 s
+noise loop with harmonicity 0.09–0.54, notes 0.05–5 s long (a looped crash's
+ring-out) — the "held C5" shape Josh described. One doubtful: parasite-eve
+"Urban Noise" prog 33 (5 notes of 4–8 s, all on beat 0, a street-noise bed);
+it flips because the median is under 6 s. A noise bed has no pitch either, so
+it stays a kit; if the ear says it is ambience, lower CYMBAL_MAX_SEC (named
+constant, tools/pedal-tone.mjs). Not checked by ear: there is no listening
+here.
+
+Built: `isCymbalLoop` (tools/pedal-tone.mjs), `cymbalProgram` in kitify
+(tools/psx/notes.mjs), tests in tests/psx.test.mjs (truth table, a synthetic
+VAB with a looped noise sample via makeTestVAB({wash: true}), and a real-rip
+test for FF8 Dead End, skipped without a rip; NR_PS1_RIPS points it at a rip
+cache). Re-capture of published PS1/PS2 songs is NOT done here (KIT verdict,
+one album per push, tools/recapture.mjs): queued in open-items.
