@@ -169,3 +169,56 @@ test("recapture: a published song with no notes at all (OoT Hyrule Field) is rep
   assert.equal(planAction("MOVED", 0, null, "49.1>17.1", false, true), "replace");
   assert.equal(planAction("MOVED", 2, null, "49.1>17.1", false, true), "keep-old+add-new");
 });
+
+// ---- KIT: SNES sampled drums (docs/plans/2026-10-13-snes-drums-and-track-tools.md, B1) --------
+const text = s => ({t: 0, bytes: [0xFF, 0x01, s.length, ...Buffer.from(s)]});
+const kitOld = () => ({tracks: [
+  {name: "voice0", notes: [{t: 0, d: 240, p: 60, v: 100, ch: 0}, {t: 960, d: 240, p: 62, v: 100, ch: 0}]},
+  {name: "voice5", notes: [{t: 0, d: 120, p: 67, v: 90, ch: 1}, {t: 480, d: 120, p: 51, v: 90, ch: 1}, {t: 960, d: 120, p: 67, v: 90, ch: 1}]},
+]});
+const kitNew = () => ({tracks: [
+  {name: "voice0", notes: [{t: 0, d: 240, p: 60, v: 100, ch: 0}, {t: 960, d: 240, p: 62, v: 100, ch: 0}]},
+  {name: "voice5", notes: [{t: 0, d: 120, p: 38, v: 90, ch: 9}, {t: 480, d: 120, p: 40, v: 90, ch: 9}, {t: 960, d: 120, p: 38, v: 90, ch: 9}],
+   extra: [text("kit:1"), text("kitmap:38=67,40=51")]},
+]});
+
+test("capture-diff: a kit-only rewrite (GM keys, channel 10, kit markers) is KIT, with the timeline unchanged", () => {
+  const r = diff(kitOld(), kitNew());
+  assert.equal(r.verdict, "KIT");
+  assert.equal(r.timelineSame, true);
+  assert.match(r.reasons[0], /voice5/);
+});
+
+test("capture-diff: a mixed voice's appended \"voiceN kit\" track folds back onto voiceN — KIT, track numbers unmoved", () => {
+  const old = {tracks: [{name: "voice3", notes: [{t: 0, d: 240, p: 60, v: 90, ch: 0}, {t: 480, d: 120, p: 72, v: 90, ch: 0}, {t: 960, d: 240, p: 62, v: 90, ch: 0}]}]};
+  const nw = {tracks: [{name: "voice3", notes: [{t: 0, d: 240, p: 60, v: 90, ch: 0}, {t: 960, d: 240, p: 62, v: 90, ch: 0}]},
+    {name: "voice3 kit", notes: [{t: 480, d: 120, p: 49, v: 90, ch: 9}], extra: [text("kit:1"), text("kitmap:49=72")]}]};
+  assert.equal(diff(old, nw).verdict, "KIT");
+});
+
+test("capture-diff: a kit rewrite plus one moved note is MOVED", () => {
+  const nw = kitNew(); nw.tracks[0].notes[1].t = 1000;
+  assert.equal(diff(kitOld(), nw).verdict, "MOVED");
+});
+
+test("capture-diff: a kitmap-only change between two kit captures is VELOCITY", () => {
+  const nw = kitNew(); nw.tracks[1].extra = [text("kit:1"), text("kitmap:38=67,40=52")];
+  assert.equal(diff(kitNew(), nw).verdict, "VELOCITY");
+});
+
+test("recapture (Josh #436/#437): an unchanged timeline replaces in place, annotated or not; a changed timeline gets a copy", () => {
+  assert.equal(planAction("KIT", 5, null, null), "replace", "kit-only diff on an annotated song: replaced, its .rollnotes.json is never written");
+  assert.throws(() => assertWritable(path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "albums/snes/final-fantasy-4/the-prelude.rollnotes.json")), /annotations/);
+  // same notes-changed song, same bars/meter/tempo: timelineSame decides
+  const moved = base(); moved.tracks[0].notes[1].p = 65;
+  const same = diff(base(), moved);
+  assert.equal(same.verdict, "MOVED"); assert.equal(same.timelineSame, true);
+  assert.equal(planAction("MOVED", 4, null, null, false, false, same.timelineSame), "replace");
+  const tempo = diff(base(), {...base(), tempos: [{tick: 0, usq: 400000}]});
+  assert.equal(tempo.timelineSame, false);
+  assert.equal(planAction("MOVED", 4, null, null, false, false, tempo.timelineSame), "keep-old+add-new");
+  const longer = base(); longer.tracks[1].notes.push({t: 1920 * 5, d: 480, p: 50, v: 80});
+  const bars = diff(base(), longer);
+  assert.equal(bars.timelineSame, false, "a different bar count is a different timeline");
+  assert.equal(planAction("MOVED", 0, null, null, false, false, bars.timelineSame), "keep-old+add-new");
+});

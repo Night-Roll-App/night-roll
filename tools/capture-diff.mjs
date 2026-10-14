@@ -10,6 +10,11 @@
 //                programs, channels or text metas differ
 //   ADDED-TRACK  as above for every old track, plus new tracks AFTER them
 //                (a DPCM track) — no existing track number moves
+//   KIT          a SNES sampled-drum rewrite (docs/plans/2026-10-13-snes-drums-
+//                and-track-tools.md): fold the new file's kit tracks back onto
+//                their voices with the kitmap's captured keys, drop the kit
+//                markers and channel-10 moves, and the pair is SAME/VELOCITY.
+//                No beat moved, no track number moved (kit tracks are appended)
 //   MOVED        anything else: a note's start/length/pitch, a track
 //                removed/renamed/reordered, ppq, the tempo map, the meter
 //                or the loop point differs
@@ -135,8 +140,49 @@ function multisetDiff(a, b, key) { // [onlyA, onlyB, pairs] — pairs in order o
 
 const countKinds = evs => { const c = {}; for (const e of evs) c[e.kind] = (c[e.kind] || 0) + 1; return c; };
 
+// Fold a capture's SNES kit tracks back into the shape the old capture had:
+// kit notes return to their captured keys (the "kitmap:gm=captured" text meta;
+// a noise voice has none and keeps its key), a "voiceN kit" track merges into
+// "voiceN", the "kit:1"/"kitmap" metas go, and a folded note's channel is
+// forgotten (kitFolded: the channel-10 move is the rewrite itself).
+// Returns null when the file has no kit track.
+function foldKit(smf) {
+  const isKit = tr => tr.other.some(e => e.kind === "meta01" && e.key === "kit:1");
+  if (!smf.tracks.some(isKit)) return null;
+  const kits = [];
+  const tracks = smf.tracks.map(tr => {
+    if (!isKit(tr)) return {...tr, notes: [...tr.notes], other: [...tr.other]};
+    const mapEv = tr.other.find(e => e.kind === "meta01" && e.key.startsWith("kitmap:"));
+    const map = mapEv ? Object.fromEntries(mapEv.key.slice(7).split(",").map(kv => kv.split("="))) : {};
+    kits.push(tr.name);
+    return {...tr, notes: tr.notes.map(n => ({...n, p: map[n.p] !== undefined ? +map[n.p] : n.p, ch: -1, kitFolded: true})),
+      other: tr.other.filter(e => !(e.kind === "meta01" && (e.key === "kit:1" || e.key.startsWith("kitmap:"))))};
+  });
+  const out = [];
+  for (const tr of tracks) {
+    const m = /^(voice\d+) kit$/.exec(tr.name);
+    const host = m && out.find(t => t.name === m[1]);
+    if (host) { host.notes.push(...tr.notes); host.notes.sort((a, b) => a.t - b.t || a.p - b.p || a.d - b.d); host.other.push(...tr.other); }
+    else out.push(tr);
+  }
+  return {smf: {...smf, tracks: out}, kits};
+}
+
 // opts: {oldLoop, newLoop} — "anchor>target" strings or null
 export function captureDiff(oldSmf, newSmf, opts = {}) {
+  const raw = rawDiff(oldSmf, newSmf, opts);
+  if (raw.verdict === "MOVED") {
+    const f = foldKit(newSmf);
+    if (f) {
+      const folded = rawDiff(oldSmf, f.smf, opts);
+      if (folded.verdict === "SAME" || folded.verdict === "VELOCITY")
+        return {...raw, verdict: "KIT", loopOnly: false, timelineSame: true, reasons: ["sampled kit rewrite: " + f.kits.join(", ") + " (every other note identical once folded back)"]};
+    }
+  }
+  return raw;
+}
+
+function rawDiff(oldSmf, newSmf, opts = {}) {
   const reasons = [], moved = [], soft = [];
   let firstBar = null;
   const at = tick => { const b = barOf(oldSmf, tick); if (firstBar === null || b < firstBar) firstBar = b; return b; };
@@ -184,7 +230,7 @@ export function captureDiff(oldSmf, newSmf, opts = {}) {
       t.examples = [...rm.slice(0, MAX).map(n => "- " + fmt(n)), ...add.slice(0, MAX).map(n => "+ " + fmt(n))];
       moved.push("tr" + (i + 1) + " " + (A.name || "") + ": " + rm.length + " old notes / " + add.length + " new notes don't match, from bar " + at(first));
     }
-    const vel = pairs.filter(([x, y]) => x.v !== y.v), chs = pairs.filter(([x, y]) => x.ch !== y.ch);
+    const vel = pairs.filter(([x, y]) => x.v !== y.v), chs = pairs.filter(([x, y]) => x.ch !== y.ch && !y.kitFolded);
     if (vel.length) { t.velocity = vel.length; if (t.status === "same") t.status = "velocity"; soft.push("tr" + (i + 1) + ": " + vel.length + " velocities differ, from bar " + at(Math.min(...vel.map(([x]) => x.t)))); }
     if (chs.length) { t.channel = chs.length; if (t.status === "same") t.status = "velocity"; soft.push("tr" + (i + 1) + ": " + chs.length + " notes changed MIDI channel, from bar " + at(Math.min(...chs.map(([x]) => x.t)))); }
     const [eo, en] = multisetDiff(A.other, B.other, evKey);
@@ -210,7 +256,10 @@ export function captureDiff(oldSmf, newSmf, opts = {}) {
   if (verdict === "ADDED-TRACK" && firstBar === null) firstBar = barOf(newSmf, Math.min(...addedTracks.map(t => newSmf.tracks[t.track - 1].notes[0].t)));
   // loopOnly: every note, track, tempo and meter matches — only the loop point differs
   const loopOnly = moved.length > 0 && moved.every(m => m.startsWith("loop point"));
-  return {verdict, reasons, loopOnly, firstBar, bars: {old: barCount(oldSmf), new: barCount(newSmf)}, tracks, gained, lost};
+  // timelineSame (Josh #436/#437): the song's bars, meter and tempo map are what they were,
+  // so its annotations still land — tools/recapture.mjs planAction replaces in place
+  const timelineSame = !moved.some(m => /^(ppq|tempo map|meter) /.test(m)) && barCount(oldSmf) === barCount(newSmf);
+  return {verdict, reasons, loopOnly, timelineSame, firstBar, bars: {old: barCount(oldSmf), new: barCount(newSmf)}, tracks, gained, lost};
 }
 
 export function diffFiles(oldPath, newPath, opts = {}) {

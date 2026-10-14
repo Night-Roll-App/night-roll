@@ -28,13 +28,17 @@
 // tools/nsf/dump-all.mjs (its verified bar counts), run with --out.
 //
 // Verdicts are tools/capture-diff.mjs's. Planned action per song:
-//   SAME → skip · VELOCITY / ADDED-TRACK → replace · MOVED with no published
-//   annotations → replace · MOVED with annotations → keep the old song and
-//   add the new one as "<title> (re-capture)" (Josh, 2026-10-06, §8.3) ·
-//   a changed loop point on a song without annotations → hold (its loop
-//   line lives in the .rollnotes.json, which this tool never writes) ·
+//   SAME → skip · VELOCITY / ADDED-TRACK / KIT (SNES sampled drums) → replace ·
+//   any other verdict whose TIMELINE is unchanged (same bar count, meter and
+//   tempo map) → replace in place, annotated or not: the annotations still
+//   hold (Josh #436/#437, 2026-10-13) · MOVED with a changed timeline and no
+//   published annotations → keep the old song and add the new one as
+//   "<title> (re-capture)" (Josh, 2026-10-07: beats moved) · MOVED with a
+//   changed timeline and annotations → the same copy (Josh, 2026-10-06, §8.3) ·
+//   a row that is itself a "-recapture" copy never gets a second copy → held ·
 //   MOVED by the loop point alone (every note identical) → replace, the song
-//   keeping its own loop annotation.
+//   keeping its own loop annotation (its loop line lives in the
+//   .rollnotes.json, which this tool never writes).
 // Annotations = any .rollnotes.json entry other than the capture's loop.
 //
 // Hard allowlist: --apply writes only .mid/.notes.txt/album.json inside
@@ -54,7 +58,7 @@ import { diffFiles, loopOfRollnotes, readSmf } from "./capture-diff.mjs";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SELF = fileURLToPath(import.meta.url);
 export const CONSOLES = ["nes", "game-boy", "snes", "ps1", "ps2", "n64"]; // capture albums; compositions/starters are Josh's and never listed
-export const CAPTURE_VERSION = 2; // album.json cap.v stamped by --apply (2 = NES capture v2: bends, CC70 duty, dpcm track — 888d93e2)
+export const CAPTURE_VERSION = 3; // album.json cap.v stamped by --apply (2 = NES capture v2: bends, CC70 duty, dpcm track — 888d93e2; 3 = SNES sampled kits: kit:1 + kitmap tracks on channel 10, per-voice noise kits)
 const ARCHIVE_RAW = "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main/";
 const EXT = {nsf: ".nsf", gbs: ".gbs", spc: ".spc", psf: ".psf", psf2: ".psf2", usf: ".usf", vgm: ".vgm"};
 const MAGIC = {
@@ -149,12 +153,13 @@ export function annotationsOf(rnPath) {
 // loopOnly (MOVED by the loop point alone): the notes are identical, so the song's
 // own loop annotation still lands where it did — replace the .mid, never write the
 // .rollnotes.json, and keep that loop rather than adding a second song.
-export function planAction(verdict, annotations, oldLoop, newLoop, loopOnly = false, oldEmpty = false) {
+// timelineSame (capture-diff): bars, meter and tempo map unchanged — annotations still land, so replace in place (Josh #436/#437)
+export function planAction(verdict, annotations, oldLoop, newLoop, loopOnly = false, oldEmpty = false, timelineSame = false) {
   if (!verdict) return "none";
   if (verdict === "SAME") return "skip";
-  if (verdict === "VELOCITY" || verdict === "ADDED-TRACK" || loopOnly) return "replace";
+  if (verdict === "VELOCITY" || verdict === "ADDED-TRACK" || verdict === "KIT" || loopOnly || timelineSame) return "replace";
   if (oldEmpty && !annotations) return "replace"; // the published song had no notes at all (OoT Hyrule Field): nothing to keep beside the capture
-  return "keep-old+add-new"; // beats moved: the published song stays, annotated or not (Josh, 2026-10-07)
+  return "keep-old+add-new"; // the timeline changed: the published song stays (Josh, 2026-10-07; annotated: 2026-10-06)
 }
 
 // ---------------------------------------------------------------- one album (child process)
@@ -288,10 +293,14 @@ export async function recaptureAlbum(a, outRoot, log = console.log) {
     if (!s.newMid) { s.verdict = null; s.action = "none"; continue; }
     try {
       const d = diffFiles(oldMid, s.newMid, {oldLoop: ann.loop, newLoop: s.newLoop || null});
-      Object.assign(s, {verdict: d.verdict, reasons: d.reasons, loopOnly: d.loopOnly, oldEmpty: readSmf(readFileSync(oldMid)).tracks.every(t => !t.notes.length), firstBar: d.firstBar, bars: d.bars, gained: d.gained, lost: d.lost});
+      Object.assign(s, {verdict: d.verdict, reasons: d.reasons, loopOnly: d.loopOnly, timelineSame: d.timelineSame, oldEmpty: readSmf(readFileSync(oldMid)).tracks.every(t => !t.notes.length), firstBar: d.firstBar, bars: d.bars, gained: d.gained, lost: d.lost});
       s.newSha = sha(readFileSync(s.newMid));
     } catch (err) { s.verdict = null; s.why = "diff failed: " + err.message; }
-    s.action = planAction(s.verdict, s.annotations, s.oldLoop, s.newLoop, s.loopOnly, s.oldEmpty);
+    s.action = planAction(s.verdict, s.annotations, s.oldLoop, s.newLoop, s.loopOnly, s.oldEmpty, s.timelineSame);
+    const own = a.meta.nsf.tracks[s.base];
+    if (s.action === "keep-old+add-new" && own && typeof own === "object" && own.rip) { // a copy of a copy would be <base>-recapture-recapture
+      s.action = "hold-recapture-copy"; s.why = (s.why ? s.why + "; " : "") + "this row is already a -recapture copy and its timeline changed";
+    }
     if (s.action === "keep-old+add-new") { s.addBase = s.base + "-recapture"; s.addTitle = s.title + " (re-capture)"; }
   }
   res.songs = songs;
@@ -301,12 +310,12 @@ export async function recaptureAlbum(a, outRoot, log = console.log) {
 }
 
 // ---------------------------------------------------------------- report
-const VERDICTS = ["SAME", "VELOCITY", "ADDED-TRACK", "MOVED"];
+const VERDICTS = ["SAME", "VELOCITY", "ADDED-TRACK", "KIT", "MOVED"];
 export function buildReport(works) {
   const byConsole = {};
   const problems = {fetch: [], crash: [], capture: []};
   for (const w of works) {
-    const c = byConsole[w.console] = byConsole[w.console] || {albums: 0, songs: 0, SAME: 0, VELOCITY: 0, "ADDED-TRACK": 0, MOVED: 0, failed: 0, actions: {}};
+    const c = byConsole[w.console] = byConsole[w.console] || {albums: 0, songs: 0, SAME: 0, VELOCITY: 0, "ADDED-TRACK": 0, KIT: 0, MOVED: 0, failed: 0, actions: {}};
     c.albums++;
     for (const f of w.fetch || []) if (!f.ok) problems.fetch.push({album: w.id, file: f.file, status: f.status, size: f.size, why: f.why});
     if (w.error) problems.crash.push({album: w.id, why: w.error});
@@ -321,8 +330,8 @@ export function buildReport(works) {
 
 export function reportMarkdown(rep) {
   const L = ["# Re-capture dry run", "", "Generated " + rep.generatedAt + " by tools/recapture.mjs. Nothing under albums/ was written.", "",
-    "| Console | Albums | Songs | SAME | VELOCITY | ADDED-TRACK | MOVED | no verdict |", "|---|---|---|---|---|---|---|---|"];
-  for (const [c, x] of Object.entries(rep.byConsole)) L.push(`| ${c} | ${x.albums} | ${x.songs} | ${x.SAME} | ${x.VELOCITY} | ${x["ADDED-TRACK"]} | ${x.MOVED} | ${x.failed} |`);
+    "| Console | Albums | Songs | SAME | VELOCITY | ADDED-TRACK | KIT | MOVED | no verdict |", "|---|---|---|---|---|---|---|---|---|"];
+  for (const [c, x] of Object.entries(rep.byConsole)) L.push(`| ${c} | ${x.albums} | ${x.songs} | ${x.SAME} | ${x.VELOCITY} | ${x["ADDED-TRACK"]} | ${x.KIT} | ${x.MOVED} | ${x.failed} |`);
   L.push("", "## Problems", "");
   if (!rep.problems.fetch.length && !rep.problems.crash.length && !rep.problems.capture.length) L.push("None.");
   for (const p of rep.problems.fetch) L.push(`- fetch ${p.album}: ${p.file} — ${p.why} (status ${p.status}, ${p.size} bytes)`);

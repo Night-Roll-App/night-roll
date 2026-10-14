@@ -1,5 +1,6 @@
 import { PERF_FLAGS } from "../platform/base.js";
 import { chip } from "./chip.js";
+import { chipSourceName } from "./chip.js";
 import { S } from "../state.js";
 import { trackGain } from "./engine.js";
 import { tickToSec } from "../midi/parse.js";
@@ -303,14 +304,14 @@ export function chipNoteSlice(tr, pitch, tick) {
   if (chip.stream) {
     const idx = chipStreamIdxForTapeSec(startTape);
     const entry = chip.stream.cache.get(idx);
-    const buf = entry && entry.buffers[tr.name];
+    const buf = entry && entry.buffers[chipSourceName(tr.name)];
     if (!buf) return null; // not cached yet: the synth answers now, same as an unready whole render
     const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
     const offset = Math.min(Math.max(0, startTape - chunkTapeStart), buf.duration);
     const dur = Math.max(0.02, Math.min(endTape - chunkTapeStart, buf.duration) - offset);
     return {buf, offset, dur};
   }
-  const buf = chipBuffers()[tr.name];
+  const buf = chipBuffers()[chipSourceName(tr.name)];
   if (!buf) return null; // the render isn't done yet, or this track was dropped silent
   const offset = Math.min(startTape, buf.duration);
   const dur = Math.max(0.02, Math.min(endTape, buf.duration) - offset);

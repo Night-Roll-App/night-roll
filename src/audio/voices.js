@@ -14,6 +14,7 @@ import { scheduleClip } from "./clips.js";
 import { chipActive } from "./chip.js";
 import { chip } from "./chip.js";
 import { chipHas } from "./chip.js";
+import { chipSourceName } from "./chip.js";
 import { trackIsDrums } from "../model/grid.js";
 import { drumHit } from "./engine.js";
 import { prof } from "../state.js";
@@ -1024,7 +1025,7 @@ export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the 
       // same path chipStart uses from here down: [chip.pan panner, if this
       // track was downmixed to mono] -> trackGain(ti), so volume/pan/mute match playback
       let node = g;
-      if (chip.pan && chip.pan[tr.name] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[tr.name]; g.connect(p); node = p; }
+      if (chip.pan && chip.pan[chipSourceName(tr.name)] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[chipSourceName(tr.name)]; g.connect(p); node = p; }
       node.connect(trackGain(ti));
       src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
       src.start(when, slice.offset, slice.dur); // a lone extra source — never touches chip.srcs, so a tap mid-playback can't fight the playing sources

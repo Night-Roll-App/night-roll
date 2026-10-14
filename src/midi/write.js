@@ -22,7 +22,8 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
   const track = body => [...str("MTrk"), ...u32(body.length), ...body];
   const NON_DRUM_CH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]; // 15 melodic channels; 9 stays drums-only whatever the track count (the old ti<9?ti:(ti+1)&15 formula collided past 16 tracks)
   const isKit = name => /drum|percussion|kit|noise|dpcm/i.test(name || ""); // dpcm: the NES sample channel's hits (capture v2)
-  const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
+  const kitmapText = map => "kitmap:" + Object.entries(map).sort((a, b) => a[0] - b[0]).map(([g, c]) => g + "=" + c).join(","); // tools/nsf/midi-write.mjs kitmapText
+const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
 
   // phase 2 (docs/declared-vs-learner-spec.md "B"): a foreign file's raw
   // leftovers — matched back to the CURRENT track holding the same original
@@ -88,6 +89,7 @@ export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key)
     // (parseMidi reads it back into track.offset) so a tap keeps sounding right
     if (tr.offset) evs.push({t: 0, o: -2, d: textMeta(0x01, "sounding:" + tr.offset)});
     if (tr.kit === true) evs.push({t: 0, o: -2, d: textMeta(0x01, "kit:1")}); // parseMidi reads it back into track.kit
+    if (tr.kit === true && tr.kitFrom) evs.push({t: 0, o: -2, d: textMeta(0x01, kitmapText(tr.kitFrom))}); // …and the captured keys into track.kitFrom
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
     // annotation's pan (tr.pan) overrides it at playback (trackPan()) but
     // lives in rollnotes, never here — this is only what survives with no

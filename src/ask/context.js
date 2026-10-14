@@ -504,7 +504,7 @@ export function askKeyStateLine() {
 }
 export function askContext(sp, budget) { // the ONE block per request; never stored
   if (S.askGeneral) {
-    let s = "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
+    let s = "general chat — no song attached. The user opened the Front Desk: for the app, the project, music in general, or a message for a Worker; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
       (appMode() === "normal" ? "The tutor rule about answering music questions directly still holds." : "The tutor rule about the user's own discoveries still holds for music questions.") +
       (appMode() === "normal" ? "\nmode: normal" : "") + "\n" + askAppState();
     const openLine = askOpenSongLine();

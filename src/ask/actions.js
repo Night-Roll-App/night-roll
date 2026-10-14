@@ -328,7 +328,7 @@ export function askActItems(input) { // → [{action, args}], or throws naming t
 // drafts, an ambiguous name errors with the candidates — never a guess).
 export function askOpenSongQueue(a) {
   if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — open_song only opens songs from this Night Roll's own list");
-  if (S.askTerminal) throw new Error("the Terminal tab goes to Claude Code on the Mac — nothing opens from here");
+  if (S.askTerminal) throw new Error("the Worker tab goes to Claude Code on the Mac — nothing opens from here");
   if (S.songLoading) throw new Error("still opening the last song — ask again when it's in");
   if (S.askHopKey && S.askHopKey === askStoreKey()) throw new Error("a carried-over request can't open another song — ask for that yourself in this chat");
   if (S.askSwitch) throw new Error("the song is changing — ask again in " + S.askSwitch.title + "'s chat");

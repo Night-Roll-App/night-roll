@@ -343,7 +343,7 @@ test("⌨ Terminal tab: Send round trip against a fake bridge — real <context>
     const r = srv.requests.find(x => x.path === "/v1/terminal");
     assert.ok(r, "POSTed to /v1/terminal");
     assert.match(r.json.text, /^<context>\n[\s\S]*\n<\/context>\n\nwhat's the Ask token plan status\?$/);
-    assert.match(val(app, `askstatus.textContent`), /the terminal is working: reading the file/, "the real response's now.text reached the status line");
+    assert.match(val(app, `askstatus.textContent`), /the Worker is working: reading the file/, "the real response's now.text reached the status line");
     assert.equal(val(app, `askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "what's the Ask token plan status?", "stored WITHOUT the context block");
   } finally {
     await srv.close();

@@ -10461,3 +10461,13 @@ map (not file-wide) avoids false positives from two unrelated functions
 both naming a local `b`. The ALLOWLIST in the test is empty today — step 2
 left no unconverted writer among the controls it registered — and may only
 shrink from here as a later step registers and migrates more.
+
+## Front Desk and Worker (words, 2026-10-13 — docs/plans in claude-bridge, Josh #422–#424)
+
+The ✦ Ask tab is the **Front Desk** and the ⌨ Terminal tab is the **Worker**
+(one Worker per app). Step 1 changed words only: tab labels, greetings,
+placeholders, notices, log headers of new files, the bridge prompt in
+tools/ai-profile.mjs. Every stored name stays (`ff1roll-ask-*` keys, mode values
+`general`/`terminal`, `askmodegen`/`askmodeterm`, `/v1/terminal`, `*.ask.md`
+file names, `send_to_terminal`). The plan and its Fable amendments live in
+claude-bridge/docs/plans/2026-10-13-front-desk-worker.md.

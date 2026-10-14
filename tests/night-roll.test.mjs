@@ -3082,7 +3082,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "their own full-width row under it",
     "swipe sideways on the strips",
     "Beat subdivisions", "Volume slider", "song gain",
-    "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Worker tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the Worker gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
@@ -3092,7 +3092,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "seventh picks one of 6, 7 or maj7", "alterations (b5 #5 b9 #9 #11 b13) stack", "the toggle re-cases the numeral", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "Front Desk and Worker", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "seventh picks one of 6, 7 or maj7", "alterations (b5 #5 b9 #9 #11 b13) stack", "the toggle re-cases the numeral", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "The beat cell counts the 16ths", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -5124,7 +5124,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "pushed gbs-import");
   assert.ok(val(`document.getElementById("askbtn").classList.contains("hasnote")`), "✉ lights on the Ask button while the sheet is closed");
   run(`asksheet.classList.add("on"); askSetMode("terminal"); askRender();`); // openAsk itself needs the target <select> the harness lacks
-  assert.ok(val(`[...asklog.children].filter(d => d.className === "askmsg note").map(d => d.textContent)`).some(x => /^(\d\d:\d\d|[A-Z][a-z]{2} \d+ \d\d:\d\d) · .*from the Mac: pushed gbs-import/.test(x)), "note bubble rendered in the Terminal tab, with its time");
+  assert.ok(val(`[...asklog.children].filter(d => d.className === "askmsg note").map(d => d.textContent)`).some(x => /^(\d\d:\d\d|[A-Z][a-z]{2} \d+ \d\d:\d\d) · .*from the Worker: pushed gbs-import/.test(x)), "note bubble rendered in the Terminal tab, with its time");
   run(`askSetMode("song"); localStorage.removeItem(ASK_TERMINAL_KEY);`);
   assert.match(val(`askLogMarkdown([{role: "note", content: "pushed gbs-import", m: "terminal"}])`), /\*\*Mac \(terminal\):\*\* pushed gbs-import/);
   // the general chat: its own key, session name, log path, no song context, no annotation tool; back to the song afterwards
@@ -5135,7 +5135,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.match(val(`askContext({t0: 0, t1: 1920, from: 1, to: 1}, {win: 8192})`), /^general chat — no song attached/);
   assert.ok(!val(`askActOffered("add_annotation")`), "no annotation tool in the general chat");
   assert.ok(val(`askActOffered("read_song")`), "reading songs still allowed");
-  assert.match(val(`askLogHeader()`), /^# ✦ AI log — general/);
+  assert.match(val(`askLogHeader()`), /^# ✦ AI log — Front Desk/);
   run(`{ const g = askLoad(); g.push({role: "user", content: "hello general", t: 1}); askSave(g); }`);
   assert.ok(val(`JSON.stringify(pendingChats())`).includes('"general"'), "unsaved general chat shows in the Publish list's Chats section");
   assert.ok(!val(`JSON.stringify(pendingSongs())`).includes('"general"'), "…but is never a song (Terminal #111: chats stay out of the Publish (N) count)");
@@ -5229,7 +5229,7 @@ test("Publish window: songs first, then a Chats section folded by default (its c
   assert.equal(val(`__chats().children[0].children[0].textContent`), "▾ Chats (" + chatN + ")");
   const rows = val(`__chatRows().map(b => [b.className, b.children[0].children[0].textContent, b.children[0].children[1].textContent, b.children[1].children[0].textContent])`);
   assert.ok(rows.every(r => r[0] === "psong pchat"));
-  assert.ok(rows.some(r => r[1] === "✦ General chat" && r[2] === "Publish chat" && r[3] === "✦ 1 chat message unsaved"), "the general chat row: " + JSON.stringify(rows));
+  assert.ok(rows.some(r => r[1] === "✦ Front Desk chat" && r[2] === "Publish chat" && r[3] === "✦ 1 chat message unsaved"), "the general chat row: " + JSON.stringify(rows));
   assert.ok(rows.some(r => r[1] === "✦ " + tG + " chat" && r[2] === "Publish chat" && r[3] === "✦ 2 chat messages unsaved"), "the chat-only song's row, named as a chat: " + JSON.stringify(rows));
   assert.ok(!rows.some(r => r[1].includes(tF)), "a song with edits is not listed under Chats");
   // fold again → pref cleared
@@ -5251,7 +5251,7 @@ test("Terminal chat: logs to ask/terminal.ask.md, is never a song for Publish al
   assert.equal(val(`ASK_TERMINAL_LOG`), "ask/terminal.ask.md");
   assert.equal(val(`askLogPath(ASK_TERMINAL_KEY)`), "ask/terminal.ask.md");
   assert.equal(val(`askLogPath("terminal")`), "ask/terminal.ask.md", "the bare chat key resolves the same way");
-  assert.match(val(`askLogHeader(ASK_TERMINAL_KEY)`), /^# ✦ AI log — Terminal\n\nThe ⌨ Terminal chat — messages to and from the Mac's Claude Code/);
+  assert.match(val(`askLogHeader(ASK_TERMINAL_KEY)`), /^# ✦ AI log — Worker\n\nThe ⌨ Worker chat — messages to and from the Mac's Claude Code/);
   assert.ok(!val(`askLogHeader(ASK_TERMINAL_KEY)`).includes("One file per song"), "not the per-song header");
   assert.equal(val(`askLogSong(ASK_TERMINAL_KEY)`), null, "no song behind the terminal chat");
   // the repo-side migration is this commit's move: the file lives under ask/, nothing terminal.* at the root
@@ -5268,7 +5268,7 @@ test("Terminal chat: logs to ask/terminal.ask.md, is never a song for Publish al
   // the PUBLISH sheet: its own block under Chats with the one-tap button, no song row
   run(`localStorage.setItem(PUBCHATS_OPEN_KEY, "1"); renderSyncPending();`);
   const blocks = val(`[...([...document.getElementById("syncpending").children].find(b => b.className.startsWith("pchats")) || {children: []}).children].slice(1).map(b => b.children[0].children[0].textContent)`);
-  assert.ok(blocks.includes("⌨ Terminal chat"), "a Terminal chat block under Chats: " + JSON.stringify(blocks));
+  assert.ok(blocks.includes("⌨ Worker chat"), "a Worker chat block under Chats: " + JSON.stringify(blocks));
   const songRows = val(`[...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong")).map(b => b.children[0].children[0].textContent)`);
   assert.ok(!songRows.some(t => /terminal/i.test(t)), "no song-style row for it");
   run(`localStorage.removeItem(PUBCHATS_OPEN_KEY);`);
@@ -5282,7 +5282,7 @@ test("Terminal chat: logs to ask/terminal.ask.md, is never a song for Publish al
          return {ok: false, status: 404, json: async () => ({})};
        };
        globalThis.__job = publishAllJobStart(() => {}, ["terminal"]);`);
-  assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key}))`), [{label: "Terminal chat", key: "terminal"}]);
+  assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key}))`), [{label: "Worker chat", key: "terminal"}]);
   for (let i = 0; i < 50 && val(`__job.state`) === "running"; i++) await new Promise(r => setImmediate(r)); // the host's real loop drains the sandbox's microtasks (its timers are fake)
   assert.equal(val(`__job.state`), "done", "job finished: " + val(`__job.err`));
   assert.deepEqual(val(`__puts`), ["ask/terminal.ask.md"], "one PUT, the log under ask/ — never terminal.rollnotes.json");
@@ -9242,15 +9242,15 @@ test("Publish all: creates a job with one item per pending SONG (chats excluded 
   run(`globalThis.__job = publishAllJobStart(() => {}, pendingChats());`);
   assert.equal(val(`__job.title`), "Publish chats");
   assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key}))`), [
-    {label: "General chat", key: "general"},
-    {label: "Terminal chat", key: "terminal"},
+    {label: "Front Desk chat", key: "general"},
+    {label: "Worker chat", key: "terminal"},
     {label: val(`songTitleOf("albums/compositions/nightroll/pa-chat.mid")`) + " chat", key: "albums/compositions/nightroll/pa-chat.mid"},
   ]);
   await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
   run(`jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");`);
   // one chat row's key alone
   run(`globalThis.__job = publishAllJobStart(() => {}, ["general"]);`);
-  assert.equal(val(`__job.title`), "Publish General chat");
+  assert.equal(val(`__job.title`), "Publish Front Desk chat");
   await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
   run(`pendingSongs = globalThis.__realPending; pendingChats = globalThis.__realPendingChats; writeToken = globalThis.__realWriteToken;
        jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");
@@ -10228,7 +10228,7 @@ test("⌨ Terminal tab: Send queues it on the bridge; a failure gives the words 
     assert.match(term0, /^<context>\n[\s\S]*\n<\/context>\n\nfix the footer$/, "wrapped like every other chat's <context> block");
     assert.match(term0, /open song: Term \(albums\/test\/term\.mid, Local\)/, "the Terminal tab used to omit the open song; now it's here");
     assert.match(term0, /New since your last message:/, "new ⚠\/status lines since this chat's last send");
-    assert.match(val(`askstatus.textContent`), /the terminal is working: building X/);
+    assert.match(val(`askstatus.textContent`), /the Worker is working: building X/);
     assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "fix the footer");
     run(`globalThis.fetch = async () => { throw new Error("Load failed"); }; askinput.value = "second";`);
     await run(`askSend()`);
@@ -10442,7 +10442,7 @@ test("Send after ■ Stop: the stopped dictation's late words can't refill the e
 test("⌨ Terminal stays while the terminal is busy: liveness is a line in the tab, never a reason to hide it (Josh, 2026-09-30)", () => {
   run(`askSetMode("terminal"); askCaps = {bridge: true, terminal: true, terminalLive: false}; askTabsApply(); askStatusRender();`);
   assert.equal(val(`askTerminal`), true, "still on the Terminal tab");
-  assert.match(val(`document.getElementById("asknowstrip").textContent`), /^queued — the terminal is busy/);
+  assert.match(val(`document.getElementById("asknowstrip").textContent`), /^queued — the Worker is busy/);
   run(`askCaps = {bridge: false, terminal: false, terminalLive: false}; askSetMode("song");`);
 });
 

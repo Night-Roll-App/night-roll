@@ -302,7 +302,17 @@ export function setHearMidi(on) {
   try { localStorage.setItem("ff1roll-hear-midi", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
 }
 export function chipActive() { return !hearMidi() && chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream); }
+// A SNES "voiceN kit" track (tools/nsf/midi-write.mjs: a voice that plays melody
+// AND sampled drums keeps its melody on voiceN and appends its kit hits as
+// "voiceN kit") has no render buffer of its own: its sound is inside voiceN's.
+// Lookups into the RENDER resolve through this; chipStart/chipPartTrack never
+// do (they iterate the render's buffers, so voiceN would start twice).
+export function chipSourceName(name) {
+  const m = /^(voice\d+) kit$/.exec(name || "");
+  return m ? m[1] : name;
+}
 export function chipHas(name) { // this track name has console audio
+  name = chipSourceName(name);
   if (chip.stream) return chip.stream.tracks.includes(name) && !chip.stream.silent.has(name); // stream mode (step 3): listed and not reported silent by the idle sweep
   return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name]));
 }

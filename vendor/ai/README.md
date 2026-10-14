@@ -142,7 +142,7 @@ The Swift package the native apps (Night Roll Tuner, Night Roll Guitar) use for 
 parity with Night Roll's window (minus song features) is tracked row by row in `docs/ai-window-parity.md`;
 **a new feature in Night Roll's AI window adds a parity row.**
 
-- `AIWindow` (view) over `AIWindowModel`: Ask and Terminal tabs (Terminal appears only when the bridge offers it),
+- `AIWindow` (view) over `AIWindowModel`: Front Desk (✦, the old Ask) and Worker (⌨, the old Terminal) tabs (Worker appears only when the bridge offers it),
   greeting, drafts per tab, now strip and Recent list, terminal model pickers, unread dot and working pulse,
   session line, Compact and Clear behind the in-package `BridgeConfirmSheet` (no native dialogs), screenshot and
   picture attachments, paste, dictation, composing notice. `ChatPanel` is a thin wrapper.

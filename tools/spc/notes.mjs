@@ -198,6 +198,49 @@ function classifyNoiseVoices(events) {
   }
 }
 
+// ---- sampled drums (docs/plans/2026-10-13-snes-drums-and-track-tools.md) ----
+// Josh #429, final: one drum track per game voice (Q28) and drum notes
+// rewritten to General MIDI drum keys (Q29). Not switches: tests pin both.
+export const SPC_KIT_PER_VOICE = true;
+export const SPC_KIT_GM_KEYS = true;
+export const SPC_KIT_MAX_KEYS = 2; // a drum sample plays at most this many distinct keys; more is a melodic one-shot (FF5 "The Fierce Battle" voice 0, 10 keys)
+
+// A (voice, sample) group is a kit group when every note is a one-shot with no
+// clear pitch (`unpitched`), there are at least DRUM_MIN_HITS of them, their
+// median length is under DRUM_MAX_MEDIAN_DUR_SEC and they play at most
+// SPC_KIT_MAX_KEYS keys. Generic: it reads the sample and the notes, never
+// the game. n = notes in the group, unpitched = how many are unpitched.
+export function isSpcKitGroup({n, unpitched, medianSec, keys}) {
+  return n >= DRUM_MIN_HITS && unpitched === n && medianSec < DRUM_MAX_MEDIAN_DUR_SEC && keys <= SPC_KIT_MAX_KEYS;
+}
+
+// Mark the notes of kit groups `e.kit = true` (makeMidi writes them as a kit
+// track on channel 10 with GM keys; `e.midi` keeps the captured key). A noise
+// voice that survived classifyNoiseVoices is a kit too (one track per voice,
+// Q-C). Returns the decisions as facts for the capture's warnings (ⓘ, on
+// demand only — they name a sound, never a key or a chord).
+export function markSpcKits(events) {
+  const warnings = [];
+  const groups = new Map();
+  for (const e of events) {
+    if (e.noiseClock !== undefined) { if (e.drum !== undefined) e.kit = true; continue; }
+    const id = e.voice + ":" + e.srcn;
+    (groups.get(id) || groups.set(id, []).get(id)).push(e);
+  }
+  for (const evs of groups.values()) {
+    const durs = evs.map(e => (e.endSample - e.startSample) / SAMPLE_RATE).sort((a, b) => a - b);
+    const g = {n: evs.length, unpitched: evs.filter(e => e.unpitched).length, medianSec: durs[Math.floor(durs.length / 2)], keys: new Set(evs.map(e => e.midi)).size};
+    const label = `voice${evs[0].voice} sample ${evs[0].srcn}`;
+    if (isSpcKitGroup(g)) {
+      for (const e of evs) e.kit = true;
+      warnings.push(`${label}: one-shot, no clear pitch, ${g.n} hits, ${g.keys} key${g.keys === 1 ? "" : "s"} → drum kit`);
+    } else if (g.unpitched === g.n && g.n >= DRUM_MIN_HITS && g.medianSec < DRUM_MAX_MEDIAN_DUR_SEC) {
+      warnings.push(`${label}: one-shot, no clear pitch, ${g.n} hits, but ${g.keys} keys → left melodic`);
+    }
+  }
+  return warnings;
+}
+
 // Reconstruct per-voice note events from a capture (runSPC's result).
 // onset = a KON bit (the dump's own KON register included, at sample 0); end = KOFF bit, the next KON, volume zeroed, one-shot
 // sample END, or the envelope model fading below SILENCE_ENV; pitch =
@@ -375,8 +418,10 @@ export function reconstruct(capture, {roots = {}} = {}) {
     e.startFrame = toTick(e.startSample);
     e.endFrame = toTick(e.endSample);
   }
+  const kept = events.filter(e => e.midi != null && e.endFrame > e.startFrame);
+  warnings.push(...markSpcKits(kept));
   return {
-    events: events.filter(e => e.midi != null && e.endFrame > e.startFrame),
+    events: kept,
     instruments: insts,
     frames: toTick(samples),
     frameSec: TICK_SEC,

@@ -57,12 +57,12 @@ export function askTabLabel() { // the tab names the song: the sheet covers the 
   return "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song");
 }
 export function askPlaceholder(tab) {
-  if (tab === "terminal") return "Tell the terminal what to build or fix…";
-  return tab === "general" ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
+  if (tab === "terminal") return "Tell the Worker what to build or fix…";
+  return tab === "general" ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for a Worker…" : "…") : "Ask about what you're looking at…";
 }
 export function askGreeting(tab) { // an empty chat's first bubble — the Learning one leads with hints (CLAUDE.md), the Normal one answers
-  if (tab === "terminal") return "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.";
-  if (tab === "general") return "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.";
+  if (tab === "terminal") return "This goes straight to the Worker — the Claude Code session on your Mac that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.";
+  if (tab === "general") return "This is the Front Desk — not about any one song. Ask about the app, the project, music in general, or say \"tell the Worker…\" to pass a message to the Claude Code sessions on your Mac.";
   return appMode() === "normal"
     ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
     : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.";
@@ -85,7 +85,7 @@ export const askstatus = document.getElementById("askstatus");
 // when each note from the Mac (and each Terminal message) was sent — Josh,
 // 2026-09-30: "I want timestamps on the messages that you sent back to me"
 export function askClock(t) { return aiClock(t); }
-export function askNoteLabel(from) { return from === "handoff" ? "" : "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; } // a handoff line (open_song, src/ask/client.js askSwitchRun) is its own "↪ from …" — no envelope
+export function askNoteLabel(from) { return from === "handoff" ? "" : "✉ " + (from && from !== "terminal" ? from : "from the Worker") + ": "; } // a handoff line (open_song, src/ask/client.js askSwitchRun) is its own "↪ from …" — no envelope
 // the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
 // paragraphs lost today to the app reinstalling under him). Per chat, device-
 // local (a composer draft is not the song's state); cleared on Send. The

@@ -52,6 +52,19 @@ export function kitMetaEvent() {
   return {t: 0, o: -2, d: [0xFF, 0x01, bytes.length, ...bytes]};
 }
 
+// A capture-detected kit track's second marker, "kitmap:38=67,40=51": the
+// GM drum key each hit was rewritten to = the key the game's own sample
+// played at (SNES sampled drums, Josh #429 Q29). parseMidi reads it into
+// `track.kitFrom` ({gm: captured}); "Not drums" shows the captured keys again
+// from it without touching the file. Sorted by GM key so it is deterministic.
+export function kitmapText(map) {
+  return "kitmap:" + Object.entries(map).sort((a, b) => a[0] - b[0]).map(([g, c]) => g + "=" + c).join(",");
+}
+export function kitmapMetaEvent(map) {
+  const bytes = [...kitmapText(map)].map(c => c.charCodeAt(0));
+  return {t: 0, o: -2, d: [0xFF, 0x01, ...vl(bytes.length), ...bytes]};
+}
+
 // ---------------------------------------------------------------- glide (CC84)
 // NIGHT-ROLL.md "Glide (CC84)". A note with `lg` is a CONTINUATION: the chip
 // did not re-key it, so it plays on from the note before it on the same voice
@@ -308,17 +321,22 @@ export function ccFromSeries(sr, d, ticksPerFrame) {
 // downbeat = kick, busiest = hats), then any key two samples share moves to
 // the next free percussion key, so distinct samples never merge.
 const GM_PERC = Array.from({length: 47}, (_, k) => 35 + k); // 35…81
-function dpcmKeys(notes, beatTicks, barBeats) {
-  const by = new Map();
-  for (const n of notes) { if (!by.has(n.sample)) by.set(n.sample, {key: n.sample, notes: []}); by.get(n.sample).notes.push({tick: n.t}); }
-  const voices = guessKit([...by.values()], {beatTicks, barBeats});
-  const taken = new Set(), out = new Map();
+// guessKit's result (voices with .gm) -> Map(key -> a General MIDI key unique
+// in the song): any key two voices share moves to the next free percussion
+// key, so distinct sounds never merge. `taken` pre-reserves keys already in use.
+function uniqueGmKeys(voices, taken = new Set()) {
+  const out = new Map();
   for (const v of [...voices].sort((a, b) => a.key - b.key)) {
     let p = v.gm;
     if (taken.has(p)) p = GM_PERC.find(k => !taken.has(k) && k > v.gm) || GM_PERC.find(k => !taken.has(k));
     taken.add(p); out.set(v.key, p);
   }
   return out;
+}
+function dpcmKeys(notes, beatTicks, barBeats) {
+  const by = new Map();
+  for (const n of notes) { if (!by.has(n.sample)) by.set(n.sample, {key: n.sample, notes: []}); by.get(n.sample).notes.push({tick: n.t}); }
+  return uniqueGmKeys(guessKit([...by.values()], {beatTicks, barBeats}));
 }
 // RPN 0 (pitch bend sensitivity) on a channel: ±semis, then RPN null
 export function bendRangeMetas(ch, semis) {
@@ -339,6 +357,14 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   for (const name of Object.keys(chans)) byCh[name] = [];
   const linked = events.some(e => e.lg);
   const dropped = new Map(); // channel -> notes dropped
+  // SNES sampled/noise drums (tools/spc/notes.mjs markSpcKits sets e.kit): a
+  // voice that plays ONLY kit hits keeps its voiceN track (the console render
+  // pairs by name; no track number moves) with the kit marker on channel 10;
+  // a voice that also plays melody keeps its melody on voiceN and its kit
+  // hits go to a "voiceN kit" track APPENDED after the last voice, in voice
+  // order (the NES dpcm precedent: no existing track number moves).
+  const melodic = new Set(events.filter(e => !e.kit).map(e => e.channel));
+  const kitTracks = new Map(); // track name -> {voice, notes}
   for (const e of events) {
     const t = toTick(e.startFrame);
     const d = Math.max(40, toTick(e.endFrame) - t); // min = a quantized 12th
@@ -350,7 +376,7 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     // end-volume of the software envelope rides along (0-127 like velocity)
     const ve = e.volEnd != null && e.vol != null && e.volEnd < e.vol
       ? Math.max(8, Math.round(e.volEnd / volMax * 127)) : undefined;
-    const key = e.drum != null ? "drums" : e.channel;
+    const key = e.kit ? e.channel : e.drum != null ? "drums" : e.channel;
     const tpf = frameSec / (60 / bpm) * PPQ;
     const env = e.volSeries ? shapeFromSeries(e, v, d, tpf, volMax, shape) : undefined;
     const bend = e.bendSeries ? bendFromSeries(e, d, tpf) : undefined;
@@ -361,10 +387,13 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const pan = e.panSeries ? ccFromSeries(e.panSeries, d, tpf) : undefined;
     const rev = e.echoSeries ? ccFromSeries(e.echoSeries, d, tpf) : undefined;
     const prog = e.prog !== undefined ? e.prog // a chip's own timbre number (Game Boy wave table, capture v2)
-      : e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined ? e.srcn : undefined;
-    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
+      : e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined && !e.kit ? e.srcn : undefined;
+    const tname = e.kit && melodic.has(e.channel) ? e.channel + " kit" : null;
+    const dest = tname ? (kitTracks.get(tname) || kitTracks.set(tname, {voice: e.voice, notes: []}).get(tname)).notes : (byCh[key] = byCh[key] || []);
+    dest.push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
       ...(pan ? {pan} : {}), ...(rev ? {rev} : {}), ...(prog !== undefined ? {prog} : {}),
       ...(e.channel === "dpcm" ? {sample: e.midi} : {}),
+      ...(e.kit ? {kit: tname || e.channel, kitSrcn: e.srcn, ...(e.drum != null ? {kitGm: 1} : {})} : {}),
       ...(e.lg ? {lg: 1} : {}), ...(linked ? {c0: glideCents(e)} : {})});
   }
   // glide links (a capture marks e.lg from the chip's own no-re-key signal):
@@ -373,6 +402,35 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   if (byCh.dpcm && byCh.dpcm.length) {
     const keys = dpcmKeys(byCh.dpcm, PPQ * 4 / tsDen, tsNum);
     for (const n of byCh.dpcm) { n.p = keys.get(n.sample); delete n.sample; }
+  }
+  // the kit pass: one guessKit over the whole song (tools/kit-guess.mjs), each
+  // (voice, sample, captured key) one kit voice, so two voices never both
+  // become "snare"; keys unique per song. A noise voice's hits are already GM
+  // keys (the noise clock): they keep them, and reserve them.
+  for (const [tname, kt] of [...kitTracks].sort((a, b) => a[1].voice - b[1].voice)) byCh[tname] = kt.notes;
+  const kitNotes = Object.values(byCh).flat().filter(n => n.kit);
+  const kitMaps = new Map(); // track name -> {gm: captured}
+  const kitNames = new Set(kitNotes.map(n => n.kit));
+  if (kitNotes.length) {
+    const taken = new Set(kitNotes.filter(n => n.kitGm).map(n => n.p));
+    const by = new Map();
+    for (const n of kitNotes) {
+      if (n.kitGm) continue;
+      const vi = +n.kit.replace(/^voice(\d+).*$/, "$1"), id = vi * 65536 + (n.kitSrcn || 0) * 256 + n.p;
+      if (!by.has(id)) by.set(id, {key: id, notes: []});
+      by.get(id).notes.push({tick: n.t});
+      n.kitId = id;
+    }
+    const gm = uniqueGmKeys(guessKit([...by.values()], {beatTicks: PPQ * 4 / tsDen, barBeats: tsNum}), taken);
+    for (const n of kitNotes) {
+      if (!n.kitGm) {
+        const m = kitMaps.get(n.kit) || kitMaps.set(n.kit, {}).get(n.kit);
+        m[gm.get(n.kitId)] = n.p;
+        n.p = gm.get(n.kitId);
+      }
+      chans[n.kit] = 9;
+    }
+    for (const n of kitNotes) { delete n.kit; delete n.kitSrcn; delete n.kitGm; delete n.kitId; }
   }
   // bend points in cents -> 14-bit values against the channel's range: ±2
   // (the GM default, nothing written) unless a slide reaches further, then
@@ -398,7 +456,8 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
       while (nextCh === 9 || used.has(nextCh)) nextCh++;
       chans[name] = nextCh; used.add(nextCh);
     }
-    tracks.push(trackBytes(name, notes, chans[name], rangeOf[name] > 2 ? bendRangeMetas(chans[name], rangeOf[name]) : []));
+    const kitMetas = kitNames.has(name) ? [kitMetaEvent(), ...(kitMaps.has(name) ? [kitmapMetaEvent(kitMaps.get(name))] : [])] : [];
+    tracks.push(trackBytes(name, notes, chans[name], [...kitMetas, ...(rangeOf[name] > 2 ? bendRangeMetas(chans[name], rangeOf[name]) : [])]));
   }
   if (dropped.size) {
     const n = [...dropped.values()].reduce((a, b) => a + b, 0);
@@ -509,6 +568,7 @@ export function writeSongMidi(song) {
     // written key by tr.offset semitones — round-trips through every save
     if (tr.offset) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, "sounding:" + tr.offset)});
     if (tr.kit === true) evs.push(kitMetaEvent());
+    if (tr.kit === true && tr.kitFrom) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, kitmapText(tr.kitFrom))});
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
     // annotation's pan (tr.pan) overrides it at playback but lives in
     // rollnotes, never here — this is only what survives with no annotation

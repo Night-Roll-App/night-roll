@@ -126,8 +126,8 @@ export function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENE
 // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general and terminal chats under ask/
 export function askLogHeader(key) {
   const sk = askLogKey(key);
-  if (sk === ASK_GENERAL_KEY) return "# ✦ AI log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
-  if (sk === ASK_TERMINAL_KEY) return "# ✦ AI log — Terminal\n\nThe ⌨ Terminal chat — messages to and from the Mac's Claude Code (no song, no model call in the app). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
+  if (sk === ASK_GENERAL_KEY) return "# ✦ AI log — Front Desk\n\nThe chat that is not about one song (the app, the project, music in general, messages for the Workers). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
+  if (sk === ASK_TERMINAL_KEY) return "# ✦ AI log — Worker\n\nThe ⌨ Worker chat — messages to and from the Mac's Claude Code (no song, no model call in the app). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
   return "# ✦ AI log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
 export function askLogMarkdown(msgs) { return aiLogMarkdown(msgs, {user: "Josh", note: "Mac", ai: "AI"}); } // what Save appends: one heading per question (when, which bars), the reply under it
@@ -237,7 +237,7 @@ export function askStatusRender() {
   if (strip) { // every tab, whenever the bridge is there (was the song-free chat only)
     const show = S.askCaps.bridge;
     strip.style.display = show ? "" : "none";
-    if (show) strip.textContent = (S.askTerminal && S.askCaps.terminal && !S.askCaps.terminalLive ? "queued — the terminal is busy; your message waits. " : "") +
+    if (show) strip.textContent = (S.askTerminal && S.askCaps.terminal && !S.askCaps.terminalLive ? "queued — the Worker is busy; your message waits. " : "") +
       "Claude Code " + askStatusLine() + (S.askStatusNow && S.askStatusNow.t ? " · " + askAgeText(S.askStatusNow.t) : "");
     if (!show) askStatusRecentShow(false);
   }

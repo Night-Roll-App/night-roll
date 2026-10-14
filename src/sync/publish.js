@@ -607,7 +607,7 @@ export async function publishUnsavedSong(folder, name) {
 // publishes use. One Publish-all job at a time. Publish all is SONGS only
 // (Terminal #111, 2026-10-04): chats ride a job only when named in
 // onlyKeys — the Chats section's "Publish chats" button, or one chat row.
-export function pendingChatLabel(key) { return key === "general" ? "General chat" : key === "terminal" ? "Terminal chat" : songTitleOf(key) + " chat"; } // a chat item's name in the job dialog and the Chats section
+export function pendingChatLabel(key) { return key === "general" ? "Front Desk chat" : key === "terminal" ? "Worker chat" : songTitleOf(key) + " chat"; } // a chat item's name in the job dialog and the Chats section
 export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish, or the chats — the same flow for just those keys
   const chats = pendingChats();
   const pending = onlyKeys ? pendingAll().filter(k => onlyKeys.includes(k)) : pendingSongs();

@@ -6,8 +6,8 @@ before touching the player.
 
 ## Bridge + Terminal tab — do this at EVERY session start (also after /clear)
 
-Josh talks to this session from the iPad: the app's ✦ AI panel → ⌨ Terminal
-tab queues his messages at the Mac bridge; nothing reaches you unless the
+Josh talks to this session from the iPad: the app's ✦ AI panel → ⌨ Worker
+tab (was Terminal) queues his messages at the Mac bridge; nothing reaches you unless the
 watcher below is running. (Skip this section only in a session started BY
 the bridge — an Ask session; see the hard rule below.)
 
@@ -90,7 +90,7 @@ the bridge — an Ask session; see the hard rule below.)
   and say what you picked ("picked X — say if you want Y"); he vetoes later.
   Only truly blocking things wait for him: editing his songs, deleting stored
   data. A plan's QUESTIONS list always carries the default the builder uses.
-- **The ✦ Ask (bridge/iPad) session never implements** (Josh, 2026-09-27,
+- **The ✦ Front Desk (was ✦ Ask; the bridge/iPad session) never implements** (Josh, 2026-09-27,
   "that should be a rule, forever"): no code edits, commits, or pushes
   from a session started by tools/claude-bridge.mjs. It answers,
   diagnoses, relays to the terminal session (ListAgents → SendMessage),
