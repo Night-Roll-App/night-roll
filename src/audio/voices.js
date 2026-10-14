@@ -1019,6 +1019,8 @@ function playChipSlice(ti, tr, slice) {
   src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
   src.start(when, slice.offset, slice.dur);
 }
+// an SNES capture's tracks are the DSP's voices: "voiceN", or "voiceN kit" for a voice's sampled drums
+function isSnesVoiceTrack(name) { return /^voice\d+( kit)?$/.test(name || ""); }
 // "▶ Hear sound" (voice menu): ONE note of this track in the GAME's voice.
 // The note is the track's most common pitch, taken from a real captured
 // note (its tick resolves the instrument actually playing there). Unlike a
@@ -1048,9 +1050,16 @@ export async function hearTrackSound(ti) {
   const explicit = typeof tr.voice === "string" && tr.voice !== "auto";
   if (!explicit && live.length && isCaptureKey(S.songKey)) {
     const loaded = chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream);
-    if (loaded && chipHas(tr.name)) {
-      const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, rep.t, S.song.ppq);
+    const ready = loaded && chipHas(tr.name), snes = isSnesVoiceTrack(tr.name);
+    const songSec = tickToSec(S.song, rep.t) * S.playRate;
+    // SNES: the song's own render slice is the exact sound (its mix, its echo) — the worker's table
+    // note (no render needed; tools/spc/preview.mjs) answers when there is no slice yet
+    if (ready && snes) { const slice = chipNoteSlice(tr, pitch, rep.t); if (slice) { playChipSlice(ti, tr, slice); return true; } }
+    if (ready || snes) {
+      const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, rep.t, S.song.ppq, songSec);
       if (buf) { const s = S.audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(S.audio.currentTime + 0.01); return true; }
+    }
+    if (ready && !snes) {
       const slice = chipNoteSlice(tr, pitch, rep.t);
       if (slice) { playChipSlice(ti, tr, slice); return true; }
     }
@@ -1067,7 +1076,8 @@ export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the 
   openMaster(); // master may be faded out from the last stop
   const tr = S.song && S.song.tracks[ti];
   if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
-    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, S.song.ppq);
+    if (isSnesVoiceTrack(tr.name)) { const slice = chipNoteSlice(tr, pitch, tick); if (slice) { playChipSlice(ti, tr, slice); return; } } // the song's own render is the exact sound; the worker's note preview (tools/spc/preview.mjs) is hear-sound's fallback
+    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, S.song.ppq, tick == null ? undefined : tickToSec(S.song, tick) * S.playRate);
     if (buf) { const s = S.audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(S.audio.currentTime + 0.01); return; }
     // register chips (nsf/gbs/spc): chipPreviewBuffer above always comes back
     // null — no per-note renderer, a register log has no note to re-render

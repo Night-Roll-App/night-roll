@@ -263,7 +263,7 @@ export const chipPreviewProgAt = new Map();
 // (tools/note-preview.mjs) — this function stays kind-agnostic. Undefined
 // tick (a piano-strip key press, live MIDI input — no note at all) keeps
 // today's behavior exactly: the track's first program, keyed without a tick.
-export async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq) {
+export async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq, songSec) {
   if (!S.chipWorker || S.chipWorker.__key !== S.songKey || !S.audio) return null;
   const known = tick != null && chipPreviewProgAt.get(S.songKey + "|" + name + "|" + tick);
   const key = S.songKey + "|" + name + "|" + midi + (known ? "|p" + known : "");
@@ -273,7 +273,7 @@ export async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq) {
   const reply = await new Promise(res => {
     const t = setTimeout(() => { chipPreviewPending.delete(req); res(null); }, 400); // a slow answer loses to the synth: a tap must sound now
     chipPreviewPending.set(req, m => { clearTimeout(t); res(m); });
-    try { S.chipWorker.postMessage({preview: {req, id: S.songKey, track: name, midi, vel: 100, offset, tick, ppq}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
+    try { S.chipWorker.postMessage({preview: {req, id: S.songKey, track: name, midi, vel: 100, offset, tick, ppq, songSec}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
   });
   if (!reply || !reply.pcm) return null;
   const x = reply.pcm, st = x.l ? x : null;
@@ -577,7 +577,7 @@ export const CHIPS = {
   // then the 300 s retry doubled it (an iPad tab would not survive that).
   spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC", keepBytes: true,
         channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
-        files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
+        files: ["spc/spc", "spc/notes", "?spc/apu-render", "?spc/preview"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
         render: (M, res, o) => M.renderApu(res.apuLog, {...o, stereo: !o.monoOnly}), // the SPC renderer takes the capture itself
         renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
         stereo: true, // {l, r} per voice: VOL L/R, surround voices and the echo's own stereo (tools/spc/apu-render.mjs)
@@ -1025,6 +1025,7 @@ export function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
     try { workerUrl = new URL("tools/chip-worker.mjs?v=" + Date.now(), S.APP_BASE).href; w = new Worker(workerUrl, {type: "module"}); }
     catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker (" + workerUrl + "): " + err.message + " — rendering inline"); return resolve(null); }
     S.chipWorker = w;
+    w.__key = forKey; // from the start: an SNES worker answers note previews while it renders (chip-worker.mjs); the others reply null until their set is kept
     const c = CHIPS[kind];
     const watch = setInterval(() => { if (S.songKey !== forKey) { finish("stale"); } }, 250); // a song change ends the render at once
     const finish = out => { // a finished render keeps its worker (and the loaded set) for note previews; anything else ends it

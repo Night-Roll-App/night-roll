@@ -3623,9 +3623,29 @@ voice plays that voice; a track that is not from a capture plays its synth
 voice. A capture whose game sound is not ready (render loading, stream chunk
 not cached, Genesis) plays NOTHING and the status line reads "game sound
 still loading — try again in a moment" (Josh's plan Q-E: no synth stand-in, it
-would mislead drum identification). SNES with no render yet needs plan step 5
-(a worker `previewOne` for spc). The slice player is `playChipSlice`, shared
-with `previewNote`.
+would mislead drum identification). The slice player is `playChipSlice`,
+shared with `previewNote`.
+
+**SNES with no render (plan step 5, 2026-10-14).** The worker keeps a compact
+per-note table for an SPC (`spcPreviewTable`, tools/spc/preview.mjs): each
+reconstructed note's 128 DSP registers as they stood at its onset, plus the
+song's RAM (the DSP write log itself is not kept). It is built right after
+the emulation run and BEFORE the render, and the worker is keyed to the song
+from creation (`w.__key`), so a note preview is answered while the render is
+still running (the render yields between slices). `previewOne` for spc
+(`previewSpcNote`) picks the voice's note nearest in time to the tapped one
+(the page sends `songSec`, native seconds since the song's first onset; a
+pitch match breaks ties; a `voiceN kit` track picks kit hits only), then
+renders a two-write capture (KON, and KOFF at the note's length, capped at
+1.5 s) over its registers through the same S-DSP renderer the song uses
+(`renderApu`): the BRR resampled at its PITCH with its ADSR/GAIN envelope,
+VOL and echo send. A different pitch of the same instrument scales PITCH by
+the interval; a kit key keeps the captured sample's own pitch. PMON is off
+(no neighbouring voice), so a pitch-modulated note previews without the
+modulation. The reply's `prog` ("srcn:adsr1:adsr2:gain") keys the page's
+preview cache. With a render in hand the song's own slice still wins for SNES
+(its mix and echo); the worker note is the fallback. Test: tests/spc-preview.test.mjs
+(pitch within 3 cents, envelope correlation >= 0.99 against the render).
 
 ## Game instrument libraries (2026-09-28)
 

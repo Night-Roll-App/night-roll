@@ -909,6 +909,31 @@ test("▶ Hear sound: a captured track plays ONE note in the game's voice — a 
   run(`chip.key = null; audio = null; chipPreviewCache.clear();`);
 });
 
+test("▶ Hear sound on SNES with NO render: the worker's note preview answers with the note's song-time position; with a render the slice still wins", async () => {
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; };
+  run(`createComposition(120, 4, 4); ensureAudio();
+       S.songKey = "albums/imports/snes-x/a.mid";
+       song.tracks = [{name: "voice3 kit", kit: true, notes: [{t: 480, d: 120, p: 38, v: 90, ch: 9}, {t: 960, d: 120, p: 38, v: 90, ch: 9}]}];
+       chip.key = null; chip.pcm = null; chip.buffers = null; chip.stream = null;
+       globalThis.__starts = []; globalThis.__status = []; globalThis.__asked = null; globalThis.__sched = 0;
+       scheduleNote = () => { globalThis.__sched++; };
+       setInfo = m => { globalThis.__status.push(m); };
+       audio.createBufferSource = () => ({buffer: null, connect(t) { return t; }, disconnect() {}, start(w, o, d) { globalThis.__starts.push({tag: this.buffer && this.buffer.length}); }, stop() {}});
+       chipWorker = {__key: songKey, postMessage(m) { globalThis.__asked = {track: m.preview.track, midi: m.preview.midi, tick: m.preview.tick, songSec: m.preview.songSec}; const req = m.preview.req; setTimeout(() => this.onmessage({data: {preview: {req, pcm: {l: new Float32Array(50), r: new Float32Array(50)}, sampleRate: 32000, prog: "3:255:224:0"}}}), 1); }};
+       chipWorker.onmessage = e => { const m = e.data; const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); };`);
+  await settle(run(`hearTrackSound(0)`));
+  assert.deepEqual(val(`globalThis.__asked`), {track: "voice3 kit", midi: 38, tick: 480, songSec: 0.5}, "the worker is asked for the kit note at 0.5 s of song time");
+  assert.equal(val(`globalThis.__starts.length`), 1, "the worker's note plays");
+  assert.equal(val(`globalThis.__sched`), 0, "no synth stand-in");
+  // the worker is not there yet: nothing plays, and the status says why
+  run(`chipWorker = null; globalThis.__starts = []; globalThis.__status = [];`);
+  await settle(run(`hearTrackSound(0)`));
+  assert.equal(val(`globalThis.__starts.length`), 0);
+  assert.deepEqual(val(`globalThis.__status`), ["game sound still loading — try again in a moment"]);
+  run(`chip.key = null; audio = null; chipPreviewCache.clear(); chipPreviewProgAt.clear();`);
+});
+
 test("writeMidi round-trip: CC10 pan, CC70 duty, aftertouch (ve) and per-note channel survive", () => {
   installSong();
   const back = val(`(() => {

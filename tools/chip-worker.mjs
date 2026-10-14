@@ -359,7 +359,7 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
   spc: {
     parse: M => b => M.parseSPC(b),
     run: async (M, parsed, n, secs, prog) => ({cap: await M.runSPCAsync(parsed, secs, prog)}),
-    lead: (M, res) => { const r = M.reconstruct(res.cap, {}); return (r.events.length ? Math.min(...r.events.map(e => e.startFrame)) : 0) * r.frameSec; },
+    lead: (M, res) => { const r = res.recon || (res.recon = M.reconstruct(res.cap, {})); return (r.events.length ? Math.min(...r.events.map(e => e.startFrame)) : 0) * r.frameSec; }, // res.recon: the preview table (below) reads the same notes
     render: (M, res, o) => M.renderApu(res.cap, {...o, stereo: !o.monoOnly}),
     channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"],
     stereo: true, // {l, r} per voice (tools/spc/apu-render.mjs): VOL L/R, surround voices, the echo
@@ -614,6 +614,9 @@ const streamSessions = createStreamState(); // id -> streamed-protocol session (
 // own program/instrument (psf: `program`; usf: `inst`), for the page's
 // preview cache key — undefined when no tick was given or none resolved.
 export async function previewOne(live, p) {
+  if (live && live.spc) { // SNES: the template note's registers + BRR through the S-DSP renderer, no render needed (tools/spc/preview.mjs)
+    return live.M.previewSpcNote ? live.M.previewSpcNote(live.M.renderApu, live.spc, {track: p.track, midi: p.midi, offset: p.offset, songSec: p.songSec}) : null;
+  }
   if (!live || !live.res || !live.res.result || !live.res.result.notes) return null;
   const {M, R, res, rate, kind} = live;
   if (!M.renderOneNote) return null; // an older cached module set without sounding.mjs/note-preview.mjs: no preview rather than a crash
@@ -656,6 +659,13 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     const parsed = R.parse(M)(bytes, libs);
     const res = await R.run(M, parsed, n, secs, p => post({progress: p * 0.3}));
     const leadSec = R.lead(M, res);
+    // SNES: keep a compact per-note register table (tools/spc/preview.mjs) so a
+    // note preview works from here on — during the render below too, since the
+    // worker answers messages between its slices — without holding the DSP log
+    if (kind === "spc" && M.spcPreviewTable) {
+      live = {id, kind, M, R, res: null, rate: 32000, spc: M.spcPreviewTable(res.cap, res.recon.events)};
+      res.recon = null;
+    }
     // memory budget (planChipRender, above): the render's OWN sample rate/
     // channels, decided before it allocates anything — mirrors index.html's
     // inline path exactly (the worker can't call the page's copy)
@@ -675,7 +685,7 @@ if (typeof self !== "undefined") self.onmessage = async e => {
       const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
       ({pcm, pan, transfer, peakBytes, keptBytes} = tallyChipRender(r, names, plan)); outRate = r.sampleRate; groups = names.length;
     }
-    live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate: plan.rate} : null; // kept for note previews
+    if (kind !== "spc") live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate: plan.rate} : null; // kept for note previews (spc's was kept before the render, above)
     post({done: {pcm, sampleRate: outRate, leadSec, pan, debug: {peakBytes, keptBytes, tracks, groups}}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };
