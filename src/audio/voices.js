@@ -99,7 +99,7 @@ export function sfPick(ids) {
 // each opening its instruments; the flat VOICES list keeps every lookup working
 export const VOICE_GROUPS = [
   ["NES / waves", [["auto", "auto (NES)"], ["square", "pulse 50%"], ["square25", "pulse 25%"],
-                   ["square12", "pulse 12.5%"], ["triangle", "triangle"], ["sine", "sine"], ["sawtooth", "saw"]]],
+                   ["square12", "pulse 12.5%"], ["triangle", "triangle"], ["nesTri", "triangle (NES)"], ["sine", "sine"], ["sawtooth", "saw"]]],
   ["Keys & mallets", sfPick(["sf-piano", "sf-rhodes", "sf-harpsichord", "sf-celesta", "sf-musicbox", "sf-vibes", "sf-marimba", "sf-glock"])],
   ["Guitar & bass", sfPick(["sf-guitar", "sf-steel", "sf-eguitar", "sf-banjo", "sf-abass", "sf-ebass"])],
   ["Strings", sfPick(["sf-violin", "sf-viola", "sf-cello", "sf-contrabass", "sf-strings", "sf-pizz", "sf-harp"])],
@@ -110,7 +110,7 @@ export const VOICE_GROUPS = [
 export const VOICES = VOICE_GROUPS.flatMap(([, vs]) => vs);
 // the 2026-08-15 synth patches (piano/pluck/strings/organ/bell) stay playable
 // for any annotation that saved them, but the menu now offers samples instead
-export const VOICE_AMP = {square: 0.5, square25: 0.5, square12: 0.5, triangle: 0.9, sine: 0.85, sawtooth: 0.33,
+export const VOICE_AMP = {square: 0.5, square25: 0.5, square12: 0.5, triangle: 0.9, nesTri: 0.9, sine: 0.85, sawtooth: 0.33,
                    piano: 0.8, pluck: 0.9, strings: 0.42, organ: 0.5, bell: 0.6};
 export const SF_NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 export function sfNoteName(p) { return SF_NOTE_NAMES[p % 12] + (Math.floor(p / 12) - 1); }

@@ -1870,6 +1870,17 @@ test("sampled voices: every menu entry has its soundfont file; pitch names map t
   const voices = val(`VOICES`).map(v => v[0]);
   assert.ok(voices.includes("sf-piano") && voices.includes("sf-violin"));
   assert.ok(!voices.includes("pluck") && !voices.includes("bell"));
+  // Q46: the NES triangle is an EXTRA voice; no default moves
+  assert.ok(voices.includes("nesTri"));
+  assert.equal(run(`VOICES.find(v => v[0] === "nesTri")[1]`), "triangle (NES)");
+  assert.equal(run(`VOICES.find(v => v[0] === "triangle")[1]`), "triangle");
+  run(`song.tracks = [{name: "a", notes: []}, {name: "b", notes: []}, {name: "c", notes: []}];`);
+  assert.equal(run(`[0, 1, 2].map(voiceType).join()`), "square,square25,triangle", "auto assignment unchanged");
+  // 32 steps, 16 levels: the wave is a staircase, so its harmonics carry more than a smooth triangle's
+  run(`S.audio = {createPeriodicWave(re, im) { return {re, im}; }}; globalThis.__w = nesTriWave(); S.audio = null;`);
+  assert.equal(run(`__w.re.length`), 32);
+  assert.ok(run(`Math.abs(__w.re[1])`) > 0.5, "fundamental present");
+  assert.ok(run(`Math.abs(__w.re[3]) < Math.abs(__w.re[1])`));
 });
 
 test("data-location config: defaults are legacy-identical; bases and repos route", () => {
@@ -3157,6 +3168,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Worker tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the Worker gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
+    "triangle (NES)",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Hear sound", "These are drums", "Not drums", "Update countdown", "Not now", "Backups on your Mac",

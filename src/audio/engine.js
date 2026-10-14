@@ -172,6 +172,15 @@ export function dutyWave(duty) {
   for (let n = 1; n < N; n++) real[n] = (2 / (n * Math.PI)) * Math.sin(n * Math.PI * duty);
   return S.audio.createPeriodicWave(real, imag);
 }
+export function nesTriWave() {
+  const N = 32, H = 32, real = new Float32Array(H), imag = new Float32Array(H);
+  const x = Array.from({length: N}, (_, i) => (i < 16 ? 15 - i : i - 16) / 7.5 - 1);
+  for (let k = 1; k < H; k++) for (let i = 0; i < N; i++) {
+    real[k] += x[i] * Math.cos(2 * Math.PI * k * i / N) * 2 / N;
+    imag[k] += x[i] * Math.sin(2 * Math.PI * k * i / N) * 2 / N;
+  }
+  return S.audio.createPeriodicWave(real, imag);
+}
 export function makeOsc(type) {
   const o = S.audio.createOscillator();
   if (type === "square25") {
@@ -180,6 +189,9 @@ export function makeOsc(type) {
   } else if (type === "square12") {
     if (!S.pulse12) S.pulse12 = dutyWave(0.125);
     o.setPeriodicWave(S.pulse12);
+  } else if (type === "nesTri") { // the 2A03 triangle: 32 steps, 16 levels (15..0, 0..15), not a smooth ramp
+    if (!S.nesTri) S.nesTri = nesTriWave();
+    o.setPeriodicWave(S.nesTri);
   } else if (type === "organ") { // drawbar-ish harmonic stack, flat sustain
     if (!S.organWave) {
       const real = new Float32Array([0, 1, 0.55, 0.28, 0.4, 0.1, 0.16, 0, 0.1]);
@@ -319,7 +331,7 @@ export function ensureAudio() { // one context for the app's lifetime — iOS Sa
   // has killed (state "closed") can never come back: rebuild + re-warm.
   if (S.audio && S.audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
     if (!gestureActive()) return;
-    S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
+    S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.nesTri = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
   }
   if (S.audio) return;
   // WebKit picks the page's audio session itself: plain Web Audio gets an
@@ -340,7 +352,7 @@ export function ensureAudio() { // one context for the app's lifetime — iOS Sa
 }
 export function rebuildAudio(why) {
   try { if (S.audio) S.audio.close().catch(() => {}); } catch (err) { /* already closed */ }
-  S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
+  S.audio = null; S.master = null; S.pulse25 = null; S.pulse12 = null; S.nesTri = null; S.trackGains = []; S.trackPanners = []; S.metGain = null; S.organWave = null;
   ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
   logDebug("audio engine rebuilt (" + why + "; gesture " + (gestureActive() ? "active" : "lapsed") + ")");
 }

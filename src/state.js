@@ -158,6 +158,7 @@ export const S = {
   sfPreloadPending: false,
   pulse25: null,
   pulse12: null,
+  nesTri: null,
   organWave: null,
   glideNext: new WeakMap(), // glide (CC84): note -> the continuation it hands its sounding voice to (audio/transport.js buildSchedule, per play)
   glideVoice: new WeakMap(), // glide: continuation note -> the live voice handle its predecessor left it (audio/voices.js glideTakeover)

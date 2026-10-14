@@ -136,13 +136,13 @@ export async function renderSongOffline() {
   // on every context rebuild), gain/panner nodes belong to one graph, and
   // chip.buffers is cached per context (chipBuffers). Nothing here is
   // awaited until startRendering(), so nothing else can see the swap.
-  const saved = {audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+  const saved = {audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, nesTri: S.nesTri, organWave: S.organWave,
                  chipBuffers: chip.buffers, chipBuffersCtx: chip.buffersCtx,
                  playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs};
   S.audio = oac;
   ({master: S.master, limiter: S.limiter} = masterChain(oac)); // the same gain stages as playback, so the file sounds like the app
   S.trackGains = []; S.trackPanners = [];
-  S.pulse25 = null; S.pulse12 = null; S.organWave = null;
+  S.pulse25 = null; S.pulse12 = null; S.nesTri = null; S.organWave = null;
   // chip.buffers/buffersCtx are deliberately left as they are: chipBuffers()
   // already rebuilds against whichever context `audio` names when the two
   // disagree (that's how a live context REBUILD picks up a stale chip cache
@@ -171,7 +171,7 @@ export async function renderSongOffline() {
   // put the live globals back BEFORE the (seconds-long) render: the nodes are
   // already wired into the offline graph, and a note preview, a ▶ tap or the
   // playhead during the render must see the live context, not this one
-  ({audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, organWave: S.organWave,
+  ({audio: S.audio, master: S.master, limiter: S.limiter, trackGains: S.trackGains, trackPanners: S.trackPanners, pulse25: S.pulse25, pulse12: S.pulse12, nesTri: S.nesTri, organWave: S.organWave,
     playing: S.playing, playT0: S.playT0, playOffset: S.playOffset, loopPass: S.loopPass, loopSeg: S.loopSeg, albumEndAbs: S.albumEndAbs} = saved);
   chip.buffers = saved.chipBuffers; chip.buffersCtx = saved.chipBuffersCtx;
   if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }
