@@ -34,15 +34,16 @@ export async function aiJobGet(host, id) { // → {status, job}; job null on 404
   return {status: r.status, job: await aiBody(r)};
 }
 export function aiJobKill(host, id) { return fetch(aiUrlOf(host) + "/v1/jobs/" + encodeURIComponent(id), {method: "DELETE", headers: aiHeadersOf(host)}).catch(() => {}); }
-// ---- inbox + status (polled by the app)
-export async function aiInboxFetch(host, since) { return aiResult(await aiBridgeGet(host, "/v1/inbox?since=" + (+since || 0), {cache: "no-store"})); }
-export async function aiStatusFetch(host, opts) { return aiResult(await aiBridgeGet(host, "/v1/status", Object.assign({cache: "no-store"}, opts || {}))); }
+// ---- inbox + status (polled by the app); each asks for its own app (host.app, default "night-roll") so another app's notes/status never show
+const aiAppOf = host => encodeURIComponent((host && host.app) || "night-roll");
+export async function aiInboxFetch(host, since) { return aiResult(await aiBridgeGet(host, "/v1/inbox?since=" + (+since || 0) + "&app=" + aiAppOf(host), {cache: "no-store"})); }
+export async function aiStatusFetch(host, opts) { return aiResult(await aiBridgeGet(host, "/v1/status?app=" + aiAppOf(host), Object.assign({cache: "no-store"}, opts || {}))); }
 // ---- sessions (one per chat key on the bridge)
 export async function aiSessionGet(host, key) { return aiResult(await aiBridgeGet(host, "/v1/sessions/" + encodeURIComponent(key), {cache: "no-store"})); }
 export function aiSessionDelete(host, key) { return fetch(aiUrlOf(host) + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeadersOf(host)}); }
 export async function aiSessionCompact(host, key, model) { return aiResult(await aiBridgePost(host, "/v1/sessions/" + encodeURIComponent(key) + "/compact", {model})); }
 // ---- the terminal queue (another Claude Code session on the Mac reads it) and its prefs
-export async function aiTerminalPost(host, text) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text})); }
+export async function aiTerminalPost(host, text) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text, app: decodeURIComponent(aiAppOf(host))})); }
 export async function aiTerminalPrefsGet(host) { try { const r = await aiBridgeGet(host, "/v1/terminal-prefs", {cache: "no-store"}); return r.ok ? await aiBody(r) : null; } catch (err) { return null; } }
 export function aiTerminalPrefsSet(host, patch) { return aiBridgePost(host, "/v1/terminal-prefs", patch); }
 // ---- app state (composing / mic) and the deploy hold: fire-and-forget or caller-handled

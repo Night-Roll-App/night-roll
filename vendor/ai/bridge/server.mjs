@@ -78,6 +78,12 @@
 // current one-liner and keeps the last 10 with timestamps; `--status ""`
 // or `--status-clear` clears the current line (history stays).
 //
+// Apps: notes, terminal messages and status lines are per app. `--say` and
+// `--status` take `--app <id>` (default "night-roll"; "guitar", "tuner", any
+// string); POST bodies carry `app` (terminal also takes ?app= / x-nr-app);
+// GET /v1/inbox, /v1/terminal and /v1/status take ?app=<id> and return only
+// that app's rows. No app, or a legacy untagged row, means "night-roll".
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status ·
@@ -190,14 +196,25 @@ export function main(argv, profile) {
   if (has(argv, "--say")) { // a note for the chat client (and the chat session): post it to the running bridge and exit
     const text = flag(argv, "--say", "").trim();
     if (!text) { console.error("--say needs the text of the note"); process.exit(2); }
-    fetch(base() + "/v1/inbox", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, from: flag(argv, "--from", "terminal")})})
+    fetch(base() + "/v1/inbox", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, from: flag(argv, "--from", "terminal"), app: flag(argv, "--app", "night-roll")})})
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("note #" + j.id + " delivered to the bridge"); process.exit(0); })
+      .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
+    return;
+  }
+  if (has(argv, "--forward")) { // hand a message to another app's session: a terminal message tagged for --app, marked as forwarded from --from-app
+    const valued = new Set(["--app", "--from-app", "--port", "--host", "--token", "--forward"]);
+    const after = flag(argv, "--forward", ""), last = argv[argv.length - 1], prev = argv[argv.length - 2];
+    const text = (!after.startsWith("--") && after ? after : !last.startsWith("--") && !valued.has(prev) ? last : "").trim(); // the text follows --forward or ends the line
+    const app = flag(argv, "--app", "");
+    if (!text || !app) { console.error("--forward needs --app <id> and the text: --forward --app tuner \"text\""); process.exit(2); }
+    fetch(base() + "/v1/terminal", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, app, fwd: flag(argv, "--from-app", "night-roll")})})
+      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("message #" + j.id + " forwarded to " + app); process.exit(0); })
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
   }
   if (has(argv, "--status") || has(argv, "--status-clear")) { // "what's running" — post it to the running bridge and exit, mirroring --say
     const text = has(argv, "--status-clear") ? "" : flag(argv, "--status", "").trim();
-    fetch(base() + "/v1/status", {method: "POST", headers: authHeaders(), body: JSON.stringify({text})})
+    fetch(base() + "/v1/status", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, app: flag(argv, "--app", "night-roll")})})
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log(text ? "status set" : "status cleared"); process.exit(0); })
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
@@ -532,28 +549,36 @@ function recordQuota(info) {
   lastQuota = {fiveHour: pct(w.five_hour), sevenDay: pct(w.seven_day), at: Date.now()};
 }
 function inboxAll() { const j = readJSON(INBOX_FILE, {last: 0, notes: []}); return j && Array.isArray(j.notes) ? j : {last: 0, notes: []}; }
-function inboxAdd(text, from) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
+// which app a note / terminal message / status line is for: "night-roll" (also what legacy untagged rows and requests mean), "guitar", "tuner", any string
+const DEFAULT_APP = "night-roll";
+const appIdOf = v => String(v == null || v === "" ? DEFAULT_APP : v).replace(/[^\w.-]/g, "_").slice(0, 40) || DEFAULT_APP;
+const forApp = (row, app) => appIdOf(row.app) === app;
+function inboxAdd(text, from, app) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), app: appIdOf(app), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
 // one current status line (null when idle) plus the last 10 it ever said,
 // each with a timestamp. Clearing only blanks `now` — `recent` is history
 // and never shrinks from a clear.
 // a terminal-style tab (a queue a terminal session watches via GET
 // ?since=), answered through the inbox (--say)
 const TERMINAL_FILE = path.join(STATE_DIR, "terminal.json");
-let terminalPolledAt = 0; // the terminal watcher GETs /v1/terminal every few seconds: recent = someone is there to read it
-const terminalReachable = () => Date.now() - terminalPolledAt < 90000;
+const terminalPolledAt = new Map(); // app id → when its watcher last GETed /v1/terminal (every few seconds): recent = someone is there to read it
+const terminalReachable = app => [...terminalPolledAt].some(([id, t]) => (app == null || id === appIdOf(app)) && Date.now() - t < 90000); // no app = any watcher
 function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
-function terminalAdd(text, shot) { const box = terminalAll(); const m = {id: ++box.last, t: Date.now(), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
-function statusAll() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
-function statusSet(text) {
-  const box = statusAll();
+function terminalAdd(text, shot, app, fwd) { const box = terminalAll(); const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
+// status.json: the night-roll line at the top level (legacy shape), every other app's under .apps[id]
+function statusFile() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && typeof j === "object" && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
+function statusAll(app) { const j = statusFile(), id = appIdOf(app); if (id === DEFAULT_APP) return j; const b = j.apps && j.apps[id]; return b && Array.isArray(b.recent) ? b : {now: null, recent: []}; }
+function statusSet(text, app) {
+  const file = statusFile(), id = appIdOf(app);
+  let box = file;
+  if (id !== DEFAULT_APP) { file.apps = file.apps || {}; box = file.apps[id] = statusAll(id); }
   const trimmed = String(text || "").trim();
   if (trimmed) { const entry = {text: trimmed.slice(0, 4000), t: Date.now()}; box.now = entry; box.recent.push(entry); box.recent = box.recent.slice(-10); }
   else box.now = null;
-  writeJSON(STATUS_FILE, box);
-  return box;
+  writeJSON(STATUS_FILE, file);
+  return {now: box.now, recent: box.recent};
 }
-function notesPreface(sess) { // what the terminal said since this session's last turn
-  const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0));
+function notesPreface(sess, app) { // what the terminal said since this session's last turn, to this chat's app only
+  const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0) && forApp(n, appIdOf(app)));
   if (!fresh.length) return "";
   const when = t => new Date(t).toTimeString().slice(0, 5);
   return "NOTES FROM THE TERMINAL (delivered by the bridge since your last turn; the user sees them in the app too):\n" + fresh.map(n => `- [${when(n.t)} ${n.from}] ${n.text}`).join("\n") + "\n\n";
@@ -586,7 +611,7 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   const sess = sessionFor(songKey);
   const resumed = sess.turns > 0;
   const {system, prompt: tail} = resumed ? flattenTail(body.messages) : flatten(body.messages);
-  const prompt = notesPreface(sess) + tail;
+  const prompt = notesPreface(sess, job.app) + tail;
   const noteLast = inboxAll().last;
   // the request's optional x-nr-ctx-parts header (JSON part→chars) — stored
   // as-is in this turn's ring row, no parsing of its shape beyond valid
@@ -822,12 +847,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/inbox") { // notes from the terminal: the client polls with ?since=<last id it showed>
-    if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since)}); }
+    if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const app = appIdOf(url.searchParams.get("app")); const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since && forApp(n, app))}); }
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       if (!b || !String(b.text || "").trim()) return json(res, 400, {error: {message: "a note needs text"}});
-      const note = inboxAdd(String(b.text).trim(), b.from);
-      console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
+      const note = inboxAdd(String(b.text).trim(), b.from, b.app);
+      console.log(`inbox #${note.id} [${note.app}] from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
     }
   }
@@ -843,13 +868,13 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/terminal") { // POST from a client's own Terminal-style tab; GET ?since=ID from the terminal session's watcher
-    if (req.method === "GET") { terminalPolledAt = Date.now(); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since)}); }
+    if (req.method === "GET") { const app = appIdOf(url.searchParams.get("app")); terminalPolledAt.set(app, Date.now()); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since && forApp(m, app)).map(m => ({...m, app: appIdOf(m.app)}))}); }
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       if (!b || (!String(b.text || "").trim() && !b.shot)) return json(res, 400, {error: {message: "a message needs text"}});
-      const m = terminalAdd(b.text, b.shot);
-      console.log(`terminal #${m.id}: ${m.text.slice(0, 80)}`);
-      return json(res, 200, {...m, now: statusAll().now});
+      const m = terminalAdd(b.text, b.shot, b.app || url.searchParams.get("app") || req.headers["x-nr-app"], b.fwd);
+      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}: ${m.text.slice(0, 80)}`);
+      return json(res, 200, {...m, now: statusAll(m.app).now});
     }
   }
   if (url.pathname === "/v1/app-state") { // the client says the user is typing/dictating; a build waits rather than relaunch under them. In memory; stale after 2 min
@@ -862,15 +887,15 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for a client's poll, POST from --status or a session announcing a step
     if (req.method === "GET") {
-      const box = statusAll();
+      const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now());
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
-      const box = statusSet(b && b.text);
-      console.log(box.now ? `status: ${box.now.text.slice(0, 80)}` : "status cleared");
+      const box = statusSet(b && b.text, b && b.app);
+      console.log(box.now ? `status [${appIdOf(b && b.app)}]: ${box.now.text.slice(0, 80)}` : "status cleared");
       return json(res, 200, {now: box.now, recent: box.recent});
     }
   }
@@ -951,6 +976,7 @@ const server = http.createServer(async (req, res) => {
       const target = route.get(body.model) || route.get(MODEL_CLAUDE) || [...route.values()][0];
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
+      job.app = appIdOf(req.headers["x-nr-app"]);
       if (target.claude) runClaude(job, body, songKey, target.model, req.headers["x-nr-ctx-parts"]); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;
