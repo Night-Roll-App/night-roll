@@ -14,8 +14,10 @@
 //   greeting(tab) → text|null · renderEarlier(div)   (an empty chat; a trimmed one)
 //   msgTag(m) → {tag, dim} · noteLabel(from) · clock(t)
 //   send() · abort()   (the window's Send and Stop)
+//   desk: the ✦ tab shows the Front Desk thread (desk.js) when host.deskOffered() — see desk.js for its host members
 import { aiStoreGet, aiDraftRead, aiDraftWrite, aiDraftClear } from "./store.js";
 import { aiPartial, aiResumeSoon, aiText } from "./client.js";
+import { aiDeskMode, aiDeskLines } from "./desk.js";
 
 export const AI_WINDOW_IDS = {sheet: "asksheet", log: "asklog", input: "askinput", status: "askstatus", send: "asksend", stop: "askstop", tabSong: "askmodesong", tabGeneral: "askmodegen", tabTerminal: "askmodeterm", spanRow: "askspanrow"};
 export const AI_WINDOW_CSS = {msg: "askmsg", copy: "askcopy", other: "othermode", earlier: "earlier"};
@@ -133,6 +135,16 @@ export function aiRenderLog(host) {
   aiDraftLoad(host);
   const log = aiEl(host, "log");
   log.innerHTML = "";
+  if (aiDeskMode(host)) { // the Front Desk: one shared thread from the bridge, not this app's own chat
+    const lines = aiDeskLines(host, aiClock);
+    if (!lines.some(l => l.role !== "dim") && host.greeting) { const g = host.greeting("general"); if (g) aiBubble(host, "ai", g); }
+    for (const l of lines) {
+      const div = aiBubble(host, l.role === "user" ? "user" : l.role === "note" ? "note" : "ai", l.text);
+      if (l.role === "dim" || l.role === "ai-dim") div.classList.add(aiCss(host, "earlier"));
+    }
+    aiScrollEnd(host);
+    return;
+  }
   const st = aiStoreGet(host);
   const msgs = st.msgs;
   if (st.trimmed && host.renderEarlier) { const div = aiBubble(host, "ai", ""); div.classList.add(aiCss(host, "earlier")); host.renderEarlier(div); }

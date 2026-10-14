@@ -169,3 +169,20 @@ polled that queue for 90 s, so the row is stored as a one-off the watcher never 
 writes a "→ handed to the … Worker" note. `GET /v1/status` and `GET /v1/jobs` carry `desk: true`; status adds
 `deskLive`. Rows trimmed from `terminal.json` / `inbox.json` (past 200) are appended to
 `<state>/archive/<file>-YYYY-MM.jsonl`.
+
+## The Front Desk tab (library side)
+
+`web/desk.js` and `swift/Sources/BridgeChat/DeskChat.swift`: the ✦ tab becomes the one thread every app shares.
+Off by default: a host opts in (web `host.keys.desk` + `deskOffered()`; Swift `ChatHost.deskEnabled`), and only
+while the bridge's status says `desk: true` (an old bridge keeps the per-app Ask).
+
+- Send: `aiDeskSend` / `DeskChat.send` POST `{app: "front-desk", src: <this app>, label: <one line>, text}`; no model
+  call here. `live: false` in the answer means nobody is reading the Front Desk: the row is cached as a one-off and
+  the app asks ONE chat request (`x-nr-song: front-desk-oneoff`, `x-nr-app: front-desk`, `x-nr-desk: <row id>`, no
+  tools) whose answer the bridge writes into the thread itself.
+- Read: `aiDeskPoll` / `DeskChat.poll` fetch `GET /v1/desk?since=<t ms>` and merge by kind + id. The cache is
+  `host.keys.desk` (web, `{last, rows}`, no `msgs` field so it is never a chat) and `<key>-desk.json` (Swift).
+- Host (web): `keys.desk`, `deskOffered()`, `deskLive()`, `deskLabel()`, optional `deskContext()` (default
+  `terminalContext()`), `appName()`, `deskAppName(id)`, `deskSystemPrompt()`, `deskChanged(rows)` (new notes/reports
+  arrived: the app's light), `earlierChat()` (the old Ask chat, read-only above the thread). Host (Swift): `deskEnabled`, `deskLabel()`, `earlierSessionKey`.
+- The Worker tab is the old Terminal tab, unchanged.

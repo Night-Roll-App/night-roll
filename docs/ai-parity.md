@@ -201,6 +201,7 @@ silently.
 | Errors and status since your last message | have (sent with every message) | — | — | — |
 | Switch to another song's chat | — | yes, through `open_song` (§4) | — | — |
 | Switch to the Worker tab | — | no — the song chat already relays to the terminal | — | — |
+| Send to the Front Desk (the ✦ tab, 2026-10-13) | — | not applicable — a relay to the one session shared by all the apps, no app state to act on; song edits stay in ♪ this song | — | — |
 | Clear chat, Compact | — | no — Ask erasing its own memory mid-reply breaks the reply; you tap | — | — |
 | Screenshot to Claude | — | yes, later — "look at my screen" | `screenshot {}` | M |
 | Install now / Not now (update countdown) | — | no — restarts the app under you | — | — |

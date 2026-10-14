@@ -21,7 +21,7 @@ export {
 } from "./ctx-cache.js";
 export {
   aiBridgeGet, aiBridgePost, aiJobsSupported, aiJobGet, aiJobKill, aiInboxFetch, aiStatusFetch,
-  aiSessionGet, aiSessionDelete, aiSessionCompact, aiTerminalPost, aiTerminalPrefsGet, aiTerminalPrefsSet, aiAppState, aiDeploy,
+  aiSessionGet, aiSessionDelete, aiSessionCompact, aiTerminalPost, aiTerminalPrefsGet, aiTerminalPrefsSet, aiDeskFetch, aiDeskPost, aiDeskOneOff, aiAppState, aiDeploy,
 } from "./bridge-client.js";
 export {
   AI_SHOT_MAX, AI_MAX_SHOT_SIDE, AI_MAX_SHOT_KEEP_BYTES, aiB64Bytes, aiShotLine, aiShotUpload, aiShotOutgoing, aiShotDisplayText,
@@ -34,3 +34,4 @@ export {
   aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking,
   aiTabSet, aiTabRestore, aiTabButtons, aiRenderLog, aiWindowBind,
 } from "./window.js";
+export { aiDeskApp, aiDeskOn, aiDeskMode, aiDeskGet, aiDeskSave, aiDeskMerge, aiDeskPoll, aiDeskLines, aiDeskSend } from "./desk.js";

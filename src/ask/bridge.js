@@ -48,6 +48,7 @@ import { askHost } from "./host.js";
 import { AI_LOCAL_SOFT, AI_TOTAL_CAP, aiStoreGet, aiStoreSave, aiUnsavedCount, aiRevertToSaved, aiEvictOthers, aiPendingAll, aiPendingIndex, aiJobId, aiSeenKey, aiSeenGet, aiSeenMax, aiSeenSet, aiSeenAdvance, aiSeenStage, aiSeenCommit, aiSeenDrop, aiLogMarkdown } from "../../vendor/ai/web/store.js";
 import { aiJobsSupported, aiInboxFetch, aiStatusFetch, aiSessionGet, aiSessionCompact, aiTerminalPrefsGet, aiTerminalPrefsSet, aiAppState, aiDeploy } from "../../vendor/ai/web/bridge-client.js";
 import { aiHostAllowed } from "../../vendor/ai/web/backends.js";
+import { aiDeskPoll, aiDeskMode } from "../../vendor/ai/web/desk.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -69,6 +70,10 @@ export const ASK_GENERAL_LOG = "ask/general.ask.md";
 // default (Josh is evaluating it: Ask answers at once while I build). It rides the general chat's
 // UI (askGeneral stays true: no span row, no Fill), with its own store.
 export const ASK_TERMINAL_KEY = "ff1roll-ask-terminal";
+// The Front Desk (Josh, #422-#424): the ✦ tab becomes ONE thread shared by every app, kept by the bridge (GET /v1/desk) and cached under this key —
+// NOT a chat store (no `msgs`), so Publish, eviction and the pending scan never see it. Its cursor is ff1roll-desk-seen. The old general chat
+// (ff1roll-ask-general) stays exactly as it was and shows read-only as "Earlier chat".
+export const ASK_DESK_KEY = "ff1roll-desk";
 // Its log lives beside the general one. Before 2026-10-04 askLogPath fell
 // through the per-song branch and wrote terminal.ask.md at the repo ROOT, and
 // pendingSongs took "terminal" for a song key, so Publish all ran publishSong
@@ -209,7 +214,7 @@ export function askCompactModelName() { const m = /^claude-code-(opus|sonnet|hai
 // the bridge's compact runs the Claude CLI directly — it wants "opus", not "claude-code-opus"; plain "claude-code" omits it, so the bridge's own default model applies
 export function askSessionRender() {
   const line = document.getElementById("asksessionline"), btn = document.getElementById("askcompact");
-  const show = S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal && S.song;
+  const show = S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal && S.song && !aiDeskMode(askHost()); // the Front Desk has no session of its own to size
   if (line) line.style.display = show ? "" : "none";
   if (btn) btn.style.display = show ? "" : "none";
   if (!show) return;
@@ -218,7 +223,7 @@ export function askSessionRender() {
   if (btn) btn.disabled = !u || !u.turns;
 }
 export async function askSessionRefresh() {
-  if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song) { askSessionRender(); return; }
+  if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song || aiDeskMode(askHost())) { askSessionRender(); return; }
   const key = askSessionName();
   try {
     const r = await aiSessionGet(askHost(), key);
@@ -449,6 +454,7 @@ export async function deployAskTap() { // the "Not now" / "Install now" sheet (a
 
 export async function askInboxPoll() {
   if (!askInboxAllowed() || !S.song) return;
+  aiDeskPoll(askHost()); // the Front Desk thread rides the same poll (a no-op unless the bridge offers it)
   const url = aiUrl();
   let r;
   try { r = await aiInboxFetch(askHost(), localStorage.getItem(askInboxSeenKey()) || 0); } catch (err) { return; }
@@ -464,6 +470,10 @@ export async function askInboxPoll() {
   if (!notes.length) { if (j && j.last) localStorage.setItem(askInboxSeenKey(), String(j.last)); return; }
   askNotesArrived(notes);
   localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
+}
+export function askDeskArrived() { // a note or a Worker's report landed in the Front Desk thread while it was not on screen: the same ✉ light as an inbox note
+  if (asksheet.classList.contains("on") && aiDeskMode(askHost())) return;
+  document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ the Front Desk answered — tap ✦ AI to read it");
 }
 export function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
   const toTerm = n => !n.from || n.from === "terminal";
@@ -490,7 +500,7 @@ export async function askStatusPoll() {
   // a dead tailnet address can hang a fetch for a minute: no answer in 8 s is "unreachable", and the fetch is aborted so hung ones never pile up
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
   try { r = await aiStatusFetch(askHost(), {signal: ctl.signal}); if (r.status >= 500) throw new Error("HTTP " + r.status); } // a 5xx is the tailnet front end answering for a bridge that isn't up yet
-  catch (err) { if (askBridgeSeen(url)) askReachSet(false); S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  catch (err) { if (askBridgeSeen(url)) askReachSet(false); S.askCaps = {...S.askCaps, terminalLive: false, deskLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
   finally { clearTimeout(t); }
   askReachSet(true); // the bridge answered: the offline banner goes, a waiting message is sent
   if (r.status === 404) { S.askStatusNo = url; S.askStatusNow = null; S.askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
@@ -502,7 +512,7 @@ export async function askStatusPoll() {
   S.askQuota = (j && j.quota) || null;
   if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
   deploySetHeld(!!(j && j.deployHold));
-  S.askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
+  S.askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), desk: !!(j && j.desk), deskLive: !!(j && j.deskLive), sessions: !!(j && j.sessions)};
   askStatusRender();
   askTabsApply();
   askSessionRefresh();

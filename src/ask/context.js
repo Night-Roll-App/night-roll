@@ -29,6 +29,7 @@ import { logLine } from "../model/jobs.js";
 import { askStoreKey } from "./sheet.js";
 import { cfg } from "../platform/storage.js";
 import { ASK_TERMINAL_KEY } from "./bridge.js";
+import { ASK_DESK_KEY } from "./bridge.js";
 import { songTitleOf } from "../hooks.js";
 import { keyLabelState } from "../ui/chrome.js";
 import { editableSong } from "../model/song.js";
@@ -487,6 +488,18 @@ export function askTerminalContext() {
   const openLine = askOpenSongLine();
   if (openLine) parts.push(openLine);
   const ns = askNewSinceLines(ASK_TERMINAL_KEY);
+  if (ns) parts.push(ns);
+  return parts.length ? parts.join("\n") : null;
+}
+
+// The Front Desk tab (vendor/ai/web/desk.js) sends the same facts as the Worker tab, but reads and moves its OWN "new since" cursor (ASK_DESK_KEY),
+// so a message to one never consumes what the other still has to tell. askDeskLabel: the one line other apps see beside this message.
+export function askDeskLabel() { return S.songKey && S.song ? songTitleOf(S.songKey) + " · bar " + (Math.floor(curTick() / barTicks()) + 1) : ""; }
+export function askDeskContext() {
+  const parts = [];
+  const openLine = askOpenSongLine();
+  if (openLine) parts.push(openLine);
+  const ns = askNewSinceLines(ASK_DESK_KEY);
   if (ns) parts.push(ns);
   return parts.length ? parts.join("\n") : null;
 }

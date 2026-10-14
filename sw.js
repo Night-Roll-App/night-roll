@@ -35,7 +35,7 @@
 // from cache when the network failed or timed out.
 
 const SW_VERSION = "nr-v48"; // bumped: the Maestro icons + icons/mark.svg (icons are cache-first, so a new picture needs a new cache); nr-v47 = src/audio/loudness.js + src/audio/levels.js join APP_MODULES (the song gain); nr-v46 = src/model/patch.js joins APP_MODULES (patches v1); nr-v45 =src/model/noteshape.js joins APP_MODULES (volume shape inside a note); nr-v44 = src/ask/actions.js joins APP_MODULES (the act tool); nr-v43 = src/ui/study-sheet.js joins APP_MODULES (the Analysis sheet); nr-v42 = src/ask/annotate.js joins APP_MODULES (✦ Annotate this song…); nr-v41 = src/ui/vellane.js (the velocity lane, DAW F4) joins APP_MODULES; nr-v40 = vendor/ai/web/window.js joins AI_MODULES (AI library step 6); nr-v39 = client.js (step 5); nr-v38 = store/ctx-cache/bridge-client/attach (step 4); nr-v37 = backends.js (step 3, docs/ai-library-plan.md §4); nr-v36 = src/theory/facts/* and src/theory/harmony/* join APP_MODULES (docs/theory-toolkit.md); nr-v35 = quiz/ + privacy.html bypass the worker; nr-v34 = help/help.html
-const AI_LIB = "b0a7af6"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
+const AI_LIB = "ba6c348"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
 const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's
@@ -48,14 +48,14 @@ const APP_MODULES = ["src/edition.js", "src/devtools.js", "src/main.js", "src/st
 // vendor/ai/files.json's web/ entries AND index.html's modulepreload ∩
 // vendor/ai (tests/modules.test.mjs's extended rule 8). Precached (unlike
 // src/, which is network-first) because it's pinned, not live-edited.
-const AI_MODULES = ["vendor/ai/web/index.js", "vendor/ai/web/sse.js", "vendor/ai/web/backends.js", "vendor/ai/web/store.js", "vendor/ai/web/ctx-cache.js", "vendor/ai/web/bridge-client.js", "vendor/ai/web/attach.js", "vendor/ai/web/client.js", "vendor/ai/web/reach.js", "vendor/ai/web/window.js"];
+const AI_MODULES = ["vendor/ai/web/index.js", "vendor/ai/web/sse.js", "vendor/ai/web/backends.js", "vendor/ai/web/store.js", "vendor/ai/web/ctx-cache.js", "vendor/ai/web/bridge-client.js", "vendor/ai/web/attach.js", "vendor/ai/web/client.js", "vendor/ai/web/reach.js", "vendor/ai/web/window.js", "vendor/ai/web/desk.js"];
 // AI_MODULES' entries are repeated here as literal strings rather than
 // spread in, the same way APP_MODULES' entries above are: tests/pwa.test.mjs
 // JSON.parses this array's own source text verbatim, which a spread
 // (`...AI_MODULES`) isn't.
 const PRECACHE = ["./", "index.html", "css/app.css", "help/help.html", "vendor/vexflow.js", "app.webmanifest",
                   "src/edition.js", "src/devtools.js", "src/main.js",
-                  "vendor/ai/web/index.js", "vendor/ai/web/sse.js", "vendor/ai/web/backends.js", "vendor/ai/web/store.js", "vendor/ai/web/ctx-cache.js", "vendor/ai/web/bridge-client.js", "vendor/ai/web/attach.js", "vendor/ai/web/client.js", "vendor/ai/web/reach.js", "vendor/ai/web/window.js",
+                  "vendor/ai/web/index.js", "vendor/ai/web/sse.js", "vendor/ai/web/backends.js", "vendor/ai/web/store.js", "vendor/ai/web/ctx-cache.js", "vendor/ai/web/bridge-client.js", "vendor/ai/web/attach.js", "vendor/ai/web/client.js", "vendor/ai/web/reach.js", "vendor/ai/web/window.js", "vendor/ai/web/desk.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "icons/mark.svg"];
 const NAV_TIMEOUT_MS = 4000;
 

@@ -10524,3 +10524,16 @@ tools/ai-profile.mjs. Every stored name stays (`ff1roll-ask-*` keys, mode values
 `general`/`terminal`, `askmodegen`/`askmodeterm`, `/v1/terminal`, `*.ask.md`
 file names, `send_to_terminal`). The plan and its Fable amendments live in
 claude-bridge/docs/plans/2026-10-13-front-desk-worker.md.
+
+**Step 6 (the ✦ tab becomes the shared thread).** When the bridge's status says `desk: true`
+(S.askCaps.desk), the ✦ tab is the Front Desk: `askSend` calls the library's `aiDeskSend`
+(vendor/ai/web/desk.js) — one terminal-style post to app `front-desk` with `src` = this app and
+`label` = `askDeskLabel()` (`Terra · bar 12`), no model call. The thread is the bridge's
+`GET /v1/desk` window, polled with the inbox (`askInboxPoll` → `aiDeskPoll`) and cached under
+`ff1roll-desk` (`ASK_DESK_KEY`, shape `{last, rows}` — no `msgs`, so Publish, eviction and the pending
+scan never see it; its "new since" cursor is `ff1roll-desk-seen`). The Front Desk's facts are
+`askDeskContext()` (same as the Worker tab's, own cursor). `ff1roll-ask-general` and
+`ask/general.ask.md` are untouched and show read-only as "Earlier chat". Not running (`deskLive`
+false): the bridge marks the row a one-off and the app asks ONE chat request (`x-nr-desk`, no tools,
+`askSys()`); the bridge writes the answer into the thread. Old bridge (no `desk`): the tab is the
+per-app Ask exactly as before. `♪ this song` is unchanged, `act` included.

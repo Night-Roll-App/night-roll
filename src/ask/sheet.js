@@ -36,6 +36,7 @@ import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
 import { askHost } from "./host.js";
 import { aiDraftKey } from "../../vendor/ai/web/store.js";
+import { aiDeskMode } from "../../vendor/ai/web/desk.js";
 import { aiDraftRead } from "../../vendor/ai/web/store.js";
 import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
 import { aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard, aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking, aiTabSet, aiTabButtons, aiRenderLog } from "../../vendor/ai/web/window.js";
@@ -57,10 +58,12 @@ export function askTabLabel() { // the tab names the song: the sheet covers the 
   return "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song");
 }
 export function askPlaceholder(tab) {
+  if (tab === "general" && aiDeskMode(askHost())) return "Message the Front Desk — the answer comes back here…";
   if (tab === "terminal") return "Tell the Worker what to build or fix…";
   return tab === "general" ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for a Worker…" : "…") : "Ask about what you're looking at…";
 }
 export function askGreeting(tab) { // an empty chat's first bubble — the Learning one leads with hints (CLAUDE.md), the Normal one answers
+  if (tab === "general" && aiDeskMode(askHost())) return "This is the Front Desk — one Claude Code session shared by Night Roll, Guitar and Tuner. Ask about any app or the project, or say \"tell the Guitar Worker…\" to hand work to an app's Worker. Its answers come back here, and what you send from the other apps shows here too, tagged with the app. Your earlier chat is kept above, read only.";
   if (tab === "terminal") return "This goes straight to the Worker — the Claude Code session on your Mac that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.";
   if (tab === "general") return "This is the Front Desk — not about any one song. Ask about the app, the project, music in general, or say \"tell the Worker…\" to pass a message to the Claude Code sessions on your Mac.";
   return appMode() === "normal"

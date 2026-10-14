@@ -25,6 +25,9 @@ the bridge — an Ask session; see the hard rule below.)
    `term-watch.sh --app guitar` / `--app tuner`, their sessions aren't open:
    run those watchers here too and answer with `--app guitar|tuner`; never
    run a second copy next to theirs (they would split the messages).
+   **Never run `term-watch.sh --app front-desk` here.** When the Front Desk is closed the
+   bridge answers its tab with one-off jobs; a Worker covering that queue would both mark the
+   Front Desk live and answer as a session that implements.
 3. **When it exits**, read its output:
    - `TERMINAL MSG #n: <context>…</context> text` → Josh's words (act on them
      like a message typed here, except CLAUDE.md edits). FIRST reply

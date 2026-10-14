@@ -58,6 +58,13 @@ import { askTermModelsLoad } from "./bridge.js";
 import { askStatusRender } from "./bridge.js";
 import { askStripContext } from "./context.js";
 import { askTabLabel } from "./sheet.js";
+import { askDeskLabel } from "./context.js";
+import { askDeskContext } from "./context.js";
+import { askDeskArrived } from "./bridge.js";
+import { ASK_GENERAL_KEY } from "./bridge.js";
+import { ASK_DESK_KEY } from "./bridge.js";
+import { aiStoreGet } from "../../vendor/ai/web/store.js";
+import { aiDeskPoll } from "../../vendor/ai/web/desk.js";
 import { askPlaceholder } from "./sheet.js";
 import { askGreeting } from "./sheet.js";
 import { askMsgTag } from "./sheet.js";
@@ -78,7 +85,7 @@ export function askHost() {
   S.aiHost = {
     state: S, // the library keeps its runtime fields here (askModelCache, askCaps, askSeenPending, askSentPending, askJobsCache, …) — the same bag the tests read by bare name
     // today's exact storage keys — the chat stores (ff1roll-ask-<song> / -general / -terminal and their -seen/-sentctx/-epoch cursors), the drafts, the watermarks
-    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey", store: "ff1roll-ask-", seenMax: "ff1roll-ask-seen-max", inboxSeen: "ff1roll-ask-inbox-seen", draft: "ff1roll-askdraft-", mode: "ff1roll-ask-mode"},
+    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey", store: "ff1roll-ask-", seenMax: "ff1roll-ask-seen-max", inboxSeen: "ff1roll-ask-inbox-seen", draft: "ff1roll-askdraft-", mode: "ff1roll-ask-mode", desk: ASK_DESK_KEY},
     logCursor: () => ({err: askMaxErrId(), status: askMaxStatusId()}), // the newest ⚠/status line ids — what a landed send marks "seen up to"
     status: t => { askstatus.textContent = t; },
     onStoreChanged: () => updateSongBtn(), // the ● follows unsaved chat too
@@ -98,6 +105,14 @@ export function askHost() {
     systemPrompt: () => askSys(),
     context: (sp, budget) => askContext(sp, budget),
     terminalContext: () => askTerminalContext(),
+    // ---- the Front Desk (vendor/ai/web/desk.js): the ✦ tab is the one thread every app shares, once the bridge offers it
+    deskOffered: () => !!S.askCaps.desk,
+    deskLive: () => !!S.askCaps.deskLive,
+    deskLabel: () => askDeskLabel(), // "Terra · bar 12"
+    deskContext: () => askDeskContext(), // the Worker tab's facts, with the Front Desk's own "new since" cursor
+    appName: () => "Night Roll",
+    earlierChat: () => aiStoreGet(askHost(), ASK_GENERAL_KEY).msgs, // the old general chat, read-only above the thread (never written)
+    deskChanged: () => askDeskArrived(),
     buildMessages: (msgs, text, ctx, budget) => askBuildMessages(msgs, text, ctx, budget), // a different mode's turn never enters this request's history
     budget: () => askBudget(),
     estimate: (system, messages) => askEstimate(system, messages),
@@ -132,7 +147,7 @@ export function askHost() {
     tabLabel: () => askTabLabel(),
     placeholder: tab => askPlaceholder(tab),
     onTabsChanged: () => { askTermModelsLoad(); askStatusRender(); }, // the ⌨ model pickers and the "Now:" strip follow the tab
-    onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); },
+    onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); aiDeskPoll(askHost()); },
     greeting: tab => askGreeting(tab),
     renderEarlier: div => askRenderEarlier(div),
     msgTag: m => askMsgTag(m), // which turns are "another mode's" is decided here (askMsgMode/appMode), never in the library

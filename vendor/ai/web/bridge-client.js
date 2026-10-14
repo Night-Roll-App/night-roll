@@ -46,6 +46,14 @@ export async function aiSessionCompact(host, key, model) { return aiResult(await
 export async function aiTerminalPost(host, text) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text, app: decodeURIComponent(aiAppOf(host))})); }
 export async function aiTerminalPrefsGet(host) { try { const r = await aiBridgeGet(host, "/v1/terminal-prefs", {cache: "no-store"}); return r.ok ? await aiBody(r) : null; } catch (err) { return null; } }
 export function aiTerminalPrefsSet(host, patch) { return aiBridgePost(host, "/v1/terminal-prefs", patch); }
+// ---- the Front Desk: one shared session (app "front-desk" on the bridge). A post carries the asking app (src) and one line of
+// its context (label); the thread's live window is GET /v1/desk?since=<t ms>; a one-off is the bridge answering for it while it is closed
+export async function aiDeskFetch(host, since) { return aiResult(await aiBridgeGet(host, "/v1/desk?since=" + (+since || 0), {cache: "no-store"})); }
+export async function aiDeskPost(host, text, label) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text, app: "front-desk", src: decodeURIComponent(aiAppOf(host)), label: label || ""})); }
+export async function aiDeskOneOff(host, {system, text, row, job, model}) { // no tools; one shared resumed session on the bridge; the bridge itself writes the answer into the thread
+  const headers = Object.assign({}, aiHeadersOf(host), {"x-nr-job": job, "x-nr-song": "front-desk-oneoff", "x-nr-app": "front-desk", "x-nr-desk": String(row)});
+  return aiResult(await fetch(aiUrlOf(host) + "/v1/chat/completions", {method: "POST", headers, body: JSON.stringify({model, stream: false, messages: [{role: "system", content: system}, {role: "user", content: text}]})}));
+}
 // ---- app state (composing / mic) and the deploy hold: fire-and-forget or caller-handled
 export function aiAppState(host, body) { return aiBridgePost(host, "/v1/app-state", body).catch(() => {}); }
 export function aiDeploy(host, body) { return aiBridgePost(host, "/v1/deploy", body); }
