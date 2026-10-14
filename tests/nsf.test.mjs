@@ -1021,3 +1021,36 @@ test("glide: makeMidi links capture events marked lg (CC84 + chain-relative bend
   const p = await parsedOf(makeMidi(ev, opts));
   for (const s of [p.a, p.b]) assert.deepEqual(s.tracks[0].notes.map(n => !!n.lg), [false, true, true], "the app reads the links back, through the publish hop");
 });
+
+// ---- Q19: the triangle stops itself (linear counter + length counter), no register write needed
+test("triangle: a note ends where its linear counter runs out, and a $4008 bit-7 note holds until the driver changes it", () => {
+  const w = (frame, addr, value) => ({frame, addr, value});
+  const tri = log => reconstruct(log, 100, 1 / 60).filter(e => e.channel === "triangle").map(e => [e.startFrame, e.endFrame]);
+  // $4008 = 5 (linear counter 5, length counter running): 1 reload tick + 5 countdown ticks = 6 quarter-frames = 2 frames
+  assert.deepEqual(tri([w(0, 0x4015, 4), w(10, 0x4008, 5), w(10, 0x400A, 0x40), w(10, 0x400B, 0x08)]), [[10, 12]]);
+  // bit 7 set: the counter keeps reloading and the length counter is halted, so the note holds to the end
+  assert.deepEqual(tri([w(0, 0x4015, 4), w(10, 0x4008, 0x85), w(10, 0x400A, 0x40), w(10, 0x400B, 0x08)]), [[10, 100]]);
+  // bit 7 set, then the driver writes $4008 = $80 (reload 0): silent from the next tick
+  assert.deepEqual(tri([w(0, 0x4015, 4), w(10, 0x4008, 0x85), w(10, 0x400A, 0x40), w(10, 0x400B, 0x08), w(20, 0x4008, 0x80)]), [[10, 20]]);
+  // length counter: index 3 loads 2 half-frames (1 frame) — shorter than the linear counter's 127
+  assert.deepEqual(tri([w(0, 0x4015, 4), w(10, 0x4008, 0x7F), w(10, 0x400A, 0x40), w(10, 0x400B, 0x18)]), [[10, 11]]);
+  // no $400B ever loaded the length counter: the hardware is silent however the period moves (Zelda track 2's opening)
+  assert.deepEqual(tri([w(0, 0x4015, 4), w(1, 0x4008, 0x1F), w(1, 0x400A, 0x40)]), []);
+});
+
+const ZELDA_RIP = ripAt("legend-of-zelda.nsf");
+test("triangle (real rip): Zelda's triangle notes never sound where the chip's own render is silent, and some now end before the next begins",
+     {skip: !ZELDA_RIP && "legend-of-zelda.nsf not present (vault-only; NES_RIPS=<dir>)"}, () => {
+  const nsf = parseNSF(readFileSync(ZELDA_RIP));
+  for (const trk of [1, 2, 3]) {
+    const r = runNSF(nsf, trk, 40);
+    const ev = reconstruct(r.apuLog, r.frames, r.frameSec).filter(e => e.channel === "triangle");
+    const out = renderApu(r.apuLog, r.frames, r.frameSec, {}), fs = out.sampleRate * r.frameSec;
+    const active = f => { for (let i = Math.floor(f * fs) + 1; i < Math.floor((f + 1) * fs) && i < out.triangle.length; i++) if (Math.abs(out.triangle[i] - out.triangle[i - 1]) > 1e-4) return true; return false; };
+    let over = 0, gaps = 0;
+    for (const e of ev) for (let f = e.startFrame; f < e.endFrame; f++) if (!active(f)) over++;
+    for (let i = 1; i < ev.length; i++) if (ev[i].startFrame > ev[i - 1].endFrame) gaps++;
+    assert.equal(over, 0, `track ${trk}: frames a note covers while the chip is silent`);
+    assert.ok(gaps > 0, `track ${trk}: some notes end before the next begins (${gaps}/${ev.length})`);
+  }
+});

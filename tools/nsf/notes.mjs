@@ -5,7 +5,7 @@ import { snapBeat } from "./midi-write.mjs";
 // with no ref/unref, 2026-09-30, kept tools/chip-bench.mjs hanging; nsf.mjs's
 // own copy already carries the Node ref/unref fix this one lacked).
 import { microYield } from "./nsf.mjs";
-import { DMC_RATES, dmcUsed } from "./apu-render.mjs";
+import { DMC_RATES, dmcUsed, LENGTH_TABLE } from "./apu-render.mjs";
 const CLOCK = 1_789_773; // NTSC CPU Hz
 
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -21,7 +21,7 @@ export function reconstruct(apuLog, frames, frameSec) {
   const ch = {
     pulse1: {base: 0x4000, on: false, midi: null, vol: 0, period: 0, enabled: false},
     pulse2: {base: 0x4004, on: false, midi: null, vol: 0, period: 0, enabled: false},
-    triangle: {base: 0x4008, on: false, midi: null, vol: 1, period: 0, enabled: false, linear: 0},
+    triangle: {base: 0x4008, on: false, midi: null, vol: 1, period: 0, enabled: false, control: false, reload: 0, flag: false, linCount: 0, length: 0, tk: 0, sim: false},
     noise: {base: 0x400C, on: false, midi: null, vol: 0, period: 0, enabled: false},
   };
   const events = []; // {channel, startFrame, endFrame|null, midi, periodValue}
@@ -43,9 +43,28 @@ export function reconstruct(apuLog, frames, frameSec) {
   };
   const audible = (name, c) => {
     if (!c.enabled) return false;
-    if (name === "triangle") return c.linear > 0 && c.period > 1;
+    if (name === "triangle") return c.sim && c.period > 1;
     if (name === "noise") return c.vol > 0;
     return c.vol > 0 && c.period > 7 && c.period < 0x800 && !sweepMuted(name, c);
+  };
+
+  // The triangle stops itself (Q19): its linear counter (reloaded by $400B,
+  // counted down at 240 Hz) and its length counter (loaded by $400B, counted
+  // down at 120 Hz unless $4008 bit 7 halts it) silence it with NO register
+  // write. $4008 bit 7 also holds the linear counter reloading, so the note
+  // then sounds until the driver changes it. Time is counted in quarter-frame
+  // ticks (4 per video frame), the renderer's own cadence.
+  const triSounds = c => c.length > 0 && (c.linCount > 0 || (c.flag && c.reload > 0));
+  const triAdvance = (c, target4) => {
+    while (c.tk < target4) {
+      if (!(c.length > 0 && (c.flag || c.linCount > 0))) { c.tk = target4; break; }
+      if (c.flag) c.linCount = c.reload; else if (c.linCount > 0) c.linCount--;
+      if (!c.control) c.flag = false;
+      if ((c.tk & 1) && !c.control && c.length > 0) c.length--;
+      c.tk++;
+      const s = triSounds(c);
+      if (s !== c.sim) { c.sim = s; update("triangle", c, Math.ceil(c.tk / 4)); }
+    }
   };
 
   const update = (name, c, frame) => {
@@ -98,11 +117,14 @@ export function reconstruct(apuLog, frames, frameSec) {
 
   for (const w of apuLog) {
     const {addr, value, frame} = w;
+    triAdvance(ch.triangle, 4 * frame);
     if (addr === 0x4015) {
       ch.pulse1.enabled = !!(value & 1);
       ch.pulse2.enabled = !!(value & 2);
       ch.triangle.enabled = !!(value & 4);
       ch.noise.enabled = !!(value & 8);
+      if (!ch.triangle.enabled) ch.triangle.length = 0;
+      ch.triangle.sim = triSounds(ch.triangle);
       for (const [name, c] of Object.entries(ch)) update(name, c, frame);
       continue;
     }
@@ -110,8 +132,11 @@ export function reconstruct(apuLog, frames, frameSec) {
       const r = addr - c.base;
       if (r < 0 || r > 3) continue;
       if (r === 0) {
-        if (name === "triangle") c.linear = value & 0x7F;
-        else {
+        if (name === "triangle") {
+          c.control = !!(value & 0x80); c.reload = value & 0x7F;
+          if (c.control && c.flag) c.linCount = c.reload; // held reloading: lands within the frame
+          c.sim = triSounds(c);
+        } else {
           c.vol = value & 0x0F; c.constVol = !!(value & 0x10); c.duty = (value >> 6) & 3; // bits 6-7: duty = the chip's TIMBRE
           // software envelope: drivers walk vol down DURING a note (MM2
           // decays 14→7); record where it lands so playback can ramp too.
@@ -137,6 +162,11 @@ export function reconstruct(apuLog, frames, frameSec) {
         c.period = (c.period & 0x700) | value;
       } else if (r === 3) {
         if (name !== "noise") c.period = (c.period & 0xFF) | ((value & 7) << 8);
+        if (name === "triangle") {
+          if (c.enabled) c.length = LENGTH_TABLE[(value >> 3) & 31];
+          c.flag = true;
+          c.sim = triSounds(c);
+        }
         // length-counter load also (re)starts the note; treat as potential boundary
         if (open[name]) { open[name].endFrame = frame; delete open[name]; }
       } else if (r === 1 && name === "noise") {
@@ -147,6 +177,7 @@ export function reconstruct(apuLog, frames, frameSec) {
       update(name, c, frame);
     }
   }
+  triAdvance(ch.triangle, 4 * frames);
   for (const name of Object.keys(open)) open[name].endFrame = frames;
   for (const e of events) if (e.endFrame === null) e.endFrame = frames;
   return collapseSlides(events);
