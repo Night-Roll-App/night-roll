@@ -4339,8 +4339,8 @@ percussion, and so is every note of a program that appears in drum mode
 anywhere in the song; a program played at exactly one pitch over ≥ 12
 notes is percussion unless it is a pedal tone (Q27, tools/pedal-tone.mjs:
 notes held a median 1 s or more on a looped sample, or on a one-shot with a
-clear root and harmonicity; N64, which has no samples to read, a median of
-2 s) — then it stays a pitched part, and the capture says so (two pitches is
+clear root and harmonicity; PS1/PS2 only — N64's notes-only version was
+too loose and was reverted, 523470e3) — then it stays a pitched part, and the capture says so (two pitches is
 an ostinato — Bombing Mission's bass runs on two, and stays a bass); each percussion voice (program + source
 key) gets a GM key from its rhythm — backbeats → snare 38, downbeats →
 kick 36, the busiest rest → closed hat 42, open hat 46, ride 51, toms by
