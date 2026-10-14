@@ -19,7 +19,27 @@
   "m-bison-jap-balrog-us-europe": "M. Bison (Jap)/Balrog (US, Europe)",
   "ryu-s-ending": "Ryu's Ending",
   "vega-jap-m-bison-us-europe": "Vega (Jap)/M. Bison (US, Europe)",
-  "zangief-s-ending": "Zangief's Ending"
+  "zangief-s-ending": "Zangief's Ending",
+  "blanka-recapture": "Blanka (re-capture)",
+  "capcom-sound-recapture": "Capcom Sound (re-capture)",
+  "chun-li-s-ending-2-recapture": "Chun Li's Ending (2) (re-capture)",
+  "chun-li-recapture": "Chun Li (re-capture)",
+  "credits-recapture": "Credits (re-capture)",
+  "dhalsim-s-ending-recapture": "Dhalsim's Ending (re-capture)",
+  "dhalsim-recapture": "Dhalsim (re-capture)",
+  "e-honda-s-ending-recapture": "E. Honda's Ending (re-capture)",
+  "e-honda-recapture": "E. Honda (re-capture)",
+  "end-battle-recapture": "End Battle (re-capture)",
+  "game-over-recapture": "Game Over! (re-capture)",
+  "guile-s-ending-recapture": "Guile's Ending (re-capture)",
+  "ken-s-ending-1-recapture": "Ken's Ending (1) (re-capture)",
+  "ken-recapture": "Ken (re-capture)",
+  "player-select-recapture": "Player Select (re-capture)",
+  "ranking-recapture": "Ranking (re-capture)",
+  "ryu-recapture": "Ryu (re-capture)",
+  "start-battle-recapture": "Start Battle (re-capture)",
+  "vega-jap-m-bison-us-europe-recapture": "Vega (Jap)/M. Bison (US, Europe) (re-capture)",
+  "zangief-s-ending-recapture": "Zangief's Ending (re-capture)"
  },
  "nsf": {
   "vault": "snes/street-fighter-ii/",
@@ -30,7 +50,7 @@
     "track": 20,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -45,7 +65,7 @@
     "track": 25,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -75,7 +95,7 @@
     "track": 18,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -105,7 +125,7 @@
     "track": 29,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -150,7 +170,7 @@
     "track": 14,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -300,7 +320,7 @@
     "track": 8,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -314,8 +334,8 @@
     "secs": 12,
     "track": 17,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -344,8 +364,8 @@
     "secs": 46,
     "track": 28,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -375,7 +395,7 @@
     "track": 19,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -389,8 +409,8 @@
     "secs": 12,
     "track": 35,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -435,7 +455,7 @@
     "track": 23,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -465,7 +485,7 @@
     "track": 21,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -495,7 +515,7 @@
     "track": 2,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -540,7 +560,7 @@
     "track": 11,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -548,6 +568,326 @@
      "peak": -12.3,
      "synth": -19.4
     }
+   },
+   "blanka-recapture": {
+    "n": 1,
+    "secs": 114,
+    "track": 7,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -20.7,
+     "peak": -7.6,
+     "synth": -15.8
+    },
+    "rip": "blanka"
+   },
+   "capcom-sound-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 1,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -11.2,
+     "synth": -14.9
+    },
+    "rip": "capcom-sound"
+   },
+   "chun-li-s-ending-2-recapture": {
+    "n": 1,
+    "secs": 32,
+    "track": 30,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -11.8,
+     "synth": -17.7
+    },
+    "rip": "chun-li-s-ending-2"
+   },
+   "chun-li-recapture": {
+    "n": 1,
+    "secs": 105,
+    "track": 10,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -11.5,
+     "synth": -19.3
+    },
+    "rip": "chun-li"
+   },
+   "credits-recapture": {
+    "n": 1,
+    "secs": 224,
+    "track": 33,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -11.1,
+     "synth": -18.5
+    },
+    "rip": "credits"
+   },
+   "dhalsim-s-ending-recapture": {
+    "n": 1,
+    "secs": 34,
+    "track": 32,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -11.6,
+     "synth": -19.6
+    },
+    "rip": "dhalsim-s-ending"
+   },
+   "dhalsim-recapture": {
+    "n": 1,
+    "secs": 78,
+    "track": 12,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.8,
+     "peak": -11.2,
+     "synth": -18.9
+    },
+    "rip": "dhalsim"
+   },
+   "e-honda-s-ending-recapture": {
+    "n": 1,
+    "secs": 52,
+    "track": 24,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.8,
+     "peak": -14.7,
+     "synth": -20.5
+    },
+    "rip": "e-honda-s-ending"
+   },
+   "e-honda-recapture": {
+    "n": 1,
+    "secs": 118,
+    "track": 6,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.1,
+     "peak": -8.1,
+     "synth": -14.4
+    },
+    "rip": "e-honda"
+   },
+   "end-battle-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 13,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -12.7,
+     "synth": -17.8
+    },
+    "rip": "end-battle"
+   },
+   "game-over-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 15,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.2,
+     "peak": -13.3,
+     "synth": -17.9
+    },
+    "rip": "game-over"
+   },
+   "guile-s-ending-recapture": {
+    "n": 1,
+    "secs": 49,
+    "track": 26,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25,
+     "peak": -14.3,
+     "synth": -19.1
+    },
+    "rip": "guile-s-ending"
+   },
+   "ken-s-ending-1-recapture": {
+    "n": 1,
+    "secs": 51,
+    "track": 27,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.9,
+     "peak": -14.1,
+     "synth": -19.7
+    },
+    "rip": "ken-s-ending-1"
+   },
+   "ken-recapture": {
+    "n": 1,
+    "secs": 124,
+    "track": 9,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.3,
+     "peak": -12.5,
+     "synth": -19.3
+    },
+    "rip": "ken"
+   },
+   "player-select-recapture": {
+    "n": 1,
+    "secs": 32,
+    "track": 3,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -11.2,
+     "synth": -18.6
+    },
+    "rip": "player-select"
+   },
+   "ranking-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 16,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.6,
+     "peak": -12.2,
+     "synth": -19.1
+    },
+    "rip": "ranking"
+   },
+   "ryu-recapture": {
+    "n": 1,
+    "secs": 98,
+    "track": 5,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -9.1,
+     "synth": -17.5
+    },
+    "rip": "ryu"
+   },
+   "start-battle-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 4,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -14,
+     "synth": -18.7
+    },
+    "rip": "start-battle"
+   },
+   "vega-jap-m-bison-us-europe-recapture": {
+    "n": 1,
+    "secs": 132,
+    "track": 22,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -10.2,
+     "synth": -17.8
+    },
+    "rip": "vega-jap-m-bison-us-europe"
+   },
+   "zangief-s-ending-recapture": {
+    "n": 1,
+    "secs": 24,
+    "track": 31,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26,
+     "peak": -13.2,
+     "synth": -18
+    },
+    "rip": "zangief-s-ending"
    }
   },
   "chip": "spc",

@@ -10748,6 +10748,10 @@
     "path": "albums/snes/street-fighter-ii/blanka.mid"
    },
    {
+    "title": "Blanka (re-capture)",
+    "path": "albums/snes/street-fighter-ii/blanka-recapture.mid"
+   },
+   {
     "title": "Blanka's Ending",
     "path": "albums/snes/street-fighter-ii/blanka-s-ending.mid"
    },
@@ -10760,8 +10764,16 @@
     "path": "albums/snes/street-fighter-ii/capcom-sound.mid"
    },
    {
+    "title": "Capcom Sound (re-capture)",
+    "path": "albums/snes/street-fighter-ii/capcom-sound-recapture.mid"
+   },
+   {
     "title": "Chun Li",
     "path": "albums/snes/street-fighter-ii/chun-li.mid"
+   },
+   {
+    "title": "Chun Li (re-capture)",
+    "path": "albums/snes/street-fighter-ii/chun-li-recapture.mid"
    },
    {
     "title": "Chun Li's Ending (1)",
@@ -10772,6 +10784,10 @@
     "path": "albums/snes/street-fighter-ii/chun-li-s-ending-2.mid"
    },
    {
+    "title": "Chun Li's Ending (2) (re-capture)",
+    "path": "albums/snes/street-fighter-ii/chun-li-s-ending-2-recapture.mid"
+   },
+   {
     "title": "Continue...?",
     "path": "albums/snes/street-fighter-ii/continue.mid"
    },
@@ -10780,28 +10796,56 @@
     "path": "albums/snes/street-fighter-ii/credits.mid"
    },
    {
+    "title": "Credits (re-capture)",
+    "path": "albums/snes/street-fighter-ii/credits-recapture.mid"
+   },
+   {
     "title": "Dhalsim",
     "path": "albums/snes/street-fighter-ii/dhalsim.mid"
+   },
+   {
+    "title": "Dhalsim (re-capture)",
+    "path": "albums/snes/street-fighter-ii/dhalsim-recapture.mid"
    },
    {
     "title": "Dhalsim's Ending",
     "path": "albums/snes/street-fighter-ii/dhalsim-s-ending.mid"
    },
    {
+    "title": "Dhalsim's Ending (re-capture)",
+    "path": "albums/snes/street-fighter-ii/dhalsim-s-ending-recapture.mid"
+   },
+   {
     "title": "E. Honda",
     "path": "albums/snes/street-fighter-ii/e-honda.mid"
+   },
+   {
+    "title": "E. Honda (re-capture)",
+    "path": "albums/snes/street-fighter-ii/e-honda-recapture.mid"
    },
    {
     "title": "E. Honda's Ending",
     "path": "albums/snes/street-fighter-ii/e-honda-s-ending.mid"
    },
    {
+    "title": "E. Honda's Ending (re-capture)",
+    "path": "albums/snes/street-fighter-ii/e-honda-s-ending-recapture.mid"
+   },
+   {
     "title": "End Battle",
     "path": "albums/snes/street-fighter-ii/end-battle.mid"
    },
    {
+    "title": "End Battle (re-capture)",
+    "path": "albums/snes/street-fighter-ii/end-battle-recapture.mid"
+   },
+   {
     "title": "Game Over!",
     "path": "albums/snes/street-fighter-ii/game-over.mid"
+   },
+   {
+    "title": "Game Over! (re-capture)",
+    "path": "albums/snes/street-fighter-ii/game-over-recapture.mid"
    },
    {
     "title": "Guile",
@@ -10812,12 +10856,24 @@
     "path": "albums/snes/street-fighter-ii/guile-s-ending.mid"
    },
    {
+    "title": "Guile's Ending (re-capture)",
+    "path": "albums/snes/street-fighter-ii/guile-s-ending-recapture.mid"
+   },
+   {
     "title": "Ken",
     "path": "albums/snes/street-fighter-ii/ken.mid"
    },
    {
+    "title": "Ken (re-capture)",
+    "path": "albums/snes/street-fighter-ii/ken-recapture.mid"
+   },
+   {
     "title": "Ken's Ending (1)",
     "path": "albums/snes/street-fighter-ii/ken-s-ending-1.mid"
+   },
+   {
+    "title": "Ken's Ending (1) (re-capture)",
+    "path": "albums/snes/street-fighter-ii/ken-s-ending-1-recapture.mid"
    },
    {
     "title": "Ken's Ending (2)",
@@ -10836,12 +10892,24 @@
     "path": "albums/snes/street-fighter-ii/player-select.mid"
    },
    {
+    "title": "Player Select (re-capture)",
+    "path": "albums/snes/street-fighter-ii/player-select-recapture.mid"
+   },
+   {
     "title": "Ranking",
     "path": "albums/snes/street-fighter-ii/ranking.mid"
    },
    {
+    "title": "Ranking (re-capture)",
+    "path": "albums/snes/street-fighter-ii/ranking-recapture.mid"
+   },
+   {
     "title": "Ryu",
     "path": "albums/snes/street-fighter-ii/ryu.mid"
+   },
+   {
+    "title": "Ryu (re-capture)",
+    "path": "albums/snes/street-fighter-ii/ryu-recapture.mid"
    },
    {
     "title": "Ryu's Ending",
@@ -10856,6 +10924,10 @@
     "path": "albums/snes/street-fighter-ii/start-battle.mid"
    },
    {
+    "title": "Start Battle (re-capture)",
+    "path": "albums/snes/street-fighter-ii/start-battle-recapture.mid"
+   },
+   {
     "title": "The World Warrior",
     "path": "albums/snes/street-fighter-ii/the-world-warrior.mid"
    },
@@ -10864,12 +10936,20 @@
     "path": "albums/snes/street-fighter-ii/vega-jap-m-bison-us-europe.mid"
    },
    {
+    "title": "Vega (Jap)/M. Bison (US, Europe) (re-capture)",
+    "path": "albums/snes/street-fighter-ii/vega-jap-m-bison-us-europe-recapture.mid"
+   },
+   {
     "title": "Zangief",
     "path": "albums/snes/street-fighter-ii/zangief.mid"
    },
    {
     "title": "Zangief's Ending",
     "path": "albums/snes/street-fighter-ii/zangief-s-ending.mid"
+   },
+   {
+    "title": "Zangief's Ending (re-capture)",
+    "path": "albums/snes/street-fighter-ii/zangief-s-ending-recapture.mid"
    }
   ]
  },
