@@ -320,7 +320,7 @@ export function kitify(result) {
   if (!perc.length) { result.kitGuess = guess; return guess; }
   // a kit that already speaks GM (a VAB kit keyed 35+) keeps its keys; drum-mode
   // degrees (24–35) and promoted programs need a GM key
-  const needs = perc.filter(n => !n.drum || n.key < 35);
+  const needs = perc.filter(n => !n.drum || n.key < 35 || n.table); // a table slot number is not a GM key, whatever its size
   for (const n of perc) n.drum = true;
   if (!needs.length) { result.kitGuess = guess; return guess; }
   // voices: program + the key as written (drum mode: the degree key; else the pitch)
@@ -396,9 +396,10 @@ function melodicBanks(result) {
     for (const p of ps) { const last = r[r.length - 1]; if (last && p === last[1] + 1) last[1] = p; else r.push([p, p]); }
     return r.map(([a, b]) => a === b ? a : `${a}–${b}`).join(", ");
   };
-  for (const bank of banks.values()) {
+  // lone: a bank under BANK_MIN in a song that already has a melodic bank (FF9 Garnet's Song 1: prog 6, one
+  // rooted, harmonic one-shot on its own channel) follows it when its samples pitch; it says nothing otherwise
+  const settle = (bank, lone) => {
     const insts = [...new Set(bank.map(n => n.tone.instrument))].sort((a, b) => a - b);
-    if (insts.length < BANK_MIN) continue;
     if (voices === undefined) {
       const ctx = result.instr;
       try { voices = akaoVoices(result, ctx.kind === "akao-sets" ? {} : {ram: ctx.ram, table: {offset: ctx.offset}}, SPU_RATE); } catch { voices = null; }
@@ -414,7 +415,7 @@ function melodicBanks(result) {
       entries.set(k, {inst: n.tone.instrument, exact: pitched ? f.root.midi + f.root.cents / 100 + 12 * Math.log2(v.ratio) : null});
     }
     const unpitched = new Set([...entries.values()].filter(e => e.exact === null).map(e => e.inst));
-    if (unpitched.size) { warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, ${unpitched.size} unpitched → kit`); continue; }
+    if (unpitched.size) { if (!lone) warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, ${unpitched.size} unpitched → kit`); return false; }
     const xs = [...entries.values()].map(e => e.exact).sort((a, b) => a - b);
     const mid = xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2;
     const folded = new Set();
@@ -429,9 +430,18 @@ function melodicBanks(result) {
       n.cents = Math.round((exact - n.pitch) * 100);
       out.add(n);
     }
-    warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, all pitched → melodic, each note at its sample's measured pitch` +
+    warn(`drum-table bank prog ${progList(insts)}: ${insts.length} samples, all pitched → melodic, each note at its sample's measured pitch` + (lone ? " (follows the song's melodic bank)" : "") +
       (folded.size ? `; prog ${progList([...folded].sort((a, b) => a - b))} measured over a tritone from the bank's middle, written an octave toward it` : ""));
+    return true;
+  };
+  const small = []; // a bank of one instrument (two or more that pitch were never promised the same)
+  let anyMelodic = false;
+  for (const bank of banks.values()) {
+    const size = new Set(bank.map(n => n.tone.instrument)).size;
+    if (size < BANK_MIN) { if (size === 1) small.push(bank); }
+    else if (settle(bank, false)) anyMelodic = true;
   }
+  if (anyMelodic) for (const bank of small) settle(bank, true);
   return out;
 }
 

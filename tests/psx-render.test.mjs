@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { INSTR_STRIDE, findInstrDat } from "../tools/psx/instr.mjs";
 import { findSampleBank, renderSpu } from "../tools/psx/spu-render.mjs";
-import { channelGroups, splitSlides, makeMidi, notePan } from "../tools/psx/notes.mjs";
+import { channelGroups, splitSlides, makeMidi, notePan, kitify } from "../tools/psx/notes.mjs";
 // a track is a stereo pair {l, r}; the older checks read the mono sum
 const mono = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
 
@@ -192,7 +192,7 @@ test("SEQ + VAB render: each tone's VAG at 0x1000 × 2^((key − center + shift/
 // table key 60; sample set 7 holds the instruments (unity 60, so each plays
 // its sample as recorded). ch 1 plays instruments 0–2, ch 2 plays 2–5 (joined
 // by 2: one bank of 6), ch 3 plays 6 and 7 (a bank of 2).
-function drumBankRip(samples) {
+function drumBankRip(samples, ch3 = [6, 6, 7, 6]) {
   const set = makeTestSampleSet({id: 7, dest: 0x20000, arts: samples.map(s => ({adpcm: encodeAdpcm(s), unity: 60}))});
   const table = new Uint8Array(44 * 8);
   for (let i = 0; i < 8; i++) table.set([i, 60, 0, 0, 0, 0, 127, 64], (36 + i) * 8);
@@ -200,7 +200,7 @@ function drumBankRip(samples) {
   const akao = makeTestAKAO({layout: 3, sampleSetId: 7, tail: table, voices: {
     0: [...on, N(0, 1), N(1, 1), N(2, 1), 0xA0],
     1: [...on, N(2, 1), N(3, 1), N(4, 1), N(5, 1), 0xA0],
-    2: [...on, N(6, 3), N(6, 3), N(7, 3), N(6, 3), 0xA0]}});
+    2: [...on, ...ch3.map(i => N(i, 3)), 0xA0]}});
   const tableAt = akao.length - table.length - 0x34;
   akao.set([tableAt & 255, (tableAt >> 8) & 255, 0, 0], 0x34);
   const ram = new Uint8Array(0x40000);
@@ -235,4 +235,55 @@ test("kitify: a drum table of ≥ 6 rooted, harmonic samples is a melodic bank �
   const kg = channelGroups(k);
   assert.ok(kg.every(g => g.kit), kg.map(g => g.name).join(", "));
   assert.ok(k.seq.warnings.includes("drum-table bank prog 0–5: 6 samples, 1 unpitched → kit"), k.seq.warnings.join("\n"));
+});
+
+test("kitify: a lone rooted, harmonic one-shot on its own channel follows the song's melodic bank; with no melodic bank, or unpitched, it stays a kit", () => {
+  const six = [57, 59, 60, 62, 64, 76].map(midiSine);
+  // ch 3 plays only instrument 6, a sine at MIDI 69
+  const r = drumBankRip(six.concat([midiSine(69), noiseSamples(28 * 240, 7)]), [6, 6, 6, 6]);
+  kitify(r);
+  const lone = r.notes.filter(n => n.tone.instrument === 6);
+  assert.ok(lone.length && lone.every(n => !n.drum && n.table && n.pitch === 69), "instrument 6 sounds MIDI 69: " + lone.map(n => n.pitch));
+  assert.ok(r.seq.warnings.some(w => /^drum-table bank prog 6: 1 samples, all pitched → melodic.*follows the song's melodic bank/.test(w)), r.seq.warnings.join("\n"));
+  // the same lone voice, but the sample is noise: stays a kit, and says nothing new
+  const u = drumBankRip(six.concat([noiseSamples(28 * 240, 3), noiseSamples(28 * 240, 7)]), [6, 6, 6, 6]);
+  kitify(u);
+  assert.ok(u.notes.filter(n => n.tone.instrument === 6).every(n => n.drum), "an unpitched lone sample stays kit");
+  assert.ok(!u.seq.warnings.some(w => /prog 6:/.test(w)), u.seq.warnings.join("\n"));
+});
+
+test("kitify: a drum-table slot number gets a GM guess whatever its size (slots 36+ are not GM keys)", () => {
+  const r = drumBankRip([57, 59, 60, 62, 64, 76, 48, 50].map(midiSine));
+  kitify(r);
+  const kit = r.notes.filter(n => n.tone.instrument >= 6);
+  assert.ok(kit.length && kit.every(n => n.drum && n.table && n.key >= 36), "a two-instrument table: kit notes keyed 36+");
+  assert.ok(kit.every(n => Number.isInteger(n.gm)), "each has a guessed GM key: " + kit.map(n => n.gm));
+});
+
+// ---- real FF9 rips (skipped when /tmp/recap/rips is not there) ----
+const FF9 = "/tmp/recap/rips/ps1/final-fantasy-9/";
+async function ff9(name) {
+  const {readFileSync} = await import("node:fs");
+  const {loadPSFChain, assembleRam} = await import("../tools/psx/psf.mjs");
+  const {psfSong} = await import("../tools/psx/capture.mjs");
+  const chain = await loadPSFChain(readFileSync(FF9 + name + ".psf"), () => null, {name: name + ".psf"});
+  const {ram, ranges} = assembleRam(chain);
+  const result = psfSong(ram, ranges, name + ".psf").result;
+  kitify(result);
+  return result;
+}
+import { existsSync } from "node:fs";
+test("kitify (real rip): FF9 Garnet's Song 1 prog 6, a lone rooted one-shot, follows the melodic bank 0-5", {skip: !existsSync(FF9 + "garnet-s-song-1.psf")}, async () => {
+  const r = await ff9("garnet-s-song-1");
+  const p6 = r.notes.filter(n => n.program === 6);
+  assert.ok(p6.length && p6.every(n => !n.drum && n.pitch === 69), "prog 6 sounds MIDI 69: " + [...new Set(p6.map(n => n.pitch))]);
+  assert.ok(channelGroups(r).every(g => !g.kit), "no kit track is left");
+});
+test("kitify (real rip): FF9 Qu's Marsh prog 5 (no root) stays a kit and key 83 is guessed; Hunter's Chance stays drums", {skip: !existsSync(FF9 + "qu-s-marsh.psf") || !existsSync(FF9 + "hunter-s-chance.psf")}, async () => {
+  const q = await ff9("qu-s-marsh");
+  const p5 = q.notes.filter(n => n.program === 5);
+  assert.ok(p5.length && p5.every(n => n.drum && n.gm !== undefined && n.gm !== 83 && n.gm < 82), "prog 5 is a kit voice with a drum key, not Jingle Bell: " + [...new Set(p5.map(n => n.gm))]);
+  const h = await ff9("hunter-s-chance");
+  assert.ok(channelGroups(h).filter(g => g.kit).length >= 5, "Hunter's Chance keeps its kit tracks");
+  assert.ok(h.notes.filter(n => n.table).every(n => n.drum), "every table note is still drums");
 });
