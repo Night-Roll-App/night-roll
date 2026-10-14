@@ -31,7 +31,7 @@ while true; do
     if [ "$n" != "0" ]; then
       print -r -- "$out" | python3 -c "
 import json,sys; d=json.loads(sys.stdin.read(), strict=False)
-for m in d['msgs']: print('TERMINAL MSG #%d [%s]%s: %s%s' % (m['id'], m.get('app','night-roll'), (' (forwarded from %s)' % m['fwd']) if m.get('fwd') else '', m['text'], ('  [screenshot: %s]' % m['shot']) if m.get('shot') else ''))
+for m in d['msgs']: print('TERMINAL MSG #%d [%s]%s%s: %s%s' % (m['id'], m.get('app','night-roll'), (' (forwarded from %s)' % m['fwd']) if m.get('fwd') else '', (' (from %s)' % ' · '.join(x for x in (m.get('src'), m.get('label')) if x)) if m.get('src') else '', m['text'], ('  [screenshot: %s]' % m['shot']) if m.get('shot') else ''))
 print('LAST', d['last'])"
       print -r -- "$out" | python3 -c "import json,sys; print(json.loads(sys.stdin.read(), strict=False)['last'])" > $SEEN
       exit 0

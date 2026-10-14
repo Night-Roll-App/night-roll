@@ -84,6 +84,17 @@
 // GET /v1/inbox, /v1/terminal and /v1/status take ?app=<id> and return only
 // that app's rows. No app, or a legacy untagged row, means "night-roll".
 //
+// The Front Desk is app "front-desk": ONE shared session (not a per-app chat) that
+// watches GET /v1/terminal?app=front-desk like a Worker does. POST /v1/terminal
+// {app:"front-desk", src, label, text} answers {live}: false (nobody has polled that
+// queue for 90 s) stores the row as a one-off the watcher never sees; the app then
+// asks /v1/chat/completions with x-nr-desk: <row id>, and the bridge itself writes
+// the answer into the thread as a note. GET /v1/desk?since=<t ms> is the thread's
+// live window (front-desk rows + notes by time; read-only, never marks it live).
+// A POST with fwd "front-desk" to a Worker also writes the hand-off note; app "all"
+// fans out to night-roll, guitar and tuner. Rows trimmed from terminal.json and
+// inbox.json go to archive/<file>-YYYY-MM.jsonl.
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status ·
@@ -208,7 +219,7 @@ export function main(argv, profile) {
     const app = flag(argv, "--app", "");
     if (!text || !app) { console.error("--forward needs --app <id> and the text: --forward --app tuner \"text\""); process.exit(2); }
     fetch(base() + "/v1/terminal", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, app, fwd: flag(argv, "--from-app", "night-roll")})})
-      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("message #" + j.id + " forwarded to " + app); process.exit(0); })
+      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log(j.ids ? "forwarded to " + j.apps.join(", ") + " (#" + j.ids.join(", #") + ")" : "message #" + j.id + " forwarded to " + app); process.exit(0); })
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
   }
@@ -435,6 +446,10 @@ function jobEnd(job, err) {
     const calls = job.toolCalls.filter(t => t && t.name).map((t, i) => ({id: t.id || "call_" + job.id + "_" + i, type: "function", function: {name: t.name, arguments: t.args || "{}"}}));
     job.result = calls.length ? {tool_calls: calls} : {content: job.text};
   }
+  if (job.desk && !job.killed) { // a Front Desk one-off: the bridge writes the answer into the thread, so it lands even if the app went to the background
+    const text = job.status === "error" ? "\u26a0 one-off failed: " + job.error : String(job.text || "").trim();
+    if (text) { const note = inboxAdd(text, "one-off", FRONT_DESK); terminalMark(job.desk, {answered: note.id}); }
+  }
   for (const s of job.subs) { try { s({type: "end"}); } catch (e) { /* gone */ } }
   job.subs.clear();
   jobWrite(job);
@@ -553,7 +568,9 @@ function inboxAll() { const j = readJSON(INBOX_FILE, {last: 0, notes: []}); retu
 const DEFAULT_APP = "night-roll";
 const appIdOf = v => String(v == null || v === "" ? DEFAULT_APP : v).replace(/[^\w.-]/g, "_").slice(0, 40) || DEFAULT_APP;
 const forApp = (row, app) => appIdOf(row.app) === app;
-function inboxAdd(text, from, app) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), app: appIdOf(app), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
+// rows trimmed off the live files (the last 200 stay) are appended to archive/<file>-YYYY-MM.jsonl, never dropped
+function archiveRows(name, rows) { if (!rows.length) return; try { const dir = path.join(STATE_DIR, "archive"); fs.mkdirSync(dir, {recursive: true}); fs.appendFileSync(path.join(dir, name + "-" + new Date().toISOString().slice(0, 7) + ".jsonl"), rows.map(r => JSON.stringify(r)).join("\n") + "\n"); } catch (err) { console.error("archive " + name + ": " + err.message); } }
+function inboxAdd(text, from, app) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), app: appIdOf(app), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); archiveRows("inbox", box.notes.slice(0, -200)); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
 // one current status line (null when idle) plus the last 10 it ever said,
 // each with a timestamp. Clearing only blanks `now` — `recent` is history
 // and never shrinks from a clear.
@@ -563,7 +580,10 @@ const TERMINAL_FILE = path.join(STATE_DIR, "terminal.json");
 const terminalPolledAt = new Map(); // app id → when its watcher last GETed /v1/terminal (every few seconds): recent = someone is there to read it
 const terminalReachable = app => [...terminalPolledAt].some(([id, t]) => (app == null || id === appIdOf(app)) && Date.now() - t < 90000); // no app = any watcher
 function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
-function terminalAdd(text, shot, app, fwd) { const box = terminalAll(); const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
+// src/label: which app a Front Desk message came from and one line of its context; oneoff: the Front Desk was not being read, so the app asks for a one-off answer instead
+function terminalAdd(text, shot, app, fwd, extra) { const box = terminalAll(); const e = extra || {}; const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), ...(e.src ? {src: String(e.src).slice(0, 40)} : {}), ...(e.label ? {label: String(e.label).slice(0, 80)} : {}), ...(e.oneoff ? {oneoff: true} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); archiveRows("terminal", box.msgs.slice(0, -200)); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
+const FRONT_DESK = "front-desk", WORKERS = ["night-roll", "guitar", "tuner"], workerName = id => id.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); // "guitar" -> "Guitar", a hyphenated id -> two capitalised words
+function terminalMark(id, patch) { const box = terminalAll(); const m = box.msgs.find(x => x.id === id); if (m) { Object.assign(m, patch); writeJSON(TERMINAL_FILE, box); } }
 // status.json: the night-roll line at the top level (legacy shape), every other app's under .apps[id]
 function statusFile() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && typeof j === "object" && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
 function statusAll(app) { const j = statusFile(), id = appIdOf(app); if (id === DEFAULT_APP) return j; const b = j.apps && j.apps[id]; return b && Array.isArray(b.recent) ? b : {now: null, recent: []}; }
@@ -822,7 +842,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
-  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), sessions: true});
+  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), desk: true, sessions: true});
   const sm = url.pathname.match(/^\/v1\/sessions\/([^/]+)(\/compact)?$/); // session controls: usage + Clear-really-resets + Compact
   if (sm) {
     const key = sanitizeSongKey(decodeURIComponent(sm[1])) || "default"; // the exact rule songKeyOf applies to x-nr-song, so the same chat always lands on the same row
@@ -868,14 +888,31 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/terminal") { // POST from a client's own Terminal-style tab; GET ?since=ID from the terminal session's watcher
-    if (req.method === "GET") { const app = appIdOf(url.searchParams.get("app")); terminalPolledAt.set(app, Date.now()); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since && forApp(m, app)).map(m => ({...m, app: appIdOf(m.app)}))}); }
+    if (req.method === "GET") { const app = appIdOf(url.searchParams.get("app")); terminalPolledAt.set(app, Date.now()); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since && forApp(m, app) && !m.oneoff).map(m => ({...m, app: appIdOf(m.app)}))}); } // one-off rows are answered by the bridge itself: the Front Desk session never sees them here (it reads them in /v1/desk)
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       if (!b || (!String(b.text || "").trim() && !b.shot)) return json(res, 400, {error: {message: "a message needs text"}});
-      const m = terminalAdd(b.text, b.shot, b.app || url.searchParams.get("app") || req.headers["x-nr-app"], b.fwd);
-      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}: ${m.text.slice(0, 80)}`);
-      return json(res, 200, {...m, now: statusAll(m.app).now});
+      const to = appIdOf(b.app || url.searchParams.get("app") || req.headers["x-nr-app"]), fromDesk = b.fwd != null && appIdOf(b.fwd) === FRONT_DESK;
+      if (to === "all") { // a broadcast: one row per Worker (never the Front Desk itself, never a row for "all" that nothing would read)
+        const rows = WORKERS.map(w => terminalAdd(b.text, b.shot, w, b.fwd));
+        if (fromDesk) inboxAdd("\u2192 handed to every Worker: " + String(b.text || "").slice(0, 120), FRONT_DESK, FRONT_DESK);
+        console.log(`terminal #${rows.map(r => r.id).join(", #")} [all]${b.fwd ? " (forwarded from " + appIdOf(b.fwd) + ")" : ""}: ${String(b.text || "").slice(0, 80)}`);
+        return json(res, 200, {ids: rows.map(r => r.id), app: "all", apps: WORKERS});
+      }
+      const live = to === FRONT_DESK ? terminalReachable(FRONT_DESK) : undefined; // decided here, once, so a message is answered exactly once
+      const m = terminalAdd(b.text, b.shot, to, b.fwd, {src: b.src, label: b.label, oneoff: live === false});
+      if (fromDesk && to !== FRONT_DESK) inboxAdd("\u2192 handed to the " + workerName(to) + " Worker: " + m.text.slice(0, 120), FRONT_DESK, FRONT_DESK);
+      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}${m.src ? " (from " + m.src + (m.label ? " \u00b7 " + m.label : "") + ")" : ""}${m.oneoff ? " (one-off)" : ""}: ${m.text.slice(0, 80)}`);
+      return json(res, 200, {...m, now: statusAll(m.app).now, ...(live === undefined ? {} : {live})});
     }
+  }
+  if (url.pathname === "/v1/desk" && req.method === "GET") { // the Front Desk thread's live window: its queue rows and its notes, by time. Read-only: never marks the Front Desk live. since is a timestamp (t >= since); clients de-duplicate by kind + id
+    const since = +(url.searchParams.get("since") || 0) || 0;
+    const rows = [
+      ...terminalAll().msgs.filter(m => appIdOf(m.app) === FRONT_DESK).map(m => ({kind: "msg", id: m.id, t: m.t, app: FRONT_DESK, src: m.src, label: m.label, fwd: m.fwd, text: m.text, oneoff: m.oneoff, answered: m.answered})),
+      ...inboxAll().notes.filter(n => appIdOf(n.app) === FRONT_DESK).map(n => ({kind: "note", id: n.id, t: n.t, app: FRONT_DESK, from: n.from, text: n.text})),
+    ].filter(r => r.t >= since).sort((a, b) => a.t - b.t || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : a.id - b.id));
+    return json(res, 200, {last: rows.length ? rows[rows.length - 1].t : since, rows});
   }
   if (url.pathname === "/v1/app-state") { // the client says the user is typing/dictating; a build waits rather than relaunch under them. In memory; stale after 2 min
     if (req.method === "GET") { const fresh = appState && Date.now() - appState.t < 120000; return json(res, 200, fresh ? appState : {composing: false}); }
@@ -890,7 +927,7 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now());
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
@@ -977,6 +1014,7 @@ const server = http.createServer(async (req, res) => {
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
       job.app = appIdOf(req.headers["x-nr-app"]);
+      const deskRow = +req.headers["x-nr-desk"]; if (deskRow > 0) job.desk = deskRow; // the Front Desk queue row this one-off answers
       if (target.claude) runClaude(job, body, songKey, target.model, req.headers["x-nr-ctx-parts"]); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;

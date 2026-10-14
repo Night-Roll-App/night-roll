@@ -156,3 +156,16 @@ parity with Night Roll's window (minus song features) is tracked row by row in `
   `.confirmationDialog(`, `UIAlertController`, or `UIPasteboard`. The one exemption is `CopyButton.swift`, which
   may name `UIPasteboard` because it only writes (Copy); Paste is the system `PasteButton`.
 - The bridge has ONE inbox: a note sent from the terminal with `--say` shows in Night Roll and in both native apps.
+
+## Front Desk and Worker (bridge side)
+
+One shared **Front Desk** session (app id `front-desk`) plus one **Worker** per app. The Front Desk
+watches `GET /v1/terminal?app=front-desk` like a Worker does. `POST /v1/terminal` accepts `src` and `label`
+(the asking app and one line of its context) and, for `front-desk`, answers `live`: `false` means nobody has
+polled that queue for 90 s, so the row is stored as a one-off the watcher never sees; the app then asks
+`/v1/chat/completions` with `x-nr-desk: <row id>` and the bridge writes the answer into the thread itself.
+`GET /v1/desk?since=<t ms>` is the thread's live window (read-only, never marks the desk live).
+`--forward --app all --from-app front-desk "…"` fans out to the three Workers; a forward from the desk also
+writes a "→ handed to the … Worker" note. `GET /v1/status` and `GET /v1/jobs` carry `desk: true`; status adds
+`deskLive`. Rows trimmed from `terminal.json` / `inbox.json` (past 200) are appended to
+`<state>/archive/<file>-YYYY-MM.jsonl`.
