@@ -85,6 +85,9 @@ the bridge — an Ask session; see the hard rule below.)
 
 ## Hard rules
 
+- **Reopen what was open** (Josh #441, every app): windows and panels he had
+  open (the AI panel and its tab, docked windows) come back when the app
+  relaunches. One-shot pop-ups/sheets need not.
 - **Decide; never park work on a question** (Josh #430-#432, all apps, every
   session — Front Desk and Workers). Pick the sensible default, build, ship,
   and say what you picked ("picked X — say if you want Y"); he vetoes later.
