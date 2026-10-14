@@ -47,6 +47,7 @@ import { canvas } from "../render/roll.js";
 import { wrap } from "../render/roll.js";
 import { ctx } from "../render/roll.js";
 import { updateTrackMore } from "./trackbar.js";
+import { setHideDrumTracks } from "./trackbar.js";
 import { rangeSelPersist } from "../render/roll.js";
 import { viewPersistSoon } from "../render/roll.js";
 import { PERF_NOSCENE } from "../platform/base.js";
@@ -554,6 +555,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwEdit: {icon: "construction", text: "Edit toolbar"},
     vwAdded: {glyph: "┄", text: "Outline new notes"},
     vwBeatSub: {glyph: "&", text: "Beat subdivisions"},
+    vwHideDrums: {glyph: "🥁", text: "Hide drum tracks"},
     vwTextJump: {glyph: "⌨", text: "Jump into text boxes"},
     vwVolume: {icon: "volumeUp", text: "Volume slider"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
@@ -621,6 +623,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwFooter", !S.footerHidden);
   set("vwAdded", showAddedOutline());
   set("vwBeatSub", showBeatSub());
+  set("vwHideDrums", S.hideDrums);
   set("vwTextJump", textJumpOn());
   set("vwVolume", volBtnShown());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
@@ -2134,6 +2137,7 @@ export function initChrome11() {
     on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
     on("vwVolume", () => setVolBtnShown(!volBtnShown())); // the top bar's 🔊 (Josh #187: hidden by default)
     on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
+    on("vwHideDrums", () => { setHideDrumTracks(!S.hideDrums); renderViewMenu(); });
     on("vwTextJump", () => { setTextJump(!textJumpOn()); renderViewMenu(); });
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());

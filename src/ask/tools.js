@@ -103,6 +103,7 @@ import { askActGiven } from "./actions.js";
 // addTrackUndoable/pushUndo({kind:"trackRemove"|"trackInsert"}) pair the ＋
 // chip and the voice menu's ✕ Delete track already use) — never localStorage.
 import { saveTrackDir } from "../ui/trackbar.js";
+import { setHideDrumTracks } from "../ui/trackbar.js";
 import { renameTrack } from "../ui/trackbar.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { transposeTrack } from "../model/selection.js";
@@ -1344,6 +1345,20 @@ export function askMarkDrums(a) {
   saveTrackDir(ti);
   buildScoreModel(); updateTrackGains(); draw();
   return {ok: true, note: "\"" + name + "\" " + (mark === true ? "marked: these are drums" : mark === false ? "marked: not drums" : "back to auto (what the file says)") + " — one undo takes it back"};
+}
+// hide_drum_tracks (View › Display "Hide drum tracks"): the session switch that
+// hides every drum track (trackIsDrums) from the roll, score and lanes. It sets
+// no track: directive and no undo step — nothing about the song changes.
+export function askHideDrumTracks(a) {
+  a = a || {};
+  const given = a.on !== undefined && a.on !== null && String(a.on).trim() !== "";
+  const v = given ? String(a.on).trim().toLowerCase() : "";
+  if (given && !/^(true|yes|on|1|false|no|off|0)$/.test(v)) throw new Error("on must be yes or no (leave it out to flip the switch)");
+  const on = given ? askActTruthy(a.on) : !S.hideDrums;
+  setHideDrumTracks(on);
+  renderViewMenu();
+  const n = S.song ? S.song.tracks.filter((tr, ti) => trackIsDrums(ti)).length : 0;
+  return {ok: true, note: on ? "drum tracks hidden for this session" + (S.song ? " (" + n + " in this song)" : "") + " — the song and its annotations are unchanged" : "drum tracks shown again"};
 }
 // keep_that (🎹 Keep that — src/input/record.js's captureKeep, the SAME
 // rolling 60s buffer and recTakeNote/recCommitTake path ● Record itself

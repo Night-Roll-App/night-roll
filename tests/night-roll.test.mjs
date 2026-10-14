@@ -3180,6 +3180,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Hide drum tracks",
     "Coach comments",
     "↓ latest",
     "Roman numeral and no 5",
@@ -6945,6 +6946,35 @@ test("bassist: reached through act — a \"do\" list runs it, undo restores exac
   run(`askGeneral = true;`);
   await assert.rejects(askActRun(`askAct({do: [{action: "bassist", from_bar: 2, to_bar: 4}]})`), /works in a song's/);
   run(`askGeneral = false;`);
+});
+
+test("View › Display \"Hide drum tracks\": every trackIsDrums track leaves the roll for the session — no track: directive, no undo step; off brings them back; Ask hide_drum_tracks is the same switch", async () => {
+  const app2 = await createApp(); const run2 = c => app2.run(c), val2 = c => JSON.parse(run2(`JSON.stringify(${c})`));
+  run2(`createComposition(120, 4, 4);
+        song.tracks = [{name: "voice1", notes: [{t: 0, d: 120, p: 60, v: 90}]},
+                       {name: "voice2 kit", kit: true, notes: [{t: 0, d: 120, p: 38, v: 90, ch: 9}]},
+                       {name: "marked", notes: [{t: 0, d: 120, p: 64, v: 90}], drumsMark: true},
+                       {name: "melody kit", notes: [{t: 0, d: 120, p: 64, v: 90}], drumsMark: false}];
+        S.trackState = song.tracks.map(() => ({muted: false, solo: false})); S.hideDrums = false;`);
+  const shown = () => val2(`song.tracks.map((t, i) => trackShown(i))`);
+  const notesBefore = val2(`rollnotes.length`), undoBefore = val2(`editUndo.length`);
+  assert.deepEqual(shown(), [true, true, true, true]);
+  run2(`setHideDrumTracks(true)`);
+  assert.deepEqual(shown(), [true, false, false, true], "the kit and the hand-marked track go; \"Not drums\" stays");
+  assert.deepEqual(val2(`S.trackState.map(st => !!st.hidden)`), [false, false, false, false], "no track's own H was set");
+  assert.equal(val2(`rollnotes.length`), notesBefore, "no annotation");
+  assert.equal(val2(`editUndo.length`), undoBefore, "no undo step");
+  run2(`S.trackState[0].hidden = true`);
+  run2(`setHideDrumTracks(false)`);
+  assert.deepEqual(shown(), [false, true, true, true], "off: drums back; a track's own H is separate and stays");
+  run2(`S.trackState[0].hidden = false`);
+  const r = await app2.run(`askAct({do: [{action: "hide_drum_tracks", on: "yes"}]})`);
+  assert.match(String(typeof r === "string" ? r : r.final), /drum tracks hidden for this session/);
+  assert.deepEqual(shown(), [true, false, false, true]);
+  await app2.run(`askAct({do: [{action: "hide_drum_tracks"}]})`); // no arg flips
+  assert.deepEqual(shown(), [true, true, true, true]);
+  await assert.rejects(Promise.resolve(app2.run(`askAct({do: [{action: "hide_drum_tracks", on: "maybe"}]})`)), /yes or no/);
+  run2(`S.hideDrums = false`);
 });
 
 // edit_notes Ask tool (docs/ai-parity.md §5 batch 5, 2026-10-05) — bulk ops

@@ -3647,6 +3647,20 @@ preview cache. With a render in hand the song's own slice still wins for SNES
 (its mix and echo); the worker note is the fallback. Test: tests/spc-preview.test.mjs
 (pitch within 3 cents, envelope correlation >= 0.99 against the render).
 
+### Hide drum tracks (2026-10-14; View ▾ → Display, Ask `hide_drum_tracks {on?}`)
+
+A session switch (`S.hideDrums`, never stored: not in localStorage, not a
+`track:` directive, no undo step) that makes `trackShown(ti)` (render/roll.js)
+false for every `trackIsDrums` track — a kit, channel 10, or one marked
+"These are drums"; "Not drums" tracks stay. It is a flag, not `hidden` set
+on each track, on purpose: a track's own H is a saved directive, and
+finalizeNotes re-applies directives from the annotations on every change, so
+setting `hidden` per track would have written the song and been undone by
+the next edit. The chip of a hidden drum track dims (`muted` class); the
+switch covers songs opened later in the session; hidden tracks still play.
+`setHideDrumTracks` lives in ui/trackbar.js. Test: "View › Display "Hide drum
+tracks"" in tests/night-roll.test.mjs.
+
 ## Game instrument libraries (2026-09-28)
 
 Josh's goal: use any imported game's instruments in his own songs.

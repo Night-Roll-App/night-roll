@@ -120,6 +120,7 @@ silently.
 | Add / delete a track | — | yes, your songs only; delete is one undo step | `add_track {name, voice?}`, `delete_track {track}` | S |
 | ▶ Hear sound (voice menu; one note in the game's voice) | — | yes — plays, changes nothing | `hear_sound {track}` | S |
 | These are drums / Not drums (voice menu; the track: annotation's `drums` field) | — | yes — one undo, works on a capture too | `mark_drums {track, drums: yes\|no\|auto}` | S |
+| Hide drum tracks (View ▾ → Display; session only, no annotation) | — | yes — nothing in the song changes | `hide_drum_tracks {on?}` | S |
 | Reorder tracks in the mixer | — | no — one drag; rare | — | — |
 | ＋∿ audio track (recording) | — | no — needs a file pick, which only your tap can open | — | — |
 

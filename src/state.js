@@ -190,6 +190,7 @@ export const S = {
   albumFading: false,
   editOn: false,
   listenerMode: false,
+  hideDrums: false, // View › Display "Hide drum tracks": this session only, never a track: directive (render/roll.js trackShown)
   viewMode: localStorage.getItem("ff1roll-view") || "roll",
   scoreModel: null,
   scoreCache: new Map(),

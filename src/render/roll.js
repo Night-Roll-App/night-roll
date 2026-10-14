@@ -225,7 +225,12 @@ export function sectionPathAt(tick) {
 export function curTick() {
   return S.playing ? secToTick(S.song, playSec()) : S.playCursor;
 }
-export function trackShown(ti) { return !(S.trackState[ti] && S.trackState[ti].hidden); }
+// hidden = the track's own H (a saved track: directive), or the session-wide "Hide drum tracks" switch (S.hideDrums), which hides
+// every drum track without touching a directive — the song file and its annotations never change
+export function trackShown(ti) {
+  if (S.trackState[ti] && S.trackState[ti].hidden) return false;
+  return !(S.hideDrums && S.song && S.song.tracks[ti] && trackIsDrums(ti));
+}
 export const cssCache = {};
 // theme is static — cache so 60fps draw() skips getComputedStyle
 export function css(name) {

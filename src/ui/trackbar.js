@@ -17,6 +17,7 @@ import { isLocalDraft } from "../model/edits.js";
 import { audioDirText } from "../model/rollnotes.js";
 import { saveDraft } from "../model/versions.js";
 import { trackColor } from "../render/roll.js";
+import { trackShown } from "../render/roll.js";
 import { openVoiceMenu } from "./voice-menu.js";
 import { addTrackUndoable } from "../model/edits.js";
 import { trackIsDrums } from "../model/grid.js";
@@ -72,6 +73,12 @@ export function trackToggle(ti, what) { // M / S / H from a chip or a lane heade
   st[what] = !st[what];
   if (S.song && S.song.tracks[ti]) saveTrackDir(ti); // finalizeNotes re-applies it, then renders
   renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+}
+// View › Display "Hide drum tracks" (and Ask hide_drum_tracks): a session switch, no annotation, no undo step
+export function setHideDrumTracks(on) {
+  S.hideDrums = !!on;
+  renderTrackbar(); buildScoreModel(); clampView(); draw();
+  return S.hideDrums;
 }
 export function saveVoices() { saveTrackDir(S.voiceMenuTi); }
 export function saveTrackDir(ti) { // upsert this track's "track:" directive — a normal
@@ -133,7 +140,7 @@ export function renderTrackbarImpl() {
   S.song.tracks.forEach((tr, ti) => {
     const chip = document.createElement("div");
     const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
-    chip.className = "chip" + (st.muted || st.hidden ? " muted" : "") + (ti === S.selTrack ? " selected" : "");
+    chip.className = "chip" + (st.muted || st.hidden || !trackShown(ti) ? " muted" : "") + (ti === S.selTrack ? " selected" : "");
     chip.dataset.ti = String(ti); // which track this chip belongs to — the tap-away closer (below) needs it to tell "the menu's own chip" from "a different track"
     chip.setAttribute("role", "button");
     chip.tabIndex = 0;
