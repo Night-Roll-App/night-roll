@@ -27,7 +27,12 @@
   "veil-of-uncertainty-cutscene": "Veil of Uncertainty [Cutscene]",
   "vow-of-revenge-opening-ii": "Vow of Revenge [Opening II]",
   "bloody-malth-cutscene-recapture": "Bloody Malth [Cutscene] (re-capture)",
-  "depth-of-wickedness-5-1-6-5-recapture": "Depth of Wickedness [5-1, 6-5] (re-capture)"
+  "depth-of-wickedness-5-1-6-5-recapture": "Depth of Wickedness [5-1, 6-5] (re-capture)",
+  "for-your-love-ending-iii-recapture": "For Your Love [Ending III] (re-capture)",
+  "jaquio-fortress-cutscene-recapture": "Jaquio Fortress [Cutscene] (re-capture)",
+  "the-duel-opening-recapture": "The Duel [Opening] (re-capture)",
+  "veil-of-uncertainty-cutscene-recapture": "Veil of Uncertainty [Cutscene] (re-capture)",
+  "vow-of-revenge-opening-ii-recapture": "Vow of Revenge [Opening II] (re-capture)"
  },
  "nsf": {
   "vault": "nes/ninja-gaiden.nsf",
@@ -37,8 +42,8 @@
     "secs": 44.664880000000004,
     "track": 22,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -108,8 +113,8 @@
     "secs": 103.595856,
     "track": 25,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -127,6 +132,10 @@
      "lufs": -22.3,
      "peak": -6.4,
      "synth": -13.3
+    },
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
     }
    },
    "devilish-influence-cutscene-6-4": {
@@ -194,8 +203,8 @@
     "secs": 4.599816,
     "track": 26,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -314,8 +323,8 @@
     "secs": 3.199872,
     "track": 3,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -329,8 +338,8 @@
     "secs": 46.898124,
     "track": 17,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -434,8 +443,8 @@
     "secs": 27.198912,
     "track": 19,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -443,6 +452,86 @@
      "peak": -6.4,
      "synth": -12.6
     }
+   },
+   "for-your-love-ending-iii-recapture": {
+    "n": 24,
+    "secs": 53.997840000000004,
+    "track": 24,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.3,
+     "peak": -7.9,
+     "synth": -14.2
+    },
+    "rip": "for-your-love-ending-iii"
+   },
+   "jaquio-fortress-cutscene-recapture": {
+    "n": 16,
+    "secs": 20.799168,
+    "track": 16,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -21.1,
+     "peak": -6.3,
+     "synth": -10
+    },
+    "rip": "jaquio-fortress-cutscene"
+   },
+   "the-duel-opening-recapture": {
+    "n": 1,
+    "secs": 20.33252,
+    "track": 1,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.2,
+     "peak": -6.4,
+     "synth": -12.3
+    },
+    "rip": "the-duel-opening"
+   },
+   "veil-of-uncertainty-cutscene-recapture": {
+    "n": 6,
+    "secs": 24.632348,
+    "track": 6,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.5,
+     "peak": -10.3,
+     "synth": -11
+    },
+    "rip": "veil-of-uncertainty-cutscene"
+   },
+   "vow-of-revenge-opening-ii-recapture": {
+    "n": 2,
+    "secs": 48.99804,
+    "track": 2,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -22.9,
+     "peak": -6.4,
+     "synth": -12.1
+    },
+    "rip": "vow-of-revenge-opening-ii"
    }
   }
  }

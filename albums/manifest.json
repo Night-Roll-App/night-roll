@@ -9320,6 +9320,10 @@
     "path": "albums/nes/ninja-gaiden/for-your-love-ending-iii.mid"
    },
    {
+    "title": "For Your Love [Ending III] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/for-your-love-ending-iii-recapture.mid"
+   },
+   {
     "title": "Game Over",
     "path": "albums/nes/ninja-gaiden/game-over.mid"
    },
@@ -9334,6 +9338,10 @@
    {
     "title": "Jaquio Fortress [Cutscene]",
     "path": "albums/nes/ninja-gaiden/jaquio-fortress-cutscene.mid"
+   },
+   {
+    "title": "Jaquio Fortress [Cutscene] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/jaquio-fortress-cutscene-recapture.mid"
    },
    {
     "title": "Nowhere to Run [3-2, 6-2]",
@@ -9368,6 +9376,10 @@
     "path": "albums/nes/ninja-gaiden/the-duel-opening.mid"
    },
    {
+    "title": "The Duel [Opening] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/the-duel-opening-recapture.mid"
+   },
+   {
     "title": "Unbreakable Determination [4-2]",
     "path": "albums/nes/ninja-gaiden/unbreakable-determination-4-2.mid"
    },
@@ -9376,8 +9388,16 @@
     "path": "albums/nes/ninja-gaiden/veil-of-uncertainty-cutscene.mid"
    },
    {
+    "title": "Veil of Uncertainty [Cutscene] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/veil-of-uncertainty-cutscene-recapture.mid"
+   },
+   {
     "title": "Vow of Revenge [Opening II]",
     "path": "albums/nes/ninja-gaiden/vow-of-revenge-opening-ii.mid"
+   },
+   {
+    "title": "Vow of Revenge [Opening II] (re-capture)",
+    "path": "albums/nes/ninja-gaiden/vow-of-revenge-opening-ii-recapture.mid"
    }
   ]
  },
