@@ -573,7 +573,13 @@ docs/provenance-plan.md for what that drift broke.
   - Annotations come from `annotationsFor(key)` — the repo file plus this
     device's local additions, MINUS tombstones (the same merge
     `loadNotes` does for the open song, factored out so it works for a
-    key that isn't open). `markPublished(key, stamp, content, opts)`
+    key that isn't open). The repo file is read through
+    `lastSyncPrefer(key, text)` (model/rollnotes.js), the same deploy-lag
+    bridge `loadNotes` uses: this device's own publish (`ff1roll-lastsync-`,
+    10 min) beats a CDN copy that disagrees. Without it a second publish
+    inside the CDN's lag rebuilt from the stale file — `markPublished` had
+    already cleared the `added` flags — and wrote it back (ex-battle-theme,
+    2026-10-13: five sections lost). `markPublished(key, stamp, content, opts)`
     clears that key's tombstones, resets `added` flags, and updates
     `pubSig`/`midSig`/`savedStamp` on its draft — for the open song and
     any other, alike; `markCurrentSongSynced` is now a thin wrapper

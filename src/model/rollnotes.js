@@ -682,13 +682,28 @@ export function mergeLocalAdditions(notes, key) {
 // open or not). No CDN-bridge/stamp-adoption here (those only matter for
 // the song actually being opened right now); a caller that needs those uses
 // loadNotes instead.
+// deploy-lag bridge: a publish from THIS device younger than 10 min beats a
+// disagreeing CDN copy (Pages ~10 min, raw.githubusercontent ~5 min). Every
+// reader of the repo file goes through it — loadNotes AND annotationsFor:
+// publish read past it and wrote the stale copy back (ex-battle-theme,
+// 2026-10-13: five sections lost two minutes after they were published)
+export function lastSyncPrefer(key, text) {
+  if (LINK_SONGS) return text;
+  try {
+    const ls = JSON.parse(localStorage.getItem("ff1roll-lastsync-" + key) || "null");
+    if (!ls) return text;
+    if (text === ls.text || Date.now() - ls.t > 10 * 60e3) { localStorage.removeItem("ff1roll-lastsync-" + key); return text; } // CDN caught up (or bridge expired)
+    return ls.text;
+  } catch (err) { return text; } // corrupt bridge: ignore
+}
 export async function annotationsFor(key) {
   const base = key.replace(/\.midi?$/i, "");
   let notes = [];
   try {
     let res = await readData("analysis", base + ".rollnotes.json", true);
     if (!res.ok) res = await readData("analysis", base + ".rollnotes", true); // legacy
-    if (res.ok) notes = parseRollnotes(await res.text());
+    const text = lastSyncPrefer(key, res.ok ? await res.text() : null);
+    if (text !== null) notes = parseRollnotes(text);
   } catch (err) { /* no sidecar yet */ }
   // version guard (docs/annotations-v2.md P3): this is the ONE place every
   // publish/move reads a not-necessarily-open song's existing annotations

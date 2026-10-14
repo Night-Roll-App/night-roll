@@ -867,9 +867,25 @@ export function applyEditEntry(u) {
 export function editorSaveRun(body) {
   if (S.rollnotesReadOnly) { body(); return null; } // the body says why
   const before = annoSnapshot(), retired = S.editingNote, idx = retired ? S.rollnotes.indexOf(retired) : -1, type = editorType();
-  let made;
+  let made, failed = null;
+  const st = document.getElementById("nstatus"), stWas = st.textContent;
   S.edFollow.busy = true; // finalizeNotes runs mid-save: the follow hook must not read the half-written layer
-  try { made = body(); } finally { S.edFollow.busy = false; }
+  try { made = body(); }
+  catch (err) { failed = err; made = null; } // escaping the click left NOTHING on screen or in the log Ask reads (Josh's loop Save, 2026-10-12)
+  finally { S.edFollow.busy = false; }
+  if (failed) {
+    console.error(failed);
+    annoRestore(before); // a body can throw after it has already filtered the layer (the loop branch drops the old loop first)
+    pruneTombstones(); finalizeNotes(); saveLocalNotes();
+    const why = "annotation Save failed: " + (failed && failed.message || String(failed));
+    st.textContent = why;
+    S.edFollow.msg = why;
+    editorRender();
+    setInfo(why);
+    draw();
+    return null;
+  }
+  if (!made && st.textContent && st.textContent !== stWas) setInfo("annotation not saved: " + st.textContent); // a refusal reaches the status log too
   if (!made) {
     if (retired && idx >= 0 && !S.rollnotes.includes(retired)) { S.rollnotes.splice(Math.min(idx, S.rollnotes.length), 0, retired); pruneTombstones(); finalizeNotes(); saveLocalNotes(); }
     return null;

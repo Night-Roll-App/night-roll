@@ -12771,6 +12771,38 @@ test("Publish: removing a baked tempo note removes it on republish — the base 
   assert.deepEqual(JSON.parse(withoutTempo).map(t => t.usq), [500000], "back to the base tempo — the baked event is GONE, not just un-refreshed");
 });
 
+// ex-battle-theme, 2026-10-13 (8f339eae): five sections published at 23:27
+// were gone from the 23:29 publish. markPublished clears every `added` flag,
+// so the next publish rebuilds from the repo file — and the CDN (raw.github-
+// usercontent on the iPad, ~5 min) still served the 23:09 copy without them.
+test("Publish twice inside the CDN's lag: the second publish keeps what the first one published; edit → publish → reload → compare (ex-battle-theme sections)", async () => {
+  const KEY = "albums/compositions/nightroll/lag.mid", RN = "albums/compositions/nightroll/lag.rollnotes.json";
+  const a = await pubApp();
+  useFakeFolder(a, "lag");
+  openComposition(a, KEY);
+  const add = (b1, b2, label) => a.run(`{ const n = resolveNote(deriveNoteTypes([{b1: ${b1}, q1: 1, b2: ${b2}, q2: 4, text: ${JSON.stringify(label)}, section: true}])[0]); n.added = true; rollnotes.push(n); finalizeNotes(); saveLocalNotes(); }`);
+  a.run(`{ const n = resolveNote(deriveNoteTypes([{b1: 3, q1: 1, text: "loop: 2.1"}])[0]); n.added = true; rollnotes.push(n); finalizeNotes(); saveLocalNotes(); }`);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  a.context.__cdnCopy = await folderText(a, RN); // what the CDN keeps serving for the next few minutes
+  add(1, 1, "A"); add(2, 2, "B");
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const sections = text => JSON.parse(text).notes.filter(n => n.type === "section").map(n => n.label);
+  assert.deepEqual(sections(await folderText(a, RN)), ["A", "B"], "the first publish wrote both sections");
+  a.run(`globalThis.__realReadData = readData;
+    readData = async (which, path, bust) => path.endsWith(".rollnotes.json") ? {ok: true, status: 200, text: async () => __cdnCopy} : __realReadData(which, path, bust);`);
+  try {
+    a.run(`song.tracks[0].notes.push({t: 960, d: 480, p: 67, v: 100}); saveDraft(false);`); // an unrelated edit (the Drummer's take, that night)
+    await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+    assert.deepEqual(sections(await folderText(a, RN)), ["A", "B"], "the second publish kept the sections the CDN hasn't caught up on");
+    await a.run(`loadNotes()`); // reload while the CDN is still stale
+    assert.deepEqual(a.run(`JSON.stringify(rollnotes.filter(n => n.section).map(n => n.text))`), JSON.stringify(["A", "B"]), "reload: both sections");
+  } finally {
+    a.run(`readData = __realReadData;`);
+  }
+  await a.run(`loadNotes()`); // reload once the CDN caught up (the folder IS the repo here)
+  assert.deepEqual(a.run(`JSON.stringify(rollnotes.filter(n => n.section).map(n => n.text))`), JSON.stringify(["A", "B"]), "reload after the CDN caught up: both sections");
+});
+
 // ---- P1: origins, RULES, "Make it mine", meter baking (docs/provenance-plan.md) ----
 test("originOf: one of composition|copy|import|capture|starter, from what exists today", async () => {
   const a = await pubApp();
@@ -15650,6 +15682,33 @@ test("docked annotation window: unsaved work is never dropped or auto-saved — 
   run(`document.getElementById("nunsaveddiscard").dispatchEvent({type: "click"});`);
   assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), false, "Discard, then it closes");
   assert.deepEqual(val(`__fx`), []);
+  dockTeardown();
+});
+
+// Josh, ex-battle-theme 2026-10-12: + Note at 33.1, Loop, return 9, Save —
+// "nothing happens", the strip kept offering Discard, and the status log Ask
+// read had no line from any of his Saves. Not reproduced (vm, app edition,
+// real WebKit iPad); what IS provable: a throw escaped the click silently and
+// a refusal never reached the log. Both now say why, and a throw rolls back.
+test("docked annotation window: a Save that throws or refuses says why in the window and the status log — never a silent no-op, never a half-applied edit (Josh's loop Save, 2026-10-12)", () => {
+  const bt = dockSetup();
+  run(`{ const n = resolveNote(deriveNoteTypes([{b1: 15, q1: 1, text: "loop: 5.1"}])[0]); n.added = true; rollnotes.push(n); finalizeNotes(); }`);
+  const before = val(`annoSnapshot()`);
+  run(`globalThis.__info = ""; setInfo = m => { __info = m; };`); // an earlier test leaves setInfo stubbed anyway — read what it is handed
+  run(`playCursor = ${16 * bt}; openEditor(null); pickEditorType("loop"); document.getElementById("nlb").value = "9";`);
+  assert.equal(val(`edFollow.mode`), "new");
+  run(`globalThis.__dsb = dropSupersededBy; dropSupersededBy = () => { throw new Error("boom"); };`);
+  try { run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`); }
+  finally { run(`dropSupersededBy = __dsb;`); }
+  assert.match(val(`document.getElementById("nfollowmsg").textContent`), /annotation Save failed: boom/, "the window says it failed");
+  assert.match(val(`__info`), /annotation Save failed: boom/, "and the status line (the log Ask reads) has it");
+  assert.equal(val(`annoSnapshot()`), before, "the old loop the Save had already filtered out is back: nothing half-applied");
+  assert.deepEqual(val(`[edFollow.busy, edFollow.mode, editUndo.length, document.getElementById("nlb").value]`), [false, "new", 0, "9"], "the draft stays to retry; no undo step");
+  run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.loopTo !== undefined).map(n => [n.b1, n.text])`), [[17, "loop: 9.1"]], "and the retry saves");
+  run(`openEditor(null); pickEditorType("note"); document.getElementById("ntext").value = "";
+    document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`__info`), "annotation not saved: Note text is empty.", "a refusal reaches the status line too");
   dockTeardown();
 });
 

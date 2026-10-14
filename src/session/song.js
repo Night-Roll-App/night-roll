@@ -45,6 +45,7 @@ import { subtractTombstones } from "../model/rollnotes.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { cfg } from "../platform/storage.js";
 import { mergeLocalAdditions } from "../model/rollnotes.js";
+import { lastSyncPrefer } from "../model/rollnotes.js";
 import { finalizeNotes } from "../hooks.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
 import { updateSubtitleImpl as updateSubtitle } from "../ui/chrome.js";
@@ -274,15 +275,7 @@ export async function loadNotes() {
       if (!res.ok) res = await readData("analysis", notesBase() + ".rollnotes", true); // legacy
       let text = res.ok ? await res.text() : null;
       if (gen !== S.loadGen) return;
-      // deploy-lag bridge: a Sync younger than 10 min beats a disagreeing CDN
-      try {
-        const ls = LINK_SONGS ? null : JSON.parse(localStorage.getItem("ff1roll-lastsync-" + S.songKey) || "null");
-        if (ls) {
-          if (text === ls.text || Date.now() - ls.t > 10 * 60e3)
-            localStorage.removeItem("ff1roll-lastsync-" + S.songKey); // CDN caught up (or bridge expired)
-          else text = ls.text;
-        }
-      } catch (err) { /* corrupt bridge: ignore */ }
+      text = lastSyncPrefer(S.songKey, text); // deploy-lag bridge (model/rollnotes.js)
       if (text !== null) {
         const parsed = parseRollnotes(text); // version/origin/readOnly live on THIS array (props a later .map/.filter won't carry) — read them now
         S.rollnotesReadOnly = !!parsed.readOnly;
