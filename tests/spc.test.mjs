@@ -538,7 +538,7 @@ test("SNES capture v2 (real rip): FF4 Main Theme — echo on its voices, ADSR sh
   const ev = appEvents(cap);
   const A = await publishHop(midiOf(stripV2(ev))), B = await publishHop(midiOf(ev));
   assert.deepEqual(noteRows(B.b), noteRows(A.b), "every note where v1 put it");
-  const pitched = B.b.tracks.filter(t => !/drum/.test(t.name));
+  const pitched = B.b.tracks.filter(t => !/drum/.test(t.name) && !t.kit); // a kit track (SNES sampled drums) names no sample: a program on channel 10 would pick a GM kit
   assert.ok(pitched.filter(t => ctlOf(t, 91).some(e => e.v > 0)).length >= 4, "echo send on most voices");
   assert.ok(pitched.every(t => ctlOf(t, "pg").length >= 1), "every pitched voice names its sample");
   const shaped = pitched.reduce((s, t) => s + t.notes.filter(n => n.env).length, 0);
@@ -678,4 +678,21 @@ test("SNES kits: the census fixture (tests/fixtures/spc-kit-groups.json) — The
   const fx = JSON.parse(readFileSync(new URL("./fixtures/spc-kit-groups.json", import.meta.url), "utf8"));
   assert.ok(fx.groups.length >= 15);
   for (const g of fx.groups) assert.equal(isSpcKitGroup(g), g.kit, `${g.song} ${g.voice} sample ${g.srcn}`);
+});
+
+test("published FF5 The Battle: once re-captured (cap.v >= 3) voice5/voice7 are kit tracks on channel 10 with a kitmap — reads the committed file, needs no rip", async () => {
+  const dir = new URL("../albums/snes/final-fantasy-5/", import.meta.url);
+  const meta = JSON.parse(readFileSync(new URL("album.json", dir), "utf8"));
+  const cap = meta.nsf.tracks["the-battle"].cap;
+  if (!cap || cap.v < 3) return; // not re-captured yet: nothing to assert (precedent: nsf.test.mjs cap.v >= 2)
+  const { readSmf } = await import("../tools/capture-diff.mjs");
+  const smf = readSmf(readFileSync(new URL("the-battle.mid", dir)));
+  for (const name of ["voice5", "voice7"]) {
+    const tr = smf.tracks.find(t => t.name === name);
+    assert.ok(tr, name + " keeps its track");
+    assert.ok(tr.other.some(e => e.kind === "meta01" && e.key === "kit:1"), name + " has kit:1");
+    assert.ok(tr.other.some(e => e.kind === "meta01" && e.key.startsWith("kitmap:")), name + " has its kitmap");
+    assert.ok(tr.notes.every(n => n.ch === 9 && n.p >= 35 && n.p <= 81), name + ": channel 10, GM keys");
+  }
+  assert.ok(!smf.tracks.find(t => t.name === "voice6").other.some(e => e.key === "kit:1"), "voice6 stays melodic");
 });
