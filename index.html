@@ -381,6 +381,8 @@
        his ticks, his answers. The guide itself is a button INSIDE the sheet
        (Josh, Terminal #147: "I don't wanna clutter the drop-up"), not here. -->
   <button class="fitem" id="notesstudy">Analysis sheet</button>
+  <!-- the coach's comments (Q30-36): hers, read-only, imported by paste -->
+  <button class="fitem" id="notescoach">Coach comments</button>
   <!-- the open song's open questions, one tap (Josh, Terminal #226): All
        notes filtered to song notes of kind "question"; shown only when the
        song has one (initNotes2 sets the count each time the drop-up opens) -->
@@ -621,6 +623,23 @@
   </div>
 </div>
 </div><!-- /studysheet-home -->
+
+<!-- Coach comments (src/ui/coach-sheet.js): paste what she sent, see it as a
+     read-only layer; makeWindow() registers it non-dockable. -->
+<div class="overlay" id="coachsheet">
+  <div class="sheet">
+    <h2 id="coachsheet-h2">COACH COMMENTS</h2>
+    <p class="meta" style="margin:4px 0">Paste what she sent — lines like <b>bar 12: the bass walks</b>, or the JSON from the share page. Her words stay hers: shown as written, never in your annotations.</p>
+    <div class="row">
+      <button class="primary" id="coachclip">Paste &amp; import</button>
+      <button id="coachtoggle" aria-pressed="true">Marks on the ruler: on</button>
+    </div>
+    <textarea id="coachpaste" rows="3" style="width:100%" placeholder="bar 12: text&#10;5.3: text" aria-label="Paste her comments"></textarea>
+    <div class="row"><button id="coachimport">Import pasted text</button></div>
+    <div class="status" id="coachStatus"></div>
+    <div id="coachrows"></div>
+  </div>
+</div>
 
 <div id="mixersheet-home" style="display:contents">
 <div class="overlay" id="mixersheet">
@@ -1769,6 +1788,8 @@
 <link rel="modulepreload" href="src/ui/notes.js">
 <link rel="modulepreload" href="src/ui/note-editor.js">
 <link rel="modulepreload" href="src/ui/study-sheet.js">
+<link rel="modulepreload" href="src/ui/coach-sheet.js">
+<link rel="modulepreload" href="src/model/coach-comments.js">
 <link rel="modulepreload" href="src/ui/sheets.js">
 <link rel="modulepreload" href="src/ui/wm.js">
 <link rel="modulepreload" href="src/ui/vellane.js">

@@ -1,3 +1,5 @@
+import { coachRead } from "../model/coach-comments.js";
+import { coachSerialize } from "../model/coach-comments.js";
 import { S } from "../state.js";
 import { folderActive } from "../platform/folder.js";
 import { folderWrite } from "../platform/folder.js";
@@ -467,6 +469,12 @@ export async function publishSong(key, h, report) {
   report("publishing annotations…");
   const r2 = await putRollnotes(base + ".rollnotes.json", content, h);
   if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
+
+  const coach = coachRead(key); // hers, in her own sidecar beside the song (Q30-36): published only when a device holds some, never touching the .rollnotes
+  if (coach.length) {
+    const r4 = await putRollnotes(base + ".comments.json", coachSerialize(coach, title, stamp), h);
+    if (!r4.ok) throw new Error(".comments.json HTTP " + r4.status);
+  }
 
   if (hisMusic && doc) {
     const r3 = await putSongsText(base + ".notes.txt", notesTxtFor(doc, key), h);

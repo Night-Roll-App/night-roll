@@ -272,6 +272,9 @@ The one report the sheet gives, and only when asked: tap **Check coverage** and 
 **Analysis guide**
 Not sure what a full analysis even covers, or how to write one down? **Analysis guide** at the top of the Analysis sheet (or **Help → Analysis**) is reference text — the sixteen things an analysis looks at, how to find each one in Night Roll, and where it lands as an annotation. Generic, the same on every song; it never names a key, a chord, or a reading of yours.
 
+**Coach comments**
+Your coach's comments on a song — hers, shown exactly as she wrote them, with her name and the time, never mixed into your own annotations. She looks at the song from your **🔗 Share link** (no account) and sends her comments back by message. Copy her message, then tap **☰ Notes ▴ → Coach comments → Paste & import** (one tap; or paste into the box and tap Import pasted text). Lines like **bar 12: the bass walks**, **5.3: not G7/B** (bar.beat) or **song: lovely B part** work, and so does the JSON the share page makes; **from: Anna** and **sent: 2026-10-14 10:20** lines name her and the time. Importing twice adds nothing twice. Each comment is a small blue mark on the ruler at its bar (**Marks on the ruler** switches them off) and a row in the sheet — tap a row to jump to its bar. They live in **<song>.comments.json** beside the song and publish with it. The AI never sees them unless you ask ("what did the coach say about bar 5?").
+
 **Song notes**
 An idea about the whole song, not one bar — a rule you found ("Sway: long-short-long is the strongest"), with a couple of example bars written in its words. A song can have as many as you like, each with a short **title**. Tap **☰ Notes ▴ → All notes** (or open the Analysis sheet) and tap **+ Song note**: type the title, then type the idea or tap **Speak** and dictate it, then **Save**. Or tap **Song** in any note window — the bar rows go away and a title box appears. They list first, under **SONG NOTES**: in All notes as "Title — first line", in the Analysis sheet stacked title then body, so they read as one page. Tap one to edit or delete it. Titles are unique in a song — a second "Sway" is refused, so pick another title or edit the first. Song notes are never drawn on the ruler and never move when you insert or delete bars; they publish and undo like any annotation. Ask can write them too, only when you ask: "add a song note called Sway: …", "edit the Sway song note", "delete the Sway song note".
 
@@ -472,6 +475,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: run the Bassist over bars or a section label (one undo)**
 **“Bass line for bars 1 to 16, busy 2, follow the drums.”** Say the bars or one of your section labels, then what you want: style (chug, pump, arp, walk, riff), busy 1–5, octave 1–3, what it follows (drums, chords, or a track name); name a track to pick where the bass goes, else it uses your bass track or makes one. "that one again, quieter" works because the reply names the seed. (act: bassist from_bar to_bar|section track? style? busy? octave? follow? seed?)
+
+**Ask: read the coach's comments on this song, or import pasted ones**
+**“What did she say about bar 5?”** Ask for her comments ("what did the coach say?"), or paste what she sent and say "import these". (act: coach_comments op? text?)
 
 **Ask: repeat bars: open a gap, copy the music into it (one undo)**
 **“Repeat bars 5 and 6 right after themselves.”** Say the bars to copy and where the copy lands. (act: copy_bars from_bar to_bar at_bar)

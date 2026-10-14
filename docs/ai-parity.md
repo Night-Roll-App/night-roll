@@ -339,6 +339,7 @@ and fails if the menu ever grows past half the twelve-tool menu.
 | `set_track` | track, mute?, solo?, hide?, volume?, pan?, voice?, color?, name?, octave? | edits — **done batch 7** (not conditionally quiet on M/S/H as this row once proposed: `quiet` is a per-ACTION registry flag, not per-call, so a mixed set_track call always goes back to the model, same as every other edit) |
 | `add_track` / `delete_track` | name, voice? / track | edits — **done batch 7** (compositions only — the same gate the ＋ chip / voice menu's ✕ Delete track use; `set_track` works on any editable song) |
 | `keep_that` | track? | edits — **done batch 7** |
+| `coach_comments` | op? (read\|import), text? | answered, on request only — Q30-36 (2026-10-14); her comments are not in the context block |
 | `bassist` | from_bar, to_bar \| section, track?, style?, busy?, octave?, follow?, seed? | edits — **done batch 4** |
 | `drummer` | from_bar, to_bar \| section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed? | edits — done (batch 0, folded into `act` batch 1) |
 | `song_file` | new\|save_version\|versions\|save_as\|rename\|share_link, title?, label?, folder? | answered — **done batch 8** (`song: false`; its own sub-action arg is also named `action` — a model sends it under `args` to avoid colliding with the item's own, as `album`'s does) |

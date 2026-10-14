@@ -83,6 +83,8 @@ export const S = {
   instOpen: false,
   fallOn: false,
   subOn: localStorage.getItem("ff1roll-sub") !== "0",
+  coachShow: localStorage.getItem("ff1roll-coachshow") !== "0", // device-local view pref: her comments as marks on the ruler
+  coachKey: null, coachList: [], coachFetched: {}, // the open song's coach comments, cached (src/model/coach-comments.js coachCurrent)
   lassoRect: null,
   cmp: null,
   multiSel: [],

@@ -110,6 +110,11 @@ findsel.addEventListener("change", () => {
 lassobtn.addEventListener("click", () => {
 document.getElementById("chcopy").addEventListener("click", async e => {
 document.getElementById("chordbtn").addEventListener("click", () => {
+document.getElementById("notescoach").addEventListener("click", () => { closeDropUp(); openCoachSheet(); });
+const run = text => {
+document.getElementById("coachimport").addEventListener("click", () => {
+document.getElementById("coachclip").addEventListener("click", async () => {
+document.getElementById("coachtoggle").addEventListener("click", () => {
 document.getElementById("notesstudy").addEventListener("click", () => { closeDropUp(); openStudySheet(); });
 document.getElementById("studyguide").addEventListener("click", () => { openHelp("analysis"); });
 document.getElementById("studycheck").addEventListener("click", () => { studyRunCheck(); });
@@ -323,6 +328,7 @@ makeWindow("pubjobsheet", {dockable: false});
 makeWindow("infosheet", {dockable: false});
 makeWindow("importhub", {dockable: false});
 makeWindow("versionssheet", {dockable: false});
+makeWindow("coachsheet", {dockable: false});
 wmSideDividerize("wmdivider-left-full", "left");
 wmSideDividerize("wmdivider-left-inner", "left");
 wmSideDividerize("wmdivider-right-full", "right");

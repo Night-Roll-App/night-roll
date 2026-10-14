@@ -8,6 +8,7 @@ import { playSec } from "../audio/transport.js";
 import { scoreTickToX } from "./score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
+import { coachCurrent } from "../model/coach-comments.js";
 import { drawAudioStrip } from "./tracks.js";
 import { appMode } from "../platform/mode.js";
 import { isDirective } from "../model/rollnotes.js";
@@ -448,6 +449,17 @@ export function drawRuler(W, H) {
   // in score view, band edges follow the ENGRAVED positions (scoreTickToX,
   // the playhead's own map) — linear time put "A part" a hair off its notes
   const tickX = t => S.viewMode === "score" && S.scoreModel ? scoreTickToX(t) : S.RULER_W + t * ppt - S.view.x;
+  if (S.coachShow) { // her comments (Q30-36): a read-only layer of small blue marks at their bars, never an annotation
+    const qt = beatTicks();
+    ctx.fillStyle = "#5BC0EB";
+    for (const c of coachCurrent()) {
+      if (!c.at) continue;
+      const x = tickX((c.at[0] - 1) * bt + (c.at[1] - 1) * qt);
+      if (x < S.RULER_W - 8 || x > W) continue;
+      ctx.fillRect(x - 9, 2, 8, 6);
+      ctx.fillRect(x - 9, 8, 2, 2);
+    }
+  }
   if (S.annoFlash && Date.now() < S.annoFlash.until) { // an annotation undo/redo: show WHERE it changed (Josh, Terminal #247)
     const fx = tickX(S.annoFlash.a), fe = Math.max(tickX(S.annoFlash.b), fx + 6);
     ctx.fillStyle = css("--accent");

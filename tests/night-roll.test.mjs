@@ -3155,6 +3155,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
+    "Coach comments",
     "↓ latest",
     "Roman numeral and no 5",
     "Jump into text boxes",
@@ -16229,4 +16230,59 @@ test("File under: Ask add_annotation / edit_annotation take topic; an unknown id
   run(`askEditAnnotation({bar: 4, beat: 1, text: "rest on V, twice", topic: ""});`);
   assert.equal(val(`rollnotes[0].topic ?? null`), null, "un-filed");
   studyReset();
+});
+
+// ---- Coach comments (Q30-36): hers, a separate sidecar, read-only, shown as written
+test("coach comments: lines and JSON both parse; dedupe by id; her words are untouched", () => {
+  const P = t => JSON.parse(run(`JSON.stringify(coachParse(${JSON.stringify(t)}, {now: 1000}))`));
+  const r = P("from: Anna\nbar 12: the bass walks\nsecond line\n5.3 - not G7/B\nbar 7 beat 2: hm\nsong: lovely B part\n12 bars of tension");
+  assert.deepEqual(r.comments.map(c => [c.at, c.by, c.text]), [
+    [[12, 1], "Anna", "the bass walks\nsecond line"], [[5, 3], "Anna", "not G7/B"], [[7, 2], "Anna", "hm"], [null, "Anna", "lovely B part\n12 bars of tension"]]);
+  assert.equal(r.comments[0].ts, 1000, "no sent: line = the import time");
+  const j = P(JSON.stringify({by: "Anna", comments: [{at: [3, 1], text: "x"}, {at: "4.2", text: "y", ts: "2026-01-01T00:00:00Z"}, {bar: 9, text: "z", id: "k1"}, {nope: 1}]}));
+  assert.deepEqual(j.comments.map(c => c.at), [[3, 1], [4, 2], [9, 1]]);
+  assert.equal(j.comments[2].id, "k1");
+  assert.equal(j.skipped.length, 1);
+  assert.equal(P("random words with no position").comments.length, 0);
+  const again = val(`(() => { const a = coachParse("bar 2: hi", {now: 1}).comments, b = coachParse("bar 2: hi", {now: 99}).comments; return coachMerge(a, b).added; })()`);
+  assert.equal(again, 0, "the same message imported twice adds nothing");
+});
+
+test("coach comments: import → reload → still there; never touches the rollnotes; Ask reads only on request", async () => {
+  installSong();
+  run(`rollnotes = [{b1: 1, q1: 1, text: "mine"}]; coachImportText("from: Anna\\nbar 5: listen to the bass again\\nsong: nice"); `);
+  const r0 = JSON.stringify(val(`rollnotes`));
+  assert.equal(val(`coachCurrent().length`), 2);
+  const stored = run(`localStorage.getItem("ff1roll-comments-midi/test.mid")`);
+  assert.ok(stored && stored.includes("listen to the bass again"), "stored under its own key");
+  assert.equal(run(`(coachImportText("from: Anna\\nbar 5: listen to the bass again"), coachCurrent().length)`), 2, "a repeat adds nothing");
+  assert.equal(JSON.stringify(val(`rollnotes`)), r0, "his annotations are untouched");
+  // a fresh app on the same storage: the comments are still there
+  const b = await createApp({storage: {"ff1roll-comments-midi/test.mid": stored}});
+  b.run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid";`);
+  assert.equal(valOf(b, `coachCurrent().map(c => c.by + ":" + c.text)`).join("|"), "Anna:nice|Anna:listen to the bass again");
+  // Ask: an action reads them on request, as written; the context block never carries them
+  const line = run(`ASK_ACTIONS.find(d => d.name === "coach_comments").run({})`);
+  assert.match(line, /2 coach comments/);
+  assert.match(line, /5\.1 · Anna · .*: listen to the bass again/);
+  run(`multiSel = [];`);
+  assert.ok(!run(`askContext(song, 100000)`).includes("listen to the bass again"), "not in the context unless asked");
+  // the sidecar serialises one comment per line, in its own format
+  const ser = run(`coachSerialize(coachCurrent(), "test", 5)`);
+  assert.equal(JSON.parse(ser).format, "night-roll-comments");
+  assert.equal(ser.trim().split("\n").length, 4);
+  run(`localStorage.removeItem("ff1roll-comments-midi/test.mid"); songKey = null; coachCurrent();`);
+});
+
+test("coach comments: the sheet lists them under her name and the time; the ruler toggle is a device pref", () => {
+  installSong();
+  run(`coachImportText("from: Anna\\nsent: 2026-10-14 10:20\\nbar 12: the bass walks"); openCoachSheet();`);
+  const rows = app.el("coachrows");
+  const txt = e => (e.textContent || "") + (e.children || []).map(txt).join("|");
+  assert.match(txt(rows), /Bar 12\.1 · Anna · 2026-10-14 10:20/);
+  assert.match(txt(rows), /the bass walks/);
+  run(`document.getElementById("coachtoggle").click();`);
+  assert.equal(val(`coachShow`), false);
+  assert.equal(run(`localStorage.getItem("ff1roll-coachshow")`), "0");
+  run(`document.getElementById("coachtoggle").click(); localStorage.removeItem("ff1roll-coachshow"); localStorage.removeItem("ff1roll-comments-midi/test.mid"); songKey = null; coachCurrent(); document.getElementById("coachsheet").classList.remove("on");`);
 });

@@ -2956,6 +2956,49 @@ attributes); the guide's `data-topic="form"` etc. (so S2+ can clone one
 group's text) needed it widened to `<dd[^>]*>`, or every attributed dd's
 body silently vanished from docs/HELP.md.
 
+## Coach comments (Q30-36, 2026-10-14; design: docs/plans/2026-10-09-coach-commentary.md option A)
+
+His composition coach reviews a song from today's 🔗 Share link (no account,
+she sees what the link shows) and sends her comments back by message. He
+imports them; they are a separate, read-only layer.
+
+- **Sidecar, never his annotations.** `<song>.comments.json` beside the song
+  (`format: "night-roll-comments"`, `version: 1`, `comments: [...]`, one
+  comment per line). Device copy: localStorage `ff1roll-comments-<songKey>`
+  (a JSON array; rides `renameLocalKeys`). `publishSong` writes the sidecar
+  only when a device holds comments, after the `.rollnotes.json` and without
+  touching it. Merge is by `id`, append-only: an import can only add.
+  Opening the sheet on a song with no local comments reads the published
+  sidecar once (his other device).
+- **Comment shape.** `{id, at:[bar,beat]|null, by, ts, text, on?}`. `at` null
+  = the whole song. `on` is `{type, quote}` for a comment about one
+  annotation (the JSON path only; the text path has no `on`). `id` is a hash
+  of by|position|text when the sender gives none, so re-importing the same
+  message adds nothing.
+- **Import format** (src/model/coach-comments.js `coachParse`, forgiving):
+  - Lines: `bar 12: text`, `12: text`, `5.3 - text` (bar.beat), `bar 5 beat
+    3: text`, `song: text` (also `whole song:`, `general:`). An unmatched
+    line continues the comment above it. `from: Anna` / `sent: 2026-10-14
+    10:20` header lines name her and the time (else: no name, import time).
+    A bare "12 bars of tension" is not a position; it needs `:`/dash after
+    the number, or the word `bar`.
+  - JSON: `{"format":"night-roll-comments","by":"Anna","comments":[{"at":[5,3],
+    "text":"..."}]}` or a bare list; `at` may be `[bar,beat]`, `"5.3"` or
+    `bar`/`beat` fields; per-item `by`, `ts` (ms or date string), `id`, `on`.
+- **Display.** ☰ Notes ▴ → Coach comments (src/ui/coach-sheet.js): Paste &
+  import (clipboard, one tap), a paste box, the list (her name and time on
+  every row, text as written, tap = jump to the bar), and a device-local
+  toggle (`ff1roll-coachshow`, `S.coachShow`) for the small blue marks drawn
+  on the ruler at their bars (render/roll.js drawRuler).
+- **Learning mode / AI.** Her words are shown as written; nothing is added.
+  The Ask context never includes them. Ask action `coach_comments {op?,
+  text?}` reads them (or imports pasted text) only on request, and relays.
+  `node tools/annotations.mjs <song> --comments` prints them on request; the
+  default dump never reads the sidecar.
+- **Not done (v1).** Replies, per-annotation anchors from the text path,
+  marks that follow Insert/Delete bars, a share-page composer, marking the
+  song "pending" when only comments changed (they ride the next real Publish).
+
 ## Analysis sheet (☰ Notes ▴ → Analysis sheet, 2026-10-05)
 
 Step S2 of docs/plans/2026-10-05-analysis-sheet.md (storage was S1,

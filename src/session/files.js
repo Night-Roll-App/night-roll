@@ -94,7 +94,7 @@ export function fillFolderSelect(sel, exclude, prefer) { // options: known folde
 export function renameLocalKeys(oldKey, newKey) { // every per-song key on this device rides along; the open song follows
   migrateVersions(oldKey); // fold any pre-versions checkpoint/stash in under the OLD key first, so a rename can't strand them
   for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-",
-                     "ff1roll-tombs-", "ff1roll-origin-", "ff1roll-range-"]) { // a deletion of a synced note must stay dead at the new path too (moveComposition); origin rides too (P4, docs/annotations-v2.md)
+                     "ff1roll-tombs-", "ff1roll-origin-", "ff1roll-range-", "ff1roll-comments-"]) { // a deletion of a synced note must stay dead at the new path too (moveComposition); origin rides too (P4, docs/annotations-v2.md)
     const v = localStorage.getItem(pre + oldKey);
     if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
   }

@@ -131,6 +131,7 @@ or note classification. Findings stay Josh's.
     node tools/pitch-census.mjs <song> [--track T]           # PCs present/ABSENT, duration-weighted
     node tools/song-diff.mjs <old.mid> <new.mid>             # per-track added/removed/changed
     node tools/annotations.mjs <song> [--type T]             # resolved dump + anomaly flags
+# A coach's <song>.comments.json is hers: web sessions do not read it unasked (`--comments` prints it when Josh asks); relay her words as written, add no analysis.
     #   (every query tool runs the app in Learning mode: ✦ AI-tagged estimates in a rollnotes file are hidden from it — his analysis only)
     #   (--type analysis: his Analysis-sheet entries — item + tick in the text column, his answer after ✱; they are his findings, read them, never write them)
     #   (--type songnote: his titled song notes — "songnote: <title>" in the text column, the body after ✱; ideas about the whole song, his — read them, never write them)

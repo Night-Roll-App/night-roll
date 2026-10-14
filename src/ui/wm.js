@@ -812,6 +812,7 @@ export function initWm1() {
   // window (WM_WINDOWS), but not dockable, so it gets no Dock button.
   makeWindow("importhub", {dockable: false});
   makeWindow("versionssheet", {dockable: false});
+  makeWindow("coachsheet", {dockable: false}); // Coach comments (src/ui/coach-sheet.js): a browsing sheet
   wmSideDividerize("wmdivider-left-full", "left");
   wmSideDividerize("wmdivider-left-inner", "left");
   wmSideDividerize("wmdivider-right-full", "right");

@@ -23,6 +23,7 @@ import { initTrackbar1 } from "./ui/trackbar.js";
 import { initVoiceMenu1 } from "./ui/voice-menu.js";
 import { initNotes1, initNotes2, initNotes3 } from "./ui/notes.js";
 import { initStudySheet1 } from "./ui/study-sheet.js";
+import { initCoachSheet1 } from "./ui/coach-sheet.js";
 import { initNoteEditor1, initNoteEditor2, initNoteEditor3, initNoteEditor4, initNoteEditor5, initNoteEditor6 } from "./ui/note-editor.js";
 import { initSheets1, initSheets2, initSheets3, initSheets4, initSheets5, initSheets6, initSheets7, initSheets8, initSheets9 } from "./ui/sheets.js";
 import { initWm1, initWm2 } from "./ui/wm.js";
@@ -67,6 +68,7 @@ initGestures2();
 initNotes2();
 initChrome7();
 initNotes3();
+initCoachSheet1(); // the Coach comments sheet (Q30-36)
 initStudySheet1(); // the Analysis sheet's three listeners (☰ Notes ▴ → Analysis sheet, its guide + Check coverage buttons)
 initChrome8();
 initNoteEditor2();
