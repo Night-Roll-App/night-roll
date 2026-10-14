@@ -716,3 +716,27 @@ test("published FF5 The Battle: once re-captured (cap.v >= 3) voice5/voice7 are 
   }
   assert.ok(!smf.tracks.find(t => t.name === "voice6").other.some(e => e.key === "kit:1"), "voice6 stays melodic");
 });
+
+// ---- SNES phantom notes (Q20, docs/plans/2026-10-07-capture-audit-2-and-glide.md):
+// a driver preloads the NEXT note's PITCH while the voice is still fading out
+// (GAIN decreasing), then keys the real note. The pitch jump used to open a
+// legato note a few ms long, stacked on the real one. A split-born note
+// shorter than 10 ms is no note; a longer legato split (a real slide) stays.
+const jump = (koffAt, gain = 0x80 | 0x0E) => dspCapture([ // direct GAIN 0x7F (full level), then the game switches to a decrease mode 1 ms before the PITCH preload
+  ...voiceRegs(0, 0, {adsr1: 0x00, gain: 0x7F}), ...kon(0, 0.1), ...(gain == null ? [] : [[0.299, 7, gain]]), [0.3, 2, 0x00], [0.3, 3, 0x20], ...koff(0, koffAt),
+], 1.0);
+test("SNES phantoms: a PITCH preload during a GAIN fade, gone 5 ms later, leaves one note", () => {
+  const ev = reconstruct(jump(0.305)).events.filter(e => e.voice === 0);
+  assert.equal(ev.length, 1, "no phantom");
+  assert.ok(!ev[0].legato);
+  for (const gain of [0x80 | 0x0E, 0xA0 | 0x0E]) // linear and exponential decrease
+    assert.equal(reconstruct(jump(0.305, gain)).events.filter(e => e.voice === 0).length, 1, "gain " + gain.toString(16));
+});
+test("SNES phantoms: a legato split that sounds on (>= 10 ms) is a real note and stays", () => {
+  const ev = reconstruct(jump(0.5, 0x80 | 0x04)).events.filter(e => e.voice === 0); // a slow fade: the slide sounds on
+  assert.equal(ev.length, 2); assert.equal(ev[1].legato, true);
+  const held = reconstruct(jump(0.5, null)).events.filter(e => e.voice === 0); // direct GAIN held: not a fade, so a split even if it were short
+  assert.equal(held.length, 2); assert.equal(held[1].legato, true);
+  const heldShort = reconstruct(jump(0.305, null)).events.filter(e => e.voice === 0);
+  assert.equal(heldShort.length, 2, "short, but not born in a fade: kept");
+});

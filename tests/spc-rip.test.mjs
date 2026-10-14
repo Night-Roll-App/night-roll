@@ -9,7 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { parseSPC, runSPC } from "../tools/spc/spc.mjs";
-import { reconstruct, spcRebin, SPC_SHAPE } from "../tools/spc/notes.mjs";
+import { reconstruct, spcRebin, SPC_SHAPE, SAMPLE_RATE } from "../tools/spc/notes.mjs";
 import { makeMidi } from "../tools/nsf/midi-write.mjs";
 import { readSmf } from "../tools/capture-diff.mjs";
 import { createApp } from "./harness.mjs";
@@ -41,3 +41,18 @@ test("FF5 The Battle: voice5/voice7 are kits on channel 10 with GM keys, the mel
   const pub = readSmf(readFileSync(new URL("../albums/snes/final-fantasy-5/the-battle.mid", import.meta.url)));
   assert.deepEqual(song.tracks.map(t => t.name), pub.tracks.map(t => t.name), "no track number moved");
 });
+
+// Q20: SNES phantom notes. Mega Man X "Armored Armadillo": the driver preloads
+// the next PITCH while a voice fades on GAIN; the capture used to open a note
+// for each (7,082 notes, 2,406 of them legato splits under 10 ms). Songs with
+// no phantoms keep every note (counts taken before the fix, unchanged by it).
+const notesOf = f => { const spc = parseSPC(readFileSync(RIPS + "/" + f)); return reconstruct(runSPC(spc, spc.tags.seconds || 63), {}).events; };
+const have = f => existsSync(RIPS + "/" + f) ? false : "no rip at " + RIPS + "/" + f;
+test("MMX Armored Armadillo: the phantom legato splits are gone", {skip: have("mega-man-x/armored-armadillo.spc"), timeout: 120000}, () => {
+  const ev = notesOf("mega-man-x/armored-armadillo.spc");
+  const phantoms = ev.filter(e => e.legato && (e.endSample - e.startSample) / SAMPLE_RATE < 0.01);
+  assert.ok(phantoms.length < 50, "legato notes under 10 ms: " + phantoms.length + " (was 2406)");
+  assert.ok(ev.length < 5000 && ev.length > 4000, "notes: " + ev.length + " (was 7082)");
+});
+for (const [f, n] of [["chrono-trigger/a-shot-of-crisis.spc", 3289], ["donkey-kong-country/aquatic-ambiance.spc", 2851], ["final-fantasy-5/the-battle.spc", 1659]])
+  test("no phantoms, nothing removed: " + f, {skip: have(f), timeout: 120000}, () => assert.equal(notesOf(f).length, n));

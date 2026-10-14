@@ -6,7 +6,7 @@
 // instrument so a corrected root moves every note on it together.
 import { snapBeat } from "../nsf/midi-write.mjs";
 import { pitchName } from "../nsf/notes.mjs";
-import { DspVoices, OFF, ATTACK, ENV_MAX } from "./dsp-state.mjs";
+import { DspVoices, OFF, ATTACK, RELEASE, ENV_MAX } from "./dsp-state.mjs";
 
 export { pitchName };
 export const SAMPLE_RATE = 32000;
@@ -16,6 +16,7 @@ export const SAMPLE_RATE = 32000;
 export const TICK_SEC = 0.002;
 const SAMPLES_PER_TICK = SAMPLE_RATE * TICK_SEC; // 64
 const SILENCE_ENV = 0x20;   // ~-36 dB: a sustain/GAIN fade below this is the note ending
+const PHANTOM_SEC = 0.01;   // a fade-born split note shorter than this is a driver's pitch preload, not a note
 const VIBRATO_CENTS = 70;   // as in the NSF pipeline: within this of the note's start pitch = the same note singing
 // smallest pan move a capture records, in CC10 units (of 63 per side): FF4
 // "Another Moon"'s quiet lead (VOL 15) reads 74–77 every few ticks from the
@@ -344,6 +345,12 @@ export function reconstruct(capture, {roots = {}} = {}) {
   // no ENVX-based "already sounding" pass: the dumped KON register arrives
   // as a logged KON at sample 0 (spc.mjs), the player convention
 
+  // the voice's envelope is on its way out: RELEASE, KOFF held, or GAIN in a decrease mode (linear 0, exponential 1)
+  const fadeBorn = new Set(); // legato notes opened by a pitch move while their voice faded out
+  const fading = v => {
+    const b = v * 16, g = regs[b + 7];
+    return dsp.voices[v].stage === RELEASE || !!(regs[0x5C] & (1 << v)) || (!(regs[b + 5] & 0x80) && !!(g & 0x80) && ((g >> 5) & 3) < 2);
+  };
   const settle = (v) => { // PITCH/VOL writes landed: same-sample-as-onset = setup, later = vibrato/slide/fade
     pending[v] = false;
     const e = open[v];
@@ -354,7 +361,9 @@ export function reconstruct(capture, {roots = {}} = {}) {
         const exact = midiOf(v, pitch);
         e.pitch = pitch; e.midi = Math.round(exact); e.cents = Math.round((exact - Math.round(exact)) * 100);
       } else if (Math.abs(1200 * Math.log2(pitch / e.pitch)) >= VIBRATO_CENTS) {
+        const fade = fading(v);
         close(v, lastSample); start(v, lastSample, true);
+        if (fade) fadeBorn.add(open[v]);
       } else mark(e.bendSeries, relTick(e, lastSample), Math.round(1200 * Math.log2(pitch / e.pitch)));
     } else if (e.bendSeries && e.bendSeries.length > 1) mark(e.bendSeries, relTick(e, lastSample), 0); // back on its starting pitch
     if (open[v]) { // pan: compared with the value in force before this tick (the voice's last note's, at a note's setup)
@@ -410,6 +419,15 @@ export function reconstruct(capture, {roots = {}} = {}) {
   }
   advanceTo(samples);
   for (let v = 0; v < 8; v++) close(v, samples);
+
+  // Phantom notes (Q20, docs/plans/2026-10-07-capture-audit-2-and-glide.md): a
+  // driver preloads the NEXT note's PITCH while the voice is still fading out
+  // (GAIN decreasing, release, KOFF), and the split above opened a note for
+  // it. Born in a fade and shorter than PHANTOM_SEC, it was never keyed and
+  // is not audible: it goes. Short splits of a held voice (a static sample's
+  // pitch wobble) and longer ones in a fade (a real slide) stay.
+  for (let i = events.length - 1; i >= 0; i--)
+    if (fadeBorn.has(events[i]) && events[i].endSample - events[i].startSample < PHANTOM_SEC * SAMPLE_RATE) events.splice(i, 1);
 
   classifyNoiseVoices(events);
   const warnings = rootFallback(insts, events);
