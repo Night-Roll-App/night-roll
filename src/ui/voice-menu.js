@@ -27,6 +27,8 @@ import { updateTrackGains } from "../audio/engine.js";
 import { trackPan } from "../audio/engine.js";
 import { editableSong } from "../model/song.js";
 import { trackIsDrums } from "../model/grid.js";
+import { tickToSec } from "../midi/parse.js";
+import { DRUM_LABELS } from "../render/roll.js";
 import { transposeTrack } from "../model/selection.js";
 import { trackColor } from "../render/roll.js";
 import { renderTrackbarImpl as renderTrackbar } from "./trackbar.js";
@@ -149,6 +151,21 @@ export function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then
   menu.style.top = (r.bottom + 6) + "px";
   menu.classList.add("on");
 }
+// Why the capture called a track a kit, as facts only (the capture's own test:
+// one-shot, no clear pitch, few distinct keys, short). Derived from the track
+// as loaded - nothing is stored. Names a drum sound, never a key or a chord.
+export function kitFactsText(tr) {
+  if (!tr || !tr.kit || !tr.kitFrom) return null;
+  const ns = tr.notes.filter(n => !n.gone);
+  if (!ns.length) return null;
+  const len = ns.map(n => (tickToSec(S.song, n.t + n.d) - tickToSec(S.song, n.t)) * S.playRate).sort((a, b) => a - b);
+  const counts = new Map();
+  for (const n of ns) { const k = n.pKit !== undefined ? n.pKit : n.p; counts.set(k, (counts.get(k) || 0) + 1); }
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0][0];
+  const keys = Object.keys(tr.kitFrom).length;
+  return "Marked a kit by the capture: " + (DRUM_LABELS[top] || "drum") + (counts.size > 1 ? " mostly" : "") + " — " + ns.length + " hits, median "
+    + Math.round(len[Math.floor(len.length / 2)] * 1000) + " ms, " + keys + " key" + (keys === 1 ? "" : "s") + " in the game, no clear pitch";
+}
 export function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   // pick rebuilds the chip bar (finalizeNotes → renderTrackbar), so the
   // anchor chip is detached by then and repositioning from it jumped the
@@ -205,6 +222,14 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
       drow.appendChild(db);
     }
     menu.appendChild(drow);
+    const why = kitFactsText(tr);
+    if (why) {
+      const wr = document.createElement("div");
+      wr.id = "vmkitwhy";
+      wr.style.cssText = "padding:0 10px 2px;font-family:var(--mono);font-size:0.625rem;color:var(--dim)";
+      wr.textContent = why;
+      menu.appendChild(wr);
+    }
   }
   const cur = tr.voice || "auto";
   const curLabel = cur === "auto" ? "auto: " + autoVoiceLabel(ti)

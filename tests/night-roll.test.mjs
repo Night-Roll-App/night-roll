@@ -3169,6 +3169,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "triangle (NES)",
+    "says why: the drum it mostly is",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Hear sound", "These are drums", "Not drums", "Update countdown", "Not now", "Backups on your Mac",
@@ -10339,6 +10340,12 @@ test("Not drums on a capture-detected kit track shows the game's captured keys, 
        song.tracks = [{name: "voice5", kit: true, kitFrom: {38: 67, 36: 51}, notes: [{t: 0, d: 120, p: 38, v: 90, ch: 9}, {t: 480, d: 120, p: 36, v: 90, ch: 9}]}, {name: "voice1", notes: [{t: 0, d: 480, p: 60, v: 90}]}];
        trackState = [{muted: false, solo: false, hidden: false}, {muted: false, solo: false, hidden: false}]; finalizeNotes();`);
   assert.equal(val(`trackIsDrums(0)`), true, "a kit track is drums by itself");
+  const why = val(`kitFactsText(song.tracks[0])`);
+  assert.match(why, /^Marked a kit by the capture: (snare|kick) mostly — 2 hits, median \d+ ms, 2 keys in the game, no clear pitch$/, "kit decision facts");
+  assert.ok(!/G4|D#3|\b67\b|\b51\b/.test(why), "names a drum, never a key");
+  assert.equal(val(`kitFactsText(song.tracks[1])`), null, "a melodic track has none");
+  run(`buildVoiceMenu(0)`);
+  assert.match(val(`(() => { const walk = el => [el, ...(el.children || []).flatMap(walk)]; return walk(document.getElementById("voicemenu")).find(b => b.id === "vmkitwhy").textContent; })()`), /^Marked a kit/);
   const bytes = () => val(`Array.from(writeMidi({ppq: song.ppq || 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: song.tracks.map(t => ({...t}))}))`);
   const before = bytes();
   run(`song.tracks[0].drumsMark = false; saveTrackDir(0);`);
