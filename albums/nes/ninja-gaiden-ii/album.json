@@ -24,7 +24,11 @@
   "tearful-reunion-rescue-cutscenes": "Tearful Reunion [Rescue Cutscenes]",
   "time-is-critical": "Time is Critical",
   "tower-of-lahja-3-2-7-2": "Tower of Lahja [3-2, 7-2]",
-  "triumphant-ending-i": "Triumphant [Ending I]"
+  "triumphant-ending-i": "Triumphant [Ending I]",
+  "credits-recapture": "Credits (re-capture)",
+  "final-confrontation-ryu-vs-jaquio-recapture": "Final Confrontation [Ryu vs Jaquio] (re-capture)",
+  "they-got-irene-recapture": "They Got Irene (re-capture)",
+  "time-is-critical-recapture": "Time is Critical (re-capture)"
  },
  "nsf": {
   "vault": "nes/ninja-gaiden-ii.nsf",
@@ -34,8 +38,8 @@
     "secs": 93.396264,
     "track": 1,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -184,8 +188,8 @@
     "secs": 6.866392,
     "track": 16,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -214,8 +218,8 @@
     "secs": 89.32976000000001,
     "track": 25,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -409,8 +413,8 @@
     "secs": 25.698972,
     "track": 24,
     "cap": {
-     "v": 2,
-     "code": "0965b9af"
+     "v": 3,
+     "code": "04201c0e"
     },
     "loud": {
      "v": 1,
@@ -418,6 +422,70 @@
      "peak": -6.8,
      "synth": -10.1
     }
+   },
+   "credits-recapture": {
+    "n": 27,
+    "secs": 180.259456,
+    "track": 26,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -5.4,
+     "synth": -9.9
+    },
+    "rip": "credits"
+   },
+   "final-confrontation-ryu-vs-jaquio-recapture": {
+    "n": 20,
+    "secs": 28.198872,
+    "track": 22,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.2,
+     "peak": -5.3,
+     "synth": -10.6
+    },
+    "rip": "final-confrontation-ryu-vs-jaquio"
+   },
+   "they-got-irene-recapture": {
+    "n": 15,
+    "secs": 4.733144,
+    "track": 21,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -17.4,
+     "peak": -10.3,
+     "synth": -10
+    },
+    "rip": "they-got-irene"
+   },
+   "time-is-critical-recapture": {
+    "n": 25,
+    "secs": 10.599576,
+    "track": 6,
+    "cap": {
+     "v": 3,
+     "code": "04201c0e"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -19.8,
+     "peak": -6.6,
+     "synth": -9.8
+    },
+    "rip": "time-is-critical"
    }
   }
  }

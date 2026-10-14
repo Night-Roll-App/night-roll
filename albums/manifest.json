@@ -9421,6 +9421,10 @@
     "path": "albums/nes/ninja-gaiden-ii/credits.mid"
    },
    {
+    "title": "Credits (re-capture)",
+    "path": "albums/nes/ninja-gaiden-ii/credits-recapture.mid"
+   },
+   {
     "title": "Cruel Laughter [Pre-Maze Cutscene]",
     "path": "albums/nes/ninja-gaiden-ii/cruel-laughter-pre-maze-cutscene.mid"
    },
@@ -9443,6 +9447,10 @@
    {
     "title": "Final Confrontation [Ryu vs Jaquio]",
     "path": "albums/nes/ninja-gaiden-ii/final-confrontation-ryu-vs-jaquio.mid"
+   },
+   {
+    "title": "Final Confrontation [Ryu vs Jaquio] (re-capture)",
+    "path": "albums/nes/ninja-gaiden-ii/final-confrontation-ryu-vs-jaquio-recapture.mid"
    },
    {
     "title": "Impending Doom",
@@ -9497,8 +9505,16 @@
     "path": "albums/nes/ninja-gaiden-ii/they-got-irene.mid"
    },
    {
+    "title": "They Got Irene (re-capture)",
+    "path": "albums/nes/ninja-gaiden-ii/they-got-irene-recapture.mid"
+   },
+   {
     "title": "Time is Critical",
     "path": "albums/nes/ninja-gaiden-ii/time-is-critical.mid"
+   },
+   {
+    "title": "Time is Critical (re-capture)",
+    "path": "albums/nes/ninja-gaiden-ii/time-is-critical-recapture.mid"
    },
    {
     "title": "Tower of Lahja [3-2, 7-2]",
