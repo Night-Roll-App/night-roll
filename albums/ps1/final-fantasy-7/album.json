@@ -260,8 +260,8 @@
     "track": 32,
     "disc": 2,
     "cap": {
-     "v": 2,
-     "code": "d6bf120e"
+     "v": 3,
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
@@ -410,8 +410,8 @@
      "synth": -8.2
     },
     "cap": {
-     "v": 2,
-     "code": "d6bf120e"
+     "v": 3,
+     "code": "3da2b96b"
     }
    },
    "farm-boy": {
@@ -442,8 +442,8 @@
      "synth": -8.7
     },
     "cap": {
-     "v": 2,
-     "code": "29428861"
+     "v": 3,
+     "code": "3da2b96b"
     }
    },
    "fighting": {
@@ -629,7 +629,7 @@
     "disc": 1,
     "cap": {
      "v": 3,
-     "code": "9314e6f9"
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
@@ -805,7 +805,7 @@
     "disc": 1,
     "cap": {
      "v": 3,
-     "code": "9314e6f9"
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
@@ -901,7 +901,7 @@
     "disc": 4,
     "cap": {
      "v": 3,
-     "code": "9314e6f9"
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
@@ -916,8 +916,8 @@
     "track": 2,
     "disc": 1,
     "cap": {
-     "v": 2,
-     "code": "d6bf120e"
+     "v": 3,
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
@@ -938,8 +938,8 @@
      "synth": -13.4
     },
     "cap": {
-     "v": 2,
-     "code": "d6bf120e"
+     "v": 3,
+     "code": "3da2b96b"
     }
    },
    "parochial-town": {
@@ -1067,7 +1067,7 @@
     },
     "cap": {
      "v": 3,
-     "code": "9314e6f9"
+     "code": "3da2b96b"
     }
    },
    "shinra-explodes": {
@@ -1125,7 +1125,7 @@
     "disc": 1,
     "cap": {
      "v": 3,
-     "code": "9314e6f9"
+     "code": "3da2b96b"
     },
     "loud": {
      "v": 1,
