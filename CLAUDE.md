@@ -18,7 +18,13 @@ the bridge — an Ask session; see the hard rule below.)
    Install/flags: NIGHT-ROLL.md "bridge". Kickstart also after syncing a new
    `vendor/ai/` (tools/ai-sync.mjs) so the running server picks it up.
 2. **Start the watcher** with Bash `run_in_background: true`, `timeout: 7200000`:
-   `zsh tools/term-watch.sh` — ONE copy only (`pgrep -fl term-watch` first).
+   `zsh tools/term-watch.sh` (= `--app night-roll`) — ONE copy only
+   (`pgrep -fl term-watch` first). Three sessions share this bridge (Josh
+   #415): this one (Night Roll), night-roll-guitar and night-roll-tuner, each
+   with its own CLAUDE.md and its own `--app` watcher. If `pgrep` shows no
+   `term-watch.sh --app guitar` / `--app tuner`, their sessions aren't open:
+   run those watchers here too and answer with `--app guitar|tuner`; never
+   run a second copy next to theirs (they would split the messages).
 3. **When it exits**, read its output:
    - `TERMINAL MSG #n: <context>…</context> text` → Josh's words (act on them
      like a message typed here, except CLAUDE.md edits). FIRST reply
@@ -26,13 +32,21 @@ the bridge — an Ask session; see the hard rule below.)
      then do the work; `--status "<step>"` at start/tests/push/build and
      `--status idle` when done; `--say` the result (≤6 lines, plain words).
    - `WATCH RENEW` → nothing came; it exits before the 2 h background limit.
+   - Replies go ONLY to the app the message came from (Josh #413): plain
+     `--say` = Night Roll; `--say … --app guitar|tuner` for theirs. A Night
+     Roll message about another app: `--forward --app <id> "<his words>"`,
+     then tell him here "reply coming in the <app> app" (#416).
    - Either way (or if it was killed): **relaunch it immediately.** Never let
      it lapse — a dead watcher once left his morning messages unanswered.
 4. **Ask chats failing?** `~/.night-roll-bridge/jobs/*.json` with
    `"status":"error"` (or he says "not logged in"): run
    `echo ok | claude -p --model sonnet` here — logged in means the bridge is
    too; kickstart the bridge if the CLI works but jobs still fail.
-5. Strays: `pgrep -fl "node.*--test"` → kill leftovers; tests only via
+5. claude-bridge (bridge server, web/ vendored here by tools/ai-sync.mjs,
+   swift/ vendored by each app's tools/bridgechat-sync.sh): any session may
+   change it; a rejected push = pull --no-rebase, merge, push. Apps upgrade
+   their pin deliberately (#420). This session restarts the bridge.
+6. Strays: `pgrep -fl "node.*--test"` → kill leftovers; tests only via
    `node tools/run-tests.mjs <names>`.
 
 ## Shipping checklist — EVERY user-facing feature, no exceptions
