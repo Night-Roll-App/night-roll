@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { makeTestSeq } from "../tools/n64/make-test-seq.mjs";
 import { parseSequence, tickSeconds, TICKS_PER_BEAT } from "../tools/n64/seq-libultra.mjs";
-import { toNotesTxt, toMidi } from "../tools/n64/notes.mjs";
+import { toNotesTxt, toMidi, channelGroups } from "../tools/n64/notes.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
 import { SparseImage, loadUSF } from "../tools/n64/usf.mjs";
 import { parkedPlayerIo, sequenceOfSet } from "../tools/n64/capture.mjs";
@@ -321,4 +321,15 @@ test("MM New Wave Bossa Nova (real set): runseq to 0x4D keeps port 4 = 1, so cha
   const staff = sequenceOfSet(realSet("majoras-mask", "nus-nzse-usa.usflib", "staff-roll")).res;
   assert.deepEqual(staff.loads.map(l => [l.op, l.id]), [["runseq", 0x7F]]);
   assert.ok(staff.seconds > 370 && staff.notes.length > 6000, staff.seconds + " s, " + staff.notes.length);
+});
+
+test("MIDI percussion: a one-pitch instrument held 2 s or more is a pedal tone and stays on its melodic track (Q27)", () => {
+  const B = TICKS_PER_BEAT, notes = [];
+  for (let i = 0; i < 16; i++) {
+    notes.push({ch: 1, inst: 30, drum: false, midi: 48, tick: i * 4 * B, dur: 4 * B, vel: 90});   // 2 s each at 120 bpm
+    notes.push({ch: 2, inst: 31, drum: false, midi: 70, tick: i * 4 * B, dur: B / 4, vel: 90});   // short hits: percussion by the old rule
+  }
+  const res = {notes, tempos: [{tick: 0, bpm: 120}], endTick: 64 * B, warnings: []};
+  const groups = channelGroups(res);
+  assert.deepEqual(groups.map(g => [g.ch, g.kit]), [[1, false], [2, true]]);
 });

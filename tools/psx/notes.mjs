@@ -10,6 +10,7 @@
 // the sample has no clear period. Both readings are kept on the note.
 import { secondsAt, barBeat, bpmOf } from "./seq.mjs";
 import { guessKit } from "../kit-guess.mjs";
+import { isPedalTone } from "../pedal-tone.mjs";
 import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
 export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
@@ -254,7 +255,9 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
 //   1. a note in drum mode is percussion; so is every note of a program that
 //      appears in drum mode anywhere in the song;
 //   2. a program played at exactly one pitch over ≥ 12 notes is percussion
-//      (two pitches is an ostinato — Bombing Mission's bass runs on two);
+//      (two pitches is an ostinato — Bombing Mission's bass runs on two),
+//      unless its sample is a pedal tone (tools/pedal-tone.mjs: a clear root,
+//      or looped and held) — that stays a pitched part;
 //   3. each percussion voice (program + source key) gets a GM key from its
 //      rhythm: the voice that sits on beats 2 and 4 is the snare, the one on
 //      1 and 3 the kick, the busiest remaining one the closed hat, then open
@@ -264,6 +267,28 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
 // in the right timing but there's some other noise going on".)
 // Before rule 1, a drum table used as a melodic bank leaves the kit (see
 // melodicBanks below).
+// The sample a program's first note plays -> sampleFacts, or null when the
+// capture can't reach it (a bare AKAO score with no table).
+function programFacts(result, n) {
+  try {
+    if (result.vab) {
+      const t = tonesFor(result.vab, n.program, n.key)[0];
+      const dec = t && vagPcm(result.vab, t.vag);
+      return dec ? sampleFacts(dec, (result.vab.vags[t.vag] && result.vab.vags[t.vag].rate) || SPU_RATE) : null;
+    }
+    const ctx = result.instr;
+    if (!ctx) return null;
+    const v = akaoVoices(result, ctx.kind === "akao-sets" ? {} : {ram: ctx.ram, table: {offset: ctx.offset}}, SPU_RATE)(n)[0];
+    return v && v.smp ? sampleFacts(v.smp) : null;
+  } catch { return null; }
+}
+function pedalProgram(result, evs) {
+  const durs = evs.map(n => secondsAt(result.seq, n.endTick) - secondsAt(result.seq, n.tick)).sort((a, b) => a - b);
+  const medianSec = durs[Math.floor(durs.length / 2)];
+  const pedal = isPedalTone({facts: programFacts(result, evs[0]), medianSec});
+  if (pedal) (result.seq.warnings || (result.seq.warnings = [])).push(`prog ${evs[0].program}: one pitch ×${evs.length} on a pitched, held sound (a pedal tone) → left melodic`);
+  return pedal;
+}
 export function kitify(result) {
   const {notes, seq} = result;
   if (result.kitGuess) return result.kitGuess; // idempotent
@@ -274,7 +299,7 @@ export function kitify(result) {
   for (const [p, evs] of byProg) {
     if (drumProgs.has(p)) continue;
     const pitches = new Set(evs.map(n => n.pitch));
-    if (evs.length >= 12 && pitches.size === 1) drumProgs.add(p);
+    if (evs.length >= 12 && pitches.size === 1 && !pedalProgram(result, evs)) drumProgs.add(p);
   }
   const perc = notes.filter(n => !melodic.has(n) && (n.drum || drumProgs.has(n.program)));
   const guess = [];

@@ -56,3 +56,15 @@ test("MMX Armored Armadillo: the phantom legato splits are gone", {skip: have("m
 });
 for (const [f, n] of [["chrono-trigger/a-shot-of-crisis.spc", 3289], ["donkey-kong-country/aquatic-ambiance.spc", 2851], ["final-fantasy-5/the-battle.spc", 1659]])
   test("no phantoms, nothing removed: " + f, {skip: have(f), timeout: 120000}, () => assert.equal(notesOf(f).length, n));
+
+// Q27: FF5 "The Battle" voice 6 sample 35 plays one key 11 times on a held sound (median 1.3 s) — a pedal tone. It stays pitched,
+// while the same song's one-key drum samples (voice 5 s38/s39, voice 7 s36/s37) are kit.
+test("pedal tone, real rip: FF5 The Battle voice6 s35 is not a kit; voices 5 and 7 are", {skip, timeout: 120000}, () => {
+  const spc = parseSPC(readFileSync(rip));
+  const ev = reconstruct(runSPC(spc, spc.tags.seconds || 63), {}).events;
+  const grp = (v, s) => ev.filter(e => e.voice === v && e.srcn === s && e.noiseClock === undefined);
+  const pedal = grp(6, 35);
+  assert.ok(pedal.length >= 8 && new Set(pedal.map(e => e.midi)).size === 1, "one key, many hits: " + pedal.length);
+  assert.ok(pedal.every(e => !e.kit && !e.unpitched), "pitched, not kit");
+  for (const [v, s] of [[5, 38], [5, 39], [7, 36], [7, 37]]) assert.ok(grp(v, s).length && grp(v, s).every(e => e.kit), `voice${v} s${s} still kit`);
+});

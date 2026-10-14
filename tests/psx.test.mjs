@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { makeTestSEQ, makeTestSEP, makeTestVAB, makeTestPSF, encodeAdpcm, sine, TEST_MELODY, TEST_KIT, TEST_END } from "../tools/psx/make-test-seq.mjs";
 import { parseSEQ, isSEQ, secondsAt, barBeat, bpmOf } from "../tools/psx/seq.mjs";
 import { parseVAB, isVAB, decodeAdpcm, estimateRoot, tonesFor } from "../tools/psx/vab.mjs";
-import { seqNotes, trimSeconds, toNotesTxt, makeMidi, isDrumProgram } from "../tools/psx/notes.mjs";
+import { seqNotes, trimSeconds, toNotesTxt, makeMidi, isDrumProgram, channelGroups } from "../tools/psx/notes.mjs";
 import { parsePSF, isPSF, inflatePSF, parseExe, scanMagic } from "../tools/psx/psf.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
 
@@ -268,12 +268,52 @@ test("percussion census: the kitify rule each group came from, and its samples' 
   assert.match(C.formatRow(kit), /^tune \| ch 2 prog 1 \| KIT VAB kit \| 2n \| 2k \{36,38\} \| 1p \| p1\[2n 2k: os r- /);
   assert.throws(() => C.censusRows(result), /before kitify/); // kitify has run: its drum flags are no longer the capture's
 
-  // the false-positive shape: a looped pitched sample held at one key ×12 is promoted by rule 2, and the facts show it
+  // the pedal tone (Q27): a looped pitched sample held (long notes) at one key ×12 was promoted by rule 2; its facts now keep it melodic
   const held = seqNotes(seq, {vab: parseVAB(vh, vb)});
   const proto = held.notes.find(x => x.program === 0);
-  held.notes = [...Array(12)].map((_, i) => ({...proto, tick: i * 480, endTick: i * 480 + 240, key: 60, pitch: 60}));
+  const longNotes = tpl => [...Array(12)].map((_, i) => ({...tpl, tick: i * 48000, endTick: i * 48000 + 40000, key: 60, pitch: 60}));
+  const short = seqNotes(seq, {vab: parseVAB(vh, vb)});
+  short.notes = [...Array(12)].map((_, i) => ({...proto, tick: i * 480, endTick: i * 480 + 240, key: 60, pitch: 60}));
+  assert.equal(C.censusRows(short, {lookup: C.sampleLookup(short)})[0].kit, true, "the same looped sound hit short is not held: still promoted");
+  held.notes = longNotes(proto);
   const [row] = C.censusRows(held, {lookup: C.sampleLookup(held)});
-  assert.equal(row.kit, true);
-  assert.equal(row.rule, "one pitch ≥12");
+  assert.equal(row.kit, false);
+  assert.equal(row.rule, null);
   assert.deepEqual(C.sampleShape(row), {"lpR": 1, "lp-": 0, "osR": 0, "os-": 0, none: 0});
+  assert.match(held.seq.warnings.join("\n"), /prog 0: one pitch ×12 on a pitched, held sound \(a pedal tone\) → left melodic/);
+  // the same one-key ×12 on the unrooted one-shot noise sample (program 1) is still a kit
+  const hits = seqNotes(seq, {vab: parseVAB(vh, vb)});
+  const hp = hits.notes.find(x => x.program === 1);
+  hits.notes = [...Array(12)].map((_, i) => ({...hp, tick: i * 480, endTick: i * 480 + 240, key: 36, pitch: 36, drum: false}));
+  hits.vab.programs[1].tones.length = 1;
+  assert.equal(C.censusRows(hits, {lookup: C.sampleLookup(hits)})[0].kit, true);
+});
+
+test("pedal tone guard (Q27, tools/pedal-tone.mjs): a looped or clearly rooted sound held 1 s+ is pitched; short or unrooted one-shots stay drums; no facts = notes alone", async () => {
+  const { isPedalTone } = await import("../tools/pedal-tone.mjs");
+  const root = c => ({midi: 60, cents: 0, confidence: c});
+  const held = 1.5, short = 0.2;
+  assert.equal(isPedalTone({facts: {oneShot: false, root: null, harmonicity: 0.3}, medianSec: held}), true, "looped, held 1.5 s");
+  assert.equal(isPedalTone({facts: {oneShot: false, root: root(0.95), harmonicity: 0.95}, medianSec: held}), true, "looped, rooted, held");
+  assert.equal(isPedalTone({facts: {oneShot: true, root: root(0.97), harmonicity: 0.99}, medianSec: held}), true, "one-shot, clear root, notes outlast it");
+  assert.equal(isPedalTone({facts: {oneShot: false, root: null, harmonicity: 0.3}, medianSec: short}), false, "looped but short");
+  assert.equal(isPedalTone({facts: {oneShot: true, root: root(0.98), harmonicity: 0.99}, medianSec: short}), false, "a rooted one-shot hit short is a tonal drum");
+  assert.equal(isPedalTone({facts: {oneShot: true, root: root(0.7), harmonicity: 0.95}, medianSec: held}), false, "weak root");
+  assert.equal(isPedalTone({facts: {oneShot: true, root: root(0.95), harmonicity: 0.5}, medianSec: held}), false, "rooted but not harmonic");
+  assert.equal(isPedalTone({facts: {oneShot: true, root: null, harmonicity: 0.1}, medianSec: 3}), false, "an unrooted one-shot is a drum however long");
+  assert.equal(isPedalTone({medianSec: 2.5}), true, "no facts, held 2.5 s");
+  assert.equal(isPedalTone({medianSec: 0.3}), false, "no facts, short");
+});
+
+// Chrono Cross (PS1 rip, fetched by tools/recapture.mjs into /tmp/recap/rips/ps1 — skipped when absent):
+// Zelbess's program 71 plays one pitch ×15 on a rooted, harmonic sample held 1.5 s — a pedal tone, not a kit.
+const ZELBESS = "/tmp/recap/rips/ps1/chrono-cross/zelbess.psf";
+test("pedal tone, real rip: Chrono Cross Zelbess prog 71 stays a pitched part", {skip: existsSync(ZELBESS) ? false : "no rip at " + ZELBESS, timeout: 60000}, async () => {
+  const { captureFile } = await import("../tools/percussion-census.mjs");
+  const { result } = await captureFile(ZELBESS);
+  const groups = channelGroups(result);
+  const p71 = result.notes.filter(n => n.program === 71 && !n.drum);
+  assert.ok(p71.length >= 12 && new Set(p71.map(n => n.pitch)).size === 1);
+  assert.ok(p71.every(n => !groups.find(g => g.notes.includes(n)).kit), "prog 71 is in a melodic group");
+  assert.match(result.seq.warnings.join("\n"), /prog 71: one pitch ×15 on a pitched, held sound \(a pedal tone\) → left melodic/);
 });
