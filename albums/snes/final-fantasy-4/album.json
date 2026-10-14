@@ -36,7 +36,9 @@
   "welcome-to-our-town": "Welcome to Our Town!",
   "within-the-giant": "Within the Giant",
   "main-theme-ocean-recapture": "Main Theme (Ocean) (re-capture)",
-  "tranquil-beach-recapture": "Tranquil Beach (re-capture)"
+  "tranquil-beach-recapture": "Tranquil Beach (re-capture)",
+  "crickets-recapture": "Crickets (re-capture)",
+  "down-the-well-recapture": "Down the Well (re-capture)"
  },
  "nsf": {
   "vault": "snes/final-fantasy-4/",
@@ -46,8 +48,8 @@
     "secs": 112,
     "track": 43,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -137,7 +139,7 @@
     "track": 19,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -152,7 +154,7 @@
     "track": 39,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -197,7 +199,7 @@
     "track": 47,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -467,7 +469,7 @@
     "track": 37,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -481,8 +483,8 @@
     "secs": 128,
     "track": 29,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -541,8 +543,8 @@
     "secs": 87,
     "track": 21,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -647,7 +649,7 @@
     "track": 15,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -902,7 +904,7 @@
     "track": 1,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -947,7 +949,7 @@
     "track": 33,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -1047,6 +1049,38 @@
      "peak": -24.1,
      "synth": -33.6
     }
+   },
+   "crickets-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 51,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -37.1,
+     "peak": -28.1,
+     "synth": -23.4
+    },
+    "rip": "crickets"
+   },
+   "down-the-well-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 53,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -31.9,
+     "peak": -22.7,
+     "synth": -25.1
+    },
+    "rip": "down-the-well"
    }
   },
   "chip": "spc",

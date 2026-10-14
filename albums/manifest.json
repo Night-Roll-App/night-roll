@@ -5058,6 +5058,10 @@
     "path": "albums/snes/final-fantasy-4/crickets.mid"
    },
    {
+    "title": "Crickets (re-capture)",
+    "path": "albums/snes/final-fantasy-4/crickets-recapture.mid"
+   },
+   {
     "title": "Cry in Sorrow (part 1)",
     "path": "albums/snes/final-fantasy-4/cry-in-sorrow-part-1.mid"
    },
@@ -5076,6 +5080,10 @@
    {
     "title": "Down the Well",
     "path": "albums/snes/final-fantasy-4/down-the-well.mid"
+   },
+   {
+    "title": "Down the Well (re-capture)",
+    "path": "albums/snes/final-fantasy-4/down-the-well-recapture.mid"
    },
    {
     "title": "Epilogue (part 1)",
