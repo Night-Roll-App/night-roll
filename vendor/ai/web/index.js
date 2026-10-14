@@ -28,6 +28,7 @@ export {
   aiPrepImage, aiCanCaptureTab, aiShotCaptureTab,
 } from "./attach.js";
 export { AI_TEXT, aiText, aiPartial, aiFinish, aiFail, aiRun, aiSendText, aiTerminalSend, aiRepending, aiResumeSoon, aiResume } from "./client.js";
+export { aiOffline, aiReachSet, aiSendHeld, aiWaitAfterFail } from "./reach.js";
 export {
   AI_WINDOW_IDS, AI_WINDOW_CSS, aiEl, aiCss, aiTab, aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard,
   aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking,

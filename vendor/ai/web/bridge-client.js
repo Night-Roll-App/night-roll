@@ -36,7 +36,7 @@ export async function aiJobGet(host, id) { // → {status, job}; job null on 404
 export function aiJobKill(host, id) { return fetch(aiUrlOf(host) + "/v1/jobs/" + encodeURIComponent(id), {method: "DELETE", headers: aiHeadersOf(host)}).catch(() => {}); }
 // ---- inbox + status (polled by the app)
 export async function aiInboxFetch(host, since) { return aiResult(await aiBridgeGet(host, "/v1/inbox?since=" + (+since || 0), {cache: "no-store"})); }
-export async function aiStatusFetch(host) { return aiResult(await aiBridgeGet(host, "/v1/status", {cache: "no-store"})); }
+export async function aiStatusFetch(host, opts) { return aiResult(await aiBridgeGet(host, "/v1/status", Object.assign({cache: "no-store"}, opts || {}))); }
 // ---- sessions (one per chat key on the bridge)
 export async function aiSessionGet(host, key) { return aiResult(await aiBridgeGet(host, "/v1/sessions/" + encodeURIComponent(key), {cache: "no-store"})); }
 export function aiSessionDelete(host, key) { return fetch(aiUrlOf(host) + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeadersOf(host)}); }

@@ -546,7 +546,7 @@ test("check rule 8: the real repo's four module manifests (modulepreload, sw.js 
 
 test("checkSrc: vendor/ai/web (checkSrc's extraRoots) is clean against rules 1-3/6/7 — no top-level let, every free identifier resolved, no top-level name collides with src/'s", () => {
   const result = checkSrc(path.join(ROOT, "src"), { extraRoots: [{ root: path.join(ROOT, "vendor/ai/web"), prefix: "vendor/ai/web" }] });
-  assert.equal(result.fileCount, 103, "94 src/ files (see the checkSrc test above) + 9 vendor/ai/web files (index.js, sse.js, backends.js — AI library step 3; store.js, ctx-cache.js, bridge-client.js, attach.js — step 4; client.js — step 5; window.js — step 6)");
+  assert.equal(result.fileCount, 104, "94 src/ files (see the checkSrc test above) + 10 vendor/ai/web files (reach.js — #388) (index.js, sse.js, backends.js — AI library step 3; store.js, ctx-cache.js, bridge-client.js, attach.js — step 4; client.js — step 5; window.js — step 6)");
   assert.deepEqual(result.violations.map(v => v.message), [], "adding vendor/ai/web to the scan finds nothing");
 });
 

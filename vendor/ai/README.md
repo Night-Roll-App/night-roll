@@ -134,3 +134,25 @@ whatever `profile.repo` supplies.
 [bridge flags…]` installs a macOS launch agent that runs the given shim at
 login and restarts it if it crashes (`--uninstall` removes it). See
 `bridge/launchd/README.md`.
+
+## swift/ (BridgeChat)
+
+The Swift package the native apps (Night Roll Tuner, Night Roll Guitar) use for their AI window. It talks only to
+`bridge/server.mjs` over routes Night Roll already uses; there is no WKWebView and no bridge change. Feature
+parity with Night Roll's window (minus song features) is tracked row by row in `docs/ai-window-parity.md`;
+**a new feature in Night Roll's AI window adds a parity row.**
+
+- `AIWindow` (view) over `AIWindowModel`: Ask and Terminal tabs (Terminal appears only when the bridge offers it),
+  greeting, drafts per tab, now strip and Recent list, terminal model pickers, unread dot and working pulse,
+  session line, Compact and Clear behind the in-package `BridgeConfirmSheet` (no native dialogs), screenshot and
+  picture attachments, paste, dictation, composing notice. `ChatPanel` is a thin wrapper.
+- `BridgeMonitor` polls `GET /v1/status` and `GET /v1/inbox`; `TerminalChat` posts `POST /v1/terminal`.
+- Routes used: `POST /v1/chat/completions`, `GET|DELETE /v1/jobs/:id`, `GET /v1/models`, `POST /v1/terminal`,
+  `GET /v1/inbox`, `GET /v1/status`, `GET|POST /v1/terminal-prefs`, `GET|DELETE /v1/sessions/:key`,
+  `POST /v1/sessions/:key/compact`, `POST /v1/shot`, `POST /v1/app-state`.
+- Fixtures in `tests/fixtures/parity/*.json` are shared: `swift test` (in `swift/`) and
+  `tests/parity-text.test.mjs` both read them, so a format change breaks both suites.
+- `tests/lint.test.mjs` also walks `swift/Sources` (skipping dot-directories): no app vocabulary, no `.alert(`,
+  `.confirmationDialog(`, `UIAlertController`, or `UIPasteboard`. The one exemption is `CopyButton.swift`, which
+  may name `UIPasteboard` because it only writes (Copy); Paste is the system `PasteButton`.
+- The bridge has ONE inbox: a note sent from the terminal with `--say` shows in Night Roll and in both native apps.

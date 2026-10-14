@@ -138,6 +138,10 @@ export function askHost() {
     msgTag: m => askMsgTag(m), // which turns are "another mode's" is decided here (askMsgMode/appMode), never in the library
     noteLabel: from => askNoteLabel(from),
     showText: content => askStripContext(content),
+    reach: up => { document.getElementById("askoffline").style.display = up ? "none" : ""; },
+    probe: () => askStatusPoll(), // a send that failed on the network: is the bridge really gone?
+    flushWaiting: () => { if (S.askBusy) return false; askSend(); return true; }, // the bridge answered again: the words still in the box go out, once (not while a reply is still streaming)
+    unsent: text => { askinput.value = askinput.value.trim() ? text + "\n" + askinput.value : text; askGrow(); }, // a question that never reached the Mac comes back to the open chat's box, ahead of anything typed since (another chat's goes into its saved draft, in the library)
     send: text => askSend(text), // the library's Send button passes nothing; the carried-over chip (askCarryChip) passes its words
   };
   return S.aiHost;
@@ -147,6 +151,11 @@ export const ASK_TEXT = {
   checkingDelivery: "… (checking whether the Mac got it)",
   errorHint: "check File → Settings… → AI model, and Test",
   jobGone: "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again",
+  offline: "Mac offline — turn on Tailscale. Your message will wait.",
+  waiting: "waiting for the Mac — your message sends when it is back",
+  waitSent: "the Mac is back — sent your waiting message",
+  waitElsewhere: "the Mac is back — your waiting message is in its chat, tap Send",
+  waitBusy: "the Mac is back — your message is still in the box; tap Send when this reply finishes",
   unreachableRetry: "… (can't reach the Mac right now — the reply is kept there; retrying)",
 };
 

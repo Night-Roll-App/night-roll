@@ -21,11 +21,13 @@
 //   bubble(role, text, meta) → an element-like {textContent, dataset, classList}
 //   showThinking(live, raw) · fillBubble(live, text) · liveBubble(jobId)
 //   busy(on) · afterSend() · restoreInput(text) · render() · poll() · landed(key, failed)
+//   unsent(text, key) (optional: a question that never reached the bridge — put it back in that chat's box)
 //   text(key, ...args) → optional wording override (see AI_TEXT)
 import { aiPickBackend, aiToolFinal, aiFinalText } from "./backends.js";
-import { aiStoreGet, aiStoreSave, aiPendingIndex, aiPendingAll, aiJobId, aiSeenCommit, aiSeenDrop, aiChatKey } from "./store.js";
+import { aiStoreGet, aiStoreSave, aiPendingIndex, aiPendingAll, aiJobId, aiSeenCommit, aiSeenDrop, aiChatKey, aiDraftRead, aiDraftWrite } from "./store.js";
 import { aiSentCommit, aiSentDrop } from "./ctx-cache.js";
 import { aiJobsSupported, aiJobGet, aiTerminalPost } from "./bridge-client.js";
+import { aiWaitAfterFail } from "./reach.js";
 
 export const AI_TEXT = { // every sentence the loop shows; a host overrides any by key
   noReply: () => "(no reply — try rephrasing)",
@@ -43,6 +45,11 @@ export const AI_TEXT = { // every sentence the loop shows; a host overrides any 
   terminalNotSent: msg => "⚠ not sent — the bridge didn't answer (" + msg + "); your message is back in the box",
   stillWriting: () => "… (still writing)",
   pendingHere: () => "… (still working — the reply lands here)",
+  offline: () => "Bridge offline — your message will wait.",
+  waiting: () => "waiting for the bridge — your message sends when it is back",
+  waitSent: () => "bridge is back — sent your waiting message",
+  waitElsewhere: () => "bridge is back — your waiting message is in its chat, tap Send",
+  waitBusy: () => "bridge is back — your message is still in the box; tap Send when this reply finishes",
 };
 export function aiText(host, key, ...args) { const t = host.text ? host.text(key, ...args) : undefined; return t != null ? t : AI_TEXT[key](...args); }
 export function aiPartial(host) { return host.state.askPartial || (host.state.askPartial = {}); } // job id → the words streamed so far: a reopened window redraws from storage, which only holds the marker
@@ -162,7 +169,16 @@ export async function aiTerminalSend(host, text) { // queue it for the bridge's 
     msgs.pop(); aiStoreSave(host, msgs, undefined, key); host.render();
     host.restoreInput(text);
     aiNotice(host, aiText(host, "terminalNotSent", err.message));
+    aiWaitAfterFail(host);
   }
+}
+function aiUnsent(host, text, key) { // never reached the bridge: the words go back to the box, and wait for it if it is gone
+  if (!host.unsent) return;
+  if (host.chatKey && aiChatKey(host, key) !== aiChatKey(host, host.chatKey())) { // another chat: its saved draft gets the words, ahead of anything already there
+    const d = aiDraftRead(host, key);
+    aiDraftWrite(host, key, {text: d.text.trim() ? text + "\n" + d.text : text, shots: d.shots});
+  } else host.unsent(text, key);
+  aiWaitAfterFail(host, key);
 }
 export function aiRepending(host, key, from, to) { // a tool round continues under a new job id: the marker follows it (re-read, never a stale array)
   const msgs = aiStoreGet(host, key).msgs, i = aiPendingIndex(msgs, from);
@@ -192,7 +208,7 @@ export async function aiResume(host) {
   for (const p of all) {
     const mine = p.key === cur, live = mine ? liveFor(p.jobId) : null;
     let j;
-    try { const r = await aiJobGet(host, p.jobId); if (r.status === 404) { aiFail(host, p.jobId, aiText(host, "jobGone"), p.key); continue; } j = r.job || {}; }
+    try { const r = await aiJobGet(host, p.jobId); if (r.status === 404) { const m = aiStoreGet(host, p.key).msgs, q = m[aiPendingIndex(m, p.jobId)]; aiFail(host, p.jobId, aiText(host, "jobGone"), p.key); if (q) aiUnsent(host, q.content, p.key); continue; } j = r.job || {}; }
     catch (err) { again = true; continue; }
     const step = ((j.notes || []).slice(-1)[0] || "working").replace(/^using /, "").replace(/…\s*$/, "");
     if (j.status === "running") { if (j.text) aiPartial(host)[p.jobId] = j.text; if (live) live.textContent = j.text ? j.text : "… (" + step + ")"; if (mine) aiNotice(host, "working: " + step); again = true; continue; }

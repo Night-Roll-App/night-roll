@@ -309,6 +309,7 @@ function buildRuntime(opts = {}) {
     performance: { now: () => vnow },
     Event: class { constructor(type) { this.type = type; } },
     fetch: () => Promise.reject(new Error("no network in tests")),
+    AbortController,
     navigator: {},
     TextDecoder,
     TextEncoder,

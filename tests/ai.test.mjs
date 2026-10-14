@@ -394,3 +394,49 @@ test("in-browser backend (WebLLM): aiProvider() dispatches by cfg().aiBackend; a
 
   run(app, `saveCfg({aiBackend: "remote"});`);
 });
+
+test("bridge goes offline: banner shows, a send is held with the box untouched, and when it answers again the waiting message is sent exactly once", async () => {
+  let down = false;
+  const srv = await startServer((req, res, rec) => {
+    if (down) return req.socket.destroy(); // Tailscale off: the connection just dies
+    if (rec.path === "/v1/jobs") return sendJson(res, 200, { ok: true });
+    if (rec.path === "/v1/status") return sendJson(res, 200, { now: null, recent: [] });
+    if (rec.path === "/v1/chat/completions") {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      sse(res, { choices: [{ delta: { content: "ok" } }] });
+      return sseDone(res);
+    }
+    res.writeHead(404); res.end();
+  });
+  const app = await mkApp("learning");
+  const chats = () => srv.requests.filter(r => r.path === "/v1/chat/completions").length;
+  try {
+    run(app, `saveCfg({aiUrl: ${JSON.stringify(srv.url)}, aiModel: "claude-code-sonnet", aiBackend: "remote"});`);
+    await run(app, `askStatusPoll()`); // the bridge answers once: this URL is a known bridge
+    down = true;
+    await run(app, `askStatusPoll()`);
+    assert.equal(val(app, `document.getElementById("askoffline").style.display`), "", "banner shown before he types or sends");
+    run(app, `askinput.value = "is this a ii-V?";`);
+    await run(app, `askSend()`);
+    assert.equal(chats(), 0, "nothing sent while offline");
+    assert.equal(val(app, `askinput.value`), "is this a ii-V?", "the box keeps his words");
+    await run(app, `askStatusPoll()`); // still down: still waiting, still nothing
+    assert.equal(chats(), 0);
+    down = false;
+    await run(app, `askStatusPoll()`);
+    await new Promise(r => setTimeout(r, 200));
+    assert.equal(val(app, `document.getElementById("askoffline").style.display`), "none", "banner gone by itself");
+    assert.equal(chats(), 1, "sent on reconnect");
+    assert.equal(val(app, `askinput.value`), "", "and the box clears as for any send");
+    await run(app, `askStatusPoll()`); await run(app, `askStatusPoll()`);
+    await new Promise(r => setTimeout(r, 100));
+    assert.equal(chats(), 1, "never twice");
+  } finally { await srv.close(); }
+});
+
+test("an LM Studio backend is never 'offline': no banner, a send goes through the normal path", async () => {
+  const app = await mkApp("learning");
+  run(app, `saveCfg({aiUrl: "http://127.0.0.1:1", aiModel: "m", aiBackend: "remote"});`);
+  await run(app, `askStatusPoll()`);
+  assert.equal(val(app, `S.aiOffline || false`), false);
+});

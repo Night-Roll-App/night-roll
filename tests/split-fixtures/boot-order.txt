@@ -288,7 +288,9 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) flush
 document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
 document.getElementById("deploynow").addEventListener("click", deployInstallNow);
 document.getElementById("askcompact").addEventListener("click", async () => {
-if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
+let beat = 0;
+if (typeof window !== "undefined") setInterval(() => { if (!document.hidden && (asksheet.classList.contains("on") || beat++ % 2 === 0)) askStatusPoll(); }, 5000);
+if (typeof window !== "undefined") for (const ev of ["online", "offline"]) window.addEventListener(ev, () => { if (!document.hidden) askStatusPoll(); });
 document.getElementById("askattach").addEventListener("click", () => {
 document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true});
 const asklog = document.getElementById("asklog"), askjump = document.getElementById("askjump");
@@ -300,7 +302,7 @@ document.getElementById("askpick").addEventListener("click", () => document.getE
 document.getElementById("askpickfile").addEventListener("change", e => {
 if (typeof document !== "undefined" && document.addEventListener) {
 for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); askStatusPoll(); } });
 askInboxStart();
 (function sheetDrag() {
 S.wm = wmLoad();

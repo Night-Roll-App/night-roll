@@ -36,6 +36,7 @@ import { askNoteLabel } from "./sheet.js";
 import { askSetMode } from "./sheet.js";
 import { askRenderImpl as askRender } from "./sheet.js";
 import { askResume } from "./client.js";
+import { askReachSet } from "./client.js";
 import { askResumeSoon } from "./client.js";
 import { askSentReset } from "./context.js";
 import { askHost } from "./host.js";
@@ -478,15 +479,24 @@ export function askNotesArrived(notes) { // the terminal's notes go to the Termi
   if (shown.length === notes.length) return;
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
+function askBridgeSeen(url) { // only a URL that has answered as the bridge can be "offline" — an LM Studio or in-browser backend is left alone
+  try { return localStorage.getItem("ff1roll-ask-bridge-seen") === url; } catch (err) { return false; }
+}
 export async function askStatusPoll() {
   if (!askInboxAllowed() || !S.song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
   const url = aiUrl();
   if (S.askStatusNo === url) return;
   let r;
-  try { r = await aiStatusFetch(askHost()); } catch (err) { S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  // a dead tailnet address can hang a fetch for a minute: no answer in 8 s is "unreachable", and the fetch is aborted so hung ones never pile up
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  try { r = await aiStatusFetch(askHost(), {signal: ctl.signal}); if (r.status >= 500) throw new Error("HTTP " + r.status); } // a 5xx is the tailnet front end answering for a bridge that isn't up yet
+  catch (err) { if (askBridgeSeen(url)) askReachSet(false); S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  finally { clearTimeout(t); }
+  askReachSet(true); // the bridge answered: the offline banner goes, a waiting message is sent
   if (r.status === 404) { S.askStatusNo = url; S.askStatusNow = null; S.askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
   if (!r.ok) return;
   const j = r.body; if (!j) return;
+  try { localStorage.setItem("ff1roll-ask-bridge-seen", url); } catch (err) { /* private mode */ }
   S.askStatusNow = (j && j.now) || null;
   S.askStatusRecent = (j && j.recent) || [];
   S.askQuota = (j && j.quota) || null;
@@ -549,7 +559,12 @@ export function initBridge1() {
   // inbox keeps its own 60 s pace)
   // (askStatusPoll asks only an allowed host, and never again after a 404 —
   // so for LM Studio or no AI at all this costs one request, then nothing)
-  if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
+  // (every 5 s while the ✦ panel is open: the offline banner and a waiting
+  // message follow the bridge's coming and going — and at once on open,
+  // on the browser's online/offline events and on coming back to the page)
+  let beat = 0;
+  if (typeof window !== "undefined") setInterval(() => { if (!document.hidden && (asksheet.classList.contains("on") || beat++ % 2 === 0)) askStatusPoll(); }, 5000);
+  if (typeof window !== "undefined") for (const ev of ["online", "offline"]) window.addEventListener(ev, () => { if (!document.hidden) askStatusPoll(); });
 }
 
 export function initBridge2() {
@@ -557,6 +572,6 @@ export function initBridge2() {
     try { await aiTerminalPrefsSet(askHost(), {[k]: e.target.value}); askstatus.textContent = k + "s will use " + e.target.value; }
     catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
   });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); askStatusPoll(); } });
   askInboxStart();
 }

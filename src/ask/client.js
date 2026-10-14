@@ -41,6 +41,7 @@ import { askStore } from "./bridge.js";
 // and every bubble/status/badge it draws. These are Night Roll's bare
 // names as delegates, same signatures as before.
 import { aiFinish, aiFail, aiRun, aiTerminalSend, aiRepending, aiResumeSoon, aiResume } from "../../vendor/ai/web/client.js";
+import { aiReachSet, aiSendHeld } from "../../vendor/ai/web/reach.js";
 
 export function askFinish(jobId, text, key) { aiFinish(askHost(), jobId, text, key); } // the reply for a pending question landed: store it, drop the marker
 export function askFail(jobId, note, key) { aiFail(askHost(), jobId, note, key); } // no reply will come: keep the question, say why
@@ -88,6 +89,7 @@ export async function askSwitchRun(sw) {
   }
   if (asksheet.classList.contains("on")) askRender();
 }
+export function askReachSet(up) { aiReachSet(askHost(), up); } // one status poll answered (true) or failed on the network (false)
 export function askRun({msgs, text, sp, messages, jobId, live, key}) { return aiRun(askHost(), {msgs, text, scope: sp, messages, jobId, live, key}); } // one exchange (tool rounds inside); the pending marker outlives a dropped connection
 export function askTerminalSend(text) { return aiTerminalSend(askHost(), text); } // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
 export async function askSend(carried) { // carried: open_song's carried-over request (or its chip), sent as the user's words — the box, its draft and the pending shots are left alone
@@ -96,6 +98,7 @@ export async function askSend(carried) { // carried: open_song's carried-over re
   if ((!typed && (carried !== undefined || !S.askShotPending.length)) || S.askBusy || !S.song) return;
   if (carried === undefined) { S.askSwitch = null; S.askCarry = null; S.askHopKey = null; } // a typed message: whatever the last one queued is over
   const text = carried !== undefined ? typed : askShotOutgoing(typed);
+  if (carried === undefined && aiSendHeld(askHost())) return; // the bridge is unreachable (askStatusPoll): nothing is sent, the box keeps the words, and askReachSet sends them when it answers again
   if (S.askTerminal) return askTerminalSend(text);
   if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
   const sp = askSpan();
