@@ -27,12 +27,13 @@ BUILT 2026-10-12 while Josh was at jiu jitsu (design night-roll-guitar/docs/desi
 ## 2026-10-08 Name: stays Night Roll (Josh, Terminal #271–#274)
 "Retro DAW" and "8-bit DAW" are generic phrases that nobody can own; no app is named either. Josh picked "1 or 2": keep Night Roll, and use "a retro DAW for game music" as a tagline and/or App Store subtitle when it publishes. Nothing to build.
 
-## 2026-10-07 Empty captures, steps 1–3 — BUILT on a worktree branch, awaiting merge (docs/plans/2026-10-07-empty-captures.md §4; NIGHT-ROLL.md "Game-steered N64 sequences, and no silent note drops")
+## 2026-10-07 Empty captures, steps 1–3 — MERGED 3ee6f709 (docs/plans/2026-10-07-empty-captures.md §4; NIGHT-ROLL.md "Game-steered N64 sequences, and no silent note drops")
 Built: N64 ldseq B0 / runseq C4 / testchan = "not enabled" / rand CE in turn (with a warning); io ports from the save state (`parkedPlayerIo`); a game-steered script loops where its deciding state repeats; SPC low-confidence root falls back to 72; makeMidi reports dropped notes. Dry run, main vs branch: OoT changes only the 3 Hyrule Field songs (Main 153.9 s → loop 13.0 s, Battle 77.1 → 25.8, Waiting 68.7 → 26.8; the 21 piece minis are SAME, since their state holds io = −1, so they do not end 0.2 s sooner). MM: Bossa Nova gains 190 notes, Staff Roll runs 379.6 s. Hyrule Field Battle's console render plays (30 s: 12 tracks, −23.8 dBFS).
 DECIDE before `--apply` of snes/earthbound: the root fallback changes 17 more EarthBound songs (MOVED). Each one gains notes that main dropped silently. In 16 the lost notes are sample #24, the static (28.6 Hz "low"); in Stonehenge Base Shuts Down it is one note of a high-confidence 500 Hz root. Examples: Belch's Factory 6611 → 20340 notes, Mysterious Crash 672 → 1393, Teleportation 1488 → 2332. Giygas' Static is ADDED-TRACK (0 → 2 notes). Still dropped after the fix, now with a warning: notes on HIGH-confidence roots (e.g. #8 at 500 Hz, down to MIDI −49 in Belch's Factory).
 TO DO after merge: plan step 4 (`--apply` for n64/ocarina-of-time and n64/majoras-mask; earthbound waits on the decision above) and `measure-loudness --apply` for the 4 N64 songs that have no `loud`; step 5, the browser check.
 
-## 2026-10-07 PS2 capture v2 — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.2 PS2; NIGHT-ROLL.md "PS2 capture v2")
+## 2026-10-07 PS2 capture v2 — MERGED a9140e94 (capture audit 2 §3.2 PS2; NIGHT-ROLL.md "PS2 capture v2")
+Still pending: the FFX re-capture apply is held for Josh's ear check (Q1, "AWAITS JOSH'S EAR: FFX pitches"); no `Re-capture ps2/final-fantasy-x` commit exists yet.
 Dark Cloud (SQ/HD/BD) and FFX (BGM/WD) captures now write: the channel's pitch wheel as raw bend at the DRIVER'S OWN range, CC84 glide links on BGM's bend-born split pieces (one note-on, never re-keyed), the channel's CC7/CC11/CC64/CC1 stream (in-note loudness), CC10 changes while a note sounds, a program per note, CC91 from the voice's wet send. Notes are v1's.
 BEND RANGE — SETTLED from the drivers' code, not guessed: Dark Cloud's modhsyn.irx bends a voice by (split bend range) × wheel ÷ 8192, in libsd's 128ths of a semitone — the HD bytes 256/1536/307/128 are ±2/±12/±2.4/±1 (down range below centre, up range above). FFX's ffxpatch.irx: 0x5D (bgm.mjs skipped it as "unknown") is the range in semitones; wheel × range ÷ 32 in 256ths. FFX's 68 0x5D: 2 ×59, 24 ×5 (Pursuit), 12 ×2 (Hurry, Aeon Battle), 127 ×2 (Luca, Welcoming of Maester Mika). The default before a track's first 0x5D was not found: those bends are not written (7 songs, 10 tiny wheel moves, no notes split by them).
 Reverb: Dark Cloud's ini -r/-d are sq.irx's effect mode + EVOL (all 59 songs -r=3 -d=4096 → CC91 16 on samples whose SPU attribute has the wet bits); FFX 0x60 = wet on, 0x61 = wet off (CC91 127/0; EVOL not read).
@@ -42,7 +43,7 @@ Named-song gate: Dark Cloud "The King's Curse" — 2,270 bends (ch 5's held G sa
 QUEUED (unblocked by the range finding): the console voice — Dark Cloud's wheel is still dropped (spu-render reads n.slide; SQ notes must not split) and FFX still slides at ±2 (Pursuit/Hurry/Welcoming play off the driver's pitch); HD/WD ADSR → n.env; HD program transpose/detune unread, and the driver adds the sample/split detune bytes as 128ths where toBank reads the sample's as cents (pitch change → its own gate). Loudness: stored synth measurements were taken on v1 files; CC7/CC11 channels change level in Hear the MIDI — re-measure after an --apply.
 Josh to hear (after merge + an --apply he approves): Dark Cloud "The King's Curse" with Hear the MIDI on an instrument voice — the sagging G, channel levels.
 
-## 2026-10-07 N64 Rare: notes fade as the bank plays them (Josh #215/#216/#218) — BUILT on a worktree branch, awaiting merge (NIGHT-ROLL.md "N64 Rare: notes fade as the bank plays them")
+## 2026-10-07 N64 Rare: notes fade as the bank plays them (Josh #215/#216/#218) — MERGED ddae9695 (NIGHT-ROLL.md "N64 Rare: notes fade as the bank plays them")
 Cause of "drums come out as notes and sound awful" (DK64 Logo) and "percussion showing up as notes" (DKR Title Theme): one-shot samples + decaying envelopes the MIDI never carried — every note held at full level to its written length. Fix: each melodic note carries the bank's fade as a volume shape (in-note aftertouch); pitches/lengths/tracks unchanged → capture-diff VELOCITY (dry run /tmp/n64drums/v2).
 NOT DONE — drum flip (would be MOVED: track rename + GM keys). Usage rule (one sound, one-shot, ≤2 keys, ≥8 notes) would flip: DK64 79 parts/50 songs (9 on a sample melodic elsewhere), DKR 115/56 (44), Banjo 193/135 (7), GoldenEye 22/15 (9), JFG 16/14 (9). No bank fact separates percussion from melodic one-shots (DK64: all one-shot, all held envelopes; pitch clarity overlaps). QUESTION for Josh (add to the numbered list): after hearing the fade, do the hand-drum parts still need the kit lane? Kit = MOVED (re-capture copies for annotated songs).
 TO DO after merge: tools/recapture.mjs --apply per Rare album, one album per push (DK64, DKR, Banjo, GoldenEye, JFG).
@@ -235,14 +236,15 @@ Per-song table (tracks, notes, findings; "outlast" = melodic notes written ≥1.
 | 179 | mini-boss | 6 (1 kit) | 2234 | — |
 
 
-## 2026-10-07 Console loudness — the song gain (Q18, Josh #183/#186/#187) — BUILT on a worktree branch, awaiting merge
+## 2026-10-07 Console loudness — the song gain (Q18, Josh #183/#186/#187) — MERGED 8259613f
+Still pending: one Chrono Cross song's loudness is not yet stored (per db3d23ff).
 docs/plans/2026-10-07-console-loudness.md §4A; NIGHT-ROLL.md "Audio gain stages". MASTER_VOL 0.22 is gone: each song plays at one gain to −16 LUFS (peak ≤ −1 dBFS); synth = same gain + match; clips at unity; limiter as safety net; bounce matches; stored master > 100% resets to 100% once; top-bar 🔊 hidden by default (View › Display › Volume slider; Ask set_pref volume_slider).
 DONE 2026-10-14: every capture album has stored loudness (3325 of 3326 tracks; only ps1/chrono-cross drowning-valley unmeasured — a full-album re-run costs ~5 h at background priority, left for a quiet day). WAS: TO DO after merge, one album per push: `node tools/measure-loudness.mjs --apply --album <console>/<slug>` for each capture album (writes only album.json nsf.tracks[base].loud; unmeasured songs measure on the device the first time they play, cached by rip hash).
 EAR CHECK (plan §4 "before it ships"): FF1 Battle, Terra, Cry of the Planet, SM64 Slider at 100% — console vs Hear the MIDI back to back, iPad speaker + headphones; pass = no jump on the toggle, no reach for the volume. Also: the limiter must not pump at normal levels.
 OPEN: NES/GB's full-scale synth match (−10.5 / −6.0 dB) leaves "Hear the MIDI" ~2.6 / ~1.8 dB quieter than measured medians (−7.9 / −4.2) on songs without a stored loud.synth — gone once an album is --applied.
 FOUND: the "(re-capture)" copies' rips 404 (tools/measure-loudness.mjs dry run: snes/chrono-trigger/quiet-beach-recapture.spc etc.) — a copy's nsf.tracks entry points its vault at "<base>-recapture.spc", which the archive doesn't have, so those songs play synth only in the app too.
 
-## 2026-10-07 N64 capture v2 — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.2 N64; NIGHT-ROLL.md "N64 capture v2")
+## 2026-10-07 N64 capture v2 — MERGED 51127d50 (capture audit 2 §3.2 N64; NIGHT-ROLL.md "N64 capture v2")
 Both drivers (EAD: SM64/OoT/MM; Rare: GoldenEye/Banjo/DK64/DKR/JFG) now write: CC7 = the channel level timeline (EAD vol × scale × player, squared on the oot generation; Rare cc7), the bank envelope over the held span as `n.env` (noteEnvelopes in render.mjs, the render's own envelope choice), pitch bend = channel bend at/under the note + vibrato + portamento (render's Vibrato/Portamento per update) / Rare's wheel incl. off-centre at the note-on, CC84 on Rare wheel-split pieces and EAD C4 continuous notes (continuation velocity = the envelope's level there), program at every change, CC91 at each note-on (+ Rare cc91 under a note), CC10 changes under held notes. Notes/tracks/tempo/loop = v1's.
 FOUND + fixed: v1 read Rare's raw cc10 (0..127) as 0..1, so every published Rare track (GoldenEye, Banjo, DK64, DKR, JFG) is CC10 127 = hard right under Hear the MIDI. Programs: MIDI playback v2's ctlCopy already carries them through publish (main's dry run of SM64 already has 204 programs; its published files have 0); what v2 adds is a program at each change instead of one per track.
 Dry run (scratch /tmp/n64v2/{main,v2}: origin/main's code vs the branch, both through the app's import → publish path; albums/ untouched), main capture vs v2, 924 songs: VELOCITY 920 · SAME 4 · MOVED 0. Per album: SM64 VEL 38; OoT VEL 106 · SAME 3; MM VEL 102 · SAME 1; DKR VEL 103; Banjo VEL 257; DK64 VEL 178; GoldenEye VEL 58; JFG VEL 78. Against the published files MM's 2 MOVED (the-monsters-raid, title-demo) are the same on main (pre-existing).
@@ -252,7 +254,7 @@ NEXT after merge: --apply one album per push (CAPTURE_VERSION 2), then `measure-
 Josh to hear (after merge + an --apply he approves): Banjo-Kazooie on Hear the MIDI — tracks no longer all hard right, wheel slides as one sound; SM64 a decaying instrument; OoT "Spirit Temple" (channel bends).
 LIMIT: MIDI bend is per channel — a Rare chord under a wheel split with differing bends gets the later note's (JFG 88 of 23,651 pieces in 20 songs; Banjo, GoldenEye 0). QUEUED: Rare instrument vibrato/tremolo fields and CC65 (spike 4); OoT ED gain, filter, comb (no MIDI equivalent); the console voice's pan under held notes can now read `n.panChanges` (§3.3).
 
-## 2026-10-07 Game Boy capture v2 — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.2 Game Boy; NIGHT-ROLL.md "Game Boy capture v2")
+## 2026-10-07 Game Boy capture v2 — MERGED 879bb839 (capture audit 2 §3.2 Game Boy; NIGHT-ROLL.md "Game Boy capture v2")
 GBS captures now write: envelope rises and stepped falls (software fades, NR32 wave level) as `n.env` (a steady hardware fall stays v1's `ve`, same bytes); NR51 left/right → CC10 (centre none, one side one event, moves as a timeline); each wave RAM table → a program (first-use order); period wobble under 70 cents and pulse 1's hardware sweep (NR10) → pitch bend (sweep never changes the notes); CC84 glide links where a period change lands with no trigger (never noise, never in a triggered frame — FFL/SML/Pokémon write orders checked); duty changes inside a note → CC70. Notes/tracks/tempo/loop = v1 (raw reconstruct v1 vs v2 over all 351 slots × 40 s: 0 note differences). No `wave:` meta (parseMidi reads none). Shared files: tools/nsf/midi-write.mjs (`e.prog` read before `srcn`, one line), tools/nsf/notes.mjs collapseSlides (a merged note takes the first sounding piece's link; NES events carry none).
 Dry run (scratch /tmp/gbv2/{main,v2}: origin/main's code vs the branch, both through the app's import → publish path; albums/ untouched). Main capture vs v2, 347 songs: VELOCITY 326 · SAME 21 · MOVED 0. Per album: DKL VEL 20; FFL VEL 19; Kirby VEL 15; Link's Awakening VEL 89 · SAME 11; Mega Man V VEL 33; Metroid II VEL 20; Pokémon Red VEL 52; SML VEL 20 · SAME 1; Tetris VEL 17 · SAME 1; Wario Land VEL 41 · SAME 8. Against the published files: 26 MOVED on both main and v2 (pre-existing drift, same songs: FFL 4, LA 11, Metroid 2, Pokémon 2, SML 5, Wario 2).
 Gained (all albums): bend 130,485 · shape 53,432 · CC84 11,890 (FFL 1,933, Kirby 1,338, LA 1,901, MMV 2,369, Metroid 4,265, Pokémon 66, Wario 18; DKL/SML/Tetris 0) · CC70 6,758 (Kirby 2,745, MMV 3,660, Pokémon 353) · CC10 2,168 (SML 835, FFL 596, Kirby 405, MMV 200, Tetris 115) · program 890 · RPN 0 on 85 channels. Of 9,128 raw links (40 s per slot), 9,040 reach the .mid; 88 (1%) are lost to makeMidi's 40-tick minimum on the predecessor.
@@ -261,7 +263,7 @@ FOUND: the audit's "none in the sample: these drivers retrigger every note" was 
 Josh to hear (after merge + an --apply he approves): Kirby's Dream Land on an instrument voice with Hear the MIDI — the wave line plays on (no re-attack), rising envelopes swell; SML "World Music 1" pans.
 QUEUED: NR50 master volume/fades → CC7 (needs a CC7 timeline in trackBytes); noise 7-bit mode; sweep overflow still leaves v1's note on screen though the chip silences pulse 1 (a note change — would be MOVED, needs Josh's ruling); the console voice's NR51 stereo (§3.3).
 
-## 2026-10-07 PS1 capture v2 — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.2 PS1; NIGHT-ROLL.md "PS1 capture v2")
+## 2026-10-07 PS1 capture v2 — MERGED cd3b542c (capture audit 2 §3.2 PS1; NIGHT-ROLL.md "PS1 capture v2")
 AKAO captures now write: CC84 glide links from the driver's own no-key-on rule (slur 0xCC/0xDA's next notes, 0xA4 slide landings, portamento notes), slide/portamento paths as chain-relative pitch bend (linear in the SPU pitch register, as the driver steps it), in-note level shapes from vol × expression × the ADSR since the chain's key-on (continuation velocity = the level it has), ADSR overrides 0xAD–0xBF in ve/shape, program per note (articulation), CC91 = reverb switch × song depth, CC10 along 0xAB pan fades. Notes/tracks/tempo/meter/loop = v1. SEQ and PS2 bytes unchanged.
 Spikes §3.0 1–2: the PSF reference player is blocked (Highly Experimental needs a Sony BIOS image; none here, not downloaded). Settled instead from the drivers' own MIPS code in the six games' RAM images: slur → the next note is not keyed on; legato 0xD0 only cancels the 2-tick early key-off (re-keys); the look-ahead clears both before a rest/0xCD/0xD1/0xDB; 0xA4 is linear in the pitch register. FF9 and Parasite Eve: the slur bit transfer and key-on skip are there, but their 0xCC/0xCD handlers were not located (FF7's rule used).
 Dry run (scratch /tmp/ps1v2/{main,v2}: origin/main's code vs the branch, both through the app's import → publish path; albums/ untouched). Main capture vs v2, 470 songs: VELOCITY 468 · SAME 1 · MOVED 0 (chrono-cross drowning-valley: no row in either — archive 404). Per album: FF7 VELOCITY 90; FF8 VELOCITY 84; FF9 VELOCITY 107 · SAME 1; Chrono Cross VELOCITY 67; Parasite Eve VELOCITY 38; SaGa Frontier VELOCITY 83. Against the published files the one MOVED (FF7 Cry of the Planet, loop point 37.4>1.1 → 50.3>2.3) is the same on main (pre-existing). Gained events: CC84 FF7 12,664 · FF8 716 · FF9 70 · CC 18,584 · PE 4 · SaGa 1,355; bends FF7 7,249 · FF8 132 · FF9 437 · CC 72,588 · SaGa 116; CC91 1,300 / 1,278 / 1,437 / 1,028 / 450 / 1,107. Note velocities changed (continuations at their real level): FF7 584, FF8 51, FF9 6, CC 10,298, SaGa 56, PE 0. Size: 7.4 → 8.6 MB (Chrono Cross 1.1 → 1.7 MB; cave-ambience 64 → 411 KB, pan-fade CC10 + slide bends of a looped ambience).
@@ -269,7 +271,7 @@ Cry of the Planet (the ear test): 879 CC84 links, 3,369 bends (ch 8/14/15, RPN �
 Josh to hear (after merge + an --apply he approves): §3.5 ear check 1 — Cry of the Planet on an instrument voice with Hear the MIDI: one held D gliding, separate notes on screen.
 QUEUED: vibrato 0xB4–B6/0xDD, tremolo, pan LFO → bend/shape/CC10 (needs the driver's LFO stepping + waveform tables read); the console voice's slur/legato no-re-attack (the other builder's render side — `n.lg` is now on every AKAO note it applies to); FF9/PE 0xCD semantics; CC7 for the SEQ/PS2 path (PS2 item).
 
-## 2026-10-07 Glide app layer (CC84) — BUILT on a worktree branch, awaiting merge (capture audit 2 §3.1 items 1–2; NIGHT-ROLL.md "Glide (CC84)")
+## 2026-10-07 Glide app layer (CC84) — MERGED f7f58cba (capture audit 2 §3.1 items 1–2; NIGHT-ROLL.md "Glide (CC84)")
 A continuation note (`n.lg`) carries CC84 = the key it continues from (parse, every hop, both writers byte-identical, capture-diff `cc84` gain); the synth (chip waves, organ, patches, soundfont) plays it on the predecessor's sounding voice — no new attack, a pitch step cancelled by the chain-relative bend, a 15 ms ramp to its level — and falls back to the old attack when anything is inconsistent. Notes on screen unchanged (Q3 default). No capture marks `lg` yet: no published file changes.
 NEXT (the per-console capture builders, §3.2): set `e.lg` from each chip's own no-re-key signal; makeMidi then writes CC84 + chain-relative bends (`chainBends`, `glideCents` in tools/nsf/midi-write.mjs); psx makeMidi / makeMidiTracks call `chainBends` themselves. Continuation velocity = the chip's real level (§2.5).
 QUEUED: game/sf2 instruments still re-attack (needs a render-the-chain pass); a duty change AT a link re-attacks (the wave is picked per note); a link to a predecessor padded to the 40-tick minimum past the continuation's start is not written (makeMidi's minimum length) — the capture builders should check how often that bites; Q4 connector line (off until Josh asks).
@@ -288,7 +290,8 @@ APPLIED 2026-10-07, one album per push: NES 19 albums (393 replaced, 8 "(re-capt
 HELD: FFX (see "AWAITS JOSH'S EAR: FFX pitches" — still his call).
 CHECK: SNES files grew (5 albums 8.1 → 14.6 MB, EarthBound 3.5 → 6 MB, mostly bends) — watch iPad load time.
 
-## 2026-10-07 SNES capture v2 — BUILT on a worktree branch, awaiting merge (audit §4 item 2; NIGHT-ROLL.md "SNES capture v2")
+## 2026-10-07 SNES capture v2 — MERGED 1276dacf (audit §4 item 2; NIGHT-ROLL.md "SNES capture v2")
+Still pending: Q20 (SNES phantom notes) is separate and open, awaiting Josh's ruling.
 Per note: the DSP's envelope × VOL as `n.env` (falls included; ADSR shapes, slow attacks), L/R → CC10 timeline (moves of 4+ only; a still voice → one CC10 = midiPan), SRCN → program (tick 0, then changes), PITCH wobble under 70 cents → pitch bend (from the note's own start pitch, never the estimated root), EON × EVOL (0 while FLG disables echo writes) → CC91. No `echo:` meta (parseMidi reads none). Notes, velocities, `ve`, tracks, tempo, meter: v1's.
 Re-capture dry run (scratch /tmp/snesv2/{main,v2}: origin/main's code vs the branch, both through the app's own import → publish path; albums/ untouched). Main capture vs v2 capture, 473 songs: VELOCITY 472 · SAME 1 · MOVED 0. Per album: FF4 VELOCITY 65; FF6 VELOCITY 81; Chrono Trigger VELOCITY 92; DKC VELOCITY 29; EarthBound VELOCITY 205 · SAME 1. Against the published files, the MOVED songs are the same on main and v2 (FF4 3, CT 9: pre-existing drift, not v2). Size: the five albums' .mid go from 8.1 MB to 14.6 MB (EarthBound 3.5 → 6.0 MB, mostly bends: 496k events).
 Josh to hear (after merge + a re-capture he approves): FF4 Main Theme on instrument voices with Hear the MIDI. Do notes decay, and are the echo and stereo there?
@@ -307,7 +310,7 @@ Ask: read the raw APU writes for pulse2 (volume/envelope/decay flags, duty, swee
 ANSWERED (terminal, bridge #512 — facts only): NSF track 15 frames 1299–1515 (54 frames per bar, bar 25 = frame 1299). Pulse2 $4004 (constant-volume mode) steps every 2 frames: 8 at beat 1 → 15 by beat 1.78 → back to 8 at beat 2.67 → flat 8 through beat 3, the same in all four bars. One pitch write per bar ($4006/$4007 on beat 1), duty 12.5% and sweep unchanged, no $4015/$4017. Shop's .mid carries no volume automation (velocity 8 per note, CC70 duty only), so synth playback is flat; the FF1 console audio replays the writes, so it has the swell. CORRECTION (#513, bridge #515): Shop's DEFAULT playback is the console voice (FF1's NSF found in the archive, played on the chip), so the swell is what Josh hears; it's flat only on a track whose voice he sets to an instrument.
 (This entry was written uncommitted by the Ask session and lost from the working tree before it was committed; restored by the terminal from the text it had read.)
 
-## 2026-10-06 song notes v1 — BUILT on a worktree branch, awaiting merge (song-level notes, Josh #494/#497)
+## 2026-10-06 song notes v1 — MERGED 2150a671 (song-level notes, Josh #494/#497)
 Many titled song notes per song (type `songnote`, NIGHT-ROLL.md ".rollnotes
 format" + "Analysis sheet"): ☰ All notes → SONG NOTES / + Song note, the
 Analysis sheet's SONG NOTES box, the note window's Song chip, Ask
@@ -318,7 +321,7 @@ QUEUED (not in v1): (a) filing bar notes under a song note — S3's `topic`
 field / "File under" chips also offering the song's song notes, so the
 example bars list themselves; (b) the "Examples: bar 5 · bar 12" line on
 each song note, built from the bar notes filed under it, tap = jump there.
-## 2026-10-07 song note kinds — BUILT on a worktree branch, awaiting merge (Josh, Terminal #225/#226)
+## 2026-10-07 song note kinds — MERGED 8ae806a9 (Josh, Terminal #225/#226)
 "Just a field inside the song note … for now general or open question …
 later more types." `kind` inside `songnote` (absent = general,
 "question"), one table `SONGNOTE_KINDS` for later kinds. Note window:
@@ -349,17 +352,17 @@ So #494's choice (several notes per song) is not settled by him: he wants an adv
 Josh, in his words: "Also please tell him that this would have to be accounted for in the annotation sheet or the analysis sheet. Yeah, we have this analysis sheet now that kind of tracks things for the analysis."
 Ask (for #494): whichever many-vs-one answer wins, song notes must be accounted for in the annotation sheet and in the Analysis sheet, so he can see and reread them there. (The terminal's plan already lists them at the top of Notes and the Analysis sheet; this confirms that is wanted.)
 
-## 2026-10-06 patches v1 — BUILT on a worktree branch, awaiting merge (Josh approved; docs/plans/2026-10-06-envelopes-lfo-review.md §4.2; NIGHT-ROLL.md "Patches")
+## 2026-10-06 patches v1 — MERGED 688b0364 (Josh approved; docs/plans/2026-10-06-envelopes-lfo-review.md §4.2; NIGHT-ROLL.md "Patches")
 A track's voice can be a patch: synth wave + ADSR + delayed vibrato, stored in the track: annotation as `voice=patch:<name>:<wave>:envA,D,S,R:vibRate,Depth,Delay`. Voice menu → Patches › lists six presets (Pluck, Soft pad, Lead + vibrato, Bass, Chip lead, Organ — wording is a placeholder, Josh's call); Edit patch… = wave row + seven sliders, saved on release (one undo). Synth path only; a capture's own volume curves are skipped on a patch (no double fade). Ask: set_track patch.
 Josh to hear: his own song, a melody track → Chip lead, then Lead + vibrato on a held line (vibrato blooms after ~¼ s); a pad track → Soft pad.
 QUEUED (patches v2+): chip macros (vol/arp/pitch/duty sequences, model.mjs points+repeat format); "Save as patch" from a game instrument; filter envelope; CC1 → the patch's vibrato depth; the ADSR drawn as one line in the sheet; preset names (Josh's wording); release longer than Download audio's 1 s tail gets cut at the song's end.
 
-## 2026-10-06 MIDI playback v2 — BUILT on a worktree branch, awaiting merge (Josh approved; NIGHT-ROLL.md "MIDI support — what the synth plays"; capture audit §2 P0 MIDI layer)
+## 2026-10-06 MIDI playback v2 — MERGED 100dab3f (Josh approved; NIGHT-ROLL.md "MIDI support — what the synth plays"; capture audit §2 P0 MIDI layer)
 `tr.ctl` owns pitch bend (+ RPN 0 range), CC7/11/64/1/91, pan changes (2+ CC10s; one stays midiPan) and program changes; carried through draft, reopen, Save As, import/capture drafts and publish; both writers byte-identical; no album .mid had any (3,251 scanned). The synth path plays them: volume × expression ramps, bend → detune, mod wheel → 5.5 Hz vibrato, sustain holds note-offs (8 s cap), CC91 → one lazy shared reverb bus, pan events → a per-note panner. Game/sf2 instruments and the console voice ignore them. Swell / Swell–fade now make room (a note above velocity 73 starts at 73 so the peak lands on 127; status line says so; one undo).
 Josh to hear: a dropped-in GM .mid with bends/sustain (any piano/guitar file off the web), one of his songs (no change — no controllers), a capture with Hear the MIDI on (no change until a capture writes controllers).
 QUEUED follow-ups: program change → voice only if Josh wants a GM table (none exists; not invented); a CC lane to draw/edit controllers; captures writing CC7/bend/CC91 (capture audit §4 v2); a reverb amount control of its own.
 
-## 2026-10-06 in-note volume shape v1 — BUILT on a worktree branch, awaiting merge (docs/plans/2026-10-06-in-note-dynamics.md option (b); NIGHT-ROLL.md "Volume shape inside a note")
+## 2026-10-06 in-note volume shape v1 — MERGED fe40d614 (docs/plans/2026-10-06-in-note-dynamics.md option (b); NIGHT-ROLL.md "Volume shape inside a note")
 Per-note `n.env` stored as poly aftertouch inside the note (relative to velocity; note-on-tick aftertouch stays `ve`; existing files byte-identical). Synth playback ramps (oscillator path only, like `ve`), NES capture writes the shape from $4004 (rises only; decays stay `ve`), ⋯ → Shape (Swell / Fade / Swell–fade / Flat), lane point drag, Ask `edit_notes op:"shape"`, at/span print points.
 Josh to hear: FF1 Shop pulse2 bars 25–28 on a synth voice needs a RE-CAPTURE of shop.mid (not done — albums/ untouched; scratch capture proved 8→15→8 in all four bars). Re-capture is his call.
 QUEUED follow-ups: tap the lane line to add a point / long-press to delete; PS1 `n.gain` → .mid (makeMidi writes it the same way); GB/SNES volume series; saved custom presets; split/divide carrying the shape across both pieces; the CC11 track lane (option (a)) for phrase dynamics.
@@ -377,7 +380,7 @@ Claude bridge accepts that. An OpenAI-strict local server (LM Studio, Ollama)
 may reject it. Fix in the AI library: map note → user with a label. Untested
 against a real local server.
 
-## AI parity batch 8 — song_file, set_pref — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5 row 8)
+## AI parity batch 8 — song_file, set_pref — BUILT 2026-10-05, MERGED 872b3810 (docs/ai-parity.md §5 row 8)
 
 Built by a Sonnet builder, its own commit on its branch. Two `ASK_ACTIONS`
 entries, src/ask/tools.js, both `song: false`, over the File menu's /
@@ -414,7 +417,7 @@ session, at merge:** browser-verify Help → AI's rows and one call of each
 ("new song called Night Rain"; "save a version called before drums";
 "turn the debug log on") before pushing.
 
-## AI parity batch 7 — set_track, add_track, delete_track, keep_that, album — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5 row 7)
+## AI parity batch 7 — set_track, add_track, delete_track, keep_that, album — BUILT 2026-10-05, MERGED ed8e1900 (docs/ai-parity.md §5 row 7)
 
 Built by a Sonnet builder, its own commit on its branch. Five `ASK_ACTIONS`
 entries, src/ask/tools.js, over the mixer/voice-menu/trackbar/album-strip's
@@ -444,7 +447,7 @@ merge:** browser-verify Help → AI's rows and one call of each ("mute the
 noise channel"; "add a track called pad"; "keep that on pulse 1"; "play
 the FF1 album") before pushing.
 
-## AI parity batches 4–5 — bassist, edit_notes — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5)
+## AI parity batches 4–5 — bassist, edit_notes — BUILT 2026-10-05, MERGED 592fd2ea, 6d721f86 (docs/ai-parity.md §5)
 
 Built by a Sonnet builder, two separate commits on its branch. Batch 4:
 `bassist` (`askBassist`, src/ask/tools.js) over `bsGenerate`/`applyTake`
@@ -478,7 +481,7 @@ call of each ("bass line for bars 1 to 16, busy 2, follow the drums";
 2 up an octave"; "copy the pulse 1 line in bar 3 to pulse 2, an octave
 down") before pushing.
 
-## AI parity batch 1 — the `act` tool — BUILT 2026-10-05 on a worktree branch, awaiting merge (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
+## AI parity batch 1 — the `act` tool — BUILT 2026-10-05, MERGED a48e46ca (docs/ai-parity.md §5; Josh #435, #443, #449, #451)
 
 Built by a Fable builder on branch `worktree-agent-ae7c4048101970432`:
 src/ask/actions.js (the registry, 7 actions: go_to, play, stop, select,
