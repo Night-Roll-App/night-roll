@@ -436,8 +436,12 @@ export function reconstruct(capture, {roots = {}} = {}) {
 // writer dropped them. Such an instrument falls back to DEFAULT_ROOT_MIDI (as
 // "none" already does), its notes are re-pitched from their PITCH, and the
 // capture says so. Pitches stay relative to the root, as with every SPC note.
+// Only when the capture would otherwise be empty (Josh #224, Q21): a static or
+// noise sample beside real pitched notes has no pitch to guess, so its notes
+// stay dropped (Belch's Factory: 6,611 notes, not 20,340 of guessed static).
 export function rootFallback(insts, events) {
   const warnings = [];
+  if (events.some(e => e.noiseClock === undefined && e.midi != null && e.midi >= 0 && e.midi <= 127)) return warnings;
   for (const inst of insts) {
     if (inst.root.confidence !== "low" && inst.root.confidence !== "none") continue;
     const evs = events.filter(e => e.instrument === inst.key && e.noiseClock === undefined && e.pitch > 0);

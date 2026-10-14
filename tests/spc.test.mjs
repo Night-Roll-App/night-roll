@@ -552,16 +552,36 @@ test("a low-confidence root that puts notes outside MIDI 0–127 falls back to t
   const giy = 69 + 12 * Math.log2(28.6 / 440); // EarthBound sample #24's estimate
   const low = inst(0, "low", giy), high = inst(1, "high", giy), fine = inst(2, "low", 60);
   const ev = (i, pitch) => { const exact = i.root.rootMidi + 12 * Math.log2(pitch / 4096); return {instrument: i.key, pitch, midi: Math.round(exact), cents: 0}; };
-  const events = [ev(low, 993), ev(low, 937), ev(high, 993), ev(fine, 993)];
+  const events = [ev(low, 993), ev(low, 937), ev(high, 993)];
   assert.ok(events[0].midi < 0 && events[2].midi < 0, "the fixture starts below MIDI 0");
   const warnings = rootFallback([low, high, fine], events);
-  assert.deepEqual(events.map(e => e.midi), [47, 46, events[2].midi, events[3].midi], "only the low-confidence, out-of-range instrument moves");
+  assert.deepEqual(events.map(e => e.midi), [47, 46, events[2].midi], "only the low-confidence, out-of-range instrument moves");
   assert.equal(events[0].cents, Math.round((72 + 12 * Math.log2(993 / 4096) - 47) * 100));
   assert.equal(low.root.rootMidi, 72); assert.equal(low.root.confidence, "none"); assert.ok(Math.abs(low.root.estimateHz - 28.6) < 0.1);
   assert.equal(high.root.rootMidi, giy, "a high-confidence root is a measurement: kept");
   assert.equal(fine.root.rootMidi, 60, "in range: kept");
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], /instrument 0 \(sample #24\): its root estimate \(28\.6 Hz, low\) put notes outside MIDI 0–127, so it uses the default root/);
+});
+
+test("rootFallback: static beside real pitched notes stays dropped (Q21, Josh #224) — no pitch is guessed unless the capture is otherwise empty", () => {
+  const inst = (id, conf, rootMidi) => ({id, key: id + "@0", srcn: id, root: {rootMidi, rootHz: 440 * 2 ** ((rootMidi - 69) / 12), confidence: conf, clarity: 0.1}});
+  const noise = inst(0, "none", -20), tune = inst(1, "high", 60);
+  const events = [{instrument: noise.key, pitch: 993, midi: -3, cents: 0}, {instrument: tune.key, pitch: 4096, midi: 60, cents: 0}];
+  assert.deepEqual(rootFallback([noise, tune], events), []);
+  assert.equal(events[0].midi, -3, "the static note is untouched (the MIDI writer drops it, with its warning)");
+  assert.equal(noise.root.rootMidi, -20);
+  const alone = [{instrument: noise.key, pitch: 993, midi: -3, cents: 0}];
+  assert.equal(rootFallback([noise], alone).length, 1, "otherwise empty: the fallback still applies");
+});
+
+const BELCH = "/tmp/recap/rips/snes/earthbound/belch-s-factory.spc";
+test("EarthBound Belch's Factory (real SPC): its static sample adds no notes (~6.6k, not 20k)", {skip: !existsSync(BELCH), timeout: 120000}, () => {
+  const spc = parseSPC(new Uint8Array(readFileSync(BELCH)));
+  const r = reconstruct(runSPC(spc, spc.tags.seconds || 63), {});
+  const kept = r.events.filter(e => e.midi >= 0 && e.midi <= 127).length;
+  assert.ok(kept > 5500 && kept < 8000, "notes: " + kept);
+  assert.ok(!r.warnings.some(w => /default root/.test(w)), r.warnings.join("; "));
 });
 
 test("makeMidi reports every note it cannot hold (pitch outside 0–127): into opts.warnings, else console.warn — never silently", () => {
