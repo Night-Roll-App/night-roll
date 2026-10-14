@@ -834,6 +834,7 @@ Q11. (AI parity, docs/ai-parity.md §6, 2026-10-05) Which tier for Ask's
     menu is ≈2,950). Advisor recommends Core. Default if no answer: Core.
 Q12. A no-model fast path for "play"/"stop" (instant, no AI round), or keep
     every request going through the model? Default: no fast path for now.
+Q13. **DONE 2026-10-14 (verified, no code change): the follow-on already sends itself.** open_song's `then:` is sent in the NEW song's chat as the user's words after the switch (src/ask/client.js askLanded); it becomes a tap-to-send chip only when the destination chat holds an unsent draft (so the draft is never wiped), and nothing is sent if the song fails to load. Evidence: tests/night-roll.test.mjs "open_song landing: askLanded ..." (follow-on sent in the new chat; chip with a draft; none on a failed load) and tests/ai.test.mjs "open_song end to end" (follow-on is a new request in the new chat); `node tools/run-tests.mjs night-roll ai` = 629 + 12 pass, 0 fail; docs/ai-parity.md line 438 states it.
 Q13. "Open Graveyard and play from bar 9": after switching songs, does the
     follow-on ("play from bar 9") send itself, or wait for your tap?
     Default: sends itself.
