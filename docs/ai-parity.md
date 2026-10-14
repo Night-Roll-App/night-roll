@@ -118,6 +118,8 @@ silently.
 | Rename track | — | yes, your songs only | `set_track {track, name}` | S |
 | Whole-track octave ▲/▼ | — | yes | `set_track {track, octave:+1\|-1}` | S |
 | Add / delete a track | — | yes, your songs only; delete is one undo step | `add_track {name, voice?}`, `delete_track {track}` | S |
+| ▶ Hear sound (voice menu; one note in the game's voice) | — | yes — plays, changes nothing | `hear_sound {track}` | S |
+| These are drums / Not drums (voice menu; the track: annotation's `drums` field) | — | yes — one undo, works on a capture too | `mark_drums {track, drums: yes\|no\|auto}` | S |
 | Reorder tracks in the mixer | — | no — one drag; rare | — | — |
 | ＋∿ audio track (recording) | — | no — needs a file pick, which only your tap can open | — | — |
 

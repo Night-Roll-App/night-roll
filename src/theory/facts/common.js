@@ -50,6 +50,7 @@ export function factsQuarters(doc, ticks) { return Math.round(ticks / doc.ppq * 
 export function factsIsDrums(track) {
   if (!track) return false;
   if (track.kind === "audio") return false;
+  if (track.drumsMark !== undefined) return !!track.drumsMark; // the track: directive's drums=1 / drums=0
   if (track.drums !== undefined) return !!track.drums;
   return /drum|percussion|kit|noise|dpcm/i.test(track.name || "") || (track.notes || []).some(n => n.ch === 9);
 }

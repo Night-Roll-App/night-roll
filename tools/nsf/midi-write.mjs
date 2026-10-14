@@ -4,7 +4,7 @@
 // frames, so raw times sit ±1 frame off the grid — hardware clock jitter,
 // not music. Musical analysis wants notes on the beats they mean. Raw frame
 // data stays intact upstream (events/.notes internals) if ever needed.
-import { guessKit } from "../kit-guess.mjs";
+import { guessKit, uniqueGmKeys } from "../kit-guess.mjs";
 export const PPQ = 480; // exported: tools/vgm/midi-write.mjs builds on the same track encoder
 
 // snap a beat position to the nearest 16th (k/4) or triplet slot (k/6 —
@@ -320,19 +320,6 @@ export function ccFromSeries(sr, d, ticksPerFrame) {
 // (tools/kit-guess.mjs, the rules PS1/N64 drums use — backbeat = snare,
 // downbeat = kick, busiest = hats), then any key two samples share moves to
 // the next free percussion key, so distinct samples never merge.
-const GM_PERC = Array.from({length: 47}, (_, k) => 35 + k); // 35…81
-// guessKit's result (voices with .gm) -> Map(key -> a General MIDI key unique
-// in the song): any key two voices share moves to the next free percussion
-// key, so distinct sounds never merge. `taken` pre-reserves keys already in use.
-function uniqueGmKeys(voices, taken = new Set()) {
-  const out = new Map();
-  for (const v of [...voices].sort((a, b) => a.key - b.key)) {
-    let p = v.gm;
-    if (taken.has(p)) p = GM_PERC.find(k => !taken.has(k) && k > v.gm) || GM_PERC.find(k => !taken.has(k));
-    taken.add(p); out.set(v.key, p);
-  }
-  return out;
-}
 function dpcmKeys(notes, beatTicks, barBeats) {
   const by = new Map();
   for (const n of notes) { if (!by.has(n.sample)) by.set(n.sample, {key: n.sample, notes: []}); by.get(n.sample).notes.push({tick: n.t}); }
@@ -389,6 +376,7 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const prog = e.prog !== undefined ? e.prog // a chip's own timbre number (Game Boy wave table, capture v2)
       : e.srcn !== undefined && e.srcn <= 127 && e.drum == null && e.noiseClock === undefined && !e.kit ? e.srcn : undefined;
     const tname = e.kit && melodic.has(e.channel) ? e.channel + " kit" : null;
+    if (tname) byCh[key] = byCh[key] || []; // the voice's own track keeps its slot (first appearance, kit or melody) — no track number moves
     const dest = tname ? (kitTracks.get(tname) || kitTracks.set(tname, {voice: e.voice, notes: []}).get(tname)).notes : (byCh[key] = byCh[key] || []);
     dest.push({t, d, p, v, duty: e.duty, ve, ...(env ? {env} : {}), ...(bend ? {bend} : {}), ...(duties ? {duties} : {}),
       ...(pan ? {pan} : {}), ...(rev ? {rev} : {}), ...(prog !== undefined ? {prog} : {}),
@@ -595,13 +583,14 @@ export function writeSongMidi(song) {
     for (const n of tr.notes || []) {
       if (n.gone) continue;
       const ch = chOf(n);
+      const kp = tr.kitFrom && n.pKit !== undefined ? n.pKit : n.p; // "Not drums" shows the captured keys in memory; the file keeps the GM keys
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
       if (n.duties) for (const q of n.duties) if (q.t > 0 && q.t < n.d) { evs.push({t: n.t + q.t, o: 0.5, d: [0xB0 | ch, 70, q.v & 3]}); lastDuty = q.v & 3; } // duty changes inside the note (see trackBytes)
       if (preds && preds.has(n)) evs.push({t: n.t, o: 0.9, d: [0xB0 | ch, 84, preds.get(n)]}); // glide link (see glidePredKeys)
-      evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
-      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
-      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]}); // volume shape (see trackBytes)
-      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
+      evs.push({t: n.t, o: 1, d: [0x90 | ch, kp & 127, (n.v || 80) & 127]});
+      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, kp & 127, n.ve & 127]});
+      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, kp & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]}); // volume shape (see trackBytes)
+      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, kp & 127, 64]});
     }
     evs.sort((a, b) => a.t - b.t || a.o - b.o);
     const body = [];

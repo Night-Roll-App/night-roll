@@ -106,6 +106,7 @@ import { renameTrack } from "../ui/trackbar.js";
 import { updateTrackGains } from "../audio/engine.js";
 import { transposeTrack } from "../model/selection.js";
 import { VOICES } from "../audio/voices.js";
+import { hearTrackSound } from "../audio/voices.js";
 import { PATCH_PRESETS } from "../model/patch.js";
 import { PATCH_PARAMS } from "../model/patch.js";
 import { PATCH_WAVES } from "../model/patch.js";
@@ -1296,6 +1297,39 @@ export function askDeleteTrack(a) {
   saveDraft();
   renderTrackbar(); buildScoreModel(); updateTrackGains(); computeSongEnd(); draw();
   return {ok: true, note: "deleted \"" + name + "\"" + (live ? " (" + live + " note" + (live === 1 ? "" : "s") + ")" : "") + " — one undo brings it back"};
+}
+// hear_sound (voice menu ▶ Hear sound): plays one note of the named track in the
+// game's own voice. Reads and plays; changes nothing, so it works on any song.
+export async function askHearSound(a) {
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  const name = S.song.tracks[ti].name || "track " + (ti + 1);
+  if (S.song.tracks[ti].kind === "audio") throw new Error(name + " is a recording — it has no game sound to hear");
+  const ok = await hearTrackSound(ti);
+  return {ok, note: ok ? "playing one note of " + name : "nothing played for " + name + " — " + (S.song.tracks[ti].notes.some(n => !n.gone) ? "game sound still loading — try again in a moment" : "no notes on it")};
+}
+// mark_drums (voice menu: These are drums / Not drums): the track: directive's
+// `drums` field — the song's own mark, which sets the track aside from (or into)
+// the analysis. Annotation-only, so it works on a capture too (the .mid is
+// never touched); one undo step, as every track: change is.
+export function askMarkDrums(a) {
+  if (!S.song) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only here");
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  const tr = S.song.tracks[ti];
+  const name = tr.name || "track " + (ti + 1);
+  if (tr.kind === "audio") throw new Error(name + " is a recording — it has no drum kit to mark");
+  const v = String(a.drums === undefined || a.drums === null ? "" : a.drums).trim().toLowerCase();
+  let mark;
+  if (["yes", "true", "1", "on", "drums"].includes(v)) mark = true;
+  else if (["no", "false", "0", "off", "not"].includes(v)) mark = false;
+  else if (["auto", "clear", "none", "reset"].includes(v)) mark = undefined;
+  else throw new Error("drums must be yes (these are drums), no (not drums) or auto (back to what the file says)");
+  tr.drumsMark = mark;
+  saveTrackDir(ti);
+  buildScoreModel(); updateTrackGains(); draw();
+  return {ok: true, note: "\"" + name + "\" " + (mark === true ? "marked: these are drums" : mark === false ? "marked: not drums" : "back to auto (what the file says)") + " — one undo takes it back"};
 }
 // keep_that (🎹 Keep that — src/input/record.js's captureKeep, the SAME
 // rolling 60s buffer and recTakeNote/recCommitTake path ● Record itself

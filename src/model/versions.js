@@ -44,7 +44,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
   return tracks.map(tr => {
     const o = {name: tr.name,
       notes: tr.notes.filter(n => !n.gone).map(n => {
-        const on = {t: n.t, d: n.d, p: n.p, v: n.v};
+        const on = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums" shows the captured keys in memory (pKit holds the file's GM key); a draft keeps the file's
         if (n.ch !== undefined) on.ch = n.ch; // drum channel survives edit re-saves
         if (n.duty !== undefined) on.duty = n.duty;
         if (n.ve !== undefined) on.ve = n.ve;
@@ -55,6 +55,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
       })};
     if (tr.midiPan !== undefined) o.midiPan = tr.midiPan; // the .mid's own CC10 (a chip capture's channel) — writeMidi re-emits it
     if (tr.kit) o.kit = true;
+    if (tr.kitFrom) o.kitFrom = tr.kitFrom; // the capture's kitmap (GM key -> the game's captured key)
     if (tr.ctl && tr.ctl.length) o.ctl = ctlCopy(tr).ctl; // channel controllers (bend, CC7/11/64/1/91, pan events, program)
     if (tr.offset) o.offset = tr.offset; // tools/sounding.mjs
     if (tr.srcIndex !== undefined) o.srcIndex = tr.srcIndex; // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

@@ -13,6 +13,7 @@ import { keyNameAt } from "../model/song.js";
 import { beatTicks } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
 import { trackIsDrums } from "../model/grid.js";
+import { kitKeyOf } from "../model/grid.js";
 import { trackAudible } from "../audio/engine.js";
 import { pitchName } from "../theory/chords.js";
 import { spellPc } from "../theory/chords.js";
@@ -154,7 +155,7 @@ export function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three d
       const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
       if (!ns.length) continue;
       const row = "bar " + (b + 1) + ": " + ns.map(n =>
-        fmt((n.t - b * bt) / qt + 1) + " " + (trackIsDrums(ti) ? String(n.p) : pitchName(n.p, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null))) + " " + fmt(n.d / qt)).join(", ");
+        fmt((n.t - b * bt) / qt + 1) + " " + (trackIsDrums(ti) ? String(kitKeyOf(tr, n.p)) : pitchName(n.p, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null))) + " " + fmt(n.d / qt)).join(", ");
       if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
       rows.push(row); size += row.length + 1;
     }
@@ -194,7 +195,7 @@ export function askSpanNotesCompact(t0, t1, maxChars) {
       let lastOct = null, lastDur = null; // reset each row: "the previous note in the row" never reaches across bars
       const toks = ns.map(n => {
         const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
-        if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
+        if (drums) { const tok = beat + "#" + kitKeyOf(tr, n.p) + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
         const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
         let tok = beat + cls;
         if (oct !== lastOct) tok += oct;
@@ -228,7 +229,7 @@ export function askBarRow(tr, ti, b, bt, qt, est) {
   let lastOct = null, lastDur = null; // reset every bar — never carries across bars, same rule as askSpanNotesCompact
   const toks = ns.map(n => {
     const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
-    if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
+    if (drums) { const tok = beat + "#" + kitKeyOf(tr, n.p) + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
     const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
     let tok = beat + cls;
     if (oct !== lastOct) tok += oct;

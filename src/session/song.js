@@ -10,6 +10,8 @@ import { wmRestoreOpen } from "../ui/wm.js";
 import { prof } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
+import { guessKit } from "../model/kit-guess.js";
+import { uniqueGmKeys } from "../model/kit-guess.js";
 import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
@@ -139,7 +141,11 @@ export function finalizeNotesImpl() {
     S.song.tempos = bakeTempos(S.song.baseTempos, S.rollnotes, S.song.ppq);
   }
   if (S.song) { // track: directives — per-track voice & color, synced like any note
-    S.song.tracks.forEach(tr => { delete tr.voice; delete tr.color; delete tr.vol; delete tr.pan; }); // pan: the directive's; the .mid's own stays in midiPan
+    S.song.tracks.forEach(tr => {
+      delete tr.voice; delete tr.color; delete tr.vol; delete tr.pan; // pan: the directive's; the .mid's own stays in midiPan
+      delete tr.drumsMark; delete tr.kitPlay; // These are drums / Not drums: the directive's, re-applied below
+      for (const n of tr.notes) if (n.pKit !== undefined) { n.p = n.pKit; delete n.pKit; } // "Not drums" showed the captured keys; back to the file's GM keys
+    });
     S.trackState.forEach(st => { st.muted = false; st.solo = false; st.hidden = false; }); // the directives below say otherwise
     S.laneOverride = null; // "lane: N" directive — the kit lane's pinned row, synced like any note
     { // duplicate track: directives accumulate (upsert removes a SYNCED copy
@@ -160,8 +166,27 @@ export function finalizeNotesImpl() {
       if (n.trackdir.color) S.song.tracks[ti].color = n.trackdir.color;
       if (n.trackdir.vol !== undefined) S.song.tracks[ti].vol = n.trackdir.vol;
       if (n.trackdir.pan !== undefined) S.song.tracks[ti].pan = n.trackdir.pan;
+      if (n.trackdir.drums !== undefined) S.song.tracks[ti].drumsMark = n.trackdir.drums;
       if (S.trackState[ti]) Object.assign(S.trackState[ti], {muted: !!n.trackdir.mute, solo: !!n.trackdir.solo, hidden: !!n.trackdir.hide});
     }
+    // Drums marks (docs/plans/2026-10-13-snes-drums-and-track-tools.md §2.4, D3/D4). The .mid is never edited:
+    //  - "Not drums" on a capture-detected kit track (tr.kitFrom, the file's kitmap) shows the GAME's captured keys in
+    //    memory: n.p = kitFrom[n.p], the GM key kept on n.pKit — both writers emit n.pKit, so a publish is byte-identical;
+    //  - "These are drums" on a track the file does not call a kit plays guessed GM sounds: tr.kitPlay maps each
+    //    distinct pitch to a key (guessKit over its onsets — derived here, stored nowhere).
+    for (const tr of S.song.tracks) {
+      if (tr.drumsMark === false && tr.kitFrom) {
+        for (const n of tr.notes) if (tr.kitFrom[n.p] !== undefined) { n.pKit = n.p; n.p = tr.kitFrom[n.p]; }
+      } else if (tr.drumsMark === true && !tr.kit && tr.kind !== "audio") {
+        const by = new Map();
+        for (const n of tr.notes) { if (n.gone) continue; if (!by.has(n.p)) by.set(n.p, {key: n.p, notes: []}); by.get(n.p).notes.push({tick: n.t}); }
+        if (by.size) {
+          const gm = uniqueGmKeys(guessKit([...by.values()], {beatTicks: beatTicks(), barBeats: effTs()[0] * 4 / effTs()[1]}));
+          tr.kitPlay = gm;
+        }
+      }
+    }
+    S._laneTop = null; S._kitSlots = null; S._has32 = null; // a mark moves a track in or out of the kit lane
     applyAudioDirs(); // audio: directives — kind/clip derived onto named tracks the same way
     updateTrackGains(); // live nodes follow re-applied faders immediately
     renderTrackbar();
@@ -465,6 +490,7 @@ export function openDraftDoc(d, key) {
     tracks: d.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // so previewing a draft sounds the way the publish will
       ...(tr.kit ? {kit: true} : {}),
+      ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), // the capture's kitmap: GM key -> the game's captured key
       ...ctlCopy(tr), // channel controllers, likewise
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

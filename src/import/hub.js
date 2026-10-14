@@ -430,6 +430,7 @@ export function localMidiOpen(parsed, name) {
     tracks: parsed.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 in the dropped file — survives to the republished copy
       ...(tr.kit ? {kit: true} : {}),
+      ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), // the capture's kitmap: GM key -> the game's captured key
       ...ctlCopy(tr), // its bends, volumes, sustain, reverb sends, programs too
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits
@@ -689,6 +690,7 @@ export function initHub1() {
         tracks: parsed.tracks.map(tr => ({name: tr.name,
           ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
           ...(tr.kit ? {kit: true} : {}),
+      ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), // the capture's kitmap: GM key -> the game's captured key
           ...ctlCopy(tr),
           ...(tr.offset ? {offset: tr.offset} : {}),
           ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits

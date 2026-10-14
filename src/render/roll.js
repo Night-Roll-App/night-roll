@@ -2,6 +2,7 @@ import { S, prof } from "../state.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { annoInLasso } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
+import { kitKeyOf } from "../model/grid.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
 import { scoreTickToX } from "./score.js";
@@ -26,7 +27,7 @@ export function kitSlots() { // visible lane rows: the trio always, plus whateve
   if (S._kitSlots) return S._kitSlots;
   const used = new Set();
   if (S.song) S.song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti)) for (const n of tr.notes) if (!n.gone) used.add(n.p);
+    if (trackIsDrums(ti)) for (const n of tr.notes) if (!n.gone) used.add(kitKeyOf(tr, n.p));
   });
   S._kitSlots = DRUM_SLOTS.filter((p, i) => i < 3 || used.has(p));
   return S._kitSlots;
@@ -58,7 +59,7 @@ export function inKitLane(row) { return songHasDrums() && row <= kitLaneTop() + 
 // -1: ⋯ row taps route through the lane gesture
 export function noteRow(ti, p) { // display row: drums live in the docked lane
   if (!trackIsDrums(ti)) return p;
-  const i = kitSlots().indexOf(p);
+  const i = kitSlots().indexOf(kitKeyOf(S.song.tracks[ti], p));
   return kitLaneTop() - (i < 0 ? 0 : i);
 }
 export function drumStepImpl(p, d) { // vertical moves walk the VISIBLE kit slots, not semitones

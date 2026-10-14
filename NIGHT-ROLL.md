@@ -1700,6 +1700,23 @@ track: pulse1 voice=sine color=#0aa2c0
                      other — song truth, not device preference. Playback
                      only; the .mid is never touched. Tracks matched by
                      name (or trN index). Removing it reverts to defaults.
+                     `drums=1` / `drums=0` (2026-10-13; JSON `"drums": true|false`):
+                     "These are drums" / "Not drums" from the voice menu —
+                     the song's own say on whether the track is a kit,
+                     beating its name and channel 10 everywhere
+                     (`trackIsDrums` / `factsIsDrums` / query-lib
+                     `isDrumTrack` read `tr.drumsMark`, set by finalizeNotes).
+                     Absent = what the .mid says. The .mid is NEVER edited by
+                     a mark: a hand-marked track that is not a kit keeps its
+                     captured pitches and plays guessed GM sounds
+                     (`tr.kitPlay`: guessKit over its distinct pitches,
+                     derived at load, stored nowhere; Josh's plan Q-B); "Not
+                     drums" on a capture-detected kit track (`tr.kitFrom`,
+                     the file's `kitmap`) shows the game's captured keys in
+                     memory (`n.p`, the GM key kept on `n.pKit`; drafts, Save
+                     As and both writers emit the GM key, so a publish is
+                     byte-identical) and `scheduleNote` no longer drums it
+                     (`n.ch === 9 && drumsMark !== false`). One undo step.
 
 [3.1]
 chop: start        ← non-destructive trim, RAW capture coordinates (the one
@@ -3534,6 +3551,22 @@ dropped this track silent) falls to the synth, same as today. An
 explicit voice or a drum track still plays the synth, same gate as the
 sequence-chip path above. Test: "tap a note on a REGISTER chip song …"
 in tests/night-roll.test.mjs.
+
+### ▶ Hear sound (2026-10-13; voice menu, Ask `hear_sound {track}`)
+
+`hearTrackSound(ti)` (src/audio/voices.js, beside `previewNote`) plays ONE
+note of the track in the game's voice: the track's most common pitch, taken
+from a real (not gone, not `added`) note so its tick resolves the instrument.
+Unlike a tap it does NOT skip drum tracks. Paths: PS1/N64 `chipPreviewBuffer`
+with that note's tick; SNES/NES/GB `chipNoteSlice` (a `voiceN kit` track
+through `chipSourceName`); a track with an explicit `game:`/`sf2:`/synth
+voice plays that voice; a track that is not from a capture plays its synth
+voice. A capture whose game sound is not ready (render loading, stream chunk
+not cached, Genesis) plays NOTHING and the status line reads "game sound
+still loading — try again in a moment" (Josh's plan Q-E: no synth stand-in, it
+would mislead drum identification). SNES with no render yet needs plan step 5
+(a worker `previewOne` for spc). The slice player is `playChipSlice`, shared
+with `previewNote`.
 
 ## Game instrument libraries (2026-09-28)
 

@@ -139,6 +139,11 @@ byte-identical. Legacy-text form: `songnote(question): <title>`. A kind
 this build doesn't know is kept and written back; a build older than kinds
 carries the field as an unknown one (`extra`) and writes it back too.
 
+A track entry may carry the optional boolean `"drums"` (2026-10-13): `true` =
+"These are drums", `false` = "Not drums"; absent = what the .mid says. It is
+the song's own mark and never changes the .mid. An older build keeps it as an
+unknown field and writes it back.
+
 A track's `"voice"` may be a **patch** since 2026-10-06 (patches v1,
 NIGHT-ROLL.md "Patches") — no new type and no new field: the patch is
 the voice string itself, so every reader, writer, store and undo path

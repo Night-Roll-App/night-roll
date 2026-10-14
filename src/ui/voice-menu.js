@@ -14,6 +14,7 @@ import { VOICE_GROUPS } from "../audio/voices.js";
 import { songRegionRight } from "./chrome.js";
 import { trackToggle } from "./trackbar.js";
 import { saveVoices } from "./trackbar.js";
+import { saveTrackDir } from "./trackbar.js";
 import { sfFileFor } from "../audio/voices.js";
 import { ensureAudio } from "../audio/engine.js";
 import { sfDecode } from "../audio/voices.js";
@@ -67,6 +68,7 @@ import { stop } from "../audio/transport.js";
 import { play } from "../audio/transport.js";
 import { stretchEnsureAll } from "../audio/clips.js";
 import { PATCH_PRESETS } from "../model/patch.js";
+import { hearTrackSound } from "../audio/voices.js";
 import { PATCH_WAVES } from "../model/patch.js";
 import { PATCH_PARAMS } from "../model/patch.js";
 import { isPatchVoice } from "../model/patch.js";
@@ -177,8 +179,33 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
   close.textContent = "✕";
   close.setAttribute("aria-label", "Close voice menu");
   close.addEventListener("click", () => menu.classList.remove("on"));
-  head.append(hlbl, vmhide, close);
+  // ▶ Hear sound: ONE note of this track in the game's own voice (voices.js hearTrackSound) —
+  // how you tell what a part is when the notes alone don't say (a drum hit at a pitch)
+  const vmhear = document.createElement("button");
+  vmhear.id = "vmhear";
+  vmhear.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
+  vmhear.textContent = "▶ Hear sound";
+  vmhear.setAttribute("aria-label", "Hear sound — " + (tr.name || "track " + (ti + 1)));
+  vmhear.title = "Play one note of this track in the game's own voice";
+  vmhear.addEventListener("click", () => { hearTrackSound(ti); });
+  head.append(hlbl, vmhide, ...(tr.kind === "audio" ? [] : [vmhear]), close);
   menu.appendChild(head);
+  if (tr.kind !== "audio") { // the song's own say on whether this track is a kit: These are drums / Not drums (a track: annotation, never the .mid); tap the checked one again for auto
+    const drow = document.createElement("div");
+    drow.id = "vmdrums";
+    drow.style.cssText = "display:flex;gap:6px;padding:2px 10px";
+    for (const [label, val] of [["These are drums", true], ["Not drums", false]]) {
+      const db = document.createElement("button");
+      db.style.cssText = "min-height:32px;padding:2px 10px;flex:1";
+      db.classList.toggle("active", tr.drumsMark === val);
+      db.textContent = (tr.drumsMark === val ? "✓ " : "") + label;
+      db.setAttribute("aria-pressed", String(tr.drumsMark === val));
+      db.title = tr.drumsMark === val ? "Tap again to go back to what the file says" : "Mark this track: " + label.toLowerCase();
+      db.addEventListener("click", () => { tr.drumsMark = tr.drumsMark === val ? undefined : val; saveTrackDir(ti); buildScoreModel(); draw(); buildVoiceMenu(ti); });
+      drow.appendChild(db);
+    }
+    menu.appendChild(drow);
+  }
   const cur = tr.voice || "auto";
   const curLabel = cur === "auto" ? "auto: " + autoVoiceLabel(ti)
     : cur.startsWith("game:") ? gameVoiceLabel(cur)

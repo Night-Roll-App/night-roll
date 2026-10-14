@@ -81,7 +81,7 @@ export function saveTrackDir(ti) { // upsert this track's "track:" directive —
   const name = tr.name || "tr" + (ti + 1);
   const st = S.trackState[ti] || {};
   const d = {name, voice: tr.voice, color: tr.color, vol: tr.vol !== 1 ? tr.vol : undefined, pan: tr.pan,
-             mute: !!st.muted, solo: !!st.solo, hide: !!st.hidden};
+             mute: !!st.muted, solo: !!st.solo, hide: !!st.hidden, drums: tr.drumsMark};
   // one undo step (DAW review, 2026-09-29: a stray fader drag or voice tap
   // couldn't be taken back): the directives as they were, before this change
   pushUndo({kind: "anno", json: annoSnapshot()});

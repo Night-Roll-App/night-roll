@@ -127,7 +127,7 @@ that error class. They report what IS — never a chord name, key inference,
 or note classification. Findings stay Josh's.
 
     node tools/at.mjs <song> <bar.beat> [--span <bar.beat>]  # sounding notes; onset vs SUSTAINS; a shaped note lists its volume points (shape +beats→level)
-    node tools/span.mjs <song> <from> <to>                   # events + pitch-class SET (drums excluded)
+    node tools/span.mjs <song> <from> <to>                   # events + pitch-class SET (drums excluded — a track marked "These are drums" / "Not drums" (track: drums=1|0) follows the mark)
     node tools/pitch-census.mjs <song> [--track T]           # PCs present/ABSENT, duration-weighted
     node tools/song-diff.mjs <old.mid> <new.mid>             # per-track added/removed/changed
     node tools/annotations.mjs <song> [--type T]             # resolved dump + anomaly flags

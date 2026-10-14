@@ -74,7 +74,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5"]);
+  "item", "done", "ai", "title", "kind", "roman", "no5", "drums"]);
 export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
 // A chord band's own fields beside its symbol (Josh, Terminal #228/#230):
 // `roman` — the Roman numeral HE entered, a string as typed; `no5` — his
@@ -111,7 +111,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     case "key": n.text = "key: " + (j.key || "") + att; break;
     case "timesig": n.text = "timesig: " + (j.timesig || "") + att; break;
     case "tempo": n.text = "tempo: " + j.bpm + att; break;
-    case "track": n.text = trackDirText({name: j.track || "", voice: j.voice, color: j.color, vol: j.vol, pan: j.pan, mute: j.mute, solo: j.solo, hide: j.hide}) + att; break;
+    case "track": n.text = trackDirText({name: j.track || "", voice: j.voice, color: j.color, vol: j.vol, pan: j.pan, mute: j.mute, solo: j.solo, hide: j.hide, drums: j.drums === true || j.drums === 1 ? true : j.drums === false || j.drums === 0 ? false : undefined}) + att; break;
     case "loop": n.text = "loop: " + (j.loop || "") + att; break;
     case "audio": n.text = audioDirText({track: j.track || "", file: j.file || "", offset: j.offset || 0, len: j.len || null, local: !!j.local}) + att; break;
     case "chop": n.text = "chop: " + (j.chop || ""); break;
@@ -211,6 +211,7 @@ export function deriveNoteTypes(out) {
         if (k === "vol") d.vol = Math.min(1.5, Math.max(0, parseFloat(v)));
         if (k === "pan") d.pan = Math.min(1, Math.max(-1, parseFloat(v))); // −1 left … +1 right; overrides the .mid's CC10
         if (k === "mute" || k === "solo" || k === "hide") d[k] = v === "1"; // saved with the song, the DAW way (2026-09-29)
+        if (k === "drums" && (v === "1" || v === "0")) d.drums = v === "1"; // These are drums (1) / Not drums (0); absent = what the .mid says
       }
       n.trackdir = d;
       n.text = trackDirText(d);
@@ -390,6 +391,7 @@ export function noteToJSONBase(n) {
       if (k === "vol") j.vol = parseFloat(v);
       if (k === "pan") j.pan = parseFloat(v);
       if ((k === "mute" || k === "solo" || k === "hide") && v === "1") j[k] = true;
+      if (k === "drums" && (v === "1" || v === "0")) j.drums = v === "1";
     }
     return withNote(j);
   }
@@ -484,7 +486,8 @@ export function serializeRollnotesStamped(stamp) { return serializeNotesList(S.r
 export function trackDirText(d) {
   return "track: " + d.name + (d.voice && d.voice !== "auto" ? " voice=" + d.voice : "") + (d.color ? " color=" + d.color : "") +
     (d.vol !== undefined && isFinite(d.vol) ? " vol=" + d.vol : "") + (d.pan !== undefined && isFinite(d.pan) ? " pan=" + d.pan : "") +
-    (d.mute ? " mute=1" : "") + (d.solo ? " solo=1" : "") + (d.hide ? " hide=1" : "");
+    (d.mute ? " mute=1" : "") + (d.solo ? " solo=1" : "") + (d.hide ? " hide=1" : "") +
+    (d.drums === true ? " drums=1" : d.drums === false ? " drums=0" : "");
 }
 
 export function isDirective(n) { // anything that isn't a plain text note

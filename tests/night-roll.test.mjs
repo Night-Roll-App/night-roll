@@ -873,6 +873,42 @@ test("a \"voiceN kit\" track rides on voiceN's render: chipHas/chipNoteSlice res
   run(`chipStopSrcs(); chip.key = null; chip.buffers = null; audio = null;`);
 });
 
+test("▶ Hear sound: a captured track plays ONE note in the game's voice — a SNES kit track slices voiceN's render (not drumHit), a PS1 kit track asks the worker with the kit note's tick, and with no render it plays nothing and says so", async () => {
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; };
+  run(`createComposition(120, 4, 4); ensureAudio();
+       S.songKey = "albums/imports/snes-x/a.mid";
+       song.tracks = [{name: "voice3", notes: [{t: 0, d: 240, p: 60, v: 100}]},
+         {name: "voice3 kit", kit: true, notes: [{t: 480, d: 120, p: 38, v: 90, ch: 9}, {t: 960, d: 120, p: 38, v: 90, ch: 9}, {t: 1440, d: 120, p: 42, v: 90, ch: 9}]}];
+       chip.key = songKey; chip.lead = 2; chip.pcm = null; chip.stream = null; chipWorker = null;
+       chip.buffers = {voice3: {duration: 100, _tag: "v3"}}; chip.buffersCtx = audio;
+       globalThis.__drum = 0; globalThis.__sched = 0; globalThis.__starts = []; globalThis.__status = [];
+       drumHit = () => { globalThis.__drum++; };
+       scheduleNote = () => { globalThis.__sched++; };
+       audio.createBufferSource = () => ({buffer: null, connect(t) { return t; }, disconnect() {}, start(w, o, d) { globalThis.__starts.push({offset: o, dur: d, tag: this.buffer && this.buffer._tag}); }, stop() {}});`);
+  run(`setInfo = m => { globalThis.__status.push(m); };`);
+  // SNES: the most common pitch (38) at its first real note (tick 480 = 0.5 s) sliced out of voice3's render
+  assert.equal(await settle(run(`hearTrackSound(1)`)), true);
+  assert.deepEqual(val(`globalThis.__starts.map(s => [s.tag, s.offset])`), [["v3", 2.5]], "voice3's buffer at lead 2 + 0.5 s");
+  assert.equal(val(`globalThis.__drum`), 0, "a drum track reaches the game path, not drumHit");
+  assert.equal(val(`globalThis.__sched`), 0);
+  // PS1: the worker is asked with the kit note's tick (the template note resolves the instrument)
+  run(`song.tracks = [{name: "ch 8 prog 7", kit: true, notes: [{t: 480, d: 120, p: 38, v: 90, ch: 9}, {t: 960, d: 120, p: 38, v: 90, ch: 9}]}];
+       chip.buffers = {"ch 8 prog 7": {duration: 100, _tag: "ps1"}}; globalThis.__starts = []; globalThis.__asked = null;
+       chipWorker = {__key: songKey, postMessage(m) { globalThis.__asked = {tick: m.preview.tick, midi: m.preview.midi, track: m.preview.track}; const req = m.preview.req; setTimeout(() => this.onmessage({data: {preview: {req, pcm: new Float32Array(50), sampleRate: 44100}}}), 0); }, terminate() {}};
+       chipWorker.onmessage = e => { const m = e.data; const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); };`);
+  await settle(run(`hearTrackSound(0)`));
+  assert.deepEqual(val(`globalThis.__asked`), {tick: 480, midi: 38, track: "ch 8 prog 7"});
+  assert.equal(val(`globalThis.__drum`), 0);
+  // no render yet: nothing plays, the status line says why — no synth stand-in
+  run(`chipWorker = null; chip.key = null; chip.buffers = null; globalThis.__starts = []; globalThis.__status = [];`);
+  await settle(run(`hearTrackSound(0)`));
+  assert.equal(val(`globalThis.__starts.length`), 0);
+  assert.equal(val(`globalThis.__sched + globalThis.__drum`), 0, "no synth note, no synth drum");
+  assert.deepEqual(val(`globalThis.__status`), ["game sound still loading — try again in a moment"]);
+  run(`chip.key = null; audio = null; chipPreviewCache.clear();`);
+});
+
 test("writeMidi round-trip: CC10 pan, CC70 duty, aftertouch (ve) and per-note channel survive", () => {
   installSong();
   const back = val(`(() => {
@@ -3123,7 +3159,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Hear sound", "These are drums", "Not drums", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "File → 🔗 Share link", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10245,6 +10281,71 @@ test("M silences but still shows, H hides but still plays, and the song remember
   assert.equal(val(`noteToJSON(resolveNote({b1: 1, q1: 1, text: "track: bass mute=1 solo=1"})).mute`), true, "the JSON file keeps it");
 });
 
+test("These are drums / Not drums: the track: directive's `drums` field round-trips text <-> JSON <-> v2, an older build keeps it, and the mark refreshes trackIsDrums / the facts / the Ask context, with one undo", () => {
+  installSong();
+  // text <-> JSON
+  assert.equal(val(`noteToJSON(resolveNote({b1: 1, q1: 1, text: "track: voice5 drums=1"})).drums`), true);
+  assert.equal(val(`noteToJSON(resolveNote({b1: 1, q1: 1, text: "track: voice5 drums=0"})).drums`), false);
+  assert.equal(val(`"drums" in noteToJSON(resolveNote({b1: 1, q1: 1, text: "track: voice5 vol=1"}))`), false, "absent = auto");
+  assert.equal(val(`trackDirText({name: "voice5", drums: true})`), "track: voice5 drums=1");
+  assert.equal(val(`trackDirText({name: "voice5", drums: false, mute: true})`), "track: voice5 mute=1 drums=0");
+  assert.equal(val(`trackDirText({name: "voice5"})`), "track: voice5");
+  const j = val(`parseRollnotesJSON(JSON.stringify({format: "night-roll-annotations", version: 2, notes: [{at: [1, 1], type: "track", track: "voice5", drums: false}, {at: [1, 1], type: "track", track: "voice7", drums: true, futureField: 3}]}))`);
+  assert.equal(j[0].trackdir.drums, false, "JSON -> directive");
+  assert.equal(j[1].trackdir.drums, true);
+  assert.equal(val(`noteToJSON(parseRollnotesJSON(JSON.stringify({notes: [{at: [1, 1], type: "track", track: "voice7", drums: true, futureField: 3}]}))[0]).futureField`), 3, "a field this build does not know is written back");
+  // the live mark
+  run(`songKey = "albums/test/drums.mid"; rollnotes = [];
+       song.tracks = [{name: "voice5", notes: [{t: 0, d: 120, p: 67, v: 90}, {t: 480, d: 120, p: 51, v: 90}, {t: 960, d: 120, p: 67, v: 90}, {t: 1440, d: 120, p: 51, v: 90}]},
+                      {name: "voice1", notes: [{t: 0, d: 480, p: 60, v: 90}]}];
+       trackState = [{muted: false, solo: false, hidden: false}, {muted: false, solo: false, hidden: false}]; finalizeNotes();`);
+  assert.equal(val(`trackIsDrums(0)`), false, "an unmarked G4/D#3 track is melodic");
+  run(`globalThis.__undo0 = editUndo.length; song.tracks[0].drumsMark = true; saveTrackDir(0);`);
+  assert.equal(val(`trackIsDrums(0)`), true, "These are drums");
+  assert.equal(val(`editUndo.length - __undo0`), 1, "one undo step");
+  assert.match(val(`rollnotes.find(n => n.trackdir).text`), /^track: voice5 drums=1$/, "saved as the annotation");
+  assert.equal(val(`factsDocFromState().tracks[0].drums`), true, "the facts see it");
+  assert.equal(val(`factsTracks(factsDocFromState()).map(t => t.name).join()`), "voice1", "a marked track leaves the facts' default track set (no chord readout from it)");
+  assert.match(val(`askSpanNotesCompact(0, 1920, 4000)`) || "", /voice5 \[drums\]/, "[drums] in the Ask context");
+  assert.equal(val(`song.tracks[0].kitPlay instanceof Map`), true, "a hand mark on a non-kit track guesses its sounds at play time");
+  assert.ok(val(`[...song.tracks[0].kitPlay.values()].every(k => k >= 35 && k <= 81)`), "GM percussion keys");
+  assert.deepEqual(val(`song.tracks[0].notes.map(n => n.p)`), [67, 51, 67, 51], "the notes themselves keep their pitches");
+  run(`editUndoPop();`);
+  assert.equal(val(`trackIsDrums(0)`), false, "one undo takes the mark back");
+  assert.equal(val(`song.tracks[0].kitPlay === undefined`), true);
+  // a reload applies the directive again
+  run(`rollnotes = parseRollnotesJSON(JSON.stringify({notes: [{at: [1, 1], type: "track", track: "voice5", drums: true}]})).map(resolveNote); finalizeNotes();`);
+  assert.equal(val(`trackIsDrums(0)`), true, "the song remembers it");
+  run(`rollnotes = []; finalizeNotes();`);
+  assert.equal(val(`trackIsDrums(0)`), false, "no directive, no mark");
+});
+
+test("Not drums on a capture-detected kit track shows the game's captured keys, stops the drumming, never changes what is written; hearing/lasso skip a marked-drums track", async () => {
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: this test stubs drumHit/playSynthVoice
+  run(`createComposition(120, 4, 4); ensureAudio();`);
+  run(`songKey = "albums/test/kit.mid"; rollnotes = [];
+       song.tracks = [{name: "voice5", kit: true, kitFrom: {38: 67, 36: 51}, notes: [{t: 0, d: 120, p: 38, v: 90, ch: 9}, {t: 480, d: 120, p: 36, v: 90, ch: 9}]}, {name: "voice1", notes: [{t: 0, d: 480, p: 60, v: 90}]}];
+       trackState = [{muted: false, solo: false, hidden: false}, {muted: false, solo: false, hidden: false}]; finalizeNotes();`);
+  assert.equal(val(`trackIsDrums(0)`), true, "a kit track is drums by itself");
+  const bytes = () => val(`Array.from(writeMidi({ppq: song.ppq || 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: song.tracks.map(t => ({...t}))}))`);
+  const before = bytes();
+  run(`song.tracks[0].drumsMark = false; saveTrackDir(0);`);
+  assert.equal(val(`trackIsDrums(0)`), false, "Not drums");
+  assert.deepEqual(val(`song.tracks[0].notes.map(n => n.p)`), [67, 51], "the game's own captured keys are shown");
+  assert.deepEqual(bytes(), before, "and the written bytes are the GM keys, untouched");
+  assert.deepEqual(val(`draftTracks(song.tracks)[0].notes.map(n => n.p)`), [38, 36], "a draft keeps the file's keys too");
+  run(`globalThis.__d = 0; globalThis.__s = 0; drumHit = () => { globalThis.__d++; };`);
+  run(`scheduleNote(0, {p: 67, v: 90, ch: 9, t: 0, d: 120}, audio.currentTime + 0.01, 0.2);`);
+  assert.equal(val(`globalThis.__d`), 0, "Not drums beats the channel-10 short-circuit");
+  run(`song.tracks[0].drumsMark = undefined; saveTrackDir(0);`);
+  assert.deepEqual(val(`song.tracks[0].notes.map(n => n.p)`), [38, 36], "clearing the mark restores the GM keys");
+  assert.equal(val(`song.tracks[0].notes.some(n => n.pKit !== undefined)`), false);
+  // marked drums leave the lasso transpose (selection.js skips trackIsDrums tracks)
+  run(`song.tracks[1].drumsMark = true; saveTrackDir(1);`);
+  assert.equal(val(`trackIsDrums(1)`), true);
+  assert.equal(val(`song.tracks.map((t, ti) => trackIsDrums(ti) ? t.name : null).filter(Boolean).join()`), "voice5,voice1");
+});
+
 test("⌨ Terminal tab: Send queues it on the bridge; a failure gives the words back; the terminal's notes land in this tab", async () => {
   installSong();
   run(`songKey = "albums/test/term.mid"; localStorage.removeItem(ASK_TERMINAL_KEY); askSetMode("terminal");
@@ -10544,21 +10645,23 @@ test("a capture's kit group keeps channel 10 through every app write: the \"kit:
     const pans = (src.match(/midiPan: tr\.midiPan|o\.midiPan = tr\.midiPan/g) || []).length;
     const kits = (src.match(/\(tr\.kit \? \{kit: true\} : \{\}\)|if \(tr\.kit\) o\.kit = true/g) || []).length;
     assert.ok(pans > 0 && kits === pans, f + ": " + pans + " midiPan copies, " + kits + " kit copies");
+    const froms = (src.match(/\(tr\.kitFrom \? \{kitFrom: tr\.kitFrom\} : \{\}\)|if \(tr\.kitFrom\) o\.kitFrom = tr\.kitFrom/g) || []).length;
+    assert.equal(froms, kits, f + ": every kit copy carries the kitmap (kitFrom) too — a dry run lost it in the draft once (2026-10-13)");
   }
   installSong();
   const CAP = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [
     {name: "ch 1 prog 3", midiPan: 0.25, notes: [{t: 0, d: 480, p: 60, v: 90, ch: 0}]},
-    {name: "ch 8 prog 7", kit: true, midiPan: -0.5, notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 480, d: 120, p: 38, v: 90, ch: 9}]}]};
+    {name: "ch 8 prog 7", kit: true, kitFrom: {36: 72, 38: 67}, midiPan: -0.5, notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 480, d: 120, p: 38, v: 90, ch: 9}]}]};
   const kitTrack = bytes => JSON.parse(run(`JSON.stringify((() => { const t = parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true}).tracks[1];
-    return {name: t.name, kit: t.kit, chs: t.notes.map(n => n.ch), ps: t.notes.map(n => n.p)}; })())`));
-  const want = {name: "ch 8 prog 7", kit: true, chs: [9, 9], ps: [36, 38]};
+    return {name: t.name, kit: t.kit, kitFrom: t.kitFrom, chs: t.notes.map(n => n.ch), ps: t.notes.map(n => n.p)}; })())`));
+  const want = {name: "ch 8 prog 7", kit: true, kitFrom: {36: 72, 38: 67}, chs: [9, 9], ps: [36, 38]};
   assert.deepEqual(kitTrack(writeSongMidi(CAP)), want, "the capture's own bytes");
   // parse → the capture's draft map (src/import/capture.js) → openDraftDoc → draftDoc → both writers
   app.context._capBytes = [...writeSongMidi(CAP)];
   const d = val(`(() => { const p = parseMidi(new Uint8Array(_capBytes).buffer, {trust: true});
     const draft = {savedStamp: 0, dirty: true, title: "kit test", capture: true, ppq: p.ppq, timesig: p.timesig || [4, 4], tempos: p.tempos,
       tracks: p.tracks.map(tr => ({name: tr.name, ...(tr.offset ? {offset: tr.offset} : {}), ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
-        ...(tr.kit ? {kit: true} : {}), ...ctlCopy(tr), notes: tr.notes.map(nt => ({t: nt.t, d: nt.d, p: nt.p, v: nt.v, ...(nt.ch !== undefined ? {ch: nt.ch} : {})}))}))};
+        ...(tr.kit ? {kit: true} : {}), ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), ...ctlCopy(tr), notes: tr.notes.map(nt => ({t: nt.t, d: nt.d, p: nt.p, v: nt.v, ...(nt.ch !== undefined ? {ch: nt.ch} : {})}))}))};
     openDraftDoc(draft, "midi/kit-test.mid");
     const dd = draftDoc(false);
     return {ppq: dd.ppq, timesig: dd.timesig, tempos: dd.tempos, tracks: dd.tracks}; })()`);
@@ -12467,7 +12570,7 @@ test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].
   // routed through document.getElementById — the vm harness's getElementById
   // only ever resolves ids it has itself handed out (see tests/harness.mjs),
   // so (like the chip's own M/S/H spans) it's reached positionally: the
-  // voice menu's head row is [name label, #vmhide, ✕ close].
+  // voice menu's head row is [name label, #vmhide, ▶ Hear sound, ✕ close].
   const vmhide = () => a.run(`document.getElementById("voicemenu").children[0].children[1]`);
   assert.equal(vmhide().getAttribute("aria-pressed"), "false");
   vmhide().dispatchEvent({type: "click"});

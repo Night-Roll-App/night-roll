@@ -107,11 +107,16 @@ export function secDepthCap() { // device pref, per song: how many section level
 export function trackIsDrums(ti) {
   const tr = S.song.tracks[ti];
   if (tr.kind === "audio") return false; // "drums-di.wav" is a take, not a kit
+  if (tr.drumsMark !== undefined) return tr.drumsMark; // These are drums (true) / Not drums (false): the track: directive's `drums`, finalizeNotes — beats the name and channel 10
   if (tr.drums === undefined)
     // "noise" = the NES noise channel — percussion by hardware definition
     tr.drums = /drum|percussion|kit|noise|dpcm/i.test(tr.name) || tr.notes.some(x => x.ch === 9);
   return tr.drums;
 }
+
+// A hand-marked drum track keeps its captured pitches (G4…); tr.kitPlay (finalizeNotes: guessKit over its
+// distinct pitches, derived at load and stored nowhere) maps each to the GM drum key it plays and shows as.
+export function kitKeyOf(tr, p) { return tr.kitPlay ? (tr.kitPlay.get(p) ?? p) : p; }
 
 export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
 // Position words — one formatter for every readout (LCD, note status line,

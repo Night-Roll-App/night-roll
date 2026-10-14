@@ -432,6 +432,7 @@ export async function publishSong(key, h, report) {
              tracks: d.tracks.map(tr => ({name: tr.name,
                ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
                ...(tr.kit ? {kit: true} : {}),
+      ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), // the capture's kitmap: GM key -> the game's captured key
                ...ctlCopy(tr),
                ...(tr.offset ? {offset: tr.offset} : {}),
                ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits

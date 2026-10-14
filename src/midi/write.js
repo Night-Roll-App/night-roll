@@ -110,6 +110,7 @@ const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
     for (const n of tr.notes) {
       if (n.gone) continue;
       const ch = chOf(n);
+      const kp = tr.kitFrom && n.pKit !== undefined ? n.pKit : n.p; // "Not drums" shows the captured keys in memory; the file keeps the GM keys
       // duty (chip timbre) rides as CC70 ahead of the note it changes on —
       // parseMidi reads it back; other DAWs just see a sound controller
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
@@ -118,14 +119,14 @@ const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
       // glide link: CC84 = the key this note continues from, just before its on
       const pr = preds && preds.get(n);
       if (pr) evs.push({t: n.t, o: 0.9, d: [0xB0 | ch, 84, pr.p & 127]});
-      evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
+      evs.push({t: n.t, o: 1, d: [0x90 | ch, kp & 127, (n.v || 80) & 127]});
       // decay target as polyphonic aftertouch right after the on — parseMidi
       // reads it back as the note's end volume; DAWs see key pressure
-      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
+      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, kp & 127, n.ve & 127]});
       // volume shape: more aftertouch at ticks INSIDE the note, level =
       // r × velocity (parseMidi divides back); points past a shortened end drop
-      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, n.p & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]});
-      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
+      if (n.env) for (const q of n.env) if (q.t > 0 && q.t < n.d) evs.push({t: n.t + q.t, o: 1.5, d: [0xA0 | ch, kp & 127, Math.max(0, Math.min(127, Math.round(q.r * ((n.v || 80) & 127))))]});
+      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, kp & 127, 64]});
     }
     evs.sort((a, b) => a.t - b.t || a.o - b.o); // offs (o=0) before duty (0.5) before controllers (0.75) before the glide link (0.9) before ons (1) before aftertouch (1.5) at the same tick
     const body = [];

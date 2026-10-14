@@ -197,12 +197,13 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
     tracks: S.song.tracks.map((tr, ti) => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // a capture's own CC10 — Save As shouldn't silently strip it
       ...(tr.kit ? {kit: true} : {}),
+      ...(tr.kitFrom ? {kitFrom: tr.kitFrom} : {}), // the capture's kitmap: GM key -> the game's captured key
       ...ctlCopy(tr), // nor its bends, volumes, sustain, reverb sends
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
       notes: (S.song.rawNotes ? S.song.rawNotes[ti] : tr.notes) // raw: chop stays a view
         .filter(n => !n.gone).map(n => {
-          const o = {t: n.t, d: n.d, p: n.p, v: n.v};
+          const o = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums": the file's GM key, not the captured one shown in memory
           if (n.ch !== undefined) o.ch = n.ch;
           if (n.duty !== undefined) o.duty = n.duty;
           if (n.ve !== undefined) o.ve = n.ve;

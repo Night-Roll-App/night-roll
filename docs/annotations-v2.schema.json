@@ -99,6 +99,7 @@
         "mute": { "type": "boolean", "description": "type: track." },
         "solo": { "type": "boolean", "description": "type: track." },
         "hide": { "type": "boolean", "description": "type: track." },
+        "drums": { "type": "boolean", "description": "type: track — true: 'These are drums', false: 'Not drums'; absent = what the .mid says. Never changes the .mid." },
         "loop": { "type": "string", "description": "type: loop — the jump target as 'bar.beat'." },
         "file": { "type": "string", "description": "type: audio — the recorded clip's filename." },
         "offset": { "type": "number", "minimum": 0, "description": "type: audio — seconds into the file where this piece starts." },

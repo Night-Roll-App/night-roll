@@ -33,6 +33,8 @@ import { askSongPath } from "./tools.js";
 import { askSetTrack } from "./tools.js";
 import { askAddTrack } from "./tools.js";
 import { askDeleteTrack } from "./tools.js";
+import { askHearSound } from "./tools.js";
+import { askMarkDrums } from "./tools.js";
 import { askKeepThat } from "./tools.js";
 import { askAlbum } from "./tools.js";
 import { askSongFile } from "./tools.js";
@@ -232,6 +234,14 @@ export const ASK_ACTIONS = [
    example: "Delete the empty track.", say: "Say which track.",
    spec: "delete_track {track}: removes a track by name (never the track selected in the app — an unknown or ambiguous name is an error naming the song's own tracks) — the SAME ✕ Delete track the voice menu offers. Refused when it is the song's last track (a song needs at least one), saying so. Only when the user explicitly asks; one undo step; own compositions only.",
    run(a) { return askDeleteTrack(a).note; }},
+  {name: "hear_sound", args: "track", gloss: "play one note of a track in the game's own voice",
+   example: "Let me hear the voice5 sound.", quiet: true, say: "Say which track.",
+   spec: "hear_sound {track}: plays ONE note of the named track (its most common pitch, taken from a real note) in the GAME's own voice — the SAME ▶ Hear sound the track's voice menu has. PS1/N64 songs ask the live renderer, SNES/NES/Game Boy slice the song's own game-sound render; a track with its own game/soundfont/synth voice plays that voice. If the game sound is not ready it plays nothing and says so (try again in a moment) — never a synth stand-in. An unknown or ambiguous name is an error naming the song's tracks. Changes nothing in the song.",
+   async run(a) { return (await askHearSound(a)).note; }},
+  {name: "mark_drums", args: "track drums", gloss: "mark a track as drums, not drums, or back to auto (one undo)",
+   example: "These are drums on voice5.", say: "Say the track and yes (these are drums), no (not drums) or auto.",
+   spec: "mark_drums {track, drums}: drums is yes (\"These are drums\"), no (\"Not drums\") or auto (back to what the file says) — the SAME mark the track's voice menu has, saved as the track: annotation's drums field (the .mid is never touched; works on a capture too). A track marked as drums leaves the chord readout, the facts and the lasso transpose and plays as a kit; \"Not drums\" on a detected kit track shows the game's own keys again. An unknown or ambiguous track name is an error naming the song's tracks. One undo.",
+   run(a) { return askMarkDrums(a).note; }},
   {name: "keep_that", args: "track?", gloss: "write the last ~60s you noodled on the keys, at the cursor (one undo)",
    example: "Keep that on pulse 1.", say: "Say which track if it isn't the one already selected.",
    spec: "keep_that {track?}: writes whatever was just played on the on-screen keys or a MIDI keyboard — the rolling buffer 🎹 Keep that already keeps, up to the last 60 seconds — onto the named track (or the one already selected, if track is omitted) at the playhead, timed against the song's tempo exactly as the button does. One undo step, exactly like a take from Record. Refused while ● Record is running, on an audio track, or when nothing was played; own editable songs only.",

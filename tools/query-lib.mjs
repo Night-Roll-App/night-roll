@@ -57,6 +57,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
       rollnotesVersion: rnVersion, rollnotesReadOnly: rnReadOnly, rollnotesOrigin: rnOrigin,
       tracks: song.tracks.map(tr => ({name: tr.name || "",
         ...(tr.kit ? {kit: true} : {}), // the capture's "kit:1" marker (isDrumTrack)
+        ...(tr.drumsMark !== undefined ? {drumsMark: tr.drumsMark} : {}), // These are drums / Not drums: the song's track: directive (finalizeNotes)
         notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v, ch: n.ch,
           ...(shapePoints(n).length ? {shape: shapePoints(n).map(q => [+(q.t / song.ppq).toFixed(2), Math.round(shapeLevel(n, q))])} : {})}))})), // a volume shape's points: [beats after the onset, level 0-127]
       // visibleNotes (model/rollnotes.js): the harness runs in Learning, so
@@ -83,7 +84,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
   return doc;
 }
 
-export const isDrumTrack = tr => tr.kit === true || /drum|percussion|kit|noise|dpcm/i.test(tr.name || ""); // tr.kit: a capture kit group named "ch 8 prog 7"
+export const isDrumTrack = tr => tr.drumsMark !== undefined ? tr.drumsMark : tr.kit === true || /drum|percussion|kit|noise|dpcm/i.test(tr.name || ""); // tr.kit: a capture kit group named "ch 8 prog 7"
 export const PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 export const pitchName = p => PC_NAMES[p % 12] + (Math.floor(p / 12) - 1);
 

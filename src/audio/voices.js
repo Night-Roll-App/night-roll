@@ -4,6 +4,7 @@ import { pluckBuffer } from "./engine.js";
 import { makeOsc } from "./engine.js";
 import { setInfo } from "../hooks.js";
 import { albumMetaFor } from "../model/provenance.js";
+import { isCaptureKey } from "../model/provenance.js";
 import { titleCompare } from "../model/catalog.js";
 import { vaultFetch } from "./chip.js";
 import { idbSf2Get } from "../platform/storage.js";
@@ -16,6 +17,7 @@ import { chip } from "./chip.js";
 import { chipHas } from "./chip.js";
 import { chipSourceName } from "./chip.js";
 import { trackIsDrums } from "../model/grid.js";
+import { kitKeyOf } from "../model/grid.js";
 import { drumHit } from "./engine.js";
 import { prof } from "../state.js";
 import { ensureAudio } from "./engine.js";
@@ -980,7 +982,8 @@ export function scheduleNote(ti, n, when, durSec) {
   // nor uses the oscillator/sample path below (see "game instrument voices" above scheduleNote)
   const gvoice = S.song.tracks[ti] && S.song.tracks[ti].voice;
   if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
-  if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v, durSec); return; }
+  // "Not drums" (drumsMark === false) beats the channel-10 short-circuit: the mark alone must be able to stop a kit track from drumming
+  if ((n.ch === 9 && S.song.tracks[ti].drumsMark !== false) || trackIsDrums(ti)) { drumHit(ti, kitKeyOf(S.song.tracks[ti], n.p), when, n.v, durSec); return; }
   playSynthVoice(ti, n, when, durSec, noteVoice(ti, n));
 }
 scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
@@ -993,6 +996,69 @@ export function tapSoundSession(ms = 2000) {
   audioSessionType("playback");
   clearTimeout(tapSoundSession.ambientTimer);
   tapSoundSession.ambientTimer = setTimeout(() => { if (!S.playing && !S.albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, ms);
+}
+// One slice of the song's rendered track buffer (chipNoteSlice), through the
+// same path chipStart uses: [chip.pan panner, if this track was downmixed to
+// mono] -> trackGain(ti), so volume/pan/mute match playback. A lone extra
+// source — never touches chip.srcs, so a tap mid-playback can't fight the
+// playing sources.
+function playChipSlice(ti, tr, slice) {
+  const src = S.audio.createBufferSource();
+  src.buffer = slice.buf;
+  const g = S.audio.createGain(); // ~5ms fade in/out: a slice starts/ends mid-waveform, not at a zero-crossing
+  const when = S.audio.currentTime + 0.01;
+  const fade = Math.min(0.005, slice.dur / 2);
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(1, when + fade);
+  g.gain.setValueAtTime(1, Math.max(when + fade, when + slice.dur - fade));
+  g.gain.linearRampToValueAtTime(0, when + slice.dur);
+  src.connect(g);
+  let node = g;
+  if (chip.pan && chip.pan[chipSourceName(tr.name)] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[chipSourceName(tr.name)]; g.connect(p); node = p; }
+  node.connect(trackGain(ti));
+  src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
+  src.start(when, slice.offset, slice.dur);
+}
+// "▶ Hear sound" (voice menu): ONE note of this track in the GAME's voice.
+// The note is the track's most common pitch, taken from a real captured
+// note (its tick resolves the instrument actually playing there). Unlike a
+// tap (previewNote) it does not skip drum tracks — hearing the game's drum is
+// the point. Paths: PS1/N64 ask the live worker (chipPreviewBuffer); SNES/
+// NES/GB slice the song's own render (chipNoteSlice, kit tracks through
+// chipSourceName); a track with an explicit game:/sf2:/synth voice plays
+// that voice; a track that is not from a capture plays its synth voice. A
+// capture whose game sound is not ready plays NOTHING — no synth stand-in, it
+// would mislead drum identification (Josh's plan Q-E). Returns true if a
+// sound was started.
+export async function hearTrackSound(ti) {
+  const tr = S.song && S.song.tracks[ti];
+  if (!tr || tr.kind === "audio") return false;
+  const live = tr.notes.filter(n => !n.gone && !n.added);
+  const pool = live.length ? live : tr.notes.filter(n => !n.gone);
+  if (!pool.length) { setInfo("no notes on this track to hear"); return false; }
+  const count = new Map();
+  for (const n of pool) count.set(n.p, (count.get(n.p) || 0) + 1);
+  let pitch = pool[0].p;
+  for (const [p, c] of count) if (c > count.get(pitch) || (c === count.get(pitch) && p < pitch)) pitch = p;
+  const rep = pool.find(n => n.p === pitch);
+  ensureAudio();
+  tapSoundSession();
+  await resumeAudio();
+  openMaster();
+  const explicit = typeof tr.voice === "string" && tr.voice !== "auto";
+  if (!explicit && live.length && isCaptureKey(S.songKey)) {
+    const loaded = chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream);
+    if (loaded && chipHas(tr.name)) {
+      const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, rep.t, S.song.ppq);
+      if (buf) { const s = S.audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(S.audio.currentTime + 0.01); return true; }
+      const slice = chipNoteSlice(tr, pitch, rep.t);
+      if (slice) { playChipSlice(ti, tr, slice); return true; }
+    }
+    setInfo("game sound still loading — try again in a moment");
+    return false;
+  }
+  scheduleNote(ti, {p: pitch, v: 90, ch: tr.kit === true ? 9 : 0, t: rep.t, d: rep.d, _preview: true}, S.audio.currentTime + 0.01, 0.5);
+  return true;
 }
 export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
   ensureAudio();
@@ -1011,26 +1077,7 @@ export async function previewNote(ti, pitch, tick, durSec = 0.3) { // tick: the 
     // synth (Josh, FF4 SNES "Cry in Sorrow (part 1)", 2026-09-30: "tapping a
     // note plays the generic synth, not the game sound").
     const slice = chipNoteSlice(tr, pitch, tick);
-    if (slice) {
-      const src = S.audio.createBufferSource();
-      src.buffer = slice.buf;
-      const g = S.audio.createGain(); // ~5ms fade in/out: a slice starts/ends mid-waveform, not at a zero-crossing
-      const when = S.audio.currentTime + 0.01;
-      const fade = Math.min(0.005, slice.dur / 2);
-      g.gain.setValueAtTime(0, when);
-      g.gain.linearRampToValueAtTime(1, when + fade);
-      g.gain.setValueAtTime(1, Math.max(when + fade, when + slice.dur - fade));
-      g.gain.linearRampToValueAtTime(0, when + slice.dur);
-      src.connect(g);
-      // same path chipStart uses from here down: [chip.pan panner, if this
-      // track was downmixed to mono] -> trackGain(ti), so volume/pan/mute match playback
-      let node = g;
-      if (chip.pan && chip.pan[chipSourceName(tr.name)] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[chipSourceName(tr.name)]; g.connect(p); node = p; }
-      node.connect(trackGain(ti));
-      src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
-      src.start(when, slice.offset, slice.dur); // a lone extra source — never touches chip.srcs, so a tap mid-playback can't fight the playing sources
-      return;
-    }
+    if (slice) { playChipSlice(ti, tr, slice); return; }
   }
   scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, S.audio.currentTime + 0.01, durSec); // a patch's sheet holds the note long enough to hear its vibrato and release
 }
