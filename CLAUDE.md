@@ -85,6 +85,11 @@ the bridge — an Ask session; see the hard rule below.)
 
 ## Hard rules
 
+- **Decide; never park work on a question** (Josh #430-#432, all apps, every
+  session — Front Desk and Workers). Pick the sensible default, build, ship,
+  and say what you picked ("picked X — say if you want Y"); he vetoes later.
+  Only truly blocking things wait for him: editing his songs, deleting stored
+  data. A plan's QUESTIONS list always carries the default the builder uses.
 - **The ✦ Ask (bridge/iPad) session never implements** (Josh, 2026-09-27,
   "that should be a rule, forever"): no code edits, commits, or pushes
   from a session started by tools/claude-bridge.mjs. It answers,
