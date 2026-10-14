@@ -817,12 +817,16 @@ Q14. (Analysis sheet, plan §6.1 — shipped with a default) The sixteen prompts
     stay; only the wording changes if you want it to. Example: "Phrase
     pairing — question and answer, or a changed ending" could just be
     "Phrase pairing".
-Q15. (Analysis sheet, plan §6.2 — NOT built yet, S3) "File under" chips in
-    the annotation editor, so a bar note can be listed under Cadences /
-    Motifs etc.? One more row in the editor you use constantly; without it
-    the sheet lists only sections and chords by type and everything else
-    goes through the tick + answer box. Default if you say nothing: build
-    it after you've used the sheet for a week.
+Q15. DONE 2026-10-14 (decided by the triage default, "decide and ship") --
+    "File under" chips built: a row under the text box of a note, chord,
+    section or key (Sections / Phrases / Pairing / Chords / Numerals /
+    Cadences / Bass / Tension / Degrees / Shape / Motifs; nothing lit unless
+    tapped, tap again to clear). A filed note is listed under that prompt in
+    the Analysis sheet and stays where it is on the roll; the sheet's + note
+    on a located prompt opens the editor with its chip lit; unfiled bar notes
+    wait in the "UNFILED BAR NOTES" fold; Ask add/edit_annotation take
+    `topic`. Say if you want different chip wording or the song-note chips
+    (queued (a) in the 2026-10-06 song-notes entry).
 Q16. (Analysis sheet, plan §6.3 — shipped with a default) The one count the
     sheet shows unasked is "▸ N chord bands" (your own bands, same number
     ☰ All notes shows). Keep it, or hide every number except inside Check

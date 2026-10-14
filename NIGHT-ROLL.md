@@ -2978,7 +2978,17 @@ annotations of that type (`studyTypeMatch`: section bands under
 Sections; key lines inline and chord bands behind a "▸ N chord bands"
 fold under Key and chords) as ☰ All notes rows — tap one and the cursor
 jumps to its bar, the view follows, its editor opens (`studyJumpTo`).
-His plain bar notes sit in a last "BAR NOTES · N" fold. Each group's
+"File under" (Q15, S3): `topic` is an optional string on a note, chord, section or key
+(`n.topic`; `"harmony.cadences"` etc. — a `STUDY_GROUPS` prompt id; the located
+prompts only, `FILE_UNDER` in model/rollnotes.js is the chip table, a test holds
+it to the prompt ids). Written by the note editor's chip row `#ntopic` (nothing lit
+by default, a second tap clears it, `editorTopic()`/`setEditorTopic()`), carried
+like `ai` is (`jsonToRawNote`/`noteToJSON`, `saveLocalNotes`, `annoSnapshot` via
+noteToJSON); the sheet's `+ note` on an untyped located prompt opens the editor with
+`{topic}` pre-lit. `studyGroups` lists a prompt's `auto` as its type match PLUS notes
+whose `topic` is its id. Ask: `add_annotation`/`edit_annotation` take `topic`
+(`askTopicArg`). Filed notes leave the last fold; an id this build does not know
+stays there. His plain unfiled bar notes sit in a last "UNFILED BAR NOTES · N" fold. Each group's
 "What to look for ▸" fold (folded by default — Josh, Terminal #144)
 clones that group's `data-topic` `<dd>` out of help/help.html's
 analysis section through `ensureHelpLoaded()` — one source, offline via

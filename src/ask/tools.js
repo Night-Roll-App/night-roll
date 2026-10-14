@@ -3,6 +3,7 @@ import { playSec } from "../audio/transport.js";
 import { setHearMidi } from "../audio/chip.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
+import { FILE_UNDER } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { noteToJSON } from "../model/rollnotes.js";
@@ -219,6 +220,15 @@ export function askChordExtrasArgs(a, prev) {
   if (a.roman !== undefined && a.roman !== null) x.roman = String(a.roman).trim() || undefined;
   if (a.no5 !== undefined && a.no5 !== null) x.no5 = (a.no5 === true || a.no5 === 1 || /^(true|yes|on|1)$/i.test(String(a.no5).trim())) || undefined;
   return x;
+}
+// "File under" as dictated (a prompt id from the Analysis sheet, "" clears); only the kinds the editor's chip row offers
+export function askTopicArg(a, kind, prev) {
+  if (a.topic === undefined || a.topic === null) return prev ? prev.topic : undefined;
+  const id = String(a.topic).trim();
+  if (!id) return undefined;
+  if (!FILE_UNDER.some(f => f.id === id)) throw new Error("topic must be one of: " + FILE_UNDER.map(f => f.id).join(", "));
+  if (!["note", "chord", "section", "key"].includes(kind)) throw new Error("topic (File under) goes on a note, chord, section or key");
+  return id;
 }
 export function askNoteKind(n) { // the add_annotation "kind" this existing note was written as
   if (n.section) return "section";
@@ -449,6 +459,8 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   fresh.added = true;
   if (fresh.chord) Object.assign(fresh, askChordExtrasArgs(a, null));
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation (kind: chord)");
+  const topic = askTopicArg(a, kind, null);
+  if (topic) fresh.topic = topic;
   const isLoop = n => n.loopTo !== undefined || /^loop:/i.test(n.text || "");
   if (isLoop(fresh)) S.rollnotes = S.rollnotes.filter(n => !(n.added && isLoop(n))); // one loop point per song, as the editor does (loopTo is derived later, in finalizeNotes)
   dropSupersededBy(fresh);
@@ -482,6 +494,8 @@ export function askEditAnnotation(a) {
   fresh.added = true;
   if (fresh.chord) Object.assign(fresh, askChordExtrasArgs(a, n)); // kept unless he said otherwise, like the comment
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation");
+  const topic = askTopicArg(a, kind, n);
+  if (topic) fresh.topic = topic;
   if (kind === "key") dropLocalKeyAt(bar, beat); // anchor-level: only a key at the (possibly new) exact beat is replaced
   retireEdited(n); // tombstones a synced original (so it can't come back on reload) and drops it — same path the note editor's own Save uses on an edit
   const isLoop = nn => nn.loopTo !== undefined || /^loop:/i.test(nn.text || "");

@@ -38,6 +38,7 @@ import { trackShown } from "../render/roll.js";
 import { annoSnapshot } from "../model/edits.js";
 import { pushUndo } from "../model/edits.js";
 import { annoRestore } from "../model/rollnotes.js";
+import { FILE_UNDER } from "../model/rollnotes.js";
 import { putSongNote } from "../model/rollnotes.js";
 import { SONGNOTE_KINDS } from "../model/rollnotes.js";
 import { songNoteKind } from "../model/rollnotes.js";
@@ -210,6 +211,23 @@ export function renderTypeChips() {
 // a song note's kind (Josh, Terminal #225): one tap, no keyboard. The row's
 // data-v is the one source of truth; a kind from a newer build that this
 // one doesn't list shows as an extra chip so Save keeps it.
+// "File under" (Analysis sheet S3): optional, nothing lit unless tapped; the
+// row's data-v is the one source of truth, a second tap on the lit chip
+// clears it. An id from a newer build shows as an extra chip so Save keeps it.
+export function editorTopic() { return document.getElementById("ntopic").dataset.v || ""; }
+export function setEditorTopic(id) {
+  const row = document.getElementById("ntopic");
+  id = id || "";
+  row.dataset.v = id;
+  row.textContent = "";
+  const opts = !id || FILE_UNDER.some(f => f.id === id) ? FILE_UNDER : FILE_UNDER.concat([{id, label: id}]);
+  for (const f of opts) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.v = f.id; b.textContent = f.label;
+    b.classList.toggle("active", f.id === id); b.setAttribute("aria-pressed", String(f.id === id));
+    row.appendChild(b);
+  }
+}
 export function editorSongKind() { return document.getElementById("nsongkinds").dataset.v || "general"; }
 export function setEditorSongKind(kind) {
   const row = document.getElementById("nsongkinds"), id = songNoteKindInfo(kind).id;
@@ -282,6 +300,7 @@ export function applyEditorType() {
   document.getElementById("nfromrow").style.display = t === "song" ? "none" : ""; // a song note has no bar
   document.getElementById("nsongrow").style.display = t === "song" ? "" : "none";
   document.getElementById("nsongkindrow").style.display = t === "song" ? "" : "none";
+  document.getElementById("ntopicrow").style.display = t === "note" || t === "chord" || t === "section" || t === "key" ? "" : "none"; // the types a bar note can be listed under
   document.getElementById("nmic").style.display =
     SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
   document.getElementById("ntext").placeholder =
@@ -572,6 +591,7 @@ export function editorFill(note, presetType, opts) {
   document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
   document.getElementById("nsongtitle").value = type === "song" && note && note.songnote ? note.songnote.title : "";
   setEditorSongKind(note && note.songnote ? songNoteKind(note) : opts && opts.songKind || "general"); // opts.songKind: "+ question" opens a new one already marked
+  setEditorTopic(note ? note.topic : opts && opts.topic); // opts.topic: the Analysis sheet's + pre-lights its prompt
   if (type === "chord") setChordWidget(note ? note.text : "");
   if (type === "chord") setRomanWidget(note ? note.roman : "", note && note.no5);
   if (type === "key" && note) {
@@ -939,7 +959,7 @@ export function editorFollowing() {
   return !!(w && w.dock !== "bottom" && S.wm[w.dock] && S.wm[w.dock].ids.length > 1);
 }
 export function editorFieldsKey(withType) {
-  return JSON.stringify([withType ? editorType() : "", ED_FIELD_IDS.map(id => document.getElementById(id).value), editorSongKind(), chordSel, document.getElementById("nno5").classList.contains("active")]);
+  return JSON.stringify([withType ? editorType() : "", ED_FIELD_IDS.map(id => document.getElementById(id).value), editorSongKind(), editorTopic(), chordSel, document.getElementById("nno5").classList.contains("active")]);
 }
 export function editorSpanKey() { return ED_SPAN_IDS.map(id => document.getElementById(id).value).join(","); }
 export function editorMark() { S.edFollow.base = editorFieldsKey(S.edFollow.mode === "editing"); S.edFollow.baseSpan = editorSpanKey(); }
@@ -1263,6 +1283,7 @@ export function initNoteEditor4() {
     if (e.key === "Enter") { e.preventDefault(); document.getElementById("ntext").focus(); }
   });
   document.getElementById("ntypechips").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) pickEditorType(b.dataset.v); });
+  document.getElementById("ntopic").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) setEditorTopic(b.dataset.v === editorTopic() ? "" : b.dataset.v); });
   document.getElementById("nsongkinds").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) setEditorSongKind(b.dataset.v); });
   document.getElementById("ntext").addEventListener("input", () => { // a pause after typing, not every keystroke: "A" mid-word must not become a chord
     if (S.ntypePicked || editorType() !== "note") return;
@@ -1508,6 +1529,7 @@ export function initNoteEditor4() {
     } else {
       fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null, text, added: true};
     }
+    if (editorTopic() && ["note", "chord", "section", "key"].includes(type)) fresh.topic = editorTopic();
     dropSupersededBy(fresh);
     const made = resolveNote(fresh);
     S.rollnotes.push(made);

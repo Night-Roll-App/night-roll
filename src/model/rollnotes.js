@@ -74,7 +74,17 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5", "drums"]);
+  "item", "done", "ai", "title", "kind", "roman", "no5", "drums", "topic"]);
+// "File under" chips (docs/plans/2026-10-05-analysis-sheet.md §3b): the
+// Analysis-sheet prompts a bar note can be listed under — the located ones
+// (form, harmony, melody; the song-level prompts take an answer instead).
+// `id` is a STUDY_GROUPS prompt id (a test holds the two tables together).
+export const FILE_UNDER = [
+  {id: "form.sections", label: "Sections"}, {id: "form.phrases", label: "Phrases"}, {id: "form.pairing", label: "Pairing"},
+  {id: "harmony.chords", label: "Chords"}, {id: "harmony.numerals", label: "Numerals"}, {id: "harmony.cadences", label: "Cadences"},
+  {id: "harmony.bass", label: "Bass"}, {id: "harmony.tension", label: "Tension"},
+  {id: "melody.degrees", label: "Degrees"}, {id: "melody.shape", label: "Shape"}, {id: "melody.motifs", label: "Motifs"},
+];
 export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
 // A chord band's own fields beside its symbol (Josh, Terminal #228/#230):
 // `roman` — the Roman numeral HE entered, a string as typed; `no5` — his
@@ -126,6 +136,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     default: n.text = j.text || "";
   }
   if (j.ai && typeof j.ai === "object") n.ai = {model: String(j.ai.model || ""), at: String(j.ai.at || "")}; // ✦ Annotate this song: the AI-estimate tag rides the file, the local store and the undo snapshot (src/ask/annotate.js)
+  if (typeof j.topic === "string" && j.topic) n.topic = j.topic; // "File under": the Analysis-sheet prompt this note is listed under (an unknown id rides along, listed nowhere)
   for (const k of Object.keys(j)) {
     if (ROLLNOTES_FIELDS.has(k)) continue;
     (n.extra || (n.extra = {}))[k] = JSON.parse(JSON.stringify(j[k])); // a newer build's field (e.g. a future filing tag): carried, written back, never interpreted
@@ -352,6 +363,7 @@ export function noteToJSON(n) { // enriched-or-stashed note -> schema entry (tex
   const j = noteToJSONBase(n);
   if (n.extra) for (const k of Object.keys(n.extra)) if (!(k in j)) j[k] = n.extra[k]; // a newer build's fields, back where they were (jsonToRawNote)
   if (n.ai) j.ai = {model: String(n.ai.model || ""), at: String(n.ai.at || "")}; // the ✦ AI tag on every type alike (jsonToRawNote reads it back)
+  if (n.topic) j.topic = n.topic; // the "File under" tag, same reasoning (docs/plans/2026-10-05-analysis-sheet.md §3b)
   return j;
 }
 export function noteToJSONBase(n) {

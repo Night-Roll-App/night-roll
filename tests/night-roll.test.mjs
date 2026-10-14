@@ -3168,7 +3168,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Worker tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the Worker gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
-    "triangle (NES)",
+    "triangle (NES)", "File under",
     "says why: the drum it mostly is",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -13447,8 +13447,8 @@ test("analysis entries (S1): re-dictating a PUBLISHED answer survives a reload �
 test("forward compatibility (S1, review finding 2): an unknown field and an unknown TYPE survive parse → serialize verbatim — through the local store and undo too — and neither reads as an empty note", () => {
   installSong();
   const notes = [
-    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>", topic: "harmony.cadences"}, // a field a later build may add
-    {at: [2, 1], text: "a bar note", topic: "harmony.cadences"},
+    {at: [1, 1], type: "analysis", item: "summary.what", done: true, note: "<your summary>", flavor: "warm"}, // a field a later build may add
+    {at: [2, 1], text: "a bar note", flavor: "warm"},
     {at: [3, 1], to: [4, 4], type: "chord", chord: "G7", note: "c", shade: 2},
     {at: [5, 1], type: "motif", motif: "x", returns: [[7, 1], [9, 1]]}, // a whole type from a later build
     {at: [6, 1], type: "cadence", kind: "half"},
@@ -13458,9 +13458,9 @@ test("forward compatibility (S1, review finding 2): an unknown field and an unkn
   assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "every entry back as written");
   assert.deepEqual(val(`rollnotes.filter(n => n.opaque).map(n => ({text: n.text, dir: isDirective(n), undrawn: isUndrawnAnno(n), copy: isCopyableAnno(n)}))`),
     [{text: "motif: x", dir: true, undrawn: true, copy: false}, {text: "cadence:", dir: true, undrawn: true, copy: false}]);
-  assert.deepEqual(val(`rollnotes[1].extra`), {topic: "harmony.cadences"});
+  assert.deepEqual(val(`rollnotes[1].extra`), {flavor: "warm"});
   run(`rollnotes.forEach(n => { n.added = true; }); saveLocalNotes();`);
-  assert.deepEqual(JSON.parse(run(`localStorage.getItem(notesStoreKey())`)).find(n => n.text === "a bar note").extra, {topic: "harmony.cadences"}, "the unsynced store carries the unknown field");
+  assert.deepEqual(JSON.parse(run(`localStorage.getItem(notesStoreKey())`)).find(n => n.text === "a bar note").extra, {flavor: "warm"}, "the unsynced store carries the unknown field");
   run(`const __snap = annoSnapshot(); rollnotes = []; annoRestore(__snap);`);
   assert.deepEqual(JSON.parse(run(`serializeRollnotes()`)).notes, notes, "undo restores unknown fields and types verbatim");
   run(`rollnotes.forEach(n => { n.added = false; }); shiftAnchors(barTicks());`); // an unknown type has a real anchor: it moves with the music; the sheet entry does not
@@ -16161,4 +16161,72 @@ test("Publish turns Compare off for the open song — the saved copy is now your
   a.run(`cmp = {repo: song.tracks, showing: "mine", mine: null, diff: {tracks: [], added: 0, removed: 0, changed: 0}};`);
   await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
   assert.equal(a.run(`cmp`), null, "compare is off after Publish");
+});
+
+test("File under (Analysis sheet S3, Q15): FILE_UNDER ids are real prompts; topic round-trips through the file, lists a note under its prompt, and leaves the unfiled fold", () => {
+  installSong(); studyReset();
+  assert.deepEqual(val(`FILE_UNDER.filter(f => !STUDY_PROMPTS.some(p => p.id === f.id)).map(f => f.id)`), [], "every chip is a prompt id the sheet knows");
+  assert.ok(val(`FILE_UNDER.every(f => !f.id.startsWith("texture.") && !f.id.startsWith("summary."))`), "only the located prompts get a chip");
+  run(`rollnotes = parseRollnotes(${JSON.stringify(JSON.stringify({format: "night-roll-annotations", version: 2, song: "scratch", notes: [
+    {at: [3, 1], text: "<filed note>", topic: "harmony.cadences"},
+    {at: [5, 1], text: "<loose note>"},
+    {at: [7, 1], type: "chord", chord: "Am", topic: "melody.motifs"},
+    {at: [9, 1], text: "<odd tag>", topic: "future.thing"},
+  ]}))}).map(resolveNote); finalizeNotes();`);
+  const out = JSON.parse(run(`serializeRollnotes()`)).notes;
+  assert.deepEqual(out.map(n => n.topic), ["harmony.cadences", undefined, "melody.motifs", "future.thing"], "topic written back as read, unknown ids included");
+  const g = val(`(() => { const r = studyGroups(visibleNotes()); const p = Object.fromEntries(r.groups.flatMap(x => x.prompts).map(x => [x.id, x.auto.map(n => n.text)])); return {cad: p["harmony.cadences"], mot: p["melody.motifs"], chords: p["harmony.chords"], bar: r.barNotes.map(n => n.text)}; })()`);
+  assert.deepEqual(g.cad, ["<filed note>"], "a note filed under Cadences lists there");
+  assert.deepEqual(g.mot, ["Am"], "a chord band filed under Motifs lists there");
+  assert.deepEqual(g.chords, ["Am"], "and still lists under Key and chords by its type");
+  assert.deepEqual(g.bar, ["<loose note>", "<odd tag>"], "filed notes leave the unfiled fold; an id this build does not know stays visible there");
+  studyReset();
+});
+
+test("File under: the editor's chip row writes topic, a text-only edit keeps it, a second tap clears it, it survives the unsynced store, the sheet's + pre-lights it", () => {
+  installSong(); studyReset();
+  const chips = () => val(`[...document.getElementById("ntopic").children].filter(b => b.classList.contains("active")).map(b => b.dataset.v)`);
+  const tap = id => run(`(() => { const row = document.getElementById("ntopic"); const b = [...row.children].find(c => c.dataset.v === ${JSON.stringify(id)}); row.dispatchEvent({type: "click", target: {closest: () => b}}); })()`);
+  run(`openEditor(null, "note");`);
+  assert.deepEqual(chips(), [], "nothing lit by default");
+  assert.equal(val(`document.getElementById("ntopicrow").style.display`), "", "the row shows on a text note");
+  tap("harmony.cadences");
+  assert.deepEqual(chips(), ["harmony.cadences"]);
+  run(`document.getElementById("ntext").value = "half rest"; document.getElementById("nsave").click();`);
+  assert.equal(val(`rollnotes.filter(n => n.topic === "harmony.cadences").length`), 1, "Save wrote the tag");
+  assert.equal(JSON.parse(run(`serializeRollnotes()`)).notes.filter(n => n.topic === "harmony.cadences").length, 1, "and the file carries it");
+  assert.ok(val(`localStorage.getItem(notesStoreKey())`).includes('"topic":"harmony.cadences"'), "and the unsynced store, so a reload keeps it");
+  // reopen, change only the words: the tag stays
+  run(`openEditor(rollnotes.find(n => n.topic)); document.getElementById("ntext").value = "half rest, longer"; document.getElementById("nsave").click();`);
+  assert.equal(val(`rollnotes.filter(n => n.topic === "harmony.cadences" && n.text === "half rest, longer").length`), 1, "a text-only edit keeps the filing");
+  // a second tap on the lit chip clears it
+  run(`openEditor(rollnotes.find(n => n.topic));`);
+  assert.deepEqual(chips(), ["harmony.cadences"], "an existing note opens with its chip lit");
+  tap("harmony.cadences");
+  assert.deepEqual(chips(), []);
+  run(`document.getElementById("nsave").click();`);
+  assert.equal(val(`rollnotes.filter(n => n.topic).length`), 0, "un-filed");
+  // the sheet's + on an untyped located prompt opens the editor with the chip lit; a typed one does not
+  run(`rollnotes = []; finalizeNotes(); openStudySheet();`);
+  const add = studyFind(app.el("studyrows"), e => e.id === "studyprompt-harmony-cadences");
+  studyFind(add, e => typeof e.getAttribute === "function" && (e.getAttribute("aria-label") || "").startsWith("Add a note")).click();
+  assert.deepEqual(chips(), ["harmony.cadences"], "+ note beside Cadences pre-lights Cadences");
+  run(`document.getElementById("noteeditor").classList.remove("on"); closeStudySheet();`);
+  studyReset();
+});
+
+test("File under: Ask add_annotation / edit_annotation take topic; an unknown id or a wrong kind is refused", () => {
+  installSong(); studyReset();
+  run(`rollnotes = []; finalizeNotes();`);
+  run(`askAddAnnotation({kind: "note", text: "rest on V", bar: 4, beat: 1, topic: "harmony.cadences"});`);
+  assert.equal(val(`rollnotes[0].topic`), "harmony.cadences");
+  assert.throws(() => run(`askAddAnnotation({kind: "note", text: "x", bar: 5, beat: 1, topic: "nope"})`), /topic must be one of/);
+  assert.throws(() => run(`askAddAnnotation({kind: "tempo", text: "100", bar: 5, beat: 1, topic: "harmony.cadences"})`), /note, chord, section or key/);
+  run(`askEditAnnotation({bar: 4, beat: 1, text: "rest on V, twice"});`);
+  assert.equal(val(`rollnotes[0].topic`), "harmony.cadences", "an edit keeps the filing unless told otherwise");
+  run(`askEditAnnotation({bar: 4, beat: 1, text: "rest on V, twice", topic: "melody.motifs"});`);
+  assert.equal(val(`rollnotes[0].topic`), "melody.motifs", "re-filed");
+  run(`askEditAnnotation({bar: 4, beat: 1, text: "rest on V, twice", topic: ""});`);
+  assert.equal(val(`rollnotes[0].topic ?? null`), null, "un-filed");
+  studyReset();
 });

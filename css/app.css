@@ -776,10 +776,10 @@
   #noteeditor.edidle #nfromrow, #noteeditor.edidle #ntorow, #noteeditor.edidle #nchordbox,
   #noteeditor.edidle #nsectrow, #noteeditor.edidle #ntext, #noteeditor.edidle #nkeyrow,
   #noteeditor.edidle #ntemporow, #noteeditor.edidle #ntsrow, #noteeditor.edidle #nlooprow,
-  #noteeditor.edidle #nchoprow, #noteeditor.edidle #nsongrow, #noteeditor.edidle #nsongkindrow,
+  #noteeditor.edidle #nchoprow, #noteeditor.edidle #nsongrow, #noteeditor.edidle #nsongkindrow, #noteeditor.edidle #ntopicrow,
   #noteeditor.edro #nfromrow, #noteeditor.edro #ntorow, #noteeditor.edro #nchordbox, #noteeditor.edro #nsectrow,
   #noteeditor.edro #ntext, #noteeditor.edro #nkeyrow, #noteeditor.edro #ntemporow, #noteeditor.edro #ntsrow,
-  #noteeditor.edro #nlooprow, #noteeditor.edro #nchoprow, #noteeditor.edro #nsongrow, #noteeditor.edro #nsongkindrow {
+  #noteeditor.edro #nlooprow, #noteeditor.edro #nchoprow, #noteeditor.edro #nsongrow, #noteeditor.edro #nsongkindrow, #noteeditor.edro #ntopicrow {
     opacity: 0.45; pointer-events: none;
   }
   /* red, not a quiet line: a tap held behind it looked like a dead tap (Josh #258/#260) */

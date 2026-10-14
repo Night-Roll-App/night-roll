@@ -94,6 +94,13 @@ the device's unsynced store (`ff1roll-notes-<key>`) and the undo snapshot
 not AI. Readers that do not know the field ignore it (the schema's note
 object lists it; nothing else about the entry changes).
 
+One more optional string, added 2026-10-14 (Q15, "File under"), on a plain
+text note, chord, section or key: `"topic": "harmony.cadences"` — the id of an
+Analysis-sheet prompt (docs/plans/2026-10-05-analysis-sheet.md §3b). The note
+stays where it is on the roll; the sheet also lists it under that prompt.
+`noteToJSON` writes it, `jsonToRawNote` reads it, the unsynced store carries it;
+absent = not filed; an id a build does not know is kept and listed nowhere.
+
 One note type was added 2026-10-05 (S1 of docs/plans/2026-10-05-analysis-
 sheet.md): `"type": "analysis"` — one line per prompt on the song's
 Analysis sheet that has a tick or an answer, `"item"` the prompt's stored

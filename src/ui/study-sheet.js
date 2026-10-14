@@ -2,6 +2,7 @@ import { S } from "../state.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { visibleNotes } from "../model/rollnotes.js";
+import { FILE_UNDER } from "../model/rollnotes.js";
 import { songNoteKind } from "../model/rollnotes.js";
 import { songNoteKindInfo } from "../model/rollnotes.js";
 import { studyEntryFor } from "../model/rollnotes.js";
@@ -99,10 +100,12 @@ export function studyGroups(notes) {
   const list = notes || [];
   const groups = STUDY_GROUPS.map(g => Object.assign({}, g, {prompts: g.prompts.map(p => {
     const entry = list.find(n => n.study && n.study.item === p.id) || null;
-    const auto = p.type ? list.filter(n => studyTypeMatch(p.type, n)).sort((a, b) => a.start - b.start) : [];
+    // a prompt lists his notes of its type AND any note he filed under it ("File under" chips, §3b)
+    const auto = list.filter(n => (p.type && studyTypeMatch(p.type, n)) || n.topic === p.id).sort((a, b) => a.start - b.start);
     return Object.assign({group: g.id}, p, {auto, entry});
   })}));
-  const barNotes = list.filter(n => !isDirective(n) && !n.keypartial && !isUndrawnAnno(n)).sort((a, b) => a.start - b.start);
+  const filed = new Set(FILE_UNDER.map(f => f.id));
+  const barNotes = list.filter(n => !isDirective(n) && !n.keypartial && !isUndrawnAnno(n) && !filed.has(n.topic)).sort((a, b) => a.start - b.start);
   return {groups, barNotes};
 }
 // pure: the on-demand report. A prompt counts as covered by his tick, his
@@ -309,19 +312,20 @@ function studyPromptRow(p) {
     acts.appendChild(ans);
   }
   const addType = p.type || "note";
+  const filing = !p.type && FILE_UNDER.some(f => f.id === p.id); // an untyped located prompt: + opens a note with this prompt's chip already lit
   const add = document.createElement("button");
   add.className = "gadd";
   add.textContent = "+ " + addType;
-  add.setAttribute("aria-label", "Add a " + addType + " annotation at the cursor");
-  add.addEventListener("click", () => openEditor(null, addType)); // a normal bar annotation, on the roll; the sheet lists sections and chords by type
+  add.setAttribute("aria-label", "Add a " + addType + " annotation at the cursor" + (filing ? ", filed under this prompt" : ""));
+  add.addEventListener("click", () => openEditor(null, addType, filing ? {topic: p.id} : undefined)); // a normal bar annotation, on the roll; the sheet lists sections and chords by type
   acts.appendChild(add);
   head.append(tick, lbl, acts);
   wrap.appendChild(head);
   if (p.auto.length) {
     const rows = document.createElement("div");
     rows.className = "grows studyauto";
-    const chords = p.id === "harmony.chords" ? p.auto.filter(n => n.chord) : [];
-    const inline = p.id === "harmony.chords" ? p.auto.filter(n => !n.chord) : p.auto;
+    const chords = p.id === "harmony.chords" ? p.auto.filter(n => n.chord && p.type && studyTypeMatch(p.type, n)) : [];
+    const inline = p.id === "harmony.chords" ? p.auto.filter(n => !chords.includes(n)) : p.auto;
     for (const n of inline) rows.appendChild(studyAnnoRow(n));
     if (chords.length) { // a count of a TYPE he wrote (☰ All notes shows the same number); the rows fold because a song may carry dozens
       const fold = document.createElement("button");
@@ -474,7 +478,7 @@ export function renderStudySheet(openItem) {
     head.className = "ghead";
     const fold = document.createElement("button");
     fold.className = "studyfoldbtn";
-    fold.textContent = (S.studyBarNotesOpen ? "▾ " : "▸ ") + "BAR NOTES · " + barNotes.length;
+    fold.textContent = (S.studyBarNotesOpen ? "▾ " : "▸ ") + "UNFILED BAR NOTES · " + barNotes.length;
     fold.setAttribute("aria-expanded", String(!!S.studyBarNotesOpen));
     fold.addEventListener("click", () => { S.studyBarNotesOpen = !S.studyBarNotesOpen; renderStudySheet(); });
     head.appendChild(fold);
