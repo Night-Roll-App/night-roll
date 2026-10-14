@@ -8785,6 +8785,10 @@
     "path": "albums/snes/mega-man-x/armored-armadillo.mid"
    },
    {
+    "title": "Armored Armadillo (re-capture)",
+    "path": "albums/snes/mega-man-x/armored-armadillo-recapture.mid"
+   },
+   {
     "title": "Boomer Kuwanger",
     "path": "albums/snes/mega-man-x/boomer-kuwanger.mid"
    },
@@ -8793,20 +8797,40 @@
     "path": "albums/snes/mega-man-x/boss-battle.mid"
    },
    {
+    "title": "Boss Battle (re-capture)",
+    "path": "albums/snes/mega-man-x/boss-battle-recapture.mid"
+   },
+   {
     "title": "Boss Defeated",
     "path": "albums/snes/mega-man-x/boss-defeated.mid"
+   },
+   {
+    "title": "Boss Defeated (re-capture)",
+    "path": "albums/snes/mega-man-x/boss-defeated-recapture.mid"
    },
    {
     "title": "Boss Intro",
     "path": "albums/snes/mega-man-x/boss-intro.mid"
    },
    {
+    "title": "Boss Intro (re-capture)",
+    "path": "albums/snes/mega-man-x/boss-intro-recapture.mid"
+   },
+   {
     "title": "Capcom Logo",
     "path": "albums/snes/mega-man-x/capcom-logo.mid"
    },
    {
+    "title": "Capcom Logo (re-capture)",
+    "path": "albums/snes/mega-man-x/capcom-logo-recapture.mid"
+   },
+   {
     "title": "Castings",
     "path": "albums/snes/mega-man-x/castings.mid"
+   },
+   {
+    "title": "Castings (re-capture)",
+    "path": "albums/snes/mega-man-x/castings-recapture.mid"
    },
    {
     "title": "Chill Penguin",
@@ -8821,6 +8845,10 @@
     "path": "albums/snes/mega-man-x/dr-light.mid"
    },
    {
+    "title": "Dr. Light (re-capture)",
+    "path": "albums/snes/mega-man-x/dr-light-recapture.mid"
+   },
+   {
     "title": "Ending",
     "path": "albums/snes/mega-man-x/ending.mid"
    },
@@ -8829,12 +8857,24 @@
     "path": "albums/snes/mega-man-x/flame-mammoth.mid"
    },
    {
+    "title": "Flame Mammoth (re-capture)",
+    "path": "albums/snes/mega-man-x/flame-mammoth-recapture.mid"
+   },
+   {
     "title": "Intro Stage",
     "path": "albums/snes/mega-man-x/intro-stage.mid"
    },
    {
+    "title": "Intro Stage (re-capture)",
+    "path": "albums/snes/mega-man-x/intro-stage-recapture.mid"
+   },
+   {
     "title": "Launch Octopus",
     "path": "albums/snes/mega-man-x/launch-octopus.mid"
+   },
+   {
+    "title": "Launch Octopus (re-capture)",
+    "path": "albums/snes/mega-man-x/launch-octopus-recapture.mid"
    },
    {
     "title": "Password Screen",
@@ -8845,6 +8885,10 @@
     "path": "albums/snes/mega-man-x/sigma-battle.mid"
    },
    {
+    "title": "Sigma Battle (re-capture)",
+    "path": "albums/snes/mega-man-x/sigma-battle-recapture.mid"
+   },
+   {
     "title": "Sigma Battle 2",
     "path": "albums/snes/mega-man-x/sigma-battle-2.mid"
    },
@@ -8853,8 +8897,16 @@
     "path": "albums/snes/mega-man-x/sigma-boss-battle.mid"
    },
    {
+    "title": "Sigma Boss Battle (re-capture)",
+    "path": "albums/snes/mega-man-x/sigma-boss-battle-recapture.mid"
+   },
+   {
     "title": "Sigma Fortress 1",
     "path": "albums/snes/mega-man-x/sigma-fortress-1.mid"
+   },
+   {
+    "title": "Sigma Fortress 1 (re-capture)",
+    "path": "albums/snes/mega-man-x/sigma-fortress-1-recapture.mid"
    },
    {
     "title": "Sigma Fortress 2",
@@ -8869,12 +8921,20 @@
     "path": "albums/snes/mega-man-x/sigma-intro-1.mid"
    },
    {
+    "title": "Sigma Intro 1 (re-capture)",
+    "path": "albums/snes/mega-man-x/sigma-intro-1-recapture.mid"
+   },
+   {
     "title": "Sigma Intro 2",
     "path": "albums/snes/mega-man-x/sigma-intro-2.mid"
    },
    {
     "title": "Spark Mandrill",
     "path": "albums/snes/mega-man-x/spark-mandrill.mid"
+   },
+   {
+    "title": "Spark Mandrill (re-capture)",
+    "path": "albums/snes/mega-man-x/spark-mandrill-recapture.mid"
    },
    {
     "title": "Stage Intro",
@@ -8885,20 +8945,40 @@
     "path": "albums/snes/mega-man-x/stage-select-1.mid"
    },
    {
+    "title": "Stage Select 1 (re-capture)",
+    "path": "albums/snes/mega-man-x/stage-select-1-recapture.mid"
+   },
+   {
     "title": "Stage Select 2",
     "path": "albums/snes/mega-man-x/stage-select-2.mid"
+   },
+   {
+    "title": "Stage Select 2 (re-capture)",
+    "path": "albums/snes/mega-man-x/stage-select-2-recapture.mid"
    },
    {
     "title": "Stigma Defeated",
     "path": "albums/snes/mega-man-x/stigma-defeated.mid"
    },
    {
+    "title": "Stigma Defeated (re-capture)",
+    "path": "albums/snes/mega-man-x/stigma-defeated-recapture.mid"
+   },
+   {
     "title": "Sting Chameleon",
     "path": "albums/snes/mega-man-x/sting-chameleon.mid"
    },
    {
+    "title": "Sting Chameleon (re-capture)",
+    "path": "albums/snes/mega-man-x/sting-chameleon-recapture.mid"
+   },
+   {
     "title": "Storm Eagle",
     "path": "albums/snes/mega-man-x/storm-eagle.mid"
+   },
+   {
+    "title": "Storm Eagle (re-capture)",
+    "path": "albums/snes/mega-man-x/storm-eagle-recapture.mid"
    },
    {
     "title": "Test Track",
@@ -8909,16 +8989,32 @@
     "path": "albums/snes/mega-man-x/title-screen.mid"
    },
    {
+    "title": "Title Screen (re-capture)",
+    "path": "albums/snes/mega-man-x/title-screen-recapture.mid"
+   },
+   {
     "title": "Weapon Screen",
     "path": "albums/snes/mega-man-x/weapon-screen.mid"
+   },
+   {
+    "title": "Weapon Screen (re-capture)",
+    "path": "albums/snes/mega-man-x/weapon-screen-recapture.mid"
    },
    {
     "title": "Zero 1",
     "path": "albums/snes/mega-man-x/zero-1.mid"
    },
    {
+    "title": "Zero 1 (re-capture)",
+    "path": "albums/snes/mega-man-x/zero-1-recapture.mid"
+   },
+   {
     "title": "Zero 2",
     "path": "albums/snes/mega-man-x/zero-2.mid"
+   },
+   {
+    "title": "Zero 2 (re-capture)",
+    "path": "albums/snes/mega-man-x/zero-2-recapture.mid"
    }
   ]
  },

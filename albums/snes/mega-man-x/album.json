@@ -2,7 +2,31 @@
  "title": "Mega Man X",
  "order": 50,
  "songs": {
-  "dr-light": "Dr. Light"
+  "dr-light": "Dr. Light",
+  "armored-armadillo-recapture": "Armored Armadillo (re-capture)",
+  "boss-battle-recapture": "Boss Battle (re-capture)",
+  "boss-defeated-recapture": "Boss Defeated (re-capture)",
+  "boss-intro-recapture": "Boss Intro (re-capture)",
+  "capcom-logo-recapture": "Capcom Logo (re-capture)",
+  "castings-recapture": "Castings (re-capture)",
+  "dr-light-recapture": "Dr. Light (re-capture)",
+  "flame-mammoth-recapture": "Flame Mammoth (re-capture)",
+  "intro-stage-recapture": "Intro Stage (re-capture)",
+  "launch-octopus-recapture": "Launch Octopus (re-capture)",
+  "sigma-battle-recapture": "Sigma Battle (re-capture)",
+  "sigma-boss-battle-recapture": "Sigma Boss Battle (re-capture)",
+  "sigma-fortress-1-recapture": "Sigma Fortress 1 (re-capture)",
+  "sigma-intro-1-recapture": "Sigma Intro 1 (re-capture)",
+  "spark-mandrill-recapture": "Spark Mandrill (re-capture)",
+  "stage-select-1-recapture": "Stage Select 1 (re-capture)",
+  "stage-select-2-recapture": "Stage Select 2 (re-capture)",
+  "stigma-defeated-recapture": "Stigma Defeated (re-capture)",
+  "sting-chameleon-recapture": "Sting Chameleon (re-capture)",
+  "storm-eagle-recapture": "Storm Eagle (re-capture)",
+  "title-screen-recapture": "Title Screen (re-capture)",
+  "weapon-screen-recapture": "Weapon Screen (re-capture)",
+  "zero-1-recapture": "Zero 1 (re-capture)",
+  "zero-2-recapture": "Zero 2 (re-capture)"
  },
  "nsf": {
   "vault": "snes/mega-man-x/",
@@ -28,7 +52,7 @@
     "track": 10,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -118,7 +142,7 @@
     "track": 11,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -133,7 +157,7 @@
     "track": 33,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -163,7 +187,7 @@
     "track": 31,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -223,7 +247,7 @@
     "track": 21,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -238,7 +262,7 @@
     "track": 29,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -298,7 +322,7 @@
     "track": 25,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -313,7 +337,7 @@
     "track": 26,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -342,8 +366,8 @@
     "secs": 12,
     "track": 27,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -373,7 +397,7 @@
     "track": 8,
     "cap": {
      "v": 3,
-     "code": "56366d7c"
+     "code": "22c6f5e4"
     },
     "loud": {
      "v": 1,
@@ -531,6 +555,390 @@
      "peak": -13.5,
      "synth": -20.5
     }
+   },
+   "armored-armadillo-recapture": {
+    "n": 1,
+    "secs": 111,
+    "track": 9,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -12.6,
+     "synth": -16.9
+    },
+    "rip": "armored-armadillo"
+   },
+   "boss-battle-recapture": {
+    "n": 1,
+    "secs": 59,
+    "track": 18,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.4,
+     "peak": -12.2,
+     "synth": -18.6
+    },
+    "rip": "boss-battle"
+   },
+   "boss-defeated-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 19,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -11,
+     "synth": -14.7
+    },
+    "rip": "boss-defeated"
+   },
+   "boss-intro-recapture": {
+    "n": 1,
+    "secs": 14,
+    "track": 17,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.4,
+     "peak": -14.7,
+     "synth": -22.1
+    },
+    "rip": "boss-intro"
+   },
+   "capcom-logo-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 34,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -28.8,
+     "peak": -17.4,
+     "synth": -22.9
+    },
+    "rip": "capcom-logo"
+   },
+   "castings-recapture": {
+    "n": 1,
+    "secs": 125,
+    "track": 32,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.9,
+     "peak": -12.1,
+     "synth": -17.3
+    },
+    "rip": "castings"
+   },
+   "dr-light-recapture": {
+    "n": 1,
+    "secs": 31,
+    "track": 22,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.7,
+     "peak": -15.5,
+     "synth": -18.9
+    },
+    "rip": "dr-light"
+   },
+   "flame-mammoth-recapture": {
+    "n": 1,
+    "secs": 113,
+    "track": 12,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.5,
+     "peak": -12.3,
+     "synth": -19.2
+    },
+    "rip": "flame-mammoth"
+   },
+   "intro-stage-recapture": {
+    "n": 1,
+    "secs": 88,
+    "track": 2,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.2,
+     "peak": -10.6,
+     "synth": -18.9
+    },
+    "rip": "intro-stage"
+   },
+   "launch-octopus-recapture": {
+    "n": 1,
+    "secs": 103,
+    "track": 13,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.4,
+     "peak": -13.2,
+     "synth": -19.6
+    },
+    "rip": "launch-octopus"
+   },
+   "sigma-battle-recapture": {
+    "n": 1,
+    "secs": 36,
+    "track": 28,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23,
+     "peak": -12,
+     "synth": -17.2
+    },
+    "rip": "sigma-battle"
+   },
+   "sigma-boss-battle-recapture": {
+    "n": 1,
+    "secs": 56,
+    "track": 4,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -12,
+     "synth": -17.6
+    },
+    "rip": "sigma-boss-battle"
+   },
+   "sigma-fortress-1-recapture": {
+    "n": 1,
+    "secs": 123,
+    "track": 24,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.2,
+     "peak": -12.9,
+     "synth": -20.3
+    },
+    "rip": "sigma-fortress-1"
+   },
+   "sigma-intro-1-recapture": {
+    "n": 1,
+    "secs": 17,
+    "track": 3,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.3,
+     "peak": -14.5,
+     "synth": -16.3
+    },
+    "rip": "sigma-intro-1"
+   },
+   "spark-mandrill-recapture": {
+    "n": 1,
+    "secs": 102,
+    "track": 14,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.5,
+     "peak": -10.9,
+     "synth": -18.1
+    },
+    "rip": "spark-mandrill"
+   },
+   "stage-select-1-recapture": {
+    "n": 1,
+    "secs": 18,
+    "track": 7,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.7,
+     "peak": -11.5,
+     "synth": -19.2
+    },
+    "rip": "stage-select-1"
+   },
+   "stage-select-2-recapture": {
+    "n": 1,
+    "secs": 35,
+    "track": 23,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -27.3,
+     "peak": -15.4,
+     "synth": -20.2
+    },
+    "rip": "stage-select-2"
+   },
+   "stigma-defeated-recapture": {
+    "n": 1,
+    "secs": 12,
+    "track": 30,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.2,
+     "peak": -11.9,
+     "synth": -15.4
+    },
+    "rip": "stigma-defeated"
+   },
+   "sting-chameleon-recapture": {
+    "n": 1,
+    "secs": 68,
+    "track": 15,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.5,
+     "peak": -12.3,
+     "synth": -19
+    },
+    "rip": "sting-chameleon"
+   },
+   "storm-eagle-recapture": {
+    "n": 1,
+    "secs": 62,
+    "track": 16,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -23.6,
+     "peak": -10.2,
+     "synth": -18.5
+    },
+    "rip": "storm-eagle"
+   },
+   "title-screen-recapture": {
+    "n": 1,
+    "secs": 26,
+    "track": 1,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -26.2,
+     "peak": -13.9,
+     "synth": -19.5
+    },
+    "rip": "title-screen"
+   },
+   "weapon-screen-recapture": {
+    "n": 1,
+    "secs": 15,
+    "track": 20,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.7,
+     "peak": -13.1,
+     "synth": -18.7
+    },
+    "rip": "weapon-screen"
+   },
+   "zero-1-recapture": {
+    "n": 1,
+    "secs": 34,
+    "track": 5,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -24.4,
+     "peak": -10.7,
+     "synth": -20.2
+    },
+    "rip": "zero-1"
+   },
+   "zero-2-recapture": {
+    "n": 1,
+    "secs": 63,
+    "track": 6,
+    "cap": {
+     "v": 3,
+     "code": "22c6f5e4"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -25.9,
+     "peak": -13.5,
+     "synth": -20.5
+    },
+    "rip": "zero-2"
    }
   },
   "chip": "spc",
