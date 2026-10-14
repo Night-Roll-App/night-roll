@@ -10,7 +10,8 @@
   "gang-plank-galleon": "Gang-Plank Galleon",
   "k-rool-s-cacophony": "K. Rool's Cacophony",
   "life-in-the-mines": "Life in the Mines",
-  "voices-of-the-temple": "Voices of the Temple"
+  "voices-of-the-temple": "Voices of the Temple",
+  "misty-menace-recapture": "Misty Menace (re-capture)"
  },
  "nsf": {
   "vault": "snes/donkey-kong-country/",
@@ -20,8 +21,8 @@
     "secs": 199,
     "track": 7,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -50,8 +51,8 @@
     "secs": 12,
     "track": 23,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -65,8 +66,8 @@
     "secs": 56,
     "track": 6,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -95,8 +96,8 @@
     "secs": 12,
     "track": 25,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -110,8 +111,8 @@
     "secs": 125,
     "track": 8,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -125,8 +126,8 @@
     "secs": 300,
     "track": 5,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -140,8 +141,8 @@
     "secs": 109,
     "track": 4,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -155,8 +156,8 @@
     "secs": 300,
     "track": 3,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -200,8 +201,8 @@
     "secs": 230,
     "track": 19,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -215,8 +216,8 @@
     "secs": 120,
     "track": 13,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -230,8 +231,8 @@
     "secs": 124,
     "track": 15,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -245,8 +246,8 @@
     "secs": 181,
     "track": 20,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -290,8 +291,8 @@
     "secs": 12,
     "track": 28,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -305,8 +306,8 @@
     "secs": 263,
     "track": 11,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -335,8 +336,8 @@
     "secs": 183,
     "track": 10,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -365,8 +366,8 @@
     "secs": 241,
     "track": 17,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -380,8 +381,8 @@
     "secs": 146,
     "track": 2,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -395,8 +396,8 @@
     "secs": 108,
     "track": 22,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -410,8 +411,8 @@
     "secs": 114,
     "track": 1,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -440,8 +441,8 @@
     "secs": 177,
     "track": 12,
     "cap": {
-     "v": 2,
-     "code": "b28173b8"
+     "v": 3,
+     "code": "9f862164"
     },
     "loud": {
      "v": 1,
@@ -449,6 +450,22 @@
      "peak": -11.8,
      "synth": -15.3
     }
+   },
+   "misty-menace-recapture": {
+    "n": 1,
+    "secs": 257,
+    "track": 16,
+    "cap": {
+     "v": 3,
+     "code": "9f862164"
+    },
+    "loud": {
+     "v": 1,
+     "lufs": -39.4,
+     "peak": -19.6,
+     "synth": -25.9
+    },
+    "rip": "misty-menace"
    }
   },
   "chip": "spc",
