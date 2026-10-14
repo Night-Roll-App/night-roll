@@ -8,7 +8,6 @@ import { TICKS_PER_BEAT } from "./constants.mjs";
 import { tickSeconds } from "./seq-libultra.mjs";
 import { Vibrato, OotVibrato, Portamento, OotPortamento, UPDATES_PER_SECOND, OOT_UPDATES_PER_SECOND } from "./render.mjs";
 import { guessKit } from "../kit-guess.mjs";
-import { isPedalTone } from "../pedal-tone.mjs";
 
 const label = n => n.drum ? "D" + n.semitone : pitchName(n.midi);
 
@@ -93,13 +92,7 @@ export function channelGroups(res, {tsNum = 4, tsDen = 4} = {}) {
   const byInst = new Map();
   for (const n of notes) if (!n.drum && n.inst != null) (byInst.get(n.inst) || byInst.set(n.inst, []).get(n.inst)).push(n);
   const percInst = new Set();
-  const tempos = res.tempos && res.tempos.length ? res.tempos : [{tick: 0, bpm: 120}];
-  for (const [inst, evs] of byInst) {
-    if (evs.length < 12 || new Set(evs.map(n => n.midi)).size !== 1) continue;
-    // a pedal tone (tools/pedal-tone.mjs) stays pitched; the capture has no samples here, so notes alone: a median of 2 s or more
-    const durs = evs.map(n => tickSeconds(tempos, n.tick + n.dur) - tickSeconds(tempos, n.tick)).sort((a, b) => a - b);
-    if (!isPedalTone({medianSec: durs[Math.floor(durs.length / 2)]})) percInst.add(inst);
-  }
+  for (const [inst, evs] of byInst) if (evs.length >= 12 && new Set(evs.map(n => n.midi)).size === 1) percInst.add(inst);
   const isPerc = n => n.drum || percInst.has(n.inst);
   // voices for the guess: a drum index, or a promoted instrument's one pitch
   const voices = new Map();
