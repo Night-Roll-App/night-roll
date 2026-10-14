@@ -320,7 +320,12 @@ export function kitify(result) {
   if (!perc.length) { result.kitGuess = guess; return guess; }
   // a kit that already speaks GM (a VAB kit keyed 35+) keeps its keys; drum-mode
   // degrees (24–35) and promoted programs need a GM key
-  const needs = perc.filter(n => !n.drum || n.key < 35 || n.table); // a table slot number is not a GM key, whatever its size
+  // A drum-table slot is a GM key only in AKAO layout 3 (Chrono Cross, FF8, FF9), whose tables keep the
+  // composer's GM note numbers: a low thump sits at 35/36, short bright noise at 42/44, long noise at 49/57
+  // (Fable sample audit, 13 songs: guessing them made 38 voices worse, 9 better). Layouts 1/2 key the table by
+  // degree (24 + n), never GM, so every slot there is guessed (their slot 35 is not a bass drum).
+  const slotIsGm = n => n.table && seq.version >= 3 && n.key >= 35;
+  const needs = perc.filter(n => !n.drum || n.key < 35 || (n.table && !slotIsGm(n)));
   for (const n of perc) n.drum = true;
   if (!needs.length) { result.kitGuess = guess; return guess; }
   // voices: program + the key as written (drum mode: the degree key; else the pitch)

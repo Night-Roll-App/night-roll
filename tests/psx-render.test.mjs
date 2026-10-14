@@ -252,12 +252,12 @@ test("kitify: a lone rooted, harmonic one-shot on its own channel follows the so
   assert.ok(!u.seq.warnings.some(w => /prog 6:/.test(w)), u.seq.warnings.join("\n"));
 });
 
-test("kitify: a drum-table slot number gets a GM guess whatever its size (slots 36+ are not GM keys)", () => {
-  const r = drumBankRip([57, 59, 60, 62, 64, 76, 48, 50].map(midiSine));
+test("kitify: a layout-3 drum-table slot 35+ is already a GM key and passes through (Chrono Cross/FF8/FF9 tables are GM-laid)", () => {
+  const r = drumBankRip([57, 59, 60, 62, 64, 76, 48, 50].map(midiSine));   // drumBankRip builds a layout-3 AKAO
   kitify(r);
   const kit = r.notes.filter(n => n.tone.instrument >= 6);
   assert.ok(kit.length && kit.every(n => n.drum && n.table && n.key >= 36), "a two-instrument table: kit notes keyed 36+");
-  assert.ok(kit.every(n => Number.isInteger(n.gm)), "each has a guessed GM key: " + kit.map(n => n.gm));
+  assert.ok(kit.every(n => n.gm === undefined || n.gm === n.key), "slots keep their GM numbers, no rhythm guess: " + kit.map(n => n.key + ">" + n.gm));
 });
 
 // ---- real FF9 rips (skipped when /tmp/recap/rips is not there) ----
@@ -279,10 +279,11 @@ test("kitify (real rip): FF9 Garnet's Song 1 prog 6, a lone rooted one-shot, fol
   assert.ok(p6.length && p6.every(n => !n.drum && n.pitch === 69), "prog 6 sounds MIDI 69: " + [...new Set(p6.map(n => n.pitch))]);
   assert.ok(channelGroups(r).every(g => !g.kit), "no kit track is left");
 });
-test("kitify (real rip): FF9 Qu's Marsh prog 5 (no root) stays a kit and key 83 is guessed; Hunter's Chance stays drums", {skip: !existsSync(FF9 + "qu-s-marsh.psf") || !existsSync(FF9 + "hunter-s-chance.psf")}, async () => {
+test("kitify (real rip): FF9 Qu's Marsh prog 5 (no root) stays a kit at its own slot 83; Hunter's Chance stays drums", {skip: !existsSync(FF9 + "qu-s-marsh.psf") || !existsSync(FF9 + "hunter-s-chance.psf")}, async () => {
   const q = await ff9("qu-s-marsh");
   const p5 = q.notes.filter(n => n.program === 5);
-  assert.ok(p5.length && p5.every(n => n.drum && n.gm !== undefined && n.gm !== 83 && n.gm < 82), "prog 5 is a kit voice with a drum key, not Jingle Bell: " + [...new Set(p5.map(n => n.gm))]);
+  // layout 3 keeps the slot: its 7.3 kHz, 0.43 s noise fits a jingle/shaker better than the rhythm guesser's snare (Fable audit)
+  assert.ok(p5.length && p5.every(n => n.drum && (n.gm === undefined || n.gm === 83)), "prog 5 is a kit voice at slot 83: " + [...new Set(p5.map(n => n.gm))]);
   const h = await ff9("hunter-s-chance");
   assert.ok(channelGroups(h).filter(g => g.kit).length >= 5, "Hunter's Chance keeps its kit tracks");
   assert.ok(h.notes.filter(n => n.table).every(n => n.drum), "every table note is still drums");
