@@ -100,7 +100,9 @@
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status ·
 // POST /v1/deploy · GET|POST /v1/app-state · GET|POST /v1/terminal ·
 // POST /v1/backup {key, doc, notes?, at} · GET /v1/backups?key=… ·
-// GET /v1/backups/<dir>/<file> · GET|DELETE /v1/sessions/:key (usage
+// GET /v1/backups/<dir>/<file> · PUT /v1/takes/<app>/<id>/<name> (raw body,
+// streamed to disk under takes/; 409 over a different-size file) ·
+// GET /v1/takes/<app> · GET|DELETE /v1/sessions/:key (usage
 // {turns, tokens, cost, lastCompact}; DELETE drops the session id so the
 // next turn starts fresh; ?turns=1 adds `ring`, the last 50 turns'
 // {t, gapS, in, out, cacheRead, cacheCreate, ctxTokens, apiCalls, parts}) ·
@@ -302,6 +304,11 @@ const SHOT_MAX = 25 * 1024 * 1024;
 // anything younger than 7 days past that — see POST /v1/backup
 const BACKUPS_DIR = path.join(STATE_DIR, "backups");
 const BACKUP_MAX = 20 * 1024 * 1024;
+// performance takes (an app's recorded run: audio + JSON sidecar), PUT one file at a time: takes/<app>/<id>/<name>. Never pruned.
+const TAKES_DIR = path.join(STATE_DIR, "takes");
+const TAKE_MAX = 300 * 1024 * 1024;
+const TAKE_NAMES = ["audio.m4a", "take.json"];
+const TAKE_SEG = /^[\w.-]{1,80}$/;
 const TURN_MS = 20 * 60 * 1000;
 const MODEL_CLAUDE = "claude-code";
 const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"];
@@ -808,7 +815,7 @@ async function runUpstream(job, body, target) { // forward to an OpenAI server, 
 // ---------------------------------------------------------------- http
 function cors(res) {
   res.setHeader("access-control-allow-origin", "*");
-  res.setHeader("access-control-allow-methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("access-control-allow-methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("access-control-allow-headers", "*");
   res.setHeader("access-control-expose-headers", "x-nr-job, x-nr-session-epoch");
 }
@@ -983,6 +990,50 @@ const server = http.createServer(async (req, res) => {
     let raw; try { raw = fs.readFileSync(file, "utf8"); } catch (err) { return json(res, 404, {error: {message: "no such backup"}}); }
     cors(res); res.writeHead(200, {"content-type": "application/json"}); return res.end(raw);
   }
+  const tkPut = url.pathname.match(/^\/v1\/takes\/([^/]+)\/([^/]+)\/([^/]+)$/);
+  if (req.method === "PUT" && tkPut) { // raw bytes → takes/<app>/<id>/<name>; streamed to <name>.part, renamed when complete
+    let app, id, name;
+    try { [app, id, name] = tkPut.slice(1).map(decodeURIComponent); } catch (err) { return json(res, 400, {error: {message: "bad path"}}); }
+    if (![app, id].every(seg => TAKE_SEG.test(seg) && seg !== "." && seg !== "..") || !TAKE_NAMES.includes(name)) return json(res, 400, {error: {message: "bad app, id or name"}});
+    const dir = path.join(TAKES_DIR, app, id), dest = path.join(dir, name), part = dest + ".part";
+    fs.mkdirSync(dir, {recursive: true});
+    const out = fs.createWriteStream(part);
+    let n = 0, werr = null;
+    out.on("error", err => { werr = err; });
+    const drop = () => { // unlink once the stream has closed (it may still be opening the file)
+      const rm = () => { try { fs.unlinkSync(part); } catch (err) { /* never created */ } };
+      if (out.closed) rm(); else { out.once("close", rm); out.destroy(); }
+    };
+    try {
+      for await (const c of req) {
+        n += c.length;
+        if (n > TAKE_MAX) { drop(); return json(res, 413, {error: {message: "take too big"}}); }
+        if (werr) throw werr;
+        if (!out.write(c)) await new Promise(r => out.once("drain", r));
+      }
+      await new Promise(r => out.end(r));
+      if (werr) throw werr;
+    } catch (err) { drop(); return json(res, 400, {error: {message: "upload broke off"}}); }
+    let have = -1; try { have = fs.statSync(dest).size; } catch (err) { /* a new file */ }
+    if (have === n) { drop(); return json(res, 200, {path: dest, skipped: true}); }
+    if (have >= 0) { drop(); return json(res, 409, {error: {message: "a different " + name + " is already stored"}}); }
+    fs.renameSync(part, dest);
+    console.log(`take ${app}/${id}/${name} (${n} bytes)`);
+    return json(res, 200, {path: dest});
+  }
+  const tkList = url.pathname.match(/^\/v1\/takes\/([^/]+)$/);
+  if (req.method === "GET" && tkList) { // diagnostics: what is stored for this app
+    let app; try { app = decodeURIComponent(tkList[1]); } catch (err) { return json(res, 400, {error: {message: "bad path"}}); }
+    if (!TAKE_SEG.test(app) || app === "." || app === "..") return json(res, 400, {error: {message: "bad app"}});
+    const root = path.join(TAKES_DIR, app), takes = [];
+    let ids = []; try { ids = fs.readdirSync(root).sort(); } catch (err) { /* none yet */ }
+    for (const id of ids) {
+      const files = [];
+      try { for (const f of fs.readdirSync(path.join(root, id)).sort()) { try { files.push({name: f, bytes: fs.statSync(path.join(root, id, f)).size}); } catch (err) { /* gone mid-list */ } } } catch (err) { continue; }
+      takes.push({id, files});
+    }
+    return json(res, 200, {takes});
+  }
   if (req.method === "POST" && url.pathname === "/v1/shot") { // raw PNG/JPEG bytes → a file Claude can Read; answers its path
     const chunks = []; let n = 0;
     try { for await (const c of req) { n += c.length; if (n > SHOT_MAX) return json(res, 413, {error: {message: "screenshot too big"}}); chunks.push(c); } }
@@ -1061,6 +1112,7 @@ server.listen(PORT, HOST, async () => {
     `\n  upstreams:   ${(upstreams.length ? upstreams : AUTO_UPSTREAMS).map(u => u.name + "=" + u.url).join(", ")}${upstreams.length ? "" : " (auto: listed only while running)"}` +
     `\n  models now:  ${models.map(m => m.id).join(", ") || "(none reachable)"}` +
     `\n  jobs:        ${JOBS_DIR}, kept ${KEEP_MS / 3600000}h after fetch` +
+    `\n  takes:       ${TAKES_DIR} (PUT /v1/takes/<app>/<id>/<name>, never pruned)` +
     `\n  sessions:    ${SESSIONS_FILE} (one Claude Code session per chat) · inbox: ${INBOX_FILE} (--say "text")`);
 });
 return server;

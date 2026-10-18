@@ -149,7 +149,9 @@ parity with Night Roll's window (minus song features) is tracked row by row in `
 - `BridgeMonitor` polls `GET /v1/status` and `GET /v1/inbox`; `TerminalChat` posts `POST /v1/terminal`.
 - Routes used: `POST /v1/chat/completions`, `GET|DELETE /v1/jobs/:id`, `GET /v1/models`, `POST /v1/terminal`,
   `GET /v1/inbox`, `GET /v1/status`, `GET|POST /v1/terminal-prefs`, `GET|DELETE /v1/sessions/:key`,
-  `POST /v1/sessions/:key/compact`, `POST /v1/shot`, `POST /v1/app-state`.
+  `POST /v1/sessions/:key/compact`, `POST /v1/shot`, `POST /v1/app-state`, `PUT /v1/takes/<app>/<id>/<name>`
+  (a recorded run: `audio.m4a` then `take.json`, stored under `<state dir>/takes/<app>/<id>/`, never pruned; 409 if a
+  different-size file is already there, 413 past 300 MB) and `GET /v1/takes/<app>` (what is stored).
 - Fixtures in `tests/fixtures/parity/*.json` are shared: `swift test` (in `swift/`) and
   `tests/parity-text.test.mjs` both read them, so a format change breaks both suites.
 - `tests/lint.test.mjs` also walks `swift/Sources` (skipping dot-directories): no app vocabulary, no `.alert(`,
@@ -186,3 +188,5 @@ while the bridge's status says `desk: true` (an old bridge keeps the per-app Ask
   `terminalContext()`), `appName()`, `deskAppName(id)`, `deskSystemPrompt()`, `deskChanged(rows)` (new notes/reports
   arrived: the app's light), `earlierChat()` (the old Ask chat, read-only above the thread). Host (Swift): `deskEnabled`, `deskLabel()`, `earlierSessionKey`.
 - The Worker tab is the old Terminal tab, unchanged.
+
+`BridgeChatTestSupport` (swift/) is test-only: the stub bridge and the shared AI panel UI tests; no app target depends on it.
