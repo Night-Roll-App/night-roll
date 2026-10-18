@@ -1030,6 +1030,7 @@ const server = http.createServer(async (req, res) => {
     for (const id of ids) {
       const files = [];
       try { for (const f of fs.readdirSync(path.join(root, id)).sort()) { try { files.push({name: f, bytes: fs.statSync(path.join(root, id, f)).size}); } catch (err) { /* gone mid-list */ } } } catch (err) { continue; }
+      if (!files.length) continue; // a PUT that broke off or was too big left only its empty folder
       takes.push({id, files});
     }
     return json(res, 200, {takes});
