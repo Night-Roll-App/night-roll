@@ -307,7 +307,8 @@ const BACKUP_MAX = 20 * 1024 * 1024;
 // performance takes (an app's recorded run: audio + JSON sidecar), PUT one file at a time: takes/<app>/<id>/<name>. Never pruned.
 const TAKES_DIR = path.join(STATE_DIR, "takes");
 const TAKE_MAX = 300 * 1024 * 1024;
-const TAKE_NAMES = ["audio.m4a", "take.json"];
+const TAKE_NAMES = ["audio.m4a", "take.json", "usage.json"];
+const TAKE_REPLACEABLE = ["usage.json"]; // the app's daily control-use counts (#602): each upload replaces the last
 const TAKE_SEG = /^[\w.-]{1,80}$/;
 const TURN_MS = 20 * 60 * 1000;
 const MODEL_CLAUDE = "claude-code";
@@ -1016,7 +1017,7 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { drop(); return json(res, 400, {error: {message: "upload broke off"}}); }
     let have = -1; try { have = fs.statSync(dest).size; } catch (err) { /* a new file */ }
     if (have === n) { drop(); return json(res, 200, {path: dest, skipped: true}); }
-    if (have >= 0) { drop(); return json(res, 409, {error: {message: "a different " + name + " is already stored"}}); }
+    if (have >= 0 && !TAKE_REPLACEABLE.includes(name)) { drop(); return json(res, 409, {error: {message: "a different " + name + " is already stored"}}); }
     fs.renameSync(part, dest);
     console.log(`take ${app}/${id}/${name} (${n} bytes)`);
     return json(res, 200, {path: dest});
