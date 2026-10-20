@@ -95,6 +95,21 @@
 // fans out to night-roll, guitar and tuner. Rows trimmed from terminal.json and
 // inbox.json go to archive/<file>-YYYY-MM.jsonl.
 //
+// One AI (#644 Phase 1): every POST /v1/terminal from an app (not a forward, not
+// "all", not the front-desk) gets an INSTANT canned note in that row's own app
+// (from "terminal", auto:true) and the same text as `ack` in the response —
+// "Sent to Claude (#n)…" when the AI's watcher polled that app in the last 90 s
+// (`live`), else an offline line, and the bridge starts a read-only quick answer
+// itself (session `<app>-quick`; the row stays in the queue with quick:true).
+// The first time the watcher's GET returns the row the bridge adds "Claude has
+// #n now." GET /v1/terminal?app=a,b,c&wait=25 watches several apps with one
+// cursor and long-polls (wait capped at 25 s). POST /v1/ai-session {session,
+// takeover?} registers the one AI (409 while another session polled within
+// 90 s). POST /v1/terminal/done {id, text?} answers row id in ITS app; POST
+// /v1/status {text, msg} takes the app from row msg. EVERY claude child is
+// read-only (--tools Read,Glob,Grep,WebFetch,WebSearch) and gets
+// NR_BRIDGE_CHILD=1; only the interactive terminal session writes code.
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status ·
@@ -130,7 +145,7 @@
 // human decides when that happens. The countdown names its app
 // (--deploy-in N --app guitar; the POST's {app}): only that app's GET
 // /v1/status?app= carries deployInMs/deployHold, so a guitar install
-// never counts down in Night Roll. --deploy-wait takes the same --app.
+// never counts down in another app. --deploy-wait takes the same --app.
 //
 // Session usage + compaction: each chat's session accumulates usage from
 // every turn's stream-json "result" event: input_tokens/output_tokens/
@@ -228,9 +243,17 @@ export function main(argv, profile) {
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
   }
+  if (has(argv, "--done")) { // the AI answers terminal row n: the note lands in row n's OWN app, and the row is marked done:  --done 12 "text"
+    const i = argv.indexOf("--done"), id = +argv[i + 1], text = (argv[i + 2] && !argv[i + 2].startsWith("--") ? argv[i + 2] : "").trim();
+    if (!(id > 0)) { console.error("--done needs a row number: --done 12 \"text\""); process.exit(2); }
+    fetch(base() + "/v1/terminal/done", {method: "POST", headers: authHeaders(), body: JSON.stringify({id, text, from: flag(argv, "--from", "terminal")})})
+      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("#" + j.id + " done" + (j.note ? ", note #" + j.note + " delivered to " + j.app : "")); process.exit(0); })
+      .catch(err => { console.error("could not finish #" + id + ": " + err.message); process.exit(1); });
+    return;
+  }
   if (has(argv, "--status") || has(argv, "--status-clear")) { // "what's running" — post it to the running bridge and exit, mirroring --say
     const text = has(argv, "--status-clear") ? "" : flag(argv, "--status", "").trim();
-    fetch(base() + "/v1/status", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, app: flag(argv, "--app", "night-roll")})})
+    fetch(base() + "/v1/status", {method: "POST", headers: authHeaders(), body: JSON.stringify({text, app: flag(argv, "--app", "night-roll"), ...(flag(argv, "--msg", "") ? {msg: +flag(argv, "--msg", "")} : {})})}) // --msg n: the app comes from terminal row n
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log(text ? "status set" : "status cleared"); process.exit(0); })
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
@@ -314,6 +337,8 @@ const TAKE_NAMES = ["audio.m4a", "take.json", "usage.json"];
 const TAKE_REPLACEABLE = ["usage.json"]; // the app's daily control-use counts (#602): each upload replaces the last
 const TAKE_SEG = /^[\w.-]{1,80}$/;
 const TURN_MS = 20 * 60 * 1000;
+const READ_TOOLS = ["Read", "Glob", "Grep", "WebFetch", "WebSearch"]; // every claude child the bridge starts gets exactly these (#644): the one AI in the terminal is the only writer
+const childEnv = () => ({...process.env, CLAUDECODE: "", NR_BRIDGE_CHILD: "1"}); // the hooks (Phase 2) skip a session that carries NR_BRIDGE_CHILD
 const MODEL_CLAUDE = "claude-code";
 const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"];
 const AUTO_UPSTREAMS = [{name: "lmstudio", url: "http://localhost:1234"}, {name: "ollama", url: "http://localhost:11434"}];
@@ -402,8 +427,8 @@ async function fetchJSON(url, opts, ms) {
 async function listModels() { // {models: [{id, owned_by}], route: Map id → {upstream, id}}
   const models = [], route = new Map();
   if (claudeOk) {
-    models.push({id: MODEL_CLAUDE, object: "model", owned_by: "claude-code (" + CLAUDE_MODE + ", " + CLAUDE_DEFAULT_MODEL + ")"}); route.set(MODEL_CLAUDE, {claude: true, model: CLAUDE_DEFAULT_MODEL});
-    for (const m of CLAUDE_MODELS) { const id = MODEL_CLAUDE + "-" + m; models.push({id, object: "model", owned_by: "claude-code (" + CLAUDE_MODE + ", " + m + ")"}); route.set(id, {claude: true, model: m}); }
+    models.push({id: MODEL_CLAUDE, object: "model", owned_by: "claude-code (read-only, " + CLAUDE_DEFAULT_MODEL + ")"}); route.set(MODEL_CLAUDE, {claude: true, model: CLAUDE_DEFAULT_MODEL});
+    for (const m of CLAUDE_MODELS) { const id = MODEL_CLAUDE + "-" + m; models.push({id, object: "model", owned_by: "claude-code (read-only, " + m + ")"}); route.set(id, {claude: true, model: m}); }
   }
   const list = upstreams.length ? upstreams : AUTO_UPSTREAMS;
   await Promise.all(list.map(async u => {
@@ -459,7 +484,10 @@ function jobEnd(job, err) {
   }
   if (job.desk && !job.killed) { // a Front Desk one-off: the bridge writes the answer into the thread, so it lands even if the app went to the background
     const text = job.status === "error" ? "\u26a0 one-off failed: " + job.error : String(job.text || "").trim();
-    if (text) { const note = inboxAdd(text, "one-off", FRONT_DESK); terminalMark(job.desk, {answered: note.id}); }
+    if (text && job.quick) { // an offline quick answer (#644): into the row's OWN app as a terminal note, so old and new builds both show it in the Worker tab
+      const note = inboxAdd(job.status === "error" ? "Quick answer failed: " + job.error : "Quick answer (Claude is offline): " + text, "terminal", job.app, {auto: true, quick: true});
+      terminalMark(job.desk, {answered: note.id});
+    } else if (text) { const note = inboxAdd(text, "one-off", FRONT_DESK); terminalMark(job.desk, {answered: note.id}); }
   }
   for (const s of job.subs) { try { s({type: "end"}); } catch (e) { /* gone */ } }
   job.subs.clear();
@@ -564,7 +592,7 @@ function sessionUsageView(s, viewOpts) { // {turns, tokens, cost} — s may be u
 // instead of vanishing mid-edit.
 let deployUntil = 0;
 // which app the install is for ("guitar", "night-roll"): the three apps share
-// this bridge, and a guitar install must not count down in Night Roll. Set by
+// this bridge, and a guitar install must not count down in another app. Set by
 // the countdown's own POST ({app}); null (a POST without one) = every app.
 let deployApp = null;
 // a hold blocks --deploy-wait regardless of deployUntil, until released or
@@ -585,7 +613,7 @@ const appIdOf = v => String(v == null || v === "" ? DEFAULT_APP : v).replace(/[^
 const forApp = (row, app) => appIdOf(row.app) === app;
 // rows trimmed off the live files (the last 200 stay) are appended to archive/<file>-YYYY-MM.jsonl, never dropped
 function archiveRows(name, rows) { if (!rows.length) return; try { const dir = path.join(STATE_DIR, "archive"); fs.mkdirSync(dir, {recursive: true}); fs.appendFileSync(path.join(dir, name + "-" + new Date().toISOString().slice(0, 7) + ".jsonl"), rows.map(r => JSON.stringify(r)).join("\n") + "\n"); } catch (err) { console.error("archive " + name + ": " + err.message); } }
-function inboxAdd(text, from, app) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), app: appIdOf(app), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); archiveRows("inbox", box.notes.slice(0, -200)); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
+function inboxAdd(text, from, app, extra) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), app: appIdOf(app), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000), ...(extra || {})}; box.notes.push(note); archiveRows("inbox", box.notes.slice(0, -200)); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
 // one current status line (null when idle) plus the last 10 it ever said,
 // each with a timestamp. Clearing only blanks `now` — `recent` is history
 // and never shrinks from a clear.
@@ -593,12 +621,40 @@ function inboxAdd(text, from, app) { const box = inboxAll(); const note = {id: +
 // ?since=), answered through the inbox (--say)
 const TERMINAL_FILE = path.join(STATE_DIR, "terminal.json");
 const terminalPolledAt = new Map(); // app id → when its watcher last GETed /v1/terminal (every few seconds): recent = someone is there to read it
+let aiSeenAt = 0, aiSession = null; // the last poll of ANY app, and the one registered AI session {id, at} (POST /v1/ai-session)
+const terminalWaiters = new Set(); // long-polls parked on GET /v1/terminal?wait=N: {apps, since, res, timer}
 const terminalReachable = app => [...terminalPolledAt].some(([id, t]) => (app == null || id === appIdOf(app)) && Date.now() - t < 90000); // no app = any watcher
 function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
 // src/label: which app a Front Desk message came from and one line of its context; oneoff: the Front Desk was not being read, so the app asks for a one-off answer instead
-function terminalAdd(text, shot, app, fwd, extra) { const box = terminalAll(); const e = extra || {}; const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), ...(e.src ? {src: String(e.src).slice(0, 40)} : {}), ...(e.label ? {label: String(e.label).slice(0, 80)} : {}), ...(e.oneoff ? {oneoff: true} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); archiveRows("terminal", box.msgs.slice(0, -200)); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
+function terminalAdd(text, shot, app, fwd, extra) { const box = terminalAll(); const e = extra || {}; const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), ...(e.src ? {src: String(e.src).slice(0, 40)} : {}), ...(e.label ? {label: String(e.label).slice(0, 80)} : {}), ...(e.oneoff ? {oneoff: true} : {}), ...(e.acked ? {acked: true} : {}), ...(e.quick ? {quick: true} : {}), ...(e.kind ? {kind: String(e.kind).slice(0, 20)} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); archiveRows("terminal", box.msgs.slice(0, -200)); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
 const FRONT_DESK = "front-desk", WORKERS = ["night-roll", "guitar", "tuner"], workerName = id => id.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); // "guitar" -> "Guitar", a hyphenated id -> two capitalised words
 function terminalMark(id, patch) { const box = terminalAll(); const m = box.msgs.find(x => x.id === id); if (m) { Object.assign(m, patch); writeJSON(TERMINAL_FILE, box); } }
+// ---- one AI (#644 Phase 1): the instant reply, the watcher's multi-app long-poll, delivery marks
+const appsOf = raw => { const ids = String(raw == null ? "" : raw).split(",").map(x => x.trim()).filter(Boolean).map(appIdOf); return ids.length ? [...new Set(ids)] : [DEFAULT_APP]; }; // ?app=a,b,c — split BEFORE appIdOf, which turns a comma into "_"
+const clock = t => new Date(t).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
+function stampPoll(apps) { const now = Date.now(); for (const a of apps) terminalPolledAt.set(a, now); aiSeenAt = now; }
+// The canned replies. Live: the AI's watcher polled this app in the last 90 s. Offline: say so, say when it was last seen, and promise the quick answer only if the bridge can really give one.
+function ackText(id, live, quickComing) {
+  if (live) return `Sent to Claude (#${id}). It'll answer here.`;
+  return `Claude isn't running on the Mac (${aiSeenAt ? "last seen " + clock(aiSeenAt) : "not seen since the bridge started"}). #${id} is saved and Claude will get it when it starts.` + (quickComing ? " A quick read-only answer is coming." : "");
+}
+function startQuickAnswer(row) { // the offline answer: one read-only one-off, written into the row's own app by jobEnd
+  const job = newJob("quick_" + row.id + "_" + Date.now().toString(36), MODEL_CLAUDE);
+  job.app = row.app; job.desk = row.id; job.quick = true;
+  const sys = "The Claude session on the Mac that does the work is not running, so you are giving a QUICK, READ-ONLY answer from the repo files. You cannot change anything. If the message asks for a change or a build, say it is saved in the queue and Claude will do it when it starts.";
+  runClaude(job, {messages: [{role: "system", content: sys}, {role: "user", content: row.text + (row.shot ? "\n(screenshot: " + row.shot + ")" : "")}]}, row.app + "-quick", CLAUDE_DEFAULT_MODEL);
+}
+// What a watcher's GET answers: the rows after `since` for any of these apps (a one-off front-desk row is the bridge's own, never listed). The first time an acked row is listed it is "picked up": one "Claude has #n now." note, once.
+function terminalPoll(apps, since) {
+  const box = terminalAll(), now = Date.now();
+  const rows = box.msgs.filter(m => m.id > since && apps.includes(appIdOf(m.app)) && !m.oneoff);
+  const fresh = rows.filter(m => m.acked && !m.delivered);
+  if (fresh.length) { for (const m of fresh) m.delivered = now; writeJSON(TERMINAL_FILE, box); for (const m of fresh) inboxAdd(`Claude has #${m.id} now.`, "terminal", m.app, {auto: true}); }
+  return {last: box.last, msgs: rows.map(m => ({...m, app: appIdOf(m.app)}))};
+}
+function terminalNotify() { // a row was just added: answer every parked long-poll it belongs to
+  for (const w of [...terminalWaiters]) { const r = terminalPoll(w.apps, w.since); if (!r.msgs.length) continue; terminalWaiters.delete(w); clearTimeout(w.timer); stampPoll(w.apps); json(w.res, 200, r); }
+}
 // status.json: the night-roll line at the top level (legacy shape), every other app's under .apps[id]
 function statusFile() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && typeof j === "object" && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
 function statusAll(app) { const j = statusFile(), id = appIdOf(app); if (id === DEFAULT_APP) return j; const b = j.apps && j.apps[id]; return b && Array.isArray(b.recent) ? b : {now: null, recent: []}; }
@@ -613,7 +669,7 @@ function statusSet(text, app) {
   return {now: box.now, recent: box.recent};
 }
 function notesPreface(sess, app) { // what the terminal said since this session's last turn, to this chat's app only
-  const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0) && forApp(n, appIdOf(app)));
+  const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0) && forApp(n, appIdOf(app)) && !n.auto); // canned acks and quick answers are the bridge's own words, never a model's input
   if (!fresh.length) return "";
   const when = t => new Date(t).toTimeString().slice(0, 5);
   return "NOTES FROM THE TERMINAL (delivered by the bridge since your last turn; the user sees them in the app too):\n" + fresh.map(n => `- [${when(n.t)} ${n.from}] ${n.text}`).join("\n") + "\n\n";
@@ -653,14 +709,14 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   // JSON (a bad/missing header just means no parts).
   let ctxParts = null;
   if (ctxPartsHeader) { try { ctxParts = JSON.parse(String(ctxPartsHeader)); } catch (err) { ctxParts = null; } }
-  const sys = profile.sys.common + "\n" + (CLAUDE_MODE === "full" ? profile.sys.full : profile.sys.read) + "\n" + profile.sys.link + (system ? "\n\nTHE APP'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
+  const sys = profile.sys.common + "\n" + profile.sys.read + "\n" + profile.sys.link + (system ? "\n\nTHE APP'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
   const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
-  if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
+  args.push("--tools", ...READ_TOOLS); // always read-only, whatever --claude says (#644): the terminal session is the one writer
   args.push("--add-dir", SHOTS_DIR); // an uploaded screenshot sits outside the repo; Read needs the directory allowed
   // a lean base: no MCP servers (browser/Gmail/Drive tool definitions) and
   // no skills list — the chat client uses neither.
   args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands");
-  const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
+  const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: childEnv()});
   job.child = child;
   let buf = "", err = "", sawText = false, held = "", holding = true, pend = "", turnUsage = null, lastAssistantUsage = null, apiCalls = 0;
   const text = t => { // hold the first characters back: a one-line tool call must not stream as prose
@@ -771,8 +827,8 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
 // directly).
 function runCompact(sessionId, model) {
   return new Promise((resolve, reject) => {
-    const args = ["-p", "--resume", sessionId, "--output-format", "stream-json", "--include-partial-messages", "--verbose", "--model", model || CLAUDE_DEFAULT_MODEL, "/compact"];
-    const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
+    const args = ["-p", "--resume", sessionId, "--output-format", "stream-json", "--include-partial-messages", "--verbose", "--tools", READ_TOOLS.join(","), "--model", model || CLAUDE_DEFAULT_MODEL, "/compact"]; // --tools is variadic: it eats every bare word after it, "/compact" included (checked on the CLI 2026-10-20: `--tools a,b Bash` lists Bash as a tool) — a flag must sit between it and the positional
+    const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: childEnv()});
     let buf = "", err = "", pre = null, post = null, cost = 0, sawResult = false;
     const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("compact took longer than 3 min")); }, 3 * 60 * 1000);
     child.stdout.on("data", d => {
@@ -902,8 +958,41 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, cur);
     }
   }
-  if (url.pathname === "/v1/terminal") { // POST from a client's own Terminal-style tab; GET ?since=ID from the terminal session's watcher
-    if (req.method === "GET") { const app = appIdOf(url.searchParams.get("app")); terminalPolledAt.set(app, Date.now()); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since && forApp(m, app) && !m.oneoff).map(m => ({...m, app: appIdOf(m.app)}))}); } // one-off rows are answered by the bridge itself: the Front Desk session never sees them here (it reads them in /v1/desk)
+  if (url.pathname === "/v1/terminal/done" && req.method === "POST") { // {id, text?}: the AI answers row id — the note goes to THAT row's app (#413 by code) and the row is marked done
+    let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    const row = terminalAll().msgs.find(x => x.id === +(b && b.id));
+    if (!row) return json(res, 404, {error: {message: "no terminal row #" + (b && b.id) + " (older than the last 200?)"}});
+    const text = String(b.text || "").trim();
+    const note = text ? inboxAdd(text, b.from || "terminal", row.app) : null;
+    terminalMark(row.id, {done: Date.now(), ...(note ? {answered: note.id} : {})});
+    console.log(`terminal #${row.id} [${appIdOf(row.app)}] done${note ? ", note #" + note.id : ""}`);
+    return json(res, 200, {id: row.id, app: appIdOf(row.app), ...(note ? {note: note.id} : {})});
+  }
+  if (url.pathname === "/v1/ai-session") { // the one AI registers itself; a second session is refused (409) while the first polled in the last 90 s, unless it says takeover
+    if (req.method === "GET") return json(res, 200, {session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at, aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null});
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      const id = String(b && b.session || "").replace(/[^\w.:-]/g, "").slice(0, 80);
+      if (!id) return json(res, 400, {error: {message: "a registration needs a session id"}});
+      if (aiSession && aiSession.id !== id && aiSeenAt && Date.now() - aiSeenAt < 90000 && !(b && b.takeover))
+        return json(res, 409, {error: {message: "another AI session is live (started " + clock(aiSession.at) + ", last polled " + clock(aiSeenAt) + ")"}, registeredAt: aiSession.at, aiSeenAt});
+      aiSession = {id, at: aiSession && aiSession.id === id ? aiSession.at : Date.now()};
+      console.log(`ai-session ${id} registered${b && b.takeover ? " (takeover)" : ""}`);
+      return json(res, 200, {ok: true, session: id, registeredAt: aiSession.at});
+    }
+  }
+  if (url.pathname === "/v1/terminal") { // POST from a client's own Terminal-style tab; GET ?since=ID&app=a,b,c[&wait=N] from the terminal session's watcher
+    if (req.method === "GET") {
+      const apps = appsOf(url.searchParams.get("app")), since = +(url.searchParams.get("since") || 0) || 0, wait = Math.min(25, Math.max(0, +(url.searchParams.get("wait") || 0) || 0));
+      stampPoll(apps);
+      const r = terminalPoll(apps, since);
+      if (r.msgs.length || !wait) return json(res, 200, r);
+      const w = {apps, since, res, timer: null}; // long-poll: parked until a row arrives or the wait runs out
+      w.timer = setTimeout(() => { terminalWaiters.delete(w); stampPoll(apps); json(res, 200, terminalPoll(apps, since)); }, wait * 1000);
+      terminalWaiters.add(w);
+      res.on("close", () => { clearTimeout(w.timer); terminalWaiters.delete(w); });
+      return;
+    }
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       if (!b || (!String(b.text || "").trim() && !b.shot)) return json(res, 400, {error: {message: "a message needs text"}});
@@ -912,13 +1001,20 @@ const server = http.createServer(async (req, res) => {
         const rows = WORKERS.map(w => terminalAdd(b.text, b.shot, w, b.fwd));
         if (fromDesk) inboxAdd("\u2192 handed to every Worker: " + String(b.text || "").slice(0, 120), FRONT_DESK, FRONT_DESK);
         console.log(`terminal #${rows.map(r => r.id).join(", #")} [all]${b.fwd ? " (forwarded from " + appIdOf(b.fwd) + ")" : ""}: ${String(b.text || "").slice(0, 80)}`);
+        terminalNotify();
         return json(res, 200, {ids: rows.map(r => r.id), app: "all", apps: WORKERS});
       }
-      const live = to === FRONT_DESK ? terminalReachable(FRONT_DESK) : undefined; // decided here, once, so a message is answered exactly once
-      const m = terminalAdd(b.text, b.shot, to, b.fwd, {src: b.src, label: b.label, oneoff: live === false});
+      const fromApp = to !== FRONT_DESK && !b.fwd; // a person's message from an app (not a hand-off, not the web's Front Desk): it gets the instant canned reply
+      const live = to === FRONT_DESK || fromApp ? terminalReachable(to) : undefined; // decided here, once, so a message is answered exactly once
+      const quick = fromApp && live === false && claudeOk; // nobody is watching: the bridge answers read-only itself
+      const m = terminalAdd(b.text, b.shot, to, b.fwd, {src: b.src, label: b.label, oneoff: to === FRONT_DESK && live === false, acked: fromApp, quick});
+      let ack;
+      if (fromApp) { ack = ackText(m.id, live, quick); inboxAdd(ack, "terminal", m.app, {auto: true}); } // BEFORE anything slow, in the row's own app, from "terminal": every build already shows it in the Worker tab
+      if (quick) startQuickAnswer(m);
       if (fromDesk && to !== FRONT_DESK) inboxAdd("\u2192 handed to the " + workerName(to) + " Worker: " + m.text.slice(0, 120), FRONT_DESK, FRONT_DESK);
-      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}${m.src ? " (from " + m.src + (m.label ? " \u00b7 " + m.label : "") + ")" : ""}${m.oneoff ? " (one-off)" : ""}: ${m.text.slice(0, 80)}`);
-      return json(res, 200, {...m, now: statusAll(m.app).now, ...(live === undefined ? {} : {live})});
+      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}${m.src ? " (from " + m.src + (m.label ? " \u00b7 " + m.label : "") + ")" : ""}${m.oneoff ? " (one-off)" : ""}${fromApp ? live ? " (live)" : " (offline" + (quick ? ", quick answer" : "") + ")" : ""}: ${m.text.slice(0, 80)}`);
+      terminalNotify();
+      return json(res, 200, {...m, now: statusAll(m.app).now, ...(live === undefined ? {} : {live}), ...(ack ? {ack} : {})});
     }
   }
   if (url.pathname === "/v1/desk" && req.method === "GET") { // the Front Desk thread's live window: its queue rows and its notes, by time. Read-only: never marks the Front Desk live. since is a timestamp (t >= since); clients de-duplicate by kind + id
@@ -942,12 +1038,14 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
-      const box = statusSet(b && b.text, b && b.app);
-      console.log(box.now ? `status [${appIdOf(b && b.app)}]: ${box.now.text.slice(0, 80)}` : "status cleared");
+      let app = b && b.app;
+      if (b && b.msg != null) { const row = terminalAll().msgs.find(x => x.id === +b.msg); if (!row) return json(res, 404, {error: {message: "no terminal row #" + b.msg + " (older than the last 200?)"}}); app = row.app; } // --msg n: the app comes from row n, so a status can't be tagged to the wrong one
+      const box = statusSet(b && b.text, app);
+      console.log(box.now ? `status [${appIdOf(app)}]: ${box.now.text.slice(0, 80)}` : "status cleared");
       return json(res, 200, {now: box.now, recent: box.recent});
     }
   }
@@ -1119,7 +1217,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, async () => {
   const {models} = await listModels();
   console.log(`${profile.label || "claude-bridge"}: http://${HOST}:${PORT}` + (TOKEN ? " (token required)" : "") +
-    `\n  claude code: ${claudeOk ? "yes (" + CLAUDE_MODE + ", repo " + REPO + ")" : CLAUDE_MODE === "off" ? "off" : "not installed"}` +
+    `\n  claude code: ${claudeOk ? "yes (read-only, repo " + REPO + ")" : CLAUDE_MODE === "off" ? "off" : "not installed"}` +
     `\n  upstreams:   ${(upstreams.length ? upstreams : AUTO_UPSTREAMS).map(u => u.name + "=" + u.url).join(", ")}${upstreams.length ? "" : " (auto: listed only while running)"}` +
     `\n  models now:  ${models.map(m => m.id).join(", ") || "(none reachable)"}` +
     `\n  jobs:        ${JOBS_DIR}, kept ${KEEP_MS / 3600000}h after fetch` +

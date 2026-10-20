@@ -172,6 +172,35 @@ writes a "→ handed to the … Worker" note. `GET /v1/status` and `GET /v1/jobs
 `deskLive`. Rows trimmed from `terminal.json` / `inbox.json` (past 200) are appended to
 `<state>/archive/<file>-YYYY-MM.jsonl`.
 
+## One AI: the instant reply (bridge side, #644 Phase 1)
+
+Every `POST /v1/terminal` from an app (not a `fwd` hand-off, not `app:"all"`, not the web's `front-desk`) is
+answered at once, before anything slow, with a canned note in **that row's own app** (`from:"terminal"`,
+`auto:true`; every build already shows it in the Worker tab). The same text comes back as `ack`, with `live`.
+- AI live (its watcher polled that app within 90 s): `Sent to Claude (#712). It'll answer here.`
+- AI offline: `Claude isn't running on the Mac (last seen 9:41 PM). #712 is saved and Claude will get it when it starts. A quick read-only answer is coming.`
+  (`not seen since the bridge started` when no watcher has polled yet; the last sentence is left out under `--no-claude`.)
+  The bridge then runs one read-only job itself (session `<app>-quick`) and writes `Quick answer (Claude is offline): …`
+  (`auto:true`, `quick:true`) into the same app. The row stays in the queue with `quick:true`, so the AI still gets it.
+- The first time the watcher's GET returns the row: `Claude has #712 now.` (once, `auto:true`).
+
+`notesPreface` never feeds an `auto:true` note to a model. **Every `claude` the bridge starts is read-only**
+(`--tools Read,Glob,Grep,WebFetch,WebSearch`: chat turns, quick answers, manual and warm compact; `--claude full` is
+accepted but moot, and the prompt is always `profile.sys.read`) and gets `NR_BRIDGE_CHILD=1`. Only the interactive
+terminal session writes code.
+
+- `GET /v1/terminal?since=ID&app=a,b,c&wait=25`: several apps at once (split on commas), one cursor; `wait` (max 25 s)
+  parks the request until a row arrives. Each listed app is stamped as polled, so `terminalLive` is right for all.
+  Rows may carry `kind:"grant"` (the bridge telling the AI Josh allowed a command; the watcher prints `GRANT #k [app]: …`).
+- `POST /v1/ai-session {session, takeover?}`: registers the one AI; `409` while a different session polled within
+  90 s unless `takeover`. `GET /v1/ai-session` reads it. `GET /v1/status` adds `aiLive` and `aiSeenAt`.
+- CLI: `--done <n> "text"` posts the note to row n's app and marks the row done; `--status "text" --msg <n>` takes
+  the app from row n.
+- `tools/term-watch.sh [--apps a,b | --app a] [--takeover]`: the watcher (default apps night-roll, guitar, tuner,
+  front-desk; cursor `term-seen-ai`, starting at the bridge's last row when missing). `--app` keeps the old
+  single-app form and cursor files. Registers `$CLAUDE_CODE_SESSION_ID` (not with `--app`: that form never
+  registers); `WATCH REFUSED` (exit 3) on a 409.
+
 ## The Front Desk tab (library side)
 
 `web/desk.js` and `swift/Sources/BridgeChat/DeskChat.swift`: the ✦ tab becomes the one thread every app shares.
