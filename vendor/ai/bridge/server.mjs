@@ -127,7 +127,10 @@
 // once deployInMs has run out AND no hold is active (also exits 0
 // immediately if the bridge can't be reached, or after 60 minutes of
 // waiting) — a build script can run this right before an install, so a
-// human decides when that happens.
+// human decides when that happens. The countdown names its app
+// (--deploy-in N --app guitar; the POST's {app}): only that app's GET
+// /v1/status?app= carries deployInMs/deployHold, so a guitar install
+// never counts down in Night Roll. --deploy-wait takes the same --app.
 //
 // Session usage + compaction: each chat's session accumulates usage from
 // every turn's stream-json "result" event: input_tokens/output_tokens/
@@ -232,19 +235,19 @@ export function main(argv, profile) {
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
   }
-  if (has(argv, "--deploy-in")) { // an install's heads-up: post it to the running bridge and exit, mirroring --status
+  if (has(argv, "--deploy-in")) { // an install's heads-up: post it to the running bridge and exit, mirroring --status (--app names the app being installed)
     const inSec = +flag(argv, "--deploy-in", "15");
-    fetch(base() + "/v1/deploy", {method: "POST", headers: authHeaders(), body: JSON.stringify({inSec})})
+    fetch(base() + "/v1/deploy", {method: "POST", headers: authHeaders(), body: JSON.stringify({inSec, app: flag(argv, "--app", "night-roll")})})
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("deploy warning: " + j.inSec + "s"); process.exit(0); })
       .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
     return;
   }
-  if (has(argv, "--deploy-wait")) { // blocks a build script's own relaunch step until the countdown has run out AND nobody has held it — polls, never pushes
-    const giveUpAt = Date.now() + 60 * 60 * 1000;
+  if (has(argv, "--deploy-wait")) { // blocks a build script's own relaunch step until the countdown has run out AND nobody has held it — polls, never pushes (--app: the same app as its --deploy-in)
+    const giveUpAt = Date.now() + 60 * 60 * 1000, statusUrl = base() + "/v1/status?app=" + encodeURIComponent(flag(argv, "--app", "night-roll"));
     (async () => {
       for (;;) {
         let j;
-        try { const r = await fetch(base() + "/v1/status", {headers: authHeaders()}); j = await r.json(); }
+        try { const r = await fetch(statusUrl, {headers: authHeaders()}); j = await r.json(); }
         catch (err) { console.log("deploy-wait: bridge unreachable — going ahead"); process.exit(0); }
         const waiting = (j && j.deployInMs > 0) || !!(j && j.deployHold);
         if (!waiting) { console.log("deploy-wait: clear to install"); process.exit(0); }
@@ -560,6 +563,10 @@ function sessionUsageView(s, viewOpts) { // {turns, tokens, cost} — s may be u
 // /v1/status carries the milliseconds left so the client can count down
 // instead of vanishing mid-edit.
 let deployUntil = 0;
+// which app the install is for ("guitar", "night-roll"): the three apps share
+// this bridge, and a guitar install must not count down in Night Roll. Set by
+// the countdown's own POST ({app}); null (a POST without one) = every app.
+let deployApp = null;
 // a hold blocks --deploy-wait regardless of deployUntil, until released or
 // 60 minutes pass (then GET /v1/status reports it released on its own).
 let deployHold = false;
@@ -934,8 +941,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET") {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
-      const deployInMs = Math.max(0, deployUntil - Date.now());
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
+      const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
@@ -944,12 +951,14 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {now: box.now, recent: box.recent});
     }
   }
-  if (req.method === "POST" && url.pathname === "/v1/deploy") { // {inSec, hold?}: an install relaunches the client app in inSec seconds (0 cancels); hold:true/false pauses/releases "Not now" — independent of inSec, so a {hold:true} alone doesn't need to also know the countdown
+  if (req.method === "POST" && url.pathname === "/v1/deploy") { // {inSec, hold?, app?}: an install relaunches the client app in inSec seconds (0 cancels); hold:true/false pauses/releases "Not now" — independent of inSec, so a {hold:true} alone doesn't need to also know the countdown; app names the one app it is for (absent: leaves it as it was)
     let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
     if (b && typeof b.hold === "boolean") { deployHold = b.hold; deployHoldAt = b.hold ? Date.now() : 0; }
     const sec = Math.max(0, Math.min(120, +(b && b.inSec) || 0));
     deployUntil = sec ? Date.now() + sec * 1000 : 0;
-    console.log((sec ? `deploy: app relaunches in ${sec}s` : "deploy: cancelled") + (deployHold ? " (held — \"Not now\")" : ""));
+    if (!sec && !deployHold) deployApp = null; // cancelled and not held: nothing is pending for anyone
+    else if (b && typeof b.app === "string" && b.app) deployApp = appIdOf(b.app);
+    console.log((sec ? `deploy: ${deployApp || "every app"} relaunches in ${sec}s` : "deploy: cancelled") + (deployHold ? " (held — \"Not now\")" : ""));
     return json(res, 200, {inSec: sec, hold: deployHold});
   }
   if (req.method === "POST" && url.pathname === "/v1/backup") { // {key, doc, notes?, at}: an off-device copy of one item's own draft (deploy safeguards)
