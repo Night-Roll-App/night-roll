@@ -192,8 +192,13 @@ terminal session writes code.
 - `GET /v1/terminal?since=ID&app=a,b,c&wait=25`: several apps at once (split on commas), one cursor; `wait` (max 25 s)
   parks the request until a row arrives. Each listed app is stamped as polled, so `terminalLive` is right for all.
   Rows may carry `kind:"grant"` (the bridge telling the AI Josh allowed a command; the watcher prints `GRANT #k [app]: …`).
-- `POST /v1/ai-session {session, takeover?}`: registers the one AI; `409` while a different session polled within
-  90 s unless `takeover`. `GET /v1/ai-session` reads it. `GET /v1/status` adds `aiLive` and `aiSeenAt`.
+- `POST /v1/ai-session {session, terminal?, takeover?}`: registers the one AI; `409` while a different session polled
+  within 90 s unless `takeover` or the same `terminal` (the tab id the SessionStart hook sends; a `/clear` keeps it).
+  `{terminal}` alone only checks (the watcher's start). `GET /v1/ai-session` reads it. `GET /v1/status` adds `aiLive`
+  and `aiSeenAt`.
+- `POST /v1/asks/:id {decision}` is taken only on the decision listener `BRIDGE_DECIDE_ADDR` (the Mac's tailnet
+  address, e.g. `100.73.74.71:8788`), from a peer in `BRIDGE_APPROVER_IPS` that `tailscale whois` maps to
+  `BRIDGE_APPROVER`; on 127.0.0.1 or the ts.net proxy it is always `403`.
 - CLI: `--done <n> "text"` posts the note to row n's app and marks the row done; `--status "text" --msg <n>` takes
   the app from row n.
 - `tools/term-watch.sh [--apps a,b | --app a] [--takeover]`: the watcher (default apps night-roll, guitar, tuner,

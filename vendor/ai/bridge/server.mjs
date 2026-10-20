@@ -110,6 +110,24 @@
 // read-only (--tools Read,Glob,Grep,WebFetch,WebSearch) and gets
 // NR_BRIDGE_CHILD=1; only the interactive terminal session writes code.
 //
+// Permission cards (#644 Phase 3): POST /v1/asks {id, kind: permission|blocked,
+// session, tool, summary, detail, repo, agent_type, app, hash, expiresAt} opens a
+// card (same id again = no second card); GET /v1/asks/:id?wait=N (<=25) long-polls
+// it ({status: open|allowed|denied|expired, decision}); GET /v1/asks lists the
+// open ones, and GET /v1/status carries them as `asks`. POST /v1/asks/:id
+// {decision, app?} decides, and is taken ONLY on the decision listener
+// (BRIDGE_DECIDE_ADDR, the Mac's tailnet address, e.g. 100.73.74.71:8788; never
+// 127.0.0.1 or the ts.net proxy, where anything on this Mac can forge the
+// headers): the socket's peer must be one of BRIDGE_APPROVER_IPS, none of this
+// machine's own addresses (BRIDGE_SELF_IPS adds to the interface list), and
+// `tailscale whois` on it must answer BRIDGE_APPROVER; else 403. Unset, every
+// decision is 403. The first decision wins, a late one is 409 and creates
+// nothing; anything but exactly "allow" is a deny. Allowing a `blocked` card
+// stores a ten-minute one-time grant IN MEMORY (never a file) for that session,
+// tool and input hash and queues a kind:"grant" terminal row so the watcher wakes
+// the AI; GET /v1/grants?session=&tool=&hash=[&peek=1] consumes it. asks.jsonl is
+// a log only.
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status ·
@@ -655,6 +673,55 @@ function terminalPoll(apps, since) {
 function terminalNotify() { // a row was just added: answer every parked long-poll it belongs to
   for (const w of [...terminalWaiters]) { const r = terminalPoll(w.apps, w.since); if (!r.msgs.length) continue; terminalWaiters.delete(w); clearTimeout(w.timer); stampPoll(w.apps); json(w.res, 200, r); }
 }
+// ---- one AI (#644 Phase 3): permission cards. In memory only: a restart loses the open cards (the hook re-POSTs the same id) and every grant (fail closed).
+const asks = new Map(); // id → card {id, kind: "permission"|"blocked", session, tool, summary, detail, repo, agent_type, app, hash, createdAt, expiresAt, status: open|allowed|denied|expired, decision}
+const grants = []; // {session, tool, hash, expires}: Josh's one-time OK for a blocked call. Never in a file the AI could write; consumed by GET /v1/grants
+const asksWaiters = new Set(); // long-polls parked on GET /v1/asks/:id?wait=N: {id, res, timer}
+const ASKS_LOG = path.join(STATE_DIR, "asks.jsonl"); // a log only, never read back
+const ASK_MAX_MS = 31 * 60 * 1000, GRANT_MS = +process.env.BRIDGE_GRANT_MS || 10 * 60 * 1000; // BRIDGE_GRANT_MS: tests only
+const csv = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
+const APPROVER = process.env.BRIDGE_APPROVER || "", APPROVER_IPS = csv(process.env.BRIDGE_APPROVER_IPS); // the tailnet login and device addresses a decision must come from
+function asksLog(o) { try { fs.mkdirSync(STATE_DIR, {recursive: true}); fs.appendFileSync(ASKS_LOG, JSON.stringify({t: Date.now(), ...o}) + "\n"); } catch (err) { console.error("asks.jsonl: " + err.message); } }
+function asksSweep() {
+  const now = Date.now();
+  for (const a of asks.values()) {
+    if (a.status === "open" && now >= a.expiresAt) { a.status = "expired"; a.decision = null; asksLog({ev: "expired", id: a.id, kind: a.kind, tool: a.tool}); }
+    if (a.status !== "open" && now - a.expiresAt > 3600000) asks.delete(a.id);
+  }
+  for (let i = grants.length - 1; i >= 0; i--) if (grants[i].expires <= now) grants.splice(i, 1);
+}
+const askCard = a => ({id: a.id, kind: a.kind, tool: a.tool, summary: a.summary, detail: a.detail, repo: a.repo, agent_type: a.agent_type, app: a.app, createdAt: a.createdAt, expiresAt: a.expiresAt});
+const openAsks = () => { asksSweep(); return [...asks.values()].filter(a => a.status === "open").map(askCard); };
+const askReply = a => ({id: a.id, status: a.status, decision: a.decision || null});
+function asksNotify(a) { for (const w of [...asksWaiters]) if (w.id === a.id) { asksWaiters.delete(w); clearTimeout(w.timer); json(w.res, 200, askReply(a)); } }
+const normIp = v => { let x = String(v).trim().replace(/^\[|\]$/g, "").replace(/^::ffff:/i, ""); if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(x)) x = x.slice(0, x.lastIndexOf(":")); return x; };
+// Who may decide. Headers prove nothing: the AI runs on this Mac, which reaches 127.0.0.1 directly (any header it
+// likes) and the ts.net proxy with a GENUINE Tailscale-User-Login (the Mac is one of Josh's devices). So decisions are
+// taken only on the decision listener bound to the tailnet address, where the peer address is the one WireGuard
+// authenticated: a local process connecting there arrives as the Mac itself and is refused; 127.0.0.1 is not bound.
+// `tailscale whois` then ties the device to the approver's login (BRIDGE_WHOIS names the CLI; a .mjs path is a fake
+// for tests; empty skips the lookup). BRIDGE_TESTS_PEER_HEADER (tests only) reads the peer from a header instead.
+const DECIDE_ADDR = /^(.+):(\d+)$/.exec(process.env.BRIDGE_DECIDE_ADDR || ""), WHOIS = process.env.BRIDGE_WHOIS == null ? "tailscale" : process.env.BRIDGE_WHOIS, PEER_HEADER = String(process.env.BRIDGE_TESTS_PEER_HEADER || "").toLowerCase();
+function peerOf(req) { return normIp((PEER_HEADER && req.headers[PEER_HEADER]) || (req.socket && req.socket.remoteAddress) || ""); }
+function whoisLogin(ip) {
+  if (!WHOIS) return APPROVER;
+  try {
+    const r = /\.m?js$/.test(WHOIS) ? spawnSync(process.execPath, [WHOIS, "whois", "--json", ip], {encoding: "utf8", timeout: 5000}) : spawnSync(WHOIS, ["whois", "--json", ip], {encoding: "utf8", timeout: 5000});
+    if (r.status !== 0) return "";
+    const j = JSON.parse(r.stdout);
+    return String((j && j.UserProfile && j.UserProfile.LoginName) || "");
+  } catch (err) { return ""; }
+}
+function approverError(req) {
+  if (!req.decideListener) return "decisions are taken only on the tailnet decision listener";
+  if (!APPROVER || !APPROVER_IPS.length) return "this bridge is not set up to take decisions (BRIDGE_APPROVER and BRIDGE_APPROVER_IPS)";
+  const ip = peerOf(req);
+  const self = new Set(["127.0.0.1", "::1", ...csv(process.env.BRIDGE_SELF_IPS).map(normIp), ...Object.values(os.networkInterfaces()).flat().filter(Boolean).map(i => normIp(i.address))]);
+  if (!ip || self.has(ip)) return "a decision cannot come from the Mac itself";
+  if (!APPROVER_IPS.includes(ip)) return "a decision must come from the approved device";
+  if (whoisLogin(ip).toLowerCase() !== APPROVER.toLowerCase()) return "a decision needs the approver's tailnet login (whois " + ip + ")";
+  return null;
+}
 // status.json: the night-roll line at the top level (legacy shape), every other app's under .apps[id]
 function statusFile() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && typeof j === "object" && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
 function statusAll(app) { const j = statusFile(), id = appIdOf(app); if (id === DEFAULT_APP) return j; const b = j.apps && j.apps[id]; return b && Array.isArray(b.recent) ? b : {now: null, recent: []}; }
@@ -968,16 +1035,83 @@ const server = http.createServer(async (req, res) => {
     console.log(`terminal #${row.id} [${appIdOf(row.app)}] done${note ? ", note #" + note.id : ""}`);
     return json(res, 200, {id: row.id, app: appIdOf(row.app), ...(note ? {note: note.id} : {})});
   }
-  if (url.pathname === "/v1/ai-session") { // the one AI registers itself; a second session is refused (409) while the first polled in the last 90 s, unless it says takeover
+  if (url.pathname === "/v1/asks" || url.pathname.startsWith("/v1/asks/")) { // permission cards: the hook POSTs one, long-polls it; the approver's device decides
+    const id = url.pathname.slice("/v1/asks/".length);
+    if (url.pathname === "/v1/asks" && req.method === "GET") return json(res, 200, {asks: openAsks()});
+    if (url.pathname === "/v1/asks" && req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      const aid = String(b && b.id || "");
+      if (!/^[\w-]{8,64}$/.test(aid)) return json(res, 400, {error: {message: "an ask needs an id of 8-64 letters, digits, - or _"}});
+      if (!b || (b.kind !== "permission" && b.kind !== "blocked")) return json(res, 400, {error: {message: "kind must be permission or blocked"}});
+      asksSweep();
+      const had = asks.get(aid);
+      if (had) return json(res, 200, askReply(had)); // the same hook re-POSTing (a restart, a retry): not a second card
+      const now = Date.now(), str = (v, n) => String(v == null ? "" : v).slice(0, n);
+      const a = {id: aid, kind: b.kind, session: str(b.session, 80), tool: str(b.tool, 80), summary: str(b.summary, 1000), detail: str(b.detail, 1000), repo: str(b.repo, 120), agent_type: str(b.agent_type, 80), app: appIdOf(b.app), hash: str(b.hash, 80), createdAt: now,
+        expiresAt: Math.min(now + ASK_MAX_MS, Math.max(now + 100, +b.expiresAt || now + 600000)), status: "open", decision: null};
+      asks.set(aid, a);
+      asksLog({ev: "ask", id: aid, kind: a.kind, tool: a.tool, summary: a.summary.slice(0, 200), repo: a.repo, agent_type: a.agent_type});
+      console.log(`ask ${aid} [${a.kind}] ${a.tool}: ${a.summary.slice(0, 80)}`);
+      return json(res, 200, askReply(a));
+    }
+    if (id && !id.includes("/") && req.method === "GET") { // long-poll one card: answers at once when decided or expired, else after ?wait=N (≤25 s) with status "open"
+      asksSweep();
+      const a = asks.get(id);
+      if (!a) return json(res, 404, {error: {message: "no such ask (the bridge may have restarted)"}});
+      const wait = Math.min(25, Math.max(0, +(url.searchParams.get("wait") || 0) || 0));
+      if (a.status !== "open" || !wait) return json(res, 200, askReply(a));
+      const w = {id, res, timer: null};
+      w.timer = setTimeout(() => { asksWaiters.delete(w); asksSweep(); json(res, 200, askReply(a)); }, Math.min(wait * 1000, Math.max(0, a.expiresAt - Date.now()) + 50));
+      asksWaiters.add(w);
+      res.on("close", () => { clearTimeout(w.timer); asksWaiters.delete(w); });
+      return;
+    }
+    if (id && !id.includes("/") && req.method === "POST") { // {decision: "allow"|"deny", app?}: only the approver's device. First decision wins, a late one gets 409 and creates nothing
+      const why = approverError(req);
+      if (why) { asksLog({ev: "refused", id, why}); return json(res, 403, {error: {message: why}}); }
+      asksSweep();
+      const a = asks.get(id);
+      if (!a) return json(res, 404, {error: {message: "no such ask"}});
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      if (a.status !== "open") return json(res, 409, {error: {message: "already " + a.status}, status: a.status});
+      const decision = b && b.decision === "allow" ? "allow" : "deny"; // anything but exactly "allow" is a deny
+      a.status = decision === "allow" ? "allowed" : "denied"; a.decision = decision;
+      const tapped = appIdOf(b && b.app || a.app);
+      if (decision === "allow" && a.kind === "blocked") {
+        if (a.hash) grants.push({session: a.session, tool: a.tool, hash: a.hash, expires: Date.now() + GRANT_MS});
+        terminalAdd(`Josh allowed this on the iPad: ${a.summary.slice(0, 300)}. Retry it exactly as before.`, null, tapped, null, {kind: "grant"}); // the watcher prints it as GRANT #n and wakes the AI
+        terminalNotify();
+      }
+      const verb = decision === "allow" ? "allowed" : a.kind === "blocked" ? "left blocked" : "denied";
+      inboxAdd(`Josh ${verb}: ${a.tool} ${a.summary.slice(0, 120)}`, "terminal", tapped, {auto: true});
+      asksLog({ev: "decision", id, decision, kind: a.kind, tool: a.tool, app: tapped});
+      console.log(`ask ${id} ${decision}`);
+      asksNotify(a);
+      return json(res, 200, askReply(a));
+    }
+  }
+  if (url.pathname === "/v1/grants" && req.method === "GET") { // ?session=&tool=&hash=[&peek=1]: is there a live one-time OK for exactly this call? Consumes it unless peek
+    asksSweep();
+    const q = k => url.searchParams.get(k) || "";
+    const i = grants.findIndex(g => g.session === q("session") && g.tool === q("tool") && g.hash === q("hash") && q("hash"));
+    if (i >= 0 && !q("peek")) grants.splice(i, 1);
+    return json(res, 200, {granted: i >= 0});
+  }
+  if (url.pathname === "/v1/ai-session") { // the one AI registers itself; a second session is refused (409) while the first polled in the last 90 s, unless it says takeover or comes from the same terminal (a /clear: same tab, new id)
     if (req.method === "GET") return json(res, 200, {session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at, aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null});
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
-      const id = String(b && b.session || "").replace(/[^\w.:-]/g, "").slice(0, 80);
-      if (!id) return json(res, 400, {error: {message: "a registration needs a session id"}});
-      if (aiSession && aiSession.id !== id && aiSeenAt && Date.now() - aiSeenAt < 90000 && !(b && b.takeover))
-        return json(res, 409, {error: {message: "another AI session is live (started " + clock(aiSession.at) + ", last polled " + clock(aiSeenAt) + ")"}, registeredAt: aiSession.at, aiSeenAt});
-      aiSession = {id, at: aiSession && aiSession.id === id ? aiSession.at : Date.now()};
-      console.log(`ai-session ${id} registered${b && b.takeover ? " (takeover)" : ""}`);
+      const id = String(b && b.session || "").replace(/[^\w.:-]/g, "").slice(0, 80), term = String(b && b.terminal || "").slice(0, 120);
+      const live = aiSession && aiSeenAt && Date.now() - aiSeenAt < 90000, sameTerm = !!(term && aiSession && aiSession.terminal === term);
+      const refuse = () => json(res, 409, {error: {message: "another AI session is live (started " + clock(aiSession.at) + ", last polled " + clock(aiSeenAt) + ")"}, registeredAt: aiSession.at, aiSeenAt});
+      if (!id) { // {terminal} alone: the watcher checking it belongs to the registered session's terminal before it polls (it registers nothing)
+        if (!term) return json(res, 400, {error: {message: "a registration needs a session id"}});
+        if (live && !sameTerm) return refuse();
+        return json(res, 200, {ok: true, session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at});
+      }
+      if (live && aiSession.id !== id && !(b && b.takeover) && !sameTerm) return refuse();
+      aiSession = {id, at: aiSession && aiSession.id === id ? aiSession.at : Date.now(), terminal: term || (aiSession && aiSession.id === id ? aiSession.terminal : "")};
+      console.log(`ai-session ${id} registered${b && b.takeover ? " (takeover)" : sameTerm ? " (same terminal)" : ""}`);
       return json(res, 200, {ok: true, session: id, registeredAt: aiSession.at});
     }
   }
@@ -1038,7 +1172,7 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, asks: openAsks(), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
@@ -1213,6 +1347,21 @@ const server = http.createServer(async (req, res) => {
   }
   json(res, 404, {error: {message: "not found"}});
 });
+
+// The decision listener (#644): only POST /v1/asks/:id, only on the tailnet address (see approverError). Bound late and
+// retried, because tailscaled's interface may come up after launchd starts the bridge at login.
+let decideServer = null;
+if (DECIDE_ADDR) {
+  const [, dHost, dPort] = DECIDE_ADDR;
+  decideServer = http.createServer((req, res) => {
+    if (req.method === "POST" && /^\/v1\/asks\/[\w-]+$/.test(req.url)) { req.decideListener = true; return server.emit("request", req, res); }
+    json(res, 404, {error: {message: "the decision listener takes only POST /v1/asks/:id"}});
+  });
+  const bindDecide = () => decideServer.listen(+dPort, dHost, () => console.log(`decisions: http://${dHost}:${dPort} (approver ${APPROVER || "UNSET"} from ${APPROVER_IPS.join(", ") || "NO DEVICE"}${WHOIS ? ", whois via " + WHOIS : ", no whois"})`));
+  decideServer.on("error", err => { console.error(`decision listener ${dHost}:${dPort}: ${err.message}; retrying in 15 s`); setTimeout(bindDecide, 15000).unref(); });
+  bindDecide();
+  if (PEER_HEADER) console.error(`WARNING: BRIDGE_TESTS_PEER_HEADER=${PEER_HEADER}: the decision peer comes from a header. Tests only.`);
+} else console.log("decisions: OFF (set BRIDGE_DECIDE_ADDR=<tailnet ip>:<port>); every POST /v1/asks/:id is 403");
 
 server.listen(PORT, HOST, async () => {
   const {models} = await listModels();

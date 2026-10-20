@@ -1,10 +1,10 @@
 {
   "LICENSE": "5a02f191a6333badf75ba07c751f1c6a5a5b1033401c0892d8124702d0af98c8",
-  "README.md": "87b9d7e68a6bbebc7a270a5bd717b81595c2d4349d6a88f488052c7dee8e8883",
+  "README.md": "f02090264fcf439f698292af8fe4dc2ea86200a427c985bec6f88a3df3a6c4c2",
   "bridge/launchd/README.md": "934c801a84d4cf37412422c5111dbad0d1745725bf1531d078f997edb86173f5",
   "bridge/launchd/install.sh": "9e7db4671b25dfba831643ddd0b6c2c36fd6e52cdd2fcfd2e1291706e0517a89",
   "bridge/launchd/template.plist": "aed13dab1da5dc5067b780df4ba57b65a8b7591d503693a8717c7885bf084ad3",
-  "bridge/server.mjs": "8d8390cce14a706daf0543d2287eacbd4d610938fd116700543a71805b9228b0",
+  "bridge/server.mjs": "b2dd86b1b9e50a25033c95a99c6b115ac14cc900ed1663a7ea1ab5c9255138eb",
   "web/attach.js": "aaa86704bebf9d4e0a6f1e260267e3f0c6cada438559ac7e4d334dd7730f4c44",
   "web/backends.js": "171bfc12bcfc118db2aa0345604908838801559ab98bbe6bcf327f8e0b374a8a",
   "web/bridge-client.js": "5e7c542bf9d73f14b9159d56c9969e488366032a2e7262af4cadac34dda909a0",
