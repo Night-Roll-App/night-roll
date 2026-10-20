@@ -1172,7 +1172,7 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, asks: openAsks(), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, asks: openAsks(), ...(DECIDE_ADDR ? {decideUrl: `http://${DECIDE_ADDR[1]}:${DECIDE_ADDR[2]}`} : {}), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
