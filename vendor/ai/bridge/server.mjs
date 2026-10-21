@@ -101,6 +101,7 @@
 // "Got it (#n)." when the AI's watcher polled that app in the last 90 s
 // (`live`), else an offline line, and the bridge starts a read-only quick answer
 // itself (session `<app>-quick`; the row stays in the queue with quick:true).
+// Busy (alive, watcher not polling: a long command; see aiBusy) routes like live with the ack "Got it (#n). Claude is busy and will see it shortly."; /v1/status and /v1/ai-session carry aiState live|busy|offline (aiLive true for live and busy).
 // While the AI is live a plain question is judged by the same read-only helper
 // (#681): it answers (note + done + an "ANSWERED #n" FYI row for the watcher) or
 // says NEEDS_AI / errors / passes 60 s and the row goes to the AI as usual.
@@ -644,6 +645,23 @@ function inboxAdd(text, from, app, extra) { const box = inboxAll(); const note =
 const TERMINAL_FILE = path.join(STATE_DIR, "terminal.json");
 const terminalPolledAt = new Map(); // app id → when its watcher last GETed /v1/terminal (every few seconds): recent = someone is there to read it
 let aiSeenAt = 0, aiSession = null; // the last poll of ANY app, and the one registered AI session {id, at} (POST /v1/ai-session)
+// Busy (not live, not offline): the session is alive but not polling, e.g. inside a 10-minute test run. Evidence is the AI
+// session's hooks (POST /v1/ai-session/heartbeat from tools/bridge-hook.mjs on Pre/PostToolUse, UserPromptSubmit, Stop) and
+// the pid the hook registered (Claude Code's own process). Rules, in order:
+//   a registered pid that is dead            -> offline
+//   last hook was not Stop, pid alive OR hook within 15 min -> busy
+//   last hook was Stop, pid alive AND within 15 min -> busy (the watcher is about to be restarted); else offline
+//   no hook ever seen (bridge just restarted) -> offline until the next hook
+let aiHook = null; // {at, event, session, pid}
+const BUSY_MS = +process.env.BRIDGE_BUSY_MS || 15 * 60000; // BRIDGE_BUSY_MS: tests only
+const pidAlive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; } };
+function aiBusy() {
+  if (!aiSession || !aiHook || aiHook.session !== aiSession.id) return false;
+  const pid = aiHook.pid || aiSession.pid, alive = pid ? pidAlive(pid) : null, fresh = Date.now() - aiHook.at < BUSY_MS;
+  if (alive === false) return false;
+  return aiHook.event === "Stop" ? alive === true && fresh : alive === true || fresh;
+}
+const aiStateOf = app => terminalReachable(app) ? "live" : aiBusy() ? "busy" : "offline"; // app null = any watcher
 const terminalWaiters = new Set(); // long-polls parked on GET /v1/terminal?wait=N: {apps, since, res, timer}
 const terminalReachable = app => [...terminalPolledAt].some(([id, t]) => (app == null || id === appIdOf(app)) && Date.now() - t < 90000); // no app = any watcher
 function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
@@ -656,8 +674,9 @@ const appsOf = raw => { const ids = String(raw == null ? "" : raw).split(",").ma
 const clock = t => new Date(t).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
 function stampPoll(apps) { const now = Date.now(); for (const a of apps) terminalPolledAt.set(a, now); aiSeenAt = now; }
 // The canned replies. Live: the AI's watcher polled this app in the last 90 s. Offline: say so, say when it was last seen, and promise the quick answer only if the bridge can really give one.
-function ackText(id, live, quickComing) {
-  if (live) return `Got it (#${id}).`;
+function ackText(id, state, quickComing) {
+  if (state === "live") return `Got it (#${id}).`;
+  if (state === "busy") return `Got it (#${id}). Claude is busy and will see it shortly.`;
   return `Claude isn't running on the Mac (${aiSeenAt ? "last seen " + clock(aiSeenAt) : "not seen since the bridge started"}). #${id} is saved and Claude will get it when it starts.` + (quickComing ? " A quick read-only answer is coming." : "");
 }
 function startQuickAnswer(row) { // the offline answer: one read-only one-off, written into the row's own app by jobEnd
@@ -1140,12 +1159,19 @@ const server = http.createServer(async (req, res) => {
     if (i >= 0 && !q("peek")) grants.splice(i, 1);
     return json(res, 200, {granted: i >= 0});
   }
+  if (url.pathname === "/v1/ai-session/heartbeat" && req.method === "POST") { // the AI session's hooks fired: it is alive even while its watcher is not polling
+    let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    const id = String(b && b.session || "");
+    if (!aiSession || aiSession.id !== id) return json(res, 200, {ok: false});
+    aiHook = {at: Date.now(), event: String(b.event || "").slice(0, 40), session: id, pid: +b.pid > 0 ? +b.pid : (aiHook && aiHook.session === id ? aiHook.pid : 0)};
+    return json(res, 200, {ok: true, aiState: aiStateOf()});
+  }
   if (url.pathname === "/v1/ai-session") { // the one AI registers itself; a second session is refused (409) while the first polled in the last 90 s, unless it says takeover or comes from the same terminal (a /clear: same tab, new id)
-    if (req.method === "GET") return json(res, 200, {session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at, aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null});
+    if (req.method === "GET") return json(res, 200, {session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at, aiLive: aiStateOf() !== "offline", aiState: aiStateOf(), aiSeenAt: aiSeenAt || null});
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       const id = String(b && b.session || "").replace(/[^\w.:-]/g, "").slice(0, 80), term = String(b && b.terminal || "").slice(0, 120);
-      const live = aiSession && aiSeenAt && Date.now() - aiSeenAt < 90000, sameTerm = !!(term && aiSession && aiSession.terminal === term);
+      const live = aiSession && (aiSeenAt && Date.now() - aiSeenAt < 90000 || aiBusy()), sameTerm = !!(term && aiSession && aiSession.terminal === term);
       const refuse = () => json(res, 409, {error: {message: "another AI session is live (started " + clock(aiSession.at) + ", last polled " + clock(aiSeenAt) + ")"}, registeredAt: aiSession.at, aiSeenAt});
       if (!id) { // {terminal} alone: the watcher checking it belongs to the registered session's terminal before it polls (it registers nothing)
         if (!term) return json(res, 400, {error: {message: "a registration needs a session id"}});
@@ -1153,7 +1179,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, {ok: true, session: aiSession && aiSession.id, registeredAt: aiSession && aiSession.at});
       }
       if (live && aiSession.id !== id && !(b && b.takeover) && !sameTerm) return refuse();
-      aiSession = {id, at: aiSession && aiSession.id === id ? aiSession.at : Date.now(), terminal: term || (aiSession && aiSession.id === id ? aiSession.terminal : "")};
+      aiSession = {id, at: aiSession && aiSession.id === id ? aiSession.at : Date.now(), terminal: term || (aiSession && aiSession.id === id ? aiSession.terminal : ""), pid: +(b && b.pid) > 0 ? +b.pid : 0};
       console.log(`ai-session ${id} registered${b && b.takeover ? " (takeover)" : sameTerm ? " (same terminal)" : ""}`);
       return json(res, 200, {ok: true, session: id, registeredAt: aiSession.at});
     }
@@ -1182,18 +1208,18 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, {ids: rows.map(r => r.id), app: "all", apps: WORKERS});
       }
       const fromApp = to !== FRONT_DESK && !b.fwd; // a person's message from an app (not a hand-off, not the web's Front Desk): it gets the instant canned reply
-      const live = to === FRONT_DESK || fromApp ? terminalReachable(to) : undefined; // decided here, once, so a message is answered exactly once
+      const state = to === FRONT_DESK || fromApp ? aiStateOf(to) : undefined, live = state === undefined ? undefined : state !== "offline"; // busy routes like live // decided here, once, so a message is answered exactly once
       const quick = fromApp && live === false && claudeOk; // nobody is watching: the bridge answers read-only itself
       const route = fromApp && live === true && claudeOk; // the AI is live: the read-only helper first judges question vs work (#681)
       const m = terminalAdd(b.text, b.shot, to, b.fwd, {src: b.src, label: b.label, oneoff: to === FRONT_DESK && live === false, acked: fromApp, quick, hold: route ? Date.now() + ROUTE_MS + 5000 : 0});
       let ack;
-      if (fromApp) { ack = ackText(m.id, live, quick); inboxAdd(ack, "terminal", m.app, {auto: true}); } // BEFORE anything slow, in the row's own app, from "terminal": every build already shows it in the Worker tab
+      if (fromApp) { ack = ackText(m.id, state, quick); inboxAdd(ack, "terminal", m.app, {auto: true}); } // BEFORE anything slow, in the row's own app, from "terminal": every build already shows it in the Worker tab
       if (quick) startQuickAnswer(m);
       if (route) startRouter(m);
       if (fromDesk && to !== FRONT_DESK) inboxAdd("\u2192 handed to the " + workerName(to) + " Worker: " + m.text.slice(0, 120), FRONT_DESK, FRONT_DESK);
-      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}${m.src ? " (from " + m.src + (m.label ? " \u00b7 " + m.label : "") + ")" : ""}${m.oneoff ? " (one-off)" : ""}${fromApp ? live ? " (live)" : " (offline" + (quick ? ", quick answer" : "") + ")" : ""}: ${m.text.slice(0, 80)}`);
+      console.log(`terminal #${m.id} [${m.app}]${m.fwd ? " (forwarded from " + m.fwd + ")" : ""}${m.src ? " (from " + m.src + (m.label ? " \u00b7 " + m.label : "") + ")" : ""}${m.oneoff ? " (one-off)" : ""}${fromApp ? live ? " (" + state + ")" : " (offline" + (quick ? ", quick answer" : "") + ")" : ""}: ${m.text.slice(0, 80)}`);
       terminalNotify();
-      return json(res, 200, {...m, now: statusAll(m.app).now, ...(live === undefined ? {} : {live}), ...(ack ? {ack} : {})});
+      return json(res, 200, {...m, now: statusAll(m.app).now, ...(live === undefined ? {} : {live, aiState: state}), ...(ack ? {ack} : {})});
     }
   }
   if (url.pathname === "/v1/desk" && req.method === "GET") { // the Front Desk thread's live window: its queue rows and its notes, by time. Read-only: never marks the Front Desk live. since is a timestamp (t >= since); clients de-duplicate by kind + id
@@ -1217,7 +1243,7 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: terminalReachable(), aiSeenAt: aiSeenAt || null, asks: openAsks(), ...(DECIDE_ADDR ? {decideUrl: `http://${DECIDE_ADDR[1]}:${DECIDE_ADDR[2]}`} : {}), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: aiStateOf() !== "offline", aiState: aiStateOf(), aiSeenAt: aiSeenAt || null, asks: openAsks(), ...(DECIDE_ADDR ? {decideUrl: `http://${DECIDE_ADDR[1]}:${DECIDE_ADDR[2]}`} : {}), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
