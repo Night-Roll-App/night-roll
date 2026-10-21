@@ -666,17 +666,20 @@ const terminalWaiters = new Set(); // long-polls parked on GET /v1/terminal?wait
 const terminalReachable = app => [...terminalPolledAt].some(([id, t]) => (app == null || id === appIdOf(app)) && Date.now() - t < 90000); // no app = any watcher
 function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
 // src/label: which app a Front Desk message came from and one line of its context; oneoff: the Front Desk was not being read, so the app asks for a one-off answer instead
-function terminalAdd(text, shot, app, fwd, extra) { const box = terminalAll(); const e = extra || {}; const m = {id: ++box.last, t: Date.now(), app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), ...(e.src ? {src: String(e.src).slice(0, 40)} : {}), ...(e.label ? {label: String(e.label).slice(0, 80)} : {}), ...(e.oneoff ? {oneoff: true} : {}), ...(e.acked ? {acked: true} : {}), ...(e.quick ? {quick: true} : {}), ...(e.hold ? {hold: e.hold} : {}), ...(e.kind ? {kind: String(e.kind).slice(0, 20)} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); archiveRows("terminal", box.msgs.slice(0, -200)); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
+function terminalAdd(text, shot, app, fwd, extra) { const box = terminalAll(); const e = extra || {}; const nowT = Date.now(); const m = {id: ++box.last, t: nowT, receivedAt: nowT, app: appIdOf(app), ...(fwd ? {fwd: appIdOf(fwd)} : {}), ...(e.src ? {src: String(e.src).slice(0, 40)} : {}), ...(e.label ? {label: String(e.label).slice(0, 80)} : {}), ...(e.oneoff ? {oneoff: true} : {}), ...(e.acked ? {acked: true} : {}), ...(e.quick ? {quick: true} : {}), ...(e.hold ? {hold: e.hold} : {}), ...(e.kind ? {kind: String(e.kind).slice(0, 20)} : {}), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); archiveRows("terminal", box.msgs.slice(0, -200)); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
 const FRONT_DESK = "front-desk", WORKERS = ["night-roll", "guitar", "tuner"], workerName = id => id.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); // "guitar" -> "Guitar", a hyphenated id -> two capitalised words
 function terminalMark(id, patch) { const box = terminalAll(); const m = box.msgs.find(x => x.id === id); if (m) { Object.assign(m, patch); writeJSON(TERMINAL_FILE, box); } }
+// Ticks (WhatsApp style): receivedAt = the row is stored (set in terminalAdd), deliveredAt = the AI watcher printed it, readAt = the AI acted on it (--status --msg, --done, a helper ANSWERED). Additive; the first value wins; read implies delivered.
+function terminalRead(id) { const box = terminalAll(), m = box.msgs.find(x => x.id === id); if (!m || m.readAt) return; const now = Date.now(); m.readAt = now; if (!m.deliveredAt) m.deliveredAt = now; writeJSON(TERMINAL_FILE, box); }
+const tickRows = app => terminalAll().msgs.filter(m => m.acked && m.receivedAt && appIdOf(m.app) === app && !m.fwd).slice(-30).map(m => ({id: m.id, t: m.t, receivedAt: m.receivedAt, deliveredAt: m.deliveredAt || null, readAt: m.readAt || null})); // a person's own messages from this app, for the app's poll
 // ---- one AI (#644 Phase 1): the instant reply, the watcher's multi-app long-poll, delivery marks
 const appsOf = raw => { const ids = String(raw == null ? "" : raw).split(",").map(x => x.trim()).filter(Boolean).map(appIdOf); return ids.length ? [...new Set(ids)] : [DEFAULT_APP]; }; // ?app=a,b,c — split BEFORE appIdOf, which turns a comma into "_"
 const clock = t => new Date(t).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
 function stampPoll(apps) { const now = Date.now(); for (const a of apps) terminalPolledAt.set(a, now); aiSeenAt = now; }
 // The canned replies. Live: the AI's watcher polled this app in the last 90 s. Offline: say so, say when it was last seen, and promise the quick answer only if the bridge can really give one.
 function ackText(id, state, quickComing) {
-  if (state === "live") return `Got it (#${id}).`;
-  if (state === "busy") return `Got it (#${id}). Claude is busy and will see it shortly.`;
+  if (state === "live") return `Got it (#${id}).`; // routine: marked routine:true, the app shows ticks instead
+  if (state === "busy") return `Claude is busy and will see #${id} shortly.`;
   return `Claude isn't running on the Mac (${aiSeenAt ? "last seen " + clock(aiSeenAt) : "not seen since the bridge started"}). #${id} is saved and Claude will get it when it starts.` + (quickComing ? " A quick read-only answer is coming." : "");
 }
 function startQuickAnswer(row) { // the offline answer: one read-only one-off, written into the row's own app by jobEnd
@@ -716,7 +719,7 @@ function routeEnd(job) { // ANSWER: the app gets the note, the row is done, the 
   const text = m ? m[1].trim() : "";
   if (!text || /NEEDS_AI/.test(text)) { terminalMark(row.id, {hold: 0}); terminalNotify(); return; }
   const note = inboxAdd("Quick answer: " + text, "terminal", row.app, {auto: true, quick: true});
-  terminalMark(row.id, {answered: note.id, helper: true, done: Date.now(), hold: 0});
+  terminalMark(row.id, {answered: note.id, helper: true, done: Date.now(), hold: 0}); terminalRead(row.id);
   const one = (x, n) => String(x).replace(/\s+/g, " ").trim().slice(0, n);
   terminalAdd(`ANSWERED #${row.id} [${row.app}] by helper: ${one(row.text, 200)} \u2192 ${one(text, 400)}`, null, row.app, null, {kind: "fyi"});
   terminalNotify();
@@ -728,7 +731,7 @@ function terminalPoll(apps, since) {
   const cut = heldAt.length ? Math.min(...heldAt) : Infinity;
   const rows = box.msgs.filter(m => m.id > since && m.id < cut && apps.includes(appIdOf(m.app)) && !m.oneoff && !m.helper);
   const fresh = rows.filter(m => m.acked && !m.delivered);
-  if (fresh.length) { for (const m of fresh) m.delivered = now; writeJSON(TERMINAL_FILE, box); for (const m of fresh) if (m.quick) inboxAdd(`Claude has #${m.id} now.`, "terminal", m.app, {auto: true}); }   // a live ack already said it (#686): the pickup note only follows an offline answer
+  if (fresh.length) { for (const m of fresh) { m.delivered = now; if (!m.deliveredAt) m.deliveredAt = now; } writeJSON(TERMINAL_FILE, box); for (const m of fresh) if (m.quick) inboxAdd(`Claude has #${m.id} now.`, "terminal", m.app, {auto: true, routine: true}); }   // a live ack already said it (#686): the pickup note only follows an offline answer
   return {last: Math.min(box.last, cut - 1), msgs: rows.map(m => ({...m, app: appIdOf(m.app)}))};
 }
 function terminalNotify() { // a row was just added: answer every parked long-poll it belongs to
@@ -1066,11 +1069,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/inbox") { // notes from the terminal: the client polls with ?since=<last id it showed>
-    if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const app = appIdOf(url.searchParams.get("app")); const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since && forApp(n, app))}); }
+    if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const app = appIdOf(url.searchParams.get("app")); const box = inboxAll(), ticks = tickRows(app); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since && forApp(n, app)), ...(ticks.length ? {ticks} : {})}); }
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       if (!b || !String(b.text || "").trim()) return json(res, 400, {error: {message: "a note needs text"}});
       const note = inboxAdd(String(b.text).trim(), b.from, b.app);
+      if (b.app) { const app = appIdOf(b.app); for (const m of terminalAll().msgs) if (m.acked && m.deliveredAt && !m.readAt && !m.done && appIdOf(m.app) === app) terminalRead(m.id); } // --say --app: a reply in that app means the AI read what it had picked up
       console.log(`inbox #${note.id} [${note.app}] from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
     }
@@ -1093,7 +1097,7 @@ const server = http.createServer(async (req, res) => {
     const text = String(b.text || "").trim();
     if (row.helper) return json(res, 409, {error: {message: "#" + row.id + " was already answered by the helper; nothing to do"}});
     const note = text ? inboxAdd(text, b.from || "terminal", row.app) : null;
-    terminalMark(row.id, {done: Date.now(), ...(note ? {answered: note.id} : {})});
+    terminalMark(row.id, {done: Date.now(), ...(note ? {answered: note.id} : {})}); terminalRead(row.id);
     console.log(`terminal #${row.id} [${appIdOf(row.app)}] done${note ? ", note #" + note.id : ""}`);
     return json(res, 200, {id: row.id, app: appIdOf(row.app), ...(note ? {note: note.id} : {})});
   }
@@ -1213,7 +1217,7 @@ const server = http.createServer(async (req, res) => {
       const route = fromApp && live === true && claudeOk; // the AI is live: the read-only helper first judges question vs work (#681)
       const m = terminalAdd(b.text, b.shot, to, b.fwd, {src: b.src, label: b.label, oneoff: to === FRONT_DESK && live === false, acked: fromApp, quick, hold: route ? Date.now() + ROUTE_MS + 5000 : 0});
       let ack;
-      if (fromApp) { ack = ackText(m.id, state, quick); inboxAdd(ack, "terminal", m.app, {auto: true}); } // BEFORE anything slow, in the row's own app, from "terminal": every build already shows it in the Worker tab
+      if (fromApp) { ack = ackText(m.id, state, quick); inboxAdd(ack, "terminal", m.app, {auto: true, ...(state === "live" ? {routine: true} : {})}); } // BEFORE anything slow, in the row's own app, from "terminal": every build already shows it in the Worker tab
       if (quick) startQuickAnswer(m);
       if (route) startRouter(m);
       if (fromDesk && to !== FRONT_DESK) inboxAdd("\u2192 handed to the " + workerName(to) + " Worker: " + m.text.slice(0, 120), FRONT_DESK, FRONT_DESK);
@@ -1248,7 +1252,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       let app = b && b.app;
-      if (b && b.msg != null) { const row = terminalAll().msgs.find(x => x.id === +b.msg); if (!row) return json(res, 404, {error: {message: "no terminal row #" + b.msg + " (older than the last 200?)"}}); app = row.app; } // --msg n: the app comes from row n, so a status can't be tagged to the wrong one
+      if (b && b.msg != null) { const row = terminalAll().msgs.find(x => x.id === +b.msg); if (!row) return json(res, 404, {error: {message: "no terminal row #" + b.msg + " (older than the last 200?)"}}); app = row.app; terminalRead(row.id); } // --msg n: the app comes from row n, so a status can't be tagged to the wrong one
       const box = statusSet(b && b.text, app);
       console.log(box.now ? `status [${appIdOf(app)}]: ${box.now.text.slice(0, 80)}` : "status cleared");
       return json(res, 200, {now: box.now, recent: box.recent});
