@@ -98,7 +98,7 @@
 // One AI (#644 Phase 1): every POST /v1/terminal from an app (not a forward, not
 // "all", not the front-desk) gets an INSTANT canned note in that row's own app
 // (from "terminal", auto:true) and the same text as `ack` in the response —
-// "Sent to Claude (#n)…" when the AI's watcher polled that app in the last 90 s
+// "Got it (#n)." when the AI's watcher polled that app in the last 90 s
 // (`live`), else an offline line, and the bridge starts a read-only quick answer
 // itself (session `<app>-quick`; the row stays in the queue with quick:true).
 // While the AI is live a plain question is judged by the same read-only helper
@@ -657,7 +657,7 @@ const clock = t => new Date(t).toLocaleTimeString("en-US", {hour: "numeric", min
 function stampPoll(apps) { const now = Date.now(); for (const a of apps) terminalPolledAt.set(a, now); aiSeenAt = now; }
 // The canned replies. Live: the AI's watcher polled this app in the last 90 s. Offline: say so, say when it was last seen, and promise the quick answer only if the bridge can really give one.
 function ackText(id, live, quickComing) {
-  if (live) return `Sent to Claude (#${id}). It'll answer here.`;
+  if (live) return `Got it (#${id}).`;
   return `Claude isn't running on the Mac (${aiSeenAt ? "last seen " + clock(aiSeenAt) : "not seen since the bridge started"}). #${id} is saved and Claude will get it when it starts.` + (quickComing ? " A quick read-only answer is coming." : "");
 }
 function startQuickAnswer(row) { // the offline answer: one read-only one-off, written into the row's own app by jobEnd
@@ -709,7 +709,7 @@ function terminalPoll(apps, since) {
   const cut = heldAt.length ? Math.min(...heldAt) : Infinity;
   const rows = box.msgs.filter(m => m.id > since && m.id < cut && apps.includes(appIdOf(m.app)) && !m.oneoff && !m.helper);
   const fresh = rows.filter(m => m.acked && !m.delivered);
-  if (fresh.length) { for (const m of fresh) m.delivered = now; writeJSON(TERMINAL_FILE, box); for (const m of fresh) inboxAdd(`Claude has #${m.id} now.`, "terminal", m.app, {auto: true}); }
+  if (fresh.length) { for (const m of fresh) m.delivered = now; writeJSON(TERMINAL_FILE, box); for (const m of fresh) if (m.quick) inboxAdd(`Claude has #${m.id} now.`, "terminal", m.app, {auto: true}); }   // a live ack already said it (#686): the pickup note only follows an offline answer
   return {last: Math.min(box.last, cut - 1), msgs: rows.map(m => ({...m, app: appIdOf(m.app)}))};
 }
 function terminalNotify() { // a row was just added: answer every parked long-poll it belongs to
