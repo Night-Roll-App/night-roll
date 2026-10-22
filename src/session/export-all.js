@@ -4,7 +4,7 @@
 // transactions, and no song is loaded into the editor.
 import { runExport, exportFolderName, summaryLine, toBytes } from "../platform/export-core.js";
 import { writeMidi } from "../midi/write.js";
-import { serializeNotesList, declaredTsForKey } from "../model/rollnotes.js";
+import { serializeNotesList, declaredTsForKey, dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { nsfURL } from "../platform/storage.js";
 import { nativeFs, nativeDirHandle, folderWrite } from "../platform/folder.js";
 
@@ -91,7 +91,7 @@ export async function exportEverythingRun(sink, onProgress, now) {
   try {
     return await runExport({
       ls, idb, sink, onProgress, now: now || new Date(),
-      draftRead: key => readDraft(key, idb, ls), writeMidi, serializeNotesList, nsfUrl: nsfURL,
+      draftRead: key => readDraft(key, idb, ls), writeMidi, serializeNotesList, uniqueCount: l => dedupedNotesWithIndex(l).length, nsfUrl: nsfURL,
       beatsFor: key => (declaredTsForKey(key) || [4])[0],
     });
   } finally { if (idb) await idb.close(); }

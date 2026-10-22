@@ -96,7 +96,7 @@ const looksJson = s => { try { JSON.parse(s); return true; } catch (err) { retur
 
 // deps: {ls: {keys(), get(k)}, idb: {stores(), keys(store), get(store, key)} | null,
 //        draftRead(key), writeMidi(doc), serializeNotesList(list, beats, base, stamp, origin),
-//        beatsFor(key), nsfUrl(file), sink: {write(path, data)}, now: Date, onProgress(p)}
+//        uniqueCount(list) (the serializer's own dedupe), beatsFor(key), nsfUrl(file), sink: {write(path, data)}, now: Date, onProgress(p)}
 // Writes entries one at a time, sequentially (the Filesystem plugin moves base64); returns the manifest.
 export async function runExport(deps) {
   const {ls, idb, sink, onProgress} = deps, now = deps.now || new Date();
@@ -128,6 +128,7 @@ export async function runExport(deps) {
     let stores = [];
     try { stores = await idb.stores(); } catch (err) { errors.push({where: "indexedDB", message: err.message || String(err)}); }
     for (const store of stores) {
+      if (store === "repo") { skipped.push({store, key: "*", reason: "re-downloadable cache"}); continue; }
       let keys = [];
       try { keys = await idb.keys(store); } catch (err) { errors.push({where: "idb " + store, message: err.message || String(err)}); continue; }
       for (let i = 0; i < keys.length; i++) {
@@ -167,7 +168,7 @@ export async function runExport(deps) {
         if (!Array.isArray(list)) throw new Error("the stored list is not an array");
         const text = deps.serializeNotesList(list, deps.beatsFor(key), title, undefined, undefined);
         const rec = await put(dir + title + ".rollnotes.json", text, {song: key});
-        song.rollnotes = {path: rec.path, stored: list.length, items: JSON.parse(text).notes.length};
+        song.rollnotes = {path: rec.path, stored: list.length, unique: deps.uniqueCount ? deps.uniqueCount(list) : list.length, items: JSON.parse(text).notes.length};
       }
     } catch (err) { song.problems.push("rollnotes: " + (err.message || err)); }
     songs.push(song);

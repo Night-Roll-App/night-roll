@@ -43,7 +43,8 @@ for (const s of m.songs) {
       try {
         const items = JSON.parse(readFileSync(join(dir, s.rollnotes.path), "utf8")).notes.length;
         if (items !== s.rollnotes.items) why.push(".rollnotes.json has " + items + " items, the manifest says " + s.rollnotes.items);
-        if (s.rollnotes.items !== s.rollnotes.stored) why.push("rollnotes items " + s.rollnotes.items + " != stored list length " + s.rollnotes.stored + " (the serializer dropped duplicates)");
+        const unique = s.rollnotes.unique ?? s.rollnotes.stored; // same dedupe rule as serializeNotesList
+        if (s.rollnotes.items !== unique) why.push("rollnotes items " + s.rollnotes.items + " != unique stored entries " + unique + " (stored " + s.rollnotes.stored + "): an entry is missing");
       } catch (err) { why.push(".rollnotes.json does not parse: " + err.message); }
     }
   }

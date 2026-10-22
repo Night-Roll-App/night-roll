@@ -80,7 +80,7 @@ test("manifest: per-file size + sha256 match what was written; per-song note and
   assert.deepEqual(JSON.parse(written.get("manifest.json").toString()), m);
   const s = m.songs.find(x => x.key === "albums/compositions/nightroll/a.mid");
   assert.equal(s.mid.notes, 2); assert.equal(s.mid.tracks, 1);
-  assert.deepEqual(s.rollnotes, {path: s.rollnotes.path, stored: 1, items: 1});
+  assert.deepEqual(s.rollnotes, {path: s.rollnotes.path, stored: 1, unique: 1, items: 1});
   assert.equal(s.rollnotes.path, "songs/albums%2Fcompositions%2Fnightroll%2Fa/a.rollnotes.json");
   assert.equal(s.mid.path, "songs/albums%2Fcompositions%2Fnightroll%2Fa/a.mid");
   assert.equal(m.totals.songs, 1); assert.equal(m.totals.files, m.files.length);
@@ -96,6 +96,7 @@ test("IndexedDB records: bare blobs as-is, records as JSON with nested bytes; va
     audio: {"a/b.mid|take|1": bytes.buffer},
     nsf: {slug: {bytes: new Uint8Array([9, 9]), chip: "nsf", tracks: {t1: {n: 1, vault: "nsf/x.nsf", bytes: new Uint8Array([7, 7, 7])}, t2: {n: 2, secs: 5}}}},
     fs: {folder: {kind: "directory", queryPermission() {}}},
+    repo: {"songs:a.mid": {bytes: new Uint8Array([1]), t: 1}},
     drafts: {"albums/imports/x/y.mid": {seq: 2, tracks: [{name: "p", notes: []}]}},
   };
   let inFlight = 0, maxInFlight = 0;
@@ -114,7 +115,9 @@ test("IndexedDB records: bare blobs as-is, records as JSON with nested bytes; va
   assert.deepEqual(nsf.tracks.t2, {n: 2, secs: 5});
   assert.equal(nsf.bytes["$bytes"], Buffer.from([9, 9]).toString("base64"), "record-level bytes kept");
   assert.deepEqual(m.redownloadable, [{store: "nsf", key: "slug", track: "t1", url: "https://archive.example/nsf/x.nsf"}]);
-  assert.equal(m.skipped.length, 1); assert.equal(m.skipped[0].store, "fs");
+  assert.equal(m.skipped.length, 2); assert.equal(m.skipped[0].store, "fs");
+  assert.deepEqual(m.skipped[1], {store: "repo", key: "*", reason: "re-downloadable cache"});
+  assert.ok(![...store.keys()].some(p => p.startsWith("raw/idb/repo/")));
   assert.ok(store.has("raw/idb/drafts/albums%2Fimports%2Fx%2Fy.mid"));
   assert.equal(m.errors.length, 0);
   assert.equal((await idbEntry("audio", "k", new Blob([bytes]), deps.nsfUrl, [])).kind, "bytes");
@@ -172,7 +175,7 @@ test("the real export: whole + IndexedDB-stub drafts become .mid files, rollnote
   assert.ok(![...files.values()].some(d => Buffer.from(typeof d === "string" ? d : d).toString().includes("SECRET")));
   const whole = m.songs.find(s => s.key.endsWith("whole.mid")), big = m.songs.find(s => s.key.endsWith("big.mid"));
   assert.equal(whole.mid.notes, 4); assert.equal(big.mid.notes, 4, "tracksRef stub inflated from IDB drafts");
-  assert.deepEqual([whole.rollnotes.stored, whole.rollnotes.items], [1, 1]);
+  assert.deepEqual([whole.rollnotes.stored, whole.rollnotes.unique, whole.rollnotes.items], [1, 1, 1]);
   assert.deepEqual(m.problems, undefined);
   assert.ok(files.has("raw/idb/drafts/albums%2Fimports%2Fx%2Fbig.mid"));
   assert.deepEqual([...files.get("raw/idb/audio/k%7C1")], [5, 6]);
@@ -219,5 +222,22 @@ test("the zip fallback writes a valid store-only archive (unzip -t reads every e
     assert.match(r.stdout, /No errors detected/);
     const r2 = spawnSync("unzip", ["-p", f, "NightRoll-Export-2026-10-21/manifest.json"], {encoding: "utf8"});
     assert.equal(r2.stdout, '{"a":1}');
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("verify-export is dedupe-aware: items == unique passes even when stored > unique; a missing unique entry fails", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-dd-"));
+  try {
+    const mk = (items, unique) => {
+      const rn = JSON.stringify({notes: Array(items).fill({})});
+      mkdirSync(join(dir, "songs/s"), {recursive: true});
+      writeFileSync(join(dir, "songs/s/s.rollnotes.json"), rn);
+      writeFileSync(join(dir, "manifest.json"), JSON.stringify({files: [{path: "songs/s/s.rollnotes.json", size: Buffer.byteLength(rn), sha256: sha(Buffer.from(rn))}],
+        songs: [{key: "s.mid", mid: null, problems: [], rollnotes: {path: "songs/s/s.rollnotes.json", stored: 5, unique, items: 3}}], redacted: [], redownloadable: [], skipped: [], errors: []}));
+      return spawnSync(process.execPath, [join(ROOT, "tools/verify-export.mjs"), dir], {encoding: "utf8"});
+    };
+    assert.equal(mk(3, 3).status, 0);
+    const r = mk(3, 4);
+    assert.equal(r.status, 1); assert.match(r.stdout, /an entry is missing/);
   } finally { rmSync(dir, {recursive: true, force: true}); }
 });
