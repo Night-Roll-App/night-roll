@@ -123,3 +123,12 @@ Open questions, each with the default already chosen (none blocks work):
 - Q-d, score view: stays web until the end of Phase 5.
 - Q-e, native song home: the app's `Documents/Songs` (visible in Files).
 - Q-f, Capacitor app retirement: only when Josh says so.
+
+## Revision after Fable review (wins over the sections above)
+1. **P3 chip audio:** a hidden WKWebView stops running JS ~30 s after the app backgrounds/locks. No stream mode: pre-render each chip song to a CAF file in the foreground (chunk only for first-sound latency), then the native engine plays the file (locked playback works). Spike 1 h first: lock mid-render, measure. Bundled `.mjs` workers over file:// need a `WKURLSchemeHandler`; JSContext has no JIT (too slow).
+2. **Secrets:** redact `ff1roll-ghtoken`, `ff1roll-aikey`, `ff1roll-ai-hosts` (not `ff1roll-cfg`) from the export; native keeps them in the Keychain; Josh re-enters once.
+3. **P0 serializer:** never cycle songs through global `S`. Use `serializeNotesList` on the stored `ff1roll-notes-<key>` lists and `draftRead` (inflates `tracksRef` stubs from IDB `drafts`). Verify by content: JS re-parse of each written `.mid` note count == draft notes; rollnotes item count == stored list length.
+4. **Sharing:** the native importer opens the Capacitor app's Documents via `UIDocumentPicker` (security-scoped bookmark). No App Group.
+5. **Export memory:** write entries one at a time (Filesystem plugin is base64); record size + hash each; mark vault-fetched nsf entries as re-downloadable instead of copying.
+6. **P1 playback:** `AVAudioSequencer` + one `AVAudioUnitSampler` per track (`AVMusicTrack.destinationAudioUnit`), GeneralUser-GS sf2 program loading as in night-roll-ear BackingRenderer.swift:93 — but one long-lived live engine (not BackingRenderer's per-render offline engine).
+7. Label chip albums "approximate until P3"; encode `/` and `|` in IDB key filenames; P0 and P1 run in parallel.
