@@ -20,9 +20,9 @@ Per-repo lists also exist: night-roll-guitar/open-items.md (guitar Q-numbers, e.
 - Question for Josh: crash-reporter popups on the Mac when he returns ("NightRollNative quit unexpectedly") — silencing them changes a Mac setting (`defaults write com.apple.CrashReporter DialogType none`); needs his yes.
 
 ### Night Roll Guitar on Windows / Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md)
-- M0 go/no-go PASSED (branch windows-m0). M1 on branch windows-m1 (2026-10-23): CI builds core DLL + Godot app; downloadable test zip (artifact NightRollGuitar-win64, ~155 MB) runs on a clean Windows runner; device picker, exclusive toggle, tuner needle, "One note" exercise + result card; Practice tests pass on Windows (fixed colon-in-filename bug). Placeholder pitch detection. Fable code review running. Left for M1: real hardware test on Josh's Windows PC + interface, real detection (Q26), package trim, Godot export, exercise picker/tempo/settings/progress.
-- BLOCKED partly on guitar Q26: fine-grained read token NR_EAR_TOKEN for night-roll-ear so Windows CI can build the ear core (walk Josh through it at the Mac).
-- After M1: M2 timing check + course, M3 highway/notation/imports/backing, M4 Steam (partner account $100, store page), M5 parity + Deck.
+- M0 passed. M1 + M2 done (branches windows-m1/m2, CI green before minutes ran out): Windows core DLL, Godot app (device picker, exclusive toggle, tuner, exercises + picker, tempo, settings, course map, progress page), timing check with per-device calibration, low-latency driver built but not shipped. M3 done on the Mac only (windows-m3, local, not pushed): MIDI/MusicXML/Guitar Pro/text-tab import, built-in pieces, highway, tab/score notation, backing with GeneralUser GS. M4 groundwork done (Steam behind a switch, achievements, cloud saves, upload script). All Fable-reviewed.
+- PAUSED, waiting on Josh: (1) GitHub Actions minutes exhausted 2026-10-23 (guitar Q28; resets Nov 1, or set an Actions budget) — M3 has never built on Windows and must before merge; (2) Q26 token for night-roll-ear (real pitch detection, tuner on Windows); (3) Q27 Steinberg ASIO agreement (only for the low-latency driver); (4) Steam partner account ($100) + app ID for M4; (5) a test on his Windows PC with his interface (timing check with a cable loop, shared/exclusive).
+- Windows CI is manual-only now (Windows minutes bill 2x; cold Godot builds ~1 h).
 
 ### Other agreed, not done
 - Market research: DAWs and guitar apps (#942) — after the native waves.
