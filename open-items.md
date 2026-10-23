@@ -5,10 +5,28 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 ## 2026-10-23 CURRENT WORK (read first; older sections below are history)
-- Night Roll Native (night-roll-ipad, no remote, installs via tools/build-ipad.sh): building the web-parity checklist (docs/plans/2026-10-22-complete-checklist.md) in 6 waves (docs/plans/2026-10-22-build-everything.md). Installed: cursor smoothness (Josh: "very smooth"), wave 1 (menus, notes, annotation editor, transport row), Score smoothing + ruler. Wave 2 (7 parts) combining/testing; AI panel width + clock times + small bottom-left view switcher building; wave 3 started (prelude, Drummer/Bassist). After wave 6: Roll edit-mode screenshots web vs native side by side (#941).
-- Guitar on Windows/Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md): M0 passed (branch windows-m0); M1 step 1 (PracticeEngine extraction + Windows CI) building on windows-m1. BLOCKED partly on Q26 (guitar open-items): read token NR_EAR_TOKEN for night-roll-ear.
-- Queued after native waves: market research on DAWs and guitar apps (#942).
-- Waiting on Josh: App Store release items (TestFlight, privacy labels, listing, screenshots); ear checks on NR Native (click during chip song, drum piece solo/mute), Pencil checks.
+Per-repo lists also exist: night-roll-guitar/open-items.md (guitar Q-numbers, e.g. Q26). This section is the cross-app summary.
+
+### Night Roll Native (iPad port of this web app; repo night-roll-ipad, no remote)
+- Goal (Josh #880/#906/#908/#919/#920): native copies the web UI; the audit is a work list — build every MISSING/DIFF row until missing = 0. Plan: night-roll-ipad/docs/plans/2026-10-22-build-everything.md (6 waves); checklist 2026-10-22-complete-checklist.md (553 rows; at start 192 exact, 84 different, 245 missing).
+- Installed and confirmed: cursor smoothness (#923 → "very smooth"), smooth Roll glide kept over the web's page jump (#940, a chosen departure).
+- Installed, waiting on Josh's check: wave 1 (View menu Messages/Mixer/Beat subdivisions/Volume toggle, footer Notes menu + open questions, annotation editor, transport row, Save As/rename/move/revert); Score smoothing + bar-line glide (#932) + Score ruler (#930); zoom-on-open fix (#918, check with AI panel open); play-after-return (#907; if it fails, pull diag.log); Tracks mute/vol persistence; Score stems/flags.
+- Building: wave 2 combine (Roll overlays/find/grid, drum gutter + piece solo/mute, ruler bands, note gestures + Pencil, track row, voice menu + Tracks view, metronome/wording); AI panel width + clock times in status (#925/#926/#935) + small bottom-left view switcher (#936); wave 3 prelude + Drummer/Bassist.
+- Next: waves 3–6 (piano/guitar panel, edit tools, mixer meters, window manager, velocity lane, export, compare, instruments engine, publish, jobs, theory tools, import hub, chip capture, audio clips, settings, analysis, AI tools), then Fable closing audit, then Roll edit-mode screenshots web vs native side by side and fix every difference (#941).
+- Needs Josh's ear/hands: click on during a chip song (separate metronome engine); drum piece solo/mute; Pencil instant grab + palm rejection; Option-drag copy with a keyboard.
+- Open bugs: NRBarButton hit area ~20 pt off (workaround .contentShape; suspected LCDView.fixedSize, TransportBar.swift) — root cause not found.
+- Question for Josh: crash-reporter popups on the Mac when he returns ("NightRollNative quit unexpectedly") — silencing them changes a Mac setting (`defaults write com.apple.CrashReporter DialogType none`); needs his yes.
+
+### Night Roll Guitar on Windows / Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md)
+- M0 go/no-go PASSED (branch windows-m0: Swift core DLL on Windows CI, SwiftGodot builds). Stalled after that until 2026-10-23; M1 step 1 (PracticeEngine extraction + Windows CI core build) now building on branch windows-m1.
+- BLOCKED partly on guitar Q26: fine-grained read token NR_EAR_TOKEN for night-roll-ear so Windows CI can build the ear core (walk Josh through it at the Mac).
+- After M1: M2 timing check + course, M3 highway/notation/imports/backing, M4 Steam (partner account $100, store page), M5 parity + Deck.
+
+### Other agreed, not done
+- Market research: DAWs and guitar apps (#942) — after the native waves.
+- Guitar: realistic hand on the fretboard; CC0 impulse responses for the amp.
+- Night Roll web: local main in ~/work/night-roll/night-roll-daw is behind origin because of Josh's uncommitted sw.js (pull refuses); decide keep/discard sw.js.
+- App Store release (oldest): TestFlight install, privacy labels, listing text, screenshot approval — all need Josh.
 
 ## 2026-10-14 Two data-integrity bugs from the lastSyncPrefer commit (a29a88f3) — DONE
 DONE: `dropLocalKeyAt` now tombstones a replaced/removed PUBLISHED key annotation (same `tombstone()` as every other deletion), so Publish and reload no longer bring the old one back beside the new one. Test: "Publish: replacing a PUBLISHED key annotation tombstones the old one".
