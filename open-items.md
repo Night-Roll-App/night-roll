@@ -4,6 +4,12 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## 2026-10-23 CURRENT WORK (read first; older sections below are history)
+- Night Roll Native (night-roll-ipad, no remote, installs via tools/build-ipad.sh): building the web-parity checklist (docs/plans/2026-10-22-complete-checklist.md) in 6 waves (docs/plans/2026-10-22-build-everything.md). Installed: cursor smoothness (Josh: "very smooth"), wave 1 (menus, notes, annotation editor, transport row), Score smoothing + ruler. Wave 2 (7 parts) combining/testing; AI panel width + clock times + small bottom-left view switcher building; wave 3 started (prelude, Drummer/Bassist). After wave 6: Roll edit-mode screenshots web vs native side by side (#941).
+- Guitar on Windows/Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md): M0 passed (branch windows-m0); M1 step 1 (PracticeEngine extraction + Windows CI) building on windows-m1. BLOCKED partly on Q26 (guitar open-items): read token NR_EAR_TOKEN for night-roll-ear.
+- Queued after native waves: market research on DAWs and guitar apps (#942).
+- Waiting on Josh: App Store release items (TestFlight, privacy labels, listing, screenshots); ear checks on NR Native (click during chip song, drum piece solo/mute), Pencil checks.
+
 ## 2026-10-14 Two data-integrity bugs from the lastSyncPrefer commit (a29a88f3) — DONE
 DONE: `dropLocalKeyAt` now tombstones a replaced/removed PUBLISHED key annotation (same `tombstone()` as every other deletion), so Publish and reload no longer bring the old one back beside the new one. Test: "Publish: replacing a PUBLISHED key annotation tombstones the old one".
 DONE: `repoCopy`'s device copy (iPad app) is refreshed at publish time with the exact bytes this device published (`putRollnotes` -> "analysis:<path>", `putMidAt` -> "songs:<path>", app edition only, only on a successful PUT), so the 4 s GitHub-fallback is never older than this device's last publish. Test: "Publish (app): the device copy repoCopy falls back to is refreshed...". Not yet seen on a real iPad.
