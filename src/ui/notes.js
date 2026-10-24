@@ -1,4 +1,5 @@
 import { checkKeyVsFile } from "../model/song.js";
+import { SITE_HOME, SITE_HELP } from "../edition.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { estimateKey } from "../model/song.js";
@@ -211,8 +212,8 @@ export function ensureHelpLoaded() {
       return true;
     } catch (err) {
       S.helpLoad = null;
-      body.innerHTML = '<p class="status">Help couldn\u2019t be loaded (offline?). The full manual is on GitHub: ' +
-        '<a href="https://github.com/Night-Roll-App/night-roll/blob/main/docs/HELP.md" target="_blank" rel="noopener">HELP.md\u2009\u2197</a></p>';
+      body.innerHTML = '<p class="status">Help couldn\u2019t be loaded (offline?).' + (SITE_HELP ? ' The full manual is on GitHub: ' +
+        '<a href="' + SITE_HELP + '" target="_blank" rel="noopener">HELP.md\u2009\u2197</a>' : '') + '</p>';
       return false;
     }
   })();
@@ -228,9 +229,21 @@ export function showHelpSub(btn) { // one part of a long help tab at a time, ins
   for (const d of sec.querySelectorAll(".hsub")) d.classList.toggle("on", d.dataset.hsub === btn.dataset.hsub);
   const body = sec.closest(".sheet"); if (body) body.scrollTop = 0;
 }
+// Links to the site's own GitHub (About's address, Help's "Full manual") are
+// filled in from src/edition.js when their sheet opens, so index.html itself
+// names no repo: the store build blanks SITE_HOME and the links are gone.
+export function siteLinks(sheetId) {
+  for (const a of document.getElementById(sheetId).querySelectorAll("a[data-site]")) {
+    const url = a.dataset.site === "help" ? SITE_HELP : SITE_HOME;
+    if (!url) { a.remove(); continue; }
+    a.href = url;
+    if (a.dataset.site === "home") a.textContent = url.replace(/^https?:\/\//, "");
+  }
+}
 export function openHelp(tab) {
   const name = tab || localStorage.getItem("ff1roll-helptab") || "views";
   showHelpTab(name);
+  siteLinks("helpsheet");
   document.getElementById("helpsheet").classList.add("on");
   return ensureHelpLoaded().then(ok => { if (ok) showHelpTab(name); return ok; });
 }
@@ -710,6 +723,7 @@ export function initNotes2() {
     const n = Object.values(S.CATALOG).reduce((k, s) => k + s.length, 0);
     document.getElementById("aboutstats").textContent =
       Object.keys(S.CATALOG).length + " albums · " + n + " songs · " + draftKeys().length + " local drafts";
+    siteLinks("aboutsheet");
     document.getElementById("aboutsheet").classList.add("on");
   });
 }

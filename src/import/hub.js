@@ -16,7 +16,7 @@ import { ghHeaders } from "../audio/chip.js";
 import { songsheet } from "../ui/chrome.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { saveCfg } from "../platform/storage.js";
-import { cfg } from "../platform/storage.js";
+import { cfg, rawBase } from "../platform/storage.js";
 import { chipKindOf } from "./capture.js";
 import { sf2Magic } from "./capture.js";
 import { audioMagic } from "./capture.js";
@@ -258,7 +258,7 @@ export async function createGameFilesRepo(say) {
       body: JSON.stringify({name, description: "Game files and instruments for Night Roll", private: false, auto_init: true})});
     if (!r.ok) { say("GitHub wouldn't create " + full + " (HTTP " + r.status + "). The token needs permission to create repositories — or create it on github.com and type its name here."); return null; }
   }
-  saveCfg({nsfRepo: full, nsfBase: "https://raw.githubusercontent.com/" + full + "/main"}); cfg.c = null;
+  saveCfg({nsfRepo: full, nsfBase: rawBase(full)}); cfg.c = null;
   say("✓ " + full + (have.ok ? " (already there) " : " created ") + "— your game files and instruments go there from now on. If your token only lists some repos, add this one to it.");
   return full;
 }

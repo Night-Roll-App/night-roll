@@ -1498,7 +1498,8 @@ export async function askSongFile(a) {
   // share_link
   if (!S.song || !S.songKey) throw new Error("no song open");
   if (!catalogHas(S.songKey)) return {ok: true, note: "this song only lives on this device — Publish it first, then ask again"};
-  return {ok: true, note: "Share link: " + shareLinkFor(S.songKey)};
+  const link = shareLinkFor(S.songKey);
+  return link ? {ok: true, note: "Share link: " + link} : {ok: false, note: "This edition has no public web player, so songs have no share links."};
 }
 // ---- set_pref (docs/ai-parity.md §5 batch 8, 2026-10-05): device prefs —
 // localStorage, same layer the Settings sheet's own checkboxes/selects use

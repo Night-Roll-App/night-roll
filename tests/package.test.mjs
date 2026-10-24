@@ -87,3 +87,58 @@ test("package: the ship guard refuses a forbidden album planted in the output", 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /ship guard: clean/);
 });
+
+test("package --store: the TestFlight bundle names no repo, no site, no archive, no tailnet; only the starters' .mid ship (Josh #998)", () => {
+  const out = mkdtempSync(path.join(tmpdir(), "nr-pkg-store-"));
+  const r = spawnSync(process.execPath, [tool, "--store", "--out", out], {encoding: "utf8"});
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  assert.match(r.stdout, /packaged \(store\)/);
+  const edition = readFileSync(path.join(out, "src", "edition.js"), "utf8");
+  assert.ok(edition.includes('export const EDITION = "app";'));
+  for (const k of ["SITE_REPO", "SITE_NSF_REPO", "SITE_URL", "SITE_HOME"]) assert.ok(edition.includes("export const " + k + ' = "";'), k + " is blank in the store build");
+  const editionRepo = readFileSync(path.join(root, "src", "edition.js"), "utf8");
+  for (const k of ["SITE_REPO", "SITE_NSF_REPO", "SITE_URL", "SITE_HOME"]) assert.match(editionRepo, new RegExp("^export const " + k + ' = "[^"]+";$', "m"), k + " is set on the web");
+  assert.equal(editionRepo.split("\n").length, edition.split("\n").length);
+  assert.equal(editionRepo.split("\n").filter((l, i) => l !== edition.split("\n")[i]).length, 5, "EDITION plus the four SITE_ lines differ, nothing else");
+  // the web-only help blocks are cut whole, the rest of the help is intact
+  const help = readFileSync(path.join(out, "help", "help.html"), "utf8");
+  assert.ok(!/<!--\/?web-->/.test(help) && !/tailscale serve|npm run bridge/.test(help), "the Mac bridge / Tailscale setup is gone");
+  assert.ok(help.includes("Data locations"), "the rest of the help is still there");
+  assert.ok(readFileSync(path.join(root, "help", "help.html"), "utf8").includes("<!--web-->"), "the repo's help marks its web-only blocks");
+  // index.html: exactly the license comment changed
+  const idx = readFileSync(path.join(out, "index.html"), "utf8").split("\n"), idxRepo = readFileSync(path.join(root, "index.html"), "utf8").split("\n");
+  const diff = idxRepo.map((l, i) => l !== idx[i] ? i : -1).filter(i => i >= 0);
+  assert.deepEqual(diff.map(i => idxRepo[i].includes("Required Notice")), [true], "only the required-notice comment line differs");
+  assert.ok(!existsSync(path.join(out, "vendor", "ai", "README.md")));
+  assert.equal(JSON.parse(readFileSync(path.join(out, "BUILD.json"), "utf8")).store, true);
+  // nothing anywhere names the site, Josh's archive, his tailnet or the CDLC sites; the starters are the only music
+  const bad = /github\.com\/Night-Roll-App|night-roll-app\.github\.io|nsf-archive|raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\/|\bts\.net\b|tail136602|100\.73\.|customsforge|rocksmith/i;
+  const files = walk(out).map(f => path.relative(out, f));
+  for (const f of files) {
+    assert.ok(!bad.test(f), "path: " + f);
+    if (/\.(html|js|mjs|json|md|txt|css|webmanifest)$|^[^.]+$/.test(path.basename(f))) {
+      const m = bad.exec(readFileSync(path.join(out, f), "utf8"));
+      assert.equal(m, null, f + " mentions " + (m && m[0]));
+    }
+    if (/\.(nsf|spc|psf|minipsf|usf|gbs|vgm|psarc|wem|midi?)$/i.test(f)) assert.ok(f.startsWith("albums/starters/"), "music outside the starters: " + f);
+  }
+  // the guard's own regexes fire on what they must and not on a URL built from a typed repo
+  const src = readFileSync(tool, "utf8");
+  const res = eval(src.match(/const STORE_FORBIDDEN = (\[[\s\S]*?\]);/)[1]);
+  for (const s of ["github.com/Night-Roll-App/night-roll", "night-roll-app.github.io", "Night-Roll-App/nsf-archive", "https://raw.githubusercontent.com/joshcough/night-roll/main/", "x.tail136602.ts.net", "100.73.74.71", "customsforge", "Rocksmith"])
+    assert.ok(res.some(re => re.test(s)), "should be forbidden: " + s);
+  for (const s of ['"https://raw.githubusercontent.com/" + r + "/main"', "raw.githubusercontent.com/<owner>/<repo>/<branch>", "tests.network"])
+    assert.ok(!res.some(re => re.test(s)), "should be allowed: " + s);
+  rmSync(out, {recursive: true, force: true});
+});
+
+test("package (no --store): Josh's own iPad build keeps the site's repos and links", () => {
+  const out = mkdtempSync(path.join(tmpdir(), "nr-pkg-"));
+  const r = spawnSync(process.execPath, [tool, "--out", out], {encoding: "utf8"});
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  const edition = readFileSync(path.join(out, "src", "edition.js"), "utf8");
+  assert.match(edition, /^export const SITE_REPO = "Night-Roll-App\/night-roll";$/m);
+  assert.ok(readFileSync(path.join(out, "help", "help.html"), "utf8").includes("<!--web-->"));
+  assert.equal(JSON.parse(readFileSync(path.join(out, "BUILD.json"), "utf8")).store, false);
+  rmSync(out, {recursive: true, force: true});
+});

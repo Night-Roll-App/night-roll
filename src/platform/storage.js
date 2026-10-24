@@ -1,5 +1,5 @@
 import { S } from "../state.js";
-import { EDITION } from "../edition.js";
+import { EDITION, SITE_REPO, SITE_NSF_REPO } from "../edition.js";
 import { LINK_SONGS } from "./base.js";
 import { logErr } from "../hooks.js";
 
@@ -192,7 +192,12 @@ export function cfg() {
     // device's saved settings name the old home; read them as the new one
     // (GitHub redirects old paths for a while, but not forever, and not every
     // write) — one pass, persisted by the next saveCfg.
-    for (const k of Object.keys(c)) if (typeof c[k] === "string") c[k] = c[k].replace(/joshcough\/(night-roll|nsf-archive)(?![\w.-])/g, "Night-Roll-App/$1");
+    // (The old owner's name is derived from the site's repos so that the
+    // store build, where those are blank, carries no name of either.)
+    for (const now of [SITE_REPO, SITE_NSF_REPO]) if (now) {
+      const old = new RegExp("joshcough/" + now.split("/")[1].replace(/[.]/g, "\\.") + "(?![\\w.-])", "g");
+      for (const k of Object.keys(c)) if (typeof c[k] === "string") c[k] = c[k].replace(old, now);
+    }
     // The app edition: "this site" is the app bundle (starters only), so reads
     // default to the repo the user configured — the same place Publish writes
     // (Josh, 2026-09-27, in the app: "why didn't it show the songs that I
@@ -203,13 +208,15 @@ export function cfg() {
     cfg.c = {
       songsBase: c.songsBase || "",
       analysisBase: c.analysisBase || "",
-      songsRepo: c.songsRepo || "Night-Roll-App/night-roll",
-      analysisRepo: c.analysisRepo || c.songsRepo || "Night-Roll-App/night-roll", // a new user's annotations go where their songs go
-      // the NSF archive is Josh's (public, separate so a takedown can't touch the
+      // SITE_REPO is "" in the store build: a new user starts with no repo at
+      // all (reads come from the bundled starters) until Settings names one.
+      songsRepo: c.songsRepo || SITE_REPO,
+      analysisRepo: c.analysisRepo || c.songsRepo || SITE_REPO, // a new user's annotations go where their songs go
+      // the chip archive is Josh's (public, separate so a takedown can't touch the
       // songs repo); anyone whose songs repo is not this site's starts with none —
       // imported NSFs then stay on the device (Josh, 2026-09-26)
-      nsfRepo: c.nsfRepo !== undefined ? c.nsfRepo : ((c.songsRepo || "Night-Roll-App/night-roll") === "Night-Roll-App/night-roll" ? "Night-Roll-App/nsf-archive" : ""),
-      nsfBase: c.nsfBase || (c.nsfRepo ? "https://raw.githubusercontent.com/" + c.nsfRepo + "/main" : "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main"),
+      nsfRepo: c.nsfRepo !== undefined ? c.nsfRepo : (SITE_REPO && (c.songsRepo || SITE_REPO) === SITE_REPO ? SITE_NSF_REPO : ""),
+      nsfBase: c.nsfBase || rawBase(c.nsfRepo || (SITE_REPO ? SITE_NSF_REPO : "")),
       // ✦ AI: flat fields (saveCfg is a shallow merge); the key lives apart, like the token
       aiBackend: c.aiBackend === "browser" ? "browser" : "remote",
       aiBrowserModel: c.aiBrowserModel || "Llama-3.2-1B-Instruct-q4f16_1-MLC",
@@ -254,9 +261,11 @@ export async function idbFsPut(handle) { // null forgets the folder
 export function readBase(which) { // "songs" | "analysis": the explicit base, else (app edition) the configured repo, else this site
   const c = cfg(), explicit = which === "analysis" ? c.analysisBase : c.songsBase;
   if (explicit) return explicit;
-  if (EDITION === "app") return "https://raw.githubusercontent.com/" + (which === "analysis" ? c.analysisRepo : c.songsRepo) + "/main";
+  if (EDITION === "app") return rawBase(which === "analysis" ? c.analysisRepo : c.songsRepo); // no repo named: "" = the bundle (starters only)
   return "";
 }
+// GitHub's raw file host for an owner/repo's main branch; "" for no repo
+export function rawBase(repo) { return repo ? "https://raw.githubusercontent.com/" + repo + "/main" : ""; }
 export function songsURL(path) { return baseJoin(LINK_SONGS || readBase("songs"), path); }
 // .mid, album.json, manifest.json
 export function analysisURL(path) { return baseJoin(LINK_SONGS || readBase("analysis"), path); }
