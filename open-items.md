@@ -7,12 +7,28 @@ session start alongside the quiz.)
 ## 2026-10-23 CURRENT WORK (read first; older sections below are history)
 Per-repo lists also exist: night-roll-guitar/open-items.md (guitar Q-numbers, e.g. Q26). This section is the cross-app summary.
 
-### PAUSED 2026-10-24 ~03:00 (Josh #1030: token budget 94% for the week; keep tokens for TestFlight)
-All builders stopped mid-work; resume from these branches (none merged unless noted):
-- Native (night-roll-ipad master 30736f4 installed: fixes #965/#966/#970/#974/#980/#987/#989/#990/#994/#995/#999/#956/#973 + tf-prep): pending fix-995 follow-up = playhead runs ~1.5 bars ahead on chip songs (#997/#1000) + ruler tap-seek (#1001) in ../ipad-fix995; fix-1021 (selected-track outline, voice-menu button styling); w4-int (wave 4 + master merges, tests mid-run); w5-int (wave 5 lanes merged, wiring + tests mid-run); header menus left + drop Songs ▾ (#957) after w4/w5.
-- Store builds (#998, no game music, no repo/archive links, release check script): branch store-clean in ipad/app/guitar/tuner/daw worktrees, unfinished.
-- TestFlight: tf-prep merged in all four repos; Josh signs in + makes 3 App Store Connect records; Q: hide console catalog in TestFlight Native (#998 says yes: ship none).
-- Guitar (main 3cd844e installed: song fingering, input-channel picker, Angry Again importer 4): pending branches fingering-2 (stretch model + tap override; also linked-slide 3→1 finger bug #1029) in fing2/; highway-slides (slide ribbons + landing gems, #1024/#1026) in hwslide/; notation-slides (score/tab slide/bend/vibrato marks, #1014) in slides/; bend-motion (#1012/#1013 dot/finger moves by real bend physics + Free shows song key) in bendmo/; real-fret-spacing toggle incl. highway (#1015/#1017) in fretsp/; loopbar-playhead (#1006/#1007) in lbar/; clear-chat (move away from Send, inline 2-tap, #1009/#1010) in clrchat/. Open Q (#1020): show double-stop lower notes as grey reference notes, or re-import with chords shown?
+### PAUSED 2026-10-24 ~03:00 — RESUME HERE (Josh #1030/#1031: token budget 94%; keep tokens for TestFlight)
+All builders were stopped mid-work. "dirty=N" = N uncommitted tracked files left in that worktree (unfinished edits, not lost). Nothing below is merged unless it says so. Rules still apply: one sim per builder, boot only while running, CPU-sum gate not loadavg, ≤4 builders at once.
+
+**Night Roll Native** (repo ~/work/night-roll/night-roll-ipad, no remote). Installed on iPad: master 30736f4 = 148d53c + fix-965 panel sound/stray icon, fix-966/970/974/980 panel GM guitar/grand + roll-tap sound, fix-987/989 Follow off on scroll, fix-990 game-sound note taps, fix-994 sampler crash guard, fix-995 stems start together, tf-prep, fix-999 fretboard = web, fix-956/973 track select + ▾ flicker.
+1. TOP: playhead ~1.5 bars ahead of audio on chip songs (#997/#1000) + ruler tap-to-seek broken (#1001). Cause suspected: fix-995's chipSharedStart (sampleTime start) vs the position clock. Worktree ../ipad-fix995 @187038c dirty=2 (builder had a fix in progress; needed only ChipStemStartTests/ConsoleStemsTests runs).
+2. fix-1021: selected-track outline like the web + voice-menu buttons (Hide notes / Hear sound / drums) restyled. ../ipad-fix1021 @30736f4 dirty=2.
+3. Wave 4: ../ipad-w4int w4-int @4465d39 dirty=4 (all review fixes done at 9bee309; was merging master + running tests). Then install.
+4. Wave 5: ../ipad-w5int w5-int @fdf833b dirty=30 (7 lanes merged; wiring ClipSeams↔ClipAudio, ImportHub hooks, AudioStripDraw in ruler, .mid doc type, one key estimate — in progress). Then merge w4, Fable review, install.
+5. After w4+w5: header = web (File/Edit/View left, drop Songs ▾) (#957). Then wave 6 (AI tools), then Roll edit-mode side-by-side web vs native (#941), then market research (#942).
+6. Known: TrackStrip observes Player (relayouts ~44/s while playing) — move off Player.
+
+**Store/TestFlight** (#981/#998): tf-prep merged in ipad/guitar/tuner/app (icons, names, encryption flag, tools/testflight.sh per repo). store-clean branches (no game music, no repo/archive URLs, release check script) unfinished: ipad 187038c (worktree ~/work/night-roll/store-clean/night-roll-ipad), app 191f29b, guitar 1a23eb8, tuner 3b9fc22, daw 3a77dd40. Josh's part: sign in to Xcode; create App Store Connect records Native/Guitar/Tuner; then I run tools/testflight.sh per repo. Steps emailed 10/24. Test-info + privacy draft: Claude scratchpad testflight-test-info.md (regenerate if gone).
+
+**Night Roll Guitar** (repo ~/work/night-roll/night-roll-guitar; paired worktrees <dir>/{night-roll-guitar,night-roll-ear,night-roll-tuner}). Installed Dev+Lab: main 7e6de89 (+3cd844e open-items) = song fingering (bends ring/middle, file fingers a hint), input-channel picker (Nano Cortex), Angry Again importer 4 (9 solo notes back).
+1. highway-slides (#1024/#1026): slide ribbons on highway + landing gems + board dot/finger slides. hwslide/ @3cd844e dirty=2 (model work started).
+2. fingering-2: stretch model + tap-to-set finger + linked-slide finger bug (f4→f9 shows 3→1, #1029) + 8→12 hammer-on hand jump. fing2/ @af55cf3 dirty=4.
+3. notation-slides (#1014): slide/bend/vibrato marks in score + tab. slides/ @9c80649 dirty=5.
+4. bend-motion (#1012/#1013): dot + finger move by real bend physics (¼…2 steps) + Free after a song shows its key. bendmo/ @9c80649 dirty=4.
+5. real-fret-spacing toggle incl. highway lanes (#1015/#1017). fretsp/ @7e6de89 dirty=12.
+6. loopbar-playhead any time the song plays (#1006/#1007). lbar/ @9c80649 dirty=4.
+7. clear-chat: move Clear chat away from Send + inline 2-tap, no dialog (#1009/#1010), BridgeChat source in claude-bridge + synced into guitar/native. clrchat/ @9c80649 dirty=9.
+8. Parked: highway fret window from anchors (#1018/#1019, guitar open-items Queue). Open Q (#1020): show double-stop lower notes as grey notes, or re-import with chords shown?
 
 ### Night Roll Native (iPad port of this web app; repo night-roll-ipad, no remote)
 - Goal (Josh #880/#906/#908/#919/#920): native copies the web UI; the audit is a work list — build every MISSING/DIFF row until missing = 0. Plan: night-roll-ipad/docs/plans/2026-10-22-build-everything.md (6 waves); checklist 2026-10-22-complete-checklist.md (553 rows; at start 192 exact, 84 different, 245 missing).
