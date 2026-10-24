@@ -7,6 +7,13 @@ session start alongside the quiz.)
 ## 2026-10-23 CURRENT WORK (read first; older sections below are history)
 Per-repo lists also exist: night-roll-guitar/open-items.md (guitar Q-numbers, e.g. Q26). This section is the cross-app summary.
 
+### PAUSED 2026-10-24 ~03:00 (Josh #1030: token budget 94% for the week; keep tokens for TestFlight)
+All builders stopped mid-work; resume from these branches (none merged unless noted):
+- Native (night-roll-ipad master 30736f4 installed: fixes #965/#966/#970/#974/#980/#987/#989/#990/#994/#995/#999/#956/#973 + tf-prep): pending fix-995 follow-up = playhead runs ~1.5 bars ahead on chip songs (#997/#1000) + ruler tap-seek (#1001) in ../ipad-fix995; fix-1021 (selected-track outline, voice-menu button styling); w4-int (wave 4 + master merges, tests mid-run); w5-int (wave 5 lanes merged, wiring + tests mid-run); header menus left + drop Songs ▾ (#957) after w4/w5.
+- Store builds (#998, no game music, no repo/archive links, release check script): branch store-clean in ipad/app/guitar/tuner/daw worktrees, unfinished.
+- TestFlight: tf-prep merged in all four repos; Josh signs in + makes 3 App Store Connect records; Q: hide console catalog in TestFlight Native (#998 says yes: ship none).
+- Guitar (main 3cd844e installed: song fingering, input-channel picker, Angry Again importer 4): pending branches fingering-2 (stretch model + tap override; also linked-slide 3→1 finger bug #1029) in fing2/; highway-slides (slide ribbons + landing gems, #1024/#1026) in hwslide/; notation-slides (score/tab slide/bend/vibrato marks, #1014) in slides/; bend-motion (#1012/#1013 dot/finger moves by real bend physics + Free shows song key) in bendmo/; real-fret-spacing toggle incl. highway (#1015/#1017) in fretsp/; loopbar-playhead (#1006/#1007) in lbar/; clear-chat (move away from Send, inline 2-tap, #1009/#1010) in clrchat/. Open Q (#1020): show double-stop lower notes as grey reference notes, or re-import with chords shown?
+
 ### Night Roll Native (iPad port of this web app; repo night-roll-ipad, no remote)
 - Goal (Josh #880/#906/#908/#919/#920): native copies the web UI; the audit is a work list — build every MISSING/DIFF row until missing = 0. Plan: night-roll-ipad/docs/plans/2026-10-22-build-everything.md (6 waves); checklist 2026-10-22-complete-checklist.md (553 rows; at start 192 exact, 84 different, 245 missing).
 - Installed and confirmed: cursor smoothness (#923 → "very smooth"), smooth Roll glide kept over the web's page jump (#940, a chosen departure).
