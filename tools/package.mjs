@@ -46,7 +46,7 @@ const STORE = argv.includes("--store");
 // the site's GitHub, its Pages address, Josh's chip archive, any concrete
 // owner/repo on GitHub's raw host (a template like .../<owner>/<repo> or a
 // string built from a typed repo is fine), his tailnet, the Rocksmith sites
-const STORE_FORBIDDEN = [/github\.com\/Night-Roll-App/i, /night-roll-app\.github\.io/i, /nsf-archive/i,
+const STORE_FORBIDDEN = [/github\.com\/Night-Roll-App/i, /Night-Roll-App\//, /joshcough\//, /night-roll-app\.github\.io/i, /nsf-archive/i,
   /raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\//i, /\bts\.net\b/i, /tail136602/, /100\.73\./, /customsforge/i, /rocksmith/i];
 const STORE_TEXT = /\.(html|js|mjs|json|md|txt|css|webmanifest|svg|xml)$|^[^.]+$/i; // text by extension, or no extension (LICENSE)
 // game-audio files; a .mid is music too unless it is one of the starters
@@ -170,10 +170,10 @@ const EDITION_LINE = 'export const EDITION = "web";';
 if ((srcEdition.match(/export const EDITION = "[a-z]+";/g) || []).length !== 1) fail("src/edition.js must declare EDITION exactly once");
 let appEdition = srcEdition.replace(EDITION_LINE, 'export const EDITION = "app";');
 if (appEdition === srcEdition) fail("EDITION line not found in src/edition.js: " + EDITION_LINE);
-// --store: the site's names go blank — SITE_REPO, SITE_NSF_REPO, SITE_URL, SITE_HOME
+// --store: the site's names go blank — SITE_REPO, SITE_NSF_REPO, SITE_URL, SITE_HOME, SITE_OLD_OWNER
 // (SITE_HELP derives from SITE_HOME at run time, so it needs no line of its own)
-const SITE_LINES = appEdition.match(/^export const SITE_(REPO|NSF_REPO|URL|HOME) = "[^"]+";$/gm) || [];
-if (SITE_LINES.length !== 4) fail("src/edition.js must declare SITE_REPO, SITE_NSF_REPO, SITE_URL and SITE_HOME once each as non-empty strings (found " + SITE_LINES.length + ")");
+const SITE_LINES = appEdition.match(/^export const SITE_(REPO|NSF_REPO|URL|HOME|OLD_OWNER) = "[^"]+";$/gm) || [];
+if (SITE_LINES.length !== 5) fail("src/edition.js must declare SITE_REPO, SITE_NSF_REPO, SITE_URL, SITE_HOME and SITE_OLD_OWNER once each as non-empty strings (found " + SITE_LINES.length + ")");
 if (STORE) for (const l of SITE_LINES) appEdition = appEdition.replace(l, l.replace(/"[^"]+"/, '""'));
 { // byte-identical apart from that line (and, for the store, the four SITE_ lines)
   const a = srcEdition.split("\n"), b = appEdition.split("\n");

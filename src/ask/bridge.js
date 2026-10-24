@@ -3,6 +3,7 @@ import { askStoreKey } from "./sheet.js";
 import { appErrors } from "../model/jobs.js";
 import { appDebug } from "../model/jobs.js";
 import { S } from "../state.js";
+import { SITE_REPO } from "../edition.js";
 import { cfg } from "../platform/storage.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { baseName } from "../model/rollnotes.js";
@@ -295,10 +296,11 @@ export function askStatusRecentShow(on) {
 }
 export function askStatusToggle() { askStatusRecentShow(!S.askStatusRecentOpen); if (S.askStatusRecentOpen) askStatusFetchCommits(); }
 export async function askStatusFetchCommits() { // origin/main's last 3 subjects, public+unauthenticated, at most once per 5 min; silent on any failure
+  if (!SITE_REPO) return; // the store build has no site repo to ask
   if (S.askStatusCommits && Date.now() - S.askStatusCommitsAt < 5 * 60000) return;
   S.askStatusCommitsAt = Date.now();
   try {
-    const r = await fetch("https://api.github.com/repos/Night-Roll-App/night-roll/commits?per_page=3");
+    const r = await fetch("https://api.github.com/repos/" + SITE_REPO + "/commits?per_page=3");
     if (!r.ok) return;
     const j = await r.json();
     S.askStatusCommits = (Array.isArray(j) ? j : []).map(c => c && c.commit && c.commit.message ? c.commit.message.split("\n")[0] : "").filter(Boolean);

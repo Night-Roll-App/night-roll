@@ -16,5 +16,7 @@ export const SITE_REPO = "Night-Roll-App/night-roll";
 export const SITE_NSF_REPO = "Night-Roll-App/nsf-archive";
 export const SITE_URL = "https://night-roll-app.github.io/night-roll/";
 export const SITE_HOME = "https://github.com/Night-Roll-App/night-roll";
+// the repos' owner before the organization (2026-09-29): saved settings naming it are read as the new home
+export const SITE_OLD_OWNER = "joshcough";
 // "" when the edition has no site to point at (the store build)
 export const SITE_HELP = SITE_HOME ? SITE_HOME + "/blob/main/docs/HELP.md" : "";

@@ -95,11 +95,12 @@ test("package --store: the TestFlight bundle names no repo, no site, no archive,
   assert.match(r.stdout, /packaged \(store\)/);
   const edition = readFileSync(path.join(out, "src", "edition.js"), "utf8");
   assert.ok(edition.includes('export const EDITION = "app";'));
-  for (const k of ["SITE_REPO", "SITE_NSF_REPO", "SITE_URL", "SITE_HOME"]) assert.ok(edition.includes("export const " + k + ' = "";'), k + " is blank in the store build");
+  const SITE = ["SITE_REPO", "SITE_NSF_REPO", "SITE_URL", "SITE_HOME", "SITE_OLD_OWNER"];
+  for (const k of SITE) assert.ok(edition.includes("export const " + k + ' = "";'), k + " is blank in the store build");
   const editionRepo = readFileSync(path.join(root, "src", "edition.js"), "utf8");
-  for (const k of ["SITE_REPO", "SITE_NSF_REPO", "SITE_URL", "SITE_HOME"]) assert.match(editionRepo, new RegExp("^export const " + k + ' = "[^"]+";$', "m"), k + " is set on the web");
+  for (const k of SITE) assert.match(editionRepo, new RegExp("^export const " + k + ' = "[^"]+";$', "m"), k + " is set on the web");
   assert.equal(editionRepo.split("\n").length, edition.split("\n").length);
-  assert.equal(editionRepo.split("\n").filter((l, i) => l !== edition.split("\n")[i]).length, 5, "EDITION plus the four SITE_ lines differ, nothing else");
+  assert.equal(editionRepo.split("\n").filter((l, i) => l !== edition.split("\n")[i]).length, 6, "EDITION plus the five SITE_ lines differ, nothing else");
   // the web-only help blocks are cut whole, the rest of the help is intact
   const help = readFileSync(path.join(out, "help", "help.html"), "utf8");
   assert.ok(!/<!--\/?web-->/.test(help) && !/tailscale serve|npm run bridge/.test(help), "the Mac bridge / Tailscale setup is gone");
@@ -112,7 +113,7 @@ test("package --store: the TestFlight bundle names no repo, no site, no archive,
   assert.ok(!existsSync(path.join(out, "vendor", "ai", "README.md")));
   assert.equal(JSON.parse(readFileSync(path.join(out, "BUILD.json"), "utf8")).store, true);
   // nothing anywhere names the site, Josh's archive, his tailnet or the CDLC sites; the starters are the only music
-  const bad = /github\.com\/Night-Roll-App|night-roll-app\.github\.io|nsf-archive|raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\/|\bts\.net\b|tail136602|100\.73\.|customsforge|rocksmith/i;
+  const bad = /github\.com\/Night-Roll-App|Night-Roll-App\/|joshcough\/|night-roll-app\.github\.io|nsf-archive|raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\/|\bts\.net\b|tail136602|100\.73\.|customsforge|[Rr]ocksmith/;
   const files = walk(out).map(f => path.relative(out, f));
   for (const f of files) {
     assert.ok(!bad.test(f), "path: " + f);
@@ -125,7 +126,7 @@ test("package --store: the TestFlight bundle names no repo, no site, no archive,
   // the guard's own regexes fire on what they must and not on a URL built from a typed repo
   const src = readFileSync(tool, "utf8");
   const res = eval(src.match(/const STORE_FORBIDDEN = (\[[\s\S]*?\]);/)[1]);
-  for (const s of ["github.com/Night-Roll-App/night-roll", "night-roll-app.github.io", "Night-Roll-App/nsf-archive", "https://raw.githubusercontent.com/joshcough/night-roll/main/", "x.tail136602.ts.net", "100.73.74.71", "customsforge", "Rocksmith"])
+  for (const s of ["github.com/Night-Roll-App/night-roll", "night-roll-app.github.io", "Night-Roll-App/nsf-archive", "like Night-Roll-App/night-roll", "joshcough/night-roll", "https://raw.githubusercontent.com/joshcough/night-roll/main/", "x.tail136602.ts.net", "100.73.74.71", "customsforge", "Rocksmith"])
     assert.ok(res.some(re => re.test(s)), "should be forbidden: " + s);
   for (const s of ['"https://raw.githubusercontent.com/" + r + "/main"', "raw.githubusercontent.com/<owner>/<repo>/<branch>", "tests.network"])
     assert.ok(!res.some(re => re.test(s)), "should be allowed: " + s);

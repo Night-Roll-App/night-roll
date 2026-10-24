@@ -453,7 +453,7 @@ export function ghCheckOut(t) { const el = document.getElementById("ghcheckout")
 export async function ghCheck() {
   const repo = (document.getElementById("cfgsongsrepo").value.trim() || cfg().songsRepo);
   const token = document.getElementById("ghtoken").value.trim() || localStorage.getItem("ff1roll-ghtoken") || "";
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like Night-Roll-App/night-roll"); return; }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like yourname/my-songs"); return; }
   if (!token) { ghCheckOut("⚠ no token yet — make one (the button) and paste it"); return; }
   ghCheckOut("checking " + repo + "…");
   try {

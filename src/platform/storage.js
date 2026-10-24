@@ -1,5 +1,5 @@
 import { S } from "../state.js";
-import { EDITION, SITE_REPO, SITE_NSF_REPO } from "../edition.js";
+import { EDITION, SITE_REPO, SITE_NSF_REPO, SITE_OLD_OWNER } from "../edition.js";
 import { LINK_SONGS } from "./base.js";
 import { logErr } from "../hooks.js";
 
@@ -194,8 +194,8 @@ export function cfg() {
     // write) — one pass, persisted by the next saveCfg.
     // (The old owner's name is derived from the site's repos so that the
     // store build, where those are blank, carries no name of either.)
-    for (const now of [SITE_REPO, SITE_NSF_REPO]) if (now) {
-      const old = new RegExp("joshcough/" + now.split("/")[1].replace(/[.]/g, "\\.") + "(?![\\w.-])", "g");
+    for (const now of [SITE_REPO, SITE_NSF_REPO]) if (now && SITE_OLD_OWNER) {
+      const old = new RegExp(SITE_OLD_OWNER + "/" + now.split("/")[1].replace(/[.]/g, "\\.") + "(?![\\w.-])", "g");
       for (const k of Object.keys(c)) if (typeof c[k] === "string") c[k] = c[k].replace(old, now);
     }
     // The app edition: "this site" is the app bundle (starters only), so reads
