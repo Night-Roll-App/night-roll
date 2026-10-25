@@ -202,6 +202,28 @@ function storeHelp(text) {
   return out;
 }
 
+// --store: no game or maker name in anything the user can read. index.html and help.html get the wording below; comment-only
+// lines in src/ and tools/ lose their text (line numbers stay); in tools/ (the importers) any name left in code becomes "game";
+// in src/ only the folder keys (albums/**/final-fantasy-i, mega-man-2, tmnt-2 ...) remain, and the app's tools/check-release.sh allowlists
+// those exact tokens in those exact files, so new visible game text still fails.
+const STORE_HTML_REWRITES = [
+  [/by studying the Final Fantasy I soundtrack,/g, "by studying chiptune soundtracks,"],
+  [/\(Final Fantasy VII\/VIII\/IX, Chrono Cross\)/g, "(the PlayStation games that use it)"],
+  [/Square Enix's own \(BGM\/WD [\u2014-] Final Fantasy X\)/g, "the maker's own (BGM/WD)"],
+  [/Super Mario Bros\. 3, Castlevania II, Contra, Kirby's Adventure, both Ninja Gaidens/g, "some NES games"],
+  [/Imports \u203a Mega Man 2/g, "Imports \u203a My album"],
+  [/Published \u203a Final Fantasy I \u203a Battle Scene/g, "Published \u203a My album \u203a My song"],
+  [/\(Ico, XIII\)/g, "(some PS2 games)"],
+  [/Nintendo 64/g, "N64"],
+];
+function scrubGameText(text, rel) {
+  if (/\.html$/.test(rel)) { for (const [re, to] of STORE_HTML_REWRITES) text = text.replace(re, to); return text; }
+  if (!/\.m?js$/.test(rel)) return text;
+  text = text.split("\n").map(l => { const m = /^\s*(\/\/|\*)/.exec(l); if (m) return FORBIDDEN.test(l) ? m[0] : l; const t = /\s\/\/\s[^`]*$/.exec(l); return t && FORBIDDEN.test(t[0]) ? l.slice(0, t.index) : l; }).join("\n");
+  if (rel.startsWith("tools/")) return text.replace(new RegExp(FORBIDDEN.source, "gi"), "game");
+  return text.replace(/Nintendo 64/g, "N64").replace(/Super Nintendo/g, "Super NES");
+}
+
 // 2. which albums ship
 const albumsRoot = path.join(ROOT, "albums");
 const shipAlbums = ALLOWED_ALBUM_DIRS.map(d => path.join(ROOT, d)).filter(existsSync);
@@ -220,6 +242,7 @@ if (!CHECK_ONLY) {
     rmSync(path.join(OUT, "vendor", "ai", "README.md"), {force: true}); // the library's own README names its home; no page reads it
   }
   for (const m of RUNTIME) { const dst = path.join(OUT, "tools", m); mkdirSync(path.dirname(dst), {recursive: true}); copyFileSync(path.join(ROOT, "tools", m), dst); }
+  if (STORE) for (const f of walk(OUT)) { const r = rel(f); if (r.startsWith("vendor/") || !/\.(html|m?js)$/.test(r)) continue; const t = readFileSync(f, "utf8"), o = scrubGameText(t, r); if (o !== t) writeFileSync(f, o); }
   mkdirSync(path.join(OUT, "albums"), {recursive: true});
   for (const d of shipAlbums) copyDir(d, path.join(OUT, path.relative(ROOT, d)));
   writeFileSync(path.join(OUT, "albums", "manifest.json"), JSON.stringify(shipManifest, null, 1) + "\n");
