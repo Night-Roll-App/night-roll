@@ -109,7 +109,8 @@ test("package --store: the TestFlight bundle names no repo, no site, no archive,
   // index.html: exactly the license comment changed
   const idx = readFileSync(path.join(out, "index.html"), "utf8").split("\n"), idxRepo = readFileSync(path.join(root, "index.html"), "utf8").split("\n");
   const diff = idxRepo.map((l, i) => l !== idx[i] ? i : -1).filter(i => i >= 0);
-  assert.deepEqual(diff.map(i => idxRepo[i].includes("Required Notice")), [true], "only the required-notice comment line differs");
+  assert.ok(diff.some(i => idxRepo[i].includes("Required Notice")), "the required-notice comment line differs");
+  assert.ok(diff.length <= 8, "besides the notice, only the few reworded game-name sentences differ (" + diff.length + ")");
   assert.ok(!existsSync(path.join(out, "vendor", "ai", "README.md")));
   assert.equal(JSON.parse(readFileSync(path.join(out, "BUILD.json"), "utf8")).store, true);
   // nothing anywhere names the site, Josh's archive, his tailnet or the CDLC sites; the starters are the only music
@@ -142,4 +143,13 @@ test("package (no --store): Josh's own iPad build keeps the site's repos and lin
   assert.ok(readFileSync(path.join(out, "help", "help.html"), "utf8").includes("<!--web-->"));
   assert.equal(JSON.parse(readFileSync(path.join(out, "BUILD.json"), "utf8")).store, false);
   rmSync(out, {recursive: true, force: true});
+});
+
+test("package --store: help and index name no game (FF1, Chrono, Mario ...) and every wording rewrite matched", () => {
+  const out = mkdtempSync(path.join(tmpdir(), "nr-pkg-store-names-"));
+  const r = spawnSync(process.execPath, [tool, "--store", "--out", out], {encoding: "utf8"});
+  assert.equal(r.status, 0, r.stderr + r.stdout);   // a rewrite that matched nothing fails the build
+  const names = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|nintendo|castlevania|zelda|metroid|\bff1\b|tetris|zophar|(^|[^#$0-9a-z_])ff([0-9]+| ?(i{1,3}|iv|vi{0,3}|ix|x))\b|\bchrono\b|\bkirby|\bcontra\b|ninja gaiden|super mario|sony's|square's/i;
+  for (const f of ["index.html", "help/help.html"]) assert.doesNotMatch(readFileSync(path.join(out, f), "utf8"), names, f + " names a game or maker in the store bundle");
+  assert.doesNotMatch(readFileSync(path.join(out, "tools/n64/ead-usf.mjs"), "utf8"), /Super Mario|Zelda|GoldenEye/, "the ROM-title table is blank in the store build");
 });

@@ -202,26 +202,50 @@ function storeHelp(text) {
   return out;
 }
 
-// --store: no game or maker name in anything the user can read. index.html and help.html get the wording below; comment-only
-// lines in src/ and tools/ lose their text (line numbers stay); in tools/ (the importers) any name left in code becomes "game";
-// in src/ only the folder keys (albums/**/final-fantasy-i, mega-man-2, tmnt-2 ...) remain, and the app's tools/check-release.sh allowlists
-// those exact tokens in those exact files, so new visible game text still fails.
+// --store: no game or maker name in anything the user can read. index.html and help.html get the wording below (every rule must
+// match at least once, or the build fails: a reworded sentence must not silently stop being reworded); comment-only lines in src/
+// and tools/ lose their text (line numbers stay); in tools/ (the importers) any name left in code becomes "game" and the ROM-title
+// table's titles go blank; in src/ only the folder keys (albums/**/final-fantasy-i, mega-man-2, tmnt-2 ...) remain, and the app's
+// tools/check-release.sh allowlists those exact tokens in those exact files, so new visible game text still fails.
+// The ambiguous short names (FF1, FFX, Chrono, Kirby ...) are only matched by this store regex, not by the shared FORBIDDEN above.
+const STORE_NAMES = new RegExp(FORBIDDEN.source + "|(^|[^#$0-9a-z_])ff([0-9]+| ?(i{1,3}|iv|vi{0,3}|ix|x))\\b|\\bchrono\\b|\\bkirby|\\bcontra\\b|ninja gaiden|super mario|\\bff1\\b|tetris|zophar", "i");
 const STORE_HTML_REWRITES = [
   [/by studying the Final Fantasy I soundtrack,/g, "by studying chiptune soundtracks,"],
-  [/\(Final Fantasy VII\/VIII\/IX, Chrono Cross\)/g, "(the PlayStation games that use it)"],
-  [/Square Enix's own \(BGM\/WD [\u2014-] Final Fantasy X\)/g, "the maker's own (BGM/WD)"],
+  [/Sony's standard driver \(SEQ\/VAB\) and Square's AKAO \(Final Fantasy VII\/VIII\/IX, Chrono Cross\)/g, "the standard SEQ/VAB driver and the AKAO format"],
+  [/Sony's own SEQ\/VAB driver and Square's AKAO \(Final Fantasy VII\/VIII\/IX, Chrono Cross\)/g, "the standard SEQ/VAB driver and the AKAO format"],
+  [/Sony's standard driver \(SQ\/HD\/BD\) and Square Enix's own \(BGM\/WD [—-] Final Fantasy X\)/g, "the standard SQ/HD/BD driver and the maker's own BGM/WD one"],
+  [/Sony's stock driver \(SQ\/HD\/BD\) and Square Enix's own \(BGM\/WD [—-] Final Fantasy X\)/g, "the stock SQ/HD/BD driver and the maker's own BGM/WD one"],
   [/Super Mario Bros\. 3, Castlevania II, Contra, Kirby's Adventure, both Ninja Gaidens/g, "some NES games"],
+  [/ \(FFX "Challenge"\)/g, ""],
+  [/captures and FF1 songs too/g, "captures and other songs too"],
+  [/\(FF1 Shop's pulse 2 swells inside each bar\)/g, "(a pulse channel's swells inside each bar)"],
+  [/ — Zophar's Game Boy Tetris is DMG-TRA-0\.gbs and DMG-TRA-1\.gbs/g, ""],
+  [/the same pipeline that dumped the FF1 album runs the track/g, "the same pipeline runs the track"],
+  [/ FF1 songs still load from the site — annotate one and the annotations save to your folder\./g, ""],
+  [/Play the FF1 album\./g, "Play the Starters album."],
   [/Imports \u203a Mega Man 2/g, "Imports \u203a My album"],
   [/Published \u203a Final Fantasy I \u203a Battle Scene/g, "Published \u203a My album \u203a My song"],
-  [/\(Ico, XIII\)/g, "(some PS2 games)"],
   [/Nintendo 64/g, "N64"],
 ];
+const HTML_REWRITE_HITS = STORE_HTML_REWRITES.map(() => 0);
+// the code part of a line: string literals and comments removed (what scrubbing must leave untouched)
+const skeleton = l => /^\s*(\/\/|\/\*|\*)/.test(l) ? "" : l.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g, '""').replace(/\s\/\/\s.*$/, "");
 function scrubGameText(text, rel) {
-  if (/\.html$/.test(rel)) { for (const [re, to] of STORE_HTML_REWRITES) text = text.replace(re, to); return text; }
+  if (/\.html$/.test(rel)) {
+    STORE_HTML_REWRITES.forEach(([re, to], i) => { text = text.replace(re, () => { HTML_REWRITE_HITS[i]++; return to; }); });
+    return text;
+  }
   if (!/\.m?js$/.test(rel)) return text;
-  text = text.split("\n").map(l => { const m = /^\s*(\/\/|\*)/.exec(l); if (m) return FORBIDDEN.test(l) ? m[0] : l; const t = /\s\/\/\s[^`]*$/.exec(l); return t && FORBIDDEN.test(t[0]) ? l.slice(0, t.index) : l; }).join("\n");
-  if (rel.startsWith("tools/")) return text.replace(new RegExp(FORBIDDEN.source, "gi"), "game");
-  return text.replace(/Nintendo 64/g, "N64").replace(/Super Nintendo/g, "Super NES");
+  const before = text.split("\n");
+  const lines = before.map(l => { const m = /^\s*(\/\/|\*)/.exec(l); if (m) return STORE_NAMES.test(l) ? m[0] : l; const t = /\s\/\/\s[^`]*$/.exec(l); return t && STORE_NAMES.test(t[0]) ? l.slice(0, t.index) : l; });
+  let out = lines.join("\n");
+  if (rel.startsWith("tools/")) {
+    if (rel === "tools/n64/ead-usf.mjs") out = out.replace(/title: "[^"]*"/g, 'title: ""'); // the ROM-title table: labels only
+    out = out.replace(new RegExp(STORE_NAMES.source, "gi"), (m, p1) => (p1 || "") + "game");
+  } else out = out.replace(/Nintendo 64/g, "N64").replace(/Super Nintendo/g, "Super NES").replace(/Play the FF1 album\./g, "Play the Starters album.");
+  const after = out.split("\n");
+  after.forEach((l, i) => { if (l !== before[i] && skeleton(l) !== skeleton(before[i])) fail("store scrub changed code (not a string or comment) in " + rel + ":" + (i + 1) + ": " + before[i].trim().slice(0, 80)); });
+  return out;
 }
 
 // 2. which albums ship
@@ -243,6 +267,7 @@ if (!CHECK_ONLY) {
   }
   for (const m of RUNTIME) { const dst = path.join(OUT, "tools", m); mkdirSync(path.dirname(dst), {recursive: true}); copyFileSync(path.join(ROOT, "tools", m), dst); }
   if (STORE) for (const f of walk(OUT)) { const r = rel(f); if (r.startsWith("vendor/") || !/\.(html|m?js)$/.test(r)) continue; const t = readFileSync(f, "utf8"), o = scrubGameText(t, r); if (o !== t) writeFileSync(f, o); }
+  if (STORE) STORE_HTML_REWRITES.forEach(([re], i) => { if (!HTML_REWRITE_HITS[i]) fail("store: the wording rewrite " + re + " matched nothing (the sentence changed? update STORE_HTML_REWRITES)"); });
   mkdirSync(path.join(OUT, "albums"), {recursive: true});
   for (const d of shipAlbums) copyDir(d, path.join(OUT, path.relative(ROOT, d)));
   writeFileSync(path.join(OUT, "albums", "manifest.json"), JSON.stringify(shipManifest, null, 1) + "\n");
