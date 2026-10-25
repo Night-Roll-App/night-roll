@@ -50,7 +50,9 @@ const STORE_FORBIDDEN = [/github\.com\/Night-Roll-App/i, /Night-Roll-App\//, /jo
   /raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\//i, /\bts\.net\b/i, /tail136602/, /100\.73\./, /customsforge/i, /rocksmith/i];
 const STORE_TEXT = /\.(html|js|mjs|json|md|txt|css|webmanifest|svg|xml)$|^[^.]+$/i; // text by extension, or no extension (LICENSE)
 // game-audio files; a .mid is music too unless it is one of the starters
-const GAME_AUDIO = /\.(nsf|nsfe|spc|rsn|psf|minipsf|psf2|minipsf2|usf|miniusf|gbs|vgm|vgz|gym|2sf|psarc|wem|sng|mid|midi)$/i;
+const GAME_AUDIO = /\.(nsf|nsfe|spc|rsn|psf|minipsf|psf2|minipsf2|usf|miniusf|gbs|gsf|minigsf|vgm|vgz|gym|2sf|ncsf|ssf|dsf|hes|kss|ay|sap|mod|xm|it|s3m|vab|seq|psarc|wem|sng|mid|midi|wav|m4a|mp3|ogg|flac|caf|aif|aiff|opus)$/i;
+// the same list is in every store app's tools/check-release.sh; rendered audio (wav m4a ...) ships only at an exact path here
+const ALLOWED_AUDIO_PATHS = [];
 const ALLOWED_ALBUM_DIRS = ["albums/starters"];
 const FORBIDDEN = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|teenage mutant|nintendo|capcom|konami|square ?enix|castlevania|zelda|metroid/i;
 const TOP_FILES = ["index.html", "sw.js", "app.webmanifest", "404.html", "LICENSE"];
@@ -252,7 +254,7 @@ for (const f of files) {
 if (STORE) for (const f of files) {
   const r = rel(f);
   for (const re of STORE_FORBIDDEN) if (re.test(r)) fail("store: forbidden name in path: " + r);
-  if (GAME_AUDIO.test(r) && !(/\.midi?$/i.test(r) && ALLOWED_ALBUM_DIRS.some(d => r.startsWith(d + "/")))) fail("store: game-audio file in the output: " + r);
+  if (GAME_AUDIO.test(r) && !(/\.midi?$/i.test(r) && ALLOWED_ALBUM_DIRS.some(d => r.startsWith(d + "/"))) && !ALLOWED_AUDIO_PATHS.includes(r)) fail("store: game-audio file in the output: " + r);
   if (STORE_TEXT.test(r)) {
     const t = readFileSync(f, "utf8");
     for (const re of STORE_FORBIDDEN) { const m = re.exec(t); if (m) { const line = t.slice(0, m.index).split("\n").length; fail("store: forbidden text in " + r + ":" + line + ": " + m[0]); } }
