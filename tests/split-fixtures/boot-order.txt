@@ -243,6 +243,7 @@ document.getElementById("filedlaudio").addEventListener("click", async () => {
 document.getElementById("filedlmid").addEventListener("click", () => {
 document.getElementById("filedlscore").addEventListener("click", () => {
 document.getElementById("fsxgo").addEventListener("click", async () => {
+document.getElementById("fileexportall").addEventListener("click", () => exportEverythingUI(document.getElementById("fileexportstatus")).then(msg => { if (msg) setInfo(msg); }));
 JOB_KINDS.capture = {
 document.getElementById("impall").addEventListener("click", e => {
 document.getElementById("impclose").addEventListener("click", () =>

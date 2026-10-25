@@ -1,4 +1,5 @@
 import { connected } from "../sync/publish.js";
+import { exportEverythingUI } from "../session/export-all.js";
 import { S, prof } from "../state.js";
 import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn, srAnnounce, scheduleBackupFlush } from "../hooks.js";
 import { setControl } from "./controls.js";
@@ -2463,6 +2464,8 @@ export function initChrome12() {
     closeFileMenus();
     await exportScore(paper);
   });
+  // File ▾ → Export everything… (native-iPad plan P0): a read-only dump of every stored thing; progress + summary in the row below
+  document.getElementById("fileexportall").addEventListener("click", () => exportEverythingUI(document.getElementById("fileexportstatus")).then(msg => { if (msg) setInfo(msg); }));
 }
 
 export function initChrome13() {

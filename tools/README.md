@@ -40,6 +40,7 @@ analyst's. Paths below are referenced from WEB-SESSION.md, NIGHT-ROLL.md,
 | `migrate-rollnotes-v2.mjs` | The one-time v1 → v2 batch migration of `*.rollnotes.json` (see `docs/annotations-v2.md`). |
 | `spc-undrum.mjs` | One-time fix for SNES captures whose noise voice was merged into a drums track. |
 | `package.mjs [--out <dir>]` | Assembles the product build (default `dist/night-roll-app/`) and refuses to ship anything that is not ours. |
+| `verify-export.mjs <NightRoll-Export-folder>` | Checks a File → "Export everything…" dump: every file's size + sha256, each song's `.mid` re-parsed with the app's own `parseMidi` (note count == the draft's), rollnotes item count == the stored list's. PASS/FAIL per song and a total. |
 | `run-tests.mjs` | `npm test`: every vm test file, one at a time, every file even after a failure. |
 | `fix_keysigs.py`, `strip_tracks.py`, `trim_loops.py` | MIDI utilities: rewrite key-signature metas, delete tracks by app-visible index, trim a file to its first pass. |
 | `icon-1024.swift` | Redraws the app icon at 1024 px. |
