@@ -1,9 +1,8 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-battle-theme.mid","at":"2026-10-13T16:47:38.845Z"}, "stamp": 1792893975118, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-battle-theme.mid","at":"2026-10-13T16:47:38.845Z"}, "stamp": 1792982198772, "notes": [
   {"at":[1,1],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"key","key":"C"},
   {"at":[1,1],"type":"lane","lane":35},
   {"at":[1,1],"to":[2,4],"type":"section","label":"Intro"},
-  {"at":[1,1],"type":"loop","loop":"3.1"},
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"key","key":"F#m"},
   {"at":[3,1],"to":[10,4],"type":"section","label":"A","note":"Harmony on pulse2"},
@@ -20,5 +19,6 @@
   {"at":[22,1],"to":[22,4.25],"type":"chord","chord":"C#m7"},
   {"at":[23,1],"to":[25,4],"type":"chord","chord":"Ddim7"},
   {"at":[26,1],"to":[27,2],"type":"section","label":"Turn"},
-  {"at":[26,1],"to":[27,2],"type":"chord","chord":"C#5"}
+  {"at":[26,1],"to":[27,2],"type":"chord","chord":"C#5"},
+  {"at":[27,3],"type":"loop","loop":"3.1"}
 ] }
