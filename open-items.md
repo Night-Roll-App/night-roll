@@ -11,6 +11,57 @@ session start alongside the quiz.)
 - Queued: web game songs keep pitch when slowed (Josh 2026-10-25 ear report: slowing an FF song lowers the pitch). Native fixed on night-roll-ipad branch keep-pitch (TimePitch + measured lag table). Web: src/audio/chip.js:397 and chip-stream.js:268 are tape-style playbackRate; the fix is an AudioWorklet time-stretcher (or pre-stretched buffers) plus reworking the tape-time maths in chip-stream.js; multi-day.
 - Queued: AUv3 instruments (Josh 2026-10-25, wants to try his installed synths: SynthMaster 3 Player, 4Waves Synth AUv3). Phase 3 of night-roll-guitar docs/research/2026-10-22-auv3-plugins.md: a per-track instrument choice in Night Roll (Sampler default, or an AUv3 instrument; fullState saved in the song). Fretworks Lab's plug-in slot takes effects only (aufx), so synths do not appear there.
 - Waiting on Josh: App Store release items (TestFlight, privacy labels, listing, screenshots); ear checks on NR Native (click during chip song, drum piece solo/mute), Pencil checks.
+Per-repo lists also exist: night-roll-guitar/open-items.md (guitar Q-numbers, e.g. Q26). This section is the cross-app summary.
+
+### PAUSED 2026-10-24 ~03:00 — RESUME HERE (Josh #1030/#1031: token budget 94%; keep tokens for TestFlight)
+All builders were stopped mid-work. "dirty=N" = N uncommitted tracked files left in that worktree (unfinished edits, not lost). Nothing below is merged unless it says so. Rules still apply: one sim per builder, boot only while running, CPU-sum gate not loadavg, ≤4 builders at once.
+
+**Night Roll Native** (repo ~/work/night-roll/night-roll-ipad, no remote). Installed on iPad: master 22f6d87 (= 30736f4 minus fix-995); before that 30736f4 = 148d53c + fix-965 panel sound/stray icon, fix-966/970/974/980 panel GM guitar/grand + roll-tap sound, fix-987/989 Follow off on scroll, fix-990 game-sound note taps, fix-994 sampler crash guard, fix-995 stems start together, tf-prep, fix-999 fretboard = web, fix-956/973 track select + ▾ flicker.
+0. UPDATE 10/24 (#1032): fix-995 REVERTED on master (22f6d87, installed) because it broke Play/Back/cursor; cursor back to normal, kick/bell stem lag (#995) is back. Redo #995 properly later (start stems together AND keep the position clock right). Models: Sonnet for everything until Josh says otherwise (#1033).
+1. (was TOP, now superseded by the revert) playhead ~1.5 bars ahead of audio on chip songs (#997/#1000) + ruler tap-to-seek broken (#1001). Cause suspected: fix-995's chipSharedStart (sampleTime start) vs the position clock. Worktree ../ipad-fix995 @187038c dirty=2 (builder had a fix in progress; needed only ChipStemStartTests/ConsoleStemsTests runs).
+2. fix-1021: selected-track outline like the web + voice-menu buttons (Hide notes / Hear sound / drums) restyled. ../ipad-fix1021 @30736f4 dirty=2.
+3. Wave 4: ../ipad-w4int w4-int @4465d39 dirty=4 (all review fixes done at 9bee309; was merging master + running tests). Then install.
+4. Wave 5: ../ipad-w5int w5-int @fdf833b dirty=30 (7 lanes merged; wiring ClipSeams↔ClipAudio, ImportHub hooks, AudioStripDraw in ruler, .mid doc type, one key estimate — in progress). Then merge w4, Fable review, install.
+5. After w4+w5: header = web (File/Edit/View left, drop Songs ▾) (#957). Then wave 6 (AI tools), then Roll edit-mode side-by-side web vs native (#941), then market research (#942).
+6. Known: TrackStrip observes Player (relayouts ~44/s while playing) — move off Player.
+
+**Store/TestFlight** (#981/#998): tf-prep merged in ipad/guitar/tuner/app (icons, names, encryption flag, tools/testflight.sh per repo). store-clean branches (no game music, no repo/archive URLs, release check script) unfinished: ipad 187038c (worktree ~/work/night-roll/store-clean/night-roll-ipad), app 191f29b, guitar 1a23eb8, tuner 3b9fc22, daw 3a77dd40. Josh's part: sign in to Xcode; create App Store Connect records Native/Guitar/Tuner; then I run tools/testflight.sh per repo. Steps emailed 10/24. Test-info + privacy draft: Claude scratchpad testflight-test-info.md (regenerate if gone).
+
+**Night Roll Guitar** (repo ~/work/night-roll/night-roll-guitar; paired worktrees <dir>/{night-roll-guitar,night-roll-ear,night-roll-tuner}). Installed Dev+Lab: main 7e6de89 (+3cd844e open-items) = song fingering (bends ring/middle, file fingers a hint), input-channel picker (Nano Cortex), Angry Again importer 4 (9 solo notes back).
+1. highway-slides (#1024/#1026): slide ribbons on highway + landing gems + board dot/finger slides. hwslide/ @3cd844e dirty=2 (model work started).
+2. fingering-2: stretch model + tap-to-set finger + linked-slide finger bug (f4→f9 shows 3→1, #1029) + 8→12 hammer-on hand jump. fing2/ @af55cf3 dirty=4.
+3. notation-slides (#1014): slide/bend/vibrato marks in score + tab. slides/ @9c80649 dirty=5.
+4. bend-motion (#1012/#1013): dot + finger move by real bend physics (¼…2 steps) + Free after a song shows its key. bendmo/ @9c80649 dirty=4.
+5. real-fret-spacing toggle incl. highway lanes (#1015/#1017). fretsp/ @7e6de89 dirty=12.
+6. loopbar-playhead any time the song plays (#1006/#1007). lbar/ @9c80649 dirty=4.
+7. clear-chat: move Clear chat away from Send + inline 2-tap, no dialog (#1009/#1010), BridgeChat source in claude-bridge + synced into guitar/native. clrchat/ @9c80649 dirty=9.
+8. Parked: highway fret window from anchors (#1018/#1019, guitar open-items Queue). Open Q (#1020): show double-stop lower notes as grey notes, or re-import with chords shown?
+
+### Night Roll Native (iPad port of this web app; repo night-roll-ipad, no remote)
+- Goal (Josh #880/#906/#908/#919/#920): native copies the web UI; the audit is a work list — build every MISSING/DIFF row until missing = 0. Plan: night-roll-ipad/docs/plans/2026-10-22-build-everything.md (6 waves); checklist 2026-10-22-complete-checklist.md (553 rows; at start 192 exact, 84 different, 245 missing).
+- Installed and confirmed: cursor smoothness (#923 → "very smooth"), smooth Roll glide kept over the web's page jump (#940, a chosen departure).
+- Installed, waiting on Josh's check: wave 1 (View menu Messages/Mixer/Beat subdivisions/Volume toggle, footer Notes menu + open questions, annotation editor, transport row, Save As/rename/move/revert); Score smoothing + bar-line glide (#932) + Score ruler (#930); zoom-on-open fix (#918, check with AI panel open); play-after-return (#907; if it fails, pull diag.log); Tracks mute/vol persistence; Score stems/flags.
+- Installed 2026-10-23: AI panel width + clock times (#925/#926/#935), bottom-left view switcher (#936), track hide triangle removed (#937), tap fix near the right edge (f093db3), wave 2, wave 3 (148d53c = current master on the iPad). Installs back on (Josh: "you can deploy now").
+- Wave 2: DONE (branch w2-int 06d29d7, Fable-reviewed + fixed): Roll find/grid/highlight/outline/undo flash, drum gutter piece solo/mute + full kit + lane drag + section levels, ruler bands (resize/select/edit) + flags, note gestures (lasso bands, Option-copy, Pencil + palm rejection), track row, voice menu (writes voice= only, never the MIDI), Tracks view, metronome panel/wording, glide kept (#940).
+- Wave 3: INSTALLED (Score ruler lanes/zoom/empty tap, Score editing, piano panel, guitar fretboard + Save last 60 s, Edit menu 22/22, Drummer/Bassist, mixer meters/reorder/200%).
+- Wave 4: all 8 parts combined on w4-int (window manager, velocity lane, export, compare, game instruments, publish, jobs, theory tools); Fable review fixes + 2 test regressions being fixed; install next.
+- Wave 5: import hub, chip capture (byte-identical to web on 5 consoles), audio clips, clip editing, settings, analysis sheet DONE on branches; analyze/adopt/coach building; then combine on top of wave 4. Josh checks later: play an unpublished capture, real publish to GitHub, big PS2 set, SoundFont import.
+- Wave 6 (AI tools) after wave 5.
+- After wave 6: Fable closing audit, then Roll edit-mode screenshots web vs native side by side and fix every difference (#941).
+- Needs Josh's ear/hands: click on during a chip song (separate metronome engine); drum piece solo/mute; Pencil instant grab + palm rejection; Option-drag copy with a keyboard.
+- Open bugs: NRBarButton hit area ~20 pt off (workaround .contentShape; suspected LCDView.fixedSize, TransportBar.swift) — root cause not found.
+- Question for Josh: crash-reporter popups on the Mac when he returns ("NightRollNative quit unexpectedly") — silencing them changes a Mac setting (`defaults write com.apple.CrashReporter DialogType none`); needs his yes.
+
+### Night Roll Guitar on Windows / Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md)
+- M0 passed. M1 + M2 done (branches windows-m1/m2, CI green before minutes ran out): Windows core DLL, Godot app (device picker, exclusive toggle, tuner, exercises + picker, tempo, settings, course map, progress page), timing check with per-device calibration, low-latency driver built but not shipped. M3 done on the Mac only (windows-m3, local, not pushed): MIDI/MusicXML/Guitar Pro/text-tab import, built-in pieces, highway, tab/score notation, backing with GeneralUser GS. M4 groundwork done (Steam behind a switch, achievements, cloud saves, upload script). All Fable-reviewed.
+- PAUSED, waiting on Josh: (1) GitHub Actions minutes exhausted 2026-10-23 (guitar Q28; resets Nov 1, or set an Actions budget) — M3 has never built on Windows and must before merge; (2) Q26 token for night-roll-ear (real pitch detection, tuner on Windows); (3) Q27 Steinberg ASIO agreement (only for the low-latency driver); (4) Steam partner account ($100) + app ID for M4; (5) a test on his Windows PC with his interface (timing check with a cable loop, shared/exclusive).
+- Windows CI is manual-only now (Windows minutes bill 2x; cold Godot builds ~1 h).
+
+### Other agreed, not done
+- Market research: DAWs and guitar apps (#942) — after the native waves.
+- Guitar: realistic hand on the fretboard; CC0 impulse responses for the amp.
+- Night Roll web: local main in ~/work/night-roll/night-roll-daw is behind origin because of Josh's uncommitted sw.js (pull refuses); decide keep/discard sw.js.
+- App Store release (oldest): TestFlight install, privacy labels, listing text, screenshot approval — all need Josh.
 
 ## 2026-10-14 Two data-integrity bugs from the lastSyncPrefer commit (a29a88f3) — DONE
 DONE: `dropLocalKeyAt` now tombstones a replaced/removed PUBLISHED key annotation (same `tombstone()` as every other deletion), so Publish and reload no longer bring the old one back beside the new one. Test: "Publish: replacing a PUBLISHED key annotation tombstones the old one".
