@@ -35,7 +35,7 @@ export const OLD_MASTER_DB = 20 * Math.log10(0.22); // the fixed MASTER_VOL ever
 export const LOUD_CHIP_FILES = {
   nsf: {files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: []},
   gbs: {files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"]},
-  spc: {files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"]},
+  spc: {files: ["spc/spc", "spc/notes", "?spc/apu-render", "?spc/preview"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"]},
   psf: {files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render", "psx/capture"], shared: ["sounding", "note-preview"], own: []},
   psf2: {files: ["ps2/psf2", "ps2/sq", "ps2/hd", "ps2/bgm", "ps2/wd", "ps2/capture", "psx/vab", "psx/notes", "psx/spu-render"], shared: ["sounding", "note-preview"], own: []},
   usf: {files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: ["sounding", "note-preview"], own: []},

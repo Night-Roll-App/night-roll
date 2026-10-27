@@ -52,7 +52,7 @@ test("bridge-shim: --repo defaults to the repo root (tools/ai-profile.mjs's prof
   const port = 22500 + Math.floor(Math.random() * 500);
   const {child, out} = await startShim(["--port", String(port), "--jobs-dir", path.join(dir, "jobs")], {CLAUDE_BIN: bin, BRIDGE_UPSTREAMS: "none=http://127.0.0.1:9"});
   t.after(() => { child.kill("SIGKILL"); rmSync(dir, {recursive: true, force: true}); });
-  assert.match(out, /claude code: yes \(read, repo /, "claude code picked up via CLAUDE_BIN");
+  assert.match(out, /claude code: yes \(read-only, repo /, "claude code picked up via CLAUDE_BIN (vendored server prints read-only)");
   assert.ok(out.includes("repo " + REPO_ROOT), "no --repo flag was passed — the profile's own default filled it in: " + out);
 });
 
