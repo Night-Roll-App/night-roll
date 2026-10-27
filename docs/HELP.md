@@ -50,6 +50,9 @@ In File → Open…, every album has a **Play album** row at the top (it starts 
 **Game order / A–Z**
 Tap an album's song list (Open… or File → Open) and, when that album's soundtrack position is known, a small **Game order | A–Z** switch sits at the top: **Game order** plays the songs in the same order the original game's soundtrack does (multi-disc sets go disc then track; a song with no known position sorts after the numbered ones, alphabetically); **A–Z** is plain alphabetical. One device-wide setting, remembered across albums. The switch only appears on an album that HAS a soundtrack position for its songs — most capture albums do (51 so far), a few don't yet (no rip's playlist to read the order from). **Play album** and its **Prev** / **Next** always walk whichever order the list is currently showing — switch it and the next song picked follows the new order too.
 
+**⟲ Loop seam**
+**Tap ⟲ (beside ⏱ under the transport) to hear the seam** of a song with a loop: point: the two bars before the jump, then — with no gap — the return point and the two bars after it, over and over, without sitting through the middle. Both spans light up amber on the ruler. **Tap ⟲ again, ■ or Space** to leave. **Any two spans:** drag a span on the ruler, tap **+ span** (it is kept, amber and dimmed, and the ruler is free), drag the second span, tap ⟲ — it plays the first, then the second, then the first again, forever; so “bars 25–27.3 then 3–5” works on a song with no loop point too. Tap **✕ span 1** (or Esc) to drop a kept span. On a console song the rendered sound is cut at the same two joins. Keyboard: Esc leaves. Ask: “play the loop seam”, or name the spans.
+
 **⏱ Metronome**
 **Tap ⏱ to turn the click on or off**; **the gear** beside it opens the settings. Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: **free-running** (its own clock); **follow song** — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops (with the song stopped it still clicks, at the song's tempo where the cursor sits); **trial meter** — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.
 
@@ -529,6 +532,9 @@ Everything you can tell Ask, one row each — a phrase that works, then how to p
 
 **Ask: play from the cursor, or from a bar**
 **“Play from bar 17.”** "Play" alone plays from the cursor; name a bar (and beat) to start there. (act: play from_bar? beat?)
+
+**Ask: loop a seam: one span then the next, over and over**
+**“Play the loop seam.”** "Play the loop seam" for the tail before the jump and the head after it; or name two spans ("bars 25.1 to 27.3, then 3.1 to 5.1"); "stop the seam" leaves it. (act: play_seam spans? off?)
 
 **Ask: publish the open song (the footer's Publish)**
 **“Publish.”** Just that; it runs the footer's Publish and reports what happened. (act: publish_song)

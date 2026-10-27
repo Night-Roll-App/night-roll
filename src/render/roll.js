@@ -259,6 +259,12 @@ export function drawRangeTints(W, H) {
     ctx.fillRect(x, S.RULER_H, (S.rangeSel.b - S.rangeSel.a) * ppt, H);
     ctx.globalAlpha = 1;
   }
+  if (S.seam) for (const sp of S.seam.spans) { // the seam's spans tint the body like a cycle
+    ctx.fillStyle = css("--accent");
+    ctx.globalAlpha = 0.12;
+    ctx.fillRect(S.RULER_W + sp.a * ppt - S.view.x, S.RULER_H, (sp.b - sp.a) * ppt, H);
+    ctx.globalAlpha = 1;
+  }
 }
 drawRangeTints = prof("drawRangeTints", drawRangeTints); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function pxPerTick() { return S.view.pxq / S.song.ppq; }
@@ -438,10 +444,10 @@ export function drawRuler(W, H) {
     const rsx = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.a) : S.RULER_W + S.rangeSel.a * ppt - S.view.x;
     const rse = S.viewMode === "score" && S.scoreModel ? scoreTickToX(S.rangeSel.b) : S.RULER_W + S.rangeSel.b * ppt - S.view.x;
     ctx.fillStyle = S.rangeSel.cycle ? "#E09A3E" : css("--accent");
-    ctx.globalAlpha = (S.rangeSel.cycle ? 0.75 : 0.3) * (S.rangeSel.off ? 0.35 : 1); // dimmed = parked, tap to re-arm
+    ctx.globalAlpha = (S.rangeSel.cycle ? 0.75 : 0.3) * (S.rangeSel.off || S.seam ? 0.35 : 1); // dimmed = parked, tap to re-arm; a running seam owns playback
     ctx.fillRect(rsx, 0, rse - rsx, BASE_RULER_H); // number strip only — lanes stay readable
     ctx.globalAlpha = 1;
-    if (S.rangeSel.cycle && !S.rangeSel.off) { // the bright amber swallows the ticks and numbers: re-ink them black (Josh, 2026-09-07)
+    if (S.rangeSel.cycle && !S.rangeSel.off && !S.seam) { // the bright amber swallows the ticks and numbers: re-ink them black (Josh, 2026-09-07)
       ctx.strokeStyle = "#000";
       ctx.globalAlpha = 0.8;
       drawTicks(rsx, rse);
@@ -449,6 +455,20 @@ export function drawRuler(W, H) {
       ctx.fillStyle = "#000";
       ctx.font = "10px " + css("--mono"); // the tick pass doesn't touch it, but stay explicit
       drawNumbers(rsx, rse);
+    }
+  }
+  // the loop seam (seam.js): every span in the cycle's amber, one region each;
+  // a banked first span (waiting for its partner) is the same colour, dimmed
+  for (const sp of S.seam ? S.seam.spans : S.seamPending ? [S.seamPending] : []) {
+    const sx = S.viewMode === "score" && S.scoreModel ? scoreTickToX(sp.a) : S.RULER_W + sp.a * ppt - S.view.x;
+    const ex = S.viewMode === "score" && S.scoreModel ? scoreTickToX(sp.b) : S.RULER_W + sp.b * ppt - S.view.x;
+    ctx.fillStyle = "#E09A3E";
+    ctx.globalAlpha = S.seam ? 0.75 : 0.4;
+    ctx.fillRect(sx, 0, ex - sx, BASE_RULER_H);
+    ctx.globalAlpha = 1;
+    if (S.seam) {
+      ctx.strokeStyle = "#000"; ctx.globalAlpha = 0.8; drawTicks(sx, ex); ctx.globalAlpha = 1;
+      ctx.fillStyle = "#000"; ctx.font = "10px " + css("--mono"); drawNumbers(sx, ex);
     }
   }
   // in score view, band edges follow the ENGRAVED positions (scoreTickToX,

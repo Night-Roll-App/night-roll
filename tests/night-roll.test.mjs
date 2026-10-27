@@ -3197,7 +3197,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "triangle (NES)", "File under",
     "says why: the drum it mostly is",
-    "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
+    "Fall", "Loop seam", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Hear sound", "These are drums", "Not drums", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "File → 🔗 Share link", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
@@ -16340,4 +16340,169 @@ test("coach comments: the sheet lists them under her name and the time; the rule
   assert.equal(val(`coachShow`), false);
   assert.equal(run(`localStorage.getItem("ff1roll-coachshow")`), "0");
   run(`document.getElementById("coachtoggle").click(); localStorage.removeItem("ff1roll-coachshow"); localStorage.removeItem("ff1roll-comments-midi/test.mid"); songKey = null; coachCurrent(); document.getElementById("coachsheet").classList.remove("on");`);
+});
+
+// ---------------------------------------------------------------- loop seam
+// Josh, 2026-10-27: "listen to the loop transitions … bars 25 through 27.3, then
+// bars 3 through 5, over and over". src/audio/seam.js is the pure half; the
+// transport pump, chipSegments / chipSeamPump and the controls ride on it.
+test("seam math: pass starts, position at an elapsed time, the loop's two spans, bar.beat text (pure)", () => {
+  const sp = `[{start: 24, end: 30}, {start: 4, end: 8}]`; // A 6 s, B 4 s
+  assert.deepEqual([0, 1, 2, 3, 4].map(k => val(`seamPassStart(${sp}, ${k})`)), [0, 6, 10, 16, 20], "A, B, A, B back to back");
+  assert.deepEqual(val(`seamAt(${sp}, 0)`), {idx: 0, pass: 0, pos: 24});
+  assert.deepEqual(val(`seamAt(${sp}, 5.5)`), {idx: 0, pass: 0, pos: 29.5});
+  assert.deepEqual(val(`seamAt(${sp}, 6)`), {idx: 1, pass: 1, pos: 4}, "the A→B join is exactly at A's length");
+  assert.deepEqual(val(`seamAt(${sp}, 10)`), {idx: 0, pass: 2, pos: 24}, "B→A");
+  assert.deepEqual(val(`seamAt(${sp}, 13)`), {idx: 0, pass: 2, pos: 27}, "second lap");
+  assert.deepEqual(val(`seamAt(${sp}, -3)`), {idx: 0, pass: 0, pos: 24}, "before playT0 (a count-in): the top of A");
+  // a loop: annotation at bar 25 returning to 3.1 (bar 4/4, ppq 480 -> 1920/bar): 2 bars before the jump, 2 bars after the target
+  assert.deepEqual(val(`seamAroundLoop(2 * 1920, 24 * 1920, 1920, 26 * 1920)`), [{a: 22 * 1920, b: 24 * 1920}, {a: 2 * 1920, b: 4 * 1920}]);
+  assert.deepEqual(val(`seamAroundLoop(0, 24 * 1920, 1920, 26 * 1920)`), [{a: 22 * 1920, b: 24 * 1920}, {a: 0, b: 2 * 1920}], "a loop target at bar 1");
+  assert.deepEqual(val(`seamAroundLoop(2 * 1920, 1, 1920, 26 * 1920)`), [{a: 24 * 1920, b: 26 * 1920}, {a: 2 * 1920, b: 4 * 1920}], "an anchor at/before the target jumps at the song's end, as currentLoop() reads it");
+  assert.deepEqual(val(`seamAroundLoop(0, 1920, 1920, 26 * 1920)`), [{a: 0, b: 1920}, {a: 0, b: 2 * 1920}], "a jump less than 2 bars in: A cannot start before the song");
+  assert.equal(val(`seamAroundLoop(undefined, 5, 1920, 26 * 1920)`), null, "no loop:, no seam");
+  // spans that reach past the song's end are clamped; ones wholly past it are dropped
+  const seg = val(`seamSegFromTicks([{a: 6 * 1920, b: 20 * 1920}, {a: 30 * 1920, b: 31 * 1920}, {a: 0, b: 1920}], t => t / 960, 8 * 1920)`);
+  assert.deepEqual(seg.spans, [{start: 6 * 2, end: 16}, {start: 0, end: 2}], "A clamped to the song's end, the span past it dropped");
+  assert.deepEqual([seg.start, seg.end, seg.looped], [12, 16, true], "loopSeg.start/end mirror the first span");
+  assert.equal(val(`seamSegFromTicks([{a: 10 * 1920, b: 11 * 1920}], t => t, 8 * 1920)`), null);
+  // bar.beat <-> ticks (4/4, 480 per beat)
+  assert.equal(val(`seamParsePos("27.3", 1920, 480)`), 26 * 1920 + 2 * 480);
+  assert.equal(val(`seamParsePos("3", 1920, 480)`), 2 * 1920);
+  for (const bad of ["27.5", "0.1", "x", "3.0", "3.1.5", ""]) assert.equal(val(`seamParsePos(${JSON.stringify(bad)}, 1920, 480)`), null, bad);
+  assert.equal(val(`seamPosText(26 * 1920 + 960, 1920, 480)`), "27.3");
+  assert.equal(val(`seamSpansText([{a: 24 * 1920, b: 26 * 1920 + 960}, {a: 2 * 1920, b: 4 * 1920}], 1920, 480)`), "25.1–27.3 then 3.1–5.1");
+});
+
+test("chipSegments over a seam: A then B then A, each join gapless; mid-span resume; tape rate and lead (pure)", () => {
+  const sp = `{start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]}`;
+  let segs = val(`chipSegments(10, ${sp}, 1, 0, null, 100, 0)`);
+  assert.deepEqual(segs.slice(0, 3), [{when: 100, tapeFrom: 10, tapeTo: 14}, {when: 104, tapeFrom: 2, tapeTo: 6}, {when: 108, tapeFrom: 10, tapeTo: 14}],
+    "B starts the instant A's last sample ends; A starts the instant B's ends");
+  for (let i = 1; i < segs.length; i++) assert.equal(segs[i].when, segs[i - 1].when + (segs[i - 1].tapeTo - segs[i - 1].tapeFrom), "no gap, no overlap at join " + i);
+  segs = val(`chipSegments(0, ${sp}, 1, 0, null, 100, 5)`); // 5 s in = 1 s into B
+  assert.deepEqual(segs.slice(0, 2), [{when: 100, tapeFrom: 3, tapeTo: 6}, {when: 103, tapeFrom: 10, tapeTo: 14}], "resume inside B: its remainder, then A");
+  segs = val(`chipSegments(0, ${sp}, 0.5, 3, null, 0, 0)`); // 50% speed + 3 s of lead: tape span doubles, `when` does not
+  assert.deepEqual(segs[0], {when: 0, tapeFrom: 3 + 5, tapeTo: 3 + 7});
+  assert.equal(segs[1].when, 4, "context time is unchanged by the tape rate");
+});
+
+// the transport: pass k plays spans[k % n]; notes in the pump land on playT0 + the pass's start
+async function seamApp() {
+  const a = await createApp({intervals: true}); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c}) ?? "null"`)); // intervals: the 60 ms scheduler pump must really tick
+  // 120 bpm 4/4: one bar = 2 s; 8 bars, one quarter note per bar, pitch 60 + bar index
+  arun(`createComposition(120, 4, 4); ensureAudio(); playCursor = 0;
+        song.tracks[0].notes = Array.from({length: 8}, (_, i) => ({t: i * 1920, d: 240, p: 60 + i, v: 100, ch: 0}));
+        songEndTick = 8 * 1920; globalThis.__sch = [];
+        scheduleNote = (ti, n, when, dur) => { globalThis.__sch.push({p: n.p, when, dur}); };`);
+  return {a, arun, aval};
+}
+async function seamPlay(t, spansTicks) {
+  t.arun(`seam = {spans: ${JSON.stringify(spansTicks)}, kind: "pair"}; play(0, {noCountIn: true}).catch(() => {});`);
+  for (let i = 0; i < 60 && !t.aval(`playing`); i++) { t.a.tick(100); await new Promise(r => setTimeout(r, 0)); }
+  assert.equal(t.aval(`playing`), true, "the transport started");
+}
+test("loop seam: the pump plays A (bars 7-8) then B (bars 1-2) then A again, every note on the pass boundary — and playSec follows", async () => {
+  const t = await seamApp();
+  await seamPlay(t, [{a: 6 * 1920, b: 8 * 1920}, {a: 0, b: 2 * 1920}]);
+  for (let i = 0; i < 130; i++) t.a.tick(100); // 13 s of the fake clock, the 60 ms pump firing throughout
+  const t0 = t.aval(`playT0`);
+  const got = t.aval(`__sch`).map(e => [e.p, Math.round((e.when - t0) * 1000) / 1000]);
+  assert.deepEqual(got.slice(0, 7), [[66, 0], [67, 2], [60, 4], [61, 6], [66, 8], [67, 10], [60, 12]],
+    "A's two bars (66, 67), then B's (60, 61), then A again — back to back, a bar apart, no gap at either join: " + JSON.stringify(got));
+  assert.equal(t.aval(`loopSeg.spans.length`), 2);
+  assert.deepEqual(t.aval(`[loopSeg.start, loopSeg.end]`), [12, 16], "single-span readers see the first span");
+  // the playhead: 5 s after playT0 is 1 s into B
+  t.arun(`playT0 = audio.currentTime - 5;`);
+  assert.ok(Math.abs(t.aval(`playSec()`) - 1) < 1e-9, "playSec() maps elapsed time through the spans");
+  t.arun(`playT0 = audio.currentTime - 9;`);
+  assert.ok(Math.abs(t.aval(`playSec()`) - 13) < 1e-9, "9 s in = 1 s into A's second lap");
+  t.arun(`stop(); seam = null;`);
+});
+
+test("loop seam: a target at bar 1, spans touching the song end, and a span with no notes in it", async () => {
+  const t = await seamApp();
+  // A = the last two bars (touches the song end, clamped), B = bar 1 (the loop target at 1.1)
+  await seamPlay(t, [{a: 6 * 1920, b: 99 * 1920}, {a: 0, b: 1920}]);
+  for (let i = 0; i < 90; i++) t.a.tick(100);
+  const t0 = t.aval(`playT0`);
+  const got = t.aval(`__sch`).map(e => [e.p, Math.round((e.when - t0) * 1000) / 1000]);
+  assert.deepEqual(got.slice(0, 5), [[66, 0], [67, 2], [60, 4], [66, 6], [67, 8]], "the end-of-song span is cut at the song's end; B (bar 1) follows at once: " + JSON.stringify(got));
+  t.arun(`stop(); seam = null; __sch.length = 0;`);
+  // a silent middle span: no stall, the next span with notes still lands on time
+  t.arun(`song.tracks[0].notes = song.tracks[0].notes.filter(n => n.t < 4 * 1920 || n.t >= 6 * 1920); editGen++;`); // bars 5-6 empty
+  await seamPlay(t, [{a: 4 * 1920, b: 6 * 1920}, {a: 6 * 1920, b: 8 * 1920}]);
+  for (let i = 0; i < 140; i++) t.a.tick(100);
+  const t1 = t.aval(`playT0`);
+  const got2 = t.aval(`__sch`).map(e => [e.p, Math.round((e.when - t1) * 1000) / 1000]);
+  assert.deepEqual(got2.slice(0, 3), [[66, 4], [67, 6], [66, 12]], "the empty first span is 4 s of silence, then the second, then silence again: " + JSON.stringify(got2));
+  t.arun(`stop(); seam = null;`);
+});
+
+test("loop seam over a whole console render: chipSeamPump starts one source per pass on the pass boundary; the stream path's pin covers every span", async () => {
+  const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+  arun(`createComposition(120, 4, 4); ensureAudio();
+        chip.key = songKey; chip.lead = 2; chip.pcm = null; chip.pan = null;
+        chip.buffers = {}; chip.buffers[song.tracks[0].name] = {duration: 100};
+        globalThis.__starts = []; globalThis.__loops = [];
+        audio.createBufferSource = () => ({buffer: null, playbackRate: {value: 1}, connect(x) { return x; }, disconnect() {},
+          start(w, o, d) { globalThis.__starts.push({when: w, off: o, dur: d}); }, stop() {} });
+        playing = true; playT0 = audio.currentTime + 0.08; playRate = 1;
+        loopSeg = {start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]};
+        chipStart(10);`);
+  assert.equal(aval(`__starts.length`), 0, "chipStart makes no native-loop source for a seam");
+  arun(`chipSeamPump(audio.currentTime, 10);`); // 10 s of lookahead: passes at +0, +4, +8
+  const t0 = aval(`playT0`);
+  const s = aval(`__starts`).map(x => ({when: Math.round((x.when - t0) * 1000) / 1000, off: x.off, dur: x.dur}));
+  assert.deepEqual(s, [{when: 0, off: 12, dur: 4}, {when: 4, off: 4, dur: 4}, {when: 8, off: 12, dur: 4}],
+    "A (tape 10 + lead 2), B (tape 2 + lead 2), A: each pass starts where the last one ends");
+  arun(`chipSeamPump(audio.currentTime, 10);`);
+  assert.equal(aval(`__starts.length`), 3, "a second call inside the same lookahead schedules nothing twice");
+  arun(`playing = false; chip.key = null; chip.buffers = null; loopSeg = null; chip.srcs = [];`);
+  // stream mode: every seam span's start is pinned so no join waits on the worker
+  arun(`chip.stream = {key: songKey, cache: new Map(), pinnedIdx: new Set(), srcs: [], scheduled: new Map(), bytes: 0}; chip.lead = 0; playRate = 1; S.chipWorker = null;
+        loopSeg = {start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]}; chipStreamPinLoopStart();`);
+  const pinned = aval(`[...chip.stream.pinnedIdx].sort((a, b) => a - b)`);
+  assert.deepEqual(pinned, [1, 2, 3, 5, 6, 7].map(i => i), "both spans' chunks (2 s each) are pinned, not just the first span's start: " + JSON.stringify(pinned));
+  arun(`chip.stream = null; loopSeg = null;`);
+});
+
+test("loop seam controls: ⟲ starts the loop's seam and leaves it; + span banks a ruler span, the next armed span completes the pair; Ask play_seam", async () => {
+  const t = await seamApp();
+  const { a, arun } = t, aval = c => t.aval(c);
+  const ask = async c => JSON.parse(JSON.stringify(await a.run(c)));
+  // no loop: annotation — ⟲ is hidden; an armed ruler span shows + span
+  arun(`seamUiUpdate();`);
+  assert.equal(a.el("seambtn").style.display, "none", "no loop: no ⟲");
+  arun(`rangeSel = {a: 24 * 1920 / 4, b: 24 * 1920 / 4 + 960 + 1920 * 2, cycle: true}; seamUiUpdate();`);
+  assert.equal(a.el("seamaddbtn").style.display, "", "an armed span offers + span");
+  arun(`seamAddTap();`);
+  assert.deepEqual(aval(`seamPending`), {a: 6 * 1920, b: 6 * 1920 + 960 + 3840});
+  assert.equal(aval(`rangeSel`), null, "banking frees the ruler for the second drag");
+  assert.equal(a.el("seambtn").style.display, "", "a banked span shows ⟲");
+  arun(`rangeSel = {a: 0, b: 2 * 1920, cycle: true}; seamTap();`);
+  assert.equal(aval(`seam.kind`), "pair");
+  assert.equal(aval(`seam.spans.length`), 2);
+  assert.equal(aval(`seamPending`), null);
+  assert.ok(a.el("seambtn").classList.contains("active"), "⟲ lit while the seam is armed");
+  for (let i = 0; i < 40 && !aval(`playing`); i++) { a.tick(100); await new Promise(r => setTimeout(r, 0)); }
+  assert.equal(aval(`playing`), true);
+  arun(`seamTap();`); // tap again: leave
+  assert.equal(aval(`seam`), null);
+  assert.equal(aval(`playing`), false, "leaving also stops");
+  // the loop: annotation path
+  arun(`rollnotes = parseRollnotes("[7.1]\\nloop: 2.1\\n").map(resolveNote); finalizeNotes(); rangeSel = null; seamUiUpdate();`);
+  assert.equal(a.el("seambtn").style.display, "", "a song with a loop: shows ⟲");
+  assert.deepEqual(aval(`loopSeamSpans()`), [{a: 4 * 1920, b: 6 * 1920}, {a: 1920, b: 3 * 1920}]);
+  arun(`stop();`);
+  // Ask: spans validated, bar.beat parsed, off leaves; facts only
+  assert.match((await ask(`askAct({do: [{action: "play_seam", spans: [{from: "7.1", to: "8.3"}, {from: "1.1", to: "3.1"}]}]})`)).final, /^⟲ seam: 7\.1–8\.3 then 1\.1–3\.1, over and over$/);
+  assert.deepEqual(aval(`seam.spans`), [{a: 6 * 1920, b: 7 * 1920 + 960}, {a: 0, b: 2 * 1920}]);
+  assert.equal((await ask(`askAct({do: [{action: "play_seam", off: true}]})`)).final, "seam off");
+  assert.equal(aval(`seam`), null);
+  assert.match((await ask(`askAct({do: [{action: "play_seam"}]})`)).final, /^⟲ seam: 5\.1–7\.1 then 2\.1–4\.1, over and over$/, "no spans = around the loop");
+  await assert.rejects(a.run(`askAct({do: [{action: "play_seam", spans: [{from: "9.1", to: "10.1"}]}]})`), /past the end of the song/);
+  await assert.rejects(a.run(`askAct({do: [{action: "play_seam", spans: [{from: "3.1", to: "2.1"}]}]})`), /to must be after from/);
+  arun(`seamLeave(true); rollnotes = []; finalizeNotes();`);
+  await assert.rejects(a.run(`askAct({do: [{action: "play_seam"}]})`), /no loop: point/);
 });

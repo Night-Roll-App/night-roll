@@ -78,6 +78,8 @@ export const S = {
              lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false},
   annoFlash: null, // {a, b, until}: the span an annotation undo/redo just changed, flashed in the ruler (revealEdit)
   rangeSel: null,
+  seam: null, // the loop-seam cycle (src/audio/seam.js): {spans: [{a, b}, …] ticks, kind: "loop"|"pair"}; play() cycles them in order, forever, until it is left
+  seamPending: null, // {a, b}: a ruler span banked as the seam's first, waiting for a second
   tapBand: {n: null, t: 0},
   lassoMode: false,
   instOpen: false,

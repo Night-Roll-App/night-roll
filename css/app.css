@@ -215,7 +215,8 @@
   .metgroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--grid); border-radius: 10px; }
   /* ⏱ and ⚙ the same size (Josh #200): both SVG icons in equal boxes */
   #timectl #metbtn, #timectl #metcfg { min-height: 34px; min-width: 38px; padding: 4px 8px; margin-left: 0; font-size: inherit; }
-  #timectl #metbtn .ico, #timectl #metcfg .ico, #speedbtn .ico { width: 20px; height: 20px; }
+  #timectl #metbtn .ico, #timectl #metcfg .ico, #speedbtn .ico, #seambtn .ico { width: 20px; height: 20px; }
+  #timectl #seambtn, #timectl #seamaddbtn { min-height: 34px; min-width: 38px; padding: 4px 8px; margin-left: 0; font-size: inherit; } /* the seam pair (src/audio/seam.js) */
   /* Chrome density pass (2026-10-01): the always-visible "Claude Code is
      doing…" header chip crowded the crumb (Josh, screenshot 2026-10-01
      14:37) and is gone — the full status still lives in the AI window's

@@ -55,6 +55,7 @@ All builders were stopped mid-work. "dirty=N" = N uncommitted tracked files left
 - Market research: DAWs and guitar apps (#942) — after the native waves.
 - Guitar: realistic hand on the fretboard; CC0 impulse responses for the amp.
 - Night Roll web: local main in ~/work/night-roll/night-roll-daw is behind origin because of Josh's uncommitted sw.js (pull refuses); decide keep/discard sw.js.
+- Loop seam ⟲ (2026-10-27, branch `loop-seam`, NIGHT-ROLL.md "Loop seam"): built + vm-tested, NOT yet heard or seen in a browser. Josh's ear check owed: the A→B join on a chip-stream song and on a whole-render song; the ⟲ / + span buttons' look under the transport. Picked defaults (he vetoes): 2 bars each side of the loop; second span via "+ span" then ⟲; the UI makes two spans (Ask takes any number). sw.js AI_LIB (ba6c348) disagrees with vendor/ai/VERSION (77b9c72) at HEAD: the `modules` test "AI library wiring" fails on it, unrelated.
 - App Store release (oldest): TestFlight install, privacy labels, listing text, screenshot approval — all need Josh.
 
 ## 2026-10-14 Two data-integrity bugs from the lastSyncPrefer commit (a29a88f3) — DONE

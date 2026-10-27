@@ -127,6 +127,7 @@ import { folderActive } from "../platform/folder.js";
 import { parseMidi } from "../midi/parse.js";
 import { cmpDiff } from "../render/compare.js";
 import { stop } from "../audio/transport.js";
+import { seamTap, seamAddTap, seamLeave, seamUiUpdate } from "../audio/transport.js";
 import { cmpTrackKey } from "../render/compare.js";
 import { computeSongEnd } from "../model/song.js";
 import { play } from "../audio/transport.js";
@@ -721,7 +722,7 @@ export function resize() {
   if (typeof updateTrackMore === "function") updateTrackMore(); // wrap point moves with width
   draw();
 }
-export function drawImpl() { S.sceneValid = false; rangeSelPersist(); viewPersistSoon(); drawFull(false); }
+export function drawImpl() { S.sceneValid = false; seamUiUpdate(); rangeSelPersist(); viewPersistSoon(); drawFull(false); }
 drawImpl = prof("draw", drawImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function playbackFrameImpl() {
   if (!S.song) { draw(); return; }
@@ -1849,8 +1850,10 @@ export function initChrome5() {
    document.getElementById("playbtn").addEventListener("click", () => {
     if (!S.song) return; // first song still fetching
     if (!S.playing && S.playGateShown) { playGateTick.queued = !playGateTick.queued; playGateTick(); return; } // loading: the tap queues (or cancels) the play; it starts when the sound is ready
-    S.playing ? stop() : play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); // in an album run this is pause/resume — the run stays
+    if (S.playing) { seamLeave(false); stop(); } else play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); // in an album run this is pause/resume — the run stays; ■ also leaves a loop seam
   });
+  document.getElementById("seambtn").addEventListener("click", seamTap);
+  document.getElementById("seamaddbtn").addEventListener("click", seamAddTap);
   document.getElementById("rwbtn").addEventListener("click", () => {
     const startX = S.viewMode === "score" ? -SCORE_INTRO_W : 0;
     // an ARMED ruler selection owns ⏮: back to ITS start, and the view goes
@@ -2041,6 +2044,7 @@ export function initChrome11() {
     if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
     if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
     if (k === "x") { toggleMixer(); e.preventDefault(); return; } // Logic's mixer key
+    if (e.key === "Escape" && (S.seam || S.seamPending)) { seamLeave(true); setInfo("seam off"); return; }
     if (e.key === "Escape" && S.rangeSel) { S.rangeSel = null; setInfo("range cleared"); editorFollowSelection(); draw(); return; }
     if (k === "c" && S.rangeSel && S.rangeSel.cycle && S.rangeSel.b > S.rangeSel.a) { S.rangeSel.off = !S.rangeSel.off; setInfo(S.rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
     if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }
@@ -2069,7 +2073,7 @@ export function initChrome11() {
               t.isContentEditable || t.tagName === "BUTTON" || t.getAttribute("role") === "button")) return; // typing/tabbing wins
     if (!S.song) return;
     e.preventDefault(); // page must not scroll
-    if (S.playing) stop(); else document.getElementById("playbtn").click();
+    if (S.playing) { seamLeave(false); stop(); } else document.getElementById("playbtn").click();
   });
   document.getElementById("viewsheetbtn").addEventListener("click", e => {
     const sheet = document.getElementById("viewsheet");

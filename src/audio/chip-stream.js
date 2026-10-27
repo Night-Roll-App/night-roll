@@ -6,6 +6,7 @@ import { trackGain } from "./engine.js";
 import { tickToSec } from "../midi/parse.js";
 import { chipBuffers } from "./chip.js";
 import { playSec } from "./transport.js";
+import { seamAt } from "./seam.js";
 import { chipWorkerAvailable } from "./chip.js";
 import { CHIPS } from "./chip.js";
 import { chipPreviewPending } from "./chip.js";
@@ -121,8 +122,25 @@ export const CHIP_STREAM_PIN_LOOKAHEAD = 2;
 // looping this function forever.
 export const CHIP_SEG_HORIZON_SEC = 20;
 export const CHIP_SEG_MAX_SEGMENTS = 512;
-export function chipSegments(fromSec, loopSeg, playRate, lead, albumEndAbs, playT0) {
+// A seam (loopSeg.spans, seam.js) plays its spans back to back forever: the
+// first segment is the remainder of the span `elapsed` seconds after the
+// original playT0 sits in, each next one a whole span — the same hard splice at
+// every join as a loop wrap, and `when` of segment i+1 is exactly the end of
+// segment i, so the A -> B join has no gap.
+export function chipSegments(fromSec, loopSeg, playRate, lead, albumEndAbs, playT0, elapsed = 0) {
   const out = [];
+  if (loopSeg && loopSeg.spans && playRate > 0) {
+    const sp = loopSeg.spans;
+    let {idx, pos} = seamAt(sp, elapsed), when = playT0, songFrom = pos;
+    while (out.length < CHIP_SEG_MAX_SEGMENTS) {
+      const to = sp[idx % sp.length].end, dur = to - songFrom;
+      if (dur > 0) out.push({when, tapeFrom: lead + songFrom * playRate, tapeTo: lead + to * playRate});
+      when += Math.max(0, dur);
+      if (when - playT0 >= CHIP_SEG_HORIZON_SEC) break;
+      idx++; songFrom = sp[idx % sp.length].start;
+    }
+    return out;
+  }
   if (!loopSeg || !(loopSeg.end > loopSeg.start) || !(playRate > 0)) return out;
   let when = playT0, songFrom = fromSec;
   while (out.length < CHIP_SEG_MAX_SEGMENTS) {
@@ -220,11 +238,13 @@ export function chipStreamPinLoopStart() {
   if (!st) return;
   const idxSet = new Set();
   if (S.loopSeg && S.loopSeg.looped) {
-    const tapeStart = chip.lead + S.loopSeg.start * S.playRate;
-    const idxFrom = chipStreamIdxForTapeSec(tapeStart);
-    const idxTo = chipStreamIdxForTapeSec(tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * S.playRate);
-    for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
-    chipStreamRequestRange(idxFrom, idxTo);
+    for (const sp of S.loopSeg.spans || [S.loopSeg]) { // a seam wraps into every one of its spans
+      const tapeStart = chip.lead + sp.start * S.playRate;
+      const idxFrom = chipStreamIdxForTapeSec(tapeStart);
+      const idxTo = chipStreamIdxForTapeSec(S.loopSeg.spans && sp.end - sp.start <= 40 ? chip.lead + sp.end * S.playRate : tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * S.playRate); // a seam is short and is ALL the listener hears: pin whole spans so no join waits on the worker
+      for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
+      chipStreamRequestRange(idxFrom, idxTo);
+    }
   }
   st.pinnedIdx = idxSet;
   for (const [idx, entry] of st.cache) entry.pinned = idxSet.has(idx);
@@ -333,7 +353,7 @@ export function chipStreamPump(nowCtx) {
   const curSec = playSec();
   const t0 = Math.max(nowCtx, S.playT0); // before playT0 (the start lead, a count-in) playSec holds at playOffset: the first segment starts AT playT0, not now
   const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (t0 - S.playT0);
-  const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, t0);
+  const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, t0, t0 - S.playT0);
   let anyLive = false;
   for (const seg of segs) {
     if (seg.when >= until) break;

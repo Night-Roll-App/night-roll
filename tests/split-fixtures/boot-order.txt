@@ -54,6 +54,8 @@ document.getElementById("albumnext").addEventListener("click", albumNext);
 document.getElementById("albumleave").addEventListener("click", albumLeave);
 if (S.viewMode === "tracks") S.RULER_W = TRACKS_GUTTER;
 document.getElementById("playbtn").addEventListener("click", () => {
+document.getElementById("seambtn").addEventListener("click", seamTap);
+document.getElementById("seamaddbtn").addEventListener("click", seamAddTap);
 document.getElementById("rwbtn").addEventListener("click", () => {
 speedsl.addEventListener("input", () => { speedlbl.textContent = speedsl.value + "%"; });
 speedsl.addEventListener("change", () => applySpeed(+speedsl.value));

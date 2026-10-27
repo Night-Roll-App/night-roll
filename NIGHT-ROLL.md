@@ -3661,6 +3661,47 @@ switch covers songs opened later in the session; hidden tracks still play.
 `setHideDrumTracks` lives in ui/trackbar.js. Test: "View › Display "Hide drum
 tracks"" in tests/night-roll.test.mjs.
 
+## Loop seam — hear the join (2026-10-27; ⟲ and + span under the transport, Ask `play_seam {spans?, off?}`)
+
+Josh: "listen to the loop transitions … bars 25 through 27.3, then bars 3
+through 5, over and over". A seam is an ordered LIST of spans played back to
+back forever. `S.seam = {spans: [{a, b}] ticks, kind: "loop"|"pair"}` (per
+song, never stored; `S.seamPending` is a banked first span). `play()` turns it
+into `S.loopSeg = {start, end, looped, spans: [{start, end}] secs}` —
+start/end mirror spans[0] so single-span readers (clips, album) stay valid —
+forces the start to spans[0].start, skips the count-in and the album, and
+treats it as a cycle (strict window; no tail-chase into the first span, but a
+join INTO a later span chases like the real loop jump). One scheduler, not a
+second: the note pump maps pass k to `spans[k % n]` (`spanOf` / `passRel` /
+`originOf` in play(); for one span they reduce to the old loop formulas), so
+pass k+1 starts at `playT0 + passRel(k+1)` — the sample-accurate wrap, not a
+stop/start. A span with no notes is silence, not a stall (the seam pump never
+wraps further ahead than the lookahead). Pure maths in `audio/seam.js`
+(`seamPassStart`, `seamAt`, `seamAroundLoop`, `seamSegFromTicks`, bar.beat
+parse/format); `playSec()` maps elapsed time through the spans so the
+playhead, LCD and metronome (`seamSpanNow`) follow.
+
+Console audio: stream mode — `chipSegments(…, elapsed)` returns span
+remainder, then whole spans, each `when` = the previous segment's end (hard
+splice, same as a loop wrap), and `chipStreamPinLoopStart` pins every span
+(≤ 40 s) so no join waits on the worker. Whole render (`chip.buffers`) —
+`chipStart` makes no native-loop source for a seam; `chipSeamPump`, called by
+the pump, starts one source per pass at `playT0 + passRel(k)` with
+`start(when, offset, dur)`. Both honour `playbackRate` and `chip.lead`.
+
+Controls (`#seambtn` ⟲, `#seamaddbtn` + span, in #timectl): ⟲ shows for a
+song with a `loop:` annotation (seam = 2 bars before the jump → the jump, then
+the return point → 2 bars after: `loopSeamSpans()`), a banked span, or a
+running seam; tap = start, again = leave (■, Space, Esc also leave). + span
+shows while a ruler cycle span is armed: it banks the span (drawn dimmed
+amber) and frees the ruler; the next armed span + ⟲ starts first-then-second.
+Both spans draw in the cycle's amber on the ruler (`drawRuler`) and tint the
+body. Learning mode: only positions are shown, no key/chord/meter words. Not
+done: a seam over more than two spans from the UI (the Ask action and
+`S.seam` take any number); `play_seam` over a recording take (● disables it).
+Tests: "seam math", "chipSegments over a seam", "loop seam: …" in
+tests/night-roll.test.mjs.
+
 ## Game instrument libraries (2026-09-28)
 
 Josh's goal: use any imported game's instruments in his own songs.
