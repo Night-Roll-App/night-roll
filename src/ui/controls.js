@@ -35,6 +35,8 @@ import { iconSvg } from "./icons.js";
 export const CONTROLS = {
   playbtn: {icon: "playArrow", cls: "txt", label: "Play", aria: null},
   volbtn: {icon: "volumeUp", cls: "", label: "", aria: null},
+  seambtn: {icon: "repeat", cls: "", label: "", aria: "Hear the loop seam"}, // the loop's tail then its head, over and over (src/audio/seam.js)
+  seamaddbtn: {glyph: "+", cls: "", label: " span", aria: "Keep this ruler span as the first of two"},
   jobsbtn: {icon: "hourglassEmpty", cls: "txt", label: "", aria: null},
   vwJobs: {icon: "hourglassEmpty", cls: "", label: "  Jobs", aria: null},
   errbtn: {icon: "warning", cls: "txt", label: "", aria: null},

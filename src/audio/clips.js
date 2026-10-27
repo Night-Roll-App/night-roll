@@ -1,5 +1,6 @@
 import { S } from "../state.js";
 import { secToTick } from "../midi/parse.js";
+import { seamSpanNow } from "./seam.js";
 import { tickToSec } from "../midi/parse.js";
 import { idbAudioGet } from "../platform/storage.js";
 import { readData } from "../platform/folder.js";
@@ -388,7 +389,7 @@ export function audioChaseNow(file) {
   const now = playSec();
   forEachClip((c, ti) => {
     if (c.file !== file || !c.buffer) return;
-    const start = tickToSec(S.song, c.at), end = Math.min(start + clipLen(c) / S.playRate, S.loopSeg.end);
+    const start = tickToSec(S.song, c.at), end = Math.min(start + clipLen(c) / S.playRate, seamSpanNow(S.loopSeg, S.audio.currentTime, S.playT0).end);
     if (now < start - 0.05 || now >= end) return; // the pump will start it, or it is already over
     const lead = 0.06;
     scheduleClip(ti, c, S.audio.currentTime + lead, end - now - lead);

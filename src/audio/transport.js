@@ -37,6 +37,7 @@ import { chipActive } from "./chip.js";
 import { hearMidi } from "./chip.js";
 import { chipStreamStart } from "./chip-stream.js";
 import { chipStart } from "./chip.js";
+import { chipSeamPump } from "./chip.js";
 import { trackIsDrums } from "../model/grid.js";
 import { scheduleNote } from "./voices.js";
 import { clipClamp } from "./clips.js";
@@ -52,6 +53,8 @@ import { recFinish } from "../hooks.js";
 import { draw } from "../hooks.js";
 import { chipStopSrcs } from "./chip.js";
 import { setControl } from "../ui/controls.js";
+import { seamAt, seamPassStart, seamSegFromTicks, seamAroundLoop, seamSpansText } from "./seam.js";
+import { barTicks } from "../model/rollnotes.js";
 
 // audio export: play ONCE, whole song, no loop
 export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to B.Q
@@ -70,6 +73,12 @@ export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), ret
   const end = dir.start > dir.loopTo
     ? Math.min(tickToSec(S.song, dir.start), whole.end) : whole.end;
   return start < end ? {start, end, looped: true} : whole;
+}
+// The loop seam's two spans in ticks (null: no loop: annotation) — A is the
+// bars before the jump point, B the bars after the return target (seam.js)
+export function loopSeamSpans() {
+  const dir = S.song && S.rollnotes.find(n => n.loopTo !== undefined);
+  return dir ? seamAroundLoop(dir.loopTo, dir.start, barTicks(), S.songEndTick) : null;
 }
 export function audioStopSrcs() {
   for (const s of S.audioSrcs) { try { s.stop(); } catch (err) { /* already done */ } }
@@ -102,6 +111,7 @@ export function albumEndSec(seg, wholeEnd, hasMaterial, passes = ALBUM_PASSES, c
 }
 
 export function playSec() { // current position on the song timeline, seconds
+  if (S.loopSeg && S.loopSeg.spans) return seamAt(S.loopSeg.spans, S.audio.currentTime - S.playT0).pos; // a seam cycle: spans back to back (seam.js)
   const s = Math.max(0, S.audio.currentTime - S.playT0) + S.playOffset; // playT0 starts slightly ahead; a count-in holds the playhead at its start, even mid-song
   if (!S.loopSeg || S.loopSeg.end <= S.loopSeg.start) return s;
   return s < S.loopSeg.end ? s : S.loopSeg.start + (s - S.loopSeg.end) % (S.loopSeg.end - S.loopSeg.start);
@@ -242,7 +252,11 @@ export async function play(fromSec = 0, opts = {}) {
   // and clicking the gap; playSec() clamps at 0, so the playhead waits.
   // ● counts in from wherever it starts (DAW habit, 2026-09-29: punch-in at
   // bar 17 had no lead-in); plain playback keeps the 1.1-only rule
-  if (met.countIn && !opts.noCountIn && (fromSec < 1e-6 || S.recording) && S.song && S.songEndTick > 0) { // album tracks never count in
+  const seamWanted = !!S.seam && !S.exporting && !S.recording; // the loop-seam cycle (seam.js) owns playback until it is left
+  const seamSeg = seamWanted ? seamSegFromTicks(S.seam.spans, t => tickToSec(S.song, t), S.songEndTick) : null;
+  if (seamWanted && !seamSeg) { S.seam = null; seamUiUpdate(); } // every span lies past the song's end: no seam, plain playback
+  const seamOn = !!seamSeg;
+  if (met.countIn && !opts.noCountIn && !seamOn && (fromSec < 1e-6 || S.recording) && S.song && S.songEndTick > 0) { // album tracks never count in
     ensureMetGain();
     const beats = beatsPerBarDisp();
     const t0 = secToTick(S.song, fromSec);
@@ -261,7 +275,7 @@ export async function play(fromSec = 0, opts = {}) {
   // pass plays straight on and the cycle waits for the next ▶
   const cycleSet = !!(S.rangeSel && S.rangeSel.cycle && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a);
   const fromTick = opts.fromHere ? secToTick(S.song, fromSec) : 0;
-  const cycling = cycleSet && !(opts.fromHere && (fromTick < S.rangeSel.a || fromTick >= S.rangeSel.b));
+  let cycling = cycleSet && !(opts.fromHere && (fromTick < S.rangeSel.a || fromTick >= S.rangeSel.b));
   if (cycling) { // Logic-style cycle: a ruler selection loops playback over just
     // that span and outranks any loop: annotation
     S.loopSeg = {start: tickToSec(S.song, S.rangeSel.a),
@@ -270,6 +284,14 @@ export async function play(fromSec = 0, opts = {}) {
     // a reschedule mid-play (stretching the cycle) keeps the playhead when it
     // is still inside the span (opts.keepPos — Josh, 2026-10-03)
     if (!((opts.keepPos || opts.fromHere) && fromSec >= S.loopSeg.start && fromSec < S.loopSeg.end)) S.playOffset = fromSec = S.loopSeg.start;
+  }
+  if (seamSeg) { // A then B then A…, strict windows like a cycle (the album waits). A restart (speed, mixer, an edit) resumes inside the span it falls in; ⟲ itself (opts.seamTop) and a position outside every span start at A's top
+    S.loopSeg = seamSeg; cycling = true;
+    const sp = seamSeg.spans, at = opts.seamTop ? -1 : sp.findIndex(s => fromSec >= s.start && fromSec < s.end), i = Math.max(0, at);
+    const pos = at >= 0 ? fromSec : sp[0].start;
+    S.playT0 -= seamPassStart(sp, i) + (pos - sp[i].start); // the clock reads as if pass i began that long ago
+    S.loopPass = i;
+    S.playOffset = fromSec = pos;
   }
   if (S.recording) S.loopSeg = recOpenEnded(S.loopSeg); // ● : the tape rolls on past the end and the song grows with the take
   // album play: this song ends after its passes (2 of the loop body after the
@@ -311,15 +333,21 @@ export async function play(fromSec = 0, opts = {}) {
     const e = S.schedEvents[k];
     if (cycling && !e.n._clip) continue; // a clip is the track, not a tail: it chases even inside a cycle
     if (e.sec + e.dur > fromSec + 0.02 && !(e.n.ch === 9 || trackIsDrums(e.ti)))
-      scheduleNote(e.ti, e.n, S.playT0, e.n._clip ? clipClamp(e.sec + e.dur - fromSec, S.loopSeg.end - fromSec) : e.sec + e.dur - fromSec);
+      scheduleNote(e.ti, e.n, S.playT0, e.n._clip ? clipClamp(e.sec + e.dur - fromSec, (S.loopSeg.spans ? S.loopSeg.spans[S.loopPass] : S.loopSeg).end - fromSec) : e.sec + e.dur - fromSec);
   }
-  let wrapIdx = S.schedEvents.findIndex(e => e.sec >= S.loopSeg.start); // let: a live rebuild (edits while playing) recomputes it
+  // pass k plays spans[k % n] (a plain loop/cycle is one span: loopSeg itself).
+  // spanOf/passRel/originOf map pass k onto the song timeline and seconds after
+  // playT0; for one span they reduce to the old formulas exactly
+  const spans = S.loopSeg.spans, spanOf = k => spans ? spans[k % spans.length] : S.loopSeg;
+  const passRel = k => spans ? seamPassStart(spans, k) : k === 0 ? 0 : S.loopSeg.end + (k - 1) * (S.loopSeg.end - S.loopSeg.start) - S.playOffset;
+  const originOf = k => !spans && k === 0 ? S.playOffset : spanOf(k).start;
   setPlayBtn("stop", "Stop");
   srAnnounce("Playing" + (S.albumRun && S.currentPath ? " — " + songTitleOf(S.currentPath) : ""));
   albumStrip(); // un-dims on resume
   const pump = () => {
     if (chip.stream) chipStreamPump(S.audio.currentTime); // first (docs/streamed-render-plan.md step 3): independent of schedEvents/loopSeg's note-scheduling below, and gated internally on `playing`/the open song, so it's safe even on a stray tick after stop()
     if (!S.playing) { clearInterval(S.schedTimer); return; } // a stopped transport schedules nothing, ends nothing
+    if (spans && !chip.stream && chipActive()) chipSeamPump(S.audio.currentTime, document.hidden ? 8 : 0.6); // a seam over a whole console render: one source per pass (chip.js)
     const segLen = S.loopSeg.end - S.loopSeg.start;
     if (!S.schedEvents.length || segLen <= 0) return;
     const now = S.audio.currentTime - S.playT0;
@@ -340,40 +368,49 @@ export async function play(fromSec = 0, opts = {}) {
       buildSchedule();
       const k = S.schedEvents.findIndex(e => e.sec > S.schedLastSec + 1e-6);
       S.schedIdx = k < 0 ? S.schedEvents.length : k;
-      wrapIdx = S.schedEvents.findIndex(e => e.sec >= S.loopSeg.start);
+      if (spans) { // never back into the bars between the spans: start no earlier than the sounding span's first event
+        const lo = S.schedEvents.findIndex(e => e.sec >= spanOf(S.loopPass).start);
+        S.schedIdx = lo < 0 ? S.schedEvents.length : Math.max(S.schedIdx, lo);
+      }
     }
+    const lookahead = document.hidden ? 8 : 0.6; // hidden: the OS throttles this timer to a second or worse, so notes land "in the past" and skip (Josh, 2026-09-29, background play); schedule 8 s ahead instead. Visible: 0.6 s of lookahead: a long frame (Fall on a 1500-note SNES song, an iPad) must not starve the pump — at 0.2 s it dropped notes as "in the past" and went silent (Josh, 2026-09-27)
     for (;;) {
       // every pass ends at the loop point; material past it (a written-out
       // repeat, e.g. ship's bar 25.5 seam) is shown but never played
-      if (S.schedIdx >= S.schedEvents.length || S.schedEvents[S.schedIdx].sec >= S.loopSeg.end - 1e-9) {
-        if (wrapIdx < 0 || !isFinite(S.loopSeg.end) || S.schedEvents[wrapIdx].sec >= S.loopSeg.end) break; // nothing inside the segment, or an open-ended take: no wrap
+      const cur = spanOf(S.loopPass);
+      if (S.schedIdx >= S.schedEvents.length || S.schedEvents[S.schedIdx].sec >= cur.end - 1e-9) {
+        const nxt = spanOf(S.loopPass + 1), segLen = nxt.end - nxt.start;
+        const wrapIdx = S.schedEvents.findIndex(e => e.sec >= nxt.start);
+        if (spans) { // a seam: never run passes ahead of the lookahead; a span with no notes is silence, not a stall
+          if (passRel(S.loopPass + 1) >= now + lookahead) break;
+          if (wrapIdx < 0 || S.schedEvents[wrapIdx].sec >= nxt.end) { S.loopPass++; S.schedIdx = S.schedEvents.length; S.schedLastSec = nxt.start - 1e-6; continue; }
+        } else if (wrapIdx < 0 || !isFinite(cur.end) || S.schedEvents[wrapIdx].sec >= cur.end) break; // nothing inside the segment, or an open-ended take: no wrap
         S.loopPass++;
         S.schedIdx = wrapIdx;
-        S.schedLastSec = S.loopSeg.start - 1e-6;
+        S.schedLastSec = nxt.start - 1e-6;
         // chase across the wrap: a note straddling the loop target plays its
         // remainder (chip-capture ticks derive from real seconds, so ship's
         // C5 starts a hair before the 1.3 target and vanished on loop)
-        const passAbs = S.loopSeg.end + (S.loopPass - 1) * segLen - S.playOffset;
+        const passAbs = passRel(S.loopPass);
+        const chases = !cycling || (!!spans && S.loopPass % spans.length !== 0); // a seam's join INTO a later span chases like the real loop jump; into its first span it is a strict window
         for (let k = 0; k < wrapIdx; k++) {
           const e = S.schedEvents[k];
-          if (cycling && !e.n._clip) continue; // clips chase across a cycle wrap too
-          if (e.sec + e.dur > S.loopSeg.start + 0.02 && !(e.n.ch === 9 || trackIsDrums(e.ti)))
+          if (!chases && !e.n._clip) continue; // clips chase across a cycle wrap too
+          if (e.sec + e.dur > nxt.start + 0.02 && !(e.n.ch === 9 || trackIsDrums(e.ti)))
             scheduleNote(e.ti, e.n, S.playT0 + passAbs, e.n._clip
-              ? clipClamp(e.sec + e.dur - S.loopSeg.start, segLen, S.albumEndAbs === null ? Infinity : S.albumEndAbs - passAbs)
-              : e.sec + e.dur - S.loopSeg.start);
+              ? clipClamp(e.sec + e.dur - nxt.start, segLen, S.albumEndAbs === null ? Infinity : S.albumEndAbs - passAbs)
+              : e.sec + e.dur - nxt.start);
         }
       }
       const e = S.schedEvents[S.schedIdx];
-      const abs = (S.loopPass === 0 ? e.sec
-                                  : S.loopSeg.end + (S.loopPass - 1) * segLen + (e.sec - S.loopSeg.start))
-                  - S.playOffset; // seconds after playT0
-      if (abs >= now + (document.hidden ? 8 : 0.6)) break; // hidden: the OS throttles this timer to a second or worse, so notes land "in the past" and skip (Josh, 2026-09-29, background play); schedule 8 s ahead instead. Visible: 0.6 s of lookahead: a long frame (Fall on a 1500-note SNES song, an iPad) must not starve the pump — at 0.2 s it dropped notes as "in the past" and went silent (Josh, 2026-09-27)
+      const abs = passRel(S.loopPass) + e.sec - originOf(S.loopPass); // seconds after playT0
+      if (abs >= now + lookahead) break;
       if (S.albumEndAbs !== null && abs >= S.albumEndAbs) break; // the pass count is spent: nothing past the end
       if (abs >= -0.05) {
         let d = e.dur;
         if (e.n._clip) { // a clip must stop at the pass end and at the album's end: nothing
           // else does, because MIDI notes are short and ring past the loop harmlessly
-          const passEnd = S.loopSeg.end + S.loopPass * segLen - S.playOffset;
+          const passEnd = passRel(S.loopPass + 1);
           d = clipClamp(d, passEnd - abs, S.albumEndAbs === null ? Infinity : S.albumEndAbs - abs);
         }
         if (d > 0) scheduleNote(e.ti, e.n, S.playT0 + abs, d);
@@ -418,6 +455,7 @@ export function stop() {
   if (!S.playing) { draw(); return; }
   S.playCursor = secToTick(S.song, playSec());
   S.playing = false;
+  if (S.loopSeg && S.loopSeg.spans) S.loopSeg = null; // a seam's spans live only while it plays
   // back to mixing — except mid-album (the next song's play() follows at once)
   // or off-screen (an "ambient" session is silenced there, and that is where
   // background album play lives), or while the click is running
@@ -474,6 +512,70 @@ export function playGateTick() {
     if (playGateTick.queued && !S.playing && S.song) { playGateTick.queued = false; play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); }
   }
   playGateTick.queued = false;
+}
+
+// ---------------------------------------------------------------- loop seam
+// Hear the seam (Josh, 2026-10-27): practise a loop's JOIN — the tail before
+// the jump, then the head after the return target, over and over — without
+// sitting through the middle. S.seam = {spans: [{a, b}] ticks, kind}; play()
+// turns it into loopSeg.spans (seam.js) and the one pump wraps through them.
+// ⟲ (#seambtn): leave the seam when one is on; else, with a span banked, the
+// armed ruler span is the second; else the song's loop: annotation gives
+// "2 bars before the jump → the jump" then "return point → 2 bars after".
+// + span (#seamaddbtn): bank the armed ruler span as the first of two.
+// ■ / Space also leave it (chrome.js). Learning mode: spans are positions only.
+export function seamArmedSpan() { // the ruler span a ▶ would cycle, in ticks, or null
+  const r = S.rangeSel;
+  return r && r.cycle && !r.off && r.b > r.a ? {a: r.a, b: r.b} : null;
+}
+export function seamStart(spans, kind) {
+  const clean = spans.filter(s => s.b > s.a);
+  if (!S.song || !clean.length) return Promise.resolve();
+  S.seam = {spans: clean, kind}; S.seamPending = null;
+  seamUiUpdate();
+  if (S.playing) stop();
+  setInfo("seam: " + seamSpansText(clean, barTicks(), beatTicks()) + ", over and over — ⟲ or ■ to leave");
+  draw();
+  return play(0, {noCountIn: true, seamTop: true});
+}
+export function seamLeave(alsoStop) {
+  if (!S.seam && !S.seamPending) return;
+  S.seam = null; S.seamPending = null;
+  seamUiUpdate();
+  if (alsoStop && S.playing) stop();
+  if (!S.playing && S.loopSeg && S.loopSeg.spans) S.loopSeg = null; // nothing sounds: drop the seam's spans (a playing one is dropped by stop())
+  draw();
+}
+export function seamTap() { // #seambtn
+  if (!S.song) return;
+  if (S.seam) { seamLeave(true); setInfo("seam off"); return; }
+  const armed = seamArmedSpan(), loop = loopSeamSpans();
+  if (S.seamPending && armed) { seamStart([S.seamPending, armed], "pair"); return; }
+  if (loop) { seamStart(loop, "loop"); return; }
+  setInfo(S.seamPending ? "span 1 is kept — drag the second span on the ruler, then tap ⟲" : "this song has no loop: point — drag a span on the ruler, tap + span, drag another, tap ⟲");
+}
+export function seamAddTap() { // #seamaddbtn
+  const armed = seamArmedSpan();
+  if (!armed) { if (S.seamPending) { S.seamPending = null; setInfo("span 1 dropped"); seamUiUpdate(); draw(); } return; }
+  S.seamPending = armed; S.rangeSel = null; // the ruler is free for the second drag
+  setInfo("span 1 kept (" + seamSpansText([armed], barTicks(), beatTicks()) + ") — drag the second span, tap ⟲");
+  seamUiUpdate();
+  draw();
+}
+// the two buttons follow the state: ⟲ for a song with a loop (or a banked
+// span, or a seam running); + span while a cycle span waits on the ruler
+export function seamUiUpdate() {
+  if (typeof document === "undefined") return;
+  const b = document.getElementById("seambtn"), a = document.getElementById("seamaddbtn");
+  if (!b || !a) return;
+  const armed = !!seamArmedSpan(), banked = !!S.seamPending, on = !!S.seam;
+  const showB = !!S.song && (on || banked || !!loopSeamSpans());
+  const showA = !!S.song && !on && (armed || banked);
+  b.style.display = showB ? "" : "none";
+  a.style.display = showA ? "" : "none";
+  b.classList.toggle("active", on);
+  const dropLabel = banked && !armed;
+  if (showA && a.dataset.drop !== String(dropLabel)) { a.dataset.drop = String(dropLabel); setControl("seamaddbtn", {glyph: dropLabel ? "✕" : "+", label: dropLabel ? " span 1" : " span"}); }
 }
 
 export function initTransport1() {

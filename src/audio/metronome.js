@@ -1,5 +1,6 @@
 import { S } from "../state.js";
 import { effTs } from "../model/grid.js";
+import { seamSpanNow } from "./seam.js";
 import { playSec } from "./transport.js";
 import { secToTick } from "../midi/parse.js";
 import { tickToSec } from "../midi/parse.js";
@@ -84,10 +85,12 @@ export function metPumpFollow() {
   let bt = Math.ceil((secToTick(S.song, now) + 1) / tb) * tb;
   let delta;
   const sec = tickToSec(S.song, bt);
-  if (S.loopSeg && S.loopSeg.end > S.loopSeg.start && sec >= S.loopSeg.end - 1e-4) {
+  const cur = S.loopSeg && seamSpanNow(S.loopSeg, S.audio.currentTime, S.playT0); // a seam: the span sounding now; else the loop body
+  if (cur && cur.end > cur.start && sec >= cur.end - 1e-4) {
     // next beat lies past the jump point: chase it into the next pass
-    bt = Math.ceil((secToTick(S.song, S.loopSeg.start) - 1e-4) / tb) * tb;
-    delta = (S.loopSeg.end - now) + (tickToSec(S.song, bt) - S.loopSeg.start);
+    const nxt = S.loopSeg.spans ? S.loopSeg.spans[(S.loopSeg.spans.indexOf(cur) + 1) % S.loopSeg.spans.length] : cur;
+    bt = Math.ceil((secToTick(S.song, nxt.start) - 1e-4) / tb) * tb;
+    delta = (cur.end - now) + (tickToSec(S.song, bt) - nxt.start);
   } else {
     delta = sec - now;
   }

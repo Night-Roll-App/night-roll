@@ -5,6 +5,8 @@ import { beatsPerBarDisp } from "../model/grid.js";
 import { tickToSec } from "../midi/parse.js";
 import { play } from "../audio/transport.js";
 import { stop } from "../audio/transport.js";
+import { seamStart, seamLeave, loopSeamSpans } from "../audio/transport.js";
+import { seamParsePos, seamSpansText } from "../audio/seam.js";
 import { jumpToTick } from "../input/gestures.js";
 import { jumpBarCap } from "../input/gestures.js";
 import { editUndoPop } from "../ui/note-editor.js";
@@ -105,11 +107,36 @@ export const ASK_ACTIONS = [
      play(tickToSec(S.song, tick), {fromHere: true, noCountIn: true}).catch(() => {});
      return "▶ playing from " + label;
    }},
+  {name: "play_seam", args: "spans? off?", gloss: "loop a seam: one span then the next, over and over", quiet: true,
+   example: "Play the loop seam.", say: "\"Play the loop seam\" for the tail before the jump and the head after it; or name two spans (\"bars 25.1 to 27.3, then 3.1 to 5.1\"); \"stop the seam\" leaves it.",
+   spec: "play_seam {spans?, off?}: plays the spans back to back with no gap, in order, forever — the way to hear a loop's join. spans = [{from, to}, …] in the ruler's bar.beat (\"25.1\" = bar 25 beat 1; to is where it stops, e.g. {\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}). No spans = around the song's loop: point: the 2 bars before the jump point, then the return point and the 2 bars after it (refused when the song has no loop: point). off: true leaves the seam and stops. Sound must have been unlocked by one tap on Play this session.",
+   run(a) {
+     if (askActTruthy(a.off)) { const had = !!S.seam; seamLeave(true); return had ? "seam off" : "no seam was on"; }
+     if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
+     const bt = barTicks(), qt = beatTicks();
+     let spans;
+     if (askActGiven(a.spans)) {
+       if (!Array.isArray(a.spans) || !a.spans.length) throw new Error("spans must be a list of {from, to}, e.g. [{\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}]");
+       spans = a.spans.map((s, i) => {
+         const x = seamParsePos(s && s.from, bt, qt), y = seamParsePos(s && s.to, bt, qt);
+         if (x === null || y === null) throw new Error("span " + (i + 1) + ": from and to are ruler positions like \"25.1\" (bar.beat, counted beat of the declared meter)");
+         if (y <= x) throw new Error("span " + (i + 1) + ": to must be after from");
+         if (x >= S.songEndTick) throw new Error("span " + (i + 1) + " starts past the end of the song (" + askBarsCount() + " bars)");
+         return {a: x, b: Math.min(y, S.songEndTick)};
+       });
+     } else {
+       spans = loopSeamSpans();
+       if (!spans) throw new Error("this song has no loop: point to take the seam of — name the spans instead");
+     }
+     seamStart(spans, askActGiven(a.spans) ? "pair" : "loop").catch(() => {}); // not awaited, like play: it can sit behind a console render
+     return "⟲ seam: " + seamSpansText(spans, bt, qt) + ", over and over";
+   }},
   {name: "stop", args: "", gloss: "stop playback", quiet: true,
    example: "Stop.", say: "Just that.",
    spec: "stop {}: stops playback; the cursor stays where it stopped.",
    run() {
      const was = S.playing;
+     seamLeave(false); // stopping leaves a loop seam too
      stop();
      return (was ? "■ stopped at " : "already stopped — cursor at ") + askActPosText(S.playCursor);
    }},

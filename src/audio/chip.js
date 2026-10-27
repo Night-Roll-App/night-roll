@@ -16,13 +16,14 @@ import { logDebug } from "../hooks.js";
 import { songTitleOf } from "../hooks.js";
 import { loudForRender } from "./levels.js";
 import { loudFileHash } from "./loudness.js";
+import { seamPassStart } from "./seam.js";
 
 // ---------------------------------------------------- authentic chip audio
 // The captured APU register log rendered through the 2A03's real DSP
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-export const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
+export const chip = {seamNext: 0, seamArmed: false, key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
 // refusedKey: the song key whose render the memory budget refused (planChipRender plan.refuse) — hear-sound says "not available" for it instead of "still loading"
 // kind/loud: the render's chip and its loudness ({lufs, peak, synth?, src}) for the song gain (audio/levels.js); pendingLoud: {key, loud, cacheKey} from chipSource, until the render publishes
 // no toggle: chip audio is automatic wherever a source resolves
@@ -360,6 +361,7 @@ export function chipPcmToBuffers() {
 export function chipStopSrcs() {
   for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
   chip.srcs = [];
+  chip.seamArmed = false;
   // stream mode (docs/streamed-render-plan.md step 3): stop the per-chunk
   // sources chipStreamPump scheduled, but keep chip.stream.cache — the same
   // chunks are good for the next play() from anywhere already cached, and a
@@ -385,31 +387,67 @@ export function chipPartTrack(name) {
   for (const host of CHIP_PART_HOST[name] || []) { if (ti >= 0) break; ti = at(host); }
   return ti;
 }
+// One rendered part's source, wired exactly as every chip source is: the speed
+// slider = tape-style playbackRate on chip audio; a track the memory budget
+// downmixed from stereo to mono (planChipRender, chip.pan) gets ITS OWN panner,
+// upstream of trackGain/trackPanners (the mixer's own per-track pan, untouched)
+// — bakes the console's original static pan back in so the audible result is
+// unchanged. null: no roll track for the part, or the track picked its own voice.
+export function chipPartSrc(name, buffer) {
+  const ti = chipPartTrack(name);
+  if (ti < 0) return null;
+  const vv = S.song.tracks[ti].voice;
+  if (vv && vv !== "auto") return null; // explicit instrument choice overrides the chip for this track
+  const src = S.audio.createBufferSource();
+  src.buffer = buffer;
+  src.playbackRate.value = S.playRate;
+  let node = src;
+  if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) {
+    const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name];
+    src.connect(p); node = p;
+  }
+  node.connect(trackGain(ti));
+  return src;
+}
+// A seam (seam.js) over the whole-render buffers: one native loop cannot hold
+// two spans, so each PASS gets its own source — start(when, offset, duration)
+// with `when` = playT0 + the pass's start, the same boundary the note
+// scheduler uses, so the join is sample-accurate (no stop/start). play()'s
+// pump calls this; it schedules every pass that begins inside the lookahead.
+export function chipSeamPump(nowCtx, lookahead) {
+  const spans = S.loopSeg && S.loopSeg.spans;
+  if (!S.playing || !spans || chip.stream || !chip.seamArmed) return; // armed only by chipStart for THIS play: a render that finishes mid-seam joins at the next ▶, never with stacked passes
+  const parts = Object.entries(chipBuffers());
+  for (let guard = 0; guard < 64; guard++) {
+    const k = chip.seamNext, rel = seamPassStart(spans, k), sp = spans[k % spans.length];
+    const start = S.playT0 + rel, len = sp.end - sp.start;
+    if (start + len <= nowCtx) { chip.seamNext = k + 1; continue; } // already over
+    if (start >= nowCtx + lookahead) break;
+    const when = Math.max(start, nowCtx + 0.02), into = when - start; // a pass in progress starts now, that far into its span
+    for (const [name, buffer] of parts) {
+      const src = chipPartSrc(name, buffer);
+      if (!src) continue;
+      const off = Math.min(chip.lead + (sp.start + into) * S.playRate, buffer.duration);
+      src.start(when, off, Math.max(0, Math.min((len - into) * S.playRate, buffer.duration - off)));
+      src.onended = () => { chip.srcs = chip.srcs.filter(x => x !== src); }; // a long seam must not grow the list forever
+      chip.srcs.push(src);
+    }
+    chip.seamNext = k + 1;
+  }
+}
 export function chipStart(fromSec) {
   chipStopSrcs();
+  const seam = S.loopSeg && S.loopSeg.spans;
+  chip.seamArmed = !!seam; chip.seamNext = seam ? S.loopPass : 0; // the pass this play begins in (play() resumes inside a span)
   for (const [name, buffer] of Object.entries(chipBuffers())) {
-    const ti = chipPartTrack(name);
-    if (ti < 0) continue;
-    const vv = S.song.tracks[ti].voice;
-    if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track
-    const src = S.audio.createBufferSource();
-    src.buffer = buffer;
-    src.playbackRate.value = S.playRate; // speed slider = tape-style on chip audio
+    if (seam) break; // chipSeamPump starts the sources, pass by pass
+    const src = chipPartSrc(name, buffer);
+    if (!src) continue;
     if (S.loopSeg && S.loopSeg.end > S.loopSeg.start) {
       src.loop = true;
       src.loopStart = Math.min(chip.lead + S.loopSeg.start * S.playRate, buffer.duration);
       src.loopEnd = Math.min(chip.lead + S.loopSeg.end * S.playRate, buffer.duration);
     }
-    // a track the memory budget downmixed from stereo to mono (planChipRender,
-    // chip.pan) gets ITS OWN panner here, upstream of trackGain/trackPanners
-    // (the mixer's own per-track pan, untouched) — bakes the console's
-    // original static pan back in so the audible result is unchanged
-    let node = src;
-    if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) {
-      const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name];
-      src.connect(p); node = p;
-    }
-    node.connect(trackGain(ti));
     src.start(S.playT0, Math.min(chip.lead + fromSec * S.playRate, buffer.duration));
     if (S.albumEndAbs !== null) src.stop(S.playT0 + S.albumEndAbs); // the hardware loop still wraps; album play just ends it
     chip.srcs.push(src);

@@ -53,6 +53,7 @@ import * as platformNative from "./platform/native.js";
 import * as audioEngine from "./audio/engine.js";
 import * as audioVoices from "./audio/voices.js";
 import * as audioTransport from "./audio/transport.js";
+import * as audioSeam from "./audio/seam.js";
 import * as audioChip from "./audio/chip.js";
 import * as audioChipStream from "./audio/chip-stream.js";
 import * as audioClips from "./audio/clips.js";
@@ -129,7 +130,7 @@ export function exposeGlobals() {
                      theoryHarmonyRoman, theoryHarmonyCadence, theoryHarmonyNct, theoryHarmonyModulation,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
-                     audioEngine, audioVoices, audioTransport,
+                     audioEngine, audioVoices, audioTransport, audioSeam,
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
                      modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
                      importHub, importCapture, syncPublish,

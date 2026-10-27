@@ -408,6 +408,7 @@ export function setSong(parsed, key) {
   S.dupPending = null; // clone bookkeeping never crosses songs
   S.rangeSel = rangeSelRestore(key); // the ruler range is per song — but THIS song's survives a relaunch (Josh, 2026-10-03)
   S.tapBand = {n: null, t: 0};
+  S.seam = null; S.seamPending = null; // a seam belongs to one song
   // P6: the Analyze layer is a per-song VIEW computation — a different song
   // means stale bands, so it goes off rather than carry the wrong song's
   // reading (same "off by default" discipline as a fresh session)
