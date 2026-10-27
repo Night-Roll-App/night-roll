@@ -2044,7 +2044,7 @@ export function initChrome11() {
     if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
     if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
     if (k === "x") { toggleMixer(); e.preventDefault(); return; } // Logic's mixer key
-    if (e.key === "Escape" && (S.seam || S.seamPending)) { seamLeave(true); setInfo("seam off"); return; }
+    if (e.key === "Escape" && (S.seam || S.seamPending)) { seamLeave(!!S.seam); setInfo(S.seam ? "seam off" : "span 1 dropped"); return; }
     if (e.key === "Escape" && S.rangeSel) { S.rangeSel = null; setInfo("range cleared"); editorFollowSelection(); draw(); return; }
     if (k === "c" && S.rangeSel && S.rangeSel.cycle && S.rangeSel.b > S.rangeSel.a) { S.rangeSel.off = !S.rangeSel.off; setInfo(S.rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
     if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }

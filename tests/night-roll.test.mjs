@@ -16398,7 +16398,7 @@ async function seamApp() {
   return {a, arun, aval};
 }
 async function seamPlay(t, spansTicks) {
-  t.arun(`seam = {spans: ${JSON.stringify(spansTicks)}, kind: "pair"}; play(0, {noCountIn: true}).catch(() => {});`);
+  t.arun(`seam = {spans: ${JSON.stringify(spansTicks)}, kind: "pair"}; play(0, {noCountIn: true, seamTop: true}).catch(() => {});`);
   for (let i = 0; i < 60 && !t.aval(`playing`); i++) { t.a.tick(100); await new Promise(r => setTimeout(r, 0)); }
   assert.equal(t.aval(`playing`), true, "the transport started");
 }
@@ -16505,4 +16505,57 @@ test("loop seam controls: ⟲ starts the loop's seam and leaves it; + span banks
   await assert.rejects(a.run(`askAct({do: [{action: "play_seam", spans: [{from: "3.1", to: "2.1"}]}]})`), /to must be after from/);
   arun(`seamLeave(true); rollnotes = []; finalizeNotes();`);
   await assert.rejects(a.run(`askAct({do: [{action: "play_seam"}]})`), /no loop: point/);
+});
+
+test("loop seam review fixes: a restart resumes inside its span; an edit during an empty span stays out of the bars between; all-spans-past-the-end is no seam; a late console render never stacks passes", async () => {
+  const t = await seamApp();
+  // 1. resume: play(playSec()) while B (bars 7-8) sounds must stay in B, not jump back to A's top
+  await seamPlay(t, [{a: 0, b: 2 * 1920}, {a: 6 * 1920, b: 8 * 1920}]);
+  for (let i = 0; i < 55; i++) t.a.tick(100); // 5.5 s: A is 4 s, so 1.5 s into B
+  const at = t.aval(`playSec()`);
+  assert.ok(Math.abs(at - 13.5) < 0.2, "inside B: " + at);
+  t.arun(`const at = playSec(); stop(); __sch.length = 0; play(at, {noCountIn: true}).catch(() => {});`);
+  for (let i = 0; i < 60 && !t.aval(`playing`); i++) { t.a.tick(100); await new Promise(r => setTimeout(r, 0)); }
+  assert.equal(t.aval(`playing`), true);
+  assert.equal(t.aval(`loopPass`), 1, "resumed in pass 1 (B)");
+  assert.ok(Math.abs(t.aval(`playSec()`) - at) < 0.3, "the playhead stayed in B: " + t.aval(`playSec()`));
+  for (let i = 0; i < 40; i++) t.a.tick(100);
+  assert.ok(t.aval(`__sch`).some(e => e.p === 60), "B ends and A comes round");
+  t.arun(`stop(); seam = null;`);
+  assert.equal(t.aval(`loopSeg`), null, "stop() drops a seam's loopSeg");
+  // 3. an edit while an EMPTY span sounds: bars between the spans are not replayed
+  t.arun(`song.tracks[0].notes = song.tracks[0].notes.filter(n => n.t < 6 * 1920); editGen++;`); // bars 7-8 empty; bars 3-6 keep notes
+  await seamPlay(t, [{a: 0, b: 2 * 1920}, {a: 6 * 1920, b: 8 * 1920}]);
+  for (let i = 0; i < 55; i++) t.a.tick(100); // 5.5 s: inside the empty B
+  t.arun(`__sch.length = 0; editGen++;`);
+  for (let i = 0; i < 25; i++) t.a.tick(100);
+  assert.deepEqual(t.aval(`__sch`).filter(e => e.p >= 62 && e.p <= 65), [], "bars 3-6 stay silent");
+  t.arun(`stop(); seam = null;`);
+  // 4. every span past the song's end: no seam, plain playback
+  t.arun(`seam = {spans: [{a: 30 * 1920, b: 31 * 1920}], kind: "pair"}; play(0, {noCountIn: true, seamTop: true}).catch(() => {});`);
+  for (let i = 0; i < 40 && !t.aval(`playing`); i++) { t.a.tick(100); await new Promise(r => setTimeout(r, 0)); }
+  assert.equal(t.aval(`seam`), null, "no seam left armed");
+  assert.equal(t.aval(`loopSeg.spans === undefined`), true);
+  t.arun(`stop();`);
+  assert.equal(t.aval(`loopSeg.spans === undefined`), true);
+  // 2. console render finishing mid-seam: an unarmed chipSeamPump does nothing; an armed one skips passes already over
+  const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+  arun(`createComposition(120, 4, 4); ensureAudio();
+        chip.key = songKey; chip.lead = 0; chip.pcm = null; chip.pan = null;
+        chip.buffers = {}; chip.buffers[song.tracks[0].name] = {duration: 100};
+        globalThis.__starts = [];
+        audio.createBufferSource = () => ({buffer: null, playbackRate: {value: 1}, connect(x) { return x; }, disconnect() {},
+          start(w, o, d) { globalThis.__starts.push({when: w, off: o, dur: d}); }, stop() {} });
+        playing = true; playRate = 1; chip.seamArmed = false; chip.seamNext = 0;
+        loopSeg = {start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]};`);
+  arun(`playT0 = audio.currentTime - 9;`); // 9 s in: A, B over; the 3rd pass (A) is 1 s in
+  arun(`chipSeamPump(audio.currentTime, 0.6);`);
+  assert.equal(aval(`__starts.length`), 0, "not armed for this play: nothing starts");
+  arun(`chip.seamArmed = true; chip.seamNext = 0; chipSeamPump(audio.currentTime, 0.6);`);
+  const now = aval(`audio.currentTime`);
+  const s = aval(`__starts`);
+  assert.equal(s.length, 1, "passes 0 and 1 are over; only the one in progress starts: " + JSON.stringify(s));
+  assert.ok(s[0].when >= now && s[0].when < now + 0.05, "starts now, not in the past");
+  assert.ok(Math.abs(s[0].off - 11) < 0.1 && Math.abs(s[0].dur - 3) < 0.1, "1 s into A's tape, 3 s left: " + JSON.stringify(s[0]));
+  arun(`playing = false; chip.seamArmed = false; loopSeg = null; chip.key = null; chip.buffers = null;`);
 });

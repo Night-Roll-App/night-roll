@@ -23,7 +23,7 @@ import { seamPassStart } from "./seam.js";
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-export const chip = {seamNext: 0, key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
+export const chip = {seamNext: 0, seamArmed: false, key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
 // refusedKey: the song key whose render the memory budget refused (planChipRender plan.refuse) — hear-sound says "not available" for it instead of "still loading"
 // kind/loud: the render's chip and its loudness ({lufs, peak, synth?, src}) for the song gain (audio/levels.js); pendingLoud: {key, loud, cacheKey} from chipSource, until the render publishes
 // no toggle: chip audio is automatic wherever a source resolves
@@ -361,6 +361,7 @@ export function chipPcmToBuffers() {
 export function chipStopSrcs() {
   for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
   chip.srcs = [];
+  chip.seamArmed = false;
   // stream mode (docs/streamed-render-plan.md step 3): stop the per-chunk
   // sources chipStreamPump scheduled, but keep chip.stream.cache — the same
   // chunks are good for the next play() from anywhere already cached, and a
@@ -415,16 +416,19 @@ export function chipPartSrc(name, buffer) {
 // pump calls this; it schedules every pass that begins inside the lookahead.
 export function chipSeamPump(nowCtx, lookahead) {
   const spans = S.loopSeg && S.loopSeg.spans;
-  if (!S.playing || !spans || chip.stream) return;
+  if (!S.playing || !spans || chip.stream || !chip.seamArmed) return; // armed only by chipStart for THIS play: a render that finishes mid-seam joins at the next ▶, never with stacked passes
   const parts = Object.entries(chipBuffers());
   for (let guard = 0; guard < 64; guard++) {
     const k = chip.seamNext, rel = seamPassStart(spans, k), sp = spans[k % spans.length];
-    if (S.playT0 + rel >= nowCtx + lookahead) break;
+    const start = S.playT0 + rel, len = sp.end - sp.start;
+    if (start + len <= nowCtx) { chip.seamNext = k + 1; continue; } // already over
+    if (start >= nowCtx + lookahead) break;
+    const when = Math.max(start, nowCtx + 0.02), into = when - start; // a pass in progress starts now, that far into its span
     for (const [name, buffer] of parts) {
       const src = chipPartSrc(name, buffer);
       if (!src) continue;
-      const off = Math.min(chip.lead + sp.start * S.playRate, buffer.duration);
-      src.start(S.playT0 + rel, off, Math.max(0, Math.min((sp.end - sp.start) * S.playRate, buffer.duration - off)));
+      const off = Math.min(chip.lead + (sp.start + into) * S.playRate, buffer.duration);
+      src.start(when, off, Math.max(0, Math.min((len - into) * S.playRate, buffer.duration - off)));
       src.onended = () => { chip.srcs = chip.srcs.filter(x => x !== src); }; // a long seam must not grow the list forever
       chip.srcs.push(src);
     }
@@ -433,8 +437,8 @@ export function chipSeamPump(nowCtx, lookahead) {
 }
 export function chipStart(fromSec) {
   chipStopSrcs();
-  chip.seamNext = 0;
   const seam = S.loopSeg && S.loopSeg.spans;
+  chip.seamArmed = !!seam; chip.seamNext = seam ? S.loopPass : 0; // the pass this play begins in (play() resumes inside a span)
   for (const [name, buffer] of Object.entries(chipBuffers())) {
     if (seam) break; // chipSeamPump starts the sources, pass by pass
     const src = chipPartSrc(name, buffer);
