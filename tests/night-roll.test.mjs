@@ -6151,6 +6151,25 @@ test("Songs README: the block lists every song as a player link; splice creates,
   run(`saveCfg({songsBase: ""}); songKey = null;`);
 });
 
+test("kit lane: pinning a SYNCED lane: annotation elsewhere is an edit (stored locally, counts as unpublished, old one tombstoned); kit-note moves mark the draft dirty", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/kitlane-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); song.tracks = [{name: "drums", kit: true, notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}]}]; song.baseTempos = song.tempos;
+       for (const k of ["ff1roll-notes-", "ff1roll-tombs-"]) localStorage.removeItem(k + songKey);
+       rollnotes = [resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "lane: 30"})]; rollnotes[0].added = false; /* as loaded from the repo file */
+       saveDraft(true);`);
+  assert.equal(val(`songUnsaved()`), false, "clean to start");
+  run(`laneOverride = 34; pinKitLaneNote();`);
+  assert.equal(val(`songUnsaved()`), true, "moving only the kit lane is an unpublished change");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-notes-" + songKey)).some(n => n.text === "lane: 34")`), true, "stored locally so it survives a reload");
+  assert.equal(val(`JSON.parse(localStorage.getItem(tombKeyFor(songKey)) || "[]").length`), 1, "the published lane: 30 is retired");
+  assert.equal(val(`rollnotes.filter(n => /^lane:/.test(n.text)).length`), 1);
+  assert.equal(val(`laneOverride`), 34);
+  // moving kit NOTES (reading 1): the draft goes dirty
+  run(`saveDraft(true); song.tracks[0].notes[0].p = 38; saveEdits();`);
+  assert.equal(val(`songDirtyFlag()`), true, "a kit note moved is a draft edit");
+  run(`for (const k of ["ff1roll-notes-", "ff1roll-tombs-", "ff1roll-draft-"]) localStorage.removeItem(k + songKey); rollnotes = []; songKey = null;`);
+});
+
 test("Versions (Model B): autosave is always on; Save Version snapshots music + annotations, dated, capped at 20; ● = not published, only Publish clears it", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/save-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; song.baseTempos = song.tempos;

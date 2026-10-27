@@ -126,6 +126,16 @@ export function evtPos(e) {
   const p = e.touches ? e.touches[0] : e;
   return {x: p.clientX - r.left, y: p.clientY - r.top};
 }
+export function pinKitLaneNote() { // the lane: annotation for S.laneOverride. A SYNCED one (from the repo file) is retired and replaced by a local copy — edited in place it was never stored, so the move counted as no change (Josh, 2026-10-27)
+  const old = S.rollnotes.find(n => /^lane:\s*-?\d+\s*$/.test(n.text));
+  if (old && old.added) old.text = "lane: " + S.laneOverride;
+  else {
+    if (old) { tombstone(old); S.rollnotes = S.rollnotes.filter(x => x !== old); }
+    S.rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "lane: " + S.laneOverride, added: true}));
+  }
+  finalizeNotes();
+  saveLocalNotes();
+}
 export function posToTickPitch(pos) { // pitch is a DISPLAY ROW (kit lane rows sit above PMAX)
   const tick = (pos.x - S.RULER_W + S.view.x) / pxPerTick();
   const pitch = topRow() - Math.floor((pos.y - S.RULER_H + S.view.y) / S.view.rowH);
@@ -678,11 +688,7 @@ export function endPointer(e) {
       return;
     }
     if (S.drag.moved && S.songKey) {
-      const old = S.rollnotes.find(n => /^lane:\s*-?\d+\s*$/.test(n.text));
-      if (old) old.text = "lane: " + S.laneOverride;
-      else S.rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "lane: " + S.laneOverride, added: true}));
-      finalizeNotes();
-      saveLocalNotes();
+      pinKitLaneNote();
       setInfo("kit lane pinned (a lane: annotation — syncs with the song)");
     }
     S.drag = null;
