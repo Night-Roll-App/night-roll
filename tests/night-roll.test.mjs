@@ -3197,7 +3197,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "triangle (NES)", "File under",
     "says why: the drum it mostly is",
-    "Fall", "Loop seam", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
+    "Fall", "Loop seam", "Drag an edge of either amber span", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Hear sound", "These are drums", "Not drums", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "File → 🔗 Share link", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
@@ -16453,6 +16453,19 @@ test("seam math: pass starts, position at an elapsed time, the loop's two spans,
   assert.equal(val(`seamSpansText([{a: 24 * 1920, b: 26 * 1920 + 960}, {a: 2 * 1920, b: 4 * 1920}], 1920, 480)`), "25.1–27.3 then 3.1–5.1");
 });
 
+test("dragSeamEdge / seamEdgeAt: stretch either edge, 16th floor, song limits, other spans untouched (pure)", () => {
+  const sp = `[{a: 1920, b: 3840}, {a: 7680, b: 9600}]`, lim = `{min: 120, end: 11520}`;
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "b", 5760, ${lim})`), [{a: 1920, b: 5760}, {a: 7680, b: 9600}], "right edge out: three bars");
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 1, "a", 5760, ${lim})`), [{a: 1920, b: 3840}, {a: 5760, b: 9600}], "left edge out of the second span");
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "b", 1920, ${lim})`)[0], {a: 1920, b: 2040}, "never shorter than a 16th");
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "a", 99999, ${lim})`)[0], {a: 3720, b: 3840});
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "a", -500, ${lim})`)[0], {a: 0, b: 3840}, "not before 0");
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 1, "b", 99999, ${lim})`)[1], {a: 7680, b: 11520}, "not past the song's end");
+  assert.deepEqual(val(`seamEdgeAt(${sp}, 190, t => t / 10, 14)`), {i: 0, edge: "a"});
+  assert.deepEqual(val(`seamEdgeAt(${sp}, 385, t => t / 10, 14)`), {i: 0, edge: "b"});
+  assert.equal(val(`seamEdgeAt(${sp}, 550, t => t / 10, 14)`), null, "mid-gap grabs nothing");
+});
+
 test("chipSegments over a seam: A then B then A, each join gapless; mid-span resume; tape rate and lead (pure)", () => {
   const sp = `{start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]}`;
   let segs = val(`chipSegments(10, ${sp}, 1, 0, null, 100, 0)`);
@@ -16566,6 +16579,7 @@ test("loop seam controls: ⟲ starts the loop's seam and leaves it; + span banks
   assert.ok(a.el("seambtn").classList.contains("active"), "⟲ lit while the seam is armed");
   for (let i = 0; i < 40 && !aval(`playing`); i++) { a.tick(100); await new Promise(r => setTimeout(r, 0)); }
   assert.equal(aval(`playing`), true);
+  assert.equal(aval(`rangeSel`), null, "starting a seam clears the ruler selection");
   arun(`seamTap();`); // tap again: leave
   assert.equal(aval(`seam`), null);
   assert.equal(aval(`playing`), false, "leaving also stops");

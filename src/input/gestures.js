@@ -55,6 +55,8 @@ import { clearMultiSel } from "../model/selection.js";
 import { cursorDragSnapTicks } from "../model/grid.js";
 import { stop } from "../audio/transport.js";
 import { play } from "../audio/transport.js";
+import { seamRestart } from "../audio/transport.js";
+import { dragSeamEdge, seamEdgeAt, seamSpansText } from "../audio/seam.js";
 import { editableSong } from "../model/song.js";
 import { saveVoices } from "../ui/trackbar.js";
 import { openVoiceMenu } from "../ui/voice-menu.js";
@@ -765,6 +767,7 @@ export function endPointer(e) {
     stop();
     play(from, {keepPos: inside, noCountIn: true}).catch(() => {});
   }
+  else if (S.drag.seamEdge && S.drag.moved) seamRestart();
   else if (S.drag.bandEdge && S.drag.moved) {
     const n = S.drag.bandEdge.n;
     // a published band edited in place must be RETIRED, or the repo copy comes
@@ -1205,14 +1208,20 @@ export function initGestures1() {
       // RULER_RANGE_SLOP (endPointer hands an unmoved press to tap())
       else if (p.x > ax + 12 && p.x < bx - 12) rangeEdge = "mid";
     }
-    const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge;
+    let seamEdge = null; // a running seam's amber spans: grab either edge of either span
+    if (!lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge &&
+        S.song && S.seam && p.y < BASE_RULER_H && S.viewMode !== "score") {
+      const ppt = pxPerTick();
+      seamEdge = seamEdgeAt(S.seam.spans, p.x, t => S.RULER_W + t * ppt - S.view.x, 14);
+    }
+    const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge && !seamEdge;
     // a press ON the playhead (its tag in the strip, any mode, even while
     // playing; or its line through the notes at rest, select mode) — a cursor
     // drag, which is the strip's scrub with one difference: let go without
     // moving and the cursor stays put (a strip tap would snap it to an 8th)
     const onCursor = plain && cursorHit(p);
     S.drag = {id: e.pointerId, ptype: e.pointerType, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false,
-            lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, onCursor,
+            lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, seamEdge, onCursor,
             range0: rangeEdge ? {a: S.rangeSel.a, b: S.rangeSel.b} : null, // the span as grabbed — a "mid" slide keeps its length
             ruler: plain && !!S.song && p.y < BASE_RULER_H,
             // the playhead strip, between the ruler/bands and the notes (Josh,
@@ -1396,6 +1405,12 @@ export function initGestures1() {
         const a = rulerSnapTick(S.drag.range0.a + (x - S.drag.spos.x) / pxPerTick());
         S.rangeSel.a = a; S.rangeSel.b = a + len;
         S.rangeSel.off = false; // sliding re-arms a parked cycle, like stretching
+        draw();
+      }
+      else if (S.drag.seamEdge) { // stretch/shrink a seam span: the cycle's own magnet and 16th floor
+        const se = S.drag.seamEdge;
+        S.seam.spans = dragSeamEdge(S.seam.spans, se.i, se.edge, rulerSnapX(evtPos(e).x), {min: Math.round(S.song.ppq / 4), end: S.songEndTick});
+        setInfo("seam: " + seamSpansText(S.seam.spans, barTicks(), beatTicks()));
         draw();
       }
       else if (S.drag.rangeEdge) { // stretch the cycle by its end — bar-magnetic, stays armed

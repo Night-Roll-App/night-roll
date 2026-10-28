@@ -76,9 +76,9 @@ export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), ret
 }
 // The loop seam's two spans in ticks (null: no loop: annotation) — A is the
 // bars before the jump point, B the bars after the return target (seam.js)
-export function loopSeamSpans() {
+export function loopSeamSpans(bars) {
   const dir = S.song && S.rollnotes.find(n => n.loopTo !== undefined);
-  return dir ? seamAroundLoop(dir.loopTo, dir.start, barTicks(), S.songEndTick) : null;
+  return dir ? seamAroundLoop(dir.loopTo, dir.start, barTicks(), S.songEndTick, bars) : null;
 }
 export function audioStopSrcs() {
   for (const s of S.audioSrcs) { try { s.stop(); } catch (err) { /* already done */ } }
@@ -531,12 +531,20 @@ export function seamArmedSpan() { // the ruler span a ▶ would cycle, in ticks,
 export function seamStart(spans, kind) {
   const clean = spans.filter(s => s.b > s.a);
   if (!S.song || !clean.length) return Promise.resolve();
-  S.seam = {spans: clean, kind}; S.seamPending = null;
+  S.seam = {spans: clean, kind}; S.seamPending = null; S.rangeSel = null; // the ruler is the seam's now: a leftover selection would sit under its spans (Josh, 2026-10-28)
   seamUiUpdate();
   if (S.playing) stop();
   setInfo("seam: " + seamSpansText(clean, barTicks(), beatTicks()) + ", over and over — ⟲ or ■ to leave");
   draw();
   return play(0, {noCountIn: true, seamTop: true});
+}
+// a dragged span edge while the seam sounds: resume inside the span the playhead
+// is in (play() finds it), so the new length is heard without a restart from the top
+export function seamRestart() {
+  if (!S.seam || !S.playing) return;
+  const from = playSec();
+  stop();
+  play(from, {noCountIn: true}).catch(() => {});
 }
 export function seamLeave(alsoStop) {
   if (!S.seam && !S.seamPending) return;
