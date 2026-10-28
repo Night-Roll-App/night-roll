@@ -798,6 +798,7 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
     const bad = parts.filter(x => !["kick", "snare", "hats", "fills"].includes(x));
     if (bad.length) throw new Error("parts: " + bad.join(", ") + " — the parts are kick, snare, hats, fills");
   }
+  if (march) parts = "all"; // March is one snare line: parts do not scope it
   const trackName = ti => S.song.tracks[ti].name || "track " + (ti + 1);
   let follow = "bass", followTis, followTxt;
   let f = a.follow;
@@ -827,7 +828,7 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
   if (S.drTakes.length > 8) S.drTakes.shift();
   S.drActive = S.drTakes.length - 1;
   const where = fromBar === toBar ? "bar " + fromBar : "bars " + fromBar + "–" + toBar;
-  const recipe = (march ? "march · energy " + busy + (bass ? " · bass drum on 1 and 3" : "") + (parts !== "all" ? " · " + parts.join("+") + " only" : "")
+  const recipe = (march ? "march · energy " + busy + (bass ? " · bass drum on alternate beats" : "") + (parts !== "all" ? " · " + parts.join("+") + " only" : "")
     : "busy " + busy + " · hard " + hard + " · fills " + fillAmt + (feel !== "normal" ? " · " + feel : "") +
       (parts !== "all" ? " · " + parts.join("+") + " only" : "") + " · " + followTxt) + " · seed " + seed;
   if (!k) return {ok: true, note: "Drummer: no hits in " + where + " — every bar there is a break (only the followed track plays, or a section labeled break) · " + recipe + " (one undo restores what was there)"};

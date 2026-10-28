@@ -4,6 +4,7 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+- CLOSED 2026-10-28: Drummer "March" style (military snare cadences, Groove|March in the sheet, Ask drummer style: march) — branch march, awaiting merge + Josh listening; the native app ports marchPattern against tests/fixtures/march-goldens.json.
 ## 2026-10-23 CURRENT WORK (read first; older sections below are history)
 - Night Roll Native (night-roll-ipad, no remote, installs via tools/build-ipad.sh): building the web-parity checklist (docs/plans/2026-10-22-complete-checklist.md) in 6 waves (docs/plans/2026-10-22-build-everything.md). Installed: cursor smoothness (Josh: "very smooth"), wave 1 (menus, notes, annotation editor, transport row), Score smoothing + ruler. Wave 2 (7 parts) combining/testing; AI panel width + clock times + small bottom-left view switcher building; wave 3 started (prelude, Drummer/Bassist). After wave 6: Roll edit-mode screenshots web vs native side by side (#941).
 - Guitar on Windows/Steam (night-roll-guitar docs/plans/2026-10-21-steam-windows.md): M0 passed (branch windows-m0); M1 step 1 (PracticeEngine extraction + Windows CI) building on windows-m1. BLOCKED partly on Q26 (guitar open-items): read token NR_EAR_TOKEN for night-roll-ear.

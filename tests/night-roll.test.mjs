@@ -6829,6 +6829,14 @@ test("March: deterministic per seed, different across seeds, snare-only, accente
   assert.deepEqual(askDrSnap(), before);
 });
 
+test("March: no two snare strokes within a grace of each other (graces included, across bar lines), no duplicate ticks, in every meter at energy 1 and 5", () => {
+  installAskDrummerSong();
+  for (const [beats, qt] of [[4, 480], [3, 480], [5, 480], [7, 240], [3, 240], [6, 240], [12, 240]]) for (const e of [1, 5]) for (let s = 1; s <= 60; s++) {
+    const h = val(`marchPattern(${s}, {beats: ${beats}, qt: ${qt}, ppq: 480, bars: 6, energy: ${e}})`).filter(x => x.p === 38);
+    for (let i = 1; i < h.length; i++) assert.ok(h[i].off - h[i - 1].off >= 30, `${beats}x${qt} e${e} seed ${s}: strokes at ${h[i - 1].off} and ${h[i].off} collide`);
+  }
+});
+
 test("drummer: a section label resolves to its bars (a point section is one bar); an ambiguous or unknown label, a bad knob, an unknown follow track, a drum follow track and a meter change all error with nothing changed", () => {
   installAskDrummerSong();
   run(`rollnotes = deriveNoteTypes([

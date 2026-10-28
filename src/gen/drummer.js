@@ -586,9 +586,9 @@ function marchCellEvents(def, n, rng, V, compound) { // → {span, ev: [{u, v, k
     }
     return {span, ev};
   }
-  if (tok.roll) { // soft→firm 32nd pairs, closed by an accent
+  if (tok.roll) { // an even run of 32nds closed by an accent
     const sp = compound ? 2 : 3, k = tok.roll === 5 ? 4 : 6;
-    for (let i = 0; i < k; i++) ev.push({u: i * sp, v: V.g + Math.round((V.x - V.g) * i / (k - 1)) + Math.floor(rng() * 5), kind: "n"});
+    for (let i = 0; i < k; i++) ev.push({u: i * sp, v: Math.round((V.g + V.x) / 2), kind: "n"}); // even, then the accent on the release
     ev.push({u: k * sp, v: V.A, kind: "n"});
     return {span: 1, ev};
   }
@@ -599,10 +599,13 @@ function marchCellEvents(def, n, rng, V, compound) { // → {span, ev: [{u, v, k
 export function marchPattern(seed, o) {
   const beats = o.beats, qt = o.qt, ppq = o.ppq, bars = o.bars, e = Math.max(1, Math.min(5, Math.round(o.energy ?? 3)));
   const compound = qt < ppq && beats >= 6 && beats % 3 === 0;
-  const cellT = compound ? 3 * qt : qt, units = compound ? beats / 3 : beats, n = compound ? 6 : 4;
+  const half = !compound && qt < ppq; // x/8 simple meters: a cell is two eighths (no 32nd runs); an odd last eighth is a lone stroke
+  const cellT = compound ? 3 * qt : half ? 2 * qt : qt, units = compound ? beats / 3 : half ? Math.floor(beats / 2) : beats, n = compound ? 6 : 4;
+  const tail = half && beats % 2 === 1;
   const vocab = compound ? MARCH_COMPOUND : MARCH_SIMPLE, cad = compound ? MARCH_CADENCE.compound : MARCH_CADENCE.simple;
   const V = {A: 104 + 6 * (e - 3), x: 78 + 4 * (e - 3), g: 46 + 3 * (e - 3)};
   const grace = Math.max(1, Math.round(ppq / 16)), bt = beats * qt, salt = 0x3A8C17;
+  const dMain = Math.round(ppq * 0.1), dSoft = Math.round(ppq * 0.0625), dGrace = Math.round(ppq * 0.05), dKick = Math.round(ppq * 0.15); // lengths scale with ppq
   const pick = (rng, pool, left, first, noGrace) => {
     const ok = pool.filter(d => {
       const span = typeof d[0] === "string" ? d[0].length / n : d[0].span || 1;
@@ -631,9 +634,10 @@ export function marchPattern(seed, o) {
       const d = cad[Math.floor(endRng() * cad.length)];
       out.push({at: units - 1, c: marchCellEvents(d, n, endRng, V, compound)});
     }
+    if (tail) out.push({at: units, c: {span: 0.5, ev: [{u: 0, v: rng() < 0.5 ? V.A : V.x + Math.floor(rng() * 7), kind: "n"}]}});
     return out;
   };
-  const hits = [];
+  const hits = [], graces = [];
   for (let k = 0; k < bars; k++) {
     const role = [1, 2, 1, 1][k % 4], phrase = Math.floor(k / 4);
     const isLast = k === bars - 1, ending = k % 4 === 3 || isLast;
@@ -642,13 +646,15 @@ export function marchPattern(seed, o) {
     const bs = k * bt;
     for (const {at, c} of cells) for (const ev of c.ev) {
       const off = bs + at * cellT + Math.round(ev.u * cellT / 24);
-      if (ev.kind === "f") hits.push({off: off - grace, p: 38, v: Math.max(1, V.g - 6), d: 25});
-      if (ev.kind === "d") hits.push({off: off - 2 * grace, p: 38, v: Math.max(1, V.g - 6), d: 25}, {off: off - grace, p: 38, v: Math.max(1, V.g - 4), d: 25});
-      hits.push({off, p: 38, v: Math.max(1, Math.min(127, ev.v)), d: ev.kind === "n" && ev.v < V.g ? 30 : 45});
+      if (ev.kind === "f") graces.push({off: off - grace, p: 38, v: Math.max(1, V.g - 6), d: dGrace});
+      if (ev.kind === "d") graces.push({off: off - 2 * grace, p: 38, v: Math.max(1, V.g - 6), d: dGrace}, {off: off - grace, p: 38, v: Math.max(1, V.g - 4), d: dGrace});
+      hits.push({off, p: 38, v: Math.max(1, Math.min(127, ev.v)), d: ev.kind === "n" && ev.v < V.g ? dSoft : dMain});
     }
     if (o.bass) for (let b = 0; b < (compound ? 1 : Math.ceil(beats / 2)); b++)
-      hits.push({off: bs + (compound ? 0 : b * 2 * qt), p: 36, v: 84, d: 70});
+      hits.push({off: bs + (compound ? 0 : b * 2 * qt), p: 36, v: 84, d: dKick}); // alternate beats (1 and 3 in four)
   }
+  const snares = hits.filter(h => h.p === 38); // a grace that lands within `grace` ticks of another stroke is dropped, bar lines included
+  for (const g of graces) if (!snares.some(h => Math.abs(h.off - g.off) < grace) && !graces.some(o => o !== g && Math.abs(o.off - g.off) < grace) && g.off >= 0) hits.push(g);
   let lastI = -1; // the range closes on an accented stroke
   hits.forEach((h, i) => { if (h.p === 38 && (lastI < 0 || h.off >= hits[lastI].off)) lastI = i; });
   if (lastI >= 0) hits[lastI].v = Math.min(127, V.A + 8);

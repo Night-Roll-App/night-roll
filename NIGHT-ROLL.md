@@ -2823,6 +2823,18 @@ crash on the arrival downbeat. Velocity table keeps hats ≥25 under
 the bar's backbeat snare (cap 76). Take chips are session-ephemeral UI
 snapshots of (seed, energy, from, to) — the winning take IS the notes.
 
+### March style (2026-10-28)
+`drGenerate(seed, {style: "march", bass?})` swaps the groove for `marchPattern(seed,
+{beats, qt, ppq, bars, energy, bass})` (src/gen/drummer.js): PURE, snare-only
+(38; 36 only with `bass`, on alternate beats), `[{off, p, v, d}]` ticks from the range
+start, goldens in tests/fixtures/march-goldens.json (the native port matches them
+exactly; regenerate only on a deliberate vocabulary change). Cells are a beat (simple),
+two eighths (x/8 simple: no 32nd runs; an odd last eighth is a lone stroke) or a
+dotted-quarter pulse (compound), on a 24-unit grid. Bars cycle A B A cadence; the
+range's last stroke is accented; graces are dropped when within a grace (ppq/16) of another
+stroke. `busy` is the energy; hard/fills/feel/follow/parts are ignored (sheet dims them,
+Ask ignores them). Groove output is byte-identical (every march branch is gated).
+
 ## Perf HUD + session recorder (?perf=1)
 
 The iPad has no Activity Monitor and WebKit has no longtask

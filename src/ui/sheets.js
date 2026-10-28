@@ -518,7 +518,8 @@ export function drStyleSync() { // march: a snare-only line — fills, feel, fol
   const march = segGet("drstyle") === "march";
   for (const id of ["drfeel", "drhard", "drfollow", "drparts"]) { const el = document.getElementById(id); if (el) { el.style.opacity = march ? 0.35 : 1; el.style.pointerEvents = march ? "none" : ""; } }
   const fr = document.getElementById("drfillsrow");
-  if (march) { fr.style.opacity = 0.35; fr.style.pointerEvents = "none"; }
+  const fon = !march && (!document.querySelector("#drparts button") || drPartsGet().includes("fills")); // off in March, else back to the fills chip's say
+  fr.style.opacity = fon ? 1 : 0.35; fr.style.pointerEvents = fon ? "" : "none";
   document.getElementById("drmbass").style.display = march ? "" : "none";
 }
 export function drPartsGet() {
@@ -936,6 +937,7 @@ export function drRefresh() {
       drPartsSet(tk.parts ?? "all");
       segSet("drstyle", tk.style === "march" ? "march" : "groove");
       document.getElementById("drmbass").classList.toggle("active", !!tk.bass);
+      document.getElementById("drmbass").setAttribute("aria-pressed", String(!!tk.bass));
       segSet("drbusy", busy);
       segSet("drhard", hard);
       segSet("drfills", fillAmt);
@@ -1917,7 +1919,7 @@ export function initSheets5() {
       busy: parseInt(segGet("drbusy"), 10) || 3,
       hard: parseInt(segGet("drhard"), 10) || 3,
       fillAmt: (v => isNaN(v) ? 3 : v)(parseInt(segGet("drfills"), 10)),
-      parts: drPartsGet(),
+      parts: segGet("drstyle") === "march" ? "all" : drPartsGet(), // March is one snare line: the dimmed parts chips don't scope it
       follow: (v => v.startsWith("t") ? "bass" : v)(document.getElementById("drfollow").value),
       followTi: (v => v.startsWith("t") ? parseInt(v.slice(1), 10) : undefined)(document.getElementById("drfollow").value),
       feel: segGet("drfeel"),
