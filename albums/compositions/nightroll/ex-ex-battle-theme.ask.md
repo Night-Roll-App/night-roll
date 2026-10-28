@@ -135,3 +135,13 @@ QUESTION: Want me to delete the old bar 1 loop so only the bar 27 one is left?
 **Josh:** I have no idea what you're actually asking there should be one loop from 27.3 back to the beginning of our three. Right where the cursor is back to the beginning of three
 
 **AI (claude-code-sonnet):** Sorry, I asked that badly. I deleted the old loop at bar 1. Now there is only one, at bar 27 beat 3, and it jumps back to bar 3 beat 1. Play through the end of the song and tell me whether it loops at the cursor spot now.
+
+### 2026-10-27 18:24 · bars 1–27 (in view)
+
+**Josh:** I want to be able to practice loops or in particular I wanna listen to the loop transitions so when this song I wanna highlight bars 25 through 27 point. Three or whatever. But then also bars three through five so that I can hear the loop over and over and make sure that it sounds good we have no way to do that right now. But I think it's an interesting and useful feature to start working on. So you should let the worker know about this but I wanted to tell you because. You can see the bars
+
+**AI (claude-code-sonnet):** I can't pass this to the worker right now. The tools I'd use to write it into the terminal's queue and post a note to it are switched off in this chat. I haven't tried anything else, so the worker doesn't know yet.
+
+I understand the idea. You'd select two spans, bars 25 to 27 beat 3 and then bars 3 to 5, and have the player cycle through both back to back, so you hear the jump from the end of the song to the start on every pass. The worker would need that in your words, plus an Ask action so it works from here.
+
+If you paste this idea into the ⌨ Worker tab yourself, it will pick it up. Otherwise ask me again once my tools are back.
