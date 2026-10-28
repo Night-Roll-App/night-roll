@@ -423,6 +423,26 @@ test("Drummer: generate, reroll, take chips replay, one undo restores @smoke", a
   expect(await kit()).toEqual(take2);
 });
 
+test("Drummer March: snare-only cadence, reroll differs, Groove gives the fills row back", async ({ page }) => {
+  await page.evaluate(() => openDrummer());
+  await page.evaluate(() => { document.getElementById("drfrom").value = 1; document.getElementById("drto").value = 2; });
+  const kit = () => page.evaluate(() => {
+    const di = song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+    return di < 0 ? [] : song.tracks[di].notes.filter(n => !n.gone).map(n => ({ t: n.t, p: n.p, v: n.v }));
+  });
+  const fills = () => page.evaluate(() => document.getElementById("drfillsrow").style.pointerEvents);
+  await page.click('#drstyle button:has-text("March")');
+  expect(await fills()).toBe("none");
+  await page.click("#drgen");
+  const take1 = await kit();
+  expect(take1.length).toBeGreaterThan(4);
+  expect(take1.every(h => h.p === 38)).toBe(true);
+  await page.click("#drgen");
+  expect((await kit()).map(h => h.t + ":" + h.v).join()).not.toBe(take1.map(h => h.t + ":" + h.v).join());
+  await page.click('#drstyle button:has-text("Groove")');
+  expect(await fills()).not.toBe("none");
+});
+
 test("cycle highlight stretches by its edges, both directions", async ({ page }) => {
   const xy = tk => page.evaluate(t => {
     const r = canvas.getBoundingClientRect();
