@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-battle-theme.mid","at":"2026-10-13T16:47:38.845Z"}, "stamp": 1793139768816, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-battle-theme.mid","at":"2026-10-13T16:47:38.845Z"}, "stamp": 1793159471753, "notes": [
   {"at":[1,1],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"key","key":"C"},
   {"at":[1,1],"type":"lane","lane":35},
