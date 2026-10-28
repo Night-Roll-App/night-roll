@@ -75,15 +75,19 @@ export function dragSeamEdge(spans, idx, edge, tick, limits) {
   return spans.map((s, i) => {
     if (i !== idx) return s;
     if (edge === "a") return {a: Math.max(0, Math.min(tick, s.b - min)), b: s.b};
-    return {a: s.a, b: Math.min(end, Math.max(tick, s.a + min))};
+    const b = Math.min(end, Math.max(tick, min)); // b > a always: a is pushed down, never b past it
+    return {a: Math.max(0, Math.min(s.a, b - min)), b};
   });
 }
-// the grabbable edge nearest `x` within `slop` px: {i, edge} or null; xOf maps tick -> screen x
-export function seamEdgeAt(spans, x, xOf, slop) {
-  let best = null, bd = slop;
+// the grabbable edges within `slop` px of `x`, nearest group first (edges within
+// 1 px of the nearest tie); xOf maps tick -> screen x; edges outside [xmin, xmax] are not there
+export function seamEdgesNear(spans, x, xOf, slop, xmin = -Infinity, xmax = Infinity) {
+  const c = [];
   spans.forEach((s, i) => { for (const edge of ["a", "b"]) {
-    const d = Math.abs(x - xOf(s[edge]));
-    if (d < bd || (d === bd && best && edge === "a")) { bd = d; best = {i, edge}; }
+    const ex = xOf(s[edge]), d = Math.abs(x - ex);
+    if (d < slop && ex >= xmin && ex <= xmax) c.push({i, edge, d});
   } });
-  return best;
+  c.sort((p, q) => p.d - q.d);
+  return c.filter(e => e.d - c[0].d <= 1).map(({i, edge}) => ({i, edge}));
 }
+export function seamEdgeAt(spans, x, xOf, slop, xmin, xmax) { return seamEdgesNear(spans, x, xOf, slop, xmin, xmax)[0] || null; }

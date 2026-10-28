@@ -115,6 +115,7 @@ export const ASK_ACTIONS = [
      if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
      const bt = barTicks(), qt = beatTicks();
      let spans;
+     if (askActGiven(a.spans) && askActGiven(a.bars)) throw new Error("bars only applies to the loop's seam — with named spans, put the length in the spans");
      if (askActGiven(a.spans)) {
        if (!Array.isArray(a.spans) || !a.spans.length) throw new Error("spans must be a list of {from, to}, e.g. [{\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}]");
        spans = a.spans.map((s, i) => {
@@ -125,8 +126,8 @@ export const ASK_ACTIONS = [
          return {a: x, b: Math.min(y, S.songEndTick)};
        });
      } else {
-       const nb = askActGiven(a.bars) ? Number(a.bars) : undefined;
-       if (nb !== undefined && !(nb >= 0.25 && nb <= 64)) throw new Error("bars is how many bars each side of the jump, e.g. 3");
+       const nb = askActGiven(a.bars) ? a.bars : undefined;
+       if (nb !== undefined && !(typeof nb === "number" && nb >= 0.25 && nb <= 64)) throw new Error("bars is how many bars each side of the jump, e.g. 3");
        spans = loopSeamSpans(nb);
        if (!spans) throw new Error("this song has no loop: point to take the seam of — name the spans instead");
      }

@@ -16457,7 +16457,7 @@ test("dragSeamEdge / seamEdgeAt: stretch either edge, 16th floor, song limits, o
   const sp = `[{a: 1920, b: 3840}, {a: 7680, b: 9600}]`, lim = `{min: 120, end: 11520}`;
   assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "b", 5760, ${lim})`), [{a: 1920, b: 5760}, {a: 7680, b: 9600}], "right edge out: three bars");
   assert.deepEqual(val(`dragSeamEdge(${sp}, 1, "a", 5760, ${lim})`), [{a: 1920, b: 3840}, {a: 5760, b: 9600}], "left edge out of the second span");
-  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "b", 1920, ${lim})`)[0], {a: 1920, b: 2040}, "never shorter than a 16th");
+  assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "b", 1920, ${lim})`)[0], {a: 1800, b: 1920}, "never shorter than a 16th; b never reaches a (a is pushed down)");
   assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "a", 99999, ${lim})`)[0], {a: 3720, b: 3840});
   assert.deepEqual(val(`dragSeamEdge(${sp}, 0, "a", -500, ${lim})`)[0], {a: 0, b: 3840}, "not before 0");
   assert.deepEqual(val(`dragSeamEdge(${sp}, 1, "b", 99999, ${lim})`)[1], {a: 7680, b: 11520}, "not past the song's end");

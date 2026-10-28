@@ -78,7 +78,9 @@ export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), ret
 // bars before the jump point, B the bars after the return target (seam.js)
 export function loopSeamSpans(bars) {
   const dir = S.song && S.rollnotes.find(n => n.loopTo !== undefined);
-  return dir ? seamAroundLoop(dir.loopTo, dir.start, barTicks(), S.songEndTick, bars) : null;
+  const sp = dir ? seamAroundLoop(dir.loopTo, dir.start, barTicks(), S.songEndTick, bars) : null;
+  const q = Math.max(1, Math.round(S.song.ppq / 4)), r = t => Math.round(t / q) * q; // fractional bars land on a 16th
+  return sp && sp.map(s => ({a: r(s.a), b: Math.min(S.songEndTick, r(s.b))}));
 }
 export function audioStopSrcs() {
   for (const s of S.audioSrcs) { try { s.stop(); } catch (err) { /* already done */ } }
@@ -287,8 +289,14 @@ export async function play(fromSec = 0, opts = {}) {
   }
   if (seamSeg) { // A then B then A…, strict windows like a cycle (the album waits). A restart (speed, mixer, an edit) resumes inside the span it falls in; ⟲ itself (opts.seamTop) and a position outside every span start at A's top
     S.loopSeg = seamSeg; cycling = true;
-    const sp = seamSeg.spans, at = opts.seamTop ? -1 : sp.findIndex(s => fromSec >= s.start && fromSec < s.end), i = Math.max(0, at);
-    const pos = at >= 0 ? fromSec : sp[0].start;
+    const sp = seamSeg.spans;
+    let at = opts.seamTop ? -1 : sp.findIndex(s => fromSec >= s.start && fromSec < s.end), pos = fromSec;
+    if (opts.seamIdx !== undefined && sp.length) { // a dragged edge: stay in the span that sounded (spans may overlap); if the playhead fell out of it, go to the NEXT span's top
+      const k = Math.min(opts.seamIdx, sp.length - 1);
+      if (fromSec >= sp[k].start && fromSec < sp[k].end) at = k; else { at = (k + 1) % sp.length; pos = sp[at].start; }
+    }
+    const i = Math.max(0, at);
+    if (at < 0) pos = sp[0].start;
     S.playT0 -= seamPassStart(sp, i) + (pos - sp[i].start); // the clock reads as if pass i began that long ago
     S.loopPass = i;
     S.playOffset = fromSec = pos;
@@ -432,7 +440,7 @@ export async function play(fromSec = 0, opts = {}) {
     if (!S.playing) return;
     const x = secToTick(S.song, playSec()) * pxPerTick();
     const W = wrap.clientWidth - S.RULER_W;
-    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.stripCursor);
+    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.stripCursor || S.drag.seamEdge);
     if (S.followFree) {
       // user scrolled away: hands off until the playhead enters their view
       if (x >= S.view.x && x <= S.view.x + W) S.followFree = false;
@@ -542,9 +550,14 @@ export function seamStart(spans, kind) {
 // is in (play() finds it), so the new length is heard without a restart from the top
 export function seamRestart() {
   if (!S.seam || !S.playing) return;
-  const from = playSec();
+  const from = playSec(), ls = S.loopSeg;
+  const seamIdx = ls && ls.spans ? seamAt(ls.spans, S.audio.currentTime - S.playT0).idx : undefined;
   stop();
-  play(from, {noCountIn: true}).catch(() => {});
+  play(from, {noCountIn: true, seamIdx}).catch(() => {});
+}
+// a seam-edge drag ended (release, cancel, pinch takeover): restart only if the spans really changed
+export function seamDragEnd(drag) {
+  if (drag && drag.seamEdge && drag.moved && JSON.stringify(S.seam && S.seam.spans) !== drag.seamEdge.pre) seamRestart();
 }
 export function seamLeave(alsoStop) {
   if (!S.seam && !S.seamPending) return;
