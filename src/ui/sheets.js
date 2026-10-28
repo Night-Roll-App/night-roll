@@ -1,4 +1,5 @@
 import { jobControls } from "../model/jobs.js";
+import { addSongNote } from "../model/edits.js";
 import { S, prof } from "../state.js";
 import { JOB_KINDS } from "../model/jobs.js";
 import { jobBarSet } from "../model/jobs.js";
@@ -1854,8 +1855,7 @@ export function initSheets5() {
           if (t >= endTick) continue;
           const p = DP_PIECES[pi][1];
           if (tr.notes.some(n => !n.gone && n.t === t && n.p === p)) continue; // don't stack over an existing hit
-          tr.notes.push({t, d: Math.max(30, Math.round(step / 2)), p, v: S.pencilVel, added: isAdd});
-          if (S.song.rawNotes) S.song.rawNotes[di].push({t: t + S.chopS, d: Math.max(30, Math.round(step / 2)), p, v: S.pencilVel, added: isAdd});
+          addSongNote(di, {t, d: Math.max(30, Math.round(step / 2)), p, v: S.pencilVel, added: isAdd});
           added.push({ti: di, ni: tr.notes.length - 1});
         }
       }

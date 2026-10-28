@@ -1,4 +1,5 @@
 import { canvas } from "../render/roll.js";
+import { addSongNote } from "../model/edits.js";
 import { softFocus } from "../ui/chrome.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { tombstone } from "../model/edits.js";
@@ -254,8 +255,7 @@ export function scorePencil(pos) {
   const tr = S.song.tracks[st.ti];
   if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(st.ti, pitch, t); return; } // no twins
   const added = !isComposition();
-  tr.notes.push({t, d: snap, p: pitch, v: S.pencilVel, added});
-  if (S.song.rawNotes) S.song.rawNotes[st.ti].push({t: t + S.chopS, d: snap, p: pitch, v: S.pencilVel, added});
+  addSongNote(st.ti, {t, d: snap, p: pitch, v: S.pencilVel, added});
   pushUndo({kind: "add", ti: st.ti, ni: tr.notes.length - 1});
   saveEdits();
   previewNote(st.ti, pitch, t);
@@ -614,8 +614,7 @@ export function placePencilNote(pp) { // deferred pencil: called by the dwell ti
   const dup = tr.notes.findIndex(n => !n.gone && n.t === pp.t && n.p === pp.pitch);
   if (dup >= 0) { previewNote(S.selTrack, pp.pitch, pp.t); return {ti: S.selTrack, ni: dup, t: pp.t, snap: pp.snap, existing: true}; }
   const added = !isComposition();
-  tr.notes.push({t: pp.t, d: pp.snap, p: pp.pitch, v: S.pencilVel, added});
-  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: pp.t + S.chopS, d: pp.snap, p: pp.pitch, v: S.pencilVel, added});
+  addSongNote(S.selTrack, {t: pp.t, d: pp.snap, p: pp.pitch, v: S.pencilVel, added});
   pushUndo({kind: "add", ti: S.selTrack, ni: tr.notes.length - 1});
   previewNote(S.selTrack, pp.pitch, pp.t);
   draw();
@@ -698,10 +697,6 @@ export function endPointer(e) {
   }
   if (S.drag.pencil) { // tap or stretch — either way the note exists; persist once
     const pn = S.drag.pencil;
-    if (S.song.rawNotes && !pn.existing) { // late mirror: rawNotes index for undo/chop bookkeeping
-      const rn = S.song.rawNotes[pn.ti][S.song.rawNotes[pn.ti].length - 1];
-      if (rn) S.song.tracks[pn.ti].notes[pn.ni].ri = S.song.rawNotes[pn.ti].length - 1;
-    }
     saveEdits();
     computeSongEnd();
     setInfo(noteLabel(pn.ti, pn.ni));
@@ -961,8 +956,7 @@ export function tap(pos) {
     if (tr.kind === "audio") { setInfo("that track is a recording — pick a MIDI track to pencil on"); return; }
     if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(S.selTrack, pitch, t); return; } // no twins
     const added = !isComposition(); // in a composition the note IS the song, not an overlay
-    tr.notes.push({t, d: snap, p: pitch, v: S.pencilVel, added});
-    if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: t + S.chopS, d: snap, p: pitch, v: S.pencilVel, added});
+    addSongNote(S.selTrack, {t, d: snap, p: pitch, v: S.pencilVel, added});
     pushUndo({kind: "add", ti: S.selTrack, ni: tr.notes.length - 1});
     saveEdits();
     previewNote(S.selTrack, pitch, t);
@@ -1052,8 +1046,9 @@ export function initGestures1() {
       // (a second finger means "pan/zoom", even with pencil or select armed)
       if (S.drag.pencil && !S.drag.pencil.existing) { // remove the just-penciled note and its undo entry
         const pn = S.drag.pencil;
-        S.song.tracks[pn.ti].notes.splice(pn.ni, 1);
-        if (S.song.rawNotes) S.song.rawNotes[pn.ti].pop();
+        const [undone] = S.song.tracks[pn.ti].notes.splice(pn.ni, 1);
+        const raw = S.song.rawNotes && S.song.rawNotes[pn.ti];
+        if (raw && undone && undone.ri === raw.length - 1) raw.pop(); else if (raw && undone && raw[undone.ri]) raw[undone.ri].gone = true; // its addSongNote twin
         const u = S.editUndo[S.editUndo.length - 1];
         if (u && u.kind === "add" && u.ti === pn.ti && u.ni === pn.ni) S.editUndo.pop();
       }

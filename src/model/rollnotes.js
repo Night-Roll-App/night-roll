@@ -25,6 +25,7 @@ export function applyChop(cStart, cEnd) { // docs/split-plan.md §4 step 1 devia
   if (!S.song || !S.song.rawNotes) return false;
   const sig = cStart + ":" + (cEnd === null ? "" : cEnd);
   if (S.appliedChop === sig) return false;
+  syncRawNotes(); // the old view's edits go back first, or the new carve drops them
   S.appliedChop = sig; S.chopS = cStart; S.chopE = cEnd;
   S.song.tracks.forEach((tr, ti) => {
     let notes = S.song.rawNotes[ti].map((n, ri) => ({...n, ri})); // ri: raw index, keeps edit ids stable
@@ -39,6 +40,47 @@ export function applyChop(cStart, cEnd) { // docs/split-plan.md §4 step 1 devia
     tr.notes = notes;
   });
   return true;
+}
+// rawNotes is the chop's source; a re-carve (applyChop) and Save As
+// (forkCurrentSong) read it, so first it takes back every edit made to the
+// view since the last carve — not every edit site mirrors through ri
+// (velocity lane, shapes, …), and a note pushed without addSongNote has no
+// ri at all. Linked notes overwrite their twin (t/d only when they differ
+// from what the carve made of it, so an untouched note straddling a cut
+// isn't clipped for good); unlinked ones join raw; a raw note inside the
+// window that no view note claims was spliced out of the view: gone.
+export function syncRawNotes() {
+  if (!S.song || !S.song.rawNotes || S.appliedChop === null) return; // not carved yet: setSong's rawNotes is the view, unlinked
+  const cs = S.chopS || 0, ce = S.chopE === undefined ? null : S.chopE;
+  S.song.tracks.forEach((tr, ti) => {
+    if (!S.song.rawNotes[ti]) { // a track with no raw list: its view is all there is
+      S.song.rawNotes[ti] = tr.notes.map((n, ri) => { n.ri = ri; return rawTwin(n, n.t + cs, n.d); });
+      return;
+    }
+    const raw = S.song.rawNotes[ti], claimed = new Set();
+    for (const n of tr.notes) {
+      const r = n.ri !== undefined && !claimed.has(n.ri) ? raw[n.ri] : null; // a {...n} clone shares its source's ri: the first one keeps it
+      if (!r) { n.ri = raw.push(rawTwin(n, n.t + cs, n.d)) - 1; claimed.add(n.ri); continue; }
+      claimed.add(n.ri);
+      let t = r.t, d = r.d; // what applyChop made of r
+      if (t < cs) { d -= cs - t; t = cs; }
+      t -= cs;
+      if (ce !== null && t + d > ce - cs) d = ce - cs - t;
+      const same = n.t === t && n.d === d;
+      const twin = rawTwin(n, same ? r.t : n.t + cs, same ? r.d : n.d);
+      for (const k of Object.keys(r)) delete r[k];
+      Object.assign(r, twin);
+    }
+    raw.forEach((r, ri) => { if (!claimed.has(ri) && !r.gone && r.t + r.d > cs && (ce === null || r.t < ce)) r.gone = true; });
+  });
+}
+export function rawTwin(n, t, d) { // a view note as rawNotes keeps it: raw ticks, the file's GM key, no link, its own shape arrays
+  const r = {...n, t, d};
+  delete r.ri;
+  if (n.pKit !== undefined) { r.p = n.pKit; delete r.pKit; }
+  if (n.env) r.env = n.env.map(q => ({...q}));
+  if (n.duties) r.duties = n.duties.map(q => ({...q}));
+  return r;
 }
 export function notesBase() { return S.songKey ? S.songKey.replace(/\.midi?$/i, "") : null; }
 // path minus extension

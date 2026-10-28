@@ -1,4 +1,5 @@
 import { moveSnapTicks } from "../model/grid.js";
+import { addSongNote } from "../model/edits.js";
 import { S } from "../state.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
@@ -81,8 +82,7 @@ export function recTakeNote(tick, end, p, vel) {
   const d = Math.max(recMinD(), end - tick);
   const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
   const vv = vel !== undefined ? vel : S.pencilVel;
-  tr.notes.push({t: tick, d, p, v: vv, added: isAdd});
-  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: tick + S.chopS, d, p, v: vv, added: isAdd});
+  addSongNote(S.selTrack, {t: tick, d, p, v: vv, added: isAdd});
   S.recTake.push({ti: S.selTrack, ni: tr.notes.length - 1});
 }
 // commit S.recTake as ONE undo step (+ save); `verb` names it in the status line

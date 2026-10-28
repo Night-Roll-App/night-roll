@@ -14204,28 +14204,77 @@ test("Publish on an Untitled song names it first (saveSongAs), then publishes it
   assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
 });
 
-test("Save As copies the song as it is on screen — pasted notes he then moved or deleted don't revert or come back (Josh, Death March, 2026-10-28)", async () => {
-  // forkCurrentSong copied S.song.rawNotes, the chop snapshot: a pasted note
-  // (also Drummer/Bassist/record/AI adds) never gets an ri link to it, so a
-  // later nudge or delete of that note never reached the snapshot — the copy
-  // got the pre-edit pitch back and the deleted note back, stacked with what
-  // replaced it
+// Save As builds its copy from rawNotes (the chop's source). Each add site
+// must link its note there (addSongNote → ri) or the note's later edits
+// never reach it; syncRawNotes catches what a site still misses.
+async function forkKeepsScreen(setup, label, linked = true) {
   const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
-  run(`createComposition(100, 4, 4); selTrack = 2;
-       noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}, {ti: 2, dt: 120, d: 120, p: 47, v: 80}];
-       pasteClipboard(1920);
-       multiSel = [{ti: 2, ni: 0}]; multiSelKey = new Set(["2:0"]); selNote = null; nudgeSelection(0, -1);
-       multiSel = [{ti: 2, ni: 1}]; multiSelKey = new Set(["2:1"]); deleteSelection();`);
-  const onScreen = val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`);
-  assert.deepEqual(onScreen, [[1920, 46]], "setup: one note left, moved down to A#");
+  run(`createComposition(100, 4, 4); selTrack = 2; editUndo = []; editRedo = [];`);
+  run(setup);
+  const screen = `song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]).sort((a, b) => a[0] - b[0] || a[2] - b[2]))`;
+  const before = val(screen);
+  if (linked) assert.deepEqual(val(screen.replace("song.tracks.map(tr => tr.notes", "song.rawNotes.map(tr => tr")), before, label + ": rawNotes already holds every edit, before any sync");
   run(`forkCurrentSong("QA Fork Song", "compositions/nightroll")`);
   assert.equal(val(`songKey`), "albums/compositions/nightroll/qa-fork-song.mid");
-  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), onScreen, "the copy is what he saw");
-  // and so is what a reopen loads (he opened another song, then came back)
+  assert.deepEqual(val(screen), before, label + ": the copy is what he saw");
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "x", notes: []}]}; songKey = "albums/qa-other/x.mid";
        globalThis.__done = 0; loadSong("albums/compositions/nightroll/qa-fork-song.mid").then(() => __done = 1);`);
   for (let i = 0; i < 100 && !val(`__done`); i++) await new Promise(r => setTimeout(r, 10));
-  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), onScreen, "reopened copy");
+  assert.deepEqual(val(screen), before, label + ": and what a reopen loads");
+  return {before, val, run};
+}
+// select the live notes of track ti matching pred, then run an edit on them
+const pick = (ti, pred) => `multiSel = []; song.tracks[${ti}].notes.forEach((n, ni) => { if (!n.gone && (${pred})(n)) multiSel.push({ti: ${ti}, ni}); });
+  multiSelKey = new Set(multiSel.map(m => m.ti + ":" + m.ni)); selNote = null;`;
+
+test("Save As copies the song as it is on screen — pasted notes he then moved or deleted don't revert or come back (Josh, Death March, 2026-10-28)", async () => {
+  const {before} = await forkKeepsScreen(`noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}, {ti: 2, dt: 120, d: 120, p: 47, v: 80}];
+    pasteClipboard(1920);
+    ${pick(2, "n => n.t === 1920")} nudgeSelection(0, -1);
+    ${pick(2, "n => n.t === 2040")} deleteSelection();`, "paste");
+  assert.deepEqual(before[2], [[1920, 120, 46, 80]], "setup: one note left, moved down to A#");
+});
+
+test("Save As keeps edits to Drummer, Bassist, recorded and Ask-copied notes (every add site links rawNotes)", async () => {
+  { const {before} = await forkKeepsScreen(`drGenerate(555, 3, 1, 2);
+      const di = song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+      ${pick("song.tracks.length - 1", "n => n.t < 1920")} deleteSelection();
+      ${pick("song.tracks.length - 1", "n => n.t >= 1920 && n.t < 2400")} nudgeSelection(120, 0);`, "Drummer");
+    assert.ok(before[before.length - 1].length > 0 && before[before.length - 1].every(n => n[0] >= 1920), "setup: bar 1's hits deleted, bar 2's kept"); }
+  await forkKeepsScreen(`applyTake(2, 0, 3840, [{t: 0, d: 480, p: 40, v: 90}, {t: 480, d: 480, p: 43, v: 90}, {t: 960, d: 480, p: 45, v: 90}]);
+    ${pick(2, "n => n.t === 0")} deleteSelection();
+    ${pick(2, "n => n.t === 480")} nudgeSelection(0, 2);`, "Bassist");
+  await forkKeepsScreen(`recTake = []; recTakeNote(0, 240, 60, 100); recTakeNote(480, 720, 62, 100); recTakeNote(960, 1200, 64, 100);
+    ${pick(2, "n => n.p === 60")} deleteSelection();
+    ${pick(2, "n => n.p === 62")} nudgeSelection(0, -1);`, "record");
+  await forkKeepsScreen(`addSongNote(2, {t: 0, d: 480, p: 50, v: 80}); /* a bar 1 to copy */
+    askCopyBars({from_bar: 1, to_bar: 1, at_bar: 2});
+    ${pick(2, "n => n.t === 1920")} nudgeSelection(0, 3);`, "Ask copy_bars");
+});
+
+test("syncRawNotes: an edit no site mirrored (velocity lane, a bare push) still reaches Save As; a chop re-carve keeps it", async () => {
+  await forkKeepsScreen(`noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}]; pasteClipboard(0);
+    song.tracks[2].notes[0].v = 33; /* the velocity lane writes n.v only */
+    song.tracks[1].notes.push({t: 960, d: 240, p: 70, v: 80}); /* a future add site that forgot addSongNote */`, "unmirrored", false);
+  // chop: start at bar 2 — the view is bars 2+, rawNotes the whole song
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(100, 4, 4); selTrack = 2;
+       noteClipboard = [{ti: 2, dt: 0, d: 240, p: 50, v: 80}, {ti: 2, dt: 1920, d: 240, p: 52, v: 80}, {ti: 2, dt: 3840, d: 240, p: 53, v: 80}];
+       pasteClipboard(0);
+       rollnotes.push(resolveNote({b1: 2, q1: 1, b2: null, q2: null, text: "chop: start", added: true})); finalizeNotes();`);
+  assert.equal(val(`chopS`), 1920);
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), [[0, 52], [1920, 53]], "setup: the view starts at bar 2");
+  run(`${pick(2, "n => n.p === 52")} nudgeSelection(0, -2); ${pick(2, "n => n.p === 53")} deleteSelection();
+       song.tracks[2].notes.find(n => n.p === 50 && !n.gone).v = 99;`);
+  const raw = `song.rawNotes[2].filter(n => !n.gone).map(n => [n.t, n.p, n.v]).sort((a, b) => a[0] - b[0])`;
+  // a re-carve (the chop moves back to bar 1) sees every edit made under the old one
+  run(`rollnotes = rollnotes.filter(n => !/^chop:/.test(n.text)); finalizeNotes();`);
+  assert.equal(val(`chopS`), 0);
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v]).sort((a, b) => a[0] - b[0])`),
+    [[0, 50, 80], [1920, 50, 99]], "un-chopped: bar 1 kept, the moved note moved (and its lane-only velocity), the deleted one gone");
+  run(`rollnotes.push(resolveNote({b1: 2, q1: 1, b2: null, q2: null, text: "chop: start", added: true})); finalizeNotes();
+       forkCurrentSong("QA Chop Fork", "compositions/nightroll")`);
+  assert.deepEqual(val(raw), [[0, 50, 80], [1920, 50, 99]], "Save As under a chop copies the whole song, edits included");
 });
 
 test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it) keeps the playhead when inside (Josh, 2026-10-03)", async () => {

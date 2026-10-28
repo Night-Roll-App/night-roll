@@ -1,4 +1,5 @@
 import { play } from "../audio/transport.js";
+import { addSongNote } from "../model/edits.js";
 import { playSec } from "../audio/transport.js";
 import { setHearMidi, chip } from "../audio/chip.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
@@ -701,8 +702,7 @@ export function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate
   const added = [];
   for (const h of snapshot) {
     const tr = S.song.tracks[h.ti], isAdd = !isComposition(), t = T + h.t;
-    tr.notes.push({t, d: h.d, p: h.p, v: h.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[h.ti].push({t: t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
+    addSongNote(h.ti, {t, d: h.d, p: h.p, v: h.v, added: isAdd});
     added.push({ti: h.ti, ni: tr.notes.length - 1});
   }
   pushUndo({kind: "group", entries: [{kind: "mod", items: modItems}, {kind: "anno", json: annoBefore}, {kind: "addBatch", items: added}]});

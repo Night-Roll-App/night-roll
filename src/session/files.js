@@ -68,6 +68,7 @@ import { updateManifest } from "../sync/publish.js";
 import { manifestPlace } from "../sync/publish.js";
 import { initCatalog } from "../model/catalog.js";
 import { ctlCopy } from "../midi/parse.js";
+import { syncRawNotes } from "../model/rollnotes.js";
 
 // roots the user cannot save into
 export function folderChoices() { // the folders a Save can go to: this device's plus the repo's, own folders only, last used first
@@ -189,6 +190,7 @@ export function saveVersion(quiet) { // File → Save Version / ⌘S
 export function forkCurrentSong(name, folder) { // Save As: a copy in the folder you chose (the last used one by default)
   const key = "albums/" + (folder || localStorage.getItem("ff1roll-lastfolder") || NR_DIR.slice(7, -1)) + "/" + slugify(name) + ".mid";
   if (folder) localStorage.setItem("ff1roll-lastfolder", folder);
+  syncRawNotes(); // rawNotes takes every on-screen edit first: copying it stale undid moves and deletes (Death March, 2026-10-28)
   const notesText = serializeRollnotes(); // inherit — ruled 2026-08-14 (notes only; the copy's own origin is set below, never the source's)
   const origin = S.songKey || "local file";
   const parsed = {ppq: S.song.ppq, timesig: S.song.timesig || effTs(),
@@ -201,10 +203,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
       ...ctlCopy(tr), // nor its bends, volumes, sustain, reverb sends
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
-      // tr.notes is the truth unless a chop: is cutting a view out of rawNotes —
-      // rawNotes misses every edit to a note added without an ri link (paste,
-      // Drummer, record, AI), so copying it un-did those (Death March, 2026-10-28)
-      notes: (S.song.rawNotes && (S.chopS || S.chopE !== null) ? S.song.rawNotes[ti] : tr.notes)
+      notes: (S.song.rawNotes ? S.song.rawNotes[ti] : tr.notes) // raw: chop stays a view — synced from the view first (syncRawNotes above)
         .filter(n => !n.gone).map(n => {
           const o = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums": the file's GM key, not the captured one shown in memory
           if (n.ch !== undefined) o.ch = n.ch;

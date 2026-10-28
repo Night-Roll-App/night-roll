@@ -1,5 +1,6 @@
 import { S } from "../state.js";
 import { noteToJSON } from "./rollnotes.js";
+import { rawTwin } from "./rollnotes.js";
 import { prof } from "../state.js";
 import { notesStoreKey } from "./rollnotes.js";
 import { updateSyncBtn } from "../hooks.js";
@@ -49,6 +50,18 @@ export function addTrackUndoable(track) { // push a track and return its index; 
   if (S.song.rawNotes) S.song.rawNotes.push([]);
   S.trackState.push({muted: false, solo: false});
   return S.song.tracks.length - 1;
+}
+
+// Every new note on the roll goes through here: it joins rawNotes too (the
+// chop's source, which Save As copies) with its ri link, so later edits to it
+// mirror there. Pushed onto tr.notes alone, a pasted/Drummer/AI note's later
+// moves and deletes never reached rawNotes, and Save As undid them (Death
+// March, 2026-10-28). syncRawNotes (model/rollnotes.js) is the safety net.
+export function addSongNote(ti, n) {
+  S.song.tracks[ti].notes.push(n);
+  const raw = S.song.rawNotes && S.song.rawNotes[ti];
+  if (raw) n.ri = raw.push(rawTwin(n, n.t + S.chopS, n.d)) - 1;
+  return n;
 }
 
 export function annoSnapshot() { // full annotation-layer state, INCLUDING added flags

@@ -1,4 +1,5 @@
 import { parseChordSym } from "../theory/chords.js";
+import { addSongNote } from "../model/edits.js";
 import { LETTER_PC } from "../theory/chords.js";
 import { CHORD_TEMPLATES } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
@@ -331,8 +332,7 @@ export function applyTake(targetTi, t0, t1, hits) {
   for (const h of hits) {
     if (h.d <= 0) continue;
     const v = Math.max(1, Math.min(127, Math.round(h.v))), d = Math.max(20, Math.round(h.d)), t = Math.round(h.t);
-    tr.notes.push({t, d, p: h.p, v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[targetTi].push({t: t + S.chopS, d, p: h.p, v, added: isAdd});
+    addSongNote(targetTi, {t, d, p: h.p, v, added: isAdd});
     added.push({ti: targetTi, ni: tr.notes.length - 1});
   }
   pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
