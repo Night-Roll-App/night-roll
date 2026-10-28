@@ -14204,6 +14204,30 @@ test("Publish on an Untitled song names it first (saveSongAs), then publishes it
   assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
 });
 
+test("Save As copies the song as it is on screen — pasted notes he then moved or deleted don't revert or come back (Josh, Death March, 2026-10-28)", async () => {
+  // forkCurrentSong copied S.song.rawNotes, the chop snapshot: a pasted note
+  // (also Drummer/Bassist/record/AI adds) never gets an ri link to it, so a
+  // later nudge or delete of that note never reached the snapshot — the copy
+  // got the pre-edit pitch back and the deleted note back, stacked with what
+  // replaced it
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(100, 4, 4); selTrack = 2;
+       noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}, {ti: 2, dt: 120, d: 120, p: 47, v: 80}];
+       pasteClipboard(1920);
+       multiSel = [{ti: 2, ni: 0}]; multiSelKey = new Set(["2:0"]); selNote = null; nudgeSelection(0, -1);
+       multiSel = [{ti: 2, ni: 1}]; multiSelKey = new Set(["2:1"]); deleteSelection();`);
+  const onScreen = val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`);
+  assert.deepEqual(onScreen, [[1920, 46]], "setup: one note left, moved down to A#");
+  run(`forkCurrentSong("QA Fork Song", "compositions/nightroll")`);
+  assert.equal(val(`songKey`), "albums/compositions/nightroll/qa-fork-song.mid");
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), onScreen, "the copy is what he saw");
+  // and so is what a reopen loads (he opened another song, then came back)
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "x", notes: []}]}; songKey = "albums/qa-other/x.mid";
+       globalThis.__done = 0; loadSong("albums/compositions/nightroll/qa-fork-song.mid").then(() => __done = 1);`);
+  for (let i = 0; i < 100 && !val(`__done`); i++) await new Promise(r => setTimeout(r, 10));
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), onScreen, "reopened copy");
+});
+
 test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it) keeps the playhead when inside (Josh, 2026-10-03)", async () => {
   const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
