@@ -343,7 +343,7 @@ and fails if the menu ever grows past half the twelve-tool menu.
 | `keep_that` | track? | edits — **done batch 7** |
 | `coach_comments` | op? (read\|import), text? | answered, on request only — Q30-36 (2026-10-14); her comments are not in the context block |
 | `bassist` | from_bar, to_bar \| section, track?, style?, busy?, octave?, follow?, seed? | edits — **done batch 4** |
-| `drummer` | from_bar, to_bar \| section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed? | edits — done (batch 0, folded into `act` batch 1) |
+| `drummer` | from_bar, to_bar \| section, energy?, busy?, hard?, fills?, feel?, parts?, follow?, seed?, style? (groove\|march), bass_drum? | edits — done (batch 0, folded into `act` batch 1); `style: "march"` (2026-10-28) = the military snare cadence, same action not a new tool |
 | `song_file` | new\|save_version\|versions\|save_as\|rename\|share_link, title?, label?, folder? | answered — **done batch 8** (`song: false`; its own sub-action arg is also named `action` — a model sends it under `args` to avoid colliding with the item's own, as `album`'s does) |
 | `check` | chord\|key_vs_file\|meter_vs_file, bar?, beat? | answered, on request only |
 | `song_facts` | form\|melody\|rhythm\|bass\|voices, from_bar?, to_bar? | answered, on request only |

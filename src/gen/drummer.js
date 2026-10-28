@@ -224,11 +224,13 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   // busy = hard = energy, and hard 3 / follow bass / feel normal is BIT-
   // IDENTICAL to v1 for the same seed (hard consumes zero rng draws).
   let busy, hard, follow, feel, parts;
+  let march = false, marchBass = false; // style "march": a snare-only cadence (marchPattern) instead of the groove
   if (typeof energyOrOpts === "object" && energyOrOpts !== null) {
     const o = energyOrOpts;
     busy = o.busy ?? 3; hard = o.hard ?? busy;
     follow = o.follow ?? "bass"; feel = o.feel ?? "normal";
     parts = o.parts ?? "all";
+    march = o.style === "march"; marchBass = !!o.bass;
     if (o.followTi !== undefined) follow = "bass"; // an explicit track uses the bass-follow engine
     if (Array.isArray(o.followTis) && o.followTis.length) follow = "bass"; // so does a chosen SET of tracks (Ask's drummer tool)
     fillAmt = o.fillAmt ?? 3;
@@ -249,9 +251,10 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   const grooveGroups = partsArr.filter(g => g !== "fills");
   const scopePcs = isAllParts ? null
     : new Set(grooveGroups.flatMap(g => PIECE_GROUPS[g]));
+  if (march) fillAmt = 0; // no fills, crashes or phrase marks: the cadence owns its own endings
   if (!fillsOn) fillAmt = 0;
   if (!isAllParts && !partsArr.length) { setInfo("pick at least one part"); return 0; }
-  const HARD_DELTA = 7 * (hard - 3);
+  const HARD_DELTA = march ? 0 : 7 * (hard - 3); // march: energy alone sets the dynamics
   const energy = busy; // density reads below
   if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return 0; }
   const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
@@ -377,12 +380,17 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   };
   // a boundary AT the range start: this generation owns the arrival — crash it
   // (section-at-a-time workflow: the intro pass plays the fill, this pass lands)
-  if (boundaries.has(fromBar) && !isBreak(fromBar)) {
+  if (!march && boundaries.has(fromBar) && !isBreak(fromBar)) {
     const arng = drumRng(seed, fromBar * 7919 + 47);
     put((fromBar - 1) * bt, 49, 100 + arng() * 12, 120);
   }
+  if (march) { // one pure pattern for the whole range; put() clamps to [t0, t1), scopes parts and honors labeled breaks
+    const base = (fromBar - 1) * bt;
+    for (const h of marchPattern(seed, {beats, qt, ppq: S.song.ppq, bars: toBar - fromBar + 1, energy: busy, bass: marchBass}))
+      if (!isBreak(fromBar + Math.floor(h.off / bt))) put(base + h.off, h.p, h.v, h.d);
+  }
   let prevFill = null; // the last fill chosen in THIS take, in bar order — two in a row never match
-  for (let bar = fromBar; bar <= toBar; bar++) {
+  for (let bar = fromBar; bar <= toBar && !march; bar++) {
     if (scopePcs && scopePcs.size === 0 && fillsOn && !fillBarSet.has(bar)) continue; // fills-only: touch fill bars alone
     if (isBreak(bar)) continue; // his breaks are sacred: the drummer lays out
     const lane = grooveLane(bar);
@@ -505,7 +513,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   }
   // chord-change downbeat accents (+12, capped) — harmonic-rhythm compression
   // densifies these automatically, so his device is honored for free
-  if (follow !== "off") for (const ct of chordStarts) {
+  if (follow !== "off" && !march) for (const ct of chordStarts) {
     if (ct < t0 || ct >= t1) continue;
     for (const h of hits) if (h.t === ct && (h.p === 36 || h.p === 42)) h.v = Math.min(h.p === 42 ? 76 + HARD_DELTA : 127, h.v + 12);
   }
@@ -525,4 +533,130 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   clampView();
   draw();
   return added.length;
+}
+
+// ---- March: a snare-only military cadence (Josh, 2026-10-28: "randomly generate
+// different kinds of military beats on the snare drum so I can test them") ----
+// PURE: marchPattern(seed, {beats, qt, ppq, bars, energy, bass}) → [{off, p, v, d}],
+// off in ticks from the range start, sorted. No S, no globals — the native app
+// ports it against tests/fixtures/march-goldens.json. Bars are built from one-
+// beat cells (a dotted-quarter pulse in compound meters), on a 24-unit grid per
+// cell so 16ths, 32nds and triplets share one table. Bars cycle A B A cadence;
+// A and B restate across phrases (a cadence repeats), the 4th bar's last cell
+// and the range's final stroke vary (accented close).
+// Cell tokens: A accent, x normal, g ghost, . rest, F flam on an accent,
+// f flam on a normal, D drag on a normal. {roll}/{buzz} cells carry their own spacing.
+const MARCH_SIMPLE = [ // [tokens (4 = 16ths of a beat; 8 = a 2-beat cell), weight class]
+  ["A...", "acc"], ["x...", "acc"], ["A.x.", "acc"], ["A..x", "acc"], ["x.A.", "acc"], ["A.xx", "acc"],
+  ["Axxx", "run"], ["Axgx", "run"], ["AxxA", "run"], ["xxAx", "run"], ["gxAx", "run"], ["AxAx", "run"],
+  ["AgxxAgxx", "para"], ["xgAxxgAx", "para"],
+  ["F...", "flam"], ["F.x.", "flam"], ["FxFx", "flam"], ["x.F.", "flam"], ["xxxF", "flam"], ["f.xf", "flam"],
+  ["D...", "drag"], ["x.D.", "drag"], ["D.xD", "drag"], ["xxxD", "drag"],
+  [{roll: 5}, "roll5"], [{roll: 7}, "roll7"],
+  [{buzz: 3}, "buzz"], [{buzz: 2}, "buzz"], [{buzz: 3, span: 2}, "buzz"],
+  ["....", "rest"],
+];
+const MARCH_COMPOUND = [ // 6 = 16ths of a dotted-quarter pulse
+  ["A.....", "acc"], ["A..x..", "acc"], ["A.x.x.", "acc"], ["x..A..", "acc"], ["A..xx.", "acc"],
+  ["AxxAxx", "run"], ["AxxA.x", "run"], ["AgxAgx", "run"], ["Axxxxx", "run"], ["A.xxxx", "run"],
+  ["F.....", "flam"], ["F..F..", "flam"], ["x..F..", "flam"], ["f.xf.x", "flam"],
+  ["D.....", "drag"], ["x..D..", "drag"], ["D.xD.x", "drag"],
+  [{roll: 5}, "roll5"], [{roll: 7}, "roll7"],
+  [{buzz: 2}, "buzz"], [{buzz: 2, span: 2}, "buzz"],
+  ["......", "rest"],
+];
+const MARCH_CADENCE = {
+  simple: [["xxxA", "run"], ["x.xF", "flam"], [{roll: 5}, "roll5"], [{roll: 7}, "roll7"], ["gxxD", "drag"]],
+  compound: [["xxxxxA", "run"], ["x..xxF", "flam"], [{roll: 5}, "roll5"], [{roll: 7}, "roll7"]],
+};
+const MARCH_W = { // [energy 1..5] weight per class: low = sparse accents and flams, high = runs and rolls
+  acc: [5, 4, 2, 1, 1], run: [1, 2, 3, 4, 4], para: [0, 1, 2, 2, 2], flam: [4, 3, 2, 1, 1], drag: [1, 2, 2, 2, 1],
+  roll5: [0, 1, 2, 3, 3], roll7: [0, 0, 1, 2, 3], buzz: [0, 0, 1, 2, 3], rest: [1, 1, 1, 0, 0],
+};
+function marchCellEvents(def, n, rng, V, compound) { // → {span, ev: [{u, v, kind}]}, u in 1/24 cell
+  const tok = def[0], ev = [];
+  if (typeof tok === "string") {
+    const span = tok.length / n, per = 24 / n;
+    for (let i = 0; i < tok.length; i++) {
+      const c = tok[i];
+      if (c === ".") continue;
+      const lvl = c === "A" || c === "F" ? "A" : c === "g" ? "g" : "x";
+      ev.push({u: i * per, v: V[lvl] + (lvl === "A" ? 0 : Math.floor(rng() * 7)),
+               kind: c === "F" || c === "f" ? "f" : c === "D" ? "d" : "n"});
+    }
+    return {span, ev};
+  }
+  if (tok.roll) { // an even run of 32nds closed by an accent
+    const sp = compound ? 2 : 3, k = tok.roll === 5 ? 4 : 6;
+    for (let i = 0; i < k; i++) ev.push({u: i * sp, v: Math.round((V.g + V.x) / 2), kind: "n"}); // even, then the accent on the release
+    ev.push({u: k * sp, v: V.A, kind: "n"});
+    return {span: 1, ev};
+  }
+  const span = tok.span || 1, count = Math.round(24 * span / tok.buzz); // buzz: dense and soft, a crescendo
+  for (let i = 0; i < count; i++) ev.push({u: i * tok.buzz, v: V.g - 8 + Math.round((V.x - V.g + 8) * i / (count - 1)) + Math.floor(rng() * 5), kind: "n"});
+  return {span, ev};
+}
+export function marchPattern(seed, o) {
+  const beats = o.beats, qt = o.qt, ppq = o.ppq, bars = o.bars, e = Math.max(1, Math.min(5, Math.round(o.energy ?? 3)));
+  const compound = qt < ppq && beats >= 6 && beats % 3 === 0;
+  const half = !compound && qt < ppq; // x/8 simple meters: a cell is two eighths (no 32nd runs); an odd last eighth is a lone stroke
+  const cellT = compound ? 3 * qt : half ? 2 * qt : qt, units = compound ? beats / 3 : half ? Math.floor(beats / 2) : beats, n = compound ? 6 : 4;
+  const tail = half && beats % 2 === 1;
+  const vocab = compound ? MARCH_COMPOUND : MARCH_SIMPLE, cad = compound ? MARCH_CADENCE.compound : MARCH_CADENCE.simple;
+  const V = {A: 104 + 6 * (e - 3), x: 78 + 4 * (e - 3), g: 46 + 3 * (e - 3)};
+  const grace = Math.max(1, Math.round(ppq / 16)), bt = beats * qt, salt = 0x3A8C17;
+  const dMain = Math.round(ppq * 0.1), dSoft = Math.round(ppq * 0.0625), dGrace = Math.round(ppq * 0.05), dKick = Math.round(ppq * 0.15); // lengths scale with ppq
+  const pick = (rng, pool, left, first, noGrace) => {
+    const ok = pool.filter(d => {
+      const span = typeof d[0] === "string" ? d[0].length / n : d[0].span || 1;
+      if (span > left) return false;
+      if (!first) return true;
+      if (d[1] === "rest" || d[1] === "buzz") return false; // a bar opens on a stroke
+      if (noGrace && (d[1] === "flam" || d[1] === "drag")) return false;
+      return typeof d[0] !== "string" || d[0][0] !== ".";
+    });
+    const w = d => MARCH_W[d[1]][e - 1];
+    const total = ok.reduce((a, d) => a + w(d), 0);
+    let r = rng() * total;
+    for (const d of ok) { r -= w(d); if (r < 0) return d; }
+    return ok[ok.length - 1];
+  };
+  const barCells = (rng, ending, endRng, first, noGrace) => { // → [{at (cell index), cell}]
+    const out = [];
+    let u = 0;
+    const lim = ending ? units - 1 : units;
+    while (u < lim) {
+      const d = pick(rng, vocab, lim - u, u === 0 && first, noGrace);
+      const c = marchCellEvents(d, n, rng, V, compound);
+      out.push({at: u, c}); u += c.span;
+    }
+    if (ending) {
+      const d = cad[Math.floor(endRng() * cad.length)];
+      out.push({at: units - 1, c: marchCellEvents(d, n, endRng, V, compound)});
+    }
+    if (tail) out.push({at: units, c: {span: 0.5, ev: [{u: 0, v: rng() < 0.5 ? V.A : V.x + Math.floor(rng() * 7), kind: "n"}]}});
+    return out;
+  };
+  const hits = [], graces = [];
+  for (let k = 0; k < bars; k++) {
+    const role = [1, 2, 1, 1][k % 4], phrase = Math.floor(k / 4);
+    const isLast = k === bars - 1, ending = k % 4 === 3 || isLast;
+    const rng = drumRng((seed ^ salt) >>> 0, role);
+    const cells = barCells(rng, ending && units > 1, drumRng((seed ^ salt) >>> 0, 100 + phrase * 4 + (isLast ? 1 : 0)), true, k === 0);
+    const bs = k * bt;
+    for (const {at, c} of cells) for (const ev of c.ev) {
+      const off = bs + at * cellT + Math.round(ev.u * cellT / 24);
+      if (ev.kind === "f") graces.push({off: off - grace, p: 38, v: Math.max(1, V.g - 6), d: dGrace});
+      if (ev.kind === "d") graces.push({off: off - 2 * grace, p: 38, v: Math.max(1, V.g - 6), d: dGrace}, {off: off - grace, p: 38, v: Math.max(1, V.g - 4), d: dGrace});
+      hits.push({off, p: 38, v: Math.max(1, Math.min(127, ev.v)), d: ev.kind === "n" && ev.v < V.g ? dSoft : dMain});
+    }
+    if (o.bass) for (let b = 0; b < (compound ? 1 : Math.ceil(beats / 2)); b++)
+      hits.push({off: bs + (compound ? 0 : b * 2 * qt), p: 36, v: 84, d: dKick}); // alternate beats (1 and 3 in four)
+  }
+  const snares = hits.filter(h => h.p === 38); // a grace that lands within `grace` ticks of another stroke is dropped, bar lines included
+  for (const g of graces) if (!snares.some(h => Math.abs(h.off - g.off) < grace) && !graces.some(o => o !== g && Math.abs(o.off - g.off) < grace) && g.off >= 0) hits.push(g);
+  let lastI = -1; // the range closes on an accented stroke
+  hits.forEach((h, i) => { if (h.p === 38 && (lastI < 0 || h.off >= hits[lastI].off)) lastI = i; });
+  if (lastI >= 0) hits[lastI].v = Math.min(127, V.A + 8);
+  return hits.sort((a, b) => a.off - b.off || a.p - b.p);
 }
