@@ -3692,6 +3692,10 @@ wraps further ahead than the lookahead). Pure maths in `audio/seam.js`
 (`seamPassStart`, `seamAt`, `seamAroundLoop`, `seamSegFromTicks`, bar.beat
 parse/format); `playSec()` maps elapsed time through the spans so the
 playhead, LCD and metronome (`seamSpanNow`) follow.
+Starting a seam clears `S.rangeSel`. While it is on, the ruler's amber span edges
+drag (gestures.js `seamEdge`; pure `dragSeamEdge` / `seamEdgeAt`, same
+`rulerSnapX` magnet as the cycle); release calls `seamRestart()`, which resumes
+inside the span the playhead is in. Spans may overlap each other in time.
 
 Console audio: stream mode — `chipSegments(…, elapsed)` returns span
 remainder, then whole spans, each `when` = the previous segment's end (hard

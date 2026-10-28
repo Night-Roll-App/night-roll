@@ -66,3 +66,28 @@ export function seamPosText(tick, barTicks, beatTicks) {
 export function seamSpansText(spans, barTicks, beatTicks) {
   return spans.map(s => seamPosText(s.a, barTicks, beatTicks) + "–" + seamPosText(s.b, barTicks, beatTicks)).join(" then ");
 }
+// Drag one edge of one span (Josh, 2026-10-28: "three bars at the beginning and
+// the end"): edge "a" | "b" moves to `tick`, kept at least `min` long and inside
+// [0, end]. Spans may overlap each other in time (a loop's tail sits AFTER its
+// head), so only the span itself is constrained. Returns a new list.
+export function dragSeamEdge(spans, idx, edge, tick, limits) {
+  const min = limits.min, end = limits.end;
+  return spans.map((s, i) => {
+    if (i !== idx) return s;
+    if (edge === "a") return {a: Math.max(0, Math.min(tick, s.b - min)), b: s.b};
+    const b = Math.min(end, Math.max(tick, min)); // b > a always: a is pushed down, never b past it
+    return {a: Math.max(0, Math.min(s.a, b - min)), b};
+  });
+}
+// the grabbable edges within `slop` px of `x`, nearest group first (edges within
+// 1 px of the nearest tie); xOf maps tick -> screen x; edges outside [xmin, xmax] are not there
+export function seamEdgesNear(spans, x, xOf, slop, xmin = -Infinity, xmax = Infinity) {
+  const c = [];
+  spans.forEach((s, i) => { for (const edge of ["a", "b"]) {
+    const ex = xOf(s[edge]), d = Math.abs(x - ex);
+    if (d < slop && ex >= xmin && ex <= xmax) c.push({i, edge, d});
+  } });
+  c.sort((p, q) => p.d - q.d);
+  return c.filter(e => e.d - c[0].d <= 1).map(({i, edge}) => ({i, edge}));
+}
+export function seamEdgeAt(spans, x, xOf, slop, xmin, xmax) { return seamEdgesNear(spans, x, xOf, slop, xmin, xmax)[0] || null; }

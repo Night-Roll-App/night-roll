@@ -55,6 +55,8 @@ import { clearMultiSel } from "../model/selection.js";
 import { cursorDragSnapTicks } from "../model/grid.js";
 import { stop } from "../audio/transport.js";
 import { play } from "../audio/transport.js";
+import { seamRestart, seamDragEnd } from "../audio/transport.js";
+import { dragSeamEdge, seamEdgesNear, seamSpansText } from "../audio/seam.js";
 import { editableSong } from "../model/song.js";
 import { saveVoices } from "../ui/trackbar.js";
 import { openVoiceMenu } from "../ui/voice-menu.js";
@@ -765,6 +767,7 @@ export function endPointer(e) {
     stop();
     play(from, {keepPos: inside, noCountIn: true}).catch(() => {});
   }
+  else if (S.drag.seamEdge) seamDragEnd(S.drag);
   else if (S.drag.bandEdge && S.drag.moved) {
     const n = S.drag.bandEdge.n;
     // a published band edited in place must be RETIRED, or the repo copy comes
@@ -1040,7 +1043,7 @@ export function initGestures1() {
     // the glass, not a second finger for a pinch (checked first — a palm is
     // "primary" too: isPrimary is per pointer type)
     if (S.drag && S.drag.ptype === "pen" && e.pointerType === "touch") return;
-    if (e.isPrimary && (S.pinch || (S.drag && S.drag.ptype === e.pointerType))) { logDebug("gesture: cleared a stale " + (S.pinch ? "pinch" : "drag") + " on a new touch"); clearTimeout(S.drag && S.drag.holdTimer); S.drag = null; S.pinch = null; }
+    if (e.isPrimary && (S.pinch || (S.drag && S.drag.ptype === e.pointerType))) { logDebug("gesture: cleared a stale " + (S.pinch ? "pinch" : "drag") + " on a new touch"); clearTimeout(S.drag && S.drag.holdTimer); seamDragEnd(S.drag); S.drag = null; S.pinch = null; }
     try { canvas.setPointerCapture(e.pointerId); } catch (err) {} // Safari can refuse mid-gesture
     if (S.pinch) return; // third finger: ignore
     if (S.drag && S.drag.id !== e.pointerId) {
@@ -1074,6 +1077,7 @@ export function initGestures1() {
       S.pinch.dy0 = Math.abs(S.pinch.a.y - S.pinch.b.y);
       S.pinch.mid0x = (S.pinch.a.x + S.pinch.b.x) / 2 - S.RULER_W; // fixed anchor: parallel fingers PAN
       S.pinch.mid0y = (S.pinch.a.y + S.pinch.b.y) / 2 - S.RULER_H;
+      seamDragEnd(S.drag);
       S.drag = null;
       return;
     }
@@ -1205,14 +1209,21 @@ export function initGestures1() {
       // RULER_RANGE_SLOP (endPointer hands an unmoved press to tap())
       else if (p.x > ax + 12 && p.x < bx - 12) rangeEdge = "mid";
     }
-    const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge;
+    let seamEdge = null; // a running seam's amber spans: grab either edge of either span
+    if (!lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge &&
+        S.song && S.seam && p.y < BASE_RULER_H && S.viewMode !== "score" && !fallActive()) {
+      const ppt = pxPerTick();
+      const near = seamEdgesNear(S.seam.spans, p.x, t => S.RULER_W + t * ppt - S.view.x, 14, S.RULER_W, canvas.clientWidth);
+      if (near.length) seamEdge = {...near[0], ties: near, pre: JSON.stringify(S.seam.spans)}; // ties: edges equally under the finger — the first move's direction picks
+    }
+    const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge && !seamEdge;
     // a press ON the playhead (its tag in the strip, any mode, even while
     // playing; or its line through the notes at rest, select mode) — a cursor
     // drag, which is the strip's scrub with one difference: let go without
     // moving and the cursor stays put (a strip tap would snap it to an 8th)
     const onCursor = plain && cursorHit(p);
     S.drag = {id: e.pointerId, ptype: e.pointerType, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false,
-            lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, onCursor,
+            lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, seamEdge, onCursor,
             range0: rangeEdge ? {a: S.rangeSel.a, b: S.rangeSel.b} : null, // the span as grabbed — a "mid" slide keeps its length
             ruler: plain && !!S.song && p.y < BASE_RULER_H,
             // the playhead strip, between the ruler/bands and the notes (Josh,
@@ -1398,6 +1409,19 @@ export function initGestures1() {
         S.rangeSel.off = false; // sliding re-arms a parked cycle, like stretching
         draw();
       }
+      else if (S.drag.seamEdge) { // stretch/shrink a seam span: the cycle's own magnet and 16th floor
+        if (!S.seam) return; // Space / ■ / Esc / Ask left the seam mid-drag
+        const se = S.drag.seamEdge;
+        if (se.ties && se.ties.length > 1) { // equal grab: drag right lengthens the right edge, left the left (so every edge is reachable)
+          const dx = evtPos(e).x - S.drag.spos.x;
+          if (Math.abs(dx) < 3) return;
+          const want = dx > 0 ? "b" : "a", pick = se.ties.find(t => t.edge === want) || se.ties[0];
+          se.i = pick.i; se.edge = pick.edge; se.ties = null;
+        }
+        S.seam.spans = dragSeamEdge(S.seam.spans, se.i, se.edge, rulerSnapX(evtPos(e).x), {min: Math.round(S.song.ppq / 4), end: S.songEndTick});
+        setInfo("seam: " + seamSpansText(S.seam.spans, barTicks(), beatTicks()));
+        draw();
+      }
       else if (S.drag.rangeEdge) { // stretch the cycle by its end — bar-magnetic, stays armed
         const tk = rulerSnapX(evtPos(e).x);
         const min16 = Math.round(S.song.ppq / 4);
@@ -1432,7 +1456,7 @@ export function initGestures1() {
     S.drag.x = e.clientX; S.drag.y = e.clientY;
   });
   canvas.addEventListener("pointerup", endPointer);
-  canvas.addEventListener("pointercancel", () => { S.drag = null; S.pinch = null; draw(); });
+  canvas.addEventListener("pointercancel", () => { seamDragEnd(S.drag); S.drag = null; S.pinch = null; draw(); });
   { // note menu (DAW F2): every item is the edit row's own button or handler
     const act = (id, fn) => document.getElementById(id).addEventListener("click", () => { closeNoteMenu(); fn(); });
     const press = bid => () => document.getElementById(bid).click();

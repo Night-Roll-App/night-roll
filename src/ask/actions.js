@@ -107,14 +107,15 @@ export const ASK_ACTIONS = [
      play(tickToSec(S.song, tick), {fromHere: true, noCountIn: true}).catch(() => {});
      return "▶ playing from " + label;
    }},
-  {name: "play_seam", args: "spans? off?", gloss: "loop a seam: one span then the next, over and over", quiet: true,
+  {name: "play_seam", args: "spans? bars? off?", gloss: "loop a seam: one span then the next, over and over", quiet: true,
    example: "Play the loop seam.", say: "\"Play the loop seam\" for the tail before the jump and the head after it; or name two spans (\"bars 25.1 to 27.3, then 3.1 to 5.1\"); \"stop the seam\" leaves it.",
-   spec: "play_seam {spans?, off?}: plays the spans back to back with no gap, in order, forever — the way to hear a loop's join. spans = [{from, to}, …] in the ruler's bar.beat (\"25.1\" = bar 25 beat 1; to is where it stops, e.g. {\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}). No spans = around the song's loop: point: the 2 bars before the jump point, then the return point and the 2 bars after it (refused when the song has no loop: point). off: true leaves the seam and stops. Sound must have been unlocked by one tap on Play this session.",
+   spec: "play_seam {spans?, bars?, off?}: plays the spans back to back with no gap, in order, forever — the way to hear a loop's join. spans = [{from, to}, …] in the ruler's bar.beat (\"25.1\" = bar 25 beat 1; to is where it stops, e.g. {\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}). No spans = around the song's loop: point: bars (default 2; \"three bars each side\" = 3) before the jump point, then the return point and the same number after it (refused when the song has no loop: point). off: true leaves the seam and stops. Sound must have been unlocked by one tap on Play this session.",
    run(a) {
      if (askActTruthy(a.off)) { const had = !!S.seam; seamLeave(true); return had ? "seam off" : "no seam was on"; }
      if (!S.audio) throw new Error("sound isn't unlocked yet — the browser only starts audio from a tap: tap Play once, then ask again");
      const bt = barTicks(), qt = beatTicks();
      let spans;
+     if (askActGiven(a.spans) && askActGiven(a.bars)) throw new Error("bars only applies to the loop's seam — with named spans, put the length in the spans");
      if (askActGiven(a.spans)) {
        if (!Array.isArray(a.spans) || !a.spans.length) throw new Error("spans must be a list of {from, to}, e.g. [{\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}]");
        spans = a.spans.map((s, i) => {
@@ -125,7 +126,9 @@ export const ASK_ACTIONS = [
          return {a: x, b: Math.min(y, S.songEndTick)};
        });
      } else {
-       spans = loopSeamSpans();
+       const nb = askActGiven(a.bars) ? a.bars : undefined;
+       if (nb !== undefined && !(typeof nb === "number" && nb >= 0.25 && nb <= 64)) throw new Error("bars is how many bars each side of the jump, e.g. 3");
+       spans = loopSeamSpans(nb);
        if (!spans) throw new Error("this song has no loop: point to take the seam of — name the spans instead");
      }
      seamStart(spans, askActGiven(a.spans) ? "pair" : "loop").catch(() => {}); // not awaited, like play: it can sit behind a console render
