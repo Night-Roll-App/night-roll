@@ -201,7 +201,10 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
       ...ctlCopy(tr), // nor its bends, volumes, sustain, reverb sends
       ...(tr.offset ? {offset: tr.offset} : {}),
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
-      notes: (S.song.rawNotes ? S.song.rawNotes[ti] : tr.notes) // raw: chop stays a view
+      // tr.notes is the truth unless a chop: is cutting a view out of rawNotes —
+      // rawNotes misses every edit to a note added without an ri link (paste,
+      // Drummer, record, AI), so copying it un-did those (Death March, 2026-10-28)
+      notes: (S.song.rawNotes && (S.chopS || S.chopE !== null) ? S.song.rawNotes[ti] : tr.notes)
         .filter(n => !n.gone).map(n => {
           const o = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums": the file's GM key, not the captured one shown in memory
           if (n.ch !== undefined) o.ch = n.ch;
