@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "borrowed-tears", "origin": {"kind":"copy","from":"local/untitled-2.mid","at":"2026-10-11T14:33:31.835Z"}, "stamp": 1791851532747, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "borrowed-tears", "origin": {"kind":"copy","from":"local/untitled-2.mid","at":"2026-10-11T14:33:31.835Z"}, "stamp": 1793199834854, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"songnote","title":"Prog","note":"Min Maj Maj min min min Maj"},
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"Em"},
