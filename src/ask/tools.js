@@ -789,6 +789,9 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
   const fillAmt = knob(a.fills, 0, 5, "fills", 3);
   const feel = a.feel === undefined || a.feel === null || a.feel === "" ? "normal" : String(a.feel).trim().toLowerCase();
   if (!["normal", "half", "double"].includes(feel)) throw new Error("feel must be normal, half or double");
+  const style = a.style === undefined || a.style === null || a.style === "" ? "groove" : String(a.style).trim().toLowerCase();
+  if (!["groove", "march"].includes(style)) throw new Error("style must be groove or march");
+  const march = style === "march", bass = march && !!a.bass_drum; // march: a snare-only cadence; energy sets density and loudness
   let parts = "all";
   if (Array.isArray(a.parts) && a.parts.length) {
     parts = [...new Set(a.parts.map(x => String(x).trim().toLowerCase()))];
@@ -818,14 +821,15 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) // drGenerate's own refusal, raised BEFORE it erases anything
     throw new Error("bars " + fromBar + "–" + toBar + " cross a meter change — generate each meter's bars separately");
   const seed = a.seed !== undefined && a.seed !== null && a.seed !== "" ? (Math.round(+a.seed) >>> 0) : (Math.random() * 0xFFFFFFFF) >>> 0; // the ONLY nondeterminism, same as the sheet's Generate
-  const opts = {busy, hard, fillAmt, feel, parts, follow, followTis, fromBar, toBar};
+  const opts = {busy, hard, fillAmt, feel, parts, follow, followTis, fromBar, toBar, ...(march ? {style, bass} : {})};
   const k = drGenerate(seed, opts);
   S.drTakes.push({seed, ...opts, from: fromBar, to: toBar + 1, q: [1, 1]}); // the sheet's take chips show and replay it (to = exclusive bar, as the sheet's own fields)
   if (S.drTakes.length > 8) S.drTakes.shift();
   S.drActive = S.drTakes.length - 1;
   const where = fromBar === toBar ? "bar " + fromBar : "bars " + fromBar + "–" + toBar;
-  const recipe = "busy " + busy + " · hard " + hard + " · fills " + fillAmt + (feel !== "normal" ? " · " + feel : "") +
-    (parts !== "all" ? " · " + parts.join("+") + " only" : "") + " · " + followTxt + " · seed " + seed;
+  const recipe = (march ? "march · energy " + busy + (bass ? " · bass drum on 1 and 3" : "") + (parts !== "all" ? " · " + parts.join("+") + " only" : "")
+    : "busy " + busy + " · hard " + hard + " · fills " + fillAmt + (feel !== "normal" ? " · " + feel : "") +
+      (parts !== "all" ? " · " + parts.join("+") + " only" : "") + " · " + followTxt) + " · seed " + seed;
   if (!k) return {ok: true, note: "Drummer: no hits in " + where + " — every bar there is a break (only the followed track plays, or a section labeled break) · " + recipe + " (one undo restores what was there)"};
   return {ok: true, note: "Drummer: " + k + " hit" + (k === 1 ? "" : "s") + " in " + where + " · " + recipe + " (one undo restores what was there)"};
 }

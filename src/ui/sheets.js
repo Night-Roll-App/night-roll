@@ -514,6 +514,13 @@ export function drRange() { // ticks + whole-bar span from the bar/beat/sub sele
 export function segSet(id, v) {
   for (const b of document.querySelectorAll("#" + id + " button")) b.classList.toggle("active", b.dataset.v === String(v));
 }
+export function drStyleSync() { // march: a snare-only line — fills, feel, follow and parts stand aside, busy is its energy
+  const march = segGet("drstyle") === "march";
+  for (const id of ["drfeel", "drhard", "drfollow", "drparts"]) { const el = document.getElementById(id); if (el) { el.style.opacity = march ? 0.35 : 1; el.style.pointerEvents = march ? "none" : ""; } }
+  const fr = document.getElementById("drfillsrow");
+  if (march) { fr.style.opacity = 0.35; fr.style.pointerEvents = "none"; }
+  document.getElementById("drmbass").style.display = march ? "" : "none";
+}
 export function drPartsGet() {
   return [...document.querySelectorAll("#drparts button.active")].map(b => b.dataset.part);
 }
@@ -527,6 +534,7 @@ export function drPartsSync() { // fills chip off = the fills knob is inert (sco
   const row = document.getElementById("drfillsrow");
   row.style.opacity = on ? 1 : 0.35;
   row.style.pointerEvents = on ? "" : "none";
+  drStyleSync();
 }
 
 export function dpTick(barId, qId, sId) {
@@ -893,6 +901,7 @@ export function bsRefresh() {
   });
 }
 export function drRefresh() {
+  drStyleSync();
   const r = drRange();
   const from = r.from, to = r.to;
   const mode = (document.getElementById("drfollow") || {}).value || "bass";
@@ -917,7 +926,7 @@ export function drRefresh() {
     b.type = "button";
     const pa = drNormParts(tk.parts ?? "all");
     const scoped = !["kick", "snare", "hats", "fills"].every(g => pa.includes(g));
-    b.textContent = "take " + (i + 1) + " · " + (tk.busy ?? tk.energy ?? 3) + "/" + (tk.hard ?? tk.busy ?? 3) + "/" + (tk.fillAmt ?? 3) +
+    b.textContent = tk.style === "march" ? "take " + (i + 1) + " · march " + (tk.busy ?? 3) + (tk.bass ? " +bd" : "") : "take " + (i + 1) + " · " + (tk.busy ?? tk.energy ?? 3) + "/" + (tk.hard ?? tk.busy ?? 3) + "/" + (tk.fillAmt ?? 3) +
       ((tk.feel ?? "normal") === "half" ? " ½" : (tk.feel ?? "normal") === "double" ? " 2×" : "") +
       (scoped ? " " + pa.map(g => g[0].toUpperCase()).join("+") : "");
     b.classList.toggle("active", i === S.drActive);
@@ -925,6 +934,8 @@ export function drRefresh() {
       const busy = tk.busy ?? tk.energy ?? 3, hard = tk.hard ?? busy;
       const follow = tk.follow ?? "bass", feel = tk.feel ?? "normal", fillAmt = tk.fillAmt ?? 3;
       drPartsSet(tk.parts ?? "all");
+      segSet("drstyle", tk.style === "march" ? "march" : "groove");
+      document.getElementById("drmbass").classList.toggle("active", !!tk.bass);
       segSet("drbusy", busy);
       segSet("drhard", hard);
       segSet("drfills", fillAmt);
@@ -933,7 +944,7 @@ export function drRefresh() {
       document.getElementById("drfrom").value = tk.from;
       document.getElementById("drto").value = tk.to;
       if (tk.q) { setBeatPair("drfromq", "drfroms", tk.q[0]); setBeatPair("drtoq", "drtos", tk.q[1]); }
-      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi, followTis: tk.followTis,
+      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", style: tk.style, bass: tk.bass, followTi: tk.followTi, followTis: tk.followTis,
         fromBar: tk.fromBar ?? tk.from, toBar: tk.toBar ?? tk.to, t0: tk.t0, t1: tk.t1});
       S.drActive = i;
       drRefresh();
@@ -957,6 +968,8 @@ export function drBuildControls() {
     });
     segSet(id, def);
   };
+  mkSeg("drstyle", ["groove", "march"], "groove", ["Groove", "March"]);
+  document.getElementById("drmbass").addEventListener("click", () => { const b = document.getElementById("drmbass"); b.classList.toggle("active"); b.setAttribute("aria-pressed", String(b.classList.contains("active"))); drRefresh(); });
   mkSeg("drbusy", [1, 2, 3, 4, 5], 3);
   mkSeg("drhard", [1, 2, 3, 4, 5], 3);
   mkSeg("drfills", [0, 1, 2, 3, 4, 5], 3, ["off", "1", "2", "3", "4", "5"]);
@@ -1908,6 +1921,7 @@ export function initSheets5() {
       follow: (v => v.startsWith("t") ? "bass" : v)(document.getElementById("drfollow").value),
       followTi: (v => v.startsWith("t") ? parseInt(v.slice(1), 10) : undefined)(document.getElementById("drfollow").value),
       feel: segGet("drfeel"),
+      ...(segGet("drstyle") === "march" ? {style: "march", bass: document.getElementById("drmbass").classList.contains("active")} : {}),
       fromBar: r.from, toBar: r.to, t0: r.t0, t1: r.t1,
     };
     if (!opts.parts.length) { setInfo("pick at least one part"); return; }

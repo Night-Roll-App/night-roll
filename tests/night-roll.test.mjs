@@ -3204,7 +3204,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "Front Desk and Worker", "Earlier chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "seventh picks one of 6, 7 or maj7", "alterations (b5 #5 b9 #9 #11 b13) stack", "the toggle re-cases the numeral", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "Front Desk and Worker", "Earlier chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "Phrase fills", "ghost notes", "loops two bars", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "seventh picks one of 6, 7 or maj7", "alterations (b5 #5 b9 #9 #11 b13) stack", "the toggle re-cases the numeral", "Style: March", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "The beat cell counts the 16ths", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -6775,6 +6775,58 @@ test("drummer: follow picks the tracks the kick listens to — pulse1+pulse2 kic
   const legacy = val(`(() => { drGenerate(9, {busy: 4, hard: 3, fillAmt: 0, follow: "bass", followTi: 0, fromBar: 2, toBar: 3}); return song.tracks[3].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v]); })()`);
   assert.deepEqual(one, legacy);
   run(`editUndo = []; drTakes = [];`);
+});
+
+// ---- March (2026-10-28): the Drummer's military snare cadence. Pure core: marchPattern ----
+test("March golden: marchPattern matches tests/fixtures/march-goldens.json (the native port's contract)", () => {
+  installAskDrummerSong();
+  const fx = JSON.parse(readFileSync(new URL("./fixtures/march-goldens.json", import.meta.url), "utf8"));
+  assert.ok(fx.cases.length >= 3);
+  for (const c of fx.cases) {
+    const got = val(`marchPattern(${c.seed}, ${JSON.stringify(c.opts)})`);
+    assert.deepEqual(got, c.hits, c.name);
+    assert.ok(got.every(h => h.p === 38 || h.p === 36) && got.every((h, i) => !i || got[i - 1].off <= h.off), c.name + ": snare (and optional kick), sorted");
+    const barT = c.opts.beats * c.opts.qt;
+    assert.ok(got.every(h => h.off >= 0 && h.off < barT * c.opts.bars), c.name + ": fits the range");
+  }
+});
+
+test("March: deterministic per seed, different across seeds, snare-only, accented close; default style unchanged; ONE undo restores the kit", () => {
+  installAskDrummerSong();
+  const before = askDrSnap();
+  const kit = () => val(`song.tracks[3].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v, n.d])`);
+  const r1 = val(`askDrummer({from_bar: 2, to_bar: 5, style: "march", seed: 11})`);
+  assert.match(r1.note, /^Drummer: \d+ hits in bars 2–5 · march · energy 3 · seed 11 /);
+  const a = kit();
+  assert.ok(a.filter(h => h[0] >= 1920 && h[0] < 9600).every(h => h[1] === 38), "snare only inside the range");
+  assert.ok(a.some(h => h[0] === 0 && h[1] === 36), "kit notes outside the range are kept");
+  assert.ok(!a.some(h => h[1] === 51), "the old in-range ride is replaced");
+  run(`editUndoPop();`);
+  assert.deepEqual(askDrSnap(), before, "one undo restores every track");
+  val(`askDrummer({from_bar: 2, to_bar: 5, style: "march", seed: 11})`);
+  assert.deepEqual(kit(), a, "same seed, same cadence");
+  run(`editUndoPop();`);
+  const seen = new Set();
+  for (let s = 1; s <= 6; s++) { val(`askDrummer({from_bar: 2, to_bar: 5, style: "march", seed: ${s}})`); seen.add(JSON.stringify(kit())); run(`editUndoPop();`); }
+  assert.equal(seen.size, 6, "each seed is a different cadence");
+  const pure = val(`marchPattern(5, {beats: 4, qt: 480, ppq: 480, bars: 4, energy: 3})`);
+  const last = pure.filter(h => h.p === 38).pop();
+  assert.ok(last.v >= 110, "the range closes on an accented stroke");
+  // low energy is sparser than high
+  const n = e => val(`marchPattern(5, {beats: 4, qt: 480, ppq: 480, bars: 8, energy: ${e}})`).length;
+  assert.ok(n(1) < n(5), "energy maps to density");
+  // groove stays the default: with and without an explicit style it is the same take
+  val(`askDrummer({from_bar: 2, to_bar: 3, seed: 5})`); const g1 = kit(); run(`editUndoPop();`);
+  val(`askDrummer({from_bar: 2, to_bar: 3, seed: 5, style: "groove"})`); const g2 = kit(); run(`editUndoPop();`);
+  assert.deepEqual(g1, g2);
+  assert.ok(g1.some(h => h[1] === 42), "the groove still has hats");
+  assert.throws(() => run(`askDrummer({from_bar: 2, to_bar: 3, style: "waltz"})`), /style must be groove or march/);
+  // bass drum option, and a take chip replays style + seed
+  val(`askDrummer({from_bar: 2, to_bar: 3, style: "march", bass_drum: true, seed: 8})`);
+  assert.ok(kit().some(h => h[1] === 36 && h[0] >= 1920), "bass drum on 1 and 3");
+  assert.equal(val(`drTakes[drTakes.length - 1].style`), "march");
+  run(`editUndoPop(); drTakes = [];`);
+  assert.deepEqual(askDrSnap(), before);
 });
 
 test("drummer: a section label resolves to its bars (a point section is one bar); an ambiguous or unknown label, a bad knob, an unknown follow track, a drum follow track and a meter change all error with nothing changed", () => {
