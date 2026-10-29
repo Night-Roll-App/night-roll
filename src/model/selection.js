@@ -1,5 +1,4 @@
 import { S } from "../state.js";
-import { addSongNote } from "./edits.js";
 import { isComposition } from "./provenance.js";
 import { annoSnapshot } from "./edits.js";
 import { barTicks } from "./rollnotes.js";
@@ -35,6 +34,7 @@ import { resolveNote } from "./rollnotes.js";
 import { dropSupersededBy } from "./rollnotes.js";
 import { moveSnapTicks } from "./grid.js";
 import { tombstone } from "./edits.js";
+import { addSongNote } from "./edits.js";
 import { saveDraft } from "./versions.js";
 import { sfDeclaredAt } from "./song.js";
 import { CHORD_QUALS } from "../theory/chords.js";

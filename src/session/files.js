@@ -68,6 +68,7 @@ import { updateManifest } from "../sync/publish.js";
 import { manifestPlace } from "../sync/publish.js";
 import { initCatalog } from "../model/catalog.js";
 import { ctlCopy } from "../midi/parse.js";
+import { fileKey } from "../midi/parse.js";
 import { syncRawNotes } from "../model/rollnotes.js";
 
 // roots the user cannot save into
@@ -179,7 +180,7 @@ export function localFolders() { // folder → this device's copies (draft keys)
 export function saveVersion(quiet) { // File → Save Version / ⌘S
   if (S.song && isUnsaved(S.songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save Version of an Untitled song: folder + name first
   if (!S.song || !S.songKey || !isComposition()) { if (!quiet) setInfo("Save Version works on your own songs — this one is a capture; Save As forks it"); return false; }
-  if (S.cmp && S.cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the published copy — switch back to your version first"); return false; }
+  if (S.cmp && S.cmp.showing === "repo") { if (!quiet) setInfo(CMP_REPO_MSG); return false; }
   saveDraft(false); // the working copy is what gets versioned; make sure it's current first
   const n = readVersions(S.songKey).length + 1;
   pushVersion(S.songKey, "Version " + n);
@@ -187,7 +188,11 @@ export function saveVersion(quiet) { // File → Save Version / ⌘S
   if (!quiet) setInfo("Version saved — only on this " + (EDITION === "app" ? "iPad" : "device"));
   return true;
 }
-export function forkCurrentSong(name, folder) { // Save As: a copy in the folder you chose (the last used one by default)
+export const CMP_REPO_MSG = "you're hearing the published copy — switch back to your version first";
+export function forkCurrentSong(name, folder) { // Save As: a copy in the folder you chose (the last used one by default); false = refused (said why)
+  // comparing: the roll holds the PUBLISHED notes (cmpShow), unlinked to
+  // rawNotes — a copy now would be a mix of the two versions
+  if (S.cmp && S.cmp.showing === "repo") { setInfo(CMP_REPO_MSG); return false; }
   const key = "albums/" + (folder || localStorage.getItem("ff1roll-lastfolder") || NR_DIR.slice(7, -1)) + "/" + slugify(name) + ".mid";
   if (folder) localStorage.setItem("ff1roll-lastfolder", folder);
   syncRawNotes(); // rawNotes takes every on-screen edit first: copying it stale undid moves and deletes (Death March, 2026-10-28)
@@ -205,7 +210,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
       ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
       notes: (S.song.rawNotes ? S.song.rawNotes[ti] : tr.notes) // raw: chop stays a view — synced from the view first (syncRawNotes above)
         .filter(n => !n.gone).map(n => {
-          const o = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums": the file's GM key, not the captured one shown in memory
+          const o = {t: n.t, d: n.d, p: S.song.rawNotes ? n.p : fileKey(tr, n), v: n.v}; // rawNotes holds the file's key already (rawTwin); a view note may show the captured one ("Not drums")
           if (n.ch !== undefined) o.ch = n.ch;
           if (n.duty !== undefined) o.duty = n.duty;
           if (n.ve !== undefined) o.ve = n.ve;
@@ -238,6 +243,7 @@ export function forkCurrentSong(name, folder) { // Save As: a copy in the folder
   saveDraft();
   updateSongBtn();
   draw();
+  return true;
 }
 
 export function createComposition(bpm, num, den) { // Untitled until the first Save names it and picks its folder
@@ -303,7 +309,7 @@ export function makeItMine(name, folder) {
   if (origin !== "capture" && origin !== "starter") return; // everything else already has Edit locally/Save As
   folder = folder || localStorage.getItem("ff1roll-lastfolder") || "my-covers";
   const title = forkClashTitle(folder, (name || songTitleOf(S.songKey)).trim() || songTitleOf(S.songKey));
-  forkCurrentSong(title, folder);
+  if (!forkCurrentSong(title, folder)) return;
   setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
 }
 

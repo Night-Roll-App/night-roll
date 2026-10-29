@@ -1,5 +1,4 @@
 import { moveSnapTicks } from "../model/grid.js";
-import { addSongNote } from "../model/edits.js";
 import { S } from "../state.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
@@ -8,6 +7,7 @@ import { drawImpl as draw } from "../ui/chrome.js";
 import { pushUndo } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
 import { isLocalDraft } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { saveDraft } from "../model/versions.js";
 import { computeSongEnd } from "../model/song.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";

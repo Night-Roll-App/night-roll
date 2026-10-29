@@ -1,5 +1,4 @@
 import { barTicks } from "../model/rollnotes.js";
-import { addSongNote } from "../model/edits.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { trackIsDrums } from "../model/grid.js";
@@ -16,6 +15,7 @@ import { isComposition } from "../model/provenance.js";
 import { pushUndo } from "../model/edits.js";
 import { undoTrackAdd } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { buildScoreModel } from "../hooks.js";
 import { clampView } from "../hooks.js";

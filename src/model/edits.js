@@ -60,7 +60,7 @@ export function addTrackUndoable(track) { // push a track and return its index; 
 export function addSongNote(ti, n) {
   S.song.tracks[ti].notes.push(n);
   const raw = S.song.rawNotes && S.song.rawNotes[ti];
-  if (raw) n.ri = raw.push(rawTwin(n, n.t + S.chopS, n.d)) - 1;
+  if (raw) n.ri = raw.push(rawTwin(n, n.t + S.chopS, n.d, S.song.tracks[ti])) - 1;
   return n;
 }
 

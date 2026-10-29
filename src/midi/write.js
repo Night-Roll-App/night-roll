@@ -1,4 +1,4 @@
-import { ctlBytes, glidePreds } from "./parse.js";
+import { ctlBytes, glidePreds, fileKey } from "./parse.js";
 
 export function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one track per voice.
   // ONE writer, in two forms (open-items.md "FORMATS AUDIT" #1-2): this hand
@@ -110,7 +110,7 @@ const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
     for (const n of tr.notes) {
       if (n.gone) continue;
       const ch = chOf(n);
-      const kp = tr.kitFrom && n.pKit !== undefined ? n.pKit : n.p; // "Not drums" shows the captured keys in memory; the file keeps the GM keys
+      const kp = tr.kitFrom ? fileKey(tr, n) : n.p; // "Not drums" shows the captured keys in memory; the file keeps the GM keys
       // duty (chip timbre) rides as CC70 ahead of the note it changes on —
       // parseMidi reads it back; other DAWs just see a sound controller
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }

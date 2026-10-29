@@ -204,6 +204,7 @@ import { createComposition } from "../session/files.js";
 import { openSaveForm } from "../session/files.js";
 import { makeItMine } from "../session/files.js";
 import { forkCurrentSong } from "../session/files.js";
+import { CMP_REPO_MSG } from "../session/files.js";
 import { publishUnsavedSong } from "../sync/publish.js";
 import { saveSongAs } from "../session/files.js";
 import { renameImportDraft } from "../import/capture.js";
@@ -2343,7 +2344,7 @@ export function initChrome12() {
       return;
     }
     if (form.dataset.mode === "fork") {
-      forkCurrentSong(name, folder);
+      if (!forkCurrentSong(name, folder)) { fileStatus(CMP_REPO_MSG); return; } // comparing: the only refusal
       document.getElementById("filesheet").classList.remove("on");
       setInfo("copy saved as " + name.trim() + " in " + folderTitle(folder) + " — fully editable; Publish sends it to GitHub.");
       return;

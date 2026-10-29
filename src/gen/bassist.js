@@ -1,5 +1,4 @@
 import { parseChordSym } from "../theory/chords.js";
-import { addSongNote } from "../model/edits.js";
 import { LETTER_PC } from "../theory/chords.js";
 import { CHORD_TEMPLATES } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
@@ -19,6 +18,7 @@ import { sectionLane } from "./drummer.js";
 import { isComposition } from "../model/provenance.js";
 import { pushUndo } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { buildScoreModel } from "../hooks.js";
 import { draw } from "../hooks.js";

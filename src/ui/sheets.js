@@ -1,5 +1,4 @@
 import { jobControls } from "../model/jobs.js";
-import { addSongNote } from "../model/edits.js";
 import { S, prof } from "../state.js";
 import { JOB_KINDS } from "../model/jobs.js";
 import { jobBarSet } from "../model/jobs.js";
@@ -178,6 +177,7 @@ import { repoName } from "../platform/storage.js";
 import { renderTrackbarImpl as renderTrackbar } from "./trackbar.js";
 import { undoTrackAdd } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { getBeatPair } from "./note-editor.js";
 import { selEditItems } from "../model/selection.js";

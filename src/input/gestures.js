@@ -1,5 +1,4 @@
 import { canvas } from "../render/roll.js";
-import { addSongNote } from "../model/edits.js";
 import { softFocus } from "../ui/chrome.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { tombstone } from "../model/edits.js";
@@ -107,6 +106,7 @@ import { inKitLane } from "../render/roll.js";
 import { pencilTicks } from "../model/grid.js";
 import { gridCellStart } from "../model/grid.js";
 import { annoSnapshot } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { minPxq } from "../ui/chrome.js";
 import { PAN_TAIL_BARS } from "../ui/chrome.js";
 import { songRegionRight } from "../ui/chrome.js";

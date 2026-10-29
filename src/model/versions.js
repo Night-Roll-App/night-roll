@@ -32,6 +32,7 @@ import { resolveNoteWith } from "./rollnotes.js";
 import { bakeTempos } from "./rollnotes.js";
 import { bakeMeter } from "./rollnotes.js";
 import { ctlCopy } from "../midi/parse.js";
+import { fileKey } from "../midi/parse.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -44,7 +45,7 @@ export function draftTracks(tracks) { // the notes as a draft stores them (and a
   return tracks.map(tr => {
     const o = {name: tr.name,
       notes: tr.notes.filter(n => !n.gone).map(n => {
-        const on = {t: n.t, d: n.d, p: n.pKit !== undefined ? n.pKit : n.p, v: n.v}; // "Not drums" shows the captured keys in memory (pKit holds the file's GM key); a draft keeps the file's
+        const on = {t: n.t, d: n.d, p: fileKey(tr, n), v: n.v}; // "Not drums" shows the captured keys in memory (pKit holds the file's GM key); a draft keeps the file's
         if (n.ch !== undefined) on.ch = n.ch; // drum channel survives edit re-saves
         if (n.duty !== undefined) on.duty = n.duty;
         if (n.ve !== undefined) on.ve = n.ve;
