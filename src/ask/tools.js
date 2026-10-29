@@ -74,6 +74,7 @@ import { deleteTime } from "../model/selection.js";
 import { drGenerate } from "../gen/drummer.js";
 import { addTrackUndoable } from "../model/edits.js";
 import { undoTrackAdd } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { renderTrackbarImpl as renderTrackbar } from "../ui/trackbar.js"; // same layer as ask/tools.js — direct import, not the hooks.js port (that's for gen/drummer.js's lower-layer upcall)
 import { deleteSelection } from "../model/selection.js";
 import { quantizeSelection } from "../model/selection.js";
@@ -131,6 +132,7 @@ import { albumEffectiveOrder } from "../model/album-order.js";
 import { createComposition } from "../session/files.js";
 import { saveSongAs } from "../session/files.js";
 import { forkCurrentSong } from "../session/files.js";
+import { CMP_REPO_MSG } from "../session/files.js";
 import { isUnsaved } from "../model/provenance.js";
 import { slugify } from "../model/provenance.js";
 import { folderFromInput } from "../model/provenance.js";
@@ -701,8 +703,7 @@ export function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate
   const added = [];
   for (const h of snapshot) {
     const tr = S.song.tracks[h.ti], isAdd = !isComposition(), t = T + h.t;
-    tr.notes.push({t, d: h.d, p: h.p, v: h.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[h.ti].push({t: t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
+    addSongNote(h.ti, {t, d: h.d, p: h.p, v: h.v, added: isAdd});
     added.push({ti: h.ti, ni: tr.notes.length - 1});
   }
   pushUndo({kind: "group", entries: [{kind: "mod", items: modItems}, {kind: "anno", json: annoBefore}, {kind: "addBatch", items: added}]});
@@ -1478,7 +1479,7 @@ export async function askSongFile(a) {
     let folder;
     if (askActGiven(a.folder)) { folder = folderFromInput(String(a.folder)); if (!folder) throw new Error("\"" + a.folder + "\" isn't a usable folder name — pick another"); }
     if (S.playing) stop();
-    forkCurrentSong(title, folder); // folder undefined: forkCurrentSong's own default (the last-used folder)
+    if (!forkCurrentSong(title, folder)) throw new Error(CMP_REPO_MSG); // folder undefined: forkCurrentSong's own default (the last-used folder); false only while comparing
     return {ok: true, note: "saved a copy as \"" + title + "\"" + (folder ? " in " + folder : "") + " — fully editable"};
   }
   if (action === "rename") {

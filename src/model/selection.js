@@ -34,6 +34,7 @@ import { resolveNote } from "./rollnotes.js";
 import { dropSupersededBy } from "./rollnotes.js";
 import { moveSnapTicks } from "./grid.js";
 import { tombstone } from "./edits.js";
+import { addSongNote } from "./edits.js";
 import { saveDraft } from "./versions.js";
 import { sfDeclaredAt } from "./song.js";
 import { CHORD_QUALS } from "../theory/chords.js";
@@ -297,8 +298,7 @@ export function pasteClipboard(atTick, opts = {}) {
     const isAdd = !isComposition();
     if (tr.notes.some(n => !n.gone && n.t === t0 + c.dt && n.p === p)) continue; // never stack an identical note
     const shape = {...(c.env ? {env: c.env.map(q => ({...q}))} : {}), ...(c.ve !== undefined ? {ve: c.ve} : {})};
-    tr.notes.push({t: t0 + c.dt, d: c.d, p, v: c.v, added: isAdd, ...shape});
-    if (S.song.rawNotes) S.song.rawNotes[ti].push({t: t0 + c.dt + S.chopS, d: c.d, p, v: c.v, added: isAdd, ...shape});
+    addSongNote(ti, {t: t0 + c.dt, d: c.d, p, v: c.v, added: isAdd, ...shape});
     added.push({ti, ni: tr.notes.length - 1});
   }
   if (!added.length && !S.annoClipboard.length) return 0; // nothing landed: no undo step, selection and cursor untouched
@@ -393,8 +393,7 @@ export function duplicateSelectionInPlace() { // option-drag: clones become the 
   for (const {ti, n: nn} of items) {
     const tr = S.song.tracks[ti];
     const isAdd = !isComposition();
-    tr.notes.push({t: nn.t, d: nn.d, p: nn.p, v: nn.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[ti].push({t: nn.t + S.chopS, d: nn.d, p: nn.p, v: nn.v, added: isAdd});
+    addSongNote(ti, {t: nn.t, d: nn.d, p: nn.p, v: nn.v, added: isAdd});
     added.push({ti, ni: tr.notes.length - 1});
   }
   const entry = {kind: "addBatch", items: added};
@@ -413,8 +412,7 @@ export function splitApply(items, cutFor) { // shared: cut each note at cutFor(n
   for (const {ti, n} of items) {
     const cut = cutFor(n);
     const tr = S.song.tracks[ti], isAdd = !isComposition();
-    tr.notes.push({t: cut, d: n.t + n.d - cut, p: n.p, v: n.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[ti].push({t: cut + S.chopS, d: n.t + n.d - cut, p: n.p, v: n.v, added: isAdd});
+    addSongNote(ti, {t: cut, d: n.t + n.d - cut, p: n.p, v: n.v, added: isAdd});
     added.push({ti, ni: tr.notes.length - 1});
     n.d = cut - n.t;
     const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[ti][n.ri];
@@ -564,8 +562,7 @@ export function divideSelection(nParts) { // ➗: each selected note becomes N e
     const bounds = [];
     for (let i = 0; i <= nParts; i++) bounds.push(n.t + Math.round(n.d * i / nParts));
     for (let i = 1; i < nParts; i++) {
-      tr.notes.push({t: bounds[i], d: bounds[i + 1] - bounds[i], p: n.p, v: n.v, added: isAdd});
-      if (S.song.rawNotes) S.song.rawNotes[ti].push({t: bounds[i] + S.chopS, d: bounds[i + 1] - bounds[i], p: n.p, v: n.v, added: isAdd});
+      addSongNote(ti, {t: bounds[i], d: bounds[i + 1] - bounds[i], p: n.p, v: n.v, added: isAdd});
       added.push({ti, ni: tr.notes.length - 1});
     }
     n.d = bounds[1] - n.t;
@@ -728,8 +725,7 @@ export function moveSelectionToTrack(target, dT = 0) { // ⇄ / tracks-view retr
     const n = it.n;
     const nt = Math.max(0, n.t + dT);
     const shape = {...(n.env ? {env: n.env} : {}), ...(n.ve !== undefined ? {ve: n.ve} : {})}; // the volume shape rides along
-    tr.notes.push({t: nt, d: n.d, p: n.p, v: n.v, duty: n.duty, added: isAdd, ...shape});
-    if (S.song.rawNotes) S.song.rawNotes[target].push({t: nt + S.chopS, d: n.d, p: n.p, v: n.v, added: isAdd, ...shape});
+    addSongNote(target, {t: nt, d: n.d, p: n.p, v: n.v, duty: n.duty, added: isAdd, ...shape});
     added.push({ti: target, ni: tr.notes.length - 1});
     n.gone = true;
     const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[it.ti][n.ri];
@@ -795,8 +791,7 @@ export function insertChordAt(tick, rootPc, qual, oct, durQ) {
     const p = base + iv;
     if (p < S.PMIN || p > S.PMAX) continue;
     if (tr.notes.some(n => !n.gone && n.t === t0 && n.p === p)) continue; // never stack
-    tr.notes.push({t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: t0 + S.chopS, d: snap, p, v: S.pencilVel, added: isAdd});
+    addSongNote(S.selTrack, {t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
     added.push({ti: S.selTrack, ni: tr.notes.length - 1});
   }
   if (!added.length) return 0;
@@ -830,8 +825,7 @@ export function insertProgressionAt(tick, progStr, tonicPc, oct, durQ, minorScal
       const p = base + iv;
       if (p < S.PMIN || p > S.PMAX) continue;
       if (tr.notes.some(n => !n.gone && n.t === t0 && n.p === p)) continue; // never stack
-      tr.notes.push({t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
-      if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: t0 + S.chopS, d: snap, p, v: S.pencilVel, added: isAdd});
+      addSongNote(S.selTrack, {t: t0, d: snap, p, v: S.pencilVel, added: isAdd});
       added.push({ti: S.selTrack, ni: tr.notes.length - 1});
     }
     stampChordBand(t0, snap, chordSym((tonicPc + c.pcOff) % 12, c.qual));

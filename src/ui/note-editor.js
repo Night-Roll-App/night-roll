@@ -748,16 +748,17 @@ export function invertEdit(u) { // the entry that would undo an applyU(u), captu
   if (u.kind === "trackReorder") return {kind: "trackReorder", tracks: S.song.tracks.slice(), trackState: S.trackState.slice(), // current state, like anno/mod
     trackGains: S.trackGains.slice(), trackPanners: S.trackPanners.slice(), rawNotes: S.song.rawNotes ? S.song.rawNotes.slice() : null,
     selTrack: S.selTrack, selNote: S.selNote ? {ti: S.selNote.ti, ni: S.selNote.ni} : null, selClip: S.selClip ? {ti: S.selClip.ti, ci: S.selClip.ci} : null};
-  if (u.kind === "mod") return {kind: "mod", items: u.items.map(({ti, ni}) => {
-    const n = S.song.tracks[ti].notes[ni];
-    const o = {ti, ni, t: n.t, d: n.d, p: n.p, v: n.v};
+  if (u.kind === "mod") return {kind: "mod", items: u.items.map(it => {
+    const {ti, ni} = it, n = S.song.tracks[ti] && S.song.tracks[ti].notes[ni];
+    if (!n) return {...it}; // outside the current chop window (remapNoteRefs): nothing to snapshot, the entry rides along
+    const o = {ti, ni, ...(it.ri !== undefined ? {ri: it.ri} : {}), t: n.t, d: n.d, p: n.p, v: n.v};
     if (u.items.some(x => "env" in x)) Object.assign(o, shapeSnap(n)); // a shape edit's redo restores the shape too
     return o;
   })};
   if (u.kind === "addBatch") return {kind: "eraseBatch", items: u.items};
   if (u.kind === "eraseBatch") return {kind: "addBatch", items: u.items};
   if (u.kind === "anno") return Object.assign({}, u, {json: annoSnapshot()}); // current state, like mod — its what/at label rides along
-  return {ti: u.ti, ni: u.ni, kind: u.kind === "add" ? "erase" : "add"};
+  return {ti: u.ti, ni: u.ni, ...(u.ri !== undefined ? {ri: u.ri} : {}), kind: u.kind === "add" ? "erase" : "add"}; // ri: the note a chop re-carve remaps to
 }
 export function editRedoPop() {
   const r = S.editRedo.pop();
@@ -873,7 +874,8 @@ export function applyEditEntry(u) {
     else if (v.kind === "eraseBatch") { for (const it of v.items) setGone(it.ti, it.ni, false); }
     else setGone(v.ti, v.ni, v.kind === "add"); // undo an add = remove it; undo an erase = restore it
   };
-  applyU(u);
+  S.editInFlight = u; // an anno entry can re-carve (a chop: undone) while a group's note entries are still to come
+  try { applyU(u); } finally { S.editInFlight = null; }
   saveEdits();
   computeSongEnd();
   if (S.viewMode === "score") buildScoreModel();

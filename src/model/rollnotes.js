@@ -1,5 +1,6 @@
 import { beatsPerBarEff } from "./grid.js";
 import { S } from "../state.js";
+import { fileKey } from "../midi/parse.js";
 import { keyNameToSf } from "../theory/key.js";
 import { romanPretty } from "../theory/chords.js";
 import { beatTicks } from "./grid.js";
@@ -25,6 +26,9 @@ export function applyChop(cStart, cEnd) { // docs/split-plan.md §4 step 1 devia
   if (!S.song || !S.song.rawNotes) return false;
   const sig = cStart + ":" + (cEnd === null ? "" : cEnd);
   if (S.appliedChop === sig) return false;
+  if (S.cmp && S.cmp.showing === "repo") return false; // comparing: the roll is the published copy; carve once his version is back
+  syncRawNotes(); // the old view's edits go back first, or the new carve drops them
+  const oldViews = S.song.tracks.map(tr => tr.notes), uncarved = S.appliedChop === null;
   S.appliedChop = sig; S.chopS = cStart; S.chopE = cEnd;
   S.song.tracks.forEach((tr, ti) => {
     let notes = S.song.rawNotes[ti].map((n, ri) => ({...n, ri})); // ri: raw index, keeps edit ids stable
@@ -37,8 +41,78 @@ export function applyChop(cStart, cEnd) { // docs/split-plan.md §4 step 1 devia
       }
     }
     tr.notes = notes;
+    delete tr.kitSwapped; // fresh from rawNotes: the file's keys again; finalizeNotes swaps them back if "Not drums" still says so
   });
+  remapNoteRefs(oldViews, uncarved);
   return true;
+}
+// A carve rebuilds every track's notes array, so a {ti, ni} kept across it
+// (undo/redo entries, the selection, a record take) named whatever note now
+// sits at that index — ⌘Z after a chop change hit the wrong note. Each ref
+// learns its note's ri (the identity a carve keeps) and its ni follows it;
+// a note outside the new window gets ni -1 (every reader skips a missing
+// note) and keeps its ri, so the carve that brings it back finds it again.
+// uncarved: setSong's view, not yet linked — there view index = raw index.
+export function remapNoteRefs(oldViews, uncarved) {
+  const where = S.song.tracks.map(tr => { const m = new Map(); tr.notes.forEach((n, ni) => m.set(n.ri, ni)); return m; });
+  const fix = it => {
+    if (!it || typeof it.ti !== "number" || typeof it.ni !== "number") return;
+    if (it.ri === undefined) { const o = oldViews[it.ti] && oldViews[it.ti][it.ni]; it.ri = o && o.ri !== undefined ? o.ri : uncarved && o ? it.ni : undefined; }
+    const ni = where[it.ti] && it.ri !== undefined ? where[it.ti].get(it.ri) : undefined;
+    it.ni = ni === undefined ? -1 : ni;
+  };
+  const walk = e => {
+    if (!e) return;
+    if (e.kind === "group") { (e.entries || []).forEach(walk); return; }
+    if (e.kind === "trackInsert" || e.kind === "trackRemove" || e.kind === "trackReorder" || e.kind === "anno") return;
+    if (e.items) e.items.forEach(fix); else fix(e);
+  };
+  S.editUndo.forEach(walk); S.editRedo.forEach(walk); walk(S.editInFlight);
+  S.multiSel.forEach(fix); S.multiSel = S.multiSel.filter(m => m.ni >= 0);
+  S.multiSelKey = new Set(S.multiSel.map(m => m.ti + ":" + m.ni));
+  if (S.selNote) { fix(S.selNote); if (S.selNote.ni < 0) S.selNote = null; }
+  (S.recTake || []).forEach(fix);
+}
+// rawNotes is the chop's source; a re-carve (applyChop) and Save As
+// (forkCurrentSong) read it, so first it takes back every edit made to the
+// view since the last carve — not every edit site mirrors through ri
+// (velocity lane, shapes, …), and a note pushed without addSongNote has no
+// ri at all. Linked notes overwrite their twin (t/d only when they differ
+// from what the carve made of it, so an untouched note straddling a cut
+// isn't clipped for good); unlinked ones join raw; a raw note inside the
+// window that no view note claims was spliced out of the view: gone.
+export function syncRawNotes() {
+  if (!S.song || !S.song.rawNotes || S.appliedChop === null) return; // setSong → first finalizeNotes (loadNotes is async): the view isn't carved, so nothing on it carries ri — an edit in that window has no twin to write to and is lost to the first carve (a known gap)
+  if (S.cmp && S.cmp.showing === "repo") return; // comparing: the roll holds the published notes (cmpShow's clones), not his — writing them back would bury his
+  const cs = S.chopS || 0, ce = S.chopE === undefined ? null : S.chopE;
+  S.song.tracks.forEach((tr, ti) => {
+    if (!S.song.rawNotes[ti]) { // a track with no raw list: its view is all there is
+      S.song.rawNotes[ti] = tr.notes.map((n, ri) => { n.ri = ri; return rawTwin(n, n.t + cs, n.d, tr); });
+      return;
+    }
+    const raw = S.song.rawNotes[ti], claimed = new Set();
+    for (const n of tr.notes) {
+      const r = n.ri !== undefined && !claimed.has(n.ri) ? raw[n.ri] : null; // a {...n} clone shares its source's ri: the first one keeps it
+      if (!r) { n.ri = raw.push(rawTwin(n, n.t + cs, n.d, tr)) - 1; claimed.add(n.ri); continue; }
+      claimed.add(n.ri);
+      let t = r.t, d = r.d; // what applyChop made of r
+      if (t < cs) { d -= cs - t; t = cs; }
+      t -= cs;
+      if (ce !== null && t + d > ce - cs) d = ce - cs - t;
+      const same = n.t === t && n.d === d;
+      const twin = rawTwin(n, same ? r.t : n.t + cs, same ? r.d : n.d, tr);
+      for (const k of Object.keys(r)) delete r[k];
+      Object.assign(r, twin);
+    }
+    raw.forEach((r, ri) => { if (!claimed.has(ri) && !r.gone && r.t + r.d > cs && (ce === null || r.t < ce)) r.gone = true; });
+  });
+}
+export function rawTwin(n, t, d, tr) { // a view note as rawNotes keeps it: raw ticks, the file's GM key, no link, its own shape arrays
+  const r = {...n, t, d, p: fileKey(tr, n)};
+  delete r.ri; delete r.pKit;
+  if (n.env) r.env = n.env.map(q => ({...q}));
+  if (n.duties) r.duties = n.duties.map(q => ({...q}));
+  return r;
 }
 export function notesBase() { return S.songKey ? S.songKey.replace(/\.midi?$/i, "") : null; }
 // path minus extension

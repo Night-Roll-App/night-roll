@@ -40,6 +40,7 @@ export const S = {
   pencilVel: 80,
   pencilAcc: "key",
   editUndo: [],
+  editInFlight: null, // the undo/redo entry applyEditEntry is applying: a chop carve mid-apply remaps it too (remapNoteRefs)
   view: { x: 0, y: 0, pxq: 56, rowH: 13 },
   playing: false,
   playT0: 0,

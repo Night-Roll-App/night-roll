@@ -14204,6 +14204,147 @@ test("Publish on an Untitled song names it first (saveSongAs), then publishes it
   assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
 });
 
+// Save As builds its copy from rawNotes (the chop's source). Each add site
+// must link its note there (addSongNote → ri) or the note's later edits
+// never reach it; syncRawNotes catches what a site still misses.
+async function forkKeepsScreen(setup, label, linked = true) {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(100, 4, 4); selTrack = 2; editUndo = []; editRedo = [];`);
+  run(setup);
+  const screen = `song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]).sort((a, b) => a[0] - b[0] || a[2] - b[2]))`;
+  const before = val(screen);
+  if (linked) assert.deepEqual(val(screen.replace("song.tracks.map(tr => tr.notes", "song.rawNotes.map(tr => tr")), before, label + ": rawNotes already holds every edit, before any sync");
+  run(`forkCurrentSong("QA Fork Song", "compositions/nightroll")`);
+  assert.equal(val(`songKey`), "albums/compositions/nightroll/qa-fork-song.mid");
+  assert.deepEqual(val(screen), before, label + ": the copy is what he saw");
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "x", notes: []}]}; songKey = "albums/qa-other/x.mid";
+       globalThis.__done = 0; loadSong("albums/compositions/nightroll/qa-fork-song.mid").then(() => __done = 1);`);
+  for (let i = 0; i < 100 && !val(`__done`); i++) await new Promise(r => setTimeout(r, 10));
+  assert.deepEqual(val(screen), before, label + ": and what a reopen loads");
+  return {before, val, run};
+}
+// select the live notes of track ti matching pred, then run an edit on them
+const pick = (ti, pred) => `multiSel = []; song.tracks[${ti}].notes.forEach((n, ni) => { if (!n.gone && (${pred})(n)) multiSel.push({ti: ${ti}, ni}); });
+  multiSelKey = new Set(multiSel.map(m => m.ti + ":" + m.ni)); selNote = null;`;
+
+test("Save As copies the song as it is on screen — pasted notes he then moved or deleted don't revert or come back (Josh, Death March, 2026-10-28)", async () => {
+  const {before} = await forkKeepsScreen(`noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}, {ti: 2, dt: 120, d: 120, p: 47, v: 80}];
+    pasteClipboard(1920);
+    ${pick(2, "n => n.t === 1920")} nudgeSelection(0, -1);
+    ${pick(2, "n => n.t === 2040")} deleteSelection();`, "paste");
+  assert.deepEqual(before[2], [[1920, 120, 46, 80]], "setup: one note left, moved down to A#");
+});
+
+test("Save As keeps edits to Drummer, Bassist, recorded and Ask-copied notes (every add site links rawNotes)", async () => {
+  { const {before} = await forkKeepsScreen(`drGenerate(555, 3, 1, 2);
+      const di = song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+      ${pick("song.tracks.length - 1", "n => n.t < 1920")} deleteSelection();
+      ${pick("song.tracks.length - 1", "n => n.t >= 1920 && n.t < 2400")} nudgeSelection(120, 0);`, "Drummer");
+    assert.ok(before[before.length - 1].length > 0 && before[before.length - 1].every(n => n[0] >= 1920), "setup: bar 1's hits deleted, bar 2's kept"); }
+  await forkKeepsScreen(`applyTake(2, 0, 3840, [{t: 0, d: 480, p: 40, v: 90}, {t: 480, d: 480, p: 43, v: 90}, {t: 960, d: 480, p: 45, v: 90}]);
+    ${pick(2, "n => n.t === 0")} deleteSelection();
+    ${pick(2, "n => n.t === 480")} nudgeSelection(0, 2);`, "Bassist");
+  await forkKeepsScreen(`recTake = []; recTakeNote(0, 240, 60, 100); recTakeNote(480, 720, 62, 100); recTakeNote(960, 1200, 64, 100);
+    ${pick(2, "n => n.p === 60")} deleteSelection();
+    ${pick(2, "n => n.p === 62")} nudgeSelection(0, -1);`, "record");
+  await forkKeepsScreen(`addSongNote(2, {t: 0, d: 480, p: 50, v: 80}); /* a bar 1 to copy */
+    askCopyBars({from_bar: 1, to_bar: 1, at_bar: 2});
+    ${pick(2, "n => n.t === 1920")} nudgeSelection(0, 3);`, "Ask copy_bars");
+});
+
+test("syncRawNotes: an edit no site mirrored (velocity lane, a bare push) still reaches Save As; a chop re-carve keeps it", async () => {
+  await forkKeepsScreen(`noteClipboard = [{ti: 2, dt: 0, d: 120, p: 47, v: 80}]; pasteClipboard(0);
+    song.tracks[2].notes[0].v = 33; /* the velocity lane writes n.v only */
+    song.tracks[1].notes.push({t: 960, d: 240, p: 70, v: 80}); /* a future add site that forgot addSongNote */`, "unmirrored", false);
+  // chop: start at bar 2 — the view is bars 2+, rawNotes the whole song
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(100, 4, 4); selTrack = 2;
+       noteClipboard = [{ti: 2, dt: 0, d: 240, p: 50, v: 80}, {ti: 2, dt: 1920, d: 240, p: 52, v: 80}, {ti: 2, dt: 3840, d: 240, p: 53, v: 80}];
+       pasteClipboard(0);
+       rollnotes.push(resolveNote({b1: 2, q1: 1, b2: null, q2: null, text: "chop: start", added: true})); finalizeNotes();`);
+  assert.equal(val(`chopS`), 1920);
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), [[0, 52], [1920, 53]], "setup: the view starts at bar 2");
+  run(`${pick(2, "n => n.p === 52")} nudgeSelection(0, -2); ${pick(2, "n => n.p === 53")} deleteSelection();
+       song.tracks[2].notes.find(n => n.p === 50 && !n.gone).v = 99;`);
+  const raw = `song.rawNotes[2].filter(n => !n.gone).map(n => [n.t, n.p, n.v]).sort((a, b) => a[0] - b[0])`;
+  // a re-carve (the chop moves back to bar 1) sees every edit made under the old one
+  run(`rollnotes = rollnotes.filter(n => !/^chop:/.test(n.text)); finalizeNotes();`);
+  assert.equal(val(`chopS`), 0);
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p, n.v]).sort((a, b) => a[0] - b[0])`),
+    [[0, 50, 80], [1920, 50, 99]], "un-chopped: bar 1 kept, the moved note moved (and its lane-only velocity), the deleted one gone");
+  run(`rollnotes.push(resolveNote({b1: 2, q1: 1, b2: null, q2: null, text: "chop: start", added: true})); finalizeNotes();
+       forkCurrentSong("QA Chop Fork", "compositions/nightroll")`);
+  assert.deepEqual(val(raw), [[0, 50, 80], [1920, 50, 99]], "Save As under a chop copies the whole song, edits included");
+});
+
+test("Save As while comparing (hearing the published copy) refuses — File menu, Ask save_as — and rawNotes keeps his notes", async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(100, 4, 4); selTrack = 2;
+       noteClipboard = [{ti: 2, dt: 0, d: 240, p: 47, v: 80}]; pasteClipboard(0);
+       cmp = {repo: song.tracks.map(tr => ({name: tr.name, notes: tr.name === "triangle" ? [{t: 960, d: 240, p: 40, v: 80}] : []})),
+              showing: "mine", mine: null, diff: {tracks: [], added: 0, removed: 0, changed: 0}};
+       cmpShow("repo");`);
+  const key = val(`songKey`);
+  assert.deepEqual(val(`song.tracks[2].notes.map(n => n.p)`), [40], "setup: the roll shows the published copy");
+  run(`syncRawNotes();`);
+  assert.deepEqual(val(`song.rawNotes[2].filter(n => !n.gone).map(n => [n.t, n.p])`), [[0, 47]], "a sync while comparing leaves his notes alone");
+  run(`globalThis.__info = ""; setInfo = m => { __info = m; };`);
+  assert.equal(val(`forkCurrentSong("QA Cmp Fork", "compositions/nightroll")`), false);
+  assert.match(val(`__info`), /published copy/);
+  assert.equal(val(`songKey`), key, "no copy was made");
+  await assert.rejects(app.run(`askSongFile({op: "save_as", title: "QA Cmp Fork"})`), /published copy/);
+  assert.equal(val(`localStorage.getItem(draftStoreKey("albums/compositions/nightroll/qa-cmp-fork.mid"))`), null);
+  run(`cmpShow("mine");`);
+  assert.equal(val(`forkCurrentSong("QA Cmp Fork", "compositions/nightroll")`), true, "back on his version: Save As works");
+  assert.deepEqual(val(`song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.p])`), [[0, 47]], "and copies HIS notes");
+});
+
+test("undo across a chop re-carve: ⌘Z/⇧⌘Z hit the note they were made on, then Save As copies the result; track delete + undo under a chop", async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  const live = ti => `song.tracks[${ti}].notes.filter(n => !n.gone).map(n => [n.t, n.p]).sort((a, b) => a[0] - b[0])`;
+  const chop = on => run(on ? `rollnotes.push(resolveNote({b1: 2, q1: 1, b2: null, q2: null, text: "chop: start", added: true})); finalizeNotes();`
+                            : `rollnotes = rollnotes.filter(n => !/^chop:/.test(n.text)); finalizeNotes();`);
+  run(`createComposition(100, 4, 4); selTrack = 2; editUndo = []; editRedo = [];
+       noteClipboard = [{ti: 2, dt: 0, d: 240, p: 50, v: 80}, {ti: 2, dt: 1920, d: 240, p: 52, v: 80}]; pasteClipboard(0); editUndo = [];`);
+  chop(true);
+  run(`noteClipboard = [{ti: 2, dt: 0, d: 240, p: 60, v: 80}]; pasteClipboard(960);`); // raw tick 2880
+  assert.deepEqual(val(live(2)), [[0, 52], [960, 60]]);
+  chop(false);
+  assert.deepEqual(val(live(2)), [[0, 50], [1920, 52], [2880, 60]], "chop off: the whole song, the paste at its raw tick");
+  run(`editUndoPop()`);
+  assert.deepEqual(val(live(2)), [[0, 50], [1920, 52]], "⌘Z removes the pasted note, not whatever took its index");
+  chop(true);
+  run(`editRedoPop()`);
+  assert.deepEqual(val(live(2)), [[0, 52], [960, 60]], "⇧⌘Z under the chop again puts back that same note");
+  run(`forkCurrentSong("QA Chop Undo", "compositions/nightroll")`);
+  assert.deepEqual(val(`song.rawNotes[2].filter(n => !n.gone).map(n => [n.t, n.p]).sort((a, b) => a[0] - b[0])`), [[0, 50], [1920, 52], [2880, 60]], "Save As: the whole song as it stands");
+  // a track deleted under a chop and undone comes back whole — its notes outside the window too
+  chop(true);
+  run(`editUndo = []; askDeleteTrack({track: "triangle"});`);
+  assert.equal(val(`song.tracks.length`), 2);
+  run(`editUndoPop()`);
+  assert.equal(val(`song.tracks[2].name`), "triangle");
+  chop(false);
+  assert.deepEqual(val(live(2)), [[0, 50], [1920, 52], [2880, 60]], "the restored track, un-chopped, has all its notes");
+});
+
+test('"Not drums": a transposed or penciled note saves its GM key, not the captured one it shows', async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  // a capture-style kit track: file GM 36 plays the game's key 60, GM 38 → 62
+  run(`createComposition(100, 4, 4);
+       song.tracks.push({name: "drums", kit: true, kitFrom: {36: 60, 38: 62}, notes: []}); song.rawNotes.push([]); trackState.push({muted: false, solo: false});
+       addSongNote(3, {t: 0, d: 120, p: 36, v: 100}); addSongNote(3, {t: 480, d: 120, p: 36, v: 100});
+       rollnotes.push(resolveNote(deriveNoteTypes([{b1: 1, q1: 1, b2: null, q2: null, text: trackDirText({name: "drums", drums: false}), added: true}])[0])); finalizeNotes();`);
+  assert.equal(val(`song.tracks[3].kitSwapped`), true, "setup: Not drums swapped the keys");
+  assert.deepEqual(val(`song.tracks[3].notes.map(n => n.p)`), [60, 60], "setup: the captured keys show");
+  // transpose the second hit onto the captured 62 row; pencil a hit on that row too
+  run(`song.tracks[3].notes[1].p = 62; addSongNote(3, {t: 960, d: 120, p: 62, v: 100});`);
+  const drafted = val(`draftTracks(song.tracks)[3].notes.map(n => n.p)`);
+  assert.deepEqual(drafted, [36, 38, 38], "the draft keeps GM keys: untouched 36, transposed and penciled 38");
+  run(`syncRawNotes();`);
+  assert.deepEqual(val(`song.rawNotes[3].map(n => n.p)`), [36, 38, 38], "rawNotes too");
+});
+
 test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it) keeps the playhead when inside (Josh, 2026-10-03)", async () => {
   const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};

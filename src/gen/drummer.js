@@ -15,6 +15,7 @@ import { isComposition } from "../model/provenance.js";
 import { pushUndo } from "../model/edits.js";
 import { undoTrackAdd } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 import { buildScoreModel } from "../hooks.js";
 import { clampView } from "../hooks.js";
@@ -520,8 +521,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   hits.sort((a, b) => a.t - b.t || a.p - b.p);
   const added = [];
   for (const h of hits) {
-    tr.notes.push({t: h.t, d: h.d, p: h.p, v: h.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[di].push({t: h.t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
+    addSongNote(di, {t: h.t, d: h.d, p: h.p, v: h.v, added: isAdd});
     added.push({ti: di, ni: tr.notes.length - 1});
   }
   pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});

@@ -84,6 +84,7 @@ import { draftRead } from "../model/versions.js";
 import { rememberLastSong } from "../platform/base.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { ctlCopy } from "../midi/parse.js";
+import { fileKey } from "../midi/parse.js";
 
 export function rememberRecentSong(key) {
   if (LINK_SONGS || !key || isUnsaved(key)) return;
@@ -145,7 +146,8 @@ export function finalizeNotesImpl() {
     S.song.tracks.forEach(tr => {
       delete tr.voice; delete tr.color; delete tr.vol; delete tr.pan; // pan: the directive's; the .mid's own stays in midiPan
       delete tr.drumsMark; delete tr.kitPlay; // These are drums / Not drums: the directive's, re-applied below
-      for (const n of tr.notes) if (n.pKit !== undefined) { n.p = n.pKit; delete n.pKit; } // "Not drums" showed the captured keys; back to the file's GM keys
+      if (tr.kitSwapped) for (const n of tr.notes) { n.p = fileKey(tr, n); delete n.pKit; } // "Not drums" showed the captured keys; back to the file's GM keys (a transposed or penciled note's too)
+      delete tr.kitSwapped;
     });
     S.trackState.forEach(st => { st.muted = false; st.solo = false; st.hidden = false; }); // the directives below say otherwise
     S.laneOverride = null; // "lane: N" directive — the kit lane's pinned row, synced like any note
@@ -178,6 +180,7 @@ export function finalizeNotesImpl() {
     for (const tr of S.song.tracks) {
       if (tr.drumsMark === false && tr.kitFrom) {
         for (const n of tr.notes) if (tr.kitFrom[n.p] !== undefined) { n.pKit = n.p; n.p = tr.kitFrom[n.p]; }
+        tr.kitSwapped = true;
       } else if (tr.drumsMark === true && !tr.kit && tr.kind !== "audio") {
         const by = new Map();
         for (const n of tr.notes) { if (n.gone) continue; if (!by.has(n.p)) by.set(n.p, {key: n.p, notes: []}); by.get(n.p).notes.push({tick: n.t}); }

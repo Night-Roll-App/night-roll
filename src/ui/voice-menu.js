@@ -78,6 +78,7 @@ import { parsePatchVoice } from "../model/patch.js";
 import { patchVoiceId } from "../model/patch.js";
 import { patchLabel } from "../model/patch.js";
 import { patchNum } from "../model/patch.js";
+import { fileKey } from "../midi/parse.js";
 
 export function autoVoiceLabel(ti) { // what "auto" actually resolves to for THIS track
   if (chipActive() && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name))
@@ -160,7 +161,7 @@ export function kitFactsText(tr) {
   if (!ns.length) return null;
   const len = ns.map(n => (tickToSec(S.song, n.t + n.d) - tickToSec(S.song, n.t)) * S.playRate).sort((a, b) => a - b);
   const counts = new Map();
-  for (const n of ns) { const k = n.pKit !== undefined ? n.pKit : n.p; counts.set(k, (counts.get(k) || 0) + 1); }
+  for (const n of ns) { const k = fileKey(tr, n); counts.set(k, (counts.get(k) || 0) + 1); }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0][0];
   const keys = Object.keys(tr.kitFrom).length;
   return "Marked a kit by the capture: " + (DRUM_LABELS[top] || "drum") + (counts.size > 1 ? " mostly" : "") + " — " + ns.length + " hits, median "

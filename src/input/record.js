@@ -7,6 +7,7 @@ import { drawImpl as draw } from "../ui/chrome.js";
 import { pushUndo } from "../model/edits.js";
 import { saveEdits } from "../model/edits.js";
 import { isLocalDraft } from "../model/edits.js";
+import { addSongNote } from "../model/edits.js";
 import { saveDraft } from "../model/versions.js";
 import { computeSongEnd } from "../model/song.js";
 import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
@@ -81,8 +82,7 @@ export function recTakeNote(tick, end, p, vel) {
   const d = Math.max(recMinD(), end - tick);
   const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
   const vv = vel !== undefined ? vel : S.pencilVel;
-  tr.notes.push({t: tick, d, p, v: vv, added: isAdd});
-  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: tick + S.chopS, d, p, v: vv, added: isAdd});
+  addSongNote(S.selTrack, {t: tick, d, p, v: vv, added: isAdd});
   S.recTake.push({ti: S.selTrack, ni: tr.notes.length - 1});
 }
 // commit S.recTake as ONE undo step (+ save); `verb` names it in the status line

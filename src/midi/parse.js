@@ -268,6 +268,16 @@ export function glidePreds(notes, chOf) {
   for (const n of notes) if (n.lg && !n.gone) { const q = endAt.get(chOf(n) + ":" + n.t); if (q && q !== n) m.set(n, q); }
   return m;
 }
+// The key a note has in the FILE. "Not drums" on a capture kit track
+// (tr.kitSwapped, set by finalizeNotes) shows the game's captured key in
+// n.p with the GM key on n.pKit; a note moved or drawn there since has a
+// captured key and a stale (or no) pKit — its GM key is kitFrom's inverse.
+export function fileKey(tr, n) {
+  if (!tr || !tr.kitSwapped || !tr.kitFrom) return n.pKit !== undefined ? n.pKit : n.p;
+  if (n.pKit !== undefined && tr.kitFrom[n.pKit] === n.p) return n.pKit; // untouched since the swap
+  for (const g of Object.keys(tr.kitFrom)) if (tr.kitFrom[g] === n.p) return +g;
+  return n.p; // a row no GM key maps to: kept as shown
+}
 export function ctlCopy(tr) { return tr.ctl && tr.ctl.length ? {ctl: tr.ctl.map(e => ({...e}))} : {}; } // every hop (draft, Save As, import, publish) carries ctl like midiPan
 // per-track lookup tables, cached on the ctl array itself (no edit UI changes
 // it in place — a new parse is a new array): "ch:c" -> [{t, v}] (the last
