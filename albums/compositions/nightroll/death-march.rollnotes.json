@@ -1,0 +1,6 @@
+{ "format": "night-roll-annotations", "version": 2, "song": "death-march", "origin": {"kind":"copy","from":"local/untitled-6.mid","at":"2026-10-28T23:01:41.864Z"}, "stamp": 1793247875372, "notes": [
+  {"at":[1,1],"type":"timesig","timesig":"4/4"},
+  {"at":[1,1],"type":"lane","lane":33},
+  {"at":[1,1],"type":"tempo","bpm":100},
+  {"at":[13,1],"type":"loop","loop":"1.1"}
+] }
