@@ -126,6 +126,7 @@ nightly; `node tools/split/check.mjs` enforces the module rules.
 - [Borrowed Tears](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/borrowed-tears)
 - [Carnival](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/carnival)
 - [Cool Bmaj Progression](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/cool-bmaj-progression)
+- [Death March](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/death-march)
 - [Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-battle-theme)
 - [Ex Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-ex-battle-theme)
 - [Fanfare](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/fanfare)
