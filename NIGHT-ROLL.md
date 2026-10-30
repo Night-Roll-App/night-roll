@@ -4914,8 +4914,33 @@ behind the bridge; nothing ships in the app.
   (`importAudioFiles` into the open song; the 20 MB mono nudge applies) and
   ↓ Download. "Re-run with these settings" = a new ⏳ row, `POST` again on
   the kept input (no re-upload), its draft `<slug>-stems-<model>-<preset>.mid`
-  beside the first. ↻ Retry (`stemsJobRetry`) is the same when the Mac
-  still has the input, else "pick the file again".
+  beside the first (nothing attaches on a re-run: the recording's bytes were
+  freed with the first job — + Add as track does it on demand).
+- **Resume / ↻ (review 2026-10-30)**: one runner, three modes — `start`
+  (PUT + POST), `rerun` (POST on the Mac's kept input), `resume` (poll
+  only). After a reload `jobsLoad` marks the row interrupted and
+  `stemsResumeInterrupted` (2 s after init, past boot's own song open) asks
+  the Mac: done → fetch song.mid and finish; running → poll on; NEVER a
+  POST (it would 409 or run a second separation). A job the Mac isn't
+  running (404 with the input kept, error, cancelled) is left for ↻, which
+  re-POSTs on the kept input; no input → "pick the file again". Every
+  finished draft takes a FREE key (`stemsFreeDraftName`: `<slug>-stems.mid`,
+  then `-2`, `-3`… — never over a draft he may have edited) and the job
+  record keeps `draftKey`; the sheet's Open song opens that. Memory: the
+  picked File stays a Blob streamed to the PUT (only its first 16 bytes are
+  read for the magic/AIFF check; AIFF is the one whole read) and
+  `S.stemsBytes[id]` is freed when the job ends. ✕ aborts an in-flight PUT
+  (AbortController, a 250 ms watch); unreachable polls fail the row after
+  `STEMS_POLL_GIVE_UP` (15 ≈ 30 s) in a row with one plain sentence, a 404
+  marks the rows failed (never left running); "Failed to fetch" reads
+  "can't reach the Mac bridge…" (`stemsNetErr`). ▶ Play makes and nudges
+  the `<audio>` inside the tap (iOS Safari's gesture rule) before the fetch;
+  closing the sheet stops it; the row label follows the real state. The attach
+  (`stemsAttach`) waits ≤ 5 s for THIS job's draft to be the open song, reads
+  the bytes, then re-checks `S.songKey === job.draftKey` right before
+  `importAudioFiles` — a song he switched to in that window never gets the
+  recording (native review 2026-10-30); a skipped attach is one sentence in
+  the job note, which the sheet's title line shows.
 - **Status line**: `/v1/status`'s `stems` field lands in `S.stemsNow`
   (ask/bridge.js) and `askStatusLine()` appends " · separating <name> 42%"
   while the Mac runs one — why the fans spin.

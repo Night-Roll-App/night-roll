@@ -16990,7 +16990,7 @@ function stemsFakeBridge(opts = {}) { // → {calls, fetch}; opts.polls: the GET
     calls.push({method, url: u, headers: o.headers || {}, body: o.body});
     if (/\/take\.wav$/.test(u)) return res(200, null, STEMS_WAV); // readData: the open song's recording from the site
     if (!/\/v1\/stems\//.test(u)) return Promise.reject(new Error("no network in tests: " + u));
-    if (method === "PUT") return res(200, {id: "x", bytes: (o.body && o.body.length) || 0, ext: "wav", name: "take"});
+    if (method === "PUT") return res(200, {id: "x", bytes: (o.body && (o.body.size !== undefined ? o.body.size : o.body.length)) || 0, ext: "wav", name: "take"});
     if (method === "POST") return opts.post ? res(opts.post.status, opts.post.body) : res(200, {id: "x", status: "running"});
     if (method === "DELETE") return res(200, {ok: true, status: "cancelling"});
     if (/\/files\/song\.mid$/.test(u)) return res(200, null, stemsFixtureMid());
@@ -17008,7 +17008,7 @@ function stemsTestOn(fake) {
 }
 function stemsTestOff() {
   app.context.fetch = app.context.__stemsPrevFetch;
-  run(`aiUrl = __stemsPrevAiUrl; stemsPollMs = 2000; jobs = []; localStorage.removeItem("ff1roll-jobs"); stemsBytes = {}; document.getElementById("importhubstatus").textContent = "";`);
+  run(`aiUrl = __stemsPrevAiUrl; stemsPollMs = 2000; jobs = []; localStorage.removeItem("ff1roll-jobs"); stemsBytes = {}; stemsAudio = null; document.getElementById("importhubstatus").textContent = "";`);
 }
 
 test("stems: the job walks upload → start → poll → fetch; rows update in order; the Mac's notes open as local/<slug>-stems.mid with stem-word tracks and no key/meter in source; counts are the note", async () => {
@@ -17031,6 +17031,8 @@ test("stems: the job walks upload → start → poll → fetch; rows update in o
     assert.equal(put.headers["x-nr-name"], "Take One.wav");
     assert.equal(put.headers["content-type"], "application/octet-stream");
     assert.equal(put.body.length, STEMS_WAV.length, "the recording's own bytes, as-is");
+    assert.equal(val(`Object.keys(stemsBytes).length`), 0, "the bytes are freed when the job ends");
+    assert.equal(val(`jobs[0].draftKey`), "local/take-one-stems.mid", "the job remembers its draft");
     const post = fake.calls.find(c => c.method === "POST");
     assert.equal(post.url, "http://bridge.test/v1/stems/" + info.stemsId);
     assert.deepEqual(JSON.parse(post.body), {model: "htdemucs", mix: true, drums: "kit", notes: {preset: "default"}}, "the device defaults; zero knobs are left to the preset");
@@ -17096,7 +17098,7 @@ test("stems: refusals before anything is sent — a second live job, no bridge c
     await new Promise(r => setTimeout(r, 5));
     assert.match(val(`document.getElementById("importhubstatus").textContent`), /one recording at a time/);
     assert.equal(val(`jobs.length`), 0);
-    const file = {name: "Take One.wav", type: "audio/wav", arrayBuffer: async () => STEMS_WAV.buffer.slice(0)};
+    const file = Object.assign(new Blob([STEMS_WAV], {type: "audio/wav"}), {name: "Take One.wav"}); // a picked File: streamed to the PUT as-is, only its head read here
     run(`document.getElementById("importhub").classList.add("on")`);
     app.dispatch("stemsinput", {type: "change", target: {files: [file], value: "x"}});
     assert.ok(await stemsSettle(() => val(`jobs.length`) === 1), "the pick started a job");
@@ -17152,4 +17154,127 @@ test("stems: act split_stems — refused without a recording and with a bad knob
     run(`stemsNow = null; jobCancel(jobs[0].id)`);
     await stemsSettle(() => val(`jobs[0].state`) === "cancelled");
   } finally { stemsTestOff(); run(`song.tracks = song.tracks.filter(t => t.kind !== "audio");`); }
+});
+
+test("stems: review fixes — resume after a reload asks the Mac first (done → fetch; running → poll; never a POST), ↻ re-POSTs only a job the Mac isn't running; a second split never overwrites an existing draft and Open song opens the job's own draftKey; polling gives up after 15 unreachable tries and a 404 marks the rows failed", async () => {
+  // 1. resume: an interrupted row (jobsLoad's word) whose Mac job is done — no POST, song.mid fetched, the row finishes
+  let fake = stemsFakeBridge({polls: [{status: "done", stage: "done", pct: 1, counts: {drums: 1, bass: 2, vocals: 3, other: 4, mix: 5}, files: [{name: "song.mid", bytes: 1}]}]});
+  stemsTestOn(fake);
+  const seed = (extra) => run(`jobs = [{id: "old1", kind: "stems", title: "Take.wav", state: "interrupted", items: stemsItems(stemsOptions()).map(it => ({label: it.label, st: "interrupted", pct: 0, msg: "", key: it.key || null})), note: "", started: 1, ended: 2, err: "", stemsId: "20261030-120000-abcd", slug: "take", name: "Take.wav", options: stemsOptions(), attach: false, draftKey: null, ${extra || ""}}];`);
+  try {
+    seed();
+    run(`localStorage.removeItem(draftStoreKey("local/take-stems.mid")); localStorage.removeItem(draftStoreKey("local/take-stems-2.mid"));`);
+    const made = await run(`stemsResume(jobs[0], false).then(j => !!j)`);
+    assert.equal(made, true, "a resume row started");
+    assert.ok(await stemsSettle(() => val(`jobs.length`) === 1 && val(`jobs[0].state`) !== "running"), "the old row is gone, the new one finished");
+    assert.equal(val(`jobs[0].state`), "done", val(`jobs[0].err`));
+    assert.ok(!fake.calls.some(c => c.method === "POST" || c.method === "PUT"), "nothing was uploaded or started again");
+    assert.ok(fake.calls.some(c => c.url.endsWith("/files/song.mid")));
+    assert.equal(val(`jobs[0].note`), "drums 1 · bass 2 · vocals 3 · other 4 · mix 5");
+    assert.equal(val(`jobs[0].draftKey`), "local/take-stems.mid");
+    assert.ok(await stemsSettle(() => val(`songKey`) === "local/take-stems.mid"), "the notes opened");
+  } finally { stemsTestOff(); }
+  // 1b. resume: still running on the Mac → polling resumes (no POST), then done
+  fake = stemsFakeBridge({polls: [{status: "running", stage: "notes", stem: "other", pct: 0.7}, {status: "done", stage: "done", pct: 1, counts: {drums: 1}, files: [{name: "song.mid", bytes: 1}]}]});
+  stemsTestOn(fake);
+  try {
+    seed();
+    await run(`stemsResume(jobs[0], false)`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "done"), val(`jobs[0].state + " " + jobs[0].err`));
+    assert.ok(!fake.calls.some(c => c.method === "POST"), "never a POST on resume");
+    assert.equal(val(`jobs[0].draftKey`), "local/take-stems-2.mid", "the first run's draft is still there — this one took the next free key");
+    assert.ok(val(`!!localStorage.getItem(draftStoreKey("local/take-stems.mid"))`), "the earlier draft was not overwritten");
+  } finally { stemsTestOff(); }
+  // 1c. the Mac isn't running it (404, input kept): the boot pass leaves the row for ↻; ↻ re-POSTs on the kept input, no upload
+  fake = stemsFakeBridge({polls: [{status: "done", stage: "done", pct: 1, counts: {}, files: [{name: "song.mid", bytes: 1}]}]});
+  const realFetch = fake.fetch;
+  let gets = 0;
+  fake.fetch = async (url, o = {}) => { if ((o.method || "GET") === "GET" && /\/v1\/stems\/[^/]+$/.test(String(url)) && gets++ < 2) { fake.calls.push({method: "GET", url: String(url), headers: o.headers || {}}); return {ok: false, status: 404, json: async () => ({error: {message: "uploaded, not started"}, input: true}), arrayBuffer: async () => new ArrayBuffer(0)}; } return realFetch(url, o); };
+  stemsTestOn(fake);
+  try {
+    seed();
+    assert.equal(await run(`stemsResume(jobs[0], false).then(j => j)`), null, "boot: nothing started");
+    assert.equal(val(`jobs[0].state`), "interrupted", "the row stays for ↻");
+    assert.ok(!fake.calls.some(c => c.method === "POST"));
+    await run(`JOB_KINDS.stems.retry(jobs[0])`);
+    assert.ok(await stemsSettle(() => fake.calls.some(c => c.method === "POST")), "↻ re-POSTed");
+    assert.ok(!fake.calls.some(c => c.method === "PUT"), "no re-upload: the Mac kept the recording");
+    assert.ok(await stemsSettle(() => val(`jobs.length`) === 1 && val(`jobs[0].state`) === "done"), val(`jobs.map(j => j.state).join()`));
+    assert.match(val(`jobs[0].draftKey`), /^local\/take-stems-htdemucs-default(-\d+)?\.mid$/, "a re-run's draft sits beside the first");
+    // 3. Open song opens the stored draftKey
+    run(`stemsShown = jobs[0].id; songKey = "midi/other.mid";`);
+    app.dispatch("stemsopen", {type: "click"});
+    const want = val(`jobs[0].draftKey`);
+    assert.ok(await stemsSettle(() => val(`songKey`) === want), "Open song → " + val(`songKey`));
+  } finally { stemsTestOff(); }
+  // 5. polling: the bridge unreachable → 15 tries then one plain sentence, rows failed not running
+  fake = stemsFakeBridge();
+  const okFetch = fake.fetch;
+  fake.fetch = async (url, o = {}) => { if ((o.method || "GET") === "GET" && /\/v1\/stems\/[^/]+$/.test(String(url))) { fake.calls.push({method: "GET", url: String(url)}); await new Promise(r => setTimeout(r, 1)); throw new TypeError("Failed to fetch"); } return okFetch(url, o); };
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "far.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "failed", 4000), val(`jobs[0].state`));
+    assert.equal(fake.calls.filter(c => c.method === "GET").length, 15, "gave up after STEMS_POLL_GIVE_UP consecutive errors");
+    assert.match(val(`jobs[0].err`), /^can't reach the Mac bridge — is it running, and is this device on the tailnet\? \(15 tries\) — the Mac keeps working; ↻ on this row resumes$/);
+    assert.ok(!val(`jobs[0].items.some(i => i.st === "running" || i.st === "queued")`), "no row is left running: " + val(`jobs[0].items.map(i => i.st).join()`));
+    assert.equal(val(`jobs[0].items[1].st`), "failed");
+    assert.equal(val(`Object.keys(stemsBytes).length`), 0, "a failed job keeps no bytes");
+  } finally { stemsTestOff(); }
+  // 5b. a 404 mid-run (the Mac lost the job) → failed rows, the one sentence; 7. "Failed to fetch" on the upload is worded plainly
+  fake = stemsFakeBridge({polls: []});
+  const base = fake.fetch;
+  fake.fetch = async (url, o = {}) => { if ((o.method || "GET") === "GET" && /\/v1\/stems\/[^/]+$/.test(String(url))) { await new Promise(r => setTimeout(r, 1)); return {ok: false, status: 404, json: async () => ({error: {message: "no such job"}}), arrayBuffer: async () => new ArrayBuffer(0)}; } return base(url, o); };
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "lost.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "failed"));
+    assert.equal(val(`jobs[0].err`), "the Mac lost this job — pick the file again");
+    assert.ok(val(`jobs[0].items.slice(1).every(i => i.st === "failed")`), val(`jobs[0].items.map(i => i.st).join()`));
+    assert.equal(val(`stemsNetErr(new TypeError("Failed to fetch")).message`), "can't reach the Mac bridge — is it running, and is this device on the tailnet?");
+    assert.equal(val(`stemsNetErr(new Error("the engine failed")).message`), "the engine failed");
+  } finally { stemsTestOff(); }
+});
+
+test("stems: the recording attaches ONLY to the exact draft this job made — under the notes when that draft is the open song; skipped (and said in the note) when it never opens or another song is opened during the byte read", async () => {
+  // the good path: attach on → the new draft gets the recording as an audio track
+  let fake = stemsFakeBridge();
+  stemsTestOn(fake);
+  try {
+    run(`for (const k of Object.keys(localStorage)) if (/^ff1roll-draft-local\\/take-one-stems/.test(k)) localStorage.removeItem(k);`);
+    const file = Object.assign(new Blob([STEMS_WAV], {type: "audio/wav"}), {name: "Take One.wav"});
+    app.context.__stemsFile = file;
+    await run(`stemsJobStart({name: __stemsFile.name, type: __stemsFile.type, blob: __stemsFile}, {attach: true})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) !== "running"), "finished");
+    assert.equal(val(`jobs[0].state`), "done", val(`jobs[0].err`));
+    assert.equal(val(`jobs[0].draftKey`), "local/take-one-stems.mid");
+    assert.equal(val(`songKey`), "local/take-one-stems.mid", "the draft is the open song");
+    const audio = val(`song.tracks.filter(t => t.kind === "audio").map(t => ({name: t.name, files: t.clips.map(c => c.file)}))`);
+    assert.deepEqual(audio, [{name: "take-one", files: ["take-one.wav"]}], "the recording sits under the notes, on this draft");
+    assert.deepEqual(val(`song.tracks.filter(t => t.kind !== "audio").map(t => t.name)`), ["drums", "bass", "vocals", "other", "mix"]);
+    assert.doesNotMatch(val(`jobs[0].note`), /not attached/);
+    assert.equal(val(`Object.keys(stemsBytes).length`), 0);
+  } finally { stemsTestOff(); run(`song.tracks = song.tracks.filter(t => t.kind !== "audio");`); }
+  // the draft never opens (≤ 5 s): nothing lands anywhere, the sentence comes back
+  stemsTestOn(stemsFakeBridge());
+  try {
+    installActSong();
+    const before = val(`song.tracks.length`);
+    app.context.__stemsKept = {name: "t.wav", type: "", body: new Blob([STEMS_WAV])};
+    const why = await run(`stemsAttach(__stemsKept, "local/never-opened-stems.mid")`);
+    assert.match(why, /^recording not attached \(the new song wasn't open in time\) — ⏳ → Open → \+ Add as track/);
+    assert.equal(val(`song.tracks.length`), before, "the open song was left alone");
+    // the draft IS open, but a song switch lands between the byte read and the import: skipped — never on the other song
+    class SwitchBlob extends Blob { async arrayBuffer() { run(`songKey = "albums/compositions/nightroll/other.mid"; localStorage.setItem(draftStoreKey(songKey), "{}");`); return super.arrayBuffer(); } }
+    app.context.__stemsKept2 = {name: "t.wav", type: "", body: new SwitchBlob([STEMS_WAV])};
+    run(`songKey = "local/this-stems.mid"; localStorage.setItem(draftStoreKey(songKey), "{}");`);
+    const why2 = await run(`stemsAttach(__stemsKept2, "local/this-stems.mid")`);
+    assert.match(why2, /^recording not attached \(another song was opened meanwhile\)/);
+    assert.equal(val(`songKey`), "albums/compositions/nightroll/other.mid");
+    assert.equal(val(`song.tracks.length`), before, "the song he switched to got nothing");
+    // and the sheet's title line carries the note of a done job
+    run(`jobs = [{id: "n1", kind: "stems", title: "T.wav", name: "T.wav", state: "done", items: [], note: "drums 1 · recording not attached (another song was opened meanwhile) — ⏳ → Open → + Add as track puts it under the notes", options: stemsOptions(), stemsId: null}]; stemsSheetOpen(jobs[0]);`);
+    assert.match(val(`document.getElementById("stemstitle").textContent`), /✓ done — drums 1 · recording not attached \(another song was opened meanwhile\)/);
+    run(`stemsSheetClose();`);
+  } finally { stemsTestOff(); run(`localStorage.removeItem(draftStoreKey("local/this-stems.mid")); localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/other.mid"));`); }
 });
