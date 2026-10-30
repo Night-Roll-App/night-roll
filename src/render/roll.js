@@ -173,17 +173,34 @@ export const TRACK_COLORS = (() => {
   }
   return out;
 })();
+// Role colors (Josh #1064): the four colors a new song's pulse1 / pulse2 /
+// triangle / drums tracks get from the farthest-hue walk, pinned to the ROLE so
+// a song without pulse2 doesn't slide triangle into blue. Display only — never
+// written to a song file; an explicit track.color still beats them.
+export const ROLE_COLORS = {pulse1: TRACK_COLORS[0], pulse2: TRACK_COLORS[1], triangle: TRACK_COLORS[2], drums: TRACK_COLORS[3]};
+export function trackRole(t) { // pulse1|pulse2|triangle|drums, else null — name first, then the drum marks
+  if (!t || t.kind === "audio") return null;
+  const n = String(t.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (/^(pulse|square|sq)1$/.test(n)) return "pulse1";
+  if (/^(pulse|square|sq)2$/.test(n)) return "pulse2";
+  if (/^(tri|triangle)$/.test(n)) return "triangle";
+  if (t.drumsMark !== undefined) return t.drumsMark ? "drums" : null;
+  if (t.drums !== undefined ? t.drums : /drum|percussion|kit|noise|dpcm/i.test(t.name || "") || (t.notes || []).some(x => x.ch === 9)) return "drums";
+  return null;
+}
 export function autoTrackColors(tracks) {
-  const key = tracks.map(t => t.color || "").join("|") + "#" + tracks.length;
+  const key = tracks.map(t => (t.color || "") + "~" + (t.name || "") + "~" + (t.drumsMark === undefined ? "" : t.drumsMark ? 1 : 0) + (t.drums ? "d" : "") + (t.kind || "")).join("|") + "#" + tracks.length;
   if (S._autoColorCache.key === key) return S._autoColorCache.colors;
-  // S = every EXPLICIT color in the song, any index — Josh's own picks are
-  // avoided even when they sit on a later track than the one being assigned.
-  // An explicit color has no candidate h of its own, so it's the one place
-  // hueOf(hex) is unavoidable.
-  const used = [];
+  // used = every EXPLICIT color in the song, any index (Josh's own picks are
+  // avoided even on a later track), plus all four role colors — present or
+  // not — so a non-role track never lands on one. An explicit color has no
+  // candidate h of its own, so it's the one place hueOf(hex) is unavoidable.
+  const used = Object.values(ROLE_COLORS).map(hex => TRACK_COLOR_CANDIDATES.find(c => c.hex === hex).h);
   tracks.forEach(t => { if (t.color) used.push(hueOf(t.color)); });
   const out = tracks.map(t => {
     if (t.color) return t.color;
+    const role = trackRole(t);
+    if (role) return ROLE_COLORS[role];
     const pick = pickFarthestColor(used);
     used.push(pick.h);
     return pick.hex;

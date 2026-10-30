@@ -3406,7 +3406,8 @@ test("autoTrackColors: farthest-point default track colors, explicit color still
   }
 
   installSong();
-  run(`song.tracks = Array.from({length: 8}, (_, i) => ({name: "t" + i, notes: []})); trackState = song.tracks.map(() => ({}));`);
+  run(`// the first four are the role tracks (their colors are the farthest-hue walk's first four)
+  song.tracks = ["pulse1", "pulse2", "triangle", "drums", "t4", "t5", "t6", "t7"].map(name => ({name, notes: []})); trackState = song.tracks.map(() => ({}));`);
   const colors8 = val(`autoTrackColors(song.tracks)`);
   assert.equal(colors8.length, 8);
   assert.equal(new Set(colors8).size, 8, "no literal duplicate hex among the first 8");
@@ -3428,6 +3429,7 @@ test("autoTrackColors: farthest-point default track colors, explicit color still
   // 3 tracks must get exactly the first 3 colors an 8-track song would
   run(`song.tracks = song.tracks.slice(0, 3); trackState = trackState.slice(0, 3);`);
   assert.deepEqual(val(`autoTrackColors(song.tracks)`), colors8.slice(0, 3));
+  assert.deepEqual(colors8.slice(4).filter(c => colors8.slice(0, 4).includes(c)), [], "non-role tracks never take a role color");
 
   // an explicit color is avoided even by auto tracks at a LATER index than
   // the one Josh set it on, and still counts when it isn't ~on the 15° grid
@@ -3446,6 +3448,32 @@ test("autoTrackColors: farthest-point default track colors, explicit color still
   assert.equal(run(`trackColor(1)`), withExplicit[1]);
   assert.equal(run(`trackColor(${withExplicit.length})`), run(`trackColor(0)`));
 
+  run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("autoTrackColors: role tracks keep their fixed colors whatever their index (Josh #1064)", () => {
+  const cols = (names, extra = {}) => {
+    installSong();
+    run(`song.tracks = ${JSON.stringify(names.map(name => ({name, notes: [], ...extra[name]})))}; trackState = song.tracks.map(() => ({}));`);
+    return val(`autoTrackColors(song.tracks)`);
+  };
+  const R = val(`ROLE_COLORS`);
+  assert.equal(new Set(Object.values(R)).size, 4);
+  assert.deepEqual(cols(["pulse1", "pulse2", "triangle", "noise"]), [R.pulse1, R.pulse2, R.triangle, R.drums]);
+  // no pulse2: nobody slides into its blue
+  assert.deepEqual(cols(["pulse1", "triangle", "noise"]), [R.pulse1, R.triangle, R.drums]);
+  assert.deepEqual(cols(["noise", "triangle", "pulse1"]), [R.drums, R.triangle, R.pulse1]);
+  assert.deepEqual(cols(["Square 1", "sq2", "drums"]), [R.pulse1, R.pulse2, R.drums]);
+  // other tracks avoid every role color and keep theirs when a role track comes and goes
+  const withBass = cols(["pulse1", "triangle", "bass", "lead"]);
+  assert.ok(!Object.values(R).includes(withBass[2]) && !Object.values(R).includes(withBass[3]));
+  assert.equal(cols(["bass", "lead"])[0], withBass[2]);
+  // a channel-10 track or a drums mark is drums; an explicit "not drums" mark is not
+  assert.equal(cols(["x"], {x: {notes: [{ch: 9, p: 36, t: 0, d: 1}]}})[0], R.drums);
+  assert.equal(cols(["x"], {x: {drumsMark: true}})[0], R.drums);
+  assert.notEqual(cols(["noise"], {noise: {drumsMark: false}})[0], R.drums);
+  // explicit colors win, role or not
+  assert.deepEqual(cols(["pulse1", "bass"], {pulse1: {color: "#123456"}, bass: {color: "#abcdef"}}), ["#123456", "#abcdef"]);
   run(`song = null; songKey = "midi/test.mid";`);
 });
 
