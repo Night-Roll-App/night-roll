@@ -5070,10 +5070,15 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   contents API omits bodies over 1 MB, so the read falls back to
   `download_url`. The breadcrumb ● lights for unsaved chat
   (`askUnsavedCount`), the Publish sheet lists it per song, the
-  publish button reads "⇪ Publish song", and Clear chat asks first only
-  when something is unsaved (Clear = new session; the file keeps what was
-  saved — `localStorage.removeItem`, the whole store, since nothing of it
-  needs keeping once a fresh session starts). The Publish sheet's
+  publish button reads "⇪ Publish song", and Clear chat is two taps on the
+  one button in the AI header (`#askclear` in `#asksheet-h2`, the far end
+  from Send — Josh #1009/#1010/#1090, matching native BridgeChat): the
+  first arms it for `ASK_CLEAR_ARM_MS` (3 s, "Tap again to clear", the
+  unsaved count on the status line instead of a confirm card), the second
+  clears (Clear = new session; the file keeps what was saved —
+  `localStorage.removeItem`, the whole store, since nothing of it needs
+  keeping once a fresh session starts; `askClearArmSet` in
+  src/ask/sheet.js, timer on `S.askClearArm`). The Publish sheet's
   **Revert**, by contrast, keeps the `saved` messages and only drops the
   unsaved tail (`askRevertToSaved`) — see "publishall" above. `ghsaveall`
   (annotation sweep) does not carry chat — Save the song for that.
@@ -6059,7 +6064,7 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     /v1/sessions/:key` drops that key's row in sessions.json, so the next
     turn's `runClaude` sees no session and starts fresh (`--session-id`,
     never `--resume`); `.ask.md` and the inbox are untouched. The app's
-    Clear chat calls it (best-effort, after its usual confirm) whenever
+    Clear chat calls it (best-effort, on its second tap) whenever
     the backend is the bridge.
     **Usage:** every turn's stream-json already carries a `"result"` event
     with `usage.input_tokens/output_tokens/cache_read_input_tokens/

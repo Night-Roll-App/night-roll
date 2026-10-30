@@ -3226,7 +3226,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
     "Talk to an AI tutor", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish", "repeat bars",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
-    "Session usage and Compact", "long, Compact saves tokens", "plan usage",
+    "Session usage and Compact", "long, Compact saves tokens", "plan usage", "Tap again to clear",
     "an estimated key is named as an estimate", "Check vs file",
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
     "A MIDI keyboard works on the iPad app too",
@@ -11758,10 +11758,46 @@ test("P8 bridge-session caching: Clear chat resets the confirmed hashes (the app
   let ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.match(ctx, /unchanged since your last message/, "sanity: cached before Clear");
 
+  a.run(`document.getElementById("askclear").dispatchEvent({type: "click"});`); // first tap only arms
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "one tap arms, never clears");
   a.run(`document.getElementById("askclear").dispatchEvent({type: "click"});`);
   ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "Clear chat: full again, as if a new chat");
   assert.match(ctx, /^notes in bars 1–1:\n#/m);
+});
+
+test("Clear chat is two taps on the header button, no dialog (Josh #1009/#1010/#1090): the first arms it, the arm lapses after 3 s", async () => {
+  const a = await mkAsk("learning", `
+    localStorage.setItem(askStoreKey(), JSON.stringify({msgs: [{role: "user", text: "hi", t: 1}, {role: "assistant", text: "hello", t: 2}]}));
+    appConfirm = async () => { throw new Error("no dialog: Clear chat never opens a card"); };
+  `);
+  const btn = `document.getElementById("askclear")`;
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /<h2 id="asksheet-h2">AI<button id="askclear"[^>]*>Clear chat<\/button><\/h2>/, "lives in the panel header, not the row under Send");
+  assert.doesNotMatch(html.slice(html.indexOf('id="asksend"')), /id="askclear"/, "nothing named Clear chat after Send in the panel");
+
+  a.run(`${btn}.dispatchEvent({type: "click"});`);
+  assert.equal(a.run(`${btn}.textContent`), "Tap again to clear", "first tap arms");
+  assert.equal(a.run(`${btn}.getAttribute("data-short")`), "Sure?", "the narrow-dock label follows");
+  assert.equal(a.run(`${btn}.classList.contains("armed")`), true);
+  assert.equal(a.run(`!!JSON.parse(localStorage.getItem(askStoreKey()))`), true, "armed: the chat is still there");
+  assert.match(a.run(`document.getElementById("askstatus").textContent`), /2 messages are not in the repo yet/, "the unsaved warning moved from the card to the status line");
+
+  a.tick(3000); // nothing more: the arm lapses
+  assert.equal(a.run(`${btn}.textContent`), "Clear chat", "disarmed after 3 s");
+  assert.equal(a.run(`${btn}.classList.contains("armed")`), false);
+  assert.equal(a.run(`${btn}.getAttribute("data-short")`), "Clear");
+  assert.equal(a.run(`document.getElementById("askstatus").textContent`), "", "the warning goes with it");
+  assert.equal(a.run(`!!JSON.parse(localStorage.getItem(askStoreKey()))`), true, "a lapsed arm never clears");
+
+  a.run(`${btn}.dispatchEvent({type: "click"});`); // arm again…
+  a.tick(1000); // …still within the window
+  a.run(`${btn}.dispatchEvent({type: "click"});`); // …second tap clears
+  await new Promise(r => setImmediate(r));
+  assert.equal(a.run(`localStorage.getItem(askStoreKey())`), null, "second tap within 3 s clears the chat");
+  assert.equal(a.run(`${btn}.textContent`), "Clear chat", "and the button is back to normal at once");
+  assert.equal(a.run(`askClearArm`), null, "no timer left behind");
 });
 
 test("P8 bridge-session caching: Compact resets the confirmed hashes (the compacted session no longer holds the verbatim text)", async () => {

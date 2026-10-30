@@ -1109,6 +1109,12 @@
   /* the generic Dock control every dockable window gets (makeWindow) — the
      spot #askdock used to sit alone, now built the same way for all six */
   .wmdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 0.75rem; }
+  /* Clear chat lives in the AI header, the far end from Send (Josh #1009/#1090:
+     under Send it caught stray taps). Sized like the Dock pill beside it;
+     `order` keeps it last — makeWindow appends Dock after the markup. Armed
+     (first of its two taps) it lights, same accent tint as native. */
+  #asksheet-h2 #askclear { order: 1; margin-left: 6px; min-height: 28px; padding: 2px 9px; font-size: 0.75rem; letter-spacing: 0; white-space: nowrap; }
+  #askclear.armed { background: rgba(230, 192, 96, 0.18); border-color: var(--gold); color: var(--gold); }
   #wmmenu {
     display: none; position: fixed; z-index: 63;
     background: var(--panel2); border: 1px solid var(--grid); border-radius: 10px;

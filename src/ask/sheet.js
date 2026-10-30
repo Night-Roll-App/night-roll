@@ -30,7 +30,6 @@ import { askStatusToggle } from "./bridge.js";
 import { openAsk } from "./host.js";
 import { openSettingsSheet } from "../ui/sheets.js";
 import { askUnsavedCount } from "./bridge.js";
-import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 import { askSentReset } from "./context.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
@@ -281,6 +280,23 @@ export function initSheet2() {
   }
 }
 
+// Clear chat's arming (the header button): on, it reads "Tap again to clear"
+// ("Sure?" in a narrow dock, via data-short) and the status line says how many
+// messages are not in the repo yet — the warning the old confirm card carried,
+// without a card a stray tap could open. Off again after ASK_CLEAR_ARM_MS.
+export const ASK_CLEAR_ARM_MS = 3000;
+export function askClearArmSet(on) {
+  const btn = document.getElementById("askclear");
+  if (S.askClearArm) clearTimeout(S.askClearArm);
+  S.askClearArm = on ? setTimeout(() => askClearArmSet(false), ASK_CLEAR_ARM_MS) : null;
+  btn.textContent = on ? "Tap again to clear" : "Clear chat";
+  btn.setAttribute("data-short", on ? "Sure?" : "Clear");
+  btn.classList.toggle("armed", on);
+  const n = on ? askUnsavedCount() : 0;
+  if (n) askstatus.textContent = n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them");
+  else if (/not in the repo yet/.test(askstatus.textContent || "")) askstatus.textContent = "";
+}
+
 export function initSheet3() {
   document.getElementById("askbtn").addEventListener("click", askBtnTap);
   // the window's own controls stay wired here (not the library's aiWindowBind,
@@ -296,8 +312,10 @@ export function initSheet3() {
   document.getElementById("askreplybtn").addEventListener("click", openAsk);
   document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
   document.getElementById("askclear").addEventListener("click", async () => { // Clear = new session; unsaved messages are the one thing it can destroy
-    const n = askUnsavedCount();
-    if (n && !(await appConfirm("Clear chat", n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them") + ". Clear anyway?", "Clear", "Keep"))) return;
+    // two taps, no dialog, same as native (Josh #1009/#1010): the first arms the
+    // button for ASK_CLEAR_ARM_MS, the second clears; a stray tap arms and lapses
+    if (!S.askClearArm) { askClearArmSet(true); return; }
+    askClearArmSet(false);
     localStorage.removeItem(askStoreKey()); askSentReset(askStoreKey()); askRender(); updateSongBtn();
     // Clear really resets (open-items.md "NEXT: AI SESSION CONTROLS" #1, Josh:
     // "the app's Clear chat only clears this device's log and never tells the

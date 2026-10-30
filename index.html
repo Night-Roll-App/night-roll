@@ -1476,7 +1476,8 @@
 <div id="asksheet-home" style="display:contents">
 <div class="overlay" id="asksheet">
   <div class="sheet ask">
-    <h2 id="asksheet-h2">AI</h2>
+    <h2 id="asksheet-h2">AI<button id="askclear" data-short="Clear" title="Two taps: the first arms it for a few seconds">Clear chat</button></h2><!-- in the header, the far end from Send (Josh #1009/#1090: under Send it caught stray taps); native matches -->
+
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
       <button id="askmodesong" role="tab" class="active" aria-selected="true">♪ this song</button>
       <button id="askmodeterm" role="tab" aria-selected="false" style="display:none" title="Claude Code on your Mac — the one session behind every Night Roll app">✦ Claude</button>
@@ -1513,7 +1514,6 @@
       <span class="status" id="askstatus" style="flex:1"></span>
       <button id="askstop" style="display:none">■ Stop reply</button>
       <button id="askcompact" style="display:none" title="Summarize this chat's memory on the bridge and shrink it">Compact</button>
-      <button id="askclear">Clear chat</button>
     </div>
   </div>
 </div>
