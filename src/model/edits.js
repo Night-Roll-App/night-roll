@@ -13,6 +13,7 @@ import { isComposition } from "./provenance.js";
 import { saveDraft } from "./versions.js";
 import { computeSongEnd } from "./song.js";
 import { updateSongMeta } from "../hooks.js";
+import { scheduleUndoSave } from "./undo-persist.js";
 
 // ---------------------------------------------------------------- edits
 export function editsKey() { return S.songKey ? "ff1roll-edits-" + S.songKey : null; }
@@ -40,7 +41,7 @@ export function updateClearBtn() {
 // device, but with no repo path: never synced, never committed
 export function isLocalDraft() { return !!S.songKey && S.songKey.startsWith("local/"); }
 
-export function pushUndo(entry) { S.editUndo.push(entry); S.editRedo = []; } // a fresh edit forks history
+export function pushUndo(entry) { S.editUndo.push(entry); S.editRedo = []; scheduleUndoSave(); } // a fresh edit forks history
 // Track add/delete are undo steps too (Josh, 2026-09-12: a deleted track was
 // gone for good). Deleting used to wipe the history because entries hold track
 // indexes; LIFO makes that unnecessary — nothing older can be reached until the
@@ -92,6 +93,7 @@ export function saveLocalNotes() {
       extra: n.extra || undefined})); // extra: a newer build's fields ride the unsynced store too (model/rollnotes.js ROLLNOTES_FIELDS)
   if (local.length) localStorage.setItem(notesStoreKey(), JSON.stringify(local));
   else localStorage.removeItem(notesStoreKey());
+  scheduleUndoSave(); // an annotation edit saves no draft, but its undo step still follows it to disk
   updateSyncBtn();
   if (typeof updateSongBtn === "function") updateSongBtn(); // the ● counts unpublished annotations (songUnsaved)
   if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards)

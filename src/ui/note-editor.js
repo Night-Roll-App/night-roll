@@ -37,6 +37,7 @@ import { isTripletDur } from "../model/grid.js";
 import { trackShown } from "../render/roll.js";
 import { annoSnapshot } from "../model/edits.js";
 import { pushUndo } from "../model/edits.js";
+import { scheduleUndoSave } from "../model/undo-persist.js";
 import { annoRestore } from "../model/rollnotes.js";
 import { FILE_UNDER } from "../model/rollnotes.js";
 import { putSongNote } from "../model/rollnotes.js";
@@ -765,6 +766,7 @@ export function editRedoPop() {
   if (!r || !S.song) return;
   S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
   applyEditEntry(r);
+  scheduleUndoSave();
   revealEdit(r, "redid");
   if (r.kind === "anno") editorAfterUndo();
 }
@@ -773,6 +775,7 @@ export function editUndoPop() {
   if (!u || !S.song) return;
   S.editRedo.push(invertEdit(u));
   applyEditEntry(u);
+  scheduleUndoSave();
   revealEdit(u, "undid");
   if (u.kind === "anno") editorAfterUndo();
 }

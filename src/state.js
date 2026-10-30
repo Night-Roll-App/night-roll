@@ -276,6 +276,7 @@ export const S = {
   bsActive: -1,
   ptTarget: 0,
   editRedo: [],
+  undoSaveT: null, undoRestoring: null, // model/undo-persist.js: the debounce timer; the song key whose saved history is still being read back
   editBtnCache: "",
   askBusy: null,
   askPartial: {}, // job id → the words streamed so far (the AI library keeps it; sheet.js aliases it)

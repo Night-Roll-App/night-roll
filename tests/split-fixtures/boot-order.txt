@@ -294,7 +294,8 @@ document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
 document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
 document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
 try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal" || m === "general"; S.askGeneral = S.askTerminal; } catch (err) { S.askGeneral = S.askTerminal = false; }
-document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) { flushBackupNow(); undoFlush(); } });
+if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", () => undoFlush());
 document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
 document.getElementById("deploynow").addEventListener("click", deployInstallNow);
 document.getElementById("askcompact").addEventListener("click", async () => {

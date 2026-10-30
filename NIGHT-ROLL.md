@@ -9445,6 +9445,49 @@ and walks `#songcrumb`'s `.children` for a `.crumbdot`, not
 `querySelector`); a new `editHereNow` test makes `appConfirm` throw, to
 prove the no-confirm claim.
 
+## Undo history persistence (Josh #1078, 2026-10-29)
+
+The undo and redo stacks (`S.editUndo` / `S.editRedo`) survive a relaunch, per
+song. Module `src/model/undo-persist.js`.
+
+- **Where.** IndexedDB, the existing `drafts` store, key `undo:<song key>`
+  (`undoRecKey`, `idbUndoGet/Put/Delete` in platform/storage.js) — one JSON
+  string, no schema bump. Device-local editing history: never an annotation,
+  never a repo file, never in Publish, and not in localStorage (5 MB quota,
+  and the backup enumerates its keys). No IndexedDB = no persisted history.
+  Only for songs that have a draft (`isComposition() || isLocalDraft()`).
+- **When.** `scheduleUndoSave()` (700 ms debounce) from `pushUndo`,
+  `saveDraft`, `saveLocalNotes`, undo/redo; `undoFlush()` on `setSong` (the
+  outgoing song), `visibilitychange` hidden and `pagehide`. Both stacks empty
+  = the record is deleted. Not written in compare mode ("saved copy" shown),
+  while chopped (`chopS`/`chopE`), or while `S.undoRestoring` (a restore is
+  still reading the old record — writing now would erase it).
+- **Cap.** Newest 200 steps per stack, whole record <= 5 MB (`UNDO_MAX_STEPS`,
+  `UNDO_MAX_BYTES`); over the byte cap the oldest steps go first
+  (a tenth of the longer stack per round).
+- **Format** (`v:1`): `hash`, `at`, `len[]` (note count per live track),
+  `gone[]` (per live track, `[index, note]` of erased notes — the draft drops
+  them, but entries index by position), `tPool[]`/`rPool[]` (tracks and raw
+  arrays the entries reference that are not live, e.g. a deleted track),
+  `undo[]`/`redo[]` (entries; `trackInsert`/`trackReorder` hold `{$t: id}` /
+  `{$r: id}` instead of objects; ids below the live count mean the live
+  track/raw array). An entry that cannot be encoded (a cycle, an audio track)
+  cuts the stack: everything older is only reachable through it.
+- **Restore** (`undoRestore`, from `openDraftDoc`, after `song.notesReady`):
+  only if the record's `hash` equals `undoStateHash()` now — a hash of the
+  draft's music (`draftTracks`, tempos, meter) plus the sorted annotation
+  layer. Mismatch (the song changed elsewhere, a version was restored) =
+  record deleted, nothing restored, no message: undo steps are never applied
+  to a different state. On a match the gone notes are put back at their old
+  indexes (and in `rawNotes` in the same order — a chop re-carve rebuilds the
+  notes from it), and the stacks are set. If the user edits before the read
+  finishes, nothing is restored.
+- **Cleared by:** Revert (`revertSongToRepo`), Go back to a version or the
+  published copy (`undoClear`), deleting a draft (`idbDraftDelete` deletes
+  the record too), and any hash mismatch. Rename (`idbDraftMove`) moves it.
+- Learning mode: unchanged (nothing here is analysis state). Ask tool: not
+  applicable — the existing `undo` action walks the same restored stack.
+
 ## Local song persistence (2026-10-02 fix)
 
 **What broke.** A `local/` song (Untitled N, a local .mid import —

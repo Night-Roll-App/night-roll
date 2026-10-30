@@ -1,3 +1,4 @@
+import { undoClear } from "../model/undo-persist.js";
 import { ownFolderPath } from "../model/provenance.js";
 import { S } from "../state.js";
 import { folderOf } from "../model/catalog.js";
@@ -333,6 +334,7 @@ export async function revertSongToRepo(key) { // a Publish row's Revert: any pen
     "Revert" + (drops ? " — drops " + drops : ""), "Cancel");
   if (!ok) return;
   dropLocalSong(key);
+  undoClear(key);
   if (dropChat) askRevertToSaved(chatKey);
   pubCheck.delete(key);
   if (key === S.songKey) { S.editUndo = []; S.editRedo = []; S.songKey = null; await loadSong(key); }

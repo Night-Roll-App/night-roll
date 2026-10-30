@@ -1,3 +1,6 @@
+import { updateEditButtons } from "../ui/note-editor.js";
+import { undoFlush } from "../model/undo-persist.js";
+import { undoRestore } from "../model/undo-persist.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { studyBeforeSongChange, studyAfterNotesChange } from "../ui/study-sheet.js";
 import { isUnsaved } from "../model/provenance.js";
@@ -397,6 +400,7 @@ export async function loadSongInner(path) {
   setSong(parseMidi(buf, {trust: path.startsWith("albums/imports/")}), path); // an import album's file is our own writing: no corrupt-file guards
 }
 export function setSong(parsed, key) {
+  undoFlush(); // the outgoing song's history reaches disk before its stacks are cleared below
   studyBeforeSongChange(); // FIRST, while S.songKey/S.rollnotes are still the outgoing song's: an open Analysis-sheet answer box is committed to the song it was written on, never the next one
   editorBeforeSongChange(); // likewise first: an unsaved docked annotation draft is dropped by name, never carried to the next song's bars
   S.loadGen++; // covers the local-file path: invalidate any in-flight catalog load
@@ -500,4 +504,5 @@ export function openDraftDoc(d, key) {
   rememberLastSong(key);
   reflectSongURL(key);
   updateSongBtn();
+  undoRestore(key).then(back => { if (back) updateEditButtons(); }); // its saved undo history comes back if the song still matches it (model/undo-persist.js)
 }

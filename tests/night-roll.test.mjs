@@ -3186,6 +3186,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Jump into text boxes",
     "Docked annotation window", "follows what you select",
     "Every undo and redo says what it took back",
+    "Undo survives a relaunch",
     "Chip / MIDI switch",
     "speedometer icon",
     "their own full-width row under it",
@@ -16821,3 +16822,124 @@ test("loop seam review fixes: a restart resumes inside its span; an edit during 
   assert.ok(Math.abs(s[0].off - 11) < 0.1 && Math.abs(s[0].dur - 3) < 0.1, "1 s into A's tape, 3 s left: " + JSON.stringify(s[0]));
   arun(`playing = false; chip.seamArmed = false; loopSeg = null; chip.key = null; chip.buffers = null;`);
 });
+
+// ---- Undo history persists per song (Josh #1078; NIGHT-ROLL.md "Undo history
+// persistence"). The IndexedDB record is stubbed with a plain object inside the
+// vm; a "reload" is a fresh app on the first one's localStorage + that record.
+{
+  const KEY = "local/undo-persist-test.mid";
+  const N = (t, p, d = 480) => ({t, d, p, v: 80});
+  const draft = (tracks) => JSON.stringify({savedStamp: 0, dirty: true, title: "Undo", ppq: 480, timesig: [4, 4],
+    tempos: [{tick: 0, usq: 500000}], tracks});
+  const settle = () => new Promise(r => setTimeout(r, 30));
+  const stub = (rec) => `globalThis.indexedDB = {}; globalThis.__undoRec = ${JSON.stringify(rec)};
+    idbUndoGet = k => Promise.resolve(__undoRec[k] || null);
+    idbUndoPut = (k, v) => { __undoRec[k] = v; return Promise.resolve(true); };
+    idbUndoDelete = k => { delete __undoRec[k]; return Promise.resolve(); };`;
+  async function open(storage, rec = {}) {
+    const a = await createApp({storage});
+    a.run(stub(rec));
+    await a.run(`loadSong(${JSON.stringify(KEY)})`);
+    await settle();
+    return a;
+  }
+  const rec = a => JSON.parse(a.run(`JSON.stringify(__undoRec)`));
+  const live = a => a.run(`JSON.stringify(song.tracks.map(tr => tr.notes.filter(n => !n.gone).map(n => n.t + ":" + n.p).sort()))`);
+  const base = () => ({["ff1roll-draft-" + KEY]: draft([{name: "pulse1", notes: [N(0, 60), N(480, 62)]}, {name: "tri", notes: [N(0, 40)]}])});
+
+  test("undo history: edit → save → reload → the steps are back and undo restores the earlier state (a gone note too)", async () => {
+    const a = await open(base());
+    a.run(`song.tracks[0].notes.push({t: 960, d: 480, p: 64, v: 80, added: true}); pushUndo({kind: "add", ti: 0, ni: 2}); saveEdits();
+           song.tracks[0].notes[0].gone = true; pushUndo({kind: "erase", ti: 0, ni: 0}); saveEdits();`);
+    const after = live(a);
+    assert.equal(after, JSON.stringify([["480:62", "960:64"], ["0:40"]]));
+    await a.run(`undoFlush()`);
+    assert.ok(rec(a)[KEY], "the record is stored under the song's key");
+    const b = await open(Object.fromEntries(a.store), rec(a));
+    assert.equal(live(b), after, "the reload shows the song as it was left");
+    assert.equal(b.run(`editUndo.length`), 2, "both steps came back");
+    assert.equal(b.run(`song.tracks[0].notes.length`), 3, "the erased note is back in the list at its old index");
+    b.run(`editUndoPop()`);
+    assert.equal(live(b), JSON.stringify([["0:60", "480:62", "960:64"], ["0:40"]]), "undo brings the erased note back");
+    b.run(`editUndoPop()`);
+    assert.equal(live(b), JSON.stringify([["0:60", "480:62"], ["0:40"]]), "and the second undo removes the added one");
+    b.run(`editRedoPop(); editRedoPop()`);
+    assert.equal(live(b), after, "redo walks forward again");
+  });
+
+  test("undo history: a deleted track comes back through a reload (entries are data, not references)", async () => {
+    const a = await open(base());
+    a.run(`const t = song.tracks.splice(1, 1)[0]; const r = song.rawNotes.splice(1, 1)[0]; const st = trackState.splice(1, 1)[0];
+           pushUndo({kind: "trackInsert", ti: 1, track: t, raw: r, state: st}); saveEdits();`);
+    await a.run(`undoFlush()`);
+    const b = await open(Object.fromEntries(a.store), rec(a));
+    assert.equal(b.run(`song.tracks.length`), 1);
+    assert.equal(b.run(`editUndo.length`), 1);
+    b.run(`editUndoPop()`);
+    assert.equal(b.run(`song.tracks.length`), 2);
+    assert.equal(live(b), JSON.stringify([["0:60", "480:62"], ["0:40"]]), "the deleted track is back with its notes");
+    b.run(`editRedoPop()`);
+    assert.equal(b.run(`song.tracks.length`), 1, "redo deletes it again");
+  });
+
+  test("undo history: a song that changed since (different hash) restores nothing, silently, and the stale record goes", async () => {
+    const a = await open(base());
+    a.run(`song.tracks[0].notes.push({t: 960, d: 480, p: 64, v: 80, added: true}); pushUndo({kind: "add", ti: 0, ni: 2}); saveEdits();`);
+    await a.run(`undoFlush()`);
+    const st = Object.fromEntries(a.store);
+    st["ff1roll-draft-" + KEY] = st["ff1roll-draft-" + KEY].replace('"p":64', '"p":65'); // changed elsewhere
+    const b = await open(st, rec(a));
+    assert.equal(b.run(`editUndo.length`), 0);
+    assert.equal(b.run(`editRedo.length`), 0);
+    assert.equal(rec(b)[KEY], undefined, "never applied to a different state; the stale record is dropped");
+    assert.equal(b.run(`appErrors.filter(e => !/catalog/.test(e.msg)).length`), 0, "silent");
+  });
+
+  test("undo history: capped at 200 steps and 5 MB, oldest dropped first; redo kept", async () => {
+    const a = await open(base());
+    a.run(`for (let i = 0; i < 250; i++) editUndo.push({kind: "mod", items: [{ti: 0, ni: 0, t: i, d: 480, p: 60, v: 80}]});
+           editRedo.push({kind: "mod", items: [{ti: 0, ni: 0, t: 999, d: 480, p: 60, v: 80}]});`);
+    let r = JSON.parse(a.run(`undoEncode()`));
+    assert.equal(r.undo.length, 200);
+    assert.equal(r.undo[0].items[0].t, 50, "the 50 oldest are gone");
+    assert.equal(r.undo[199].items[0].t, 249, "the newest is kept");
+    assert.equal(r.redo.length, 1);
+    a.run(`editUndo.length = 0; editRedo.length = 0; for (let i = 0; i < 9; i++) editUndo.push({kind: "anno", json: "x".repeat(1000000) + i});`);
+    const raw = a.run(`undoEncode()`);
+    assert.ok(raw.length <= 5e6 + 2000, "within the cap: " + raw.length);
+    r = JSON.parse(raw);
+    assert.ok(r.undo.length >= 3 && r.undo.length < 9, "some dropped: " + r.undo.length);
+    assert.ok(r.undo[r.undo.length - 1].json.endsWith("8"), "the newest survives");
+  });
+
+  test("undo history: an entry that cannot be encoded cuts the stack there (older steps unreachable without it)", async () => {
+    const a = await open(base());
+    a.run(`const cyc = {}; cyc.self = cyc;
+           editUndo.push({kind: "mod", items: [{ti: 0, ni: 0, t: 1, d: 480, p: 60, v: 80}]}, {kind: "trackInsert", ti: 1, track: cyc, raw: null, state: {}}, {kind: "mod", items: [{ti: 0, ni: 0, t: 3, d: 480, p: 60, v: 80}]});`);
+    const r = JSON.parse(a.run(`undoEncode()`));
+    assert.equal(r.undo.length, 1);
+    assert.equal(r.undo[0].items[0].t, 3);
+  });
+
+  test("undo history: Revert / go back clears the saved record; an empty history stores nothing", async () => {
+    const a = await open(base());
+    a.run(`pushUndo({kind: "mod", items: [{ti: 0, ni: 0, t: 0, d: 480, p: 60, v: 80}]}); saveEdits();`);
+    await a.run(`undoFlush()`);
+    assert.ok(rec(a)[KEY]);
+    await a.run(`undoClear(songKey)`);
+    assert.equal(rec(a)[KEY], undefined);
+    a.run(`pushUndo({kind: "mod", items: [{ti: 0, ni: 0, t: 0, d: 480, p: 60, v: 80}]}); editUndo.length = 0;`);
+    await a.run(`undoFlush()`);
+    assert.equal(rec(a)[KEY], undefined, "both stacks empty: nothing stored");
+  });
+
+  test("undo history: not saved while a compare view shows the saved copy, nor before the restore has run", async () => {
+    const a = await open(base());
+    a.run(`pushUndo({kind: "mod", items: [{ti: 0, ni: 0, t: 0, d: 480, p: 60, v: 80}]}); cmp = {showing: "repo"};`);
+    await a.run(`undoFlush()`);
+    assert.equal(rec(a)[KEY], undefined, "compare mode refuses");
+    a.run(`cmp = null; undoRestoring = songKey;`);
+    await a.run(`undoFlush()`);
+    assert.equal(rec(a)[KEY], undefined, "a half-restored session never overwrites the stored history");
+  });
+}

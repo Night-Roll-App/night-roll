@@ -69,6 +69,7 @@ import * as modelKitGuess from "./model/kit-guess.js";
 import * as modelProvenance from "./model/provenance.js";
 import * as modelAlbumOrder from "./model/album-order.js";
 import * as modelVersions from "./model/versions.js";
+import * as modelUndoPersist from "./model/undo-persist.js";
 import * as modelJobs from "./model/jobs.js";
 import * as importHub from "./import/hub.js";
 import * as importCapture from "./import/capture.js";
@@ -132,7 +133,7 @@ export function exposeGlobals() {
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport, audioSeam,
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
-                     modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
+                     modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelUndoPersist, modelJobs,
                      importHub, importCapture, syncPublish,
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,

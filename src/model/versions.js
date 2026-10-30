@@ -33,6 +33,7 @@ import { bakeTempos } from "./rollnotes.js";
 import { bakeMeter } from "./rollnotes.js";
 import { ctlCopy } from "../midi/parse.js";
 import { fileKey } from "../midi/parse.js";
+import { scheduleUndoSave } from "./undo-persist.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -222,6 +223,7 @@ export function saveDraft(clean) { // clean=true right after a successful Publis
   }
   updateSongBtn(); // the unsaved dot tracks every edit
   updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
+  scheduleUndoSave(); // the undo history follows the draft to disk (model/undo-persist.js)
   filesMirrorSoon(); // the Files copy follows, once the edits settle — every edit is kept, always (Model B)
 }
 saveDraft = prof("saveDraft", saveDraft);

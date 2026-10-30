@@ -1,3 +1,4 @@
+import { undoClear } from "../model/undo-persist.js";
 import { jobControls } from "../model/jobs.js";
 import { S, prof } from "../state.js";
 import { JOB_KINDS } from "../model/jobs.js";
@@ -1278,7 +1279,7 @@ export async function goBackToVersion(key, idx) {
   localStorage.setItem(draftStoreKey(key), JSON.stringify(v.draft));
   if (v.notes) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(v.notes)); else localStorage.removeItem("ff1roll-notes-" + key);
   if (v.ts) localStorage.setItem("ff1roll-ts-" + key, v.ts); else localStorage.removeItem("ff1roll-ts-" + key);
-  S.editUndo = []; S.editRedo = [];
+  S.editUndo = []; S.editRedo = []; undoClear(key); // going back voids the saved undo history too (model/undo-persist.js)
   if (key === S.songKey) await openDraft(key);
   document.getElementById("versionssheet").classList.remove("on");
   setInfo("back to " + label + " — your previous state is saved as a version too");
@@ -1321,7 +1322,7 @@ export async function goBackToPublished(key) { // the music + annotations go bac
   if (!ok) return;
   dropLocalSong(key);
   pubCheck.delete(key);
-  S.editUndo = []; S.editRedo = [];
+  S.editUndo = []; S.editRedo = []; undoClear(key);
   if (key === S.songKey) { S.songKey = null; await loadSong(key); }
   updateSyncBtn();
   updateSongBtn();

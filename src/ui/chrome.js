@@ -1,3 +1,4 @@
+import { undoFlush } from "../model/undo-persist.js";
 import { connected } from "../sync/publish.js";
 import { exportEverythingUI } from "../session/export-all.js";
 import { S, prof } from "../state.js";
@@ -2502,7 +2503,8 @@ export function initChrome14() {
 }
 
 export function initChrome15() {
-  document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { flushBackupNow(); undoFlush(); } });
+  if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", () => undoFlush());
 }
 
 export function initChrome16() {
