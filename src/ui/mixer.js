@@ -14,6 +14,7 @@ import { trackToggle } from "./trackbar.js";
 import { trackVol } from "../audio/engine.js";
 import { saveTrackDir } from "./trackbar.js";
 import { trackPan } from "../audio/engine.js";
+import { countUsage } from "../platform/usage.js";
 
 // what you SEE and can select: H on the chip
 
@@ -306,7 +307,7 @@ export function mixerStripEl(tr, ti, canReorder) {
     vlbl.textContent = Math.round((+fader.value) * 100) + "%";
     updateTrackGains();
   });
-  fader.addEventListener("change", () => { saveTrackDir(ti); }); // persist as the track: annotation, on release
+  fader.addEventListener("change", () => { countUsage("mixer.volume"); saveTrackDir(ti); }); // persist as the track: annotation, on release
 
   const pan = document.createElement("input");
   pan.type = "range"; pan.className = "mixerpan";
@@ -321,7 +322,7 @@ export function mixerStripEl(tr, ti, canReorder) {
     plbl.textContent = mixerPanLabel(+pan.value);
     updateTrackGains();
   });
-  pan.addEventListener("change", () => { saveTrackDir(ti); });
+  pan.addEventListener("change", () => { countUsage("mixer.pan"); saveTrackDir(ti); });
   strip.append(pan, plbl);
 
   if (canReorder) mixerStripDragize(strip, name, ti);

@@ -25,6 +25,8 @@ export const S = {
   editGen: 0, // bumped by every saveEdits — the playing scheduler rebuilds when it moves (Josh, Terminal #361)
   schedGen: 0, schedLastSec: -Infinity, // the scheduler's view: the editGen its list was built from, and the last event it handed to the audio
   synthNotes: 0, // synth voices started since the last play() — the play check's count (audio/transport.js)
+  usage: null, // platform/usage.js: the on-device usage counter {id: {n, first, last}}, lazily loaded from localStorage "nr.usage"
+  usageTimer: 0,
   song: null,
   songKey: null,
   songViewRedraw: null,

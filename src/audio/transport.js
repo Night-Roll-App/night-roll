@@ -55,6 +55,7 @@ import { chipStopSrcs } from "./chip.js";
 import { setControl } from "../ui/controls.js";
 import { seamAt, seamPassStart, seamSegFromTicks, seamAroundLoop, seamSpansText } from "./seam.js";
 import { barTicks } from "../model/rollnotes.js";
+import { countUsage } from "../platform/usage.js";
 
 // audio export: play ONCE, whole song, no loop
 export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to B.Q
@@ -200,6 +201,7 @@ export async function playGateWait(capMs) { // album advance: the same gate, awa
   while (playGate() && Date.now() - t0 < capMs) await new Promise(r => setTimeout(r, 200));
 }
 export async function play(fromSec = 0, opts = {}) {
+  countUsage("transport.play");
   if (S.songLoading) { // starting a transport against a half-loaded song played
     S.pendingPlay = true; // a couple of chase notes then died (Josh, 2026-08-17)
     setPlayBtn("play", "…");
@@ -457,6 +459,7 @@ export async function play(fromSec = 0, opts = {}) {
   S.raf = requestAnimationFrame(tick);
 }
 export function stop() {
+  countUsage("transport.stop");
   S.pendingPlay = false; // an explicit stop cancels a queued mid-load play
   if (S.recording) recFinish();
   clearInterval(S.schedTimer); // even when not "playing": a scheduler must never outlive a stop
@@ -537,6 +540,7 @@ export function seamArmedSpan() { // the ruler span a ▶ would cycle, in ticks,
   return r && r.cycle && !r.off && r.b > r.a ? {a: r.a, b: r.b} : null;
 }
 export function seamStart(spans, kind) {
+  countUsage("ruler.seam");
   const clean = spans.filter(s => s.b > s.a);
   if (!S.song || !clean.length) return Promise.resolve();
   S.seam = {spans: clean, kind}; S.seamPending = null; S.rangeSel = null; // the ruler is the seam's now: a leftover selection would sit under its spans (Josh, 2026-10-28)

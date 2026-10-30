@@ -1590,6 +1590,8 @@
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgdebuglog" style="width:20px;height:20px"> Debug log: show diagnostic lines (audio wake-ups, engine rebuilds) in ⚠</label></div>
     <div class="status cfgind">For chasing a problem with Claude. Off, only real problems raise the ⚠ chip; on, the ⚠ sheet also shows what the audio engine measured, marked [debug].</div>
+    <div class="row"><button id="cfgusagecopy" style="min-height:36px;padding:4px 10px">Copy usage</button></div>
+    <div class="status cfgind">Dev builds count which features you use, on this device only. Copy usage puts the counts (action names and times, never your music or text) on the clipboard.</div>
     <div class="row"><span class="lbl" style="width:70px">Chip stream</span>
       <select id="cfgchipstream" aria-label="Chip audio streaming" style="flex:1;min-height:36px">
         <option value="off">Off</option>
@@ -1753,6 +1755,7 @@
 <link rel="modulepreload" href="src/model/album-order.js">
 <link rel="modulepreload" href="src/model/versions.js">
 <link rel="modulepreload" href="src/model/undo-persist.js">
+<link rel="modulepreload" href="src/platform/usage.js">
 <link rel="modulepreload" href="src/model/jobs.js">
 <link rel="modulepreload" href="src/import/hub.js">
 <link rel="modulepreload" href="src/import/capture.js">

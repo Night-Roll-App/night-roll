@@ -366,6 +366,9 @@ A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a trac
 **Debug log**
 File → Settings → Other → **Debug log** shows diagnostic lines in Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.
 
+**Usage counter**
+Dev builds count which features you use, on this device only. File → Settings → Other → **Copy usage** puts the counts on the clipboard: action names, how many times, first and last time — never your music, song names or text. Nothing is sent anywhere.
+
 **Chip stream (experimental)**
 File → Settings → Other → **Chip stream**, beside Debug log: **Off** renders a PlayStation/PlayStation 2 song's console audio whole before it plays. **On** streams it instead, a couple of seconds at a time, so a big song (FFX "Challenge") can't crash the page's memory holding the whole thing at once; any failure for a song falls back to the whole render automatically. **Auto** (the default since 2026-10-01) streams only a song that would otherwise have to downgrade quality (mono, or a lower sample rate) or refuse outright to fit this device's memory — a song that fits as-is plays the ordinary whole render either way. A device setting — the switch doesn't change what you hear, only how it gets there.
 

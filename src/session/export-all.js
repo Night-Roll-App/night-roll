@@ -7,12 +7,13 @@ import { writeMidi } from "../midi/write.js";
 import { serializeNotesList, declaredTsForKey, dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { nsfURL } from "../platform/storage.js";
 import { nativeFs, nativeDirHandle, folderWrite } from "../platform/folder.js";
+import { USAGE_KEY } from "../platform/usage.js";
 
 export const exportState = {running: false}; // one export at a time
 
 function lsAdapter() {
   return {
-    keys() { return Object.keys(localStorage); },
+    keys() { return Object.keys(localStorage).filter(k => k !== USAGE_KEY); }, // the usage counter is a dev log, not data to carry off
     get(k) { return localStorage.getItem(k); },
   };
 }

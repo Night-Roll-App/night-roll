@@ -9,6 +9,7 @@ import { exposeGlobals } from "./devtools.js";
 import { initBase1, initBase2 } from "./platform/base.js";
 import { initMode1 } from "./platform/mode.js";
 import { initSw1 } from "./platform/sw.js";
+import { initUsage1 } from "./platform/usage.js";
 import { initRoll1 } from "./render/roll.js";
 import { initEngine1, initEngine2 } from "./audio/engine.js";
 import { initTransport1 } from "./audio/transport.js";
@@ -109,6 +110,7 @@ initPublish3();
 initSheets8();
 initChrome16();
 initSw1();
+initUsage1(); // the on-device usage counter's two delegated listeners (clicks, shortcuts)
 initSheets9();
 boot();
 

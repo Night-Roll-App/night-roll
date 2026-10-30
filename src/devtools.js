@@ -47,6 +47,7 @@ import * as modelEdits from "./model/edits.js";
 import * as modelRollnotes from "./model/rollnotes.js";
 import * as platformBase from "./platform/base.js";
 import * as platformMode from "./platform/mode.js";
+import * as platformUsage from "./platform/usage.js";
 import * as platformStorage from "./platform/storage.js";
 import * as platformFolder from "./platform/folder.js";
 import * as platformNative from "./platform/native.js";
@@ -130,7 +131,7 @@ export function exposeGlobals() {
                      theoryFactsCommon, theoryFactsPattern, theoryFactsForm, theoryFactsMelody, theoryFactsRhythm, theoryFactsBass, theoryFactsVoices, theoryFactsFormat,
                      theoryHarmonyRoman, theoryHarmonyCadence, theoryHarmonyNct, theoryHarmonyModulation,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
-                     platformBase, platformMode, platformStorage, platformFolder, platformNative,
+                     platformBase, platformMode, platformUsage, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport, audioSeam,
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
                      modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelUndoPersist, modelJobs,

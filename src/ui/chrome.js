@@ -225,6 +225,7 @@ import { deliverAudioFile } from "../audio/bounce.js";
 import { exportScore } from "../render/score-print.js";
 import { openSyncSheet } from "./sheets.js";
 import { EDITION } from "../edition.js";
+import { countUsage } from "../platform/usage.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -2331,7 +2332,7 @@ export function initChrome12() {
     document.getElementById("fsnewfolder").style.display = isNew ? "" : "none";
     if (isNew) softFocus(document.getElementById("fsnewfolder"));
   });
-  document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) openSaveForm("fork"); });
+  document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) { countUsage("saveas"); openSaveForm("fork"); } });
   document.getElementById("fsgo").addEventListener("click", async () => {
     const form = document.getElementById("filesaveasform");
     const name = document.getElementById("fsname").value;

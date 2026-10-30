@@ -52,6 +52,7 @@ import { coachCurrent } from "../model/coach-comments.js";
 import { COACH_ENABLED } from "../model/coach-comments.js";
 import { coachLine } from "../model/coach-comments.js";
 import { coachImportText } from "../ui/coach-sheet.js";
+import { countUsage } from "../platform/usage.js";
 
 // ---- act: the one Ask tool every app action lives behind (docs/ai-parity.md
 // §2; batch 1 of §5). Josh, #435: the menu sent with every message must not
@@ -416,6 +417,7 @@ export async function runActions(items, general) { // the model-free door: [{act
     if (S.askSwitch && def.name !== "open_song") return fail("the song is changing — ask again in " + S.askSwitch.title + "'s chat"); // open_song ran (in this call or earlier in this reply): it is the last thing that happens here (docs/ai-parity.md §4)
     if (def.song !== false && general) return fail("\"" + def.name + "\" works in a song's ♪ chat, not here");
     if (def.song !== false && !S.song) return fail("no song open");
+    countUsage("ask.act." + def.name.toLowerCase().replace(/[^a-z0-9_]/g, "_")); // the registry name only, never the args
     try { lines.push(String(await def.run(it.args || {}))); } catch (err) { return fail(String(err && err.message || err)); }
     if (!def.quiet) quiet = false;
   }

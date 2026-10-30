@@ -115,6 +115,7 @@ import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { softFocus } from "./chrome.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
+import { countUsage } from "../platform/usage.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
@@ -762,6 +763,7 @@ export function invertEdit(u) { // the entry that would undo an applyU(u), captu
   return {ti: u.ti, ni: u.ni, ...(u.ri !== undefined ? {ri: u.ri} : {}), kind: u.kind === "add" ? "erase" : "add"}; // ri: the note a chop re-carve remaps to
 }
 export function editRedoPop() {
+  countUsage("edit.redo");
   const r = S.editRedo.pop();
   if (!r || !S.song) return;
   S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
@@ -771,6 +773,7 @@ export function editRedoPop() {
   if (r.kind === "anno") editorAfterUndo();
 }
 export function editUndoPop() {
+  countUsage("edit.undo");
   const u = S.editUndo.pop();
   if (!u || !S.song) return;
   S.editRedo.push(invertEdit(u));

@@ -94,3 +94,4 @@ file or the save state, never from a per-game table.
 |---|---|
 | `split/` | `check.mjs` enforces the module rules of `docs/split-plan.md` §3.6 (layers, no top-level `let`, port imports); `move.mjs` and friends did the split. |
 | `vendor/` | acorn (parser) for the checker — Node-only, never shipped. |
+- tools/usage-report.mjs — merge the web "Copy usage" JSON and the native usage.json into a ranked table of feature use (counts only).

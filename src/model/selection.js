@@ -42,6 +42,7 @@ import { stampChordBand } from "./rollnotes.js";
 import { chordSym } from "../theory/chords.js";
 import { splitProgression } from "../theory/chords.js";
 import { parseNumeral } from "../theory/chords.js";
+import { countUsage } from "../platform/usage.js";
 
 // hearing the saved copy, or someone else's song = read-only
 export function selEditItems() { // the notes an edit applies to: lasso selection, else the tapped note
@@ -218,7 +219,7 @@ export function resizeSelection(dTicks) { // same delta for every note — a cho
 // On a song whose notes are locked (lockedAnnoSong) the copy is annotations
 // only, anchored at the first one (or the span's start) — the notes can't be
 // pasted back there, and anchoring at a lassoed note would shift the bands.
-export function copySelection(annoSpan) { // returns notes + annotations copied (0 = nothing to copy)
+export function copySelection(annoSpan) { countUsage("edit.copy"); // returns notes + annotations copied (0 = nothing to copy)
   const items = editableSong() ? selEditItems() : [];
   const lassoed = lassoedAnnos(); // bands alone are a copy too (Josh, 2026-09-13: ⧉ was gray with only chords lasso'd)
   if (!items.length && !lassoed.length && !annoSpan) return 0;
@@ -236,7 +237,7 @@ export function copySelection(annoSpan) { // returns notes + annotations copied 
     .map(n => ({dt: n.start - t0, len: n.b2 ? n.end - n.start : null, json: noteToJSON(n), src: n})); // b2 = a real end anchor; point notes get a synthetic end elsewhere
   return S.noteClipboard.length + S.annoClipboard.length;
 }
-export function cutSelection() { // ✂: copy, then delete — notes and lasso'd annotations, one undo (deleteSelection does both)
+export function cutSelection() { countUsage("edit.cut"); // ✂: copy, then delete — notes and lasso'd annotations, one undo (deleteSelection does both)
   const k = copySelection();
   if (!k) return 0;
   deleteSelection();
@@ -282,7 +283,7 @@ export function pasteAnnotationsOnly(atTick, opts = {}) {
   setInfo("pasted " + k + " annotation" + (k === 1 ? "" : "s") + notesMsg + " — cursor at their end, paste again to chain");
   return k;
 }
-export function pasteClipboard(atTick, opts = {}) {
+export function pasteClipboard(atTick, opts = {}) { countUsage("edit.paste");
   if (!clipboardHas()) return 0;
   if (!editableSong()) return pasteAnnotationsOnly(atTick, opts);
   const snap = moveSnapTicks(); // same grid as moves

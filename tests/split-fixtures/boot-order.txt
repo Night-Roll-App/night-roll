@@ -233,7 +233,7 @@ document.getElementById("fncreate").addEventListener("click", () => {
 document.getElementById("fsname").addEventListener("keydown", e => {
 document.getElementById("fsnewfolder").addEventListener("keydown", e => {
 document.getElementById("fsfolder").addEventListener("change", () => {
-document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) openSaveForm("fork"); });
+document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) { countUsage("saveas"); openSaveForm("fork"); } });
 document.getElementById("fsgo").addEventListener("click", async () => {
 document.getElementById("filerename").addEventListener("click", () => {
 document.getElementById("frname").addEventListener("keydown", e => {
@@ -381,6 +381,11 @@ applyViewMode();
 resize();
 updateSyncBtn();
 if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof location !== "undefined" && S.APP_BASE) {
+document.addEventListener("click", e => {
+document.addEventListener("keydown", e => {
+window.addEventListener("pagehide", usageFlush);
+const cp = document.getElementById("cfgusagecopy");
+if (cp) cp.addEventListener("click", async () => {
 try {
 (async function boot() {
 if (typeof window !== "undefined" && window.__NR_EXPOSE) exposeGlobals();

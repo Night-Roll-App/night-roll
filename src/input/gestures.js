@@ -122,6 +122,7 @@ import { snapKeepSpot } from "../model/grid.js";
 import { drumStepImpl as drumStep } from "../render/roll.js";
 import { sfShownAt } from "../model/song.js";
 import { curTick } from "../render/roll.js";
+import { countUsage } from "../platform/usage.js";
 
 // ---------------------------------------------------------------- hit test / coords
 export function evtPos(e) {
@@ -320,6 +321,7 @@ export function scoreTap(pos) {
 }
 
 export function finalizeLasso() {
+  countUsage("select.lasso");
   const r = S.lassoRect;
   S.lassoRect = null;
   if (!r) return;
@@ -518,6 +520,7 @@ export function scrubTo(pos) {
 // the transport does; at rest, just move the cursor. Shared so the strip's
 // tap-to-move reuses exactly what the ruler's own tap already did.
 export function seekOrMoveCursor(target, opts = {}) {
+  countUsage("transport.seek");
   if (S.playing) { stop(); play(tickToSec(S.song, target), opts).catch(() => {}); }
   else { S.playCursor = target; updateSubtitle(); draw(); }
 }
@@ -627,6 +630,7 @@ export function endPointer(e) {
     S.drag = {id: survivor.id, x: survivor.x, y: survivor.y, sx: survivor.x, sy: survivor.y,
             moved: true, stripCursor: false, ruler: false};
     S.pinch = null;
+    countUsage("zoom.pinch");
     return;
   }
   if (!S.drag || S.drag.id !== e.pointerId) return;
@@ -856,14 +860,14 @@ export function tap(pos) {
       // switching it off left a dead span with no obvious way to delete it)
       const inSpan = rt >= S.rangeSel.a && rt < S.rangeSel.b && pos.y < BASE_RULER_H, tapNow = Date.now();
       if (inSpan && tapNow - S.spanTapAt < 350) {
-        S.rangeSel = null; S.spanTapAt = 0;
+        S.rangeSel = null; S.spanTapAt = 0; countUsage("ruler.delete");
         setInfo("range deleted");
         draw();
         return;
       }
       S.spanTapAt = inSpan ? tapNow : 0;
       if (S.rangeSel.off && rt >= S.rangeSel.a && rt < S.rangeSel.b && pos.y < BASE_RULER_H) {
-        S.rangeSel.off = false; // tap the dimmed span: it re-arms without redrawing it
+        S.rangeSel.off = false; countUsage("ruler.cycle"); // tap the dimmed span: it re-arms without redrawing it
         setInfo("cycle re-armed: " + "▶ loops the highlighted span again");
         draw();
         return;
@@ -877,7 +881,7 @@ export function tap(pos) {
     const {tick} = posToTickPitch(pos);
     const ppt = pxPerTick();
     if (pos.x < 18 && pos.y >= BASE_RULER_H && S.secMaxDepth > 1) { // ▸ chevron: cycle visible levels
-      cycleSecDepth();
+      cycleSecDepth(); countUsage("ruler.depth");
       return;
     }
     if (pos.y >= BASE_RULER_H) { // section lanes
@@ -1443,6 +1447,7 @@ export function initGestures1() {
         S.drag.rulerRange = true;
         const a = rulerSnapX(S.drag.spos.x);
         const b = rulerSnapX(evtPos(e).x);
+        if (a !== b) countUsage("ruler.select");
         S.rangeSel = a === b ? null : {a: Math.min(a, b), b: Math.max(a, b), cycle: true}; // drags arm the cycle
         draw();
       }

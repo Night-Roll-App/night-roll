@@ -76,6 +76,7 @@ import { openPubJobSheet } from "../ui/sheets.js";
 import { pubJobOneMotion } from "../ui/sheets.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { ctlCopy } from "../midi/parse.js";
+import { countUsage } from "../platform/usage.js";
 
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
   if (folderActive()) { await folderWrite(path, text); return {ok: true, status: 200}; }
@@ -340,6 +341,7 @@ export function manifestPlace(albums, dropPath, addPath) { // remove one path, a
 // commitImports' status line, ↻ re-runs it for the drafts still there
 // (commitImports deletes drafts only after success, so a retry is safe).
 export function publishJobStart(slug, keys, statusFn) {
+  countUsage("publish");
   keys = keys || importDraftKeys();
   if (!keys.length) { statusFn && statusFn("No captures to publish."); return null; }
   const live = jobsFind("publish", slug, true) || (slug ? null : jobsFind("publish", null, true));

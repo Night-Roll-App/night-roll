@@ -1,4 +1,5 @@
 import { S } from "../state.js";
+import { countUndoKind } from "../platform/usage.js";
 import { noteToJSON } from "./rollnotes.js";
 import { rawTwin } from "./rollnotes.js";
 import { prof } from "../state.js";
@@ -41,7 +42,7 @@ export function updateClearBtn() {
 // device, but with no repo path: never synced, never committed
 export function isLocalDraft() { return !!S.songKey && S.songKey.startsWith("local/"); }
 
-export function pushUndo(entry) { S.editUndo.push(entry); S.editRedo = []; scheduleUndoSave(); } // a fresh edit forks history
+export function pushUndo(entry) { countUndoKind(entry && entry.kind); S.editUndo.push(entry); S.editRedo = []; scheduleUndoSave(); } // a fresh edit forks history
 // Track add/delete are undo steps too (Josh, 2026-09-12: a deleted track was
 // gone for good). Deleting used to wipe the history because entries hold track
 // indexes; LIFO makes that unnecessary — nothing older can be reached until the
