@@ -516,6 +516,20 @@ test("console loudness fallback: album.json's measurement first, else this devic
   run(`localStorage.removeItem(loudCacheSlot("abc:1"))`);
 });
 
+test("View › Display \"Publish button\" (Josh #1088): footer Publish shows by default, the switch hides it, persists per device, Ask set_pref publish_button flips it", () => {
+  run(`try { localStorage.removeItem("nr.showPublish"); } catch (e) {} updateSyncBtnImpl(); renderViewMenu();`);
+  assert.equal(app.el("syncbtn").style.display, "");
+  assert.match(app.el("vwPublish").textContent, /^✓/);
+  run(`setPublishBtnShown(false)`);
+  assert.equal(app.el("syncbtn").style.display, "none");
+  assert.doesNotMatch(app.el("vwPublish").textContent, /^✓/);
+  assert.equal(run(`publishBtnShown()`), false, "reads back from storage");
+  const r = val(`askSetPref({name: "publish_button", value: true})`);
+  assert.equal(r.ok, true);
+  assert.equal(app.el("syncbtn").style.display, "");
+  run(`try { localStorage.removeItem("nr.showPublish"); } catch (e) {}`);
+});
+
 test("View › Display \"Volume slider\" (Josh #187): the top bar's 🔊 is hidden by default; the switch shows it, persists per device, and Ask set_pref volume_slider flips it; the Mixer's master strip is not touched", () => {
   run(`try { localStorage.removeItem("ff1roll-show-volume"); } catch (e) {} volBtnShown.v = undefined; applyVolBtnShown();`);
   assert.equal(run(`volBtnShown()`), false, "off by default");
@@ -3191,7 +3205,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "speedometer icon",
     "their own full-width row under it",
     "swipe sideways on the strips",
-    "Beat subdivisions", "Volume slider", "song gain",
+    "Beat subdivisions", "Volume slider", "Publish button", "song gain",
     "Playing in the background", "<b>play with the noise track</b>", "+ Song note", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Claude tab models", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the model Claude gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "What the synth plays from a MIDI file", "Glide (notes that carry on)", "makes room", "Edit patch…", "Patches ›",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",

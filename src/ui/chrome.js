@@ -227,10 +227,19 @@ import { openSyncSheet } from "./sheets.js";
 import { EDITION } from "../edition.js";
 import { countUsage } from "../platform/usage.js";
 
+export function publishBtnShown() { // device-local pref nr.showPublish; absent = shown
+  try { return localStorage.getItem("nr.showPublish") !== "0"; } catch (err) { return true; }
+}
+export function setPublishBtnShown(on) {
+  try { localStorage.setItem("nr.showPublish", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+  updateSyncBtnImpl();
+  renderViewMenu();
+}
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
-  // shown even unconnected (Josh #1084/#1087: hidden, he could not find it); the sheet says where to add a token
-  btn.style.display = "";
+  // shown even unconnected (Josh #1084/#1087: hidden, he could not find it); the sheet says where to add a token.
+  // View > Display > Publish button (Josh #1088) hides it per device.
+  btn.style.display = publishBtnShown() ? "" : "none";
   const n = pendingSongs().length;
   btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
 }
@@ -564,6 +573,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwTextJump: {glyph: "⌨", text: "Jump into text boxes"},
     vwVolume: {icon: "volumeUp", text: "Volume slider"},
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
+    vwPublish: {icon: "publish", text: "Publish button"},
     vwInst: {icon: "piano", text: "Instrument panel"},
     vwSub: {glyph: "💬", text: "Notes strip"},
     vwVel: {icon: "barChart", text: "Velocity lane"},
@@ -626,6 +636,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));
   set("vwEdit", !S.editrowHidden, !S.editOn); // dimmed (not disabled) in read-only: the pref still flips
   set("vwFooter", !S.footerHidden);
+  set("vwPublish", publishBtnShown());
   set("vwAdded", showAddedOutline());
   set("vwBeatSub", showBeatSub());
   set("vwHideDrums", S.hideDrums);
@@ -2147,6 +2158,7 @@ export function initChrome11() {
     on("vwBeatSub", () => { setBeatSub(!showBeatSub()); renderViewMenu(); });
     on("vwHideDrums", () => { setHideDrumTracks(!S.hideDrums); renderViewMenu(); });
     on("vwTextJump", () => { setTextJump(!textJumpOn()); renderViewMenu(); });
+    on("vwPublish", () => setPublishBtnShown(!publishBtnShown())); // Josh #1088
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());
     on("vwSub", () => toggleSubtitle());

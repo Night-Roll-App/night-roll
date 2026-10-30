@@ -60,6 +60,7 @@ export const CONTROLS = {
   vwTextJump: {glyph: "⌨", cls: "", label: "  Jump into text boxes", prefix: "   "},
   vwVolume: {icon: "volumeUp", cls: "", label: "Volume slider", prefix: "   "},
   vwFooter: {icon: "viewAgenda", cls: "", label: "Bottom bar", prefix: "   "},
+  vwPublish: {icon: "publish", cls: "", label: "Publish button", prefix: "   "},
   vwInst: {icon: "piano", cls: "", label: "Instrument panel", prefix: "   "},
   vwSub: {glyph: "💬", cls: "", label: "  Notes strip", prefix: "   "},
   vwVel: {icon: "barChart", cls: "", label: "Velocity lane", prefix: "   "},
