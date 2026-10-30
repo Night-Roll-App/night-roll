@@ -3181,7 +3181,6 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
     "Hide drum tracks",
-    "Coach comments",
     "↓ latest",
     "Roman numeral and no 5",
     "Jump into text boxes",
@@ -16566,8 +16565,9 @@ test("coach comments: import → reload → still there; never touches the rolln
   assert.equal(valOf(b, `coachCurrent().map(c => c.by + ":" + c.text)`).join("|"), "Anna:nice|Anna:listen to the bass again");
   // Ask: an action reads them on request, as written; the context block never carries them
   const line = run(`ASK_ACTIONS.find(d => d.name === "coach_comments").run({})`);
-  assert.match(line, /2 coach comments/);
-  assert.match(line, /5\.1 · Anna · .*: listen to the bass again/);
+  assert.equal(line, "Coach comments are switched off for now", "COACH_ENABLED is false (#1068): the action refuses, the stored data stays");
+  assert.equal(run(`coachLine(coachCurrent()[0])`).includes("listen to the bass again") || run(`coachLine(coachCurrent()[1])`).includes("listen to the bass again"), true, "the data is still readable");
+  assert.equal(val(`COACH_ENABLED`), false);
   run(`multiSel = [];`);
   assert.ok(!run(`askContext(song, 100000)`).includes("listen to the bass again"), "not in the context unless asked");
   // the sidecar serialises one comment per line, in its own format

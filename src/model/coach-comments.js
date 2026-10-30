@@ -7,6 +7,9 @@ import { S } from "../state.js";
 // Device copy: localStorage "ff1roll-comments-<songKey>" (a JSON array);
 // Publish writes the same list to <base>.comments.json. Merge is by id and
 // append-only — an import can only add.
+// Switched off 2026-10-29 (Josh #1068: not ready). One line turns it back on: the Notes entry, the ruler marks and the Ask action.
+// Stored comments (localStorage + <song>.comments.json, Publish) are untouched either way.
+export const COACH_ENABLED = false;
 export const COACH_FORMAT = "night-roll-comments";
 export function coachStoreKey(key) { return "ff1roll-comments-" + key; }
 export function coachRepoPath(key) { return key.replace(/\.midi?$/i, "") + ".comments.json"; }

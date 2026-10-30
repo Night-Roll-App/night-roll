@@ -49,6 +49,7 @@ import { askStoreKey } from "./sheet.js";
 import { askStore } from "./bridge.js";
 import { askShotDisplayText } from "./shots.js";
 import { coachCurrent } from "../model/coach-comments.js";
+import { COACH_ENABLED } from "../model/coach-comments.js";
 import { coachLine } from "../model/coach-comments.js";
 import { coachImportText } from "../ui/coach-sheet.js";
 
@@ -284,6 +285,7 @@ export const ASK_ACTIONS = [
    example: "What did she say about bar 5?", say: "Ask for her comments (\"what did the coach say?\"), or paste what she sent and say \"import these\".",
    spec: "coach_comments {op?, text?}: op read (the default) lists the open song's coach comments exactly as she wrote them — \"bar.beat · name · time: text\", one per line; op import adds the pasted text to them (lines like \"bar 12: text\", or the JSON of the share page; duplicates are skipped; nothing already there is changed). They are HERS, kept in <song>.comments.json beside the song and never in his annotations, and they are NOT in your context block: use this ONLY when the user asks what she said or asks you to import them. Then relay her words as written — never add your own verdict, chord name, key or answer to them (Learning mode is the law).",
    run(a) {
+     if (!COACH_ENABLED) return "Coach comments are switched off for now";
      const op = String(askActGiven(a.op) ? a.op : "read").toLowerCase();
      if (op === "import") { if (!askActGiven(a.text)) throw new Error("import needs text — her comments as pasted"); return coachImportText(String(a.text)).message; }
      if (op !== "read") throw new Error("op is read or import");

@@ -2970,6 +2970,11 @@ body silently vanished from docs/HELP.md.
 
 ## Coach comments (Q30-36, 2026-10-14; design: docs/plans/2026-10-09-coach-commentary.md option A)
 
+**SWITCHED OFF 2026-10-29 (Josh #1068: "I don't think that was ready").** `COACH_ENABLED = false` in src/model/coach-comments.js hides the
+Notes entry, stops the ruler marks and makes the Ask action answer "Coach comments are switched off for now". All code and stored
+`<song>.comments.json` / localStorage data are kept; flipping the constant to `true` restores everything below (and re-add the help
+entry and the "Coach comments" drift keyword). The native app has the same flag (`CoachFeature.enabled`).
+
 His composition coach reviews a song from today's 🔗 Share link (no account,
 she sees what the link shows) and sends her comments back by message. He
 imports them; they are a separate, read-only layer.

@@ -2,6 +2,7 @@ import { S } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { coachCurrent } from "../model/coach-comments.js";
+import { COACH_ENABLED } from "../model/coach-comments.js";
 import { coachImport } from "../model/coach-comments.js";
 import { coachRepoPath } from "../model/coach-comments.js";
 import { coachWhen } from "../model/coach-comments.js";
@@ -71,6 +72,7 @@ export async function openCoachSheet() {
   }
 }
 export function initCoachSheet1() {
+  if (!COACH_ENABLED) { document.getElementById("notescoach").style.display = "none"; } // switched off (#1068); the sheet and its wiring stay for the flag
   document.getElementById("notescoach").addEventListener("click", () => { closeDropUp(); openCoachSheet(); });
   const run = text => {
     try { coachStatus(coachImportText(text).message); } catch (err) { coachStatus(err.message); }

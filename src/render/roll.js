@@ -9,6 +9,7 @@ import { scoreTickToX } from "./score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { coachCurrent } from "../model/coach-comments.js";
+import { COACH_ENABLED } from "../model/coach-comments.js";
 import { drawAudioStrip } from "./tracks.js";
 import { appMode } from "../platform/mode.js";
 import { isDirective } from "../model/rollnotes.js";
@@ -491,7 +492,7 @@ export function drawRuler(W, H) {
   // in score view, band edges follow the ENGRAVED positions (scoreTickToX,
   // the playhead's own map) — linear time put "A part" a hair off its notes
   const tickX = t => S.viewMode === "score" && S.scoreModel ? scoreTickToX(t) : S.RULER_W + t * ppt - S.view.x;
-  if (S.coachShow) { // her comments (Q30-36): a read-only layer of small blue marks at their bars, never an annotation
+  if (COACH_ENABLED && S.coachShow) { // her comments (Q30-36): a read-only layer of small blue marks at their bars, never an annotation
     const qt = beatTicks();
     ctx.fillStyle = "#5BC0EB";
     for (const c of coachCurrent()) {
