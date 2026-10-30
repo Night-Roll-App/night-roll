@@ -6256,14 +6256,14 @@ test("Versions: migration folds an old checkpoint and stash in on first read, th
        for (const k of ["ff1roll-draft-", "ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + "${key}"); songKey = null;`);
 });
 
-test("Model B: not connected anywhere hides the footer Publish button and the ●; a token or a folder brings them back", () => {
+test("Model B: not connected anywhere keeps the footer Publish button (#1084) but hides the ●; a token or a folder brings the ● back", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/connected-test.mid"; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, ppq: 480, tracks: []}));
        globalThis.__realToken = localStorage.getItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-ghtoken");
        fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false; currentPath = songKey;`);
   assert.equal(val(`connected()`), false);
   run(`updateSyncBtn(); updateSongBtn();`);
-  assert.equal(val(`document.getElementById("syncbtn").style.display`), "none", "no Publish button unconnected");
+  assert.notEqual(val(`document.getElementById("syncbtn").style.display`), "none", "Publish button stays unconnected (#1084)");
   assert.equal(val(`[...document.getElementById("songcrumb").children].some(c => c.className === "crumbdot")`), false, "no ● unconnected");
   run(`localStorage.setItem("ff1roll-ghtoken", "t"); updateSyncBtn(); updateSongBtn();`);
   assert.equal(val(`connected()`), true);

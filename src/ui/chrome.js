@@ -229,7 +229,7 @@ import { countUsage } from "../platform/usage.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
-  if (!connected()) { btn.style.display = "none"; return; } // Model B: not connected anywhere = no footer Publish button
+  // shown even unconnected (Josh #1084/#1087: hidden, he could not find it); the sheet says where to add a token
   btn.style.display = "";
   const n = pendingSongs().length;
   btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
