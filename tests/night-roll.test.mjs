@@ -17278,3 +17278,58 @@ test("stems: the recording attaches ONLY to the exact draft this job made — un
     run(`stemsSheetClose();`);
   } finally { stemsTestOff(); run(`localStorage.removeItem(draftStoreKey("local/this-stems.mid")); localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/other.mid"));`); }
 });
+
+test("stems: re-review — a bridge stuck on 500 reaches the give-up (only a good answer resets the count); boot resume + ↻ on the same row start ONE runner; ✕ after the upload landed sends DELETE and cancels; importAudioFiles never lands a recording on a song switched to during its IDB put", async () => {
+  // 1. repeated 500s → give-up after 15, failed rows
+  let fake = stemsFakeBridge();
+  const okFetch = fake.fetch;
+  fake.fetch = async (url, o = {}) => { if ((o.method || "GET") === "GET" && /\/v1\/stems\/[^/]+$/.test(String(url))) { fake.calls.push({method: "GET", url: String(url)}); await new Promise(r => setTimeout(r, 1)); return {ok: false, status: 500, json: async () => ({error: {message: "boom"}}), arrayBuffer: async () => new ArrayBuffer(0)}; } return okFetch(url, o); };
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "five.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "failed", 4000), val(`jobs[0].state`));
+    assert.equal(fake.calls.filter(c => c.method === "GET").length, 15);
+    assert.equal(val(`jobs[0].err`), "the bridge keeps answering 500 — ↻ on this row resumes");
+    assert.ok(!val(`jobs[0].items.some(i => i.st === "running" || i.st === "queued")`));
+  } finally { stemsTestOff(); }
+  // 2. the boot pass and a ↻ tap on the same interrupted row, both in flight: one resume row, one song.mid fetch, no POST
+  fake = stemsFakeBridge({polls: [{status: "done", stage: "done", pct: 1, counts: {drums: 7}, files: [{name: "song.mid", bytes: 1}]}]});
+  stemsTestOn(fake);
+  try {
+    run(`for (const k of Object.keys(localStorage)) if (/^ff1roll-draft-local\\/dup-stems/.test(k)) localStorage.removeItem(k);
+         jobs = [{id: "dup1", kind: "stems", title: "Dup.wav", state: "interrupted", items: stemsItems(stemsOptions()).map(it => ({label: it.label, st: "interrupted", pct: 0, msg: "", key: it.key || null})), note: "", started: 1, ended: 2, err: "", stemsId: "20261030-130000-dupl", slug: "dup", name: "Dup.wav", options: stemsOptions(), attach: false, draftKey: null}];
+         globalThis.__dupA = stemsResume(jobs[0], false); JOB_KINDS.stems.retry(jobs[0]); globalThis.__dupB = stemsResume(jobs[0], true);`);
+    const [a, b] = await Promise.all([run(`__dupA.then(j => !!j)`), run(`__dupB.then(j => !!j)`)]);
+    assert.deepEqual([a, b], [true, false], "the first starts the runner, the later one finds the row gone / a runner live");
+    assert.ok(await stemsSettle(() => val(`jobs.length`) === 1 && val(`jobs[0].state`) === "done"), val(`jobs.map(j => j.state).join()`));
+    assert.equal(fake.calls.filter(c => c.url.endsWith("/files/song.mid")).length, 1, "one fetch of the notes");
+    assert.ok(!fake.calls.some(c => c.method === "POST"), "never a POST");
+  } finally { stemsTestOff(); }
+  // 3. ✕ while the upload is on the wire (the vm has no intervals, so the abort watch can't fire — the row sees ✕ right after the PUT lands): DELETE for the uploaded input, state cancelled, not failed
+  fake = stemsFakeBridge({polls: [{status: "running", stage: "separate", pct: 0.1}]});
+  const base = fake.fetch;
+  fake.fetch = async (url, o = {}) => { if (o.method === "PUT") { fake.calls.push({method: "PUT", url: String(url), headers: o.headers}); await new Promise(r => setTimeout(r, 30)); return {ok: true, status: 200, json: async () => ({id: "x", bytes: 1, ext: "wav", name: "c"}), arrayBuffer: async () => new ArrayBuffer(0)}; } return base(url, o); };
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "cut.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => fake.calls.some(c => c.method === "PUT")), "the PUT is on the wire");
+    run(`jobCancel(jobs[0].id)`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) !== "running"), "ended");
+    assert.equal(val(`jobs[0].state`), "cancelled", val(`jobs[0].err`));
+    assert.ok(fake.calls.some(c => c.method === "DELETE"), "the Mac was told to drop the uploaded input");
+    assert.ok(!fake.calls.some(c => c.method === "POST"), "never started");
+    assert.equal(val(`jobs[0].items[1].st`), "cancelled");
+  } finally { stemsTestOff(); }
+  // 4. importAudioFiles: the song changes during the IDB put → nothing touches the song he switched to
+  installActSong();
+  const before = val(`JSON.stringify(song.tracks.map(t => t.name))`);
+  run(`globalThis.__info = ""; setInfo = m => { __info = m; };`); // an earlier test leaves setInfo stubbed anyway — read what it is handed
+  app.context.indexedDB = {open() { run(`songKey = "albums/compositions/nightroll/elsewhere.mid"; localStorage.setItem(draftStoreKey(songKey), "{}");`); throw new Error("stub: the song moved under the put"); }};
+  try {
+    await run(`importAudioFiles([{name: "x.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}])`);
+    assert.equal(val(`songKey`), "albums/compositions/nightroll/elsewhere.mid");
+    assert.equal(val(`JSON.stringify(song.tracks.map(t => t.name))`), before, "no track was added to the song that is open now");
+    assert.ok(!val(`song.tracks.some(t => t.kind === "audio")`));
+    assert.match(val(`__info`), /the song changed while the recording was being stored — nothing was added/);
+  } finally { delete app.context.indexedDB; run(`localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/elsewhere.mid"));`); installActSong(); }
+});

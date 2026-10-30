@@ -357,6 +357,12 @@ export async function importAudioFiles(items) { // items: {name, bytes: Uint8Arr
     return;
   }
   const cursorBar = Math.floor(S.playCursor / barTicks()) * barTicks();
+  // the song this import started on: every await below (the size confirm, the
+  // mono decode, the IDB put) is a window in which he — or a finishing job —
+  // can open another song; a recording lands on the song it was meant for or
+  // nowhere (stems review 2026-10-30), never on whatever is open afterwards
+  const key0 = S.songKey;
+  const switched = () => { if (S.songKey === key0 && S.song) return false; setInfo("the song changed while the recording was being stored — nothing was added; add it again on the song you mean"); return true; };
   let lastTi = -1;
   for (const it of items) {
     let bytes = it.bytes;
@@ -372,6 +378,7 @@ export async function importAudioFiles(items) { // items: {name, bytes: Uint8Arr
         catch (err) { setInfo("couldn't decode " + it.name + " — importing as-is"); }
         it.name = it.name.replace(/\.[^.]+$/, "") + ".wav";
       }
+      if (switched()) return;
     }
     // unique slug and track name within the song
     let file = slugFile(it.name), k = 2;
@@ -380,7 +387,8 @@ export async function importAudioFiles(items) { // items: {name, bytes: Uint8Arr
     const stem = file.replace(/\.[^.]+$/, "");
     let name = stem, j = 2;
     while (S.song.tracks.some(t => (t.name || "").toLowerCase() === name.toLowerCase())) name = stem + "-" + j++;
-    const stored = await idbAudioPut(S.songKey + "|" + file, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), it.type || "");
+    const stored = await idbAudioPut(key0 + "|" + file, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), it.type || "");
+    if (switched()) return; // the stored copy is keyed to key0 and harmless there; S.song is not touched
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     if (S.audioReplaceTi !== null && S.song.tracks[S.audioReplaceTi] && S.song.tracks[S.audioReplaceTi].kind === "audio") {
       const ti = S.audioReplaceTi; S.audioReplaceTi = null;

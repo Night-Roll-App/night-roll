@@ -196,6 +196,8 @@ export async function stemsResume(job, allowPost) {
   if (jobsFind("stems", null, true)) { setInfo("a split is already running — one at a time on the Mac"); return null; }
   let g;
   try { g = await stemsGet(job.stemsId); } catch (err) { setInfo(job.name + ": " + stemsNetErr(err).message + " — ↻ on the ⏳ row tries again"); return null; }
+  // the same guards again, after the await: the boot pass and a ↻ tap on the same row can both be in flight — the second finds the row gone or a runner live and does nothing
+  if (jobsFind("stems", null, true) || !S.jobs.some(j => j.id === job.id)) return null;
   const st = (g.body || {});
   if (g.ok && (st.status === "running" || st.status === "done")) {
     jobsDismiss(job.id);
@@ -231,7 +233,7 @@ async function stemsRun(api, mode) {
       if (!up.ok) throw await stemsErr(up, up.status === 413 ? "the recording is over the Mac's 300 MB cap" : undefined);
     }
     api.update(0, {st: "done", pct: 1});
-    if (api.aborted) { mark("cancelled", 1); api.cancel(); return; }
+    if (api.aborted) { if (mode === "start") await stemsDelete(id); mark("cancelled", 1); api.cancel(); return; } // ✕ right after the upload landed: tell the Mac, so the input doesn't sit there a week
     // 2. start — 503 install:true carries the bridge's own sentence; 409 names the running job
     api.update(1, {st: "running"});
     if (mode !== "resume") await stemsPost(id, job.options);
@@ -241,10 +243,11 @@ async function stemsRun(api, mode) {
       await stemsSleep(S.stemsPollMs);
       if (api.aborted) { await stemsDelete(id); mark("cancelled"); api.cancel(); return; }
       let g;
-      try { g = await stemsGet(id); errs = 0; }
+      try { g = await stemsGet(id); }
       catch (err) { if (++errs >= STEMS_POLL_GIVE_UP) throw new Error(STEMS_UNREACHABLE + " (" + errs + " tries) — the Mac keeps working; ↻ on this row resumes"); continue; }
       const st = g.body || {};
       if (!g.ok) { if (g.status === 404) throw new Error("the Mac lost this job — pick the file again"); if (++errs >= STEMS_POLL_GIVE_UP) throw new Error("the bridge keeps answering " + g.status + " — ↻ on this row resumes"); continue; }
+      errs = 0; // only a good answer resets the count: a bridge stuck on 500/401 reaches the give-up too
       if (st.status === "error") throw new Error(st.error || "the engine failed");
       if (st.status === "cancelled") { mark("cancelled"); api.cancel(); return; }
       stemsApplyStatus(api, items, idx, st);
@@ -265,7 +268,13 @@ async function stemsRun(api, mode) {
     stemsHubRefresh();
     setInfo("stems + notes of " + name + " opened as a new song (" + stemsCountsText(counts) + ")" + (skipped ? " — " + skipped : " — ⏳ → Open plays each stem"));
   } catch (err) {
-    mark(api.aborted ? "cancelled" : "failed");
+    if (api.aborted) { // ✕ while the PUT was in flight (the abort rejects the fetch): a cancelled row, not a failed one; the Mac drops a half-written .part itself
+      mark("cancelled");
+      if (mode === "start") await stemsDelete(id);
+      api.cancel();
+      return;
+    }
+    mark("failed");
     throw stemsNetErr(err);
   } finally {
     delete S.stemsBytes[id]; // the recording's bytes are only needed until the attach; a failed row keeps nothing (↻ uses the Mac's copy)
@@ -357,7 +366,11 @@ async function stemsResultLoad(job) {
     const row = document.createElement("div");
     row.className = "row stemrow";
     const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = stem + (st.counts && st.counts[stem] !== undefined ? " · " + st.counts[stem] + " notes" : ""); row.appendChild(lbl);
-    const btn = (label, fn) => { const b = document.createElement("button"); b.textContent = label; b.addEventListener("click", () => { Promise.resolve().then(() => fn(b)).catch(err => setInfo("⚠ " + stemsNetErr(err).message)); }); row.appendChild(b); return b; };
+    const btn = (label, fn) => { // fn runs synchronously inside the click — ▶ Play's <audio> nudge must happen in the gesture itself, not a microtask later
+      const b = document.createElement("button"); b.textContent = label;
+      b.addEventListener("click", () => { let p; try { p = fn(b); } catch (err) { setInfo("⚠ " + stemsNetErr(err).message); return; } Promise.resolve(p).catch(err => setInfo("⚠ " + stemsNetErr(err).message)); });
+      row.appendChild(b); return b;
+    };
     const play = btn("▶ Play", b => stemsPlayToggle(job.stemsId, stem, b));
     if (S.stemsAudio && S.stemsAudio.id === job.stemsId && S.stemsAudio.stem === stem) { S.stemsAudio.btn = play; play.textContent = S.stemsAudio.url ? "■ Stop" : "…"; }
     btn("+ Add as track", async () => { if (!S.song) throw new Error("open the song first"); setInfo("fetching " + stem + ".wav…"); const bytes = await stemsFileBytes(job.stemsId, stem + ".wav"); S.audioReplaceTi = null; await importAudioFiles([{name: stem + ".wav", bytes, type: "audio/wav"}]); });
