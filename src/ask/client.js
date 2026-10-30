@@ -42,7 +42,6 @@ import { askStore } from "./bridge.js";
 // names as delegates, same signatures as before.
 import { aiFinish, aiFail, aiRun, aiTerminalSend, aiRepending, aiResumeSoon, aiResume } from "../../vendor/ai/web/client.js";
 import { aiReachSet, aiSendHeld } from "../../vendor/ai/web/reach.js";
-import { aiDeskMode, aiDeskSend } from "../../vendor/ai/web/desk.js";
 
 export function askFinish(jobId, text, key) { aiFinish(askHost(), jobId, text, key); } // the reply for a pending question landed: store it, drop the marker
 export function askFail(jobId, note, key) { aiFail(askHost(), jobId, note, key); } // no reply will come: keep the question, say why
@@ -101,7 +100,6 @@ export async function askSend(carried) { // carried: open_song's carried-over re
   const text = carried !== undefined ? typed : askShotOutgoing(typed);
   if (carried === undefined && aiSendHeld(askHost())) return; // the bridge is unreachable (askStatusPoll): nothing is sent, the box keeps the words, and askReachSet sends them when it answers again
   if (S.askTerminal) return askTerminalSend(text);
-  if (aiDeskMode(askHost())) return aiDeskSend(askHost(), text); // the ✦ tab is the Front Desk: queued for the shared session, no model call here (an old bridge keeps the per-app Ask below)
   if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
   const sp = askSpan();
   S.askSpanFrozen = sp;

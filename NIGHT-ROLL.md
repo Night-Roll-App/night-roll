@@ -10715,25 +10715,21 @@ both naming a local `b`. The ALLOWLIST in the test is empty today — step 2
 left no unconverted writer among the controls it registered — and may only
 shrink from here as a later step registers and migrates more.
 
-## Front Desk and Worker (words, 2026-10-13 — docs/plans in claude-bridge, Josh #422–#424)
+## The Claude tab (was Front Desk and Worker; Front Desk removed 2026-10-29, Josh #1057, claude-bridge docs/plans/2026-10-20-one-ai-v2.md #644)
 
-The ✦ Ask tab is the **Front Desk** and the ⌨ Terminal tab is the **Worker**
-(one Worker per app). Step 1 changed words only: tab labels, greetings,
-placeholders, notices, log headers of new files, the bridge prompt in
-tools/ai-profile.mjs. Every stored name stays (`ff1roll-ask-*` keys, mode values
-`general`/`terminal`, `askmodegen`/`askmodeterm`, `/v1/terminal`, `*.ask.md`
-file names, `send_to_terminal`). The plan and its Fable amendments live in
-claude-bridge/docs/plans/2026-10-13-front-desk-worker.md.
+The AI panel has two tabs: **♪ this song** (unchanged: per-song session, `ask/<song>.ask.md`) and **✦ Claude**
+(`#askmodeterm`, the old Worker tab's transport: `POST /v1/terminal` with app `night-roll`, store `ff1roll-ask-terminal`, log
+`ask/terminal.ask.md`, the Now: strip, queue, screenshots). One Claude Code session answers every app through that route and
+spawns its own helpers; there is no Front Desk to talk to and no one-off fallback UI. Stored names are unchanged
+(`ff1roll-ask-mode` values `general`/`terminal`, `askTerminal`, `/v1/terminal`).
 
-**Step 6 (the ✦ tab becomes the shared thread).** When the bridge's status says `desk: true`
-(S.askCaps.desk), the ✦ tab is the Front Desk: `askSend` calls the library's `aiDeskSend`
-(vendor/ai/web/desk.js) — one terminal-style post to app `front-desk` with `src` = this app and
-`label` = `askDeskLabel()` (`Terra · bar 12`), no model call. The thread is the bridge's
-`GET /v1/desk` window, polled with the inbox (`askInboxPoll` → `aiDeskPoll`) and cached under
-`ff1roll-desk` (`ASK_DESK_KEY`, shape `{last, rows}` — no `msgs`, so Publish, eviction and the pending
-scan never see it; its "new since" cursor is `ff1roll-desk-seen`). The Front Desk's facts are
-`askDeskContext()` (same as the Worker tab's, own cursor). `ff1roll-ask-general` and
-`ask/general.ask.md` are untouched and show read-only as "Earlier chat". Not running (`deskLive`
-false): the bridge marks the row a one-off and the app asks ONE chat request (`x-nr-desk`, no tools,
-`askSys()`); the bridge writes the answer into the thread. Old bridge (no `desk`): the tab is the
-per-app Ask exactly as before. `♪ this song` is unchanged, `act` included.
+- **Tabs.** `askTabsVisible` never offers `general`; `#askmodegen` is gone from index.html (host `ids.tabGeneral` aliases the Claude
+  button because the library's `aiTabButtons` wants two tab elements). A remembered mode `general` (the Front Desk) or `terminal`
+  opens on Claude (`askTabsApply`, the boot restore in sheet.js).
+- **Earlier chat.** `askEarlierBlock` (sheet.js) prepends a collapsed `<details class="askearlier">` to the Claude log: the old general
+  chat (`ff1roll-ask-general`) and the cached Front Desk thread (`ff1roll-desk`, `ASK_DESK_KEY`). Read only; nothing writes either store,
+  and `ask/general.ask.md` is never deleted. The Publish sheet's Chats section still lists and ships the general chat (label "Front Desk chat").
+- **In-flight replies.** The inbox poll still calls the library's `aiDeskPoll` so the bridge's `/v1/desk` window keeps caching. `askDeskMerge`
+  (bridge.js) moves rows newer than the switch (`ff1roll-desk-merged`, set the first time it runs) that are notes or Worker reports into the
+  Claude chat as notes; older rows stay in Earlier chat. Inbox notes whose `from` is `front-desk` or `one-off` go to the Claude chat too.
+- Nothing in the app sends to app `front-desk` any more (`aiDeskSend` is unused; `askDeskLabel`/`askDeskContext` removed).

@@ -1205,6 +1205,9 @@
   .askmsg .askq { display: block; margin: 4px 0; padding: 4px 8px; border-left: 3px solid var(--accent); background: var(--panel2); border-radius: 4px; }
   .askcarry { align-self: flex-start; margin: 2px 0 6px; padding: 8px 12px; min-height: 40px; border-radius: 10px; border: 1px solid rgba(230,192,96,.6); background: rgba(230,192,96,.14); color: var(--gold); font: inherit; text-align: left; cursor: pointer; } /* open_song's carried-over request, waiting for a tap (src/ask/sheet.js askCarryChip) */
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
+  details.askearlier { align-self: stretch; margin: 0 0 8px; max-height: 50vh; overflow: auto; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); padding-bottom: 6px; }
+  details.askearlier > summary { cursor: pointer; font-size: 0.8rem; color: var(--dim); padding: 6px 0; min-height: 32px; }
+  details.askearlier > .askmsg.earlier { max-height: none; margin: 4px 0; }
   .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid
      dictation past the second line (Josh, 2026-09-26). */

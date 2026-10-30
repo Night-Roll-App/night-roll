@@ -58,13 +58,9 @@ import { askTermModelsLoad } from "./bridge.js";
 import { askStatusRender } from "./bridge.js";
 import { askStripContext } from "./context.js";
 import { askTabLabel } from "./sheet.js";
-import { askDeskLabel } from "./context.js";
-import { askDeskContext } from "./context.js";
-import { askDeskArrived } from "./bridge.js";
 import { ASK_GENERAL_KEY } from "./bridge.js";
 import { ASK_DESK_KEY } from "./bridge.js";
 import { aiStoreGet } from "../../vendor/ai/web/store.js";
-import { aiDeskPoll } from "../../vendor/ai/web/desk.js";
 import { askPlaceholder } from "./sheet.js";
 import { askGreeting } from "./sheet.js";
 import { askMsgTag } from "./sheet.js";
@@ -105,14 +101,9 @@ export function askHost() {
     systemPrompt: () => askSys(),
     context: (sp, budget) => askContext(sp, budget),
     terminalContext: () => askTerminalContext(),
-    // ---- the Front Desk (vendor/ai/web/desk.js): the ✦ tab is the one thread every app shares, once the bridge offers it
+    // ---- the retired Front Desk: the library only keeps READING its thread (vendor/ai/web/desk.js aiDeskPoll, so a reply still in flight is cached);
+    // nothing here sends to it, and askDeskMerge (bridge.js) moves newer rows into the Claude tab
     deskOffered: () => !!S.askCaps.desk,
-    deskLive: () => !!S.askCaps.deskLive,
-    deskLabel: () => askDeskLabel(), // "Terra · bar 12"
-    deskContext: () => askDeskContext(), // the Worker tab's facts, with the Front Desk's own "new since" cursor
-    appName: () => "Night Roll",
-    earlierChat: () => aiStoreGet(askHost(), ASK_GENERAL_KEY).msgs, // the old general chat, read-only above the thread (never written)
-    deskChanged: () => askDeskArrived(),
     buildMessages: (msgs, text, ctx, budget) => askBuildMessages(msgs, text, ctx, budget), // a different mode's turn never enters this request's history
     budget: () => askBudget(),
     estimate: (system, messages) => askEstimate(system, messages),
@@ -139,7 +130,7 @@ export function askHost() {
     // ---- the window (step 6, adopt mode: the library binds index.html's own
     // #ask* ids). spanRow points nowhere: the library re-shows that row on
     // the song tab, and Josh wants it gone (Terminal #122, #128)
-    ids: {spanRow: null},
+    ids: {spanRow: null, tabGeneral: "askmodeterm"}, // no ✦ Front Desk tab any more: the library wants a second tab element, so it gets the Claude one (it is drawn last, so it wins)
     copyText: (text, btn) => askCopyText(text, btn),
     onDraftChange: has => askComposing(has), // the bridge's "composing" notice: a build may wait
     shotPaths: () => S.askShotPending.map(s => s.path),
@@ -147,7 +138,7 @@ export function askHost() {
     tabLabel: () => askTabLabel(),
     placeholder: tab => askPlaceholder(tab),
     onTabsChanged: () => { askTermModelsLoad(); askStatusRender(); }, // the ⌨ model pickers and the "Now:" strip follow the tab
-    onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); aiDeskPoll(askHost()); },
+    onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); },
     greeting: tab => askGreeting(tab),
     renderEarlier: div => askRenderEarlier(div),
     msgTag: m => askMsgTag(m), // which turns are "another mode's" is decided here (askMsgMode/appMode), never in the library

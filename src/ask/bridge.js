@@ -48,7 +48,8 @@ import { askHost } from "./host.js";
 import { AI_LOCAL_SOFT, AI_TOTAL_CAP, aiStoreGet, aiStoreSave, aiUnsavedCount, aiRevertToSaved, aiEvictOthers, aiPendingAll, aiPendingIndex, aiJobId, aiSeenKey, aiSeenGet, aiSeenMax, aiSeenSet, aiSeenAdvance, aiSeenStage, aiSeenCommit, aiSeenDrop, aiLogMarkdown } from "../../vendor/ai/web/store.js";
 import { aiJobsSupported, aiInboxFetch, aiStatusFetch, aiSessionGet, aiSessionCompact, aiTerminalPrefsGet, aiTerminalPrefsSet, aiAppState, aiDeploy } from "../../vendor/ai/web/bridge-client.js";
 import { aiHostAllowed } from "../../vendor/ai/web/backends.js";
-import { aiDeskPoll, aiDeskMode } from "../../vendor/ai/web/desk.js";
+import { aiDeskPoll, aiDeskGet } from "../../vendor/ai/web/desk.js";
+import { aiStripContext } from "../../vendor/ai/web/store.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -202,7 +203,7 @@ export function deployActive() { return !!S.deployTimer || S.deployHeld; }
 // Josh's own iPad runs the store build); ✦ Ask (the song-free chat) for any configured
 // backend; ♪ song as ever. A tab that disappears falls back to ♪ — each
 // chat keeps its own unsent draft, so nothing is lost.
-export function askTabsVisible(c) { return {song: true, general: !!c.backend, terminal: !!(c.backend && c.bridge && c.terminal)}; }
+export function askTabsVisible(c) { return {song: true, general: false, terminal: !!(c.backend && c.bridge && c.terminal)}; } // two tabs: ♪ this song and ✦ Claude (the old Front Desk and general chat are read-only history inside Claude)
 // key → {turns, tokens, cost, lastCompact} | null (never fetched)
 export function askSessionLine(u) {
   const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
@@ -214,7 +215,7 @@ export function askCompactModelName() { const m = /^claude-code-(opus|sonnet|hai
 // the bridge's compact runs the Claude CLI directly — it wants "opus", not "claude-code-opus"; plain "claude-code" omits it, so the bridge's own default model applies
 export function askSessionRender() {
   const line = document.getElementById("asksessionline"), btn = document.getElementById("askcompact");
-  const show = S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal && S.song && !aiDeskMode(askHost()); // the Front Desk has no session of its own to size
+  const show = S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal && S.song;
   if (line) line.style.display = show ? "" : "none";
   if (btn) btn.style.display = show ? "" : "none";
   if (!show) return;
@@ -223,7 +224,7 @@ export function askSessionRender() {
   if (btn) btn.disabled = !u || !u.turns;
 }
 export async function askSessionRefresh() {
-  if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song || aiDeskMode(askHost())) { askSessionRender(); return; }
+  if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song) { askSessionRender(); return; }
   const key = askSessionName();
   try {
     const r = await aiSessionGet(askHost(), key);
@@ -454,7 +455,7 @@ export async function deployAskTap() { // the "Not now" / "Install now" sheet (a
 
 export async function askInboxPoll() {
   if (!askInboxAllowed() || !S.song) return;
-  aiDeskPoll(askHost()); // the Front Desk thread rides the same poll (a no-op unless the bridge offers it)
+  aiDeskPoll(askHost()).then(askDeskMerge); // the retired Front Desk thread keeps being read: a reply still in flight lands in the Claude tab
   const url = aiUrl();
   let r;
   try { r = await aiInboxFetch(askHost(), localStorage.getItem(askInboxSeenKey()) || 0); } catch (err) { return; }
@@ -471,12 +472,25 @@ export async function askInboxPoll() {
   askNotesArrived(notes);
   localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
 }
-export function askDeskArrived() { // a note or a Worker's report landed in the Front Desk thread while it was not on screen: the same ✉ light as an inbox note
-  if (asksheet.classList.contains("on") && aiDeskMode(askHost())) return;
-  document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ the Front Desk answered — tap ✦ AI to read it");
+// The Front Desk tab is gone (Josh #1057). The bridge still fills its thread (GET /v1/desk, cached under ASK_DESK_KEY) for replies that were
+// in flight when the tab went. Rows newer than the switch (ASK_DESK_MERGED, set once, the first time this runs) become notes in the Claude
+// tab's own chat; older rows stay in its read-only "Earlier chat". The cursor only moves forward, so a row lands once.
+export const ASK_DESK_MERGED = "ff1roll-desk-merged";
+export function askDeskMerge() {
+  let cut;
+  try { cut = +localStorage.getItem(ASK_DESK_MERGED) || 0; } catch (err) { return; }
+  if (!cut) { try { localStorage.setItem(ASK_DESK_MERGED, String(Date.now())); } catch (err) { /* private mode */ } return; }
+  const rows = aiDeskGet(askHost()).rows.filter(r => r && r.t > cut && (r.kind === "note" || (r.kind === "msg" && r.fwd)) && (r.text || "").trim());
+  if (!rows.length) return;
+  const msgs = askStore(ASK_TERMINAL_KEY).msgs;
+  for (const r of rows) msgs.push({role: "note", content: aiStripContext(String(r.text)), t: r.t, m: r.kind === "msg" ? String(r.fwd) : "Claude", mode: appMode()});
+  askSave(msgs, undefined, ASK_TERMINAL_KEY);
+  try { localStorage.setItem(ASK_DESK_MERGED, String(Math.max(...rows.map(r => r.t)))); } catch (err) { /* private mode */ }
+  if (asksheet.classList.contains("on") && S.askTerminal) { askRender(); return; }
+  document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ Claude answered — tap ✦ AI to read it");
 }
 export function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
-  const toTerm = n => !n.from || n.from === "terminal";
+  const toTerm = n => !n.from || n.from === "terminal" || n.from === "front-desk" || n.from === "one-off"; // a note addressed to the retired Front Desk reads in the Claude tab
   for (const key of [ASK_TERMINAL_KEY, null]) {
     const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));
     if (!mine.length) continue;
@@ -519,8 +533,7 @@ export async function askStatusPoll() {
 }
 export function askTabsApply() {
   const v = askTabsVisible({backend: cfg().aiBackend === "browser" || !!aiUrl(), bridge: S.askCaps.bridge, terminal: S.askCaps.terminal});
-  const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
-  if (g) g.style.display = v.general ? "" : "none";
+  const t = document.getElementById("askmodeterm");
   if (t) t.style.display = v.terminal ? "" : "none";
   askTermModelsLoad();
   // a tab that isn't offered (yet — the bridge's status poll hasn't answered
@@ -529,7 +542,7 @@ export function askTabsApply() {
   // with "song" on every relaunch (Josh, 2026-10-06, #174)
   let saved = null;
   try { saved = localStorage.getItem("ff1roll-ask-mode"); } catch (err) { /* private mode */ }
-  const want = saved === "terminal" && v.terminal ? "terminal" : saved === "general" && v.general ? "general" : "song";
+  const want = (saved === "terminal" || saved === "general") && v.terminal ? "terminal" : "song"; // a device that had the Front Desk open opens on Claude
   const now = S.askTerminal ? "terminal" : S.askGeneral ? "general" : "song";
   if (want !== now) {
     S.askTerminal = want === "terminal"; S.askGeneral = want !== "song";

@@ -51,7 +51,7 @@ test("cursors and caches read back byte for byte: seen cursors (missing fields d
 
 test("the unsent draft comes back per chat — today's {text, shots} and the pre-2026-10-02 {shot} shape both; the saved tab (ff1roll-ask-mode) is honoured at boot", async () => {
   const app = await mkApp();
-  assert.equal(val(app, `askTerminal ? "terminal" : askGeneral ? "general" : "song"`), FIXTURE.expect.mode, "initSheet1 read ff1roll-ask-mode");
+  assert.equal(val(app, `askTerminal ? "terminal" : askGeneral ? "general" : "song"`), FIXTURE.expect.mode === "general" ? "terminal" : FIXTURE.expect.mode, "initSheet1 read ff1roll-ask-mode (a saved general/Front Desk tab opens on Claude since 2026-10-29)");
   for (const [mode, key] of [["song", SONG_KEY], ["general", "ff1roll-ask-general"], ["terminal", "ff1roll-ask-terminal"]]) {
     app.run(`askSetMode(${JSON.stringify(mode)}); askDraftKey = null; askDraftLoad();`);
     const want = FIXTURE.expect.drafts[key];

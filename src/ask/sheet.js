@@ -36,7 +36,8 @@ import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
 import { askHost } from "./host.js";
 import { aiDraftKey } from "../../vendor/ai/web/store.js";
-import { aiDeskMode } from "../../vendor/ai/web/desk.js";
+import { aiDeskGet } from "../../vendor/ai/web/desk.js";
+import { aiStripContext, aiStoreGet } from "../../vendor/ai/web/store.js";
 import { aiDraftRead } from "../../vendor/ai/web/store.js";
 import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
 import { aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard, aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking, aiTabSet, aiTabButtons, aiRenderLog } from "../../vendor/ai/web/window.js";
@@ -58,13 +59,11 @@ export function askTabLabel() { // the tab names the song: the sheet covers the 
   return "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song");
 }
 export function askPlaceholder(tab) {
-  if (tab === "general" && aiDeskMode(askHost())) return "Message the Front Desk — the answer comes back here…";
-  if (tab === "terminal") return "Tell the Worker what to build or fix…";
-  return tab === "general" ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for a Worker…" : "…") : "Ask about what you're looking at…";
+  if (tab === "terminal") return "Ask Claude, or tell it what to build or fix…";
+  return tab === "general" ? "Anything — the app, the project, music in general…" : "Ask about what you're looking at…";
 }
 export function askGreeting(tab) { // an empty chat's first bubble — the Learning one leads with hints (CLAUDE.md), the Normal one answers
-  if (tab === "general" && aiDeskMode(askHost())) return "This is the Front Desk — one Claude Code session shared by Night Roll, Guitar and Tuner. Ask about any app or the project, or say \"tell the Guitar Worker…\" to hand work to an app's Worker. Its answers come back here, and what you send from the other apps shows here too, tagged with the app. Your earlier chat is kept above, read only.";
-  if (tab === "terminal") return "This goes straight to the Worker — the Claude Code session on your Mac that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.";
+  if (tab === "terminal") return "This is Claude — the one Claude Code session on your Mac behind Night Roll, Guitar and Tuner. Ask about the app or the project, or tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing. Your earlier Front Desk and general chats are kept above, read only.";
   if (tab === "general") return "This is the Front Desk — not about any one song. Ask about the app, the project, music in general, or say \"tell the Worker…\" to pass a message to the Claude Code sessions on your Mac.";
   return appMode() === "normal"
     ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
@@ -163,7 +162,42 @@ export function askPasteInsert(text) { // at the caret when the box already has 
 export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
 export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
-export function askRenderImpl() { aiRenderLog(askHost()); askCarryChip(); askMarkQuestions(); }
+export function askRenderImpl() { aiRenderLog(askHost()); askEarlierBlock(); askCarryChip(); askMarkQuestions(); }
+// "Earlier chat" (Josh #1057): the retired ✦ Front Desk thread (the cached GET /v1/desk window, ff1roll-desk) and the older general chat, read only, at
+// the top of the Claude tab. Collapsed — a long history must not push the conversation off the screen. Nothing here writes either store; rows newer than
+// the switch were moved into the Claude chat itself by askDeskMerge (bridge.js).
+export function askEarlierLines() {
+  const lines = [];
+  for (const m of aiStoreGet(askHost(), ASK_GENERAL_KEY).msgs) lines.push({role: m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", t: m.t, text: aiStripContext(m.content)});
+  let cut = 0; try { cut = +localStorage.getItem("ff1roll-desk-merged") || 0; } catch (err) { /* private mode */ }
+  for (const r of aiDeskGet(askHost()).rows) {
+    if (cut && r.t > cut) continue; // already in the Claude chat
+    const text = aiStripContext(String(r.text || "")).replace(/^\[[^\]]*\]\s*/, "");
+    if (!text.trim()) continue;
+    const foreign = r.kind === "msg" && r.src && r.src !== "night-roll";
+    lines.push({role: r.kind === "msg" && !r.fwd ? "user" : "note", t: r.t, text: (foreign ? r.src + (r.label ? " · " + r.label : "") + ": " : r.fwd ? "✉ " + r.fwd + " Worker: " : "") + text});
+  }
+  return lines;
+}
+export function askEarlierBlock() {
+  if (!S.askTerminal || typeof asklog === "undefined" || !asklog || !asklog.prepend) return;
+  const lines = askEarlierLines();
+  if (!lines.length) return;
+  const det = document.createElement("details");
+  det.className = "askearlier";
+  det.open = !!S.askEarlierOpen;
+  det.addEventListener("toggle", () => { S.askEarlierOpen = det.open; });
+  const sum = document.createElement("summary");
+  sum.textContent = "Earlier chat — the Front Desk and general chat, read only (" + lines.length + ")";
+  det.appendChild(sum);
+  for (const l of lines) {
+    const div = document.createElement("div");
+    div.className = "askmsg earlier " + (l.role === "user" ? "user" : "ai");
+    askFillBubble(div, (l.t ? askClock(l.t) : "") + l.text);
+    det.appendChild(div);
+  }
+  asklog.prepend(det);
+}
 // a note's QUESTION: line gets its own highlight (Josh #224) — the rest reads like any reply
 export function askMarkQuestions() {
   if (typeof asklog === "undefined" || !asklog || !asklog.querySelectorAll) return;
@@ -213,7 +247,7 @@ export async function askRenderEarlier(div) { // what this device let go of afte
 // does the same; kept as this statement so the boot-order snapshot
 // (tests/boot-order.test.mjs) stays byte-identical
 export function initSheet1() {
-  try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
+  try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal" || m === "general"; S.askGeneral = S.askTerminal; } catch (err) { S.askGeneral = S.askTerminal = false; }
 }
 
 export function initSheet2() {
@@ -253,7 +287,7 @@ export function initSheet3() {
   // which does the same for an app without wiring of its own): each handler
   // is a delegate into vendor/ai/web/window.js, and the boot-order snapshot
   // (tests/boot-order.test.mjs) keeps these statements as they were
-  for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
+  for (const [id, mode] of [["askmodesong", "song"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
     if ((S.askTerminal ? "terminal" : S.askGeneral ? "general" : "song") === mode) return;
     askSetMode(mode);
     askRender(); askRefresh(); askSessionRefresh();

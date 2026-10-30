@@ -39,6 +39,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import { readFileSync } from "node:fs";
 import { createApp } from "./harness.mjs";
 
 function readBody(req) {
@@ -351,47 +352,43 @@ test("⌨ Terminal tab: Send round trip against a fake bridge — real <context>
   }
 });
 
-test("✦ Front Desk tab: with the bridge offering desk, Send posts to app front-desk with the source app and the song · bar label, caches the row under ff1roll-desk (never a chat store), asks ONE one-off when the desk isn't running, and leaves the old general chat untouched; an old bridge keeps the per-app Ask", async () => {
+test("✦ Claude tab replaces the Front Desk: two tabs, a remembered Front Desk/general tab opens on Claude, Send goes to app night-roll on /v1/terminal, the old desk thread and general chat show read-only as Earlier chat (never written), and a front-desk reply newer than the switch lands in the Claude chat", async () => {
   const srv = await startServer((req, res, rec) => {
     if (rec.method === "GET" && rec.path === "/v1/jobs") return sendJson(res, 200, { ok: true, running: 0, inbox: true, terminal: true, terminalLive: true, sessions: true });
     if (rec.method === "GET" && rec.path === "/v1/desk") return sendJson(res, 200, { last: 0, rows: [] });
-    if (rec.method === "POST" && rec.path === "/v1/terminal") return sendJson(res, 200, { id: 4, t: 1000, app: "front-desk", live: false, oneoff: true });
-    if (rec.method === "POST" && rec.path === "/v1/chat/completions") {
-      if (req.headers["x-nr-desk"]) return sendJson(res, 200, { choices: [{ message: { role: "assistant", content: "quick" } }] });
-      res.writeHead(200, { "content-type": "text/event-stream" });
-      sse(res, { choices: [{ delta: { content: "per-app answer" } }] });
-      sse(res, { choices: [{ delta: {}, finish_reason: "stop" }] });
-      return sseDone(res);
-    }
+    if (rec.method === "POST" && rec.path === "/v1/terminal") return sendJson(res, 200, { id: 4, t: 1000, app: "night-roll", live: true });
     res.writeHead(404); res.end();
   });
   const app = await mkApp("learning");
   try {
-    run(app, `saveCfg({aiUrl: ${JSON.stringify(srv.url)}, aiModel: "claude-code", aiBackend: "remote"}); localStorage.setItem("ff1roll-ask-general", JSON.stringify({msgs: [{role: "user", content: "an old question", t: 1}], saved: 1, trimmed: false}));
-      S.askCaps = {bridge: true, terminal: true, desk: true, deskLive: false, sessions: true}; askSetMode("general"); askinput.value = "why does bar 1 feel tense?";`);
+    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    assert.doesNotMatch(html, /askmodegen|Front Desk<\/button>/, "no Front Desk tab in the markup");
+    assert.match(html, /id="askmodeterm"[^>]*>✦ Claude<\/button>/);
+    run(app, `saveCfg({aiUrl: ${JSON.stringify(srv.url)}, aiModel: "claude-code", aiBackend: "remote"}); localStorage.setItem("ff1roll-ask-mode", "general");
+      localStorage.setItem("ff1roll-ask-general", JSON.stringify({msgs: [{role: "user", content: "an old question", t: 1}], saved: 1, trimmed: false}));
+      localStorage.setItem("ff1roll-desk", JSON.stringify({last: 5, rows: [{kind: "msg", id: 1, t: 5, app: "front-desk", src: "night-roll", text: "[Night Roll] a desk question"}, {kind: "note", id: 2, t: 6, from: "front-desk", text: "a desk answer"}]}));
+      localStorage.removeItem("ff1roll-desk-merged");
+      S.askCaps = {bridge: true, terminal: true, desk: true, sessions: true}; askTabsApply();`);
+    assert.equal(val(app, `S.askTerminal && S.askGeneral`), true, "a remembered general/Front Desk tab opens on Claude");
+    assert.equal(val(app, `askTabsVisible({backend: true, bridge: true, terminal: true}).general`), false);
+    run(app, `askRender()`);
+    const earlier = val(app, `asklog.children[0].children.map(c => c.textContent).join("|")`);
+    assert.match(earlier, /an old question[\s\S]*a desk question[\s\S]*a desk answer/);
+    // a reply addressed to front-desk after the switch is a note in the Claude chat, once
+    run(app, `askDeskMerge()`); // first run only sets the switch time
+    const cut = +val(app, `localStorage.getItem("ff1roll-desk-merged")`);
+    run(app, `localStorage.setItem("ff1roll-desk", JSON.stringify({last: 9, rows: [{kind: "note", id: 3, t: ${cut + 5}, from: "front-desk", text: "in-flight reply"}]})); askDeskMerge(); askDeskMerge();`);
+    const msgs = JSON.parse(val(app, `localStorage.getItem("ff1roll-ask-terminal")`)).msgs;
+    assert.deepEqual(msgs.filter(m => m.role === "note").map(m => m.content), ["in-flight reply"]);
+    // Send is the Worker route
+    run(app, `askinput.value = "hello claude";`);
     await run(app, `askSend()`);
-    const r = srv.requests.find(x => x.path === "/v1/terminal");
-    assert.ok(r, "POSTed to /v1/terminal");
-    assert.equal(r.json.app, "front-desk"); assert.equal(r.json.src, "night-roll"); assert.match(r.json.label, / · bar 1$/);
-    assert.match(r.json.text, /^<context>\n[\s\S]*\n<\/context>\n\n\[Night Roll · .* · bar 1\] why does bar 1 feel tense\?$/);
-    const cache = JSON.parse(val(app, `localStorage.getItem("ff1roll-desk")`));
-    assert.deepEqual(cache.rows.map(x => [x.kind, x.id, x.src, x.oneoff]), [["msg", 4, "night-roll", true]]);
-    assert.equal(cache.msgs, undefined, "the desk cache is not a chat store");
-    for (let i = 0; i < 40 && !srv.requests.some(x => x.headers["x-nr-desk"]); i++) await new Promise(r2 => setTimeout(r2, 25));
-    const one = srv.requests.find(x => x.headers["x-nr-desk"]);
-    assert.ok(one, "the one-off went out"); assert.equal(one.headers["x-nr-desk"], "4"); assert.equal(one.headers["x-nr-song"], "front-desk-oneoff"); assert.equal(one.headers["x-nr-app"], "front-desk");
-    assert.equal(one.json.tools, undefined, "no tools in a one-off");
+    const r = srv.requests.find(x => x.path === "/v1/terminal" && x.method === "POST");
+    assert.ok(r, "POSTed to /v1/terminal"); assert.equal(r.json.app, "night-roll");
     assert.equal(JSON.parse(val(app, `localStorage.getItem("ff1roll-ask-general")`)).msgs.length, 1, "the old general chat is never written");
-    assert.match(val(app, `asklog.children.map(c => c.textContent).join("|")`), /an old question[\s\S]*why does bar 1 feel tense\?[\s\S]*Front Desk isn't running/);
-    // an old bridge (no desk): the tab is today's Ask again
-    const before = srv.requests.filter(x => x.path === "/v1/terminal").length;
-    run(app, `clearInterval(S.askDeskTimer); S.askDeskTimer = null; S.askCaps = {bridge: true, terminal: true, sessions: true}; askinput.value = "and now?";`);
-    await run(app, `askSend()`);
-    assert.equal(srv.requests.filter(x => x.path === "/v1/terminal").length, before, "no desk post on an old bridge");
-    assert.ok(srv.requests.some(x => x.path === "/v1/chat/completions" && !x.headers["x-nr-desk"]), "the per-app Ask ran");
   } finally {
     await srv.close();
-    run(app, `clearInterval(S.askDeskTimer); S.askDeskTimer = null; askSetMode("song");`);
+    run(app, `askSetMode("song"); localStorage.removeItem("ff1roll-desk"); localStorage.removeItem("ff1roll-desk-merged");`);
   }
 });
 

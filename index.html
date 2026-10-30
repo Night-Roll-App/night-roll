@@ -348,7 +348,7 @@
        ☰ Notes / + Note pair. -->
   <button id="listbtn"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>Notes ▴</button>
   <button id="errbtn" style="display:none;color:#e66767" aria-label="Errors"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span class="lbl"></span></button>
-  <button id="askreplybtn" style="display:none;color:var(--gold)" aria-label="A Front Desk reply is ready — open it"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z"/></svg>reply</button>
+  <button id="askreplybtn" style="display:none;color:var(--gold)" aria-label="A Claude reply is ready — open it"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z"/></svg>reply</button>
   <button id="clearbtn" style="display:none">Clear edits</button>
   <!-- Publish (footer v2 tweaks, 2026-09-30): back on the bar — Josh was used
        to it here; it had moved into ⋯ More with the rest of the rarely-used
@@ -1478,8 +1478,7 @@
     <h2 id="asksheet-h2">AI</h2>
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
       <button id="askmodesong" role="tab" class="active" aria-selected="true">♪ this song</button>
-      <button id="askmodegen" role="tab" aria-selected="false">✦ Front Desk</button>
-      <button id="askmodeterm" role="tab" aria-selected="false" style="display:none" title="Straight to this app's Worker — the Claude Code session on the Mac that builds Night Roll">⌨ Worker</button>
+      <button id="askmodeterm" role="tab" aria-selected="false" style="display:none" title="Claude Code on your Mac — the one session behind every Night Roll app">✦ Claude</button>
     </div>
     <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
     <div id="asknowrecent" style="display:none"></div>

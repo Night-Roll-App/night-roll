@@ -44,7 +44,7 @@ get built.
 
 The functions are the same; each is an `ASK_ACTIONS` entry now (§2), `ASK_TOOLS` is empty, and the "general" column is the entry's `song: false` flag.
 
-| action (was a tool) | what it does | song chat | general (Front Desk tab) |
+| action (was a tool) | what it does | song chat | general (retired; no tab) |
 |---|---|---|---|
 | `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat (`topic` = "File under" an Analysis-sheet prompt) | yes | — |
 | `edit_annotation` | changes an existing annotation's text or position | yes | — |
@@ -204,8 +204,8 @@ silently.
 | Messages for the terminal ("tell the terminal…") | have (bridge notes) | — | — | — |
 | Errors and status since your last message | have (sent with every message) | — | — | — |
 | Switch to another song's chat | — | yes, through `open_song` (§4) | — | — |
-| Switch to the Worker tab | — | no — the song chat already relays to the terminal | — | — |
-| Send to the Front Desk (the ✦ tab, 2026-10-13) | — | not applicable — a relay to the one session shared by all the apps, no app state to act on; song edits stay in ♪ this song | — | — |
+| Switch to the Claude tab | — | no — the song chat already relays to the terminal | — | — |
+| Send to Claude (the ✦ Claude tab; the Front Desk tab was removed 2026-10-29) | — | not applicable — a relay to the one session shared by all the apps, no app state to act on; song edits stay in ♪ this song | — | — |
 | Clear chat, Compact | — | no — Ask erasing its own memory mid-reply breaks the reply; you tap | — | — |
 | Screenshot to Claude | — | yes, later — "look at my screen" | `screenshot {}` | M |
 | Install now / Not now (update countdown) | — | no — restarts the app under you | — | — |
@@ -500,8 +500,8 @@ So `open_song` does not open anything itself. It:
 | Graveyard is a capture / locked | Opening is fine (it's just looking). Editing tools in Graveyard's chat refuse as usual, naming ✎ Edit. |
 | Graveyard is one of your compositions | Opening isn't editing, so no extra approval. Changes still need your ask, each time. |
 | Song viewed from a link to another repo | `open_song` only opens songs from that same repo's list. |
-| Asked from the Front Desk tab (was the general Ask tab) | Same: opens the song and moves to its ♪ chat. |
-| Typed in the Worker tab (was Terminal) | That goes to the Worker (Claude Code on the Mac), not the Front Desk. Nothing opens. |
+| Asked from the general chat (retired; its history is "Earlier chat" in the Claude tab) | Same: opens the song and moves to its ♪ chat. |
+| Typed in the ✦ Claude tab (was Worker / Terminal) | That goes to Claude Code on the Mac. Nothing opens. |
 | It's already open | "Graveyard is already open." No reload. |
 | A song is still loading | Refuses: "still opening the last song." |
 | A reply in Ambush's chat is still cooking | It keeps cooking on the Mac and lands in Ambush's chat; the ✦ reply badge tells you (already how it works). |

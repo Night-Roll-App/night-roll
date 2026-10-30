@@ -292,7 +292,7 @@ document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
 document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
 document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
 document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
-try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
+try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal" || m === "general"; S.askGeneral = S.askTerminal; } catch (err) { S.askGeneral = S.askTerminal = false; }
 document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
 document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
 document.getElementById("deploynow").addEventListener("click", deployInstallNow);
@@ -340,7 +340,7 @@ wmSideDividerize("wmdivider-right-inner", "right");
 (function wmBottomSplitDividerize() {
 window.addEventListener("resize", wmLayoutAll);
 document.getElementById("askbtn").addEventListener("click", askBtnTap);
-for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
+for (const [id, mode] of [["askmodesong", "song"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
 document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
 document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });

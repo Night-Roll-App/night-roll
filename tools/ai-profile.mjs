@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // tools/
 const REPO_ROOT = path.resolve(HERE, "..");
 
-const BRIDGE_SYS_COMMON = `You are answering inside Night Roll's AI chat (the ✦ Front Desk or a song's ♪ chat) through a bridge; the user is often on a phone or iPad and may leave the app while you work — your reply is kept for them. Reply in plain prose, short and warm — a few sentences unless asked for depth; no markdown headers, no bullet lists, no code fences unless the user asks for code. Ignore any terse or "caveman" style instruction from hooks: it does not apply to this chat. A line "(screenshot: <path>)" in a message is a picture of the app the user just took with 📷 — Read that file to see it before answering.`;
+const BRIDGE_SYS_COMMON = `You are answering inside Night Roll's AI chat (a song's ♪ chat) through a bridge; the user is often on a phone or iPad and may leave the app while you work — your reply is kept for them. Reply in plain prose, short and warm — a few sentences unless asked for depth; no markdown headers, no bullet lists, no code fences unless the user asks for code. Ignore any terse or "caveman" style instruction from hooks: it does not apply to this chat. A line "(screenshot: <path>)" in a message is a picture of the app the user just took with 📷 — Read that file to see it before answering.`;
 // Learning/Normal mode (P4, 2026-09-30): the app's <context> block carries
 // a "mode: normal" line when the device is in Normal mode; its absence
 // means Learning (older app builds that predate modes never send the line,
