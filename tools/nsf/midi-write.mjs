@@ -555,6 +555,7 @@ export function writeSongMidi(song) {
     // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
     // written key by tr.offset semitones — round-trips through every save
     if (tr.offset) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, "sounding:" + tr.offset)});
+    if (!tr.notes.some(n => !n.gone)) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, "keep:1")}); // every note cut: parseMidi keeps the empty track in its slot (src/midi/write.js)
     if (tr.kit === true) evs.push(kitMetaEvent());
     if (tr.kit === true && tr.kitFrom) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, kitmapText(tr.kitFrom))});
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"

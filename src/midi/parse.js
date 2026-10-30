@@ -73,6 +73,7 @@ export function parseMidi(buf, opts = {}) {
     const ctl = []; // owned channel controllers [{t, ch, c, v}] (CTL_CCS, "pb" bend, "pg" program) — NIGHT-ROLL.md "MIDI support"
     let kitFrom = null; // a "kitmap:38=67,40=51" Text meta: a capture's GM drum keys -> the game's own captured keys (tools/nsf/midi-write.mjs kitmapMetaEvent)
     let kit = false; // a "kit:1" Text meta (writeMidi/writeSongMidi): this track is percussion
+    let keep = false; // a "keep:1" Text meta: the writers' mark on a track whose notes were all cut — it stays a (note-less) track so the tracks after it keep their index (voice, channel, colour, annotations)
     let offset = 0; // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the written key by this many semitones (a Text meta, "sounding:-12")
     const open = {}, notes = [];
     const raw = []; // phase 2: this track's unmodeled events, [{t, bytes}] — bundled into source.metas only when this parse turns out foreign
@@ -91,6 +92,7 @@ export function parseMidi(buf, opts = {}) {
             const text = decodeMetaText(data);
             const m = /^sounding:(-?\d+)$/.exec(text);
             if (m) offset = +m[1];
+            else if (text === "keep:1") keep = true;
             else if (text === "kit:1") kit = true; // the writers' kit-track marker: channel 10 whatever the name (a plain "kit" text is the composer's, kept raw)
             else if (/^kitmap:(\d+=\d+)(,\d+=\d+)*$/.test(text)) kitFrom = Object.fromEntries(text.slice(7).split(",").map(kv => kv.split("=").map(Number)));
             else if (text === "source:file") sawSourceMarker = true; // writeMidi/writeSongMidi's own round-trip marker (conductor track, tick 0)
@@ -188,11 +190,11 @@ export function parseMidi(buf, opts = {}) {
     // two or more are pan EVENTS that stay in ctl and move the synth's panner
     const pans = ctl.filter(e => e.c === 10);
     if (pans.length === 1) { curPan = Math.max(-1, Math.min(1, (pans[0].v - 64) / 63)); ctl.splice(ctl.indexOf(pans[0]), 1); }
-    if (!notes.length && ctl.length) { // a track with no notes never becomes a Night Roll track: its controllers stay raw (phase 2) as before
+    if (!notes.length && !keep && ctl.length) { // a track with no notes never becomes a Night Roll track: its controllers stay raw (phase 2) as before
       for (const e of ctl) if (e.c !== 10) raw.push({t: e.t, bytes: ctlBytes(e, e.ch)});
       raw.sort((a, b) => a.t - b.t);
     }
-    if (notes.length) {
+    if (notes.length || keep) {
       const tr = curPan === null ? {name, notes} : {name, notes, midiPan: curPan};
       if (kit || (opts.foreign && notes.every(n => n.ch === 9))) tr.kit = true; // a foreign file's GM drum track ("Standard", "Track 10") is all channel 10 whatever its name: kept there on every save (percussion plan §10)
       if (kitFrom && tr.kit) tr.kitFrom = kitFrom; // only on a kit track; "Not drums" shows these keys again without touching the file

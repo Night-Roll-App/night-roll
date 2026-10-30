@@ -88,6 +88,7 @@ const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
     // written key by tr.offset semitones — round-trips through every save
     // (parseMidi reads it back into track.offset) so a tap keeps sounding right
     if (tr.offset) evs.push({t: 0, o: -2, d: textMeta(0x01, "sounding:" + tr.offset)});
+    if (!tr.notes.some(n => !n.gone)) evs.push({t: 0, o: -2, d: textMeta(0x01, "keep:1")}); // every note cut: parseMidi keeps the empty track in its slot, or the tracks after it shift down one voice
     if (tr.kit === true) evs.push({t: 0, o: -2, d: textMeta(0x01, "kit:1")}); // parseMidi reads it back into track.kit
     if (tr.kit === true && tr.kitFrom) evs.push({t: 0, o: -2, d: textMeta(0x01, kitmapText(tr.kitFrom))}); // …and the captured keys into track.kitFrom
     // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"

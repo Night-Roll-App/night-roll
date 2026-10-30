@@ -456,6 +456,13 @@ tests/night-roll.test.mjs ("writeMidi / writeSongMidi agree byte-for-byte"
 + round-trip tests) pins the two ports together; touching one without the
 other reintroduces the drift the audit found — commitImports silently
 dropping pan/duty/aftertouch/channel from every published capture.
+**Emptied tracks keep their slot:** a track whose notes are all cut is
+written with a Text meta **`keep:1`** (both writers); parseMidi then keeps it
+as a note-less track instead of dropping it, so the tracks after it keep
+their index (auto voice, channel, colour). Without it a Publish-then-reopen
+shifted the voices (native bug 53159d8; tests/empty-track-voice.test.mjs).
+Note-less tracks WITHOUT the marker (a foreign conductor) are still dropped
+into `source.metas` as before.
 **Who may use channel 10:** only a kit track — one whose name matches
 `/drum|percussion|kit|noise|dpcm/` OR that carries `tr.kit` (since
 ed929059 a note's own ch 9 on any other track falls to the melodic
