@@ -112,6 +112,7 @@ findsel.addEventListener("change", () => {
 lassobtn.addEventListener("click", () => {
 document.getElementById("chcopy").addEventListener("click", async e => {
 document.getElementById("chordbtn").addEventListener("click", () => {
+if (!COACH_ENABLED) { document.getElementById("notescoach").style.display = "none"; }
 document.getElementById("notescoach").addEventListener("click", () => { closeDropUp(); openCoachSheet(); });
 const run = text => {
 document.getElementById("coachimport").addEventListener("click", () => {
