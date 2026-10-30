@@ -144,7 +144,8 @@ parity with Night Roll's window (minus song features) is tracked row by row in `
 
 - `AIWindow` (view) over `AIWindowModel`: Front Desk (✦, the old Ask) and Worker (⌨, the old Terminal) tabs (Worker appears only when the bridge offers it),
   greeting, drafts per tab, now strip and Recent list, terminal model pickers, unread dot and working pulse,
-  session line, Compact and Clear behind the in-package `BridgeConfirmSheet` (no native dialogs), screenshot and
+  session line, Compact behind the in-package `BridgeConfirmSheet` (no native dialogs), Clear chat in the header
+  as a two-tap button (first tap arms "Tap again to clear" for 3 s; no card — Josh #1009/#1010), screenshot and
   picture attachments, paste, dictation, composing notice. `ChatPanel` is a thin wrapper.
 - `BridgeMonitor` polls `GET /v1/status` and `GET /v1/inbox`; `TerminalChat` posts `POST /v1/terminal`.
 - Routes used: `POST /v1/chat/completions`, `GET|DELETE /v1/jobs/:id`, `GET /v1/models`, `POST /v1/terminal`,
@@ -171,6 +172,17 @@ polled that queue for 90 s, so the row is stored as a one-off the watcher never 
 writes a "→ handed to the … Worker" note. `GET /v1/status` and `GET /v1/jobs` carry `desk: true`; status adds
 `deskLive`. Rows trimmed from `terminal.json` / `inbox.json` (past 200) are appended to
 `<state>/archive/<file>-YYYY-MM.jsonl`.
+
+### Ask chats hand work to the Worker: `RELAY:`
+
+Every claude child is read-only (#644), so an Ask chat (a claude job from an app, not the `route_` helper and
+not a Front Desk one-off) cannot write a request down itself. The bridge adds a paragraph to its system prompt:
+when the user asks for something to be built, changed, fixed or remembered, put one `RELAY: <request in his own
+words + song/bars context>` line in the reply and say so in plain words. When the turn ends the bridge strips
+those lines from the reply (streamed and non-streamed alike), adds one terminal row per line to **the job's own
+app** (`src:"ask"`, `label:"app chat"`; no ack, no router, so the Worker's watcher prints it like any message)
+and appends `→ passed to the Worker (#n)` to the reply. At most 3 rows per reply; `RELAY:` inside a ```
+fence is ignored; a reply without it is untouched. Tests: `tests/relay.test.mjs`.
 
 ## One AI: the instant reply (bridge side, #644 Phase 1)
 

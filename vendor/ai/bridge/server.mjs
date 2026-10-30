@@ -114,6 +114,9 @@
 // read-only (--tools Read,Glob,Grep,WebFetch,WebSearch) and gets
 // NR_BRIDGE_CHILD=1; only the interactive terminal session writes code.
 //
+// Push (#1093): a new card also goes out as an Apple Push alert to the registered devices of its app
+// (every device when the POST names no app); POST /v1/apns/register {app, bundleId, token, env} (x-nr-app required, body ≤4 KB, the 20 newest devices kept). See bridge/apns.mjs, docs/apns.md.
+//
 // Permission cards (#644 Phase 3): POST /v1/asks {id, kind: permission|blocked,
 // session, tool, summary, detail, repo, agent_type, app, hash, expiresAt} opens a
 // card (same id again = no second card); GET /v1/asks/:id?wait=N (<=25) long-polls
@@ -228,6 +231,7 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 import crypto from "node:crypto";
+import {createApns, askBlurb} from "./apns.mjs";
 
 function flag(argv, name, dflt) { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : dflt; }
 function has(argv, name) { return argv.includes(name); }
@@ -692,6 +696,17 @@ function startQuickAnswer(row) { // the offline answer: one read-only one-off, w
 const ROUTE_MS = +process.env.BRIDGE_ROUTE_MS || 25000; // BRIDGE_ROUTE_MS: tests only
 const ROUTE_ROOT = process.env.BRIDGE_ROUTE_ROOT || path.join(os.homedir(), "work", "night-roll"), ROUTE_REPOS = {"night-roll": "night-roll-daw", guitar: "night-roll-guitar", tuner: "night-roll-tuner"}; // app → the repo the helper reads
 const ROUTE_SYS = "You are a read-only helper deciding whether a message from an app can be answered right now without the main Claude session. Start your reply with exactly ANSWER: only if the message ONLY asks for information, and you can answer it confidently from files you read (Read, Glob, Grep) or from the commit list given with the message. Then answer in a few plain sentences. Questions about history (did we do X, when) are answered only from the given commit list or files you actually read; otherwise reply NEEDS_AI. Reply with exactly NEEDS_AI and nothing else when the message asks for anything to be built, changed, fixed, installed or decided, mixes a question with such a request, or you are not sure. You cannot reach the Worker, the terminal, open-items or the inbox: never say you forwarded, noted, queued or will do anything, because that is NEEDS_AI. You cannot change anything.";
+// Ask chats cannot write (READ_TOOLS, #644): this marker is how a request reaches the Worker. runClaude adds the text, flushProse strips the lines, relayFinish turns them into terminal rows.
+const RELAY_SYS = "You cannot edit files, run commands or message anyone in this chat. When the user asks for something to be built, changed, fixed or remembered, put ONE line in your reply, alone on its line and not inside a code block: RELAY: <the user's request in his own words, plus the song/bars context you have>. Then tell him in plain words that you passed it to the Worker. Never say you could not hand it over.";
+const RELAY_MAX = 3; // rows per reply
+const relayCanWork = job => !job.route && !job.desk && WORKERS.includes(job.app); // never the Front Desk's own jobs, never an app the bridge has no Worker for
+function relayFinish(job) { // the Ask chat's hand-off to the Worker: one terminal row per RELAY: line, in the job's OWN app, plus a line in the reply
+  if (!job.relay || !job.relay.length) return;
+  const rows = job.relay.slice(0, RELAY_MAX).map(t => terminalAdd(t, null, job.app, null, {src: "ask", label: "app chat"}));
+  terminalNotify();
+  console.log(`terminal #${rows.map(r => r.id).join(", #")} [${job.app}] (relayed from an Ask chat): ${rows[0].text.slice(0, 80)}`);
+  jobPush(job, {content: (job.text.trim() ? "\n\n" : "") + "\u2192 passed to the Worker (" + rows.map(r => "#" + r.id).join(", ") + ")"});
+}
 function startRouter(row) {
   const job = newJob("route_" + row.id + "_" + Date.now().toString(36), MODEL_CLAUDE);
   const dir = path.join(ROUTE_ROOT, ROUTE_REPOS[appIdOf(row.app)] || "");
@@ -741,6 +756,8 @@ function terminalNotify() { // a row was just added: answer every parked long-po
 const asks = new Map(); // id → card {id, kind: "permission"|"blocked", session, tool, summary, detail, repo, agent_type, app, hash, createdAt, expiresAt, status: open|allowed|denied|expired, decision}
 const grants = []; // {session, tool, hash, expires}: Josh's one-time OK for a blocked call. Never in a file the AI could write; consumed by GET /v1/grants
 const asksWaiters = new Set(); // long-polls parked on GET /v1/asks/:id?wait=N: {id, res, timer}
+const APNS_REGISTER_MAX = 4 * 1024; // a registration is four short strings; 413 past this
+const apns = createApns({dir: process.env.BRIDGE_APNS_DIR || path.join(STATE_DIR, "apns"), hosts: process.env.BRIDGE_APNS_TEST_HOST ? {development: process.env.BRIDGE_APNS_TEST_HOST, production: process.env.BRIDGE_APNS_TEST_HOST} : undefined}); // push for new cards; key in <state>/apns/ (docs/apns.md)
 const ASKS_LOG = path.join(STATE_DIR, "asks.jsonl"); // a log only, never read back
 const ASK_MAX_MS = 31 * 60 * 1000, GRANT_MS = +process.env.BRIDGE_GRANT_MS || 10 * 60 * 1000; // BRIDGE_GRANT_MS: tests only
 const csv = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -754,7 +771,7 @@ function asksSweep() {
   }
   for (let i = grants.length - 1; i >= 0; i--) if (grants[i].expires <= now) grants.splice(i, 1);
 }
-const askCard = a => ({id: a.id, kind: a.kind, tool: a.tool, summary: a.summary, detail: a.detail, repo: a.repo, agent_type: a.agent_type, app: a.app, createdAt: a.createdAt, expiresAt: a.expiresAt});
+const askCard = a => ({id: a.id, kind: a.kind, tool: a.tool, summary: a.summary, detail: a.detail, blurb: askBlurb(a), repo: a.repo, agent_type: a.agent_type, app: a.app, createdAt: a.createdAt, expiresAt: a.expiresAt});
 const openAsks = () => { asksSweep(); return [...asks.values()].filter(a => a.status === "open").map(askCard); };
 const askReply = a => ({id: a.id, status: a.status, decision: a.decision || null});
 function asksNotify(a) { for (const w of [...asksWaiters]) if (w.id === a.id) { asksWaiters.delete(w); clearTimeout(w.timer); json(w.res, 200, askReply(a)); } }
@@ -840,7 +857,7 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   // JSON (a bad/missing header just means no parts).
   let ctxParts = null;
   if (ctxPartsHeader) { try { ctxParts = JSON.parse(String(ctxPartsHeader)); } catch (err) { ctxParts = null; } }
-  const sys = (job.route ? profile.sys.common : profile.sys.common + "\n" + profile.sys.read + "\n" + profile.sys.link) + (system ? "\n\nTHE APP'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
+  const sys = (job.route ? profile.sys.common : profile.sys.common + "\n" + profile.sys.read + "\n" + profile.sys.link) + (relayCanWork(job) ? "\n\n" + RELAY_SYS : "") + (system ? "\n\nTHE APP'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
   const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
   args.push("--tools", ...(job.route ? ["Read", "Glob", "Grep"] : READ_TOOLS)); // always read-only, whatever --claude says (#644): the terminal session is the one writer
   args.push("--add-dir", SHOTS_DIR, ...(job.route && job.route.dir ? [job.route.dir] : [])); // an uploaded screenshot sits outside the repo; Read needs the directory allowed
@@ -862,10 +879,22 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
     const call = pend.search(/(^|\n)[ \t]*\{\s*"tool_call"/); // a tool-call line already seen stays back to the end, junk after it included
     if (call >= 0) { const at = pend[call] === "\n" ? call + 1 : call; if (at) jobPush(job, {content: pend.slice(0, at)}); pend = pend.slice(at); return; }
     const cur = pend.slice(pend.lastIndexOf("\n") + 1), lead = cur.trimStart();
-    const keep = !lead.length || lead.startsWith("{") || lead.startsWith("`") ? cur : "";
-    const out = pend.slice(0, pend.length - keep.length);
+    const keep = !lead.length || lead.startsWith("{") || lead.startsWith("`") || (relayOn && !fence && (lead.startsWith("RELAY:") || "RELAY:".startsWith(lead))) ? cur : ""; // a line that may become RELAY: stays back too
+    const out = relayStrip(pend.slice(0, pend.length - keep.length), false);
     if (out) jobPush(job, {content: out});
     pend = keep;
+  };
+  // RELAY: lines leave the reply and wait in job.relay; a ``` fence switches the marker off
+  const relayOn = relayCanWork(job); let fence = false;
+  const relayStrip = (s, final) => {
+    if (!relayOn || !s) return s;
+    const parts = s.split("\n"), last = parts.pop(), keepLines = [];
+    for (const l of final ? [...parts, last] : parts) {
+      if (l.trimStart().startsWith("```")) fence = !fence;
+      const m = !fence && l.match(/^\s*RELAY:\s*(.*)$/);
+      if (m) { if (m[1].trim()) (job.relay || (job.relay = [])).push(m[1].trim()); } else keepLines.push(l);
+    }
+    return keepLines.map(l => l + "\n").join("").replace(/\n$/, final ? "" : "\n") + (final ? "" : last);
   };
   const timer = setTimeout(() => { if (job.status === "running") { child.kill("SIGKILL"); jobEnd(job, new Error("claude took longer than " + TURN_MS / 60000 + " min")); } }, TURN_MS);
   child.stdout.on("data", d => {
@@ -933,7 +962,8 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
     if (call) jobPush(job, {tool_calls: [{index: 0, id: "call_" + job.id, type: "function", function: {name: call.name, arguments: JSON.stringify(call.arguments)}}]}, "tool_calls");
     else {
       if (holding && held) jobPush(job, {content: held});
-      if (!holding && pend) jobPush(job, {content: pend});
+      if (!holding && pend) { const rest = relayStrip(pend, true); if (rest) jobPush(job, {content: rest}); }
+      relayFinish(job);
       // a turn that ended without words (a hung command, a cut-off) used to
       // land as an empty reply — say what happened and where it stopped
       if (!job.text.trim()) { const last = job.notes.filter(n => n && n !== "session restarted").pop(); jobPush(job, {content: "⚠ Claude finished without answering" + (last ? " — last step: " + last.replace(/…\s*$/, "") : "") + ". Ask again, or say \"continue\"."}); }
@@ -1101,6 +1131,12 @@ const server = http.createServer(async (req, res) => {
     console.log(`terminal #${row.id} [${appIdOf(row.app)}] done${note ? ", note #" + note.id : ""}`);
     return json(res, 200, {id: row.id, app: appIdOf(row.app), ...(note ? {note: note.id} : {})});
   }
+  if (url.pathname === "/v1/apns/register" && req.method === "POST") { // {app, bundleId, token, env}: an app hands over its APNs device token (BridgeChat does this)
+    if (!String(req.headers["x-nr-app"] || "").trim()) return json(res, 400, {error: {message: "x-nr-app header is required"}}); // only the apps' BridgeClient registers; it always sends it
+    let raw; try { raw = await readBodyCapped(req, APNS_REGISTER_MAX); } catch (err) { return json(res, err.code === 413 ? 413 : 400, {error: {message: err.code === 413 ? "registration too big" : "upload broke off"}}); }
+    let b; try { b = JSON.parse(raw); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    try { return json(res, 200, apns.register(b)); } catch (err) { return json(res, 400, {error: {message: err.message}}); }
+  }
   if (url.pathname === "/v1/asks" || url.pathname.startsWith("/v1/asks/")) { // permission cards: the hook POSTs one, long-polls it; the approver's device decides
     const id = url.pathname.slice("/v1/asks/".length);
     if (url.pathname === "/v1/asks" && req.method === "GET") return json(res, 200, {asks: openAsks()});
@@ -1116,7 +1152,8 @@ const server = http.createServer(async (req, res) => {
       const a = {id: aid, kind: b.kind, session: str(b.session, 80), tool: str(b.tool, 80), summary: str(b.summary, 1000), detail: str(b.detail, 1000), repo: str(b.repo, 120), agent_type: str(b.agent_type, 80), app: appIdOf(b.app), hash: str(b.hash, 80), createdAt: now,
         expiresAt: Math.min(now + ASK_MAX_MS, Math.max(now + 100, +b.expiresAt || now + 600000)), status: "open", decision: null};
       asks.set(aid, a);
-      asksLog({ev: "ask", id: aid, kind: a.kind, tool: a.tool, summary: a.summary.slice(0, 200), repo: a.repo, agent_type: a.agent_type});
+      apns.notifyAsk(a, !!b.app).catch(err => console.error("APNs: " + err.message)); // fire and forget; a push failure never blocks the card
+      asksLog({ev: "ask", id: aid, kind: a.kind, tool: a.tool, summary: a.summary.slice(0, 200), detail: a.detail.slice(0, 200), repo: a.repo, agent_type: a.agent_type});
       console.log(`ask ${aid} [${a.kind}] ${a.tool}: ${a.summary.slice(0, 80)}`);
       return json(res, 200, askReply(a));
     }
