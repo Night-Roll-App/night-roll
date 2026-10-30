@@ -235,8 +235,9 @@ export async function askSessionRefresh() {
 }
 export function askStatusIdle() { return !S.askStatusNow || !S.askStatusNow.text || /^idle\b/i.test(S.askStatusNow.text); }
 export function askStatusLine() { // "working: …" or "idle", from the bridge's current line
-  if (askStatusIdle()) return "idle" + (S.askStatusNow && S.askStatusNow.text && /^idle\W+(.+)/i.test(S.askStatusNow.text) ? " — " + S.askStatusNow.text.replace(/^idle\W+/i, "") : "");
-  return "working: " + S.askStatusNow.text;
+  const stems = S.stemsNow && S.stemsNow.running ? " · separating " + (S.stemsNow.name || "a recording") + " " + Math.round((+S.stemsNow.pct || 0) * 100) + "%" : ""; // the Mac's stems job (vendor/ai/bridge/stems.mjs statusField) — why the fans spin
+  if (askStatusIdle()) return "idle" + (S.askStatusNow && S.askStatusNow.text && /^idle\W+(.+)/i.test(S.askStatusNow.text) ? " — " + S.askStatusNow.text.replace(/^idle\W+/i, "") : "") + stems;
+  return "working: " + S.askStatusNow.text + stems;
 }
 export function askStatusRender() {
   const strip = document.getElementById("asknowstrip");
@@ -524,6 +525,7 @@ export async function askStatusPoll() {
   S.askStatusNow = (j && j.now) || null;
   S.askStatusRecent = (j && j.recent) || [];
   S.askQuota = (j && j.quota) || null;
+  S.stemsNow = (j && j.stems) || null;
   if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
   deploySetHeld(!!(j && j.deployHold));
   S.askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), desk: !!(j && j.desk), deskLive: !!(j && j.deskLive), sessions: !!(j && j.sessions)};

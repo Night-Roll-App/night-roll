@@ -153,6 +153,9 @@ parity with Night Roll's window (minus song features) is tracked row by row in `
   `POST /v1/sessions/:key/compact`, `POST /v1/shot`, `POST /v1/app-state`, `PUT /v1/takes/<app>/<id>/<name>`
   (a recorded run: `audio.m4a` then `take.json`, stored under `<state dir>/takes/<app>/<id>/`, never pruned; 409 if a
   different-size file is already there, 413 past 300 MB) and `GET /v1/takes/<app>` (what is stored).
+- Stems + notes (docs/stems.md): `PUT /v1/stems/<id>/input`, `POST|GET|DELETE /v1/stems/<id>`, `GET /v1/stems/<id>/files/<name>`,
+  `GET /v1/stems` — one recording split into stems on the Mac (Demucs) with each stem's notes as a MIDI track (Basic Pitch);
+  a python venv from `bridge/stems/install.sh`; 503 `install: true` without it. `x-nr-app` required.
 - Fixtures in `tests/fixtures/parity/*.json` are shared: `swift test` (in `swift/`) and
   `tests/parity-text.test.mjs` both read them, so a format change breaks both suites.
 - `tests/lint.test.mjs` also walks `swift/Sources` (skipping dot-directories): no app vocabulary, no `.alert(`,

@@ -4860,6 +4860,93 @@ File menus first — they sit at a higher z-index than `.overlay`), and
 `#ghsaveall`'s click handler. Capture jobs are unchanged: `Open` still
 shows the capture panel.
 
+## Stems + notes from a recording — a Mac job (web phase 2, 2026-10-30)
+
+Plan: docs/plans/stem-splitter.md (§5 is this section's spec; §4 the bridge).
+Josh's ask: "a stem splitter for the DAW, web and native", then the stems
+as MIDI — for Wardruna, where no MIDI exists. The engine (Demucs + Basic
+Pitch, a python venv under `~/.night-roll-bridge/stems/`) lives on the Mac
+behind the bridge; nothing ships in the app.
+
+- **Entry**: File → Import… → "Stems + notes from a recording (on the Mac)"
+  (index.html, after "New song from a recording"): `#ihStems` opens its own
+  hidden `#stemsinput` (ONE file; two are refused with a status line), and
+  `#ihStemsOpen` ("Split the open song's recording", shown only when the
+  open song has an audio clip — same bytes the Ask action uses) splits the
+  open song's first clip. Without a bridge URL the row says "connect the
+  Mac bridge in ✦ AI settings first".
+- **Module** `src/import/stems.js` (`initStems1()` in main.js after
+  `initCapture1`; modulepreload + sw.js `APP_MODULES`, SW_VERSION nr-v52).
+  `stemsJobStart({name, bytes, type}, opts)` → a `JOB_KINDS.stems` footer ⏳
+  job with items `upload · separate · notes <stem>… · notes mix · fetch
+  notes`; it THROWS one plain sentence instead of starting (a live stems
+  job, no bridge, not audio) — the hub shows it, the Ask action hands it to
+  the model. The runner: `PUT /v1/stems/<id>/input` (raw bytes,
+  `content-type: application/octet-stream`, `x-nr-name` = the file name as
+  a display slug, `x-nr-app` — every stems route requires it) → `POST
+  /v1/stems/<id>` with `stemsOptions()` → `GET` every `S.stemsPollMs`
+  (2000; tests 0 — the vm clock is virtual) mapping `stage/stem/pct` onto
+  the rows (`stemsApplyStatus`) → on `done`, `GET files/song.mid` →
+  `parseMidi(buf, {trust, foreign})` → `localMidiOpen(parsed, "<slug>-stems.mid")`
+  (D5: the same path a dropped .mid takes; key `local/<slug>-stems.mid`),
+  then, when the `attach` pref is on (default), `importAudioFiles` with the
+  kept bytes (`S.stemsBytes[id]`, memory only) once the draft is the open
+  song (`stemsAttach` waits ≤ 5 s). The stems themselves are never fetched
+  unasked (D3). ✕ → `DELETE` + `api.cancel()`; a 503 `install: true` fails
+  the job with the bridge's own sentence; 409 = another split is running.
+- **Ids**: `stemsNewId()` makes the bridge's strict `yyyymmdd-hhmmss-xxxx`;
+  the Mac never builds a path from anything else the app sends.
+- **.aif/.aiff** (plan §4.7 open issue 1): the upload takes wav/mp3/m4a/
+  flac/ogg by magic, so an AIFF is decoded in the browser (OfflineAudioContext)
+  and re-written as 16-bit PCM WAV with EVERY channel (`stemsToWav`,
+  `stemsWavBytes` — not `monoWavBytes`: the separator wants the stereo
+  original).
+- **Result sheet** `#stemssheet` (⏳ → Open; `stemsSheetOpen(job)`): the
+  knobs (model htdemucs / htdemucs_6s / htdemucs_ft; drums kit / frame /
+  off; notes preset default / clean / detail + the three raw thresholds,
+  worded "a note starts when this sure", "how sure before a note holds",
+  "shorter notes dropped under N ms"; mix on/off; attach on/off) are device
+  prefs in localStorage `nr.stems` (`stemsPrefs`/`stemsPrefsSave`; 0 = the
+  preset's own value; UI prefs, not song state). The result block reads
+  `GET /v1/stems/<id>`: status + per-stem note COUNTS (facts, never a label),
+  one row per stem WAV the Mac has with ▶ Play (fetch → blob URL on an
+  `<audio>` — the auth header rules out a plain `src`), + Add as track
+  (`importAudioFiles` into the open song; the 20 MB mono nudge applies) and
+  ↓ Download. "Re-run with these settings" = a new ⏳ row, `POST` again on
+  the kept input (no re-upload), its draft `<slug>-stems-<model>-<preset>.mid`
+  beside the first. ↻ Retry (`stemsJobRetry`) is the same when the Mac
+  still has the input, else "pick the file again".
+- **Status line**: `/v1/status`'s `stems` field lands in `S.stemsNow`
+  (ask/bridge.js) and `askStatusLine()` appends " · separating <name> 42%"
+  while the Mac runs one — why the fans spin.
+- **Ask**: `split_stems {model?, drums?, preset?, onset?, frame?,
+  min_note_ms?, mix?, attach?}` (src/ask/actions.js; `stemsSplitOpenSong`):
+  the open song's first clip via `audioBytesFor`, no picker; no
+  `askWritableGate` (nothing in the open song changes — the output is a new
+  song). Help rows regenerated (tools/build_ask_help.mjs); docs/ai-parity.md
+  row.
+- **Learning mode**: the Mac writes notes + stem-word track names only (no
+  key/meter/marker/text metas, no bends — asserted by the bridge's e2e); the
+  app labels nothing; the 4/4 120 grid is the recording import's own file
+  default. The vm test asserts `source.timesigs/keysigs` are empty and
+  `source.metas` absent on the opened draft.
+- **Tests**: tests/night-roll.test.mjs "stems: …" (4: the full walk with a
+  Node-side fake bridge on `app.context.fetch` whose polls yield a macrotask;
+  cancel/503/409; refusals + the hub pick + prefs + AIFF→WAV; the act),
+  FEATURES drift keywords "Stems + notes from a recording" / "(act:
+  split_stems"; tests/bridge.test.mjs "the vendored stems routes are
+  mounted" (`stems: false` without the engine, x-nr-app 400, bad id 400,
+  unknown id 404, `/v1/status` `stems: {running: 0}`) — it points
+  `BRIDGE_STEMS_DIR`/`BRIDGE_STEMS_PY` at a temp dir so a test never
+  touches the Mac's real `~/.night-roll-bridge/stems`.
+- **Bridge install (once, on the Mac)**: `vendor/ai/bridge/stems/install.sh`
+  (venv = brew python@3.10, demucs 4.1.0, basic-pitch 0.4.0, weights,
+  selftest; `--check` prints versions), then `launchctl kickstart -k
+  gui/$(id -u)/com.nightroll.bridge`; `curl -s http://127.0.0.1:8787/v1/jobs`
+  says `stems: true`. Contract + knobs: claude-bridge docs/stems.md.
+- **Native** (phase 3, night-roll-ipad): plan §7 — not built yet; the web
+  entry's words are the fixture `Tests/Fixtures/ask-actions.json` reads.
+
 ## Terminal import (tools/import-set.mjs) — 2026-09-27
 
 Import → Capture all → Publish for a whole chip-music set, from the

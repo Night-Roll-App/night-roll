@@ -153,6 +153,7 @@
   <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.spc,.vgm,.vgz,.psf,.minipsf,.psflib,.psf2,.minipsf2,.psf2lib,.usf,.miniusf,.usflib,.sf2,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
   <!-- the ＋∿ chip's own picker: audio only, so iOS opens Files (not the photo library) -->
   <input type="file" id="audioinput" multiple accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac" style="display:none">
+  <input type="file" id="stemsinput" accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac" style="display:none">
 </header>
 <div id="trackrow">
   <div id="trackzone">
@@ -1390,6 +1391,8 @@
         <div class="row"><button class="fitem" id="ihSf2" data-kind="sf2">Choose files…</button></div></dd>
       <dt>New song from a recording</dt><dd>One .wav / .mp3 / .m4a / .aif / .flac → a new song — Untitled until Save, 4/4 at 120 bpm; ♩ Tempo from this take afterwards reads the real tempo off the clip.
         <div class="row"><button class="fitem" id="ihAudio" data-kind="audio">Choose files…</button></div></dd>
+      <dt>Stems + notes from a recording (on the Mac)</dt><dd>One .wav / .mp3 / .m4a / .aif / .flac → the Mac splits it into drums, bass, vocals and other, and writes each part's notes as a track of a new song — plus the whole mix as a fifth track to compare. Notes only; the new song is yours to name. Needs the Mac bridge (✦ AI settings). Watch ⏳; Jobs → Open shows the counts, plays each stem, adds one as a track, or re-runs with other settings.
+        <div class="row"><button class="fitem" id="ihStems" data-kind="stems">Choose file…</button><button class="fitem" id="ihStemsOpen" style="display:none">Split the open song's recording</button></div></dd>
     </dl>
     <div class="status" id="importhubstatus">Drop files anywhere on this panel, or use a section's Choose files… above.</div>
   </div>
@@ -1424,6 +1427,30 @@
   </div>
 </div>
 </div><!-- /jobssheet-home -->
+
+<div class="overlay" id="stemssheet">
+  <div class="sheet">
+    <h2 id="stemssheet-h2">STEMS + NOTES</h2>
+    <div class="status" id="stemstitle"></div>
+    <div class="row"><span class="lbl">model</span>
+      <select id="stemsmodel"><option value="htdemucs">htdemucs — drums, bass, vocals, other</option><option value="htdemucs_6s">htdemucs_6s — + guitar, piano</option><option value="htdemucs_ft">htdemucs_ft — fine-tuned, ~4× slower</option></select></div>
+    <div class="row"><span class="lbl">drums</span>
+      <select id="stemsdrums"><option value="kit">kit — kick, snare, hat</option><option value="frame">frame — frame drums, no hats</option><option value="off">off — no drum track</option></select></div>
+    <div class="row"><span class="lbl">notes</span>
+      <select id="stemspreset"><option value="default">default</option><option value="clean">clean — drones and reverb tails: fewer tail-notes</option><option value="detail">detail — more, shorter notes</option></select></div>
+    <div class="row"><span class="lbl">a note starts when this sure (0–1)</span><input type="number" id="stemsonset" min="0" max="1" step="0.05" placeholder="preset" style="width:5em"></div>
+    <div class="row"><span class="lbl">how sure before a note holds (0–1)</span><input type="number" id="stemsframe" min="0" max="1" step="0.05" placeholder="preset" style="width:5em"></div>
+    <div class="row"><span class="lbl">shorter notes dropped under (ms)</span><input type="number" id="stemsminnote" min="0" max="5000" step="10" placeholder="preset" style="width:5em"></div>
+    <div class="row"><label><input type="checkbox" id="stemsmix"> the whole mix as a fifth track</label><label><input type="checkbox" id="stemsattach"> the recording under the notes</label></div>
+    <div id="stemsresult" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="stemsrerun">Re-run with these settings</button>
+      <button id="stemsopen">Open song</button>
+      <button id="stemsclose">Close</button>
+    </div>
+    <div class="status">The split runs on the Mac (one at a time); stems stay there until you play, add or download one. Notes only — what you hear is yours to name.</div>
+  </div>
+</div>
 
 <div class="overlay" id="errsheet">
   <div class="sheet">
@@ -1760,6 +1787,7 @@
 <link rel="modulepreload" href="src/model/jobs.js">
 <link rel="modulepreload" href="src/import/hub.js">
 <link rel="modulepreload" href="src/import/capture.js">
+<link rel="modulepreload" href="src/import/stems.js">
 <link rel="modulepreload" href="src/sync/publish.js">
 <link rel="modulepreload" href="src/gen/drummer.js">
 <link rel="modulepreload" href="src/gen/bassist.js">

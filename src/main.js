@@ -32,6 +32,7 @@ import { initVellane1 } from "./ui/vellane.js";
 import { initPerf1, initPerf2 } from "./ui/perf.js";
 import { initHub1 } from "./import/hub.js";
 import { initCapture1 } from "./import/capture.js";
+import { initStems1 } from "./import/stems.js";
 import { initPublish1, initPublish2, initPublish3 } from "./sync/publish.js";
 import { initBackend1 } from "./ask/backend.js";
 import { initSheet1, initSheet2, initSheet3 } from "./ask/sheet.js";
@@ -90,6 +91,7 @@ initAnnotate1(); // ✦ Annotate this song…: the View ▾ Mode item beside vwA
 initPublish2();
 initChrome12();
 initCapture1();
+initStems1(); // Stems + notes from a recording: JOB_KINDS.stems, the hub row, #stemssheet
 initChrome13();
 initNoteEditor5();
 initSheets5();

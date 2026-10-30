@@ -44,6 +44,25 @@ test("bridge-shim: /health, /v1/models with Claude off, and the startup banner c
   assert.ok(Array.isArray(models.data));
 });
 
+test("bridge-shim: the vendored stems routes are mounted — /v1/jobs says stems: false without the engine, /v1/stems wants x-nr-app, a bad id is 400, an unknown id 404 (docs/plans/stem-splitter.md §5.4)", async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), "nr-shim-stems-"));
+  const port = 25000 + Math.floor(Math.random() * 500);
+  // its own stems dir + an interpreter that is not there: never the Mac's real ~/.night-roll-bridge/stems (startupCleanup/sweep run at boot)
+  const {child} = await startShim(["--no-claude", "--port", String(port), "--jobs-dir", path.join(dir, "jobs")], {BRIDGE_STEMS_DIR: path.join(dir, "stems"), BRIDGE_STEMS_PY: path.join(dir, "no-such-python"), BRIDGE_STEMS_NO_TASKPOLICY: "1"});
+  t.after(() => { child.kill("SIGKILL"); rmSync(dir, {recursive: true, force: true}); });
+  const B = "http://127.0.0.1:" + port;
+  const jobs = await (await fetch(B + "/v1/jobs")).json();
+  assert.equal(jobs.stems, false, "the web's hub row reads this to say the engine isn't installed");
+  assert.equal((await fetch(B + "/v1/stems")).status, 400, "x-nr-app is required");
+  const list = await (await fetch(B + "/v1/stems", {headers: {"x-nr-app": "night-roll"}})).json();
+  assert.deepEqual([list.installed, list.running, Array.isArray(list.jobs)], [false, 0, true]);
+  assert.equal((await fetch(B + "/v1/stems/not-an-id", {headers: {"x-nr-app": "night-roll"}})).status, 400);
+  const r = await fetch(B + "/v1/stems/20261030-120000-abcd", {headers: {"x-nr-app": "night-roll"}});
+  assert.equal(r.status, 404);
+  const st = await (await fetch(B + "/v1/status?app=night-roll")).json();
+  assert.deepEqual(st.stems, {running: 0}, "the status line's field");
+});
+
 test("bridge-shim: --repo defaults to the repo root (tools/ai-profile.mjs's profile.repo), unchanged from the old hardcoded default", async t => {
   const dir = mkdtempSync(path.join(tmpdir(), "nr-shim-repo-"));
   const bin = path.join(dir, "fake-claude");

@@ -3255,6 +3255,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "to pulse 2, an octave down", // act: edit_notes transpose/move/copy/to_track (docs/ai-parity.md §5 batch 6)
     "Mute the noise channel", // act: set_track/add_track/delete_track/keep_that/album (docs/ai-parity.md §5 batch 7)
     "Turn the debug log on", // act: song_file/set_pref (docs/ai-parity.md §5 batch 8)
+    "Stems + notes from a recording", "(act: split_stems", // Stems + notes on the Mac (docs/plans/stem-splitter.md §5): the hub row + the Ask action
     "? Open questions", // a song note's kind (Josh, Terminal #225/#226)
     "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
     "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
@@ -16958,3 +16959,197 @@ test("loop seam review fixes: a restart resumes inside its span; an edit during 
     assert.equal(rec(a)[KEY], undefined, "a half-restored session never overwrites the stored history");
   });
 }
+
+// ---- Stems + notes from a recording (docs/plans/stem-splitter.md §5; src/import/stems.js).
+// A fake bridge in Node (app.context.fetch) plays vendor/ai/bridge/stems.mjs's
+// routes; every GET poll yields a macrotask so the 0-ms poll loop never
+// starves the test's own timers. The fixture song.mid is what nr_stems.py
+// writes: a tempo track + one named track per stem, no meter/key/marker metas.
+function stemsFixtureMid(names = ["drums", "bass", "vocals", "other", "mix"]) {
+  const vlq = n => { const out = [n & 0x7f]; while ((n >>= 7) > 0) out.unshift((n & 0x7f) | 0x80); return out; };
+  const str = s => [...s].map(c => c.charCodeAt(0));
+  const be32 = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+  const chunk = ev => [...str("MTrk"), ...be32(ev.length), ...ev];
+  const tempo = chunk([0, 0xff, 0x51, 3, 0x07, 0xa1, 0x20, 0, 0xff, 0x2f, 0]);
+  const tracks = names.map((n, i) => chunk([0, 0xff, 0x03, n.length, ...str(n), 0, 0x90 | (n === "drums" ? 9 : 0), 60 + i, 90, ...vlq(480), 0x80 | (n === "drums" ? 9 : 0), 60 + i, 0, 0, 0xff, 0x2f, 0]));
+  return new Uint8Array([...str("MThd"), ...be32(6), 0, 1, 0, names.length + 1, 0x01, 0xe0, ...tempo, ...tracks.flat()]);
+}
+const STEMS_WAV = new Uint8Array([...[..."RIFF"].map(c => c.charCodeAt(0)), 36, 0, 0, 0, ...[..."WAVEfmt "].map(c => c.charCodeAt(0)), 16, 0, 0, 0, 1, 0, 1, 0, 0x44, 0xac, 0, 0, 0x88, 0x58, 1, 0, 2, 0, 16, 0, ...[..."data"].map(c => c.charCodeAt(0)), 0, 0, 0, 0]);
+const STEMS_WAV_JS = JSON.stringify(Array.from(STEMS_WAV));
+function stemsFakeBridge(opts = {}) { // → {calls, fetch}; opts.polls: the GET bodies in order (the last repeats); opts.post: {status, body} to answer POST with
+  const calls = [];
+  const polls = opts.polls || [
+    {status: "running", stage: "separate", pct: 0.5},
+    {status: "running", stage: "notes", stem: "bass", pct: 0.4},
+    {status: "done", stage: "done", pct: 1, counts: {drums: 600, bass: 94, vocals: 379, other: 1219, mix: 1209}, files: [{name: "song.mid", bytes: 123}, {name: "drums.wav", bytes: 44}, {name: "bass.wav", bytes: 44}]},
+  ];
+  let n = 0;
+  const res = (status, body, bytes) => ({ok: status < 300, status, json: async () => body, arrayBuffer: async () => (bytes || new Uint8Array()).buffer, text: async () => JSON.stringify(body)});
+  const fetch = async (url, o = {}) => {
+    const u = String(url), method = o.method || "GET";
+    calls.push({method, url: u, headers: o.headers || {}, body: o.body});
+    if (/\/take\.wav$/.test(u)) return res(200, null, STEMS_WAV); // readData: the open song's recording from the site
+    if (!/\/v1\/stems\//.test(u)) return Promise.reject(new Error("no network in tests: " + u));
+    if (method === "PUT") return res(200, {id: "x", bytes: (o.body && o.body.length) || 0, ext: "wav", name: "take"});
+    if (method === "POST") return opts.post ? res(opts.post.status, opts.post.body) : res(200, {id: "x", status: "running"});
+    if (method === "DELETE") return res(200, {ok: true, status: "cancelling"});
+    if (/\/files\/song\.mid$/.test(u)) return res(200, null, stemsFixtureMid());
+    await new Promise(r => setTimeout(r, 1)); // a poll yields a macrotask
+    const body = polls[Math.min(n++, polls.length - 1)];
+    if (n > 200) return res(200, {status: "error", error: "the fake ran away"});
+    return res(200, body);
+  };
+  return {calls, fetch};
+}
+async function stemsSettle(pred, ms = 2000) { for (let t = 0; t < ms / 5; t++) { if (pred()) return true; await new Promise(r => setTimeout(r, 5)); } return pred(); }
+function stemsTestOn(fake) {
+  app.context.__stemsPrevFetch = app.context.fetch; app.context.fetch = fake.fetch;
+  run(`globalThis.__stemsPrevAiUrl = aiUrl; aiUrl = () => "http://bridge.test"; stemsPollMs = 0; jobs = []; localStorage.removeItem("ff1roll-jobs"); localStorage.removeItem("nr.stems"); stemsBytes = {};`);
+}
+function stemsTestOff() {
+  app.context.fetch = app.context.__stemsPrevFetch;
+  run(`aiUrl = __stemsPrevAiUrl; stemsPollMs = 2000; jobs = []; localStorage.removeItem("ff1roll-jobs"); stemsBytes = {}; document.getElementById("importhubstatus").textContent = "";`);
+}
+
+test("stems: the job walks upload → start → poll → fetch; rows update in order; the Mac's notes open as local/<slug>-stems.mid with stem-word tracks and no key/meter in source; counts are the note", async () => {
+  const fake = stemsFakeBridge();
+  stemsTestOn(fake);
+  try {
+    run(`localStorage.removeItem(draftStoreKey("local/take-one-stems.mid"));`);
+    const info = JSON.parse(await run(`stemsJobStart({name: "Take One.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: "audio/wav"}, {attach: false}).then(j => JSON.stringify({id: j.id, kind: j.kind, stemsId: j.stemsId, labels: j.items.map(i => i.label)}))`));
+    assert.equal(info.kind, "stems");
+    assert.match(info.stemsId, /^\d{8}-\d{6}-[a-z0-9]{4}$/, "the bridge's strict id, made by the app");
+    assert.deepEqual(info.labels, ["upload", "separate", "notes drums", "notes bass", "notes vocals", "notes other", "notes mix", "fetch notes"]);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) !== "running"), "the job finishes");
+    assert.equal(val(`jobs[0].state`), "done", val(`jobs[0].err`));
+    assert.deepEqual(val(`jobs[0].items.map(i => i.st)`), Array(8).fill("done"));
+    assert.equal(val(`jobs[0].note`), "drums 600 · bass 94 · vocals 379 · other 1219 · mix 1209");
+    // the calls, in order: PUT input (raw bytes, x-nr-app + x-nr-name, not json), POST options, GET polls, GET song.mid
+    const put = fake.calls.find(c => c.method === "PUT");
+    assert.equal(put.url, "http://bridge.test/v1/stems/" + info.stemsId + "/input");
+    assert.equal(put.headers["x-nr-app"], "night-roll");
+    assert.equal(put.headers["x-nr-name"], "Take One.wav");
+    assert.equal(put.headers["content-type"], "application/octet-stream");
+    assert.equal(put.body.length, STEMS_WAV.length, "the recording's own bytes, as-is");
+    const post = fake.calls.find(c => c.method === "POST");
+    assert.equal(post.url, "http://bridge.test/v1/stems/" + info.stemsId);
+    assert.deepEqual(JSON.parse(post.body), {model: "htdemucs", mix: true, drums: "kit", notes: {preset: "default"}}, "the device defaults; zero knobs are left to the preset");
+    const midAt = fake.calls.findIndex(c => c.method === "GET" && c.url.endsWith("/files/song.mid"));
+    assert.ok(midAt > 0, "song.mid fetched");
+    assert.ok(!fake.calls.some(c => /\/files\/.*\.wav$/.test(c.url)), "stems stay on the Mac (D3)");
+    assert.ok(fake.calls.indexOf(put) < fake.calls.indexOf(post) && fake.calls.indexOf(post) < midAt);
+    // the new song: a device draft through localMidiOpen, stem words as names, nothing declared
+    assert.ok(await stemsSettle(() => val(`songKey`) === "local/take-one-stems.mid"), "the draft opened: " + val(`songKey`));
+    const d = JSON.parse(await run(`draftRead("local/take-one-stems.mid").then(x => JSON.stringify(x))`));
+    assert.deepEqual(d.tracks.map(t => t.name), ["drums", "bass", "vocals", "other", "mix"]);
+    assert.deepEqual([d.source.timesigs.length, d.source.keysigs.length, d.source.metas], [0, 0, undefined], "no meter/key/marker history came with the file (D4)");
+    assert.deepEqual(d.timesig, [4, 4]);
+    assert.equal(d.tracks[0].notes[0].ch, 9, "the drums track keeps channel 10");
+    assert.equal(val(`stemsDraftKey("take-one-stems.mid")`), "local/take-one-stems.mid");
+  } finally { stemsTestOff(); }
+});
+
+test("stems: ✕ mid-run sends DELETE and the job ends cancelled; a 503 install:true fails the job with the bridge's own sentence; a 409 busy Mac fails with its message", async () => {
+  // cancel: the fake never finishes
+  let fake = stemsFakeBridge({polls: [{status: "running", stage: "separate", pct: 0.2}]});
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "loop.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => fake.calls.filter(c => c.method === "GET").length >= 2), "polling");
+    assert.equal(val(`jobs[0].items[1].st`), "running");
+    assert.equal(val(`jobs[0].items[1].pct`), 0.2);
+    run(`jobCancel(jobs[0].id)`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "cancelled"), "cancelled: " + val(`jobs[0].state`));
+    assert.ok(fake.calls.some(c => c.method === "DELETE" && /\/v1\/stems\/\d{8}-/.test(c.url)), "DELETE went to the Mac");
+    assert.ok(val(`jobs[0].items.every(i => i.st === "done" || i.st === "cancelled")`));
+  } finally { stemsTestOff(); }
+  // not installed
+  fake = stemsFakeBridge({post: {status: 503, body: {error: {message: "stems engine not installed — run bridge/stems/install.sh on the Mac"}, install: true}}});
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "a.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "failed"));
+    assert.equal(val(`jobs[0].err`), "stems engine not installed — run bridge/stems/install.sh on the Mac");
+    assert.equal(val(`jobs[0].items[0].st`), "done", "the upload had landed");
+  } finally { stemsTestOff(); }
+  // busy
+  fake = stemsFakeBridge({post: {status: 409, body: {error: {message: "a separation is running: other; it finishes in about 2 min"}, running: "20261030-120000-abcd"}}});
+  stemsTestOn(fake);
+  try {
+    await run(`stemsJobStart({name: "b.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""}, {attach: false})`);
+    assert.ok(await stemsSettle(() => val(`jobs[0].state`) === "failed"));
+    assert.match(val(`jobs[0].err`), /a separation is running: other/);
+  } finally { stemsTestOff(); }
+});
+
+test("stems: refusals before anything is sent — a second live job, no bridge configured, not an audio file; one hub pick starts the job, two files are refused; the knobs round-trip as device prefs; .aif → WAV keeps every channel", async () => {
+  const fake = stemsFakeBridge({polls: [{status: "running", stage: "separate", pct: 0.1}]});
+  stemsTestOn(fake);
+  try {
+    await assert.rejects(run(`stemsJobStart({name: "x.txt", bytes: new Uint8Array([1,2,3,4,5,6,7,8,9,10,11,12,13]), type: ""})`), /isn't an audio file/);
+    run(`aiUrl = () => ""`);
+    await assert.rejects(run(`stemsJobStart({name: "x.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""})`), /connect the Mac bridge/);
+    run(`aiUrl = () => "http://bridge.test"`);
+    assert.equal(fake.calls.length, 0, "nothing was sent");
+    // the hub: two files → refused with a status line; one → the job starts, the hub closes
+    app.dispatch("stemsinput", {type: "change", target: {files: [{name: "a.wav"}, {name: "b.wav"}], value: "x"}});
+    await new Promise(r => setTimeout(r, 5));
+    assert.match(val(`document.getElementById("importhubstatus").textContent`), /one recording at a time/);
+    assert.equal(val(`jobs.length`), 0);
+    const file = {name: "Take One.wav", type: "audio/wav", arrayBuffer: async () => STEMS_WAV.buffer.slice(0)};
+    run(`document.getElementById("importhub").classList.add("on")`);
+    app.dispatch("stemsinput", {type: "change", target: {files: [file], value: "x"}});
+    assert.ok(await stemsSettle(() => val(`jobs.length`) === 1), "the pick started a job");
+    assert.match(val(`document.getElementById("importhubstatus").textContent`), /splitting Take One\.wav on the Mac/);
+    assert.equal(val(`document.getElementById("importhub").classList.contains("on")`), false, "the hub closes; ⏳ carries on");
+    assert.equal(val(`JOB_KINDS.stems.label(jobs[0])`), "Stems · Take One.wav");
+    await assert.rejects(run(`stemsJobStart({name: "y.wav", bytes: new Uint8Array(${STEMS_WAV_JS}), type: ""})`), /already running: Take One\.wav/);
+    run(`jobCancel(jobs[0].id)`);
+    await stemsSettle(() => val(`jobs[0].state`) === "cancelled");
+    // prefs: the sheet's knobs are device-local (nr.stems), zero means "the preset's own"
+    run(`stemsPrefsSave({model: "htdemucs_6s", drums: "frame", preset: "clean", frame: 0.4, mix: false, attach: false})`);
+    assert.deepEqual(val(`stemsOptions()`), {model: "htdemucs_6s", mix: false, drums: "frame", notes: {preset: "clean", frame: 0.4}});
+    assert.deepEqual(val(`stemsItems(stemsOptions()).map(i => i.label)`), ["upload", "separate", "notes drums", "notes bass", "notes vocals", "notes other", "notes guitar", "notes piano", "fetch notes"]);
+    assert.equal(val(`stemsPrefs().attach`), false);
+    assert.equal(val(`JSON.parse(localStorage.getItem("nr.stems")).preset`), "clean");
+    run(`localStorage.removeItem("nr.stems")`);
+    assert.deepEqual(val(`stemsOptions()`), {model: "htdemucs", mix: true, drums: "kit", notes: {preset: "default"}});
+    // .aif → WAV, every channel kept (the separator wants the stereo original)
+    const wavOut = val(`Array.from(stemsWavBytes([new Float32Array([0, 0.5]), new Float32Array([-0.5, 1])], 44100))`);
+    assert.equal(wavOut.length, 44 + 2 * 2 * 2);
+    assert.equal(String.fromCharCode(...wavOut.slice(0, 4)), "RIFF");
+    assert.equal(wavOut[22], 2, "two channels");
+    assert.equal(val(`stemsIsAiff(new Uint8Array([70,79,82,77,0,0,0,0,65,73,70,70,0,0]))`), true);
+    assert.equal(val(`stemsIsAiff(new Uint8Array(${STEMS_WAV_JS}))`), false);
+  } finally { stemsTestOff(); }
+});
+
+test("stems: act split_stems — refused without a recording and with a bad knob; with one it starts the job from the song's own clip and names ⏳; the status line says what the Mac is separating", async () => {
+  const fake = stemsFakeBridge({polls: [{status: "running", stage: "separate", pct: 0.3}]});
+  installActSong();
+  stemsTestOn(fake);
+  try {
+    assert.ok(val(`askActOffered("split_stems")`), "offered in the song chat");
+    assert.ok(!val(`askActList(true).some(d => d.name === "split_stems")`), "not in the song-free chat");
+    await assert.rejects(askActRun(`askAct({do: [{action: "split_stems"}]})`), /this song has no recording/);
+    run(`song.tracks.push({name: "take", kind: "audio", clips: [{file: "take.wav", offset: 0, len: null}], notes: []});`);
+    await assert.rejects(askActRun(`askAct({do: [{action: "split_stems", model: "foo"}]})`), /model must be one of htdemucs/);
+    await assert.rejects(askActRun(`askAct({do: [{action: "split_stems", frame: 3}]})`), /frame must be a number between 0 and 1/);
+    assert.equal(fake.calls.length, 0, "a bad arg sends nothing");
+    const r = await askActRun(`askAct({do: [{action: "split_stems", preset: "clean", drums: "frame", mix: "off"}]})`);
+    assert.equal(typeof r === "string" ? r : r.final, "splitting take.wav on the Mac — ⏳ in the footer shows progress; the new song (take-stems) opens when it's done");
+    assert.ok(await stemsSettle(() => fake.calls.some(c => c.method === "POST")), "the job reached the Mac");
+    const post = fake.calls.find(c => c.method === "POST");
+    assert.deepEqual(JSON.parse(post.body), {model: "htdemucs", mix: false, drums: "frame", notes: {preset: "clean"}}, "the words became the knobs; the device defaults stay");
+    assert.ok(fake.calls.some(c => /\/take\.wav$/.test(c.url)), "the clip's bytes came from the song's own audio dir, no picker");
+    assert.equal(fake.calls.find(c => c.method === "PUT").headers["x-nr-name"], "take.wav");
+    await assert.rejects(askActRun(`askAct({do: [{action: "split_stems"}]})`), /already running/);
+    // the ✦ status line: the Mac's /v1/status stems field
+    run(`askStatusNow = null; stemsNow = {running: 1, name: "take", stage: "separate", pct: 0.42};`);
+    assert.equal(val(`askStatusLine()`), "idle · separating take 42%");
+    run(`stemsNow = {running: 0};`);
+    assert.equal(val(`askStatusLine()`), "idle");
+    run(`stemsNow = null; jobCancel(jobs[0].id)`);
+    await stemsSettle(() => val(`jobs[0].state`) === "cancelled");
+  } finally { stemsTestOff(); run(`song.tracks = song.tracks.filter(t => t.kind !== "audio");`); }
+});
