@@ -11774,11 +11774,14 @@ test("Clear chat is two taps on the header button, no dialog (Josh #1009/#1010/#
   `);
   const btn = `document.getElementById("askclear")`;
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /<h2 id="asksheet-h2">AI<button id="askclear"[^>]*>Clear chat<\/button><\/h2>/, "lives in the panel header, not the row under Send");
+  assert.match(html, /<h2 id="asksheet-h2"><span class="wmtitle" id="asksheet-title">AI<\/span><button id="askclear"[^>]*>Clear chat<\/button><\/h2>/, "lives in the panel header, not the row under Send; the title has its own span so the dialog's name stays \"AI\"");
   assert.doesNotMatch(html.slice(html.indexOf('id="asksend"')), /id="askclear"/, "nothing named Clear chat after Send in the panel");
+  assert.match(html, /id="askclear"[^>]*aria-pressed="false"/, "a two-state button: aria-pressed from the start");
+  assert.match(html, /id="askstatus" role="status"/, "the armed warning lands on a live region");
 
   a.run(`${btn}.dispatchEvent({type: "click"});`);
   assert.equal(a.run(`${btn}.textContent`), "Tap again to clear", "first tap arms");
+  assert.equal(a.run(`${btn}.getAttribute("aria-pressed")`), "true");
   assert.equal(a.run(`${btn}.getAttribute("data-short")`), "Sure?", "the narrow-dock label follows");
   assert.equal(a.run(`${btn}.classList.contains("armed")`), true);
   assert.equal(a.run(`!!JSON.parse(localStorage.getItem(askStoreKey()))`), true, "armed: the chat is still there");
@@ -11786,6 +11789,7 @@ test("Clear chat is two taps on the header button, no dialog (Josh #1009/#1010/#
 
   a.tick(3000); // nothing more: the arm lapses
   assert.equal(a.run(`${btn}.textContent`), "Clear chat", "disarmed after 3 s");
+  assert.equal(a.run(`${btn}.getAttribute("aria-pressed")`), "false");
   assert.equal(a.run(`${btn}.classList.contains("armed")`), false);
   assert.equal(a.run(`${btn}.getAttribute("data-short")`), "Clear");
   assert.equal(a.run(`document.getElementById("askstatus").textContent`), "", "the warning goes with it");
@@ -11798,6 +11802,49 @@ test("Clear chat is two taps on the header button, no dialog (Josh #1009/#1010/#
   assert.equal(a.run(`localStorage.getItem(askStoreKey())`), null, "second tap within 3 s clears the chat");
   assert.equal(a.run(`${btn}.textContent`), "Clear chat", "and the button is back to normal at once");
   assert.equal(a.run(`askClearArm`), null, "no timer left behind");
+});
+
+test("Clear chat's arm never reaches another chat: a tab switch, a song change and the panel closing all disarm it, and a stale arm's second tap clears nothing", async () => {
+  const songStore = "ff1roll-ask-midi/test.mid";
+  const a = await mkAsk("learning", `
+    asksheet.classList.add("on");
+    localStorage.setItem("${songStore}", JSON.stringify({msgs: [{role: "user", text: "hi", t: 1}]}));
+    localStorage.setItem(ASK_TERMINAL_KEY, JSON.stringify({msgs: [{role: "user", text: "build it", t: 1}]}));
+  `);
+  const btn = `document.getElementById("askclear")`;
+  const tap = () => a.run(`${btn}.dispatchEvent({type: "click"});`);
+
+  tap(); // armed on the song chat…
+  a.run(`askSetMode("terminal");`); // …then the ✦ Claude tab (aiTabButtons → host.onTabsChanged)
+  assert.equal(a.run(`askClearArm`), null, "a tab switch disarms");
+  assert.equal(a.run(`${btn}.textContent`), "Clear chat");
+  tap(); // on the terminal tab this is a FIRST tap again: arms, clears nothing
+  assert.equal(a.run(`${btn}.textContent`), "Tap again to clear");
+  assert.ok(a.run(`localStorage.getItem(ASK_TERMINAL_KEY)`), "the other chat is intact after a switch + one tap");
+  assert.ok(a.run(`localStorage.getItem("${songStore}")`), "and so is the one the arm started on");
+  a.run(`askSetMode("song");`);
+  assert.equal(a.run(`askClearArm`), null, "switching back disarms too");
+
+  tap(); // armed on the song chat…
+  a.run(`songKey = "midi/other.mid"; askModeButtons();`); // …a song change while the panel is open (setSong's own path: askModeButtons → onTabsChanged)
+  assert.equal(a.run(`askClearArm`), null, "a song change disarms");
+  assert.ok(a.run(`localStorage.getItem("${songStore}")`));
+
+  a.run(`songKey = "midi/test.mid";`);
+  tap(); // armed on test.mid…
+  a.run(`songKey = "midi/other.mid";`); // …the key moves under it with NO notification (the belt-and-braces guard)
+  tap(); // the second tap lands on other.mid's chat
+  await new Promise(r => setImmediate(r));
+  assert.equal(a.run(`askClearArm`), null, "a stale arm's second tap only disarms");
+  assert.ok(a.run(`localStorage.getItem("${songStore}")`), "test.mid's chat is intact");
+  assert.equal(a.run(`${btn}.textContent`), "Clear chat");
+
+  a.run(`songKey = "midi/test.mid";`);
+  tap(); // armed…
+  a.run(`wmCloseWindow(asksheet);`); // …✕ closes the panel
+  assert.equal(a.run(`askClearArm`), null, "closing the panel disarms");
+  assert.equal(a.run(`${btn}.textContent`), "Clear chat");
+  assert.ok(a.run(`localStorage.getItem("${songStore}")`), "nothing cleared");
 });
 
 test("P8 bridge-session caching: Compact resets the confirmed hashes (the compacted session no longer holds the verbatim text)", async () => {

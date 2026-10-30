@@ -5078,7 +5078,14 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   clears (Clear = new session; the file keeps what was saved —
   `localStorage.removeItem`, the whole store, since nothing of it needs
   keeping once a fresh session starts; `askClearArmSet` in
-  src/ask/sheet.js, timer on `S.askClearArm`). The Publish sheet's
+  src/ask/sheet.js, `S.askClearArm` = {timer, the chat key armed}; the
+  label goes through the CONTROLS registry, `aria-pressed` follows the
+  arm, and the arm is dropped on any tab change or setSong — host.js
+  `onTabsChanged` — and when the panel closes (wm.js: wmCloseWindow and
+  SHEET_TOP's closing branch); a second tap whose chat key differs from
+  the armed one disarms without clearing. The h2's title sits in its own
+  `.wmtitle` span so the dialog's `aria-labelledby` names "AI", not the
+  button too — wm.js prefers that span for any heading). The Publish sheet's
   **Revert**, by contrast, keeps the `saved` messages and only drops the
   unsaved tail (`askRevertToSaved`) — see "publishall" above. `ghsaveall`
   (annotation sweep) does not carry chat — Save the song for that.

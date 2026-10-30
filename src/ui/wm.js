@@ -4,6 +4,7 @@ import { softFocus } from "./chrome.js";
 import { S } from "../state.js";
 import { resize } from "./chrome.js";
 import { askScrollEnd } from "../ask/sheet.js";
+import { askClearArmSet } from "../ask/sheet.js";
 import { songRegionRight } from "./chrome.js";
 import { micStop } from "./chrome.js";
 import { teardownMixerMeters } from "./mixer.js";
@@ -459,6 +460,7 @@ export function wmCloseWindow(ov) {
     const g = S.wm[where.dock], nx = g && g.active && document.getElementById(g.active);
     if (nx && !nx.classList.contains("on")) nx.classList.add("on"); // the next tab shows, as when a tab closes
   }
+  if (ov.id === "asksheet") askClearArmSet(false); // the ✕ path, reachable in the vm harness (SHEET_TOP's observer below covers backdrop/Esc in a browser)
   ov.classList.remove("on");
   if (where) wmLayoutAll();
 }
@@ -912,6 +914,7 @@ export function initWm2() {
       if (WM_WINDOWS[m.target.id]) wmLayoutAll();
       if (!m.target.classList.contains("on")) { // closing: a live 🎤 inside must not keep transcribing
         if (S.micBtn && m.target.contains(S.micBtn)) micStop(true);
+        if (m.target.id === "asksheet") askClearArmSet(false); // backdrop/Esc too: an armed Clear chat never outlives the panel (✕ already did this in wmCloseWindow)
         if (m.target.id === "mixersheet") teardownMixerMeters(); // ✕/backdrop/Esc all end here too — no cost while closed
         // VoiceOver: give focus back to whatever opened this sheet (a button
         // in most cases) — otherwise focus is left on a now-hidden node and a
@@ -969,8 +972,9 @@ export function initWm2() {
       if (!(sh0.tabIndex >= 0)) sh0.tabIndex = -1; // a focus target with nothing else inside, never in the Tab order itself
       const h = sh0.querySelector("h2, h3");
       if (h) {
-        if (!h.id) h.id = ov.id + "-srlabel";
-        ov.setAttribute("aria-labelledby", h.id);
+        const t = h.querySelector(".wmtitle") || h; // a heading that also holds buttons (AI's Clear chat) names the dialog by its title span alone, not "AIClear chat"
+        if (!t.id) t.id = ov.id + "-srlabel";
+        ov.setAttribute("aria-labelledby", t.id);
       }
     }
     if (MODAL_KEEP.has(ov.id)) continue;

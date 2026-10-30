@@ -8,6 +8,7 @@ import { askSessionRefresh } from "./bridge.js";
 import { askRenderImpl as askRender } from "./sheet.js";
 import { askRefresh } from "./sheet.js";
 import { askModeButtons } from "./sheet.js";
+import { askClearArmSet } from "./sheet.js";
 import { asksheet } from "./sheet.js";
 import { wmLayoutAll } from "../ui/wm.js";
 import { askGrow } from "./sheet.js";
@@ -137,7 +138,7 @@ export function askHost() {
     restoreShots: paths => askShotRestore(paths),
     tabLabel: () => askTabLabel(),
     placeholder: tab => askPlaceholder(tab),
-    onTabsChanged: () => { askTermModelsLoad(); askStatusRender(); }, // the ⌨ model pickers and the "Now:" strip follow the tab
+    onTabsChanged: () => { askClearArmSet(false); askTermModelsLoad(); askStatusRender(); }, // the ⌨ model pickers and the "Now:" strip follow the tab; an armed Clear chat is disarmed — the chat under the button changed (tab pick, or setSong while the panel is open)
     onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); },
     greeting: tab => askGreeting(tab),
     renderEarlier: div => askRenderEarlier(div),

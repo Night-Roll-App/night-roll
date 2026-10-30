@@ -39,6 +39,7 @@ import { aiDeskGet } from "../../vendor/ai/web/desk.js";
 import { aiStripContext, aiStoreGet } from "../../vendor/ai/web/store.js";
 import { aiDraftRead } from "../../vendor/ai/web/store.js";
 import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
+import { setControl } from "../ui/controls.js";
 import { aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard, aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking, aiTabSet, aiTabButtons, aiRenderLog } from "../../vendor/ai/web/window.js";
 import { askSessionRender } from "./bridge.js";
 import { askSend } from "./client.js";
@@ -286,12 +287,16 @@ export function initSheet2() {
 // without a card a stray tap could open. Off again after ASK_CLEAR_ARM_MS.
 export const ASK_CLEAR_ARM_MS = 3000;
 export function askClearArmSet(on) {
+  if (S.askClearArm) clearTimeout(S.askClearArm.t);
+  if (!on && !S.askClearArm) return; // already disarmed (every tab change and panel close calls this): nothing to rewrite
+  S.askClearArm = on ? {t: setTimeout(() => askClearArmSet(false), ASK_CLEAR_ARM_MS), key: askStoreKey()} : null;
+  setControl("askclear", {label: on ? "Tap again to clear" : "Clear chat"}); // the registry is the one label writer (docs/split-plan.md §4 step 2)
   const btn = document.getElementById("askclear");
-  if (S.askClearArm) clearTimeout(S.askClearArm);
-  S.askClearArm = on ? setTimeout(() => askClearArmSet(false), ASK_CLEAR_ARM_MS) : null;
-  btn.textContent = on ? "Tap again to clear" : "Clear chat";
-  btn.setAttribute("data-short", on ? "Sure?" : "Clear");
-  btn.classList.toggle("armed", on);
+  if (btn) {
+    btn.setAttribute("data-short", on ? "Sure?" : "Clear");
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("armed", on);
+  }
   const n = on ? askUnsavedCount() : 0;
   if (n) askstatus.textContent = n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them");
   else if (/not in the repo yet/.test(askstatus.textContent || "")) askstatus.textContent = "";
@@ -315,7 +320,9 @@ export function initSheet3() {
     // two taps, no dialog, same as native (Josh #1009/#1010): the first arms the
     // button for ASK_CLEAR_ARM_MS, the second clears; a stray tap arms and lapses
     if (!S.askClearArm) { askClearArmSet(true); return; }
+    const stale = S.askClearArm.key !== askStoreKey(); // the chat under the button changed since the first tap (a path that skipped onTabsChanged): never clear the other one
     askClearArmSet(false);
+    if (stale) return;
     localStorage.removeItem(askStoreKey()); askSentReset(askStoreKey()); askRender(); updateSongBtn();
     // Clear really resets (open-items.md "NEXT: AI SESSION CONTROLS" #1, Josh:
     // "the app's Clear chat only clears this device's log and never tells the

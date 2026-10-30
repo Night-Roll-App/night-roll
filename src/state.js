@@ -281,7 +281,7 @@ export const S = {
   undoSaveT: null, undoRestoring: null, // model/undo-persist.js: the debounce timer; the song key whose saved history is still being read back
   editBtnCache: "",
   askBusy: null,
-  askClearArm: null, // Clear chat's first tap armed it: the disarm timer (src/ask/sheet.js askClearArmSet)
+  askClearArm: null, // Clear chat's first tap armed it: {t: disarm timer, key: the chat it would clear} (src/ask/sheet.js askClearArmSet)
   askPartial: {}, // job id → the words streamed so far (the AI library keeps it; sheet.js aliases it)
   aiHost: null, // the AI library's host adapter, built once by askHost() (src/ask/host.js)
   annotateBusy: false, // ✦ Annotate this song: one run at a time (src/ask/annotate.js)

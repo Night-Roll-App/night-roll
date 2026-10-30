@@ -42,7 +42,8 @@ export const CONTROLS = {
   errbtn: {icon: "warning", cls: "txt", label: "", aria: null},
   vwMessages: {icon: "warning", cls: "", label: "  Messages", aria: null},
   askbtn: {icon: "autoAwesome", cls: "txt", label: "AI", aria: "Talk to the AI tutor"},
-  askpaste: {icon: "contentPaste", cls: "txt", label: "Paste", aria: "Paste the clipboard into the message box"}, // 📋 beside Speak; its content never changes, feedback is #askstatus
+  askpaste: {icon: "contentPaste", cls: "txt", label: "Paste", aria: "Paste the clipboard into the message box"},
+  askclear: {label: "Clear chat"}, // the AI header's two-tap clear: "Tap again to clear" while armed (src/ask/sheet.js askClearArmSet); no icon // 📋 beside Speak; its content never changes, feedback is #askstatus
   viewbtn: {icon: "gridView", cls: "txt", label: " Roll ▴", aria: "View: Roll — tap to switch"},
   vsRoll: {icon: "gridView", cls: "", label: "  Roll", prefix: "✓ "},
   vsTracks: {icon: "tableRows", cls: "", label: "  Tracks", prefix: "   "},
