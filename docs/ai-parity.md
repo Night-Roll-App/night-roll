@@ -194,6 +194,7 @@ silently.
 | 🔗 Share link | — | yes — the link lands in the bubble, ⧉ copies it | `song_file {action:"share_link"}` | S |
 | Download .mid / audio, Export score | — | Ask opens the sheet prefilled; you tap Export (iPad downloads need a tap) | `show {what:"export_score"\|"download"}` | S |
 | Import… | — | Ask opens the hub; you pick files | `show {what:"import"}` | S |
+| Stems + notes from a recording (on the Mac; docs/plans/stem-splitter.md) | `split_stems {model?, drums?, preset?, onset?, frame?, min_note_ms?, mix?, attach?}` — the open song's recording goes to the Mac bridge; the notes come back as a NEW local song (notes only — no key/chord/meter) | yes | shipped (web 2026-10-30; native phase 3) | S |
 | Settings: folder, GitHub token, data locations, AI model | — | **no** — secrets and file pickers | — | — |
 | Settings: debug log, chip stream, text size | — | yes (harmless prefs, useful when chasing a bug) | `set_pref {name, value}` (whitelist; Learning mode is NOT on it) | S |
 | Help | — | yes | `show {what:"help", section?}` | S |

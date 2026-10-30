@@ -141,6 +141,16 @@ export const S = {
   infoFull: "tap a note",
   jobs: [],
   pubJobShown: null,
+  // Stems + notes (src/import/stems.js): the recording's bytes per bridge job id
+  // (memory only — never in ff1roll-jobs), the result sheet's job + last
+  // status, the <audio> playing a stem, the Mac's /v1/status stems field, the
+  // poll interval (tests set 0: the vm clock is virtual)
+  stemsBytes: {},
+  stemsShown: null,
+  stemsStatus: null,
+  stemsAudio: null,
+  stemsNow: null,
+  stemsPollMs: 2000,
   logSeq: 0,
   srLastText: "",
   srLastAt: -1e9,

@@ -252,6 +252,16 @@ document.getElementById("impall").addEventListener("click", e => {
 document.getElementById("impclose").addEventListener("click", () =>
 document.getElementById("impcommit").addEventListener("click", e => {
 document.getElementById("fileimpcommit").addEventListener("click", e => {
+JOB_KINDS.stems = {
+const status = t => { document.getElementById("importhubstatus").textContent = t; };
+document.getElementById("ihStems").addEventListener("click", () => {
+document.getElementById("stemsinput").addEventListener("change", async e => {
+document.getElementById("ihStemsOpen").addEventListener("click", async () => {
+document.getElementById("fileimporthub").addEventListener("click", stemsHubRefresh);
+document.getElementById("stemsclose").addEventListener("click", stemsSheetClose);
+document.getElementById("stemsopen").addEventListener("click", () => {
+document.getElementById("stemsrerun").addEventListener("click", () => {
+setTimeout(stemsResumeInterrupted, 2000);
 document.getElementById("filesave").addEventListener("click", () => {
 {
 document.getElementById("copybtn").addEventListener("click", () => {

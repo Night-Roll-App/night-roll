@@ -29,6 +29,7 @@ import { askReadNotes } from "./tools.js";
 import { askReadBars } from "./tools.js";
 import { askWriteNotes } from "./tools.js";
 import { askCopyBars } from "./tools.js";
+import { stemsSplitOpenSong, STEMS_MODELS, STEMS_DRUMS, STEMS_PRESETS } from "../import/stems.js";
 import { askInsertBars } from "./tools.js";
 import { askDeleteBars } from "./tools.js";
 import { askSongPath } from "./tools.js";
@@ -314,6 +315,24 @@ export const ASK_ACTIONS = [
    example: "Turn the debug log on.", say: "Say the name and the value: album_order (game or az), octave_numbers (on/off), debug_log (on/off), chip_stream (on/off/auto), sound (chip or midi — what you hear), beat_subdivisions (true/false — the counter's e/&/a and +NN%), text_jump (true/false — whether the app may put the cursor in a text box by itself, which raises the iPad keyboard), volume_slider (true/false — the top bar's 🔊 master volume), publish_button (true/false — the footer Publish button), or text_size (small/default/large/larger).",
    spec: "set_pref {name, value}: changes one device-local preference, same as the matching Settings-sheet control — never song state. name is album_order (game or az — the album strip's own order switch), octave_numbers (true/false — the 8va ‹›  readout), debug_log (true/false), chip_stream (on/off/auto), sound (chip or midi — what you hear), beat_subdivisions (true/false — the counter's e/&/a and +NN%), volume_slider (true/false — the top bar's 🔊 master volume), publish_button (true/false — the footer Publish button), text_jump (true/false — the app may put the cursor in a text box by itself; off by default on touch, where that raises the on-screen keyboard), or text_size (small/default/large/larger, or 0.9/1/1.15/1.3). Learning mode is NOT on this list and never will be — it is a setting only the user flips himself, never through Ask. An unknown name errors listing the choices.",
    run(a) { return askSetPref(a).note; }},
+  // ---- split_stems (docs/plans/stem-splitter.md §5.3): the open song's
+  // recording → a stems + notes job on the Mac bridge; no song edit (no gate,
+  // no undo) — the result is a NEW local draft that opens when the Mac is done.
+  {name: "split_stems", args: "model? drums? preset? onset? frame? min_note_ms? mix? attach?", gloss: "split the open song's recording into stems on the Mac and make a new song of their notes",
+   example: "Split this recording into stems and notes.", say: "Say it; add a model (htdemucs, htdemucs_6s, htdemucs_ft), a drum map (kit or frame), a preset (clean, default, detail) or the raw thresholds if you want them.",
+   spec: "split_stems {model?, drums?, preset?, onset?, frame?, min_note_ms?, mix?, attach?}: takes the open song's recording (its first audio track — a song with none is refused: import the recording first), uploads it to the Mac bridge and starts the stems job (drums, bass, vocals, other — htdemucs_6s adds guitar and piano — plus the whole mix as a fifth track when mix is on, default on); when done, a NEW song opens with one track of notes per stem — notes only, no key, chord or meter labels — and the recording under them when attach is on (default on). drums is kit (kick/snare/hat), frame (frame drums, no hats) or off; preset is default, clean (drones and reverb tails: fewer tail-notes) or detail; onset and frame are 0–1, min_note_ms the shortest note kept. Answers with where to watch it (⏳ in the footer). Refuses while another split runs, and without the Mac bridge.",
+   async run(a) {
+     const o = {};
+     if (askActGiven(a.model)) { if (!STEMS_MODELS.includes(String(a.model))) throw new Error("model must be one of " + STEMS_MODELS.join(", ")); o.model = String(a.model); }
+     if (askActGiven(a.drums)) { if (!STEMS_DRUMS.includes(String(a.drums))) throw new Error("drums must be kit, frame or off"); o.drums = String(a.drums); }
+     if (askActGiven(a.preset)) { if (!STEMS_PRESETS.includes(String(a.preset))) throw new Error("preset must be default, clean or detail"); o.preset = String(a.preset); }
+     for (const k of ["onset", "frame"]) if (askActGiven(a[k])) { const v = +a[k]; if (!(v > 0 && v <= 1)) throw new Error(k + " must be a number between 0 and 1"); o[k] = v; }
+     if (askActGiven(a.min_note_ms)) { const v = +a.min_note_ms; if (!(v > 0 && v <= 5000)) throw new Error("min_note_ms must be a number of milliseconds, 1–5000"); o.min_note_ms = v; }
+     if (askActGiven(a.mix)) o.mix = askActTruthy(a.mix);
+     if (askActGiven(a.attach)) o.attach = askActTruthy(a.attach);
+     const job = await stemsSplitOpenSong(o);
+     return "splitting " + job.name + " on the Mac — ⏳ in the footer shows progress; the new song (" + job.slug + "-stems) opens when it's done";
+   }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",
    spec: "help {name?}: without name, the index of every action available in this chat; with one, that action's full text (args, rules, what it answers).",

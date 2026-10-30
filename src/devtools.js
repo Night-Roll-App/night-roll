@@ -74,6 +74,7 @@ import * as modelUndoPersist from "./model/undo-persist.js";
 import * as modelJobs from "./model/jobs.js";
 import * as importHub from "./import/hub.js";
 import * as importCapture from "./import/capture.js";
+import * as importStems from "./import/stems.js";
 import * as syncPublish from "./sync/publish.js";
 import * as genDrummer from "./gen/drummer.js";
 import * as genBassist from "./gen/bassist.js";
@@ -135,7 +136,7 @@ export function exposeGlobals() {
                      audioEngine, audioVoices, audioTransport, audioSeam,
                      audioChip, audioChipStream, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
                      modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelUndoPersist, modelJobs,
-                     importHub, importCapture, syncPublish,
+                     importHub, importCapture, importStems, syncPublish,
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord, inputKeyboard,

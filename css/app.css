@@ -814,6 +814,9 @@
   .jobbar.sm { max-width: 56px; height: 4px; }
   #jobssheet .jobbody { display: flex; flex-direction: column; gap: 4px; }
   #jobssheet .jobbarrow { display: flex; align-items: center; gap: 6px; }
+  #stemssheet .stemrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #stemssheet .stemrow .lbl { min-width: 9em; }
+  #stemssheet .stemrow button { min-height: 36px; }
   .jobprog { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
   #pubjoblist { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
   #pubjoblist .pubjobrow { display: flex; align-items: center; gap: 8px; min-height: 28px; }

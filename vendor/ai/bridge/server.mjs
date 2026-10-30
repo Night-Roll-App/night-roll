@@ -232,6 +232,7 @@ import fs from "node:fs";
 import os from "node:os";
 import crypto from "node:crypto";
 import {createApns, askBlurb} from "./apns.mjs";
+import {createStems} from "./stems.mjs";
 
 function flag(argv, name, dflt) { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : dflt; }
 function has(argv, name) { return argv.includes(name); }
@@ -759,6 +760,11 @@ const asksWaiters = new Set(); // long-polls parked on GET /v1/asks/:id?wait=N: 
 const APNS_REGISTER_MAX = 4 * 1024; // a registration is four short strings; 413 past this
 const apns = createApns({dir: process.env.BRIDGE_APNS_DIR || path.join(STATE_DIR, "apns"), hosts: process.env.BRIDGE_APNS_TEST_HOST ? {development: process.env.BRIDGE_APNS_TEST_HOST, production: process.env.BRIDGE_APNS_TEST_HOST} : undefined}); // push for new cards; key in <state>/apns/ (docs/apns.md)
 const ASKS_LOG = path.join(STATE_DIR, "asks.jsonl"); // a log only, never read back
+// Stem separation + notes on the Mac (bridge/stems.mjs, docs/stems.md). The engine is a python venv the install
+// script makes under <state>/stems/; BRIDGE_STEMS_PY/BRIDGE_STEMS_SCRIPT point elsewhere (tests: node + a fake).
+const STEMS_DIR = process.env.BRIDGE_STEMS_DIR || path.join(STATE_DIR, "stems");
+const stems = createStems({dir: STEMS_DIR, py: process.env.BRIDGE_STEMS_PY === "node" ? process.execPath : process.env.BRIDGE_STEMS_PY || path.join(STATE_DIR, "stems", "venv", "bin", "python"), script: process.env.BRIDGE_STEMS_SCRIPT || new URL("./py/nr_stems.py", import.meta.url).pathname, noTaskpolicy: !!process.env.BRIDGE_STEMS_NO_TASKPOLICY, policy: process.env.BRIDGE_STEMS_POLICY || "utility", timeoutMs: +process.env.BRIDGE_STEMS_TIMEOUT_MS || undefined, max: +process.env.BRIDGE_STEMS_MAX || undefined});
+stems.startupCleanup(); stems.sweep(); setInterval(() => stems.sweep(), 3600e3).unref();
 const ASK_MAX_MS = 31 * 60 * 1000, GRANT_MS = +process.env.BRIDGE_GRANT_MS || 10 * 60 * 1000; // BRIDGE_GRANT_MS: tests only
 const csv = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
 const APPROVER = process.env.BRIDGE_APPROVER || "", APPROVER_IPS = csv(process.env.BRIDGE_APPROVER_IPS); // the tailnet login and device addresses a decision must come from
@@ -1074,7 +1080,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
-  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), desk: true, sessions: true});
+  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), desk: true, sessions: true, stems: stems.installed()});
+  if (url.pathname.startsWith("/v1/stems") && await stems.handle(req, res, url, {json})) return; // /v1/stems, /v1/stems/:id[/input|/files/:name]
   const sm = url.pathname.match(/^\/v1\/sessions\/([^/]+)(\/compact)?$/); // session controls: usage + Clear-really-resets + Compact
   if (sm) {
     const key = sanitizeSongKey(decodeURIComponent(sm[1])) || "default"; // the exact rule songKeyOf applies to x-nr-song, so the same chat always lands on the same row
@@ -1284,7 +1291,7 @@ const server = http.createServer(async (req, res) => {
       const app = appIdOf(url.searchParams.get("app")), box = statusAll(app);
       if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
       const deployInMs = Math.max(0, deployUntil - Date.now()), deployMine = !deployApp || deployApp === app; // another app's install: not this one's countdown
-      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: aiStateOf() !== "offline", aiState: aiStateOf(), aiSeenAt: aiSeenAt || null, asks: openAsks(), ...(DECIDE_ADDR ? {decideUrl: `http://${DECIDE_ADDR[1]}:${DECIDE_ADDR[2]}`} : {}), sessions: true, quota: lastQuota, ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(app), desk: true, deskLive: terminalReachable(FRONT_DESK), aiLive: aiStateOf() !== "offline", aiState: aiStateOf(), aiSeenAt: aiSeenAt || null, asks: openAsks(), ...(DECIDE_ADDR ? {decideUrl: `http://${DECIDE_ADDR[1]}:${DECIDE_ADDR[2]}`} : {}), sessions: true, quota: lastQuota, stems: stems.statusField(), ...(deployMine && deployInMs ? {deployInMs} : {}), ...(deployMine && deployHold ? {deployHold: true} : {})});
     } // terminal/sessions/quota: gates a client's Terminal UI, Compact button, usage line, and plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
@@ -1483,6 +1490,7 @@ server.listen(PORT, HOST, async () => {
     `\n  models now:  ${models.map(m => m.id).join(", ") || "(none reachable)"}` +
     `\n  jobs:        ${JOBS_DIR}, kept ${KEEP_MS / 3600000}h after fetch` +
     `\n  takes:       ${TAKES_DIR} (PUT /v1/takes/<app>/<id>/<name>, never pruned)` +
+    `\n  stems:       ${STEMS_DIR} (engine ${stems.installed() ? "installed" : "NOT installed: bridge/stems/install.sh"})` +
     `\n  sessions:    ${SESSIONS_FILE} (one Claude Code session per chat) · inbox: ${INBOX_FILE} (--say "text")`);
 });
 return server;
