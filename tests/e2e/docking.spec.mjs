@@ -107,8 +107,16 @@ test("two windows share the bottom, side by side", async ({ page }) => {
 // all the way across to hide the roll for a minute, then drag back").
 
 async function dragTitleTo(page, id, x, y) {
-  const h2 = await page.locator(`#${id}-h2`).boundingBox();
-  await page.mouse.move(h2.x + h2.width / 2, h2.y + h2.height / 2);
+  // the free stretch of the title between its text and its first button: the h2's middle can be a button (a docked AI window's
+  // Clear chat sits there), and a drag never starts from a button
+  const pt = await page.evaluate(id => {
+    const h2 = document.getElementById(id + "-h2"), r = h2.getBoundingClientRect();
+    const btns = [...h2.querySelectorAll("button")].map(b => b.getBoundingClientRect().left).filter(x => x > r.left);
+    const text = [...h2.childNodes].filter(n => n.tagName !== "BUTTON").map(n => { const rg = document.createRange(); rg.selectNodeContents(n); return rg.getBoundingClientRect().right; });
+    const from = Math.max(r.left, ...text), to = btns.length ? Math.min(...btns) : r.right;
+    return {x: (from + to) / 2, y: r.top + r.height / 2};
+  }, id);
+  await page.mouse.move(pt.x, pt.y);
   await page.mouse.down();
   await page.mouse.move(x, y, { steps: 12 }); // past both the 8px drag threshold and, usually, into a zone
   await page.waitForTimeout(50);
