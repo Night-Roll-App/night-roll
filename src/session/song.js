@@ -319,7 +319,13 @@ export async function loadNotes() {
 }
 export function reflectSongURL(path) { // the address bar always holds a shareable link: the song's path, no extension
   try {
-    const u = new URL(/^albums\//.test(path) ? songShareURL(path) : S.APP_BASE); // local/ drafts don't exist for anyone else
+    // the iPad app (Capacitor) has no address bar and no 404.html redirect: a
+    // path-form URL there made a resumed WebView reload at …/albums/…/song,
+    // where css/ and src/ resolve under the song's folder and come back as
+    // index.html — the app opened unstyled and dead (Josh #1117/#1118)
+    const shell = typeof location !== "undefined" && location.protocol === "capacitor:";
+    const u = new URL(/^albums\//.test(path) && !shell ? songShareURL(path) : S.APP_BASE); // local/ drafts don't exist for anyone else
+    if (shell && /^albums\//.test(path)) u.searchParams.set("song", path);
     for (const [k, v] of new URL(location.href).searchParams) if (k !== "song" && k !== "album") u.searchParams.set(k, v); // ?perf=1 etc. survive; album is set below, only while a run is actually on (never carried over stale)
     if (S.albumRun) u.searchParams.set("album", S.albumRun.album); // a run is on: the link reopens armed to it, not just this song
     u.hash = location.hash;

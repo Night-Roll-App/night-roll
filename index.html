@@ -34,6 +34,20 @@
 // 17 is -apple-system-body's own size at Dynamic Type's default ("Large");
 // clamped so the largest accessibility sizes (which run past 3x) grow text
 // without wrecking the densest chrome (transport LCD, track chips).
+// The iPad app (capacitor:) serves index.html for any unknown path, so a
+// WebView resumed at an old path-form song URL (…/albums/x/song) would load
+// css/ and src/ from the song's folder and open unstyled. Rewrite it to the
+// ?song= form before anything else loads (Josh #1117/#1118).
+(function() {
+  try {
+    var m = location.protocol === "capacitor:" && location.pathname.match(/^(.*?\/)(albums\/.+?)\/*$/);
+    if (m && !/\.[a-z0-9]+$/i.test(m[2])) {
+      var q = new URLSearchParams(location.search);
+      q.set("song", decodeURIComponent(m[2]) + ".mid");
+      location.replace(m[1] + "?" + q.toString() + location.hash);
+    }
+  } catch (e) {}
+})();
 (function() {
   var root = document.documentElement;
   try {
