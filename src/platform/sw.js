@@ -22,4 +22,23 @@ export function initSw1() {
         .catch(err => console.warn("sw:", err.message));
     }
   }
+  // Josh #1117: twice the iPad came back to the app unstyled (css/app.css never
+  // applied) and only a force-quit fixed it. --bg is the stylesheet's first
+  // rule, so an empty value means the sheet is missing: re-link it, cache-busted.
+  // Checked at boot and every time the app comes back to the foreground.
+  if (typeof document !== "undefined" && typeof getComputedStyle === "function") {
+    const healCss = () => {
+      if (getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()) return;
+      const old = document.querySelector('link[rel="stylesheet"][href^="css/app.css"]');
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "css/app.css?t=" + Date.now();
+      link.onload = () => { if (old && old !== link) old.remove(); };
+      document.head.appendChild(link);
+      console.warn("css: stylesheet missing — re-linked");
+    };
+    if (document.readyState === "complete") healCss(); else window.addEventListener("load", healCss);
+    window.addEventListener("pageshow", healCss);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) healCss(); });
+  }
 }
