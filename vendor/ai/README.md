@@ -116,8 +116,9 @@ askspanrow`) and draws into them; class names from `host.css`
 Exports: `aiGrow/aiScrollEnd/aiFocusIfKeyboard`, `aiBubble/aiFillBubble/
 aiShowThinking`, `aiTabSet/aiTabButtons/aiTabRestore/aiTab`, `aiDraftLoad/
 aiDraftSaveNow/aiDraftSaveSoon/aiDraftDrop`, `aiRenderLog`, `aiWindowBind`,
-`aiClock`. Runtime fields on `host.state`: `askGeneral`, `askTerminal`,
-`askDraftKey`, `askDraftTimer`.
+`aiClock`, `aiTicksApply/aiInboxTake` (read receipts on the Worker chat —
+see "Ticks" below; the pure parts are `web/ticks.js`). Runtime fields on
+`host.state`: `askGeneral`, `askTerminal`, `askDraftKey`, `askDraftTimer`.
 
 ## bridge/
 
@@ -192,7 +193,7 @@ fence is ignored; a reply without it is untouched. Tests: `tests/relay.test.mjs`
 Every `POST /v1/terminal` from an app (not a `fwd` hand-off, not `app:"all"`, not the web's `front-desk`) is
 answered at once, before anything slow, with a canned note in **that row's own app** (`from:"terminal"`,
 `auto:true`; every build already shows it in the Worker tab). The same text comes back as `ack`, with `live`.
-- AI live (its watcher polled that app within 90 s): `Got it (#712).` (`routine:true`: BridgeChat hides it and shows ticks instead).
+- AI live (its watcher polled that app within 90 s): `Got it (#712).` (`routine:true`: both clients hide it and show ticks instead).
 - AI busy: `Claude is busy and will see #712 shortly.` (a real note, shown).
 - AI offline: `Claude isn't running on the Mac (last seen 9:41 PM). #712 is saved and Claude will get it when it starts. A quick read-only answer is coming.`
   (`not seen since the bridge started` when no watcher has polled yet; the last sentence is left out under `--no-claude`.)
@@ -200,7 +201,8 @@ answered at once, before anything slow, with a canned note in **that row's own a
   (`auto:true`, `quick:true`) into the same app. The row stays in the queue with `quick:true`, so the AI still gets it.
 - The first time the watcher's GET returns the row after an offline answer: `Claude has #712 now.` (once, `auto:true`, `routine:true`).
 
-**Ticks (WhatsApp style).** Each terminal row from an app carries `receivedAt` (stored = one grey tick), `deliveredAt` (the watcher's GET printed it = two grey) and `readAt` (the AI acted on it: `--status --msg n`, `--done n`, a helper ANSWERED = two blue; read implies delivered). `GET /v1/inbox?app=` adds `ticks: [{id, receivedAt, deliveredAt, readAt}]` (that app's last 30 own messages; omitted when empty) to the poll BridgeChat already makes. Old rows without the fields show no ticks.
+**Ticks (WhatsApp style).** Each terminal row from an app carries `receivedAt` (stored = one grey tick), `deliveredAt` (the watcher's GET printed it = two grey) and `readAt` (the AI acted on it: `--status --msg n`, `--done n`, a `--say` into that app, a helper ANSWERED = two blue; read implies delivered). `GET /v1/inbox?app=` adds `ticks: [{id, t, receivedAt, deliveredAt, readAt}]` (that app's last 30 own messages; omitted when empty) to the poll both clients already make. Old rows without the fields show no ticks.
+Clients: BridgeChat (`TerminalChat.applyTicks`, `AIWindow.ticks`) and `web/ticks.js` + `web/window.js` do the same — the user's message keeps `{rowId, tick: sent|delivered|read}` (set when the POST answers, moved forward by the poll, never back; a `t` more than 2 min from the message's is a reused row id and is ignored); the routine acks (`routine:true`, or their words from an older bridge) never become notes. Web markup: one `<span class="asktick sent|delivered|read">#712 ✓✓</span>` in the bubble (`host.css.tick`), there and empty from the send on so the bubble never grows; the host's CSS colours it (grey; `.read` blue). The host's inbox poll calls `aiInboxTake(host, body)` and shows what it returns.
 
 `notesPreface` never feeds an `auto:true` note to a model. **Every `claude` the bridge starts is read-only**
 (`--tools Read,Glob,Grep,WebFetch,WebSearch`: chat turns, quick answers, manual and warm compact; `--claude full` is

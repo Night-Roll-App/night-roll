@@ -434,6 +434,9 @@ On the Claude Code bridge, every message you send — ♩ this song or Claude �
 **Notes from the Mac**
 On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions on your Mac ("tell the Worker to push the Game Boy branch"). When a Worker writes back, the note appears in AI as a gold **✉** bubble (inbox), and the **AI** button shows ✉ until you open it. Notes are saved with the chat.
 
+**Read receipts**
+In the **✦ Claude** (Worker) tab every message you send grows a small line at its bottom-right corner, the same as in the Guitar and Tuner apps: **#n ✓** in grey once your Mac has stored it (n is its number — cite it as "#n"), **#n ✓✓** in grey once the Worker's Claude Code has picked it up, and the **✓✓ turn blue** once it has actually read it and acted (a reply into this app, a done mark). Nothing to tap: the line is part of the bubble from the moment you send, so the bubble never jumps when a tick lands, and ticks only move forward. The Mac's routine acknowledgements ("Got it (#n).", "Claude has #n now.") no longer appear as notes — the ticks say the same thing; a "busy" or "offline" line still does.
+
 **What Claude Code is doing now**
 On the Claude Code bridge, **AI**'s own aria-label names whether the Worker's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open AI for the full line — **Claude Code working: …** or **Claude Code idle** — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.
 

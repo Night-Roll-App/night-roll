@@ -1179,6 +1179,10 @@
   .askmsg { font-size: 1.0625rem; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
             white-space: pre-wrap; max-width: 92%; }
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
+  /* read receipts under the Worker tab's own bubbles (vendor/ai/web/ticks.js, = BridgeChat AIWindow.ticks): "#n ✓" sent, "#n ✓✓" picked up, blue once read.
+     The span is there, empty, from the send on (min-height), so the bubble never grows when the first tick lands. */
+  .askmsg .asktick { display: block; clear: both; text-align: right; margin: 2px -4px -4px 0; min-height: 1em; font-size: 0.75rem; line-height: 1; font-weight: 600; letter-spacing: -0.08em; color: var(--dim); }
+  .askmsg .asktick.read { color: var(--accent); }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
   .askmsg.err { color: #e66767; }
   .askmsg.othermode { opacity: .55; } /* a different mode's turn (SAFETY 2026-10-01): shown here, never sent to the model in the current mode */

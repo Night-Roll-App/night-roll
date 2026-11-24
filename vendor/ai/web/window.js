@@ -15,12 +15,13 @@
 //   msgTag(m) → {tag, dim} · noteLabel(from) · clock(t)
 //   send() · abort()   (the window's Send and Stop)
 //   desk: the ✦ tab shows the Front Desk thread (desk.js) when host.deskOffered() — see desk.js for its host members
-import { aiStoreGet, aiDraftRead, aiDraftWrite, aiDraftClear } from "./store.js";
+import { aiStoreGet, aiStoreSave, aiDraftRead, aiDraftWrite, aiDraftClear } from "./store.js";
 import { aiPartial, aiResumeSoon, aiText } from "./client.js";
 import { aiDeskMode, aiDeskLines } from "./desk.js";
+import { aiTickDraw, aiTicksMerge, aiTicksRedraw, aiNoteRoutine } from "./ticks.js";
 
 export const AI_WINDOW_IDS = {sheet: "asksheet", log: "asklog", input: "askinput", status: "askstatus", send: "asksend", stop: "askstop", tabSong: "askmodesong", tabGeneral: "askmodegen", tabTerminal: "askmodeterm", spanRow: "askspanrow"};
-export const AI_WINDOW_CSS = {msg: "askmsg", copy: "askcopy", other: "othermode", earlier: "earlier"};
+export const AI_WINDOW_CSS = {msg: "askmsg", copy: "askcopy", other: "othermode", earlier: "earlier", tick: "asktick"};
 export function aiEl(host, which) { const ids = Object.assign({}, AI_WINDOW_IDS, host.ids || {}); return document.getElementById(ids[which]); }
 export function aiCss(host, which) { return Object.assign({}, AI_WINDOW_CSS, host.css || {})[which]; }
 export function aiTab(host) { return host.state.askTerminal ? "terminal" : host.state.askGeneral ? "general" : "song"; }
@@ -158,10 +159,25 @@ export function aiRenderLog(host) {
                       : (host.state.askTerminal && m.role === "user" ? aiClock(m.t) : "") + (host.showText ? host.showText(m.content) : m.content);
     const div = aiBubble(host, m.role === "user" ? "user" : note ? "note" : "ai", tag + body);
     if (info && info.dim) div.classList.add(aiCss(host, "other"));
+    if (host.state.askTerminal && m.role === "user") aiTickDraw(host, div, m); // the receipt band: "#n ✓" … "#n ✓✓" (ticks.js); empty on a message from before the bridge numbered them
     if (m.pending) { const part = aiPartial(host)[m.pending]; aiBubble(host, "ai", part ? part + "\n\n" + aiText(host, "stillWriting") : aiText(host, "pendingHere")).dataset.job = m.pending; pendingSeen = true; }
   }
   if (pendingSeen) aiResumeSoon(host, 200);
   aiScrollEnd(host); // a redraw lands on the latest message, never the top: a long chat redrawn while hidden or moving kept landing at the top — after layout
+}
+// ---- receipts: the host's inbox poll hands the answer here before it stores any note
+export function aiTicksApply(host, ticks) { // the bridge's `ticks` rows → the Worker chat's stored messages (forward only) and, when that chat is on screen, its bubbles
+  const key = host.keys.terminal, msgs = aiStoreGet(host, key).msgs;
+  const changed = aiTicksMerge(msgs, ticks);
+  if (!changed.length) return false;
+  aiStoreSave(host, msgs, undefined, key);
+  if (host.state.askTerminal && typeof document !== "undefined") aiTicksRedraw(host, aiEl(host, "log"), changed);
+  return true;
+}
+export function aiInboxTake(host, body) { // one GET /v1/inbox answer → the notes to show: the ticks are applied, the routine acks (they ARE the ticks) are dropped
+  if (!body) return [];
+  aiTicksApply(host, body.ticks);
+  return (Array.isArray(body.notes) ? body.notes : []).filter(n => !aiNoteRoutine(n));
 }
 // ---- wiring for the controls the library draws into: Send, Stop, the box, the tabs
 export function aiWindowBind(host) {

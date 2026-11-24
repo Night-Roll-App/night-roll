@@ -28,6 +28,7 @@ import { aiStoreGet, aiStoreSave, aiPendingIndex, aiPendingAll, aiJobId, aiSeenC
 import { aiSentCommit, aiSentDrop } from "./ctx-cache.js";
 import { aiJobsSupported, aiJobGet, aiTerminalPost } from "./bridge-client.js";
 import { aiWaitAfterFail } from "./reach.js";
+import { aiTickMark, aiTickDraw } from "./ticks.js";
 
 export const AI_TEXT = { // every sentence the loop shows; a host overrides any by key
   noReply: () => "(no reply — try rephrasing)",
@@ -156,13 +157,15 @@ export async function aiTerminalSend(host, text) { // queue it for the bridge's 
   msgs.push({role: "user", content: text, t}); // stored/shown WITHOUT the context block, like every other chat
   aiStoreSave(host, msgs, undefined, key);
   host.afterSend();
-  host.bubble("user", text, {t, terminal: true});
+  const bub = host.bubble("user", text, {t, terminal: true});
+  aiTickDraw(host, bub, null); // the empty receipt band now: the bubble never grows when the first tick lands (ticks.js)
   aiNotice(host, aiText(host, "terminalSending"));
   try {
     const r = await aiTerminalPost(host, bodyText);
     const j = r.body || {};
     if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status);
     aiSeenCommit(host, key); // the bridge actually got it: this turn's "new since" lines are now confirmed seen
+    if (aiTickMark(host, key, t, j.id)) aiTickDraw(host, bub, {rowId: j.id, tick: "sent"}); // stored on the Mac: one grey tick; the poll's `ticks` move it on
     aiNotice(host, j.now && j.now.text ? aiText(host, "terminalSentWorking", j.now.text) : aiText(host, "terminalSent"));
     const st = host.state;
     st.askTerminalFast = Date.now() + 15 * 60000; // its answer shouldn't wait for the slow poll

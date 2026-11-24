@@ -32,6 +32,7 @@ export { aiOffline, aiReachSet, aiSendHeld, aiWaitAfterFail } from "./reach.js";
 export {
   AI_WINDOW_IDS, AI_WINDOW_CSS, aiEl, aiCss, aiTab, aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard,
   aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking,
-  aiTabSet, aiTabRestore, aiTabButtons, aiRenderLog, aiWindowBind,
+  aiTabSet, aiTabRestore, aiTabButtons, aiRenderLog, aiWindowBind, aiTicksApply, aiInboxTake,
 } from "./window.js";
+export { AI_TICK_LABEL, AI_ROUTINE_RE, aiTickOf, aiNoteRoutine, aiTickMark, aiTicksMerge, aiTickCss, aiTickDraw, aiTicksRedraw } from "./ticks.js";
 export { aiDeskApp, aiDeskOn, aiDeskMode, aiDeskGet, aiDeskSave, aiDeskMerge, aiDeskPoll, aiDeskLines, aiDeskSend } from "./desk.js";

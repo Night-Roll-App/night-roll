@@ -49,6 +49,7 @@ import { AI_LOCAL_SOFT, AI_TOTAL_CAP, aiStoreGet, aiStoreSave, aiUnsavedCount, a
 import { aiJobsSupported, aiInboxFetch, aiStatusFetch, aiSessionGet, aiSessionCompact, aiTerminalPrefsGet, aiTerminalPrefsSet, aiAppState, aiDeploy } from "../../vendor/ai/web/bridge-client.js";
 import { aiHostAllowed } from "../../vendor/ai/web/backends.js";
 import { aiDeskPoll, aiDeskGet } from "../../vendor/ai/web/desk.js";
+import { aiInboxTake } from "../../vendor/ai/web/window.js";
 import { aiStripContext } from "../../vendor/ai/web/store.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
@@ -464,7 +465,7 @@ export async function askInboxPoll() {
   if (!r.ok) return;
   askShotShow(true); // an inbox means the Mac's bridge: it takes 📷 screenshots too
   const j = r.body; if (!j) return;
-  let notes = (j && j.notes || []).filter(n => n && n.text);
+  let notes = aiInboxTake(askHost(), j).filter(n => n && n.text); // the receipts (`ticks`) land on the Worker chat first; the bridge's routine acks ("Got it (#n).") ARE the tick and are dropped (vendor/ai/web/ticks.js)
   // a device that has never polled (a fresh install: the Xcode shell,
   // 2026-09-27, got the whole night's 40 notes poured into Threnody II's
   // chat) takes only the last few hours, then keeps up like any other

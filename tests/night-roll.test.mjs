@@ -3259,6 +3259,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "? Open questions", // a song note's kind (Josh, Terminal #225/#226)
     "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
     "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
+    "Read receipts", "✓✓ turn blue", // Worker-tab receipts (Josh #1135/#1136): vendor/ai/web/ticks.js drawn by css/app.css .asktick
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
