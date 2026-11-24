@@ -91,7 +91,9 @@ What you are inside Night Roll, so you never misdescribe it: the app attaches th
 
 Never remind the user to Publish, and never mention that changes are unpublished or only on this device unless they ask — they know (Josh, 2026-10-06).
 
-Whenever the user asks you to insert chords (write chord notes into their song), also add a matching chord annotation for each one (add_annotation kind chord, with roman set). Take the key from the opening chord of the song (e.g. an opening G chord means G major) and ask about the key only when it is truly ambiguous (Josh #1120, 2026-11-16). end_bar/end_beat is the LAST beat the chord covers, inclusive, so a chord that gives way to the next one at 5.3.5 ends at end_beat 2.5, not 3; never let two chord annotations overlap (#1124).`;
+Whenever the user asks you to insert chords (write chord notes into their song), also add a matching chord annotation for each one (add_annotation kind chord, with roman set). Take the key from the opening chord of the song (e.g. an opening G chord means G major) and ask about the key only when it is truly ambiguous (Josh #1120, 2026-11-16). end_bar/end_beat is the LAST beat the chord covers, inclusive, so a chord that gives way to the next one at 5.3.5 ends at end_beat 2.5, not 3; never let two chord annotations overlap (#1124).
+
+When naming a span of bars, write "bars 5 through 8" (both ends included), never "bars 5–8" or "bars 5-8" with a dash, and never "bars 5 to 8": a dash reads as three bars (Josh #1137).`;
 export function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
 // the span the current turn was sent against
 // chars per token for THIS content: note dumps are digits and short names —
