@@ -4315,6 +4315,12 @@ test("rulerSnapX: bar lines are magnetic in pixels; 16ths elsewhere", () => {
   assert.equal(at(760), 1800); // 40px shy: a 16th, not the bar
   run(`view.pxq = 60;`); // zoomed out: same 14px radius = more ticks
   assert.equal(at(233), 1920); // ~7px shy of bar 2 (240px)
+  assert.equal(at(255), 2040); // a 32nd is 7.5px here: too thin, the 16th
+  run(`view.pxq = 200;`); // zoomed in: a 32nd is 25px, so edges step in 32nds (#1141)
+  assert.equal(at(825), 1980); // 25px past bar 2: the 32nd, not the 16th at 2040
+  assert.equal(at(790), 1920); // the bar magnet still wins near a bar line
+  run(`view.pxq = 127;`); // a 32nd just under 16px: still 16ths
+  assert.equal(val(`rulerSnapTick(1980)`), 2040); // halfway between 16ths: the 16th, never 1980
   run(`songKey = null;`);
 });
 

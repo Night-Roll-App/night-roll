@@ -161,14 +161,19 @@ export function cursorHit(pos) {
   return S.mode === "select" || S.mode === null ? Math.abs(pos.x - x) < 12 : false; // the line itself, at rest
 }
 export function rulerSnapX(x) { // bar lines are magnetic in SCREEN pixels (Pencil-friendly
-  // at every zoom); away from a bar line, 16ths — finer is what zoom is for
+  // at every zoom); away from a bar line, 16ths — 32nds once zoomed in (RULER_FINE_PX)
   return rulerSnapTick((x - S.RULER_W + S.view.x) / pxPerTick());
 }
+// A ruler edge steps in 32nds only when a 32nd is at least this wide on screen
+// (Josh #1141: late-starting capture notes need 32nd spans). 32nds at every zoom
+// were too thin under a finger and landed a section edge a 16th off (2026-08-19).
+export const RULER_FINE_PX = 16;
 // the same magnet for a tick that is NOT under the finger — a whole cycle
 // slid by its middle (DAW F5) snaps by its START, so the span's length never
 // changes while it rides the bar lines
 export function rulerSnapTick(t) {
-  const q = Math.round(S.song.ppq / 4);
+  const q16 = Math.round(S.song.ppq / 4), q32 = Math.round(S.song.ppq / 8);
+  const q = q32 * pxPerTick() >= RULER_FINE_PX ? q32 : q16;
   const fine = Math.max(0, Math.round(t / q) * q);
   const bt = barTicks(), ppt = pxPerTick();
   const nearBar = Math.round(fine / bt) * bt;
