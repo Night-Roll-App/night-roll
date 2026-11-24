@@ -5253,6 +5253,15 @@ test("Ask: span notes use the DECLARED meter's counted beat, one speller, key li
   assert.match(ctx, /meter: 4\/4 \(beat = quarter\)/);
   assert.match(ctx, /cursor: bar 1 beat 2\.5/);
   assert.match(ctx, /notes in bars 1–1:/);
+  assert.doesNotMatch(ctx, /ruler selection/, "no span, no line");
+  // #1142: the ruler span's exact edges, not just the whole bars around it
+  run(`rangeSel = {a: 60, b: 1680, cycle: true};`);
+  const ctx2 = val(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx2, /ruler selection: from bar 1 beat 1\.13 up to bar 1 beat 4\.5 \(the end point not included\), cycling/);
+  run(`rangeSel.off = true;`);
+  assert.match(val(`askRulerSelLine(barTicks(), beatTicks())`), /, parked$/);
+  assert.equal(val(`askSpanLabel({from: 5, to: 8, src: "selected"})`), "bars 5 through 8 (selected)");
+  run(`rangeSel = null;`);
   run(`songKey = null; rollnotes = []; declaredTs = null; keyRegions = [];`);
 });
 
