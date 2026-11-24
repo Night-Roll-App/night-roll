@@ -1722,8 +1722,13 @@ track: pulse1 voice=sine color=#0aa2c0
                      Absent = what the .mid says. The .mid is NEVER edited by
                      a mark: a hand-marked track that is not a kit keeps its
                      captured pitches and plays guessed GM sounds
-                     (`tr.kitPlay`: guessKit over its distinct pitches,
-                     derived at load, stored nowhere; Josh's plan Q-B); "Not
+                     (`tr.kitPlay`: guessKit over its distinct pitches'
+                     onsets AND lengths — a voice held ≥ 0.75 beat rings,
+                     crash/ride, decided before the rhythm picks; then
+                     uniqueGmKeys with `taken` = the keys the song's other
+                     drum tracks play and `pool` = DRUM_SLOTS, so a guess
+                     never lands on a real piece's kit-lane row (#1134, Red
+                     Wings); derived at load, stored nowhere; Josh's plan Q-B); "Not
                      drums" on a capture-detected kit track (`tr.kitFrom`,
                      the file's `kitmap`) shows the game's captured keys in
                      memory (`n.p`, the GM key kept on `n.pKit`; drafts, Save
