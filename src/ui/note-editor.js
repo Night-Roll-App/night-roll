@@ -116,6 +116,7 @@ import { softFocus } from "./chrome.js";
 import { canvas } from "../render/roll.js";
 import { pxPerTick } from "../render/roll.js";
 import { countUsage } from "../platform/usage.js";
+import { noteLabel } from "../input/gestures.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
@@ -661,6 +662,16 @@ export function refreshSelInfo() { // one source of truth for the selection read
   const tMin = Math.min(...S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].t));
   S.multiSelSf = sfShownAt(Math.max(0, tMin));
   reflectSelVel();
+  S.challengeSec = null;
+  const cb = document.getElementById("chordbtn");
+  if (S.multiSel.length === 1) {
+    // one note lassoed = the tap's readout (pitch, place, length, velocity, track): the lasso's "C  (1 notes · vel 30)"
+    // named no track, so Josh had to switch Lasso off and tap to learn which voice it was (#1134); one note is no chord
+    setInfo(noteLabel(S.multiSel[0].ti, S.multiSel[0].ni));
+    cb.style.display = "none";
+    draw();
+    return;
+  }
   const pitches = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
   // 8va off = chord-reading mode: pitch classes only, octave duplicates collapsed
   const names = S.selOctaves
@@ -668,21 +679,28 @@ export function refreshSelInfo() { // one source of truth for the selection read
     : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf));
   const vels = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].v))];
   const velTxt = vels.length === 1 ? " · vel " + vels[0] : ""; // uniform velocity is worth stating
-  S.challengeSec = null;
-  const cb = document.getElementById("chordbtn");
+  const trackTxt = " · " + lassoTrackNames(S.multiSel.map(s => s.ti)); // which voice(s) the notes belong to (#1134)
   if (appMode() === "normal") {
     // Normal: the chord names itself (nameChord is pattern-matching, not a
     // ruling on Josh's music) — Chord? stays hidden, nothing to reveal
     const chordName = nameChord(pitches, S.multiSelSf);
-    setInfo(names.join(" · ") + "  →  " + chordName + "  (" + S.multiSel.length + " notes" + velTxt + ")",
+    setInfo(names.join(" · ") + "  →  " + chordName + "  (" + S.multiSel.length + " notes" + velTxt + trackTxt + ")",
             names.join(", ") + " — " + chordName);
     cb.style.display = "none";
   } else {
-    setInfo(names.join(" · ") + "  (" + S.multiSel.length + " notes" + velTxt + ")", names.join(", "));
+    setInfo(names.join(" · ") + "  (" + S.multiSel.length + " notes" + velTxt + trackTxt + ")", names.join(", "));
     cb.textContent = "Chord?";
     cb.style.display = "";
   }
   draw();
+}
+// The track names a lasso spans, in track order, for the readout's tail: each name once, or a count once the
+// names would crowd the status line (the status line is one row on the iPad; "voice1, voice2, voice3, voice4" would push the vel off it).
+export const LASSO_TRACKS_CHARS = 28;
+export function lassoTrackNames(tis) {
+  const names = [...new Set(tis)].sort((a, b) => a - b).map(ti => S.song.tracks[ti].name || "tr" + (ti + 1));
+  const joined = names.join(", ");
+  return names.length > 1 && joined.length > LASSO_TRACKS_CHARS ? names.length + " tracks" : joined;
 }
 // 8va: octave numbers in the readout
 export function renderOctBtn() { // ✓ = selOctaves on — same convention as renderViewMenu's checkmarks

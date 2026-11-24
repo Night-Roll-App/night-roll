@@ -35,6 +35,7 @@ import { beatsPerBarDisp } from "../model/grid.js";
 import { keyLabelState } from "../ui/chrome.js";
 import { secDepthCap } from "../model/grid.js";
 import { TRACK_COLORS } from "../render/roll.js";
+import { DRUM_SLOTS } from "../render/roll.js";
 import { appMode } from "../platform/mode.js";
 import { BASE_RULER_H } from "../render/roll.js";
 import { LANE_H } from "../render/roll.js";
@@ -73,6 +74,7 @@ import { stretchCache } from "../audio/clips.js";
 import { playGateTick } from "../audio/transport.js";
 import { loadEdits } from "../model/edits.js";
 import { effTs } from "../model/grid.js";
+import { trackIsDrums } from "../model/grid.js";
 import { clampViewImpl as clampView } from "../ui/chrome.js";
 import { askModeButtons } from "../ask/sheet.js";
 import { askRenderImpl as askRender } from "../ask/sheet.js";
@@ -179,16 +181,21 @@ export function finalizeNotesImpl() {
     //  - "Not drums" on a capture-detected kit track (tr.kitFrom, the file's kitmap) shows the GAME's captured keys in
     //    memory: n.p = kitFrom[n.p], the GM key kept on n.pKit — both writers emit n.pKit, so a publish is byte-identical;
     //  - "These are drums" on a track the file does not call a kit plays guessed GM sounds: tr.kitPlay maps each
-    //    distinct pitch to a key (guessKit over its onsets — derived here, stored nowhere).
+    //    distinct pitch to a key (guessKit over its onsets and lengths — derived here, stored nowhere), never a key
+    //    another drum track of the song already plays: that would stack the guess on a real piece's kit-lane row
+    //    (#1134: a cymbal guessed "snare" landed on voice6's snare).
+    const guessed = tr => tr.drumsMark === true && !tr.kit && tr.kind !== "audio";
+    const taken = new Set();
+    S.song.tracks.forEach((tr, i) => { if (!guessed(tr) && trackIsDrums(i)) for (const n of tr.notes) if (!n.gone) taken.add(n.p); });
     for (const tr of S.song.tracks) {
       if (tr.drumsMark === false && tr.kitFrom) {
         for (const n of tr.notes) if (tr.kitFrom[n.p] !== undefined) { n.pKit = n.p; n.p = tr.kitFrom[n.p]; }
         tr.kitSwapped = true;
-      } else if (tr.drumsMark === true && !tr.kit && tr.kind !== "audio") {
+      } else if (guessed(tr)) {
         const by = new Map();
-        for (const n of tr.notes) { if (n.gone) continue; if (!by.has(n.p)) by.set(n.p, {key: n.p, notes: []}); by.get(n.p).notes.push({tick: n.t}); }
+        for (const n of tr.notes) { if (n.gone) continue; if (!by.has(n.p)) by.set(n.p, {key: n.p, notes: []}); by.get(n.p).notes.push({tick: n.t, dur: n.d}); }
         if (by.size) {
-          const gm = uniqueGmKeys(guessKit([...by.values()], {beatTicks: beatTicks(), barBeats: effTs()[0] * 4 / effTs()[1]}));
+          const gm = uniqueGmKeys(guessKit([...by.values()], {beatTicks: beatTicks(), barBeats: effTs()[0] * 4 / effTs()[1]}), taken, DRUM_SLOTS); // taken grows: a second marked track avoids this one's keys too
           tr.kitPlay = gm;
         }
       }

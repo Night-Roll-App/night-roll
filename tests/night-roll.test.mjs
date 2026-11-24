@@ -3260,6 +3260,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
     "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
     "Read receipts", "✓✓ turn blue", // Worker-tab receipts (Josh #1135/#1136): vendor/ai/web/ticks.js drawn by css/app.css .asktick
+    "a lasso of exactly one note reads like a tap", "never lands on a row another drum track", // #1134: the lasso readout's track, the kit guess's lengths + taken rows
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -10513,6 +10514,40 @@ test("These are drums / Not drums: the track: directive's `drums` field round-tr
   assert.equal(val(`trackIsDrums(0)`), false, "no directive, no mark");
 });
 
+test("#1134 kit guess: a hand-marked voice of ringing hits is a cymbal, never the snare, and a guess never lands on a key the song's kit already plays (FF4 Red Wings voice7)", async () => {
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  // the unit: 53 hits, one of them on a backbeat, held a beat or longer — rhythm alone called it the snare
+  const ring = Array.from({length: 53}, (_, i) => ({tick: i * 960 + 50, dur: i % 2 ? 1900 : 470}));
+  ring[3].tick = 480; // the one backbeat hit
+  const kit = () => val(`guessKit(${JSON.stringify([{key: 72, notes: ring}])}, {beatTicks: 480, barBeats: 4}).map(v => [v.key, v.gm, v.label])`);
+  assert.deepEqual(kit(), [[72, 51, "ride"]], "ringing hits off the grid = a cymbal");
+  assert.deepEqual(val(`guessKit(${JSON.stringify([{key: 72, notes: ring.map(n => ({tick: n.tick}))}])}, {beatTicks: 480, barBeats: 4}).map(v => [v.key, v.gm])`), [[72, 38]],
+                   "no lengths (the capture pipelines) = the rhythm rules as before, so their pinned guesses stand");
+  const held = Array.from({length: 8}, (_, i) => ({tick: i * 3840, dur: 1900}));
+  assert.deepEqual(val(`guessKit(${JSON.stringify([{key: 60, notes: held}])}, {beatTicks: 480, barBeats: 4}).map(v => v.label)`), ["crash"], "let ring on the downbeats = the crash");
+  const gated = Array.from({length: 16}, (_, i) => ({tick: i * 480 + 480, dur: 120}));
+  assert.deepEqual(val(`guessKit(${JSON.stringify([{key: 60, notes: gated}])}, {beatTicks: 480, barBeats: 4}).map(v => v.label)`), ["snare"], "short backbeat hits are still the snare");
+  assert.deepEqual(val(`[...uniqueGmKeys([{key: 72, gm: 38}], new Set([36, 38, 42]))]`), [[72, 39]], "a taken key moves to the next free one");
+  // the song: a kit track on 36/38/42 and a marked melodic voice whose rhythm would read "snare"
+  run(`createComposition(120, 4, 4);
+       songKey = "albums/test/kit2.mid"; rollnotes = [];
+       song.tracks = [{name: "voice6", kit: true, notes: [0, 1, 2, 3].flatMap(b => [{t: b * 480, d: 120, p: 36, v: 90, ch: 9}, {t: b * 480 + 240, d: 120, p: 38, v: 90, ch: 9}, {t: b * 480, d: 60, p: 42, v: 90, ch: 9}])},
+                      {name: "voice7", notes: [1, 3, 5, 7].map(b => ({t: b * 480, d: 120, p: 72, v: 30}))}];
+       trackState = [{muted: false, solo: false, hidden: false}, {muted: false, solo: false, hidden: false}]; finalizeNotes();
+       song.tracks[1].drumsMark = true; saveTrackDir(1);`);
+  const key = val(`song.tracks[1].kitPlay.get(72)`);
+  assert.ok(![36, 38, 42].includes(key), "the guess (short backbeat hits, 'snare') steps off the kit's own rows: " + key);
+  assert.equal(val(`kitSlots().filter(k => k === ${key}).length`), 1, "and has a kit-lane row of its own");
+  // the real file: Red Wings (FF4), voice7 = C5 held 1–4 beats, 8% of its hits on the grid; voice6 is the file's kit on 36/38/42
+  app2.context.midiBytes = [...readFileSync("albums/snes/final-fantasy-4/red-wings.mid")];
+  run(`song = parseMidi(new Uint8Array(midiBytes).buffer); songKey = "albums/snes/final-fantasy-4/red-wings.mid"; rollnotes = [];
+       trackState = song.tracks.map(() => ({muted: false, solo: false, hidden: false})); finalizeNotes();`);
+  assert.deepEqual(val(`[...new Set(song.tracks.find(t => t.name === "voice6").notes.map(n => n.p))].sort()`), [36, 38, 42]);
+  run(`song.tracks.forEach((t, i) => { if (t.name === "voice7") { t.drumsMark = true; saveTrackDir(i); } });`);
+  const rw = val(`[...song.tracks.find(t => t.name === "voice7").kitPlay]`);
+  assert.deepEqual(rw, [[72, 51]], "the cymbal rides on its own row, not the snare's");
+});
+
 test("Not drums on a capture-detected kit track shows the game's captured keys, stops the drumming, never changes what is written; hearing/lasso skip a marked-drums track", async () => {
   const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: this test stubs drumHit/playSynthVoice
   run(`createComposition(120, 4, 4); ensureAudio();`);
@@ -11058,6 +11093,28 @@ test("P1 lasso chord: Normal auto-names the chord in the selection strip and hid
   const normal = await mk("normal");
   assert.equal(normal.run(`document.getElementById("chordbtn").style.display`), "none", "Normal: nothing to reveal — it's already named");
   assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
+});
+
+test("#1134 lasso readout names the track(s); a lasso of one note reads like a tap (pitch, place, length, vel, track)", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "voice7", notes: [{t: 1920 * 4, d: 1906, p: 72, v: 30}, {t: 0, d: 480, p: 60, v: 80}]},
+                     {name: "voice3", notes: [{t: 0, d: 480, p: 64, v: 80}]},
+                     {name: "a-rather-long-track-name", notes: [{t: 0, d: 480, p: 67, v: 80}]}]};
+    songKey = "midi/test.mid"; keyRegions = []; rollnotes = []; declaredTs = [4, 4]; previewSf = null;
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}]; selNote = null; selOctaves = true;
+    multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]); refreshSelInfo();
+  `);
+  const info = () => a.run(`document.getElementById("noteinfo").textContent`);
+  assert.equal(info(), "C5 · bar 5 beat 1 · 3.97q · vel 30 · voice7", "one note = the tap's readout");
+  assert.equal(a.run(`document.getElementById("chordbtn").style.display`), "none", "one note is no chord to reveal");
+  a.run(`multiSel = [{ti: 0, ni: 1}, {ti: 1, ni: 0}]; multiSelKey = new Set(["0:1", "1:0"]); refreshSelInfo();`);
+  assert.equal(info(), "C4 · E4  (2 notes · vel 80 · voice7, voice3)", "several notes: the pitches, then each track once");
+  assert.equal(a.run(`document.getElementById("chordbtn").style.display`), "", "Learning still offers Chord?");
+  a.run(`multiSel = [{ti: 0, ni: 1}, {ti: 1, ni: 0}, {ti: 2, ni: 0}]; multiSelKey = new Set(["0:1", "1:0", "2:0"]); refreshSelInfo();`);
+  assert.equal(info(), "C4 · E4 · G4  (3 notes · vel 80 · 3 tracks)", "names that would crowd the line become a count");
+  assert.equal(a.run(`lassoTrackNames([1, 1, 0])`), "voice7, voice3", "track order, each once");
 });
 
 test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", async () => {
