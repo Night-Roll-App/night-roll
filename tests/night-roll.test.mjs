@@ -3261,6 +3261,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
     "Read receipts", "✓✓ turn blue", // Worker-tab receipts (Josh #1135/#1136): vendor/ai/web/ticks.js drawn by css/app.css .asktick
     "a lasso of exactly one note reads like a tap", "never lands on a row another drum track", // #1134: the lasso readout's track, the kit guess's lengths + taken rows
+    "Select all notes", "Drums checkbox", "the mark is cleared instead", // #1140: the voice menu's action row + one Drums checkbox over the three drum states
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -12909,8 +12910,9 @@ test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].
   // routed through document.getElementById — the vm harness's getElementById
   // only ever resolves ids it has itself handed out (see tests/harness.mjs),
   // so (like the chip's own M/S/H spans) it's reached positionally: the
-  // voice menu's head row is [name label, #vmhide, ▶ Hear sound, ✕ close].
-  const vmhide = () => a.run(`document.getElementById("voicemenu").children[0].children[1]`);
+  // voice menu's title row is [name label, ✕ close] and its action row (#1140)
+  // [▶ Hear sound, Select all notes, #vmhide].
+  const vmhide = () => a.run(`document.getElementById("voicemenu").children[1].children[2]`);
   assert.equal(vmhide().getAttribute("aria-pressed"), "false");
   vmhide().dispatchEvent({type: "click"});
   assert.equal(a.run(`trackState[0].hidden`), true, "trackToggle(0, \"hidden\")");
@@ -12918,6 +12920,101 @@ test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].
   vmhide().dispatchEvent({type: "click"});
   assert.equal(a.run(`trackState[0].hidden`), false);
   assert.equal(vmhide().getAttribute("aria-pressed"), "false");
+});
+
+test("#1140 voice menu: Select all notes selects the track's every note as a lasso would — Lasso on, the lasso readout names the pitches and the track, the menu closes; a locked song too; a recording has no such button", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "voice7", notes: [{t: 1920 * 4, d: 1906, p: 72, v: 30}, {t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80, gone: true}]},
+                     {name: "voice3", notes: [{t: 0, d: 480, p: 64, v: 80}]},
+                     {name: "take", kind: "audio", clips: [], notes: []},
+                     {name: "empty", notes: []}]};
+    songKey = "albums/ff4/red-wings.mid"; keyRegions = []; rollnotes = []; declaredTs = [4, 4]; previewSf = null;
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}];
+    selNote = null; selOctaves = true; lassoMode = false; multiSel = []; multiSelKey = new Set(); voiceMenuTi = 0; voiceMenuGroup = null;
+    document.getElementById("voicemenu").classList.add("on"); buildVoiceMenu(0);
+  `);
+  assert.ok(a.run(`lockedAnnoSong()`), "an albums/ song is locked — the lasso identifies notes there, so does this");
+  const acts = () => a.run(`document.getElementById("voicemenu").children[1]`);
+  assert.equal(a.run(`[...document.getElementById("voicemenu").children[1].children].map(b => b.textContent).join("|")`), "▶ Hear sound|Select all notes|Hide notes", "the action row, in Josh's order");
+  acts().children[1].dispatchEvent({type: "click"});
+  assert.equal(a.run(`lassoMode`), true, "Lasso comes on");
+  assert.equal(a.run(`document.getElementById("lassobtn").getAttribute("aria-pressed")`), "true", "the footer's Lasso button shows it");
+  assert.deepEqual(a.run(`JSON.stringify(multiSel)`), JSON.stringify([{ti: 0, ni: 0}, {ti: 0, ni: 1}]), "every live note of that track, and no other track's; a gone note stays out");
+  assert.equal(a.run(`multiSelKey.size`), 2);
+  assert.equal(a.run(`document.getElementById("noteinfo").textContent`), "C4 · C5  (2 notes · voice7)", "the lasso readout: pitches, count, track — no key, no chord");
+  assert.equal(a.run(`document.getElementById("voicemenu").classList.contains("on")`), false, "the menu closes so the selection is in view");
+  assert.equal(a.run(`rollnotes.length`), 0, "selection only — nothing written");
+  // one note reads like a tap; a second call replaces the selection rather than adding to it
+  a.run(`selectTrackNotes(1)`);
+  assert.equal(a.run(`document.getElementById("noteinfo").textContent`), "E4 · bar 1 beat 1 · 1.00q · vel 80 · voice3");
+  assert.equal(a.run(`selectTrackNotes(3)`), 0, "an empty track selects nothing");
+  assert.equal(a.run(`selectTrackNotes(2)`), 0, "a recording has no notes to select");
+  a.run(`buildVoiceMenu(2)`);
+  assert.equal(a.run(`[...document.getElementById("voicemenu").children[1].children].map(b => b.textContent).join("|")`), "Hide notes", "a recording's action row: Hide notes only");
+  assert.equal(a.run(`document.getElementById("voicemenu").children[2].id === "vmdrums"`), false, "no Drums checkbox on a recording");
+  // the Ask action is the same path
+  assert.match(a.run(`askSelectTrackNotes({track: "voice7"}).note`), /^selected 2 notes on voice7/);
+  assert.deepEqual(a.run(`JSON.stringify(multiSel)`), JSON.stringify([{ti: 0, ni: 0}, {ti: 0, ni: 1}]));
+  assert.throws(() => a.run(`askSelectTrackNotes({track: "take"})`), /recording/);
+  assert.throws(() => a.run(`askSelectTrackNotes({track: "nope"})`), /voice7/);
+  assert.match(a.run(`askSelectTrackNotes({track: "empty"}).note`), /no notes on empty/);
+  const d = a.run(`JSON.stringify(ASK_ACTIONS.find(x => x.name === "select_track_notes"))`);
+  assert.ok(d, "registered in the act registry");
+  assert.equal(JSON.parse(d).quiet, true, "a selection answers with its one line, like select");
+});
+
+test("#1140 voice menu: ONE Drums checkbox shows the track's effective state; a tap writes the mark only when it differs from what the file says, else clears it (auto) — one undo each", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    songKey = "albums/test/drums.mid"; rollnotes = []; keyRegions = []; previewSf = null; declaredTs = [4, 4];
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "voice5", notes: [{t: 0, d: 120, p: 67, v: 90}, {t: 480, d: 120, p: 51, v: 90}, {t: 960, d: 120, p: 67, v: 90}, {t: 1440, d: 120, p: 51, v: 90}]},
+                     {name: "voice6", notes: [{t: 0, d: 120, p: 36, v: 90, ch: 9}, {t: 480, d: 120, p: 38, v: 90, ch: 9}]},
+                     {name: "noise", notes: [{t: 0, d: 120, p: 60, v: 90}]}]};
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}]; finalizeNotes();
+    voiceMenuTi = 0; voiceMenuGroup = null; buildVoiceMenu(0);
+  `);
+  const box = () => a.run(`document.getElementById("voicemenu").children[2].children[0]`);
+  const src = () => a.run(`document.getElementById("voicemenu").children[2].children[1].textContent`);
+  assert.equal(a.run(`document.getElementById("voicemenu").children[2].children.length`), 2, "one checkbox and its facts — not two buttons");
+  assert.equal(box().textContent, "☐ Drums", "a melodic G4/D#3 track: unticked");
+  assert.equal(box().getAttribute("aria-checked"), "false");
+  assert.equal(src(), "what the file says");
+  a.run(`globalThis.__u0 = editUndo.length`);
+  box().dispatchEvent({type: "click"});
+  assert.equal(a.run(`song.tracks[0].drumsMark`), true, "the file says not drums, so ticking writes the mark");
+  assert.equal(a.run(`trackIsDrums(0)`), true);
+  assert.match(a.run(`rollnotes.find(n => n.trackdir).text`), /^track: voice5 drums=1$/);
+  assert.equal(a.run(`editUndo.length - __u0`), 1, "one undo step");
+  assert.equal(box().textContent, "☑ Drums", "the menu re-renders the state");
+  assert.equal(src(), "the song's mark · the file says not drums");
+  box().dispatchEvent({type: "click"});
+  assert.equal(a.run(`song.tracks[0].drumsMark`), undefined, "unticking lands on what the file says: the mark is cleared, not written as drums=0");
+  assert.equal(a.run(`trackIsDrums(0)`), false);
+  assert.equal(a.run(`rollnotes.filter(n => n.trackdir && /drums=/.test(n.text)).length`), 0);
+  assert.equal(a.run(`editUndo.length - __u0`), 2);
+  // a channel-10 track: ticked by the file; unticking writes drums=0; ticking again clears it
+  a.run(`buildVoiceMenu(1)`);
+  assert.equal(box().textContent, "☑ Drums");
+  assert.equal(src(), "channel 10");
+  box().dispatchEvent({type: "click"});
+  assert.equal(a.run(`song.tracks[1].drumsMark`), false, "the file says drums, so unticking writes drums=0");
+  assert.equal(a.run(`trackIsDrums(1)`), false);
+  assert.match(a.run(`rollnotes.find(n => n.trackdir && n.trackdir.name === "voice6").text`), /drums=0$/);
+  assert.equal(src(), "the song's mark · the file says drums");
+  box().dispatchEvent({type: "click"});
+  assert.equal(a.run(`song.tracks[1].drumsMark`), undefined, "back to auto");
+  assert.equal(a.run(`trackIsDrums(1)`), true);
+  a.run(`buildVoiceMenu(2)`);
+  assert.equal(src(), "the name", "a kit name is the file's reason too");
+  assert.equal(a.run(`trackFileDrums({name: "voice1", kit: true, notes: []})`), true, "a kit:1 marker counts as the file's say");
+  // the mark_drums action still has its three explicit states
+  assert.match(a.run(`askMarkDrums({track: "voice5", drums: "yes"}).note`), /these are drums/);
+  assert.equal(a.run(`song.tracks[0].drumsMark`), true);
+  assert.match(a.run(`askMarkDrums({track: "voice5", drums: "auto"}).note`), /back to auto/);
+  assert.equal(a.run(`song.tracks[0].drumsMark`), undefined);
 });
 
 test("VoiceOver: the roll canvas carries a live aria-label naming the song, view, visible bars, and track count", async () => {

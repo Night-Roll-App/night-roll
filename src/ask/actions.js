@@ -38,6 +38,7 @@ import { askAddTrack } from "./tools.js";
 import { askDeleteTrack } from "./tools.js";
 import { askHearSound } from "./tools.js";
 import { askMarkDrums } from "./tools.js";
+import { askSelectTrackNotes } from "./tools.js";
 import { askHideDrumTracks } from "./tools.js";
 import { askKeepThat } from "./tools.js";
 import { askAlbum } from "./tools.js";
@@ -275,13 +276,17 @@ export const ASK_ACTIONS = [
    example: "Let me hear the voice5 sound.", quiet: true, say: "Say which track.",
    spec: "hear_sound {track}: plays ONE note of the named track (its most common pitch, taken from a real note) in the GAME's own voice — the SAME ▶ Hear sound the track's voice menu has. PS1/N64 songs ask the live renderer, SNES/NES/Game Boy slice the song's own game-sound render; a track with its own game/soundfont/synth voice plays that voice. If the game sound is not ready it plays nothing and says so (try again in a moment) — never a synth stand-in. An unknown or ambiguous name is an error naming the song's tracks. Changes nothing in the song.",
    async run(a) { return (await askHearSound(a)).note; }},
+  {name: "select_track_notes", args: "track", gloss: "select every note of a track, as a lasso would",
+   example: "Select all the notes on voice7.", quiet: true, say: "Say which track.",
+   spec: "select_track_notes {track}: selects every note of the named track exactly as a lasso drawn around them would — the SAME Select all notes the track's voice menu has: Lasso comes on, the notes light up, and the status line reads what a lasso reads (the pitch names, the count, the track; one note reads like a tap). Any song, a locked capture too; it writes nothing and names no key or chord. An unknown or ambiguous name is an error naming the song's tracks; a recording has no notes to select.",
+   run(a) { return askSelectTrackNotes(a).note; }},
   {name: "mark_drums", args: "track drums", gloss: "mark a track as drums, not drums, or back to auto (one undo)",
    example: "These are drums on voice5.", say: "Say the track and yes (these are drums), no (not drums) or auto.",
-   spec: "mark_drums {track, drums}: drums is yes (\"These are drums\"), no (\"Not drums\") or auto (back to what the file says) — the SAME mark the track's voice menu has, saved as the track: annotation's drums field (the .mid is never touched; works on a capture too). A track marked as drums leaves the chord readout, the facts and the lasso transpose and plays as a kit; \"Not drums\" on a detected kit track shows the game's own keys again. An unknown or ambiguous track name is an error naming the song's tracks. One undo.",
+   spec: "mark_drums {track, drums}: drums is yes (the voice menu's Drums checkbox ticked), no (unticked) or auto (back to what the file says) — the SAME mark the checkbox writes, saved as the track: annotation's drums field (the .mid is never touched; works on a capture too). A track marked as drums leaves the chord readout, the facts and the lasso transpose and plays as a kit; no on a detected kit track shows the game's own keys again. An unknown or ambiguous track name is an error naming the song's tracks. One undo.",
    run(a) { return askMarkDrums(a).note; }},
   {name: "hide_drum_tracks", args: "on?", gloss: "hide (or show) every drum track for this session",
    example: "Hide the drum tracks.", say: "Say hide or show the drum tracks (or leave it and I flip it).",
-   spec: "hide_drum_tracks {on?}: on is yes (hide every drum track from the roll, score and lanes), no (show them again), or left out to flip the switch — the SAME \"Hide drum tracks\" switch as View ▾ → Display. It lasts this session only and covers songs opened later; it writes no annotation and changes nothing in the song (a track's own H, saved with the song, is separate). Drum tracks are the ones the app treats as drums (a kit, channel 10, or marked \"These are drums\"). Still plays unless a track is muted.",
+   spec: "hide_drum_tracks {on?}: on is yes (hide every drum track from the roll, score and lanes), no (show them again), or left out to flip the switch — the SAME \"Hide drum tracks\" switch as View ▾ → Display. It lasts this session only and covers songs opened later; it writes no annotation and changes nothing in the song (a track's own H, saved with the song, is separate). Drum tracks are the ones the app treats as drums (a kit, channel 10, or the Drums checkbox ticked in its voice menu). Still plays unless a track is muted.",
    run(a) { return askHideDrumTracks(a).note; }},
   {name: "coach_comments", args: "op? text?", gloss: "read the coach's comments on this song, or import pasted ones",
    example: "What did she say about bar 5?", say: "Ask for her comments (\"what did the coach say?\"), or paste what she sent and say \"import these\".",

@@ -110,6 +110,7 @@ import { updateTrackGains } from "../audio/engine.js";
 import { transposeTrack } from "../model/selection.js";
 import { VOICES } from "../audio/voices.js";
 import { hearTrackSound } from "../audio/voices.js";
+import { selectTrackNotes } from "../ui/note-editor.js";
 import { PATCH_PRESETS } from "../model/patch.js";
 import { PATCH_PARAMS } from "../model/patch.js";
 import { PATCH_WAVES } from "../model/patch.js";
@@ -1329,7 +1330,21 @@ export async function askHearSound(a) {
   const ok = await hearTrackSound(ti);
   return {ok, note: ok ? "playing one note of " + name : "nothing played for " + name + " — " + (S.song.tracks[ti].notes.some(n => !n.gone) ? (chip.refusedKey === S.songKey ? "game sound isn't available for this song (too big for this device's memory)" : "game sound still loading — try again in a moment") : "no notes on it")};
 }
-// mark_drums (voice menu: These are drums / Not drums): the track: directive's
+// select_track_notes (voice menu: Select all notes, #1140): every note of the
+// named track as a lasso selection — note-editor.js selectTrackNotes, the SAME
+// path the button takes. Selection only: no undo step, works on any song.
+export function askSelectTrackNotes(a) {
+  if (!S.song) throw new Error("no song open");
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  const tr = S.song.tracks[ti];
+  const name = tr.name || "track " + (ti + 1);
+  if (tr.kind === "audio") throw new Error(name + " is a recording — it has no notes to select");
+  const k = selectTrackNotes(ti);
+  if (!k) return {ok: false, note: "no notes on " + name + " to select"};
+  return {ok: true, note: "selected " + k + " note" + (k === 1 ? "" : "s") + " on " + name + " — the lasso readout lists them"};
+}
+// mark_drums (voice menu: the Drums checkbox's mark): the track: directive's
 // `drums` field — the song's own mark, which sets the track aside from (or into)
 // the analysis. Annotation-only, so it works on a capture too (the .mid is
 // never touched); one undo step, as every track: change is.

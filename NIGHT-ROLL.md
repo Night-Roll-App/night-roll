@@ -1714,7 +1714,8 @@ track: pulse1 voice=sine color=#0aa2c0
                      only; the .mid is never touched. Tracks matched by
                      name (or trN index). Removing it reverts to defaults.
                      `drums=1` / `drums=0` (2026-10-13; JSON `"drums": true|false`):
-                     "These are drums" / "Not drums" from the voice menu —
+                     the voice menu's Drums checkbox (one checkbox since
+                     #1140; was "These are drums" / "Not drums") —
                      the song's own say on whether the track is a kit,
                      beating its name and channel 10 everywhere
                      (`trackIsDrums` / `factsIsDrums` / query-lib
@@ -3675,6 +3676,41 @@ modulation. The reply's `prog` ("srcn:adsr1:adsr2:gain") keys the page's
 preview cache. With a render in hand the song's own slice still wins for SNES
 (its mix and echo); the worker note is the fallback. Test: tests/spc-preview.test.mjs
 (pitch within 3 cents, envelope correlation >= 0.99 against the render).
+
+### Voice menu: Select all notes + the Drums checkbox (2026-11-24, #1140; Ask `select_track_notes {track}`)
+
+The track's voice menu (src/ui/voice-menu.js `buildVoiceMenu`) opens with a
+title bar (name, ✕), then ONE action row `#vmacts` — ▶ Hear sound · Select
+all notes · Hide notes, a third each (a recording: Hide notes only) — then the
+Drums row, then voice & colour as before. Nothing was removed; Hear sound
+moved ahead of Hide notes and the two drum buttons became one checkbox.
+
+**Select all notes** (`#vmselect`) calls note-editor.js `selectTrackNotes(ti)`:
+every live note of that one track as the LASSO's selection state (`S.multiSel`
+/ `S.multiSelKey`, `selNote`/`lassoAnno`/`lassoRect` cleared), `setLassoMode(true)`
+(the one switch for `S.lassoMode` + the footer button; the Lasso button's own
+click goes through it too), then `refreshSelInfo()` — so the readout is the
+lasso's (pitch names, count, track; one note like a tap, #1134), never a key
+or a chord, and the selection clears like a lasso's. Any song, a locked
+capture too. The menu closes so the selection is in view. Ask
+`select_track_notes {track}` (tools.js `askSelectTrackNotes`) is the same
+path; selection only, no undo step.
+
+**Drums checkbox** (`#vmdrumsbox`, role=checkbox) shows the EFFECTIVE state,
+`trackIsDrums(ti)`, with a dim facts span (`drumsSourceText`: "the file's
+kit" / "channel 10" / "the name" / "what the file says" / "the song's mark ·
+the file says …"). A tap is `toggleTrackDrums(ti)`: `next = !trackIsDrums(ti)`;
+`tr.drumsMark = next === trackFileDrums(tr) ? undefined : next` — the mark is
+written only where it differs from what the file says on its own
+(grid.js `trackFileDrums`: `tr.kit` || `DRUM_NAME_RE` || channel 10 notes — the
+same test `trackIsDrums` caches in `tr.drums`), else cleared (auto). So the
+three old states survive one control. `saveTrackDir` = one undo step; the
+.mid is never touched. `mark_drums {track, drums: yes|no|auto}` keeps its
+explicit three states. Native: `EditorModel.toggleTrackDrums` /
+`drumsSource` / `selectTrackNotes`, `Challenge.reportSelection` (the one
+readout the roll's lasso, the menu and Ask share). Tests: "#1140 voice menu:
+…" ×2 in tests/night-roll.test.mjs; native VoiceMenuTests,
+LassoReadoutTests, AppToolsTests.
 
 ### Hide drum tracks (2026-10-14; View ▾ → Display, Ask `hide_drum_tracks {on?}`)
 

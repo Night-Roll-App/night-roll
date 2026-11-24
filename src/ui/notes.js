@@ -4,6 +4,7 @@ import { appMode } from "../platform/mode.js";
 import { estimateKey } from "../model/song.js";
 import { checkMeterVsFile } from "../theory/key.js";
 import { openEditor } from "./note-editor.js";
+import { setLassoMode } from "./note-editor.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { tonicPcOfName } from "../theory/chords.js";
 import { S, prof } from "../state.js";
@@ -716,9 +717,7 @@ export function initNotes2() {
 
 export function initNotes3() {
   lassobtn.addEventListener("click", () => {
-    S.lassoMode = !S.lassoMode;
-    lassobtn.classList.toggle("active", S.lassoMode);
-    lassobtn.setAttribute("aria-pressed", String(S.lassoMode));
+    setLassoMode(!S.lassoMode); // the one switch: the voice menu's Select all notes turns it on through the same call (#1140)
     clearMultiSel();
     setInfo(S.lassoMode ? "lasso: drag across notes to identify them" : "tap a note");
     draw();

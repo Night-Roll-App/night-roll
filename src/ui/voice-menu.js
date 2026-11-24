@@ -27,6 +27,9 @@ import { updateTrackGains } from "../audio/engine.js";
 import { trackPan } from "../audio/engine.js";
 import { editableSong } from "../model/song.js";
 import { trackIsDrums } from "../model/grid.js";
+import { trackFileDrums } from "../model/grid.js";
+import { DRUM_NAME_RE } from "../model/grid.js";
+import { selectTrackNotes } from "./note-editor.js";
 import { tickToSec } from "../midi/parse.js";
 import { DRUM_LABELS } from "../render/roll.js";
 import { transposeTrack } from "../model/selection.js";
@@ -167,6 +170,28 @@ export function kitFactsText(tr) {
   return "Marked a kit by the capture: " + (DRUM_LABELS[top] || "drum") + (counts.size > 1 ? " mostly" : "") + " — " + ns.length + " hits, median "
     + Math.round(len[Math.floor(len.length / 2)] * 1000) + " ms, " + keys + " key" + (keys === 1 ? "" : "s") + " in the game, no clear pitch";
 }
+// The Drums checkbox (#1140): flips the track's EFFECTIVE state. The mark is
+// written only when it differs from what the file says on its own; a mark that
+// would just repeat the file is cleared instead (back to auto), so the old
+// three states — drums / not drums / what the file says — survive one control.
+// One undo step (saveTrackDir); the .mid is never touched. Returns the mark.
+export function toggleTrackDrums(ti) {
+  const tr = S.song.tracks[ti];
+  const next = !trackIsDrums(ti);
+  tr.drumsMark = next === trackFileDrums(tr) ? undefined : next;
+  saveTrackDir(ti);
+  buildScoreModel(); updateTrackGains(); draw();
+  return tr.drumsMark;
+}
+// Where the checkbox's state comes from, as facts: the song's mark (and what
+// the file says under it), or the file's own reason.
+export function drumsSourceText(tr) {
+  if (tr.drumsMark !== undefined) return "the song's mark · the file says " + (trackFileDrums(tr) ? "drums" : "not drums");
+  if (tr.kit) return "the file's kit";
+  if (tr.notes.some(n => n.ch === 9)) return "channel 10";
+  if (DRUM_NAME_RE.test(tr.name)) return "the name";
+  return "what the file says";
+}
 export function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   // pick rebuilds the chip bar (finalizeNotes → renderTrackbar), so the
   // anchor chip is detached by then and repositioning from it jumped the
@@ -175,53 +200,78 @@ export function buildVoiceMenu(ti) { // content only — picks refresh in place;
   menu.innerHTML = "";
   const renderToken = ++S.voiceMenuRenderToken; // invalidates every OTHER in-flight async render on this menu — see its own declaration
   const tr = S.song.tracks[ti];
+  const name = tr.name || "track " + (ti + 1);
+  // #1140 ("a little reorganization"): a title bar (name, ✕), then ONE row of the
+  // track's actions — ▶ Hear sound · Select all notes · Hide notes — then the
+  // Drums checkbox with the capture's kit facts under it, then voice & colour as
+  // before. Hide notes (Chrome density pass, 2026-10-01) stays off the chip itself;
+  // the Mixer keeps its separate H.
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:center;gap:6px;padding:2px 4px 2px 10px";
   const hlbl = document.createElement("span");
   hlbl.style.cssText = "font-family:var(--mono);font-size:0.6875rem;color:var(--dim);flex:1";
-  hlbl.textContent = (tr.name || "track " + (ti + 1)) + (tr.kind === "audio" ? " — recording" : " — voice & color");
-  // Hide notes (Chrome density pass, 2026-10-01): moved off the chip itself
-  // into the voice menu's own header row — the Mixer keeps its separate H.
-  const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
-  const vmhide = document.createElement("button");
-  vmhide.id = "vmhide";
-  vmhide.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
-  vmhide.classList.toggle("active", !!st.hidden);
-  vmhide.textContent = "Hide notes";
-  vmhide.setAttribute("aria-pressed", String(!!st.hidden));
-  vmhide.setAttribute("aria-label", "Hide notes — " + (tr.name || "track " + (ti + 1)));
-  vmhide.title = "Hide this track's notes (still plays unless muted)";
-  vmhide.addEventListener("click", () => { trackToggle(ti, "hidden"); buildVoiceMenu(ti); });
+  hlbl.textContent = name + (tr.kind === "audio" ? " — recording" : " — voice & color");
   const close = document.createElement("button");
   close.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
   close.textContent = "✕";
   close.setAttribute("aria-label", "Close voice menu");
   close.addEventListener("click", () => menu.classList.remove("on"));
+  head.append(hlbl, close);
+  menu.appendChild(head);
+  const acts = document.createElement("div");
+  acts.id = "vmacts";
+  acts.style.cssText = "display:flex;gap:6px;padding:2px 10px";
+  const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
   // ▶ Hear sound: ONE note of this track in the game's own voice (voices.js hearTrackSound) —
   // how you tell what a part is when the notes alone don't say (a drum hit at a pitch)
   const vmhear = document.createElement("button");
   vmhear.id = "vmhear";
-  vmhear.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
+  vmhear.style.cssText = "min-height:32px;padding:2px 6px;flex:1;white-space:nowrap";
   vmhear.textContent = "▶ Hear sound";
-  vmhear.setAttribute("aria-label", "Hear sound — " + (tr.name || "track " + (ti + 1)));
+  vmhear.setAttribute("aria-label", "Hear sound — " + name);
   vmhear.title = "Play one note of this track in the game's own voice";
   vmhear.addEventListener("click", () => { hearTrackSound(ti); });
-  head.append(hlbl, vmhide, ...(tr.kind === "audio" ? [] : [vmhear]), close);
-  menu.appendChild(head);
-  if (tr.kind !== "audio") { // the song's own say on whether this track is a kit: These are drums / Not drums (a track: annotation, never the .mid); tap the checked one again for auto
+  // Select all notes (#1140): the track's every note as a lasso selection — the
+  // readout names the pitches and the track (note-editor.js selectTrackNotes);
+  // the menu closes so the selection is in view
+  const vmsel = document.createElement("button");
+  vmsel.id = "vmselect";
+  vmsel.style.cssText = "min-height:32px;padding:2px 6px;flex:1;white-space:nowrap";
+  vmsel.textContent = "Select all notes";
+  vmsel.setAttribute("aria-label", "Select all notes — " + name);
+  vmsel.title = "Select every note of this track, as a lasso would (the readout lists the pitches)";
+  vmsel.addEventListener("click", () => { const k = selectTrackNotes(ti); menu.classList.remove("on"); if (!k) setInfo("no notes on " + name); });
+  const vmhide = document.createElement("button");
+  vmhide.id = "vmhide";
+  vmhide.style.cssText = "min-height:32px;padding:2px 6px;flex:1;white-space:nowrap";
+  vmhide.classList.toggle("active", !!st.hidden);
+  vmhide.textContent = "Hide notes";
+  vmhide.setAttribute("aria-pressed", String(!!st.hidden));
+  vmhide.setAttribute("aria-label", "Hide notes — " + name);
+  vmhide.title = "Hide this track's notes (still plays unless muted)";
+  vmhide.addEventListener("click", () => { trackToggle(ti, "hidden"); buildVoiceMenu(ti); });
+  acts.append(...(tr.kind === "audio" ? [] : [vmhear, vmsel]), vmhide);
+  menu.appendChild(acts);
+  if (tr.kind !== "audio") { // the song's own say on whether this track is a kit: ONE checkbox, Drums (#1140), showing the track's effective state
     const drow = document.createElement("div");
     drow.id = "vmdrums";
-    drow.style.cssText = "display:flex;gap:6px;padding:2px 10px";
-    for (const [label, val] of [["These are drums", true], ["Not drums", false]]) {
-      const db = document.createElement("button");
-      db.style.cssText = "min-height:32px;padding:2px 10px;flex:1";
-      db.classList.toggle("active", tr.drumsMark === val);
-      db.textContent = (tr.drumsMark === val ? "✓ " : "") + label;
-      db.setAttribute("aria-pressed", String(tr.drumsMark === val));
-      db.title = tr.drumsMark === val ? "Tap again to go back to what the file says" : "Mark this track: " + label.toLowerCase();
-      db.addEventListener("click", () => { tr.drumsMark = tr.drumsMark === val ? undefined : val; saveTrackDir(ti); buildScoreModel(); draw(); buildVoiceMenu(ti); });
-      drow.appendChild(db);
-    }
+    drow.style.cssText = "display:flex;align-items:center;gap:8px;padding:2px 10px";
+    const eff = trackIsDrums(ti);
+    const db = document.createElement("button");
+    db.id = "vmdrumsbox";
+    db.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
+    db.classList.toggle("active", eff);
+    db.textContent = (eff ? "☑" : "☐") + " Drums";
+    db.setAttribute("role", "checkbox");
+    db.setAttribute("aria-checked", String(eff));
+    db.setAttribute("aria-label", "Drums — " + name);
+    db.title = eff ? "Tap to say this track is not drums" : "Tap to say this track is drums";
+    db.addEventListener("click", () => { toggleTrackDrums(ti); buildVoiceMenu(ti); });
+    const src = document.createElement("span");
+    src.id = "vmdrumssrc";
+    src.style.cssText = "font-family:var(--mono);font-size:0.625rem;color:var(--dim);flex:1";
+    src.textContent = drumsSourceText(tr);
+    drow.append(db, src);
     menu.appendChild(drow);
     const why = kitFactsText(tr);
     if (why) {

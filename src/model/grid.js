@@ -104,13 +104,20 @@ export function secDepthCap() { // device pref, per song: how many section level
   const v = S.songKey ? localStorage.getItem("ff1roll-secdepth-" + S.songKey) : null;
   return v === null ? 99 : Math.max(0, +v);
 }
+// "noise" = the NES noise channel — percussion by hardware definition
+export const DRUM_NAME_RE = /drum|percussion|kit|noise|dpcm/i;
+// What the FILE says about a track, with no mark of the song's: a kit marker
+// (kit:1 — always written on channel 10), channel 10 notes, or a kit name. The
+// voice menu's Drums checkbox (#1140) compares the mark against this: a mark
+// that only repeats the file is cleared instead of written (back to auto).
+export function trackFileDrums(tr) {
+  return !!tr.kit || DRUM_NAME_RE.test(tr.name) || tr.notes.some(x => x.ch === 9);
+}
 export function trackIsDrums(ti) {
   const tr = S.song.tracks[ti];
   if (tr.kind === "audio") return false; // "drums-di.wav" is a take, not a kit
-  if (tr.drumsMark !== undefined) return tr.drumsMark; // These are drums (true) / Not drums (false): the track: directive's `drums`, finalizeNotes — beats the name and channel 10
-  if (tr.drums === undefined)
-    // "noise" = the NES noise channel — percussion by hardware definition
-    tr.drums = /drum|percussion|kit|noise|dpcm/i.test(tr.name) || tr.notes.some(x => x.ch === 9);
+  if (tr.drumsMark !== undefined) return tr.drumsMark; // the Drums checkbox's mark (drums=1 / drums=0): the track: directive's `drums`, finalizeNotes — beats the name and channel 10
+  if (tr.drums === undefined) tr.drums = trackFileDrums(tr);
   return tr.drums;
 }
 

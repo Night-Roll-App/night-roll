@@ -750,6 +750,27 @@ export function gridFollowNote(n) {
   return true;
 }
 
+export function setLassoMode(on) { // S.lassoMode and the footer's Lasso button, as one — every switch of the mode goes through here
+  S.lassoMode = !!on;
+  const b = document.getElementById("lassobtn");
+  if (b) { b.classList.toggle("active", S.lassoMode); b.setAttribute("aria-pressed", String(S.lassoMode)); }
+}
+// Voice menu "Select all notes" (#1140) and Ask select_track_notes: every live
+// note of ONE track, exactly as a lasso drawn around them — the lasso's own
+// selection state, so refreshSelInfo reads what a lasso reads (the pitch
+// names, the count, the track; one note like a tap) and Lasso comes on, so the
+// selection clears and grows the way a lasso's does. Any song: a locked
+// capture too (lasso identifies notes there already). Writes nothing.
+export function selectTrackNotes(ti) {
+  const tr = S.song && S.song.tracks[ti];
+  if (!tr || tr.kind === "audio") return 0;
+  if (!S.lassoMode) setLassoMode(true);
+  S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null; S.lassoAnno = null; S.lassoRect = null; S.challengeSec = null;
+  tr.notes.forEach((n, ni) => { if (!n.gone) { S.multiSel.push({ti, ni}); S.multiSelKey.add(ti + ":" + ni); } });
+  refreshSelInfo();
+  updateEditButtons();
+  return S.multiSel.length;
+}
 export function selectAllNotes() { // ⌘A: every visible note (hidden tracks stay out — H means out of reach)
   if (!S.song) return 0;
   S.multiSel = [];
