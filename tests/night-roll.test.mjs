@@ -10520,7 +10520,7 @@ test("#1134 kit guess: a hand-marked voice of ringing hits is a cymbal, never th
   const ring = Array.from({length: 53}, (_, i) => ({tick: i * 960 + 50, dur: i % 2 ? 1900 : 470}));
   ring[3].tick = 480; // the one backbeat hit
   const kit = () => val(`guessKit(${JSON.stringify([{key: 72, notes: ring}])}, {beatTicks: 480, barBeats: 4}).map(v => [v.key, v.gm, v.label])`);
-  assert.deepEqual(kit(), [[72, 51, "ride"]], "ringing hits off the grid = a cymbal");
+  assert.deepEqual(kit(), [[72, 49, "crash"]], "ringing hits off the grid = a crash (#1139)");
   assert.deepEqual(val(`guessKit(${JSON.stringify([{key: 72, notes: ring.map(n => ({tick: n.tick}))}])}, {beatTicks: 480, barBeats: 4}).map(v => [v.key, v.gm])`), [[72, 38]],
                    "no lengths (the capture pipelines) = the rhythm rules as before, so their pinned guesses stand");
   const held = Array.from({length: 8}, (_, i) => ({tick: i * 3840, dur: 1900}));
@@ -10545,7 +10545,7 @@ test("#1134 kit guess: a hand-marked voice of ringing hits is a cymbal, never th
   assert.deepEqual(val(`[...new Set(song.tracks.find(t => t.name === "voice6").notes.map(n => n.p))].sort()`), [36, 38, 42]);
   run(`song.tracks.forEach((t, i) => { if (t.name === "voice7") { t.drumsMark = true; saveTrackDir(i); } });`);
   const rw = val(`[...song.tracks.find(t => t.name === "voice7").kitPlay]`);
-  assert.deepEqual(rw, [[72, 51]], "the cymbal rides on its own row, not the snare's");
+  assert.deepEqual(rw, [[72, 49]], "the crash sits on its own row, not the snare's (#1139)");
 });
 
 test("Not drums on a capture-detected kit track shows the game's captured keys, stops the drumming, never changes what is written; hearing/lasso skip a marked-drums track", async () => {

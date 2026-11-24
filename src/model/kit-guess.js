@@ -35,8 +35,8 @@ export function guessKit(voices, {beatTicks, barBeats = 4}) {
   }
   for (const v of voices) {
     if (v.len === null || v.len < RING_BEATS) continue;
-    // let ring on the downbeats or for bars at a time = the crash; a ringing pattern = the ride
-    if (v.one >= 0.5 || v.len >= 2) { v.gm = 49; v.label = "crash"; } else { v.gm = 51; v.label = "ride"; }
+    // a hit let ring is a crash (Josh #1139: Red Wings' voice7, ~1-beat hits off the grid, is a crash); the ride stays a rhythm pick
+    v.gm = 49; v.label = "crash";
   }
   const pick = (score, gm, label) => {
     const c = voices.filter(v => !v.gm).sort((a, b) => score(b) - score(a))[0];
