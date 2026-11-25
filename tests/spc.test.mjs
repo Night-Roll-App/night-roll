@@ -740,3 +740,24 @@ test("SNES phantoms: a legato split that sounds on (>= 10 ms) is a real note and
   const heldShort = reconstruct(jump(0.305, null)).events.filter(e => e.voice === 0);
   assert.equal(heldShort.length, 2, "short, but not born in a fade: kept");
 });
+
+// ---- #1143 (FF4 Red Wings voice0): the driver writes PITCHL and PITCHH as two
+// stores that can land a sample apart. A vibrato crossing 0x0fff/0x1000 read
+// between them (0x0f04, 0x10eb) looked like a 2-semitone jump and split one
+// keyed note into legato pieces at wandering points.
+test("SNES PITCH bytes a sample apart: a vibrato across 0x0fff/0x1000 stays one note", () => {
+  const S1 = 1 / 32000;
+  const wob = [];
+  for (let k = 0; k < 8; k++) { // up to 0x1004, back to 0x0feb, low byte first, high byte a sample later
+    const t = 0.2 + k * 0.05, up = k % 2 === 0;
+    wob.push([t, 2, up ? 0x04 : 0xEB], [t + S1, 3, up ? 0x10 : 0x0F]);
+  }
+  const cap = dspCapture([...voiceRegs(0, 0, {pitch: 0x0FEB}), ...kon(0, 0.1), ...wob, ...koff(0, 0.7)], 1.0);
+  const ev = reconstruct(cap).events.filter(e => e.voice === 0);
+  assert.equal(ev.length, 1, "one keyed note, no legato pieces");
+  assert.ok(!ev[0].legato);
+  // a real slide written the same way (both bytes, a sample apart) still splits
+  const slide = dspCapture([...voiceRegs(0, 0, {pitch: 0x1000}), ...kon(0, 0.1), [0.3, 2, 0x00], [0.3 + S1, 3, 0x20], ...koff(0, 0.7)], 1.0);
+  const sv = reconstruct(slide).events.filter(e => e.voice === 0);
+  assert.equal(sv.length, 2); assert.equal(sv[1].legato, true);
+});

@@ -272,6 +272,12 @@ export function reconstruct(capture, {roots = {}} = {}) {
   const events = [];
   const open = new Array(8).fill(null);
   const pending = new Array(8).fill(false); // voice had PITCH/VOL writes this sample: settle at the next sample
+  // a PITCH byte written without its partner: the driver writes PITCHL and PITCHH
+  // as two stores, and they can land a sample apart. Read in between, a vibrato
+  // crossing 0x0fff/0x1000 looks like a 2-semitone jump and split one held note
+  // into keyless pieces (Josh #1143, FF4 Red Wings voice0). {col, sample} or null.
+  const pitchHalf = new Array(8).fill(null);
+  const PITCH_PAIR_SAMPLES = 2;
   const toTick = s => Math.round(s / SAMPLES_PER_TICK);
 
   const pitchOf = v => regs[v * 16 + 2] | ((regs[v * 16 + 3] & 0x3F) << 8);
@@ -381,7 +387,14 @@ export function reconstruct(capture, {roots = {}} = {}) {
 
   let lastSample = 0, nextPoll = SAMPLES_PER_TICK;
   const advanceTo = (sample) => {
-    for (let v = 0; v < 8; v++) if (pending[v]) settle(v);
+    for (let v = 0; v < 8; v++) {
+      if (!pending[v]) continue;
+      const h = pitchHalf[v];
+      const setup = open[v] && open[v].startSample === lastSample; // a note's setup adopts its pitch now, half or not
+      if (h && !setup && sample - h.sample <= PITCH_PAIR_SAMPLES) continue; // its partner byte may still come: settle after it
+      pitchHalf[v] = null;
+      settle(v);
+    }
     while (dsp.sample < sample) {
       dsp.tick();
       if (dsp.sample >= nextPoll) {
@@ -415,6 +428,10 @@ export function reconstruct(capture, {roots = {}} = {}) {
     if (reg === 0x7C) { dsp.write(reg, value); continue; }
     if (reg === 0x4D || reg === 0x2C || reg === 0x3C || reg === 0x6C) // the echo send: EON, EVOL L/R, FLG's echo-write bit
       for (let vv = 0; vv < 8; vv++) if (open[vv]) mark(open[vv].echoSeries, relTick(open[vv], w.sample), echoOf(vv));
+    if (v < 8 && (col === 2 || col === 3)) {
+      const h = pitchHalf[v];
+      pitchHalf[v] = h && h.col !== col ? null : {col, sample: w.sample}; // the partner landed: whole again
+    }
     if (v < 8 && (col <= 3)) pending[v] = true; // VOL L/R, PITCH L/H
   }
   advanceTo(samples);
