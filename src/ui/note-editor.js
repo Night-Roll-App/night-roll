@@ -1053,7 +1053,11 @@ export function editorSelTarget(useLasso) {
   const type = editorNewType(r.a, r.b), q = beatTicks(), endOf = n => typeof n.end === "number" ? n.end : n.start;
   const hits = visibleNotes().filter(n => n[type] && n.start < r.b && endOf(n) > r.a).sort((x, y) => x.start - y.start); // visibleNotes: his own only in Learning
   if (!hits.length) return {kind: "empty", a: r.a, b: r.b, type};
-  if (hits.length === 1) {
+  if (type === "section") { // sections nest: only a match loads one; a span inside them all is a new subsection (Josh #1146)
+    const m = hits.find(n => Math.abs(n.start - r.a) <= q && Math.abs(endOf(n) - r.b) <= q);
+    if (m) return {kind: "anno", n: m};
+    if (hits.every(n => n.start <= r.a && endOf(n) >= r.b)) return {kind: "empty", a: r.a, b: r.b, type};
+  } else if (hits.length === 1) {
     const n = hits[0], e = endOf(n);
     if ((Math.abs(n.start - r.a) <= q && Math.abs(e - r.b) <= q) || (r.a >= n.start && r.b <= e)) return {kind: "anno", n};
   }

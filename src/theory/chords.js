@@ -190,6 +190,7 @@ export function chordPickParse(rest) { // "m7b5" → {base, sev, tens, alts}; an
     else if (sev) { if (!addTen(tok, true)) return null; } // "79" → 9
     else { sev = "7"; addTen(tok, true); } // a bare "9" is a ninth chord: 7 + 9
   }
+  if (alts.length && !chordAltsAllowed(base, sev)) return null; // "Db#11": a chip tap would drop the #11 — the typed text stands
   tens.sort((a, c) => a - c);
   alts.sort((a, c) => CHORD_ALTS.indexOf(a) - CHORD_ALTS.indexOf(c));
   return {base, sev, tens, alts, add};

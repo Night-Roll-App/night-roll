@@ -16233,6 +16233,25 @@ function dockTeardown() {
 const fld = id => val(`document.getElementById(${JSON.stringify(id)}).value`);
 const follow = (a, b) => run(`rangeSel = ${a === null ? "null" : `{a: ${a}, b: ${b}, cycle: true}`}; editorFollowSelection();`);
 
+test("docked annotation window: part of a section (even from its own start) is a new subsection; only a span matching a section loads it (Josh #1146)", () => {
+  const bt = dockSetup();
+  try {
+    run(`edFollow.lastSaved = "section";
+      rollnotes = deriveNoteTypes([{b1: 29, q1: 1, b2: 37, q2: 4, text: "section: B", added: true}, {b1: 36, q1: 1, b2: 37, q2: 4, text: "section: Turn", added: true}]).map(resolveNote); finalizeNotes();`);
+    follow(28 * bt, 32 * bt);
+    assert.equal(val(`edFollow.mode`), "new", "bars 29 through 32, from B's start: a new section");
+    assert.deepEqual([fld("nb1"), fld("nb2")], ["29", "33"]);
+    follow(28 * bt, 37 * bt);
+    assert.equal(val(`editingNote && editingNote.text`), "B", "B exactly loads B");
+    follow(35 * bt, 37 * bt);
+    assert.equal(val(`editingNote && editingNote.text`), "Turn", "Turn exactly loads Turn, though it sits inside B");
+    follow(35 * bt, 36 * bt);
+    assert.equal(val(`edFollow.mode`), "new", "bar 36, inside Turn and B: a new section");
+    follow(36 * bt, 40 * bt);
+    assert.equal(val(`edFollow.mode`), "several", "across B's end: several");
+  } finally { dockTeardown(); }
+});
+
 test("docked annotation window: a band tap loads it; a span matching or inside one chord loads it; several or a partial overlap say how many in one row with \"New chord here\"; empty bars give a blank chord with the span's bars (plan R1–R4)", () => {
   const bt = dockSetup();
   run(`const g = rollnotes.find(n => n.text === "G7"); rangeSel = {a: g.start, b: g.end}; editorFollowBand(g);`); // what tap() does with Ruler highlight on
