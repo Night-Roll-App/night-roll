@@ -16775,6 +16775,19 @@ test("File under (Analysis sheet S3, Q15): FILE_UNDER ids are real prompts; topi
   studyReset();
 });
 
+test("a chop saves though the hidden end row holds a stale end before its start (Josh #1147: fight-1, chop at 18.2 refused)", () => {
+  installSong();
+  try {
+    run(`rollnotesReadOnly = false; rollnotes = []; finalizeNotes(); openEditor(null, "chop");
+      document.getElementById("nchopmode").value = "end";
+      document.getElementById("nb1").value = "3"; setBeatPair("nq1", "ns1", 2);
+      document.getElementById("nb2").value = "3"; document.getElementById("nq2").value = ""; document.getElementById("ns2").value = "";
+      document.getElementById("nstatus").textContent = ""; document.getElementById("nsave").click();`);
+    assert.doesNotMatch(val(`document.getElementById("nstatus").textContent`), /end has to come after the start/);
+    assert.equal(val(`rollnotes.filter(n => n.chopdir === "end").length`), 1, "the end chop is written");
+  } finally { run(`rollnotes = rollnotes.filter(n => !n.chopdir); finalizeNotes();`); }
+});
+
 test("File under: the editor's chip row writes topic, a text-only edit keeps it, a second tap clears it, it survives the unsynced store, the sheet's + pre-lights it", () => {
   installSong(); studyReset();
   const chips = () => val(`[...document.getElementById("ntopic").children].filter(b => b.classList.contains("active")).map(b => b.dataset.v)`);

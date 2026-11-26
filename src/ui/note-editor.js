@@ -1491,7 +1491,8 @@ export function initNoteEditor4() {
     const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
     const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
     let b2raw = 0, q2raw = 0;
-    if (document.getElementById("nb2").value !== "") { // "ends at" → the stored "through" (to: bar of the last tick, beats from that bar's start)
+    const hasEnd = !["loop", "timesig", "chop", "tempo"].includes(type); // these hide the end row: a stale hidden end must not refuse the Save (Josh #1147)
+    if (hasEnd && document.getElementById("nb2").value !== "") { // "ends at" → the stored "through" (to: bar of the last tick, beats from that bar's start)
       const bt = barTicks(), qt = beatTicks();
       const endTick = (+document.getElementById("nb2").value - 1) * bt + (getBeatPair("nq2", "ns2") - 1) * qt;
       if (endTick <= (b1 - 1) * bt + (q1 - 1) * qt) { document.getElementById("nstatus").textContent = "The end has to come after the start."; return; }
