@@ -2,7 +2,7 @@
 // from "<vendored path>/web/index.js".
 export { aiSSE } from "./sse.js";
 export {
-  aiStorage, aiBaseUrl, aiReqHeaders, aiUrlOf, aiHeadersOf, aiHostKindOf,
+  aiStorage, aiDeviceId, aiBaseUrl, aiReqHeaders, aiUrlOf, aiHeadersOf, aiHostKindOf,
   aiRemoteBackend, aiBrowserBackend, aiPickBackend,
   AI_PROBE_MS, aiPickModel, aiProbe,
   AI_WEBLLM_URL, AI_BROWSER_MODELS, aiWebllmLoad, aiEngineFor, aiHasWebGPU, aiBrowserProbe,
@@ -36,3 +36,4 @@ export {
 } from "./window.js";
 export { AI_TICK_LABEL, AI_ROUTINE_RE, aiTickOf, aiNoteRoutine, aiTickMark, aiTicksMerge, aiTickCss, aiTickDraw, aiTicksRedraw } from "./ticks.js";
 export { aiDeskApp, aiDeskOn, aiDeskMode, aiDeskGet, aiDeskSave, aiDeskMerge, aiDeskPoll, aiDeskLines, aiDeskSend } from "./desk.js";
+export { AI_FORWARD_DONE_CAP, aiForwardIsChat, aiForwardMine, aiForwardGet, aiForwardSave, aiForwardPending, aiForwardTake, aiForwardRetry, aiForwardSendNow, aiForwardDismiss } from "./forward.js";
