@@ -410,6 +410,16 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   2026-10-05 (the Analysis guide). Anchor: *(none yet)*. FF: *(find
   one)*.
 
+- **Extended chord (stacked triads)** — a triad sounding over a different
+  bass note often fuses into one bigger chord (a triad on the 3rd above
+  the bass = a seventh chord). "Chords within chords." — `encountered`
+  2026-11-27 (Josh #1159, Fight 1 song chat: he heard chords inside
+  chords in the SNES voices, which three NES channels rarely allow).
+  Anchor: Fight 1 bars 7 through 14 *(his to analyze)*. FF: Fight 1.
+- **Polychord** — two distinct triads sounding together on purpose and
+  staying audibly separate (rarer; jazz, film). — `encountered`
+  2026-11-27 (same chat). Anchor: *(none yet)*.
+
 ## Form
 
 - **Turnaround** — the moment before a repeat that sets up the RETURN
