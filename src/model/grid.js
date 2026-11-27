@@ -165,9 +165,10 @@ export function posAnchor(b, q) { return posCount(Math.max(0, (b - 1) * 4 * effT
 export function posBeatWord(p) { return p.beat + p.syl + (p.pct ? " +" + p.pct + "%" : ""); }
 export function posText(t) { const p = posParts(t); return "bar " + p.bar + " beat " + posBeatWord(p); }
 export function posShort(p) { return "bar " + p.bar + (p.beat === 1 && !p.syl && !p.pct ? "" : " beat " + posBeatWord(p)); }
-export function posAnchorText(n) { // an annotation's b1/q1(–b2/q2) — q2 is the inclusive end beat, absent = the whole bar
+export function posAnchorText(n) { // an annotation's b1/q1(–b2/q2) — q2 is the inclusive end beat, absent = the whole bar; `until` (#1179) = the exact exclusive end
   const head = posShort(posAnchor(n.b1, n.q1));
   if (!n.b2) return head;
+  if (n.until) { const u = posAnchor(n.until[0], n.until[1]); return head + " until bar " + u.bar + " beat " + posBeatWord(u); }
   if (n.q2 === null || n.q2 === undefined) return head + "–" + n.b2;
   const e = posAnchor(n.b2, n.q2);
   return head + "–" + e.bar + " beat " + posBeatWord(e);

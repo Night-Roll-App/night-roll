@@ -148,7 +148,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "pedal", "drums", "topic"]);
+  "until", "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "pedal", "drums", "topic"]);
 // "File under" chips (docs/plans/2026-10-05-analysis-sheet.md §3b): the
 // Analysis-sheet prompts a bar note can be listed under — the located ones
 // (form, harmony, melody; the song-level prompts take an answer instead).
@@ -196,7 +196,8 @@ export function nextChordLayer(fresh) {
   return top >= 0 ? top + 1 : undefined;
 }
 export function sameChordSpan(n, fresh) {
-  return n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1) && (n.b2 || null) === (fresh.b2 || null) && (n.q2 || null) === (fresh.q2 || null);
+  return n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1) && (n.b2 || null) === (fresh.b2 || null) && (n.q2 || null) === (fresh.q2 || null) &&
+         (n.until ? n.until.join() : "") === (fresh.until ? fresh.until.join() : ""); // #1179: an exact end is part of the span
 }
 export function chordBandText(n) { // the band's readout everywhere it is shown: "F# · ♭VII · no5"
   return n.text + (n.chord && n.roman ? " · " + romanPretty(n.roman) : "") + (n.chord && n.no5 ? " · no5" : "");
@@ -206,6 +207,14 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
   const n = {b1: +at[0] || 1, q1: at[1] !== undefined ? +at[1] : 1,
              b2: j.to ? +j.to[0] : null,
              q2: j.to && j.to[1] !== undefined ? +j.to[1] : null, text: ""};
+  // `until` (Josh #1179): the band's EXCLUSIVE end, [bar, beat], written only
+  // when the end is off a whole beat; `to` beside it is the beat the end falls
+  // in, for a build that doesn't read this. Present → the end is that exact
+  // tick (resolveNote); absent → today's inclusive-`to` rule.
+  if (Array.isArray(j.until) && j.until.length === 2 && Number.isFinite(+j.until[0]) && Number.isFinite(+j.until[1]) && +j.until[0] >= 1 && +j.until[1] >= 1) {
+    n.until = [+j.until[0], +j.until[1]];
+    if (!n.b2) { n.b2 = n.until[0]; n.q2 = Math.max(1, Math.floor(n.until[1])); } // `until` without `to`: derive the fallback, so every b2 reader still sees a span
+  }
   if (typeof j.type === "string" && j.type && !ROLLNOTES_TYPES.has(j.type)) {
     // a type from a newer build: the whole entry rides along untouched and
     // is written back as-is (noteToJSONBase); the text is only a label for
@@ -476,6 +485,7 @@ export function noteToJSON(n) { // enriched-or-stashed note -> schema entry (tex
 export function noteToJSONBase(n) {
   const j = {at: n.q1 !== 1 ? [n.b1, n.q1] : [n.b1, 1]};
   if (n.b2) j.to = (n.q2 !== null && n.q2 !== undefined) ? [n.b2, n.q2] : [n.b2];
+  if (n.b2 && Array.isArray(n.until)) j.until = [n.until[0], n.until[1]]; // #1179: the exact end, after `to` (its fallback), before type
   if (n.opaque) { // a type this build doesn't know: the stashed entry verbatim, only the anchors re-read (bar edits may have moved it)
     const o = {};
     for (const k of Object.keys(n.opaque)) o[k] = k === "at" ? j.at : k === "to" ? (j.to || n.opaque.to) : n.opaque[k];
@@ -534,7 +544,8 @@ export function noteToJSONBase(n) {
 export function resolveNote(n) {
   const bt = barTicks();
   n.start = (n.b1 - 1) * bt + (n.q1 - 1) * beatTicks();
-  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null;
+  n.end = n.until ? (n.until[0] - 1) * bt + (n.until[1] - 1) * beatTicks() // #1179: the exclusive end, exactly
+        : n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null;
   return n;
 }
 // Duplicate track: directives are dropped HERE, on the write side, last-wins
@@ -621,8 +632,23 @@ export function isUndrawnAnno(n) { return !!(n.study || n.songnote || n.opaque);
 // {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
 export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
 
-export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
+export function setEndBQ(n, tick) { setEndUnits(n, tick, barTicks(), beatTicks()); }
+// A band's end from its EXCLUSIVE end tick, to the 16th. q2 is the INCLUSIVE
+// end beat (resolveNote adds one). A CHORD band whose end is off a whole beat
+// (Josh #1179: an Am7 meant for 4.3.5 to 4.4 drew to 4.4.5 — `to` always adds
+// the whole beat) gets `until` = [bar, beat] of the exact end, and `to` = the
+// beat that end falls in, the fallback an older build draws; an end on a beat
+// clears `until`, so such a band is written byte-for-byte as before. Sections
+// keep the inclusive rule alone (native does the same).
+export function setEndUnits(n, tick, bt, qt) {
+  const ub = Math.floor(Math.max(qt, tick) / bt) + 1, uq = snapBeat((Math.max(qt, tick) % bt) / qt + 1);
+  if (n.chord && Math.abs(uq - Math.round(uq)) > 1e-9) {
+    n.until = [ub, uq];
+    n.b2 = ub; n.q2 = Math.max(1, Math.floor(uq));
+    return;
+  }
+  delete n.until;
+  const t = Math.max(qt, tick) - qt;
   n.b2 = Math.floor(t / bt) + 1;
   n.q2 = snapBeat((t % bt) / qt + 1);
 }
@@ -848,7 +874,7 @@ export async function annotationsFor(key) {
 export function resolveNoteWith(n, ppq, ts) {
   const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1];
   n.start = (n.b1 - 1) * bt + (n.q1 - 1) * qt;
-  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
+  n.end = n.until ? (n.until[0] - 1) * bt + (n.until[1] - 1) * qt : n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
   return n;
 }
 
@@ -915,8 +941,10 @@ export function shiftAnchors(deltaTicks) {
       const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
       return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
     };
+    const endTick = n.b2 ? (n.until ? (n.until[0] - 1) * bt + (n.until[1] - 1) * unit : (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * unit) : null;
     [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
+    if (n.b2 && n.chord) setEndUnits(n, Math.max(0, endTick + deltaTicks), bt, unit); // #1179: a chord's end slides exactly and is re-expressed as to/until by the one rule
+    else if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
     if (lm) {
       const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
@@ -933,8 +961,10 @@ export function convertAnchors(oldTs, newTs) {
   };
   for (const n of S.rollnotes) {
     if (isSongLevelAnno(n)) continue;
+    const endTick = n.b2 ? (n.until ? (n.until[0] - 1) * oldBt + (n.until[1] - 1) * oldUnit : (n.b2 - 1) * oldBt + (n.q2 || oldTs[0]) * oldUnit) : null;
     [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldTs[0]);
+    if (n.b2 && n.chord) setEndUnits(n, endTick, newBt, newUnit); // #1179: re-barred, still exact, same to/until rule
+    else if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldTs[0]);
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
     if (lm) {
       const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);

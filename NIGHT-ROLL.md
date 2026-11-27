@@ -1634,6 +1634,27 @@ true}` / `edit_annotation {pedal}` via `askChordExtrasArgs` + `askPedalize`
 (root from the text, label normalized, roman/no5 dropped); context lines
 carry ` [pedal]` and the legend explains it.
 
+**Exact chord ends — `until` (2026-11-27, Josh #1179; native builds the
+same):** a chord entry's optional `"until": [bar, beat]`, its EXCLUSIVE end,
+written ONLY when the end is off a whole beat (`to` is inclusive and adds
+the whole beat, so an Am7 meant for 4.3.5 to 4.4 drew to 4.4.5); beside it
+`to` = the beat the end falls in (`[4, 3]`), the fallback an older build
+draws. In memory `n.until` (undefined = none). ONE function turns an
+exclusive end tick into `to`/`until`: `setEndUnits(n, tick, bt, qt)`
+(`setEndBQ` = the song's units) — chord + off-beat end → `until` + the
+fallback `to`; anything else → today's `b2`/`q2` and no `until`, so a band
+ending on a beat is written byte-for-byte as before. Callers: the editor's
+Save (the ruler selection's half-beat snap or the ends-at subdivision), the
+band-edge drag, lasso paste and every move, Insert chord, Adopt, Ask's
+`add_annotation`/`edit_annotation {until: [4, 4] | "4.4"}` (`askUntilArg` +
+`askApplyUntil`); `shiftAnchors`/`convertAnchors` re-express it.
+`resolveNote`/`resolveNoteWith` read `until` first, so every `n.end` reader
+(chordBandAt and spelling, Check labels, the Bassist, lanes, loops/spans) is
+exact for free; `sameChordSpan` compares it; `noteToJSONBase` writes it after
+`to`; `ROLLNOTES_FIELDS` has it; the unsynced store and the rename seed
+carry it. Readouts: `posAnchorText` says "until bar 4 beat 4"; Ask's compact
+context writes `[4.3.5 until 4.4]`. No version bump.
+
 **Stored origin (P4):** `origin.kind`/`from`/`movedFrom` are now set where
 they're KNOWN, not derived from a note — `forkCurrentSong` (Save As/✎ Edit
 a copy/"Make it mine") sets `{kind: "copy", from: <source path>, at}`;

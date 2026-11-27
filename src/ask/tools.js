@@ -26,6 +26,7 @@ import { lockedAnnoSong } from "../model/song.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { parseRollnotes } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
+import { setEndBQ } from "../model/rollnotes.js";
 import { nextChordLayer } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
@@ -177,7 +178,7 @@ export function askAnnotationsText() {
 export function askAnnotationsTextCompact() {
   const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n) && !askAnnotationStructural(n)).map(({n, i}) => {
     const kind = askNoteKind(n), value = askNoteValue(n, kind);
-    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
+    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]"; // #1179: an exact (exclusive) end reads "until 4.4"
     const sub = n.songnote && songNoteKind(n) !== "general" ? " (" + songNoteKind(n) + ")" : ""; // "songnote (question): Title" — his open questions, listable on request
     return i + " " + at + " " + kind + sub + ": " + value + askChordExtrasText(n) + (n.cnote ? " — " + n.cnote : "");
   });
@@ -233,6 +234,26 @@ export function askChordExtrasArgs(a, prev) {
   if (a.no5 !== undefined && a.no5 !== null) x.no5 = askTruthy(a.no5) || undefined;
   if (a.pedal !== undefined && a.pedal !== null) x.pedal = askTruthy(a.pedal) || undefined;
   return x;
+}
+// `until` as dictated (#1179): [bar, beat] or "bar.beat" — the band's EXACT
+// (exclusive) end, for a chord that ends off a whole beat ("Am7 from 4.3.5
+// to 4.4"); undefined = not given. Applied through setEndBQ, so an end on a
+// beat is stored the old way and only an off-beat end carries the field.
+export function askUntilArg(a) {
+  if (a.until === undefined || a.until === null || a.until === "") return undefined;
+  let bar, beat;
+  if (Array.isArray(a.until)) { bar = +a.until[0]; beat = a.until[1] !== undefined ? +a.until[1] : 1; }
+  else { const m = String(a.until).trim().match(/^(\d+)(?:\.(\d+(?:\.\d+)?))?$/); if (!m) throw new Error("until is written like 4.4 or [4, 4]"); bar = +m[1]; beat = m[2] ? +m[2] : 1; }
+  if (!(bar >= 1) || !(beat >= 1)) throw new Error("until needs a bar and a beat ≥ 1");
+  return {bar, beat};
+}
+export function askApplyUntil(fresh, u) {
+  if (!u) return;
+  if (!fresh.chord) throw new Error("until belongs on a chord annotation (kind: chord)");
+  const tick = (u.bar - 1) * barTicks() + (u.beat - 1) * beatTicks();
+  const start = (fresh.b1 - 1) * barTicks() + ((fresh.q1 || 1) - 1) * beatTicks();
+  if (!(tick > start)) throw new Error("until has to come after the start");
+  setEndBQ(fresh, tick);
 }
 // a pedal band carries only its root: "A", "Am7" or "A ped." dictated with
 // pedal: true all become "A ped." (pedalLabel), and the numeral / no-5 marks
@@ -485,7 +506,9 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
     // stack: true — another layer over the chord already on this exact span (#1159–#1162); with no chord there the arg is harmless
     if (askTruthy(a.stack)) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }
     askPedalize(fresh);
+    askApplyUntil(fresh, askUntilArg(a));
   }
+  else if (a.until) throw new Error("until belongs on a chord annotation (kind: chord)");
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation (kind: chord)");
   else if (a.stack) throw new Error("stack belongs on a chord annotation (kind: chord)");
   else if (a.pedal) throw new Error("pedal belongs on a chord annotation (kind: chord)");
@@ -522,7 +545,12 @@ export function askEditAnnotation(a) {
   if (!parsed.length) throw new Error("could not parse that annotation");
   const fresh = parsed[0];
   fresh.added = true;
-  if (fresh.chord) { Object.assign(fresh, askChordExtrasArgs(a, n)); askPedalize(fresh); } // kept unless he said otherwise, like the comment
+  if (fresh.chord) { // kept unless he said otherwise, like the comment
+    Object.assign(fresh, askChordExtrasArgs(a, n)); askPedalize(fresh);
+    const u = askUntilArg(a);
+    if (u) askApplyUntil(fresh, u);
+    else if (n.until && a.new_end_bar === undefined && a.new_end_beat === undefined && bar === n.b1 && beat === (n.q1 || 1)) fresh.until = [n.until[0], n.until[1]]; // #1179: an unmoved band keeps its exact end
+  }
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation");
   const topic = askTopicArg(a, kind, n);
   if (topic) fresh.topic = topic;
@@ -548,7 +576,7 @@ export function askDeleteAnnotation(a) {
   const n = askFindAnnotation(a || {});
   if (n.songnote) throw new Error("that is a song note — song_note {op: \"delete\", title} removes it");
   if (askAnnotationStructural(n) && !n.tsdir && !n.chopdir) throw new Error("that annotation is a structural directive (track/audio/lane) — remove it in the app's own editor, not here"); // a meter or chop the user dictated can be taken back the same way (batch 3); track/audio/lane stay the editor's
-  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
+  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
   tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
   S.rollnotes = S.rollnotes.filter(x => x !== n);
   finalizeNotes();

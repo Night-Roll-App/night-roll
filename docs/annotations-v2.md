@@ -298,6 +298,23 @@ deriver (`chordExtrasFrom` reads and writes it beside `roman`/`no5`).
   ("written by a newer Night Roll") is the guard against exactly that; it
   bites only songs that actually hold a stacked chord.
 - Readers: `ROLLNOTES_MAX_VERSION = 3`, native `Rollnotes.maxVersion = 3`.
+
+## `pedal` and `until` — two more optional chord fields (2026-11-27, no version bump)
+
+- `"pedal": true` (Josh #1177) on a `type: "chord"` entry: a bass pedal
+  point, label `"<root> ped."`. Drawn on its own row(s) under every chord
+  row; never supersedes a chord nor is superseded by one. An older build
+  ignores the field and draws a chord band, so the version stays as it is.
+- `"until": [bar, beat]` (Josh #1179) on a `type: "chord"` entry: the band's
+  EXCLUSIVE end, written ONLY when the end does not fall on a whole beat
+  (`to` is inclusive and always adds the whole beat — an Am7 meant for 4.3.5
+  to 4.4 drew to 4.4.5). Beside it `to` = the beat the end falls in
+  (`[4, 3]` for an end at 4.3.5), the fallback an older build draws. A
+  reader with `until` ends the band at that exact tick; without it, the
+  `to` rule as before. A band ending on a beat is written byte-for-byte as
+  today (`setEndUnits`, src/model/rollnotes.js — the one place an end tick
+  becomes `to`/`until`). Field order: `at`, `to`, `until`, `type`, `chord`,
+  `roman`, `no5`, `layer`, `pedal`, `note`.
   The schema (docs/annotations-v2.schema.json) lists the field.
 
 ## Round-trip guarantees (tested, tests/night-roll.test.mjs)

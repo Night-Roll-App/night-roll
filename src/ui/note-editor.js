@@ -1654,6 +1654,7 @@ export function initNoteEditor4() {
       // layer (#1159–#1162): an edit keeps the chord's own; ＋ Another chord here takes the one above the chords on this exact span; anything else has none
       if (S.editingNote && S.editingNote.layer > 0) fresh.layer = S.editingNote.layer;
       else if (!S.editingNote && S.edFollow.stack) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }
+      if (b2raw) setEndBQ(fresh, (+document.getElementById("nb2").value - 1) * barTicks() + (getBeatPair("nq2", "ns2") - 1) * beatTicks()); // #1179: an end off a whole beat (the ruler's half-beat snap, the ends-at subdivision) is kept exactly, as `until`
     } else if (type === "section") {
       const label = document.getElementById("nsectlabel").value.trim();
       if (!label) { document.getElementById("nstatus").textContent = "Section label is empty."; return; }

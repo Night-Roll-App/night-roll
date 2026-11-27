@@ -3244,6 +3244,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analyze ▸",
     "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
     "Pedal point", // #1177: a chord band marked `pedal: true`, drawn under every chord row
+    "A chord can end mid-beat", // #1179: an exclusive `until` end on a chord band
     "Annotate this song", "comes back after a relaunch",
     "VoiceOver",
     "Chip stream (experimental)",
@@ -15359,9 +15360,9 @@ test("note dialog: the second row is where the span ENDS — existing annotation
   // an end inside a bar's first beat (stored to: [b, q < 1])
   run(`rollnotes = []; finalizeNotes(); rangeSel = {a: ${3 * bt - qt / 2}, b: ${3 * bt + qt / 4}, cycle: true}; openEditor(null, "chord");`);
   run(`setChordWidget("D"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
-  const d = val(`(() => { const n = rollnotes.find(n => n.chord); return {start: n.start, end: n.end, b2: n.b2, q2: n.q2}; })()`);
-  assert.deepEqual([d.start, d.end, d.b2, d.q2], [3 * bt - qt / 2, 3 * bt + qt / 4, 4, 0.25]);
-  assert.deepEqual(val(`noteToJSON(rollnotes.find(n => n.chord)).to`), [4, 0.25], "the file says to: [4, 0.25] and reads back the same");
+  const d = val(`(() => { const n = rollnotes.find(n => n.chord); return {start: n.start, end: n.end, b2: n.b2, q2: n.q2, until: n.until}; })()`);
+  assert.deepEqual([d.start, d.end, d.b2, d.q2, d.until], [3 * bt - qt / 2, 3 * bt + qt / 4, 4, 1, [4, 1.25]], "#1179: the exact end is `until`, `to` the beat it falls in (was to: [4, 0.25])");
+  assert.deepEqual(val(`(({to, until}) => [to, until])(noteToJSON(rollnotes.find(n => n.chord)))`), [[4, 1], [4, 1.25]], "the file says to: [4, 1], until: [4, 1.25] and reads back the same");
   assert.equal(val(`resolveNote(jsonToRawNote(noteToJSON(rollnotes.find(n => n.chord)))).end`), 3 * bt + qt / 4);
   // the end can't come before the start
   run(`openEditor(rollnotes.find(n => n.chord)); document.getElementById("nb2").value = "1"; setBeatPair("nq2", "ns2", 1); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
@@ -18726,5 +18727,124 @@ test("pedal point #1177: Ask add_annotation {pedal: true} writes \"A ped.\" from
     run(`askEditAnnotation({id: ${idOf("E ped.")}, text: "E7", pedal: false});`);
     assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.q1 === 2).map(n => [n.text, n.pedal ?? null])`), [["E7", null]], "pedal: false turns it back into a chord");
     assert.match(run(`JSON.stringify(ASK_ACTIONS.find(x => x.name === "add_annotation").spec)`), /pedal: true \(chord only\)/, "the act registry's spec says so");
+  } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey); localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`); }
+});
+
+// ---- exact chord ends (Josh #1179): an exclusive `until: [bar, beat]`, written only when the end is off a whole beat
+test("until #1179: setEndBQ — a chord ending on a beat is stored as today (no field); off a beat it gets until + the fallback to; sections keep the inclusive rule; the file round-trips with until after to; whole-beat files stay byte-identical", () => {
+  installSong();
+  const bt = val(`barTicks()`), qt = val(`beatTicks()`);
+  const endAt = (chord, tick) => val(`(() => { const n = {b1: 4, q1: 3.5, b2: null, q2: null, text: "Am7", chord: ${chord}}; setEndBQ(n, ${tick}); resolveNote(n); return [n.b2, n.q2, n.until ?? null, n.end]; })()`);
+  assert.deepEqual(endAt(true, 3 * bt + 3 * qt), [4, 3, null, 3 * bt + 3 * qt], "ends at 4.4 (a whole beat): to [4, 3], no until — Josh's Am7 from 4.3.5 to 4.4 ends ON beat 4");
+  assert.deepEqual(endAt(true, 4 * bt), [4, 4, null, 4 * bt], "ends at the bar line: to [4, 4], as today");
+  assert.deepEqual(endAt(true, 3 * bt + 2.5 * qt), [4, 3, [4, 3.5], 3 * bt + 2.5 * qt], "ends at 4.3.5: until [4, 3.5], to [4, 3] = the beat the end falls in, and the end is the exact tick");
+  assert.deepEqual(endAt(true, 3 * bt + 0.25 * qt), [4, 1, [4, 1.25], 3 * bt + 0.25 * qt], "a 16th into the bar: to [4, 1] (never 0)");
+  assert.deepEqual(endAt(false, 3 * bt + 2.5 * qt), [4, 2.5, null, 3 * bt + 2.5 * qt], "a section keeps the inclusive fractional q2 — no until");
+  // the writer: until after to, before type; the reader: the exact end back
+  const list = `deriveNoteTypes([{b1: 4, q1: 3.5, b2: 4, q2: 3, until: [4, 3.5], text: "chord: Am7"}, {b1: 4, q1: 1, b2: 4, q2: 2, text: "chord: Am"}]).map(resolveNote)`;
+  const json = run(`serializeNotesList(${list}, 4, "menu")`);
+  assert.match(json, /\{"at":\[4,3\.5\],"to":\[4,3\],"until":\[4,3\.5\],"type":"chord","chord":"Am7"\}/, "until rides after to (its fallback), before type");
+  assert.match(json, /"version": 2/, "no version bump");
+  assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(json)}).map(resolveNote).map(n => [n.text, n.until ?? null, n.end])`), [["Am7", [4, 3.5], 3 * bt + 2.5 * qt], ["Am", null, 3 * bt + 2 * qt]], "read back: the until band ends at the exact tick, the other by the to rule");
+  const v2 = '{ "format": "night-roll-annotations", "version": 2, "song": "menu", "notes": [\n  {"at":[4,3.5],"to":[4,3],"type":"chord","chord":"Am7"},\n  {"at":[5,1],"to":[6],"type":"chord","chord":"C"}\n] }\n';
+  assert.equal(run(`serializeNotesList(parseRollnotesJSON(${JSON.stringify(v2)}), 4, "menu")`), v2, "bands ending on a beat: byte-identical to today, no until anywhere");
+  assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(v2)}).map(resolveNote).map(n => n.end)`), [3 * bt + 3 * qt, 6 * bt], "…and read as before");
+  // until without to (a hand-written file): the fallback is derived so every b2 reader still sees a span
+  assert.deepEqual(val(`jsonToRawNote({at: [4, 1], until: [4, 2.5], type: "chord", chord: "G"})`).until, [4, 2.5]);
+  assert.deepEqual(val(`(() => { const n = jsonToRawNote({at: [4, 1], until: [4, 2.5], type: "chord", chord: "G"}); return [n.b2, n.q2]; })()`), [4, 2]);
+  assert.equal(val(`jsonToRawNote({at: [4, 1], to: [4, 2], until: "nope", type: "chord", chord: "G"}).until ?? null`), null, "a malformed until is ignored");
+  assert.ok(val(`ROLLNOTES_FIELDS.has("until")`), "a known field, never carried as extra");
+  // the span identity includes it: a chord ending at 4.3.5 is not the chord ending at 4.4
+  run(`rollnotes = ${list}; finalizeNotes();`);
+  run(`dropSupersededBy({b1: 4, q1: 3.5, b2: 4, q2: 3, text: "A7", chord: true});`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text).sort()`), ["Am", "Am7"], "same to, no until: a different span — nothing replaced");
+  run(`dropSupersededBy({b1: 4, q1: 3.5, b2: 4, q2: 3, until: [4, 3.5], text: "A7", chord: true});`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["Am"], "the identical exact span replaces");
+  // the unsynced store carries it
+  run(`songKey = "albums/compositions/nightroll/until-store.mid"; rollnotes = deriveNoteTypes([{b1: 4, q1: 1, b2: 4, q2: 2, until: [4, 2.5], text: "chord: G", added: true}]).map(resolveNote); finalizeNotes(); saveLocalNotes();`);
+  assert.deepEqual(JSON.parse(val(`localStorage.getItem(notesStoreKey())`)).map(n => n.until ?? null), [[4, 2.5]]);
+  assert.deepEqual(val(`mergeLocalAdditions([], notesStoreKey().replace("ff1roll-notes-", "")).map(n => n.until ?? null)`), [[4, 2.5]]);
+  run(`localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`);
+});
+
+test("until #1179: every end reader is exact — spelling (chordBandAt) stops at the until tick, Check labels hears only the span, the Bassist's timeline ends there; moves and re-barring keep or drop the field as the end lands", () => {
+  installSong();
+  const bt = val(`barTicks()`), qt = val(`beatTicks()`);
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 1920, p: 60, v: 80}, {t: ${bt} + 2.5 * ${qt}, d: 240, p: 61, v: 80}]}]}; song.rawNotes = null; chopS = 0; computeSongEnd(); isComposition = () => true;`);
+  run(`rollnotes = deriveNoteTypes([{b1: 2, q1: 1, b2: 2, q2: 2, until: [2, 2.5], text: "chord: C7#9", added: true}]).map(resolveNote); finalizeNotes();`);
+  assert.equal(val(`chordBandAt(${bt} + 1.5 * ${qt} - 1) ? chordBandAt(${bt} + 1.5 * ${qt} - 1).text : null`), "C7#9", "inside the band (just before its end)");
+  assert.equal(val(`chordBandAt(${bt} + 1.5 * ${qt})`), null, "at the exact end: not covered — the old inclusive rule would have run on to 2.3");
+  assert.equal(val(`spellPcAt(3, ${bt} + 1.5 * ${qt}, 0)`), val(`spellPc(3, 0)`), "spelling past the end is the key's");
+  assert.equal(val(`spellPcAt(3, ${bt} + ${qt}, 0)`), "D#", "inside: the ♯9");
+  run(`updateChordStale();`);
+  assert.equal(val(`rollnotes[0].stale ?? null`), null, "the C# at 2.3.5 is past the exact end: not heard, so the C under C7#9 is no mismatch");
+  assert.deepEqual(val(`bsChordTimeline(${bt}, 2 * ${bt}).map(e => [e.t, e.end])`), [[bt, bt + 1.5 * qt]], "the Bassist's entry ends at the exact tick");
+  assert.deepEqual(val(`rollnotes.map(n => n.lane)`), [0]);
+  // a band dragged by its end to a whole beat loses the field; to an off-beat tick keeps it exact
+  run(`setEndBQ(rollnotes[0], ${bt} + 2 * ${qt}); resolveNote(rollnotes[0]);`);
+  assert.deepEqual(val(`[rollnotes[0].until ?? null, rollnotes[0].b2, rollnotes[0].q2, rollnotes[0].end]`), [null, 2, 2, bt + 2 * qt]);
+  run(`setEndBQ(rollnotes[0], ${bt} + 2.75 * ${qt}); resolveNote(rollnotes[0]);`);
+  assert.deepEqual(val(`[rollnotes[0].until ?? null, rollnotes[0].b2, rollnotes[0].q2, rollnotes[0].end]`), [[2, 3.75], 2, 3, bt + 2.75 * qt]);
+  // shifting the layer by half a beat: the exact end slides, and lands on a whole beat → the field goes; by a 16th → it stays
+  run(`shiftAnchors(0.25 * ${qt});`);
+  assert.deepEqual(val(`[rollnotes[0].until ?? null, rollnotes[0].q1]`), [null, 1.25], "ends at 2.4 now: no until");
+  run(`shiftAnchors(0.25 * ${qt});`);
+  assert.deepEqual(val(`[rollnotes[0].until ?? null]`), [[2, 4.25]]);
+  assert.equal(val(`(resolveNote(rollnotes[0]), rollnotes[0].end)`), bt + 3.25 * qt);
+  // re-barring 4/4 → 2/4 keeps the exact end
+  run(`convertAnchors([4, 4], [2, 4]); resolveNoteWith(rollnotes[0], song.ppq, [2, 4]);`); // the meter itself is still 4/4 here: resolve under the new units by hand
+  assert.deepEqual(val(`[rollnotes[0].b1, rollnotes[0].q1, rollnotes[0].until ?? null, rollnotes[0].end]`), [3, 1.5, [4, 2.25], bt + 3.25 * qt], "re-barred in 2/4: bar 3 beat 1.5 until bar 4 beat 2.25 — the same ticks");
+  assert.equal(val(`posAnchorText(rollnotes[0])`).includes(" until bar 4 beat 2"), true, "the readout says where it ends: " + val(`posAnchorText(rollnotes[0])`));
+  run(`rollnotes = []; finalizeNotes(); songKey = null;`);
+});
+
+test("until #1179: the chord window — an end row on a half beat saves the exact end (until), on a whole beat saves as today; opening the band shows the exact end; a long label on a half-beat band changes neither its width nor its lane (#1180)", () => {
+  const bt = dockSetup(); // G7 bars 9–10, C bars 11–12
+  const qt = val(`beatTicks()`);
+  try {
+    follow(3 * bt + 2.5 * qt, 3 * bt + 3 * qt); // Josh's Am7: 4.3.5 through 4.4 — the ruler's half-beat snap
+    assert.deepEqual([fld("nb1"), fld("nq1"), fld("ns1"), fld("nb2"), fld("nq2"), fld("ns2")], ["4", "3", "0.5", "4", "4", "0"], "the rows show the selection's own ends");
+    run(`setChordWidget("Am7"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    let n = val(`rollnotes.filter(x => x.text === "Am7").map(x => [x.b1, x.q1, x.b2, x.q2, x.until ?? null, x.end])`);
+    assert.deepEqual(n, [[4, 3.5, 4, 3, null, 3 * bt + 3 * qt]], "ends ON beat 4: to [4, 3], no until — half a beat long, as selected");
+    follow(3 * bt, 3 * bt + 2.5 * qt); // 4.1 through 4.3.5: an end off the beat
+    run(`setChordWidget("Am"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    n = val(`rollnotes.filter(x => x.text === "Am").map(x => [x.b1, x.q1, x.b2, x.q2, x.until ?? null, x.end])`);
+    assert.deepEqual(n, [[4, 1, 4, 3, [4, 3.5], 3 * bt + 2.5 * qt]], "ends at 4.3.5: until [4, 3.5] + the fallback to [4, 3]; the band is 2.5 beats, not 3");
+    run(`editorFollowBand(rollnotes.find(x => x.text === "Am"));`);
+    assert.deepEqual([fld("nb2"), fld("nq2"), fld("ns2")], ["4", "3", "0.5"], "opening it shows the exact end");
+    run(`setChordWidget("Am9"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(x => x.b1 === 4 && x.q1 === 1).map(x => [x.text, x.until ?? null])`), [["Am9", [4, 3.5]]], "re-labelled in place, the exact end kept, nothing doubled");
+    // #1180: the label never widens the band or moves its lane
+    const before = val(`rollnotes.filter(x => x.text === "Am9").map(x => [x.start, x.end, x.lane])`);
+    run(`rollnotes.find(x => x.text === "Am9").text = "Am9 with a label far longer than half a beat could ever show at this zoom"; finalizeNotes();`);
+    assert.deepEqual(val(`rollnotes.filter(x => x.text.startsWith("Am9")).map(x => [x.start, x.end, x.lane])`), before, "same start, end and lane: lanes come from spans alone");
+  } finally { dockTeardown(); }
+});
+
+test("until #1179: Ask add_annotation {until} writes the exact end (chord only), the context line says \"until 4.3.5\"; edit keeps it on an unmoved band and drops it for a new whole-beat end", () => {
+  installSong();
+  const bt = val(`barTicks()`), qt = val(`beatTicks()`);
+  run(`songKey = "albums/compositions/nightroll/until-ask.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); rollnotes = []; finalizeNotes();`);
+  try {
+    run(`askAddAnnotation({kind: "chord", text: "Am7", bar: 4, beat: 3.5, until: "4.4"});`);
+    assert.deepEqual(val(`rollnotes.map(n => [n.b2, n.q2, n.until ?? null, n.end])`), [[4, 3, null, 3 * bt + 3 * qt]], "until 4.4 is a whole beat: stored as to [4, 3], ends on beat 4");
+    run(`askAddAnnotation({kind: "chord", text: "Am", bar: 4, beat: 1, until: [4, 3.5]});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.text === "Am").map(n => [n.b2, n.q2, n.until ?? null, n.end])`), [[4, 3, [4, 3.5], 3 * bt + 2.5 * qt]], "until [4, 3.5]: the field, the fallback to, the exact end");
+    const lines = run(`askAnnotationsTextCompact()`).split("\n");
+    assert.ok(lines.some(l => /\[4\.1 until 4\.3\.5\] chord: Am$/.test(l)), "the context writes the exact end: " + lines.join(" | "));
+    assert.ok(lines.some(l => /\[4\.3\.5-4\.3\] chord: Am7$/.test(l)), "a whole-beat end reads as before");
+    assert.throws(() => run(`askAddAnnotation({kind: "chord", text: "E", bar: 4, beat: 3, until: "4.2"})`), /until has to come after the start/);
+    assert.throws(() => run(`askAddAnnotation({kind: "chord", text: "E", bar: 5, beat: 1, until: "five"})`), /until is written like 4\.4/);
+    assert.throws(() => run(`askAddAnnotation({kind: "section", text: "A", bar: 5, beat: 1, until: "5.2.5"})`), /until belongs on a chord annotation/);
+    const idOf = text => val(`dedupedNotesWithIndex(rollnotes).find(({n}) => n.text === ${JSON.stringify(text)}).i`);
+    run(`askEditAnnotation({id: ${idOf("Am")}, text: "Am6"});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.text === "Am6").map(n => n.until ?? null)`), [[4, 3.5]], "an edit that only relabels keeps the exact end");
+    run(`askEditAnnotation({id: ${idOf("Am6")}, text: "Am6", new_end_bar: 4, new_end_beat: 2});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.text === "Am6").map(n => [n.q2, n.until ?? null, n.end])`), [[2, null, 3 * bt + 2 * qt]], "a new whole-beat end drops it");
+    run(`askEditAnnotation({id: ${idOf("Am6")}, text: "Am6", until: "4.1.5"});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.text === "Am6").map(n => [n.q2, n.until ?? null, n.end])`), [[1, [4, 1.5], 3 * bt + 0.5 * qt]], "until on an edit moves the exact end");
+    assert.match(run(`JSON.stringify(ASK_ACTIONS.find(x => x.name === "add_annotation").spec)`), /until = \[bar, beat\]/, "the act registry's spec says so");
+    assert.match(helpSource(), /A chord can end mid-beat/, "the help sheet names the feature (FEATURES keyword)");
   } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey); localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`); }
 });
