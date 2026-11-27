@@ -3274,6 +3274,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "a lasso of exactly one note reads like a tap", "never lands on a row another drum track", // #1134: the lasso readout's track, the kit guess's lengths + taken rows
     "Select all notes", "Drums checkbox", "the mark is cleared instead", // #1140: the voice menu's action row + one Drums checkbox over the three drum states
     "game songs too", "Keep pitch when the speed changes", // a slowed game song keeps its pitch (Josh 2026-10-25/11-27; audio/chip-pitch.js) + the Settings › Other switch
+    "spelled by your chord", // #1171: a note under his chord band is named by its degree there (C7#9 → D#); theory/chords.js spellInChord
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -11167,6 +11168,132 @@ test("#1164 a drum hit reads as its drum, never a pitch; drums stay out of a las
   assert.equal(chordBtn(), "", "two pitches over a drum still offer Chord?");
   a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 1, ni: 0}]; multiSelKey = new Set(["0:0", "1:0"]); refreshSelInfo();`);
   assert.equal(chordBtn(), "none", "one pitch over a drum is no chord");
+});
+
+test("#1171 spellInChord: a pitch class the label names is spelled by its degree — root letter + (degree − 1), accidental to fit", () => {
+  const sp = (pc, label) => { const r = val(`spellInChord(${pc}, ${JSON.stringify(label)})`); return r ? r.letter + r.acc : null; };
+  // Josh's case and the spec's examples
+  assert.equal(sp(3, "C7#9"), "D#", "the ♯9 of C7♯9 is D♯, never E♭");
+  assert.equal(sp(10, "C7"), "Bb");
+  assert.equal(sp(6, "Ebm"), "Gb");
+  assert.equal(sp(4, "F#7"), "E");
+  assert.equal(sp(3, "B7"), "D#");
+  // the triad, sus, 6, 7s
+  assert.equal(sp(1, "Db"), "Db", "the root is spelled as written");
+  assert.equal(sp(8, "Caug"), "G#", "an augmented fifth is a sharp fifth");
+  assert.equal(sp(6, "Cm7b5"), "Gb", "a flat fifth replaces the perfect one");
+  assert.equal(sp(7, "Cm7b5"), null, "…so G is no longer a chord tone");
+  assert.equal(sp(8, "Bdim7"), "Ab", "a diminished seventh is a double-flat seventh letter");
+  assert.equal(sp(7, "Dsus4"), "G", "sus4 names the 4th");
+  assert.equal(sp(4, "Dsus2"), "E", "sus2 names the 2nd");
+  assert.equal(sp(9, "C6"), "A");
+  assert.equal(sp(11, "Cmaj7"), "B");
+  // tensions, adds and alterations
+  assert.equal(sp(1, "C7b9"), "Db");
+  assert.equal(sp(2, "C9"), "D");
+  assert.equal(sp(10, "C9"), "Bb", "a ninth chord carries its seventh");
+  assert.equal(sp(10, "C69"), null, "69 is a sixth chord with an added ninth — no seventh");
+  assert.equal(sp(2, "C69"), "D");
+  assert.equal(sp(2, "C7add9"), "D");
+  assert.equal(sp(6, "C7#11"), "F#");
+  assert.equal(sp(8, "C7b13"), "Ab");
+  assert.equal(sp(5, "C11"), "F", "an eleventh chord carries its ninth and seventh too");
+  assert.equal(sp(2, "C11"), "D");
+  assert.equal(sp(9, "C13"), "A");
+  assert.equal(sp(2, "C13"), "D", "a 13 implies the 9…");
+  assert.equal(sp(5, "C13"), "F", "…and the 11");
+  assert.equal(sp(10, "C13"), "Bb");
+  assert.equal(sp(2, "Cadd13"), null, "addN adds only N");
+  assert.equal(sp(5, "Cadd13"), null);
+  assert.equal(sp(9, "Cadd13"), "A");
+  assert.equal(sp(2, "Cmaj13"), "D");
+  assert.equal(sp(10, "Cmb9"), "Bb", "an altered tension is a tension: it brings the 7th");
+  assert.equal(sp(1, "Cmb9"), "Db");
+  assert.equal(sp(10, "Cm6b9"), null, "…unless a 6 is there");
+  assert.equal(sp(9, "Cm6b9"), "A");
+  assert.equal(sp(6, "Cm7b5"), "Gb"); assert.equal(sp(8, "C7#5"), "G#"); assert.equal(sp(7, "C7#5"), null, "b5/#5 replace the natural 5th");
+  // what the label does not name keeps the key spelling (null here)
+  assert.equal(sp(1, "C7"), null, "a passing tone is not a chord tone");
+  // the slash bass is spelled with the letter the label writes (the rule native ChordSpelling.swift follows too)
+  assert.equal(sp(4, "C/E"), "E", "a slash bass that is a chord tone");
+  assert.equal(sp(6, "C/F#"), "F#", "a slash bass that is not one: as written");
+  assert.equal(sp(10, "C/Bb"), "Bb");
+  assert.equal(sp(10, "C/A#"), "A#", "…as written, sharp or flat");
+  assert.equal(sp(3, "Cm/D#"), "D#", "the written bass wins over the triad's E♭");
+  assert.equal(sp(6, "Am/F#"), "F#");
+  // native's vocabulary too (ChordSpelling.swift ascii() + degrees(); its testTheChipRowsOwnSpellingParses) — spelling only, the chips and nameChord keep theirs
+  assert.equal(sp(6, "E♭m"), "Gb", "the iPad's chip row writes ♭");
+  assert.equal(sp(3, "C7♯9"), "D#");
+  assert.equal(sp(6, "Cm7♭5"), "Gb");
+  assert.equal(sp(6, "Cø7"), "Gb"); assert.equal(sp(10, "Cø"), "Bb");
+  assert.equal(sp(9, "C°7"), "Bbb"); assert.equal(sp(3, "C°"), "Eb");
+  assert.equal(sp(11, "CΔ"), "B");
+  assert.equal(sp(10, "C7 (passing)"), "Bb", "a trailing note is not the chord");
+  assert.equal(sp(10, "Cmin7"), "Bb"); assert.equal(sp(3, "Cmin"), "Eb");
+  assert.equal(sp(3, "C-7"), "Eb"); assert.equal(sp(8, "C+"), "G#"); assert.equal(sp(10, "C+7"), "Bb");
+  assert.equal(sp(5, "Csus"), "F", "bare sus = sus4"); assert.equal(sp(4, "Csus"), null);
+  assert.equal(sp(2, "Cadd2"), "D"); assert.equal(sp(10, "Cadd2"), null, "add brings no seventh");
+  assert.equal(sp(5, "Cadd4"), "F"); assert.equal(sp(9, "Cadd6"), "A");
+  assert.equal(sp(2, "C2"), "D"); assert.equal(sp(10, "C2"), null); assert.equal(sp(5, "C4"), "F");
+  assert.equal(sp(4, "Cmaj"), "E", "maj alone is the major triad"); assert.equal(sp(11, "Cmaj"), null);
+  assert.equal(sp(0, "CM7"), null, "…and what native refuses, we refuse"); assert.equal(sp(0, "C7+"), null); assert.equal(sp(0, "H7"), null); assert.equal(sp(0, "C stuff"), null);
+  // unreadable labels change nothing and never throw
+  assert.equal(sp(0, "N.C."), null);
+  assert.equal(sp(0, "garbage"), null);
+  assert.equal(sp(0, ""), null);
+  assert.equal(val(`spellInChord(0, null)`), null);
+  assert.equal(val(`spellInChord(0, 42)`), null);
+  assert.equal(sp(0, "Cxyz"), null, "an unknown suffix: the whole label stands down");
+});
+
+test("#1171 the tapped note, the lasso and the Ask context read a note under his chord band by its degree in the chord", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 63, v: 80}, {t: 480, d: 480, p: 61, v: 80}, {t: 2400, d: 480, p: 63, v: 80}]}]};
+    songKey = "midi/test.mid"; keyRegions = []; declaredTs = [4, 4]; previewSf = null;
+    trackState = [{muted: false, solo: false}]; selNote = null; selOctaves = true; multiSel = []; multiSelKey = new Set();
+    rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();
+  `);
+  const first = (code) => a.run(code).split(" · ")[0];
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "under C7#9 the pc-3 note is the ♯9");
+  assert.equal(first(`noteLabel(0, 1)`), "C#4", "pc 1 is not in C7♯9: the key spelling (no key declared → C's table, C♯) stands");
+  assert.equal(first(`noteLabel(0, 2)`), "Eb4", "outside the band the same pitch keeps today's spelling");
+  // the lasso readout spells each pitch by the band at its earliest note
+  a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]); refreshSelInfo();`);
+  assert.match(a.run(`document.getElementById("noteinfo").textContent`), /^C#4 · D#4  \(2 notes/, "lasso names: C# (not in the chord, key spelling) and D# (the ♯9)");
+  a.run(`selOctaves = false; refreshSelInfo();`);
+  assert.match(a.run(`document.getElementById("noteinfo").textContent`), /^C# · D#  \(2 notes/, "pitch-class mode too");
+  a.run(`selOctaves = true; document.getElementById("chordbtn").click();`);
+  assert.match(a.run(`document.getElementById("noteinfo").textContent`), /^C#4 · D#4  →  /, "Chord? lists the same names");
+  // the Ask context's note lines
+  assert.match(a.run(`askSpanNotes(0, 1920)`), /1 D#4 1, 2 C#4 1/, "askSpanNotes spells by the band");
+  assert.match(a.run(`askSpanNotesCompact(0, 1920)`), /1\|1D#4\/1 2C#/, "the compact rows too");
+  assert.match(a.run(`askSpanNotes(1920, 3840)`), /2 D#4 1/, "past the band the context's own no-key sharp spelling stands (the tap readout says Eb4 there: sfAt's C table)");
+  // a label nothing can read leaves everything as it was
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: N.C.\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "Eb4");
+  // nested bands: the innermost one spells
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "the inner C7#9, not the outer Cm's E♭");
+  assert.equal(first(`noteLabel(0, 1)`), "C#4");
+  // which band covers a note — ONE rule with native ChordSpelling.tones(atTick:): lowest layer, then greatest start, then smallest end
+  a.run(`rollnotes = parseRollnotes("[1.1 - 1.4]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "same start: the shorter band is the inner one");
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); rollnotes[1].layer = 1; finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "Eb4", "a layer-1 chord waits: layer 0 (absent) spells, however nested");
+  a.run(`rollnotes = parseRollnotes("[1.1]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "a chord with no range covers its own beat…");
+  assert.equal(first(`noteLabel(0, 1)`), "C#4", "…and no further (beat 2 is C♯ either way, but see the band check)");
+  assert.equal(a.run(`chordBandAt(479) ? chordBandAt(479).text : null`), "C7#9");
+  assert.equal(a.run(`chordBandAt(480)`), null, "one beat long");
+  // the Ask context's lasso line reads the same names as the lasso readout (#1171 divergence 6)
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes(); multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]); multiSelSf = 0;`);
+  assert.match(a.run(`askContext(askSpan(), askBudget())`), /^lasso-selected notes: C#4 D#4 — do not name/m, "the ✦ AI reads D♯, like the strip");
+  // Learning hides a ✦ AI chord: it never spells a note
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: C7#9\\n").map(resolveNote); rollnotes[0].ai = {model: "x", at: "y"}; finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "Eb4", "an AI estimate does not drive the spelling in Learning");
+  assert.match(helpSource(), /spelled by your chord/, "the help sheet names the feature (FEATURES keyword)");
 });
 
 test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", async () => {

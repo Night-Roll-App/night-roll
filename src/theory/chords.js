@@ -216,6 +216,93 @@ export function parseChordSym(sym) {
   return (sym || "").trim().match(/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?(?:\s+\((.*)\))?$/);
 }
 
+// Spelling by chord degree (Josh #1171): under HIS chord band a note is the
+// degree the label names — C7#9's pc 3 is the ♯9, so D♯, where the key table
+// would say E♭. Letter = root letter + (degree − 1); the accidental is whatever
+// lands that letter on the pitch class. Only tones the label names are
+// spelled this way (the root, the triad — sus2/sus4 as 2nd/4th — 6/7/maj7,
+// the tensions it carries and its alterations); every other pc keeps the key
+// spelling, so a passing tone never borrows a chord's letter. A slash bass is
+// spelled with the letter the label writes (C/B♭ → B♭, C/E → E, Cm/D♯ → D♯ even
+// though the triad says E♭: he wrote the bass). Tensions: 13 implies 9 and 11,
+// 11 implies 9, addN adds only N; any tension, altered or not, brings the 7th
+// unless a 6 is present ("69" = 6 + 9, no 7th); b5/#5 replace the natural 5th.
+// A label nothing here can read (N.C., free text) → null: the caller falls back
+// to spellPc. Never throws. The SAME rule is native ChordSpelling.swift's —
+// a change here is a change there (Josh #1050: both versions).
+const CHORD_DEG_PC = {1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 9: 14, 11: 17, 13: 21}; // major-scale semitones of each degree
+export const chordSpellMemo = {};
+export function chordSpelling(label) { // label → {pc: {letter, acc}} for the tones it names, or null
+  if (typeof label !== "string") return null;
+  if (label in chordSpellMemo) return chordSpellMemo[label];
+  let out = null;
+  try { out = chordSpellingRaw(label); } catch (e) { out = null; }
+  return (chordSpellMemo[label] = out);
+}
+// The labels native ChordSpelling reads beyond the chip vocabulary (its ascii()
+// + degrees()): ♯/♭ as typed on the iPad, ° ø Δ, min/-/+, bare sus, add2/4/6,
+// a bare 2 or 4, "maj" alone = a major triad. Spelling only — the chip row and
+// nameChord keep their own vocabulary.
+export function chordLabelAscii(label) {
+  return label.replace(/♯/g, "#").replace(/♭/g, "b").replace(/°/g, "dim").replace(/ø7/g, "m7b5").replace(/ø/g, "m7b5").replace(/Δ/g, "maj7");
+}
+function chordVocabNormalize(q) {
+  let s = q;
+  if (s.startsWith("min")) s = "m" + s.slice(3);
+  else if (s.startsWith("-")) s = "m" + s.slice(1);
+  else if (s.startsWith("+")) s = "aug" + s.slice(1);
+  else if (s === "maj") s = "";
+  return s.replace(/sus(?![24])/g, "sus4").replace(/add2(?!\d)/g, "add9").replace(/add4(?!\d)/g, "add11").replace(/add6(?!\d)/g, "6")
+          .replace(/(?<![\dsd#b])2(?!\d)/g, "add9").replace(/(?<![\dsd#b])4(?!\d)/g, "add11");
+}
+function chordSpellingRaw(label) {
+  const m = parseChordSym(chordLabelAscii(label));
+  if (!m) return null;
+  const q = chordQualParse(chordVocabNormalize(m[3] || ""));
+  if (!q) return null;
+  const rootLetter = LETTERS.indexOf(m[1]);
+  const rootPc = ((LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0)) % 12 + 12) % 12;
+  const tones = [[1, 0]]; // [degree, semitones above the root]
+  const base = q.base, x = q.exts;
+  if (base === "m") tones.push([3, 3], [5, 7]);
+  else if (base === "dim") tones.push([3, 3], [5, 6]);
+  else if (base === "aug") tones.push([3, 4], [5, 8]);
+  else if (base === "sus2") tones.push([2, 2], [5, 7]);
+  else if (base === "sus4") tones.push([4, 5], [5, 7]);
+  else if (base === "5") tones.push([5, 7]);
+  else tones.push([3, 4], [5, 7]);
+  const has = t => x.includes(t);
+  const maj = has("maj7") || has("maj9") || has("maj11") || has("maj13");
+  const ten = ["13", "maj13"].some(has) ? 13 : ["11", "maj11"].some(has) ? 11 : ["9", "maj9"].some(has) ? 9 : 0;
+  const alt = {b5: [5, 6], "#5": [5, 8], b9: [9, 13], "#9": [9, 15], "#11": [11, 18], b13: [13, 20]};
+  const altTension = ["b9", "#9", "#11", "b13"].some(has); // an altered tension is a tension: C7♯9's cousin "C♯9" still carries the 7th
+  if (has("6")) tones.push([6, 9]);
+  if (has("7") || maj || ((ten || altTension) && !has("6"))) tones.push([7, base === "dim" && !maj ? 9 : maj ? 11 : 10]); // a tension brings its seventh; "69" is a 6 with an added 9; dim7's seventh is diminished
+  for (const d of [9, 11, 13]) if (ten >= d || has("add" + d)) tones.push([d, CHORD_DEG_PC[d]]);
+  for (const a of Object.keys(alt)) if (has(a)) {
+    if (a === "b5" || a === "#5") { const i = tones.findIndex(t => t[0] === 5); if (i >= 0) tones.splice(i, 1); } // an altered fifth replaces the perfect one
+    tones.push(alt[a]);
+  }
+  const map = {};
+  for (const [deg, semi] of tones) {
+    const letter = LETTERS[(rootLetter + deg - 1) % 7];
+    const pc = (rootPc + semi) % 12;
+    let diff = (pc - LETTER_PC[letter] + 12) % 12;
+    if (diff > 6) diff -= 12;
+    if (Math.abs(diff) > 2) continue; // no triple accidentals: that tone keeps the key spelling
+    if (!(pc in map)) map[pc] = {letter, acc: diff === 0 ? "" : diff === 1 ? "#" : diff === -1 ? "b" : diff === 2 ? "##" : "bb"};
+  }
+  if (m[4]) { // the slash bass, as he wrote it — over whatever degree the chord would have called that pc
+    const letter = m[4][0], acc = m[4][1] || "";
+    map[((LETTER_PC[letter] + (acc === "#" ? 1 : acc === "b" ? -1 : 0)) % 12 + 12) % 12] = {letter, acc};
+  }
+  return map;
+}
+export function spellInChord(pc, label) { // {letter, acc} when the label names this pitch class, else null
+  const map = chordSpelling(label);
+  return map && map[((pc % 12) + 12) % 12] || null;
+}
+
 export function transposeChordLabel(text, dP) { // "G#m" + 2 → "A#m"; spelling flat-preferred like inserts
   const m = text.match(/^([A-G])([#b♯♭]?)(.*)$/);
   if (!m) return text;
