@@ -117,6 +117,9 @@ import * as sessionAlbum from "./session/album.js";
 import * as sessionFiles from "./session/files.js";
 import * as sessionBoot from "./session/boot.js";
 import * as sessionExportAll from "./session/export-all.js";
+import * as sessionExportScore from "./session/export-score.js";
+import * as exportMusicxml from "./export/musicxml.js";
+import * as exportTab from "./export/tab.js";
 import * as platformExportCore from "./platform/export-core.js";
 import * as uiPerf from "./ui/perf.js";
 import * as platformSw from "./platform/sw.js";
@@ -143,7 +146,7 @@ export function exposeGlobals() {
                      inputGestures, inputRecord, inputKeyboard,
                      askBackend, askTools, askActions, askContext, askBridge, askShots, askSheet, askClient, askHost, askAnnotate,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiStudySheet, uiCoachSheet, modelCoachComments, uiSheets, uiWm, uiVellane,
-                     sessionSong, sessionAlbum, sessionFiles, sessionBoot, sessionExportAll, platformExportCore, uiPerf, platformSw,
+                     sessionSong, sessionAlbum, sessionFiles, sessionBoot, sessionExportAll, sessionExportScore, exportMusicxml, exportTab, platformExportCore, uiPerf, platformSw,
                      hooks, wire };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {

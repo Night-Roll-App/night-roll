@@ -28,6 +28,10 @@ there is no account, no server and no build step — `index.html`,
   loop points, dictated or typed in the app. In Learning mode the app never
   names a key or a chord on its own — signatures and spellings render only
   what I have written down. Normal mode shows estimates, labelled as such.
+- **Exports what it shows.** The score as printable pages, MusicXML (with
+  a TAB staff — opens in Guitar Pro, MuseScore, the guitar app), plain-text
+  guitar tab per part, MIDI — for the shown tracks, all of them, or one file
+  per part; one share sheet. A key or meter only where one is declared.
 - **A small DAW.** Pencil and drag note entry on a 16th/triplet grid,
   multi-note editing (move, resize, split, join, velocity), chord and
   progression insertion, a drum lane with a Drummer and a Bassist that

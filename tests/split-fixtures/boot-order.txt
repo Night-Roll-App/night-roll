@@ -244,8 +244,6 @@ document.getElementById("filesavelocal").addEventListener("click", () => { if (S
 document.getElementById("filerevert").addEventListener("click", () => {
 document.getElementById("filedlaudio").addEventListener("click", async () => {
 document.getElementById("filedlmid").addEventListener("click", () => {
-document.getElementById("filedlscore").addEventListener("click", () => {
-document.getElementById("fsxgo").addEventListener("click", async () => {
 document.getElementById("fileexportall").addEventListener("click", () => exportEverythingUI(document.getElementById("fileexportstatus")).then(msg => { if (msg) setInfo(msg); }));
 JOB_KINDS.capture = {
 document.getElementById("impall").addEventListener("click", e => {
@@ -262,6 +260,11 @@ document.getElementById("stemsclose").addEventListener("click", stemsSheetClose)
 document.getElementById("stemsopen").addEventListener("click", () => {
 document.getElementById("stemsrerun").addEventListener("click", () => {
 setTimeout(stemsResumeInterrupted, 2000);
+document.getElementById("filedlscore").addEventListener("click", () => { closeFileMenus(); exportSheetOpen(); });
+document.getElementById("exShown").addEventListener("click", () => {
+document.getElementById("exAll").addEventListener("click", () => {
+document.getElementById("exSplit").addEventListener("click", () => {
+document.getElementById("exGo").addEventListener("click", async () => {
 document.getElementById("filesave").addEventListener("click", () => {
 {
 document.getElementById("copybtn").addEventListener("click", () => {
@@ -391,6 +394,7 @@ applyViewMode();
 resize();
 updateSyncBtn();
 if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof location !== "undefined" && S.APP_BASE) {
+if (typeof document !== "undefined" && typeof getComputedStyle === "function") {
 document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
 window.addEventListener("pagehide", usageFlush);

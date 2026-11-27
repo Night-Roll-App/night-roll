@@ -1241,7 +1241,7 @@
   <button class="fitem" id="fileshare">🔗 Share link…</button>
   <button class="fitem" id="filedlmid">Download .mid</button>
   <button class="fitem" id="filedlaudio">Download audio</button>
-  <button class="fitem" id="filedlscore">Export score…</button>
+  <button class="fitem" id="filedlscore">Export score / tab…</button>
   <button class="fitem" id="fileexportall">Export everything…</button>
   <div id="fileexportstatus" style="display:none;padding:4px 14px;font-size:0.8125rem;color:var(--gold)" aria-live="polite"></div>
   <button class="fitem" id="filehelp">Help</button>
@@ -1262,12 +1262,6 @@
     <div class="row">
       <input type="text" id="fsname" placeholder="song name" style="flex:1;min-height:40px">
       <button class="primary" id="fsgo">Save</button>
-    </div>
-  </div>
-  <div id="filescoreform" style="display:none"><!-- File ▾ → Export score… (DAW F6): paper size, then Export — src/render/score-print.js -->
-    <div class="row"><span class="lbl">paper</span>
-      <select id="fsxpaper" aria-label="Paper size" style="min-height:40px"><option value="letter">Letter</option><option value="a4">A4</option></select>
-      <button class="primary" id="fsxgo">Export</button>
     </div>
   </div>
   <div id="filerenameform" style="display:none">
@@ -1441,6 +1435,30 @@
   </div>
 </div>
 </div><!-- /jobssheet-home -->
+
+<div class="overlay" id="exportsheet"><!-- File ▾ → Export score / tab… (docs/plans/2026-11-27-score-tab-export.md §5): src/session/export-score.js -->
+  <div class="sheet">
+    <h2 id="exportsheet-h2">EXPORT SCORE / TAB</h2>
+    <div class="status" id="exTitle"></div>
+    <div class="row"><span class="lbl">formats</span>
+      <label><input type="checkbox" id="exFmtPages" checked> Pages</label>
+      <label><input type="checkbox" id="exFmtMusicxml" checked> MusicXML</label>
+      <label><input type="checkbox" id="exFmtTab" checked> Tab</label>
+      <label><input type="checkbox" id="exFmtMidi"> MIDI</label></div>
+    <div class="status">Tab: standard tuning, 24 frets — one .txt file per part, and a TAB staff inside the MusicXML.</div>
+    <div class="row"><span class="lbl">parts</span>
+      <button id="exShown" class="exlink">As shown</button>
+      <button id="exAll" class="exlink">All</button>
+      <button id="exSplit" class="exlink" aria-pressed="false">Each part its own file</button></div>
+    <div class="row" id="exParts"></div>
+    <div class="row"><span class="lbl">tab for</span></div>
+    <div class="row" id="exTab"></div>
+    <div class="row"><span class="lbl">paper</span>
+      <select id="exPaper" aria-label="Paper size"><option value="letter">Letter</option><option value="a4">A4</option></select>
+      <button class="primary" id="exGo">Export</button></div>
+    <div class="status">This song only — whole albums come in the next build. The files go to the share sheet (a browser downloads them).</div>
+  </div>
+</div>
 
 <div class="overlay" id="stemssheet">
   <div class="sheet">
@@ -1859,6 +1877,9 @@
 <link rel="modulepreload" href="src/session/files.js">
 <link rel="modulepreload" href="src/session/boot.js">
 <link rel="modulepreload" href="src/session/export-all.js">
+<link rel="modulepreload" href="src/session/export-score.js">
+<link rel="modulepreload" href="src/export/musicxml.js">
+<link rel="modulepreload" href="src/export/tab.js">
 <link rel="modulepreload" href="src/platform/export-core.js">
 <link rel="modulepreload" href="src/ui/perf.js">
 <link rel="modulepreload" href="src/platform/sw.js">

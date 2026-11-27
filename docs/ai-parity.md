@@ -193,7 +193,8 @@ silently.
 | Publish (this song) | have (`publish_song`) | — | — | — |
 | Publish all / folder publish | — | no — a batch over many songs deserves your tap in the Publish window | `show {what:"publish"}` | S |
 | 🔗 Share link | — | yes — the link lands in the bubble, ⧉ copies it | `song_file {action:"share_link"}` | S |
-| Download .mid / audio, Export score | — | Ask opens the sheet prefilled; you tap Export (iPad downloads need a tap) | `show {what:"export_score"\|"download"}` | S |
+| Download .mid / audio | — | Ask opens the sheet prefilled; you tap Export (iPad downloads need a tap) | `show {what:"download"}` | S |
+| Export score / tab (docs/plans/2026-11-27-score-tab-export.md, phase 1) | `export {what?, formats?, parts?, split?, tab_for?, paper?}` — pages, MusicXML (with a TAB staff), ASCII tab per part, MIDI for the open song, one share sheet; album/folder refuse until phase 2 | yes | shipped (web + native 2026-11-27) | S |
 | Import… | — | Ask opens the hub; you pick files | `show {what:"import"}` | S |
 | Stems + notes from a recording (on the Mac; docs/plans/stem-splitter.md) | `split_stems {model?, drums?, preset?, onset?, frame?, min_note_ms?, mix?, attach?}` — the open song's recording goes to the Mac bridge; the notes come back as a NEW local song (notes only — no key/chord/meter) | yes | shipped (web 2026-10-30; native phase 3) | S |
 | Settings: folder, GitHub token, data locations, AI model | — | **no** — secrets and file pickers | — | — |
