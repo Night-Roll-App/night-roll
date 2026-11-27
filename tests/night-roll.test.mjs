@@ -3274,6 +3274,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Copy annotations on a locked song", // Terminal #235: lasso → Copy → Paste of chords/sections on a capture
     "the outlined bands move with them", // a lasso-move carries the lasso's bands (Josh, 2026-10-09)
     "Read receipts", "✓✓ turn blue", // Worker-tab receipts (Josh #1135/#1136): vendor/ai/web/ticks.js drawn by css/app.css .asktick
+    "A Worker message that belongs to the song", "from the Worker tab", // Josh #1189: src/ask/forward.js over vendor/ai/web/forward.js
     "a lasso of exactly one note reads like a tap", "never lands on a row another drum track", // #1134: the lasso readout's track, the kit guess's lengths + taken rows
     "Select all notes", "Drums checkbox", "the mark is cleared instead", // #1140: the voice menu's action row + one Drums checkbox over the three drum states
     "game songs too", "Keep pitch when the speed changes", // a slowed game song keeps its pitch (Josh 2026-10-25/11-27; audio/chip-pitch.js) + the Settings › Other switch

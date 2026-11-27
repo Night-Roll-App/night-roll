@@ -7,7 +7,7 @@
 // through host.url()/host.headers() (backends.js's aiUrlOf/aiHeadersOf).
 // Results are {ok, status, body} so a caller can tell a 404 ("this server
 // has no such route — stop asking") from a network error (thrown).
-import { aiUrlOf, aiHeadersOf } from "./backends.js";
+import { aiUrlOf, aiHeadersOf, aiDeviceId } from "./backends.js";
 
 async function aiBody(r) { try { return await r.json(); } catch (err) { return null; } }
 async function aiResult(r) { return {ok: r.ok, status: r.status, body: await aiBody(r)}; }
@@ -43,7 +43,7 @@ export async function aiSessionGet(host, key) { return aiResult(await aiBridgeGe
 export function aiSessionDelete(host, key) { return fetch(aiUrlOf(host) + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeadersOf(host)}); }
 export async function aiSessionCompact(host, key, model) { return aiResult(await aiBridgePost(host, "/v1/sessions/" + encodeURIComponent(key) + "/compact", {model})); }
 // ---- the terminal queue (another Claude Code session on the Mac reads it) and its prefs
-export async function aiTerminalPost(host, text) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text, app: decodeURIComponent(aiAppOf(host))})); }
+export async function aiTerminalPost(host, text) { return aiResult(await aiBridgePost(host, "/v1/terminal", {text, app: decodeURIComponent(aiAppOf(host)), device: aiDeviceId(host)})); } // device: this browser's id — a hand-off of this message to a song chat (#1189) runs here alone
 export async function aiTerminalPrefsGet(host) { try { const r = await aiBridgeGet(host, "/v1/terminal-prefs", {cache: "no-store"}); return r.ok ? await aiBody(r) : null; } catch (err) { return null; } }
 export function aiTerminalPrefsSet(host, patch) { return aiBridgePost(host, "/v1/terminal-prefs", patch); }
 // ---- the Front Desk: one shared session (app "front-desk" on the bridge). A post carries the asking app (src) and one line of

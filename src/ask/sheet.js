@@ -24,6 +24,7 @@ import { askShotTake } from "./shots.js";
 import { askShotClearAll } from "./shots.js";
 import { askPickFiles } from "./shots.js";
 import { askBtnTap } from "./host.js";
+import { askForwardChips } from "./forward.js";
 import { askRender } from "../hooks.js";
 import { askSessionRefresh } from "./bridge.js";
 import { askStatusToggle } from "./bridge.js";
@@ -162,7 +163,7 @@ export function askPasteInsert(text) { // at the caret when the box already has 
 export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
 export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
-export function askRenderImpl() { aiRenderLog(askHost()); askEarlierBlock(); askCarryChip(); askMarkQuestions(); }
+export function askRenderImpl() { aiRenderLog(askHost()); askEarlierBlock(); askCarryChip(); askForwardChips(); askMarkQuestions(); }
 // "Earlier chat" (Josh #1057): the retired ✦ Front Desk thread (the cached GET /v1/desk window, ff1roll-desk) and the older general chat, read only, at
 // the top of the Claude tab. Collapsed — a long history must not push the conversation off the screen. Nothing here writes either store; rows newer than
 // the switch were moved into the Claude chat itself by askDeskMerge (bridge.js).

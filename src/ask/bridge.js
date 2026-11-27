@@ -50,6 +50,7 @@ import { aiJobsSupported, aiInboxFetch, aiStatusFetch, aiSessionGet, aiSessionCo
 import { aiHostAllowed } from "../../vendor/ai/web/backends.js";
 import { aiDeskPoll, aiDeskGet } from "../../vendor/ai/web/desk.js";
 import { aiInboxTake } from "../../vendor/ai/web/window.js";
+import { askForwardTake } from "./forward.js";
 import { aiStripContext } from "../../vendor/ai/web/store.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
@@ -492,6 +493,8 @@ export function askDeskMerge() {
   document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ Claude answered — tap ✦ AI to read it");
 }
 export function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
+  notes = askForwardTake(notes); // a kind:"chat" note is a Worker message for a song's chat (#1189): sent there or kept waiting, never a note
+  if (!notes.length) return;
   const toTerm = n => !n.from || n.from === "terminal" || n.from === "front-desk" || n.from === "one-off"; // a note addressed to the retired Front Desk reads in the Claude tab
   for (const key of [ASK_TERMINAL_KEY, null]) {
     const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));

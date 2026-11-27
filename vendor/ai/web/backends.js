@@ -19,6 +19,20 @@
 import { aiSSE } from "./sse.js";
 
 export function aiStorage(host) { return host.storage || globalThis.localStorage; }
+// aiDeviceId(host): this browser's own id for the bridge (#1189) — a random word kept under host.keys.device (default
+// host.keys.store + "device"), sent with every Worker message (POST /v1/terminal `device`) and echoed on a hand-off to a song
+// chat, so that of all the devices polling one app's inbox only the one that sent the words runs them. Regenerated when
+// storage is empty (a cleared site, a new browser); without writable storage it lives on host.state for this page's life.
+export function aiDeviceId(host) {
+  const key = (host.keys && (host.keys.device || (host.keys.store ? host.keys.store + "device" : null))) || "ai-device";
+  let id = null;
+  try { id = aiStorage(host).getItem(key); } catch (err) { id = null; }
+  if (!(id && /^[\w.-]{8,64}$/.test(id))) id = host.state && host.state.aiDeviceId || null;
+  if (!id) id = "w" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  if (host.state) host.state.aiDeviceId = id;
+  try { aiStorage(host).setItem(key, id); } catch (err) { /* no storage: the id lives on host.state until the page goes */ }
+  return id;
+}
 export function aiBaseUrl(host) { return (host.settings().url || "").replace(/\/+$/, ""); }
 export function aiReqHeaders(host) {
   const h = {"content-type": "application/json"};
