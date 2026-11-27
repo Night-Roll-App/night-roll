@@ -46,7 +46,7 @@ The functions are the same; each is an `ASK_ACTIONS` entry now (§2), `ASK_TOOLS
 
 | action (was a tool) | what it does | song chat | general (retired; no tab) |
 |---|---|---|---|
-| `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat (`topic` = "File under" an Analysis-sheet prompt; `stack: true` on a chord = another layer over the chord on that exact span, 2026-11-27 layered chords; `pedal: true` on a chord = a bass pedal point, written "A ped." on its own row under the chord rows, #1177; `until: [bar, beat]` on a chord = its exact exclusive end when it stops off a whole beat, #1179) | yes | — |
+| `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat (`kind: "pickup"` = the song's pickup, #1192: `bar`+`beat` where bar 1 starts in the current numbering or `text` = its length in beats; every anchor re-expressed, one undo; `edit_annotation` changes its length, `delete_annotation` removes it; bar 0 is addressable while a pickup exists; `topic` = "File under" an Analysis-sheet prompt; `stack: true` on a chord = another layer over the chord on that exact span, 2026-11-27 layered chords; `pedal: true` on a chord = a bass pedal point, written "A ped." on its own row under the chord rows, #1177; `until: [bar, beat]` on a chord = its exact exclusive end when it stops off a whole beat, #1179) | yes | — |
 | `edit_annotation` | changes an existing annotation's text or position | yes | — |
 | `delete_annotation` | removes one annotation | yes | — |
 | `publish_song` | the footer's Publish, for the open song | yes | — |
@@ -61,7 +61,9 @@ The functions are the same; each is an `ASK_ACTIONS` entry now (§2), `ASK_TOOLS
 
 The general chat gets only the read-another-song actions (and open_song,
 help). Since batch 3 add_annotation also writes `meter` (3/4) and `chop`
-(start|end), and delete_annotation takes a dictated one back; edit still
+(start|end), and since 2026-11-27 `pickup` (#1192 — never suggested, only
+written when the user says where bar 1 starts), and delete_annotation takes
+a dictated one back; edit still
 refuses structural directives, and track settings are not annotations Ask
 writes (set_track, §1 below).
 

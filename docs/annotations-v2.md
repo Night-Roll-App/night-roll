@@ -317,6 +317,39 @@ deriver (`chordExtrasFrom` reads and writes it beside `roman`/`no5`).
   `roman`, `no5`, `layer`, `pedal`, `note`.
   The schema (docs/annotations-v2.schema.json) lists the field.
 
+## v4 — the pickup (2026-11-27, #1190–#1192, docs/plans/2026-11-27-pickup-bar.md)
+
+v4 = one new entry type, `{"at":[1,1],"type":"pickup","pickup":P}` — the
+pickup's (anacrusis) LENGTH in the ruler's counted beats, `0 < P ≤ beats
+per bar`, fractions on the 16th grid. It defines the frame every other
+anchor in the file is written in: bar 1 (the first full bar) starts `P`
+beats into the song and the notes before it are **bar 0** — so `at`, `to`
+and `until` may name bar 0 (`{"at":[0,4],"to":[0,4],"until":[0,4.5],…}`
+is a half-beat chord inside a one-beat pickup; the schema's anchor minimum
+is 0). One per song (last wins); never drawn (the bar-1 line is its mark);
+anchored at `[1,1]` like the song-level entries and left alone by every bar
+edit; an optional `note` rides along. Text form `pickup: 1`.
+
+- **Version rule:** `version = pickup present ? 4 : layer present ? 3 : 2`
+  (web `rollnotesVersionFor`, native `RollnotesWriter.version(for:)`): a file
+  with no pickup and no layered chord stays `version: 2` byte-for-byte.
+- **Why the bump:** an older build reading a pickup file would show every
+  annotation `P` beats early and let the user add one in the wrong frame.
+  The lock bites only songs that hold a pickup; readers ship to both apps
+  before the editor does.
+- **Readers accept bar 0** (review C1): web `jsonToRawNote` reads `at[0]`
+  with a finite-number check (`+at[0] || 1` used to coerce 0 to 1), the
+  `until` guard is `≥ 0`; native `Rollnotes.raw` keeps `b1 == 0`.
+- **Setting or removing a pickup re-expresses every anchor** through
+  absolute time (`reframeAnchors`), with the two-tap warning and one undo
+  step — the music under an annotation never moves. The merge
+  (`mergeLocalAdditions`) reframes a published list into the local store's
+  frame before dedup, so a pickup set on synced notes survives a reload
+  before Publish (review C2).
+- Readers: `ROLLNOTES_MAX_VERSION = 4`, native `Rollnotes.maxVersion = 4`.
+- Shared fixture: tests/fixtures/pickup.rollnotes.json (web
+  tests/pickup.test.mjs; native PickupTests) — byte-identical in both repos.
+
 ## Round-trip guarantees (tested, tests/night-roll.test.mjs)
 
 - v1 → parse → serialize → byte-identical (pre-existing coverage,
@@ -325,9 +358,10 @@ deriver (`chordExtrasFrom` reads and writes it beside `roman`/`no5`).
   origin header included — "P4" tests.
 - A v2 fixture and its v1 twin (same `notes`, only the header differs) →
   parse → identical in-memory notes.
-- A v4 fixture (or any `version` > 3, or a `version` ≥ 2 file with an
+- A v5 fixture (or any `version` > 4, or a `version` ≥ 2 file with an
   unrecognized `format`) → `readOnly` true, `publishSong`/`annotationsFor`
-  refuse. (Was v3 until 2026-11-27; v3 now reads read-write.)
+  refuse. (Was v3 until 2026-11-27, then v4 the same day; v4 — the pickup —
+  now reads read-write.)
 - A v2 list with no `layer` → serialize → `version: 2`, byte-identical; the
   same list plus one layered chord → `version: 3` with `"layer": 1` on that
   entry only → parse → identical in-memory notes ("layered chords" tests).

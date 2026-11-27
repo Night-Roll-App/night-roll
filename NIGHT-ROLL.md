@@ -1523,6 +1523,7 @@ line-per-change:
   {"at":[3,1],"type":"tempo","bpm":90},
   {"at":[1,1],"type":"track","track":"pulse1","voice":"sine","color":"#0aa2c0"},
   {"at":[2,1],"type":"chop","chop":"start"},
+  {"at":[1,1],"type":"pickup","pickup":1},
   {"at":[25,1],"type":"loop","loop":"2.1"},
   {"at":[6,2.5],"text":"Plain prose observation."}
 ] }
@@ -1604,6 +1605,89 @@ prompt's "never overlap two chords" rule carries the one exception. Later
 (only if he needs it): a polychord symbol, Roman rules for
 stacks, generators following a chosen layer, a visual mark on layered rows
 (plan §9).
+
+**Pickup bar (2026-11-27, Josh #1190–#1192; docs/plans/2026-11-27-pickup-bar.md
++ its review; native builds the same):** one new type, `pickup`, carrying the
+pickup's LENGTH `P` in the ruler's counted beats (`{"at":[1,1],"type":
+"pickup","pickup":1}`, text form `pickup: 1`, `n.pickup`, `S.declaredPickup`
+set in `finalizeNotesImpl` BEFORE the chop block and the re-resolve — review
+C9). It DEFINES the frame: `T = P·beatTicks` is where bar 1 starts; bar 0 is a
+full-length virtual bar ending at `T` of which only the last `P` beats exist
+(a one-beat pickup in 4/4 puts the first note at bar 0 beat 4). The helpers
+in `model/grid.js` — `pickupBeats`/`pickupTicks`, `barStartTick(b)`,
+`barAtTick(t)`, `barBeatAt(t)`, `frameBQ(tick, T, bt, qt)` (signed floor
+division: a tick before `T` reads bar 0), `fullBarsCount` — replace every
+hand-written `(b − 1)·bt` and `floor(t / bt) + 1`: `resolveNote`,
+`resolveNoteWith(n, ppq, ts, pickupBeats)` (versions.js passes
+`declaredPickupOf(list)`), `setEndUnits(n, tick, bt, qt, T)` and
+`setAnchorBQ` (the two tick→bar WRITERS, review C5 — an end inside bar 0 is
+`until: [0, q]`), `posCount`/`posParts`/`posAnchor` (clamps gone: All notes
+and the LCD read "bar 0 beat 4"), `hasEnd(n)` (a band ending in bar 0 has
+`b2 = 0`, which `n.b2 ?` read as "no end"), the ruler (`drawRuler`: lines at
+`T + k·bt`, a dim `0` at the song's start, bar 1's line full height), the
+strip ticks, the loop target (`loop: 0.4` returns to the pickup, review C8),
+`computeSongEnd` (the song ends on a bar line of the frame), the score model
+(`mStart`/`mLen`/`mIndex`, measure 0 = `[0, T)` engraved as wide as its
+ticks, review C6), MusicXML (`<measure number="0" implicit="yes">`, then 1,
+2, …), ASCII tab (a short measure 0, numbers from 0), the generators
+(`barStartTick(fromBar)`; bar 0 is never a target), the count-in (one full
+bar of clicks, then a click on every whole beat of bar 0 before the pickup —
+Q3/R10), the following metronome's phase, Ask (`askActBarBeat` accepts 0,
+`askBarsCount` = full bars, context rows `bar 0:`, the song line "N bars and a
+pickup" + a pickup line, the legend sentence, `askSpan` on the frame's bar
+lines) and the query tools (`doc.pickupTicks`, `.notes.txt` rows from `bar
+0:`). **Storage rule (plan §3.2): the file is the ruler.** Setting or
+removing a pickup converts every bar-anchored entry through absolute time —
+`reframeAnchors(list, oldT, newT, bt, qt)`, PURE over the list it is given
+(review C2), opaque entries included (they are things at a place — native's
+reframe drops its opaque skip for this one function; its `shiftAnchors` still
+skips them), chord ends through `setEndUnits`, loop text rewritten — with the
+SAME two-tap warning the meter and the chop use ("⚠ Bar 1 starts here? Bars
+renumber and N annotation(s) are re-expressed …"; N = `pickupOthersCount`,
+song-level entries and the pickup itself excluded) and ONE `anno` undo step.
+`applyPickup(P, cnote)` (model/rollnotes.js) is the one write path (P = 0
+removes; refuses > one bar in plain words; snaps to the 16th grid; retires a
+synced entry with a tombstone), called by the note editor's Pickup type
+(`NTYPE_CHIPS`, `#npickuprow` — the length prefilled from the CURSOR he placed
+and nothing else, with the live "bar 1 starts at …" line; a cursor at tick 0
+refuses "put the cursor on the first full bar's downbeat"), the Go to bar
+sheet's **Bar 1 starts at the cursor** / **Remove pickup** button
+(`barJumpPickup`, input/gestures.js — four taps and no typing, Q1) and Ask
+`add_annotation {kind: "pickup", bar, beat}` (where bar 1 starts in the
+CURRENT numbering) or `{kind: "pickup", text: "1"}` (the length);
+`edit_annotation` changes the length, `delete_annotation` removes it. **The
+reload hole (review R1/C2):** `saveLocalNotes` stores only `added` notes, so
+the re-expressed SYNCED anchors live in memory only; `mergeLocalAdditions(
+notes, key, filePickup)` therefore reads the pickup the FILE carries (passed
+by `loadNotes`/`annotationsFor` before `subtractTombstones` can drop a deleted
+entry) and the pickup the local store carries (or, absent, what survives the
+tombstones), and when they differ reframes the published layer — in beat
+units, `bt = beats per bar, qt = 1`, so a not-open song merges the same way —
+BEFORE the `(b1, q1, text)` dedup; the local pickup entry replaces the
+published one. Nothing new goes in the local store, so undo needs no
+tombstone handling. (The meter and the chop have this same hole today —
+queued in open-items.) **Interplay:** a meter change keeps `T` in TICKS and
+rewrites `P` in the new counted beat (`convertAnchors`; a `P'` longer than the
+new bar refuses the re-bar: `meterFitsPickup`); a changed meter sits at "the
+song start" = tick 0 = `songStartAnchor()` = `[0, beats − P + 1]` with a
+pickup, so `bakeMeter` keeps its one event at tick 0 and the published .mid
+is unchanged (review C3, Q4); a start chop converts the downbeat like every
+anchor (`shiftAnchors` → `pickupAfterShift(delta)`: `P' = (T + delta)/qt`;
+`P' ≤ 0` or more than a bar removes the pickup, named in the chop's warning —
+review C4; the chop directive itself stays raw). **Version:** `version = pickup
+present ? 4 : layer present ? 3 : 2` (`rollnotesVersionFor`;
+`ROLLNOTES_MAX_VERSION = 4`), so an older build locks a pickup file instead of
+showing every annotation `T` early; the "too new" fixtures are at 5. Readers
+accept bar 0 (`jsonToRawNote`: `Number.isFinite(+at[0]) ? +at[0] : 1`, `until`
+bar `≥ 0` — review C1; the schema's anchor minimum is 0). Learning mode: the
+app never detects, suggests or pre-fills a pickup beyond the cursor position,
+and the Ask system prompt (both rule blocks) forbids suggesting one. Shared
+fixture `tests/fixtures/pickup.rollnotes.json` (byte-identical to native's
+copy): a one-beat pickup, a half-beat chord inside bar 0 (`[0,4]` until
+`[0,4.5]`), a section, a text note, `loop: 0.4`, one opaque entry; web tests in
+tests/pickup.test.mjs. Paper (score-print.js) keeps uniform measure widths —
+measure 0 takes a full slot and VexFlow spaces its notes; only the screen
+engraves it short.
 
 **Pedal point (2026-11-27, Josh #1177; native builds the same):** a chord
 entry with ONE more optional field, `"pedal": true` (absent = false), label
@@ -1860,6 +1944,16 @@ chop: start        ← non-destructive trim, RAW capture coordinates (the one
                      Editor prefills the cut from the cursor; ☰ list shows
                      chop anchors with a "raw" tag.
 
+[1.1]
+pickup: 1          ← the pickup (anacrusis), #1192: bar 1 — the first FULL
+                     bar — starts this many counted beats into the song, and
+                     the notes before it are bar 0. Every other anchor in the
+                     file is in that frame ("Pickup bar", below). At most one
+                     per song, at most one bar long; fractions on the 16th
+                     grid (1.5). Anchored at 1.1 like the song-level entries
+                     and left alone by every bar edit. A file holding one is
+                     version 4.
+
 [25.1]
 loop: 2.1          ← "loop:" prefix = loop directive. The anchor is the
                      jump point: when playback reaches bar 25 beat 1 it
@@ -1918,7 +2012,7 @@ sections are these modules now.
 - `theory/key.js` — the pure half of key-estimate/file-declared-key checking (step 4, 2026-10-03): `pearsonCorr`, `fileKeyAt`, `checkMeterVsFile`, plus the spelling-table helpers `keyNameFor`/`trueSf`/`TONIC_SPELL`/`FIFTHS_POS`/`MODE_FIFTHS` `fileKeyAt` needed, plus (step 5, 2026-10-03) `keyNameToSf` (+ `MODE_OFFSET`/`LETTER_SF`/`MODE_SF_OFFSET`) — the name→signed-fifths counterpart of `keyNameFor`, pulled out of app.js's annotation parser (`deriveNoteTypes`'s `key:` directive) because it's pure theory, not annotation-model logic, and belongs beside its sibling. Imports `S` (layer 0, same tier). **`estimateKey` and `checkKeyVsFile` still did NOT move** (step 5 was asked to retry this once `trackIsDrums`/`barTicks` left app.js — see below — but it turns out they can never land here): `theory/` is layer 0, the lowest layer, and `estimateKey`/`checkKeyVsFile` need `trackIsDrums`/`barTicks`, which are genuinely model-layer (layer 2) concepts wherever they live. Layer 0 may only import layer 0, by construction, forever — moving `trackIsDrums`/`barTicks` out of `app.js` and into `model/` (which step 5 did) does not change this; it only swaps which layer blocks the import (`LEGACY_CONTAINER` for `model`, both impossible for a layer-0 importer). Both functions still live in app.js, bare-name reachable exactly as before (every Learning-mode spy test — "estimateKey is never called in Learning" — still passes; nothing about the gating moved). See docs/split-plan.md "Deviations (5)" and open-items.md's corrected QUEUED entry (the earlier one assumed this would resolve itself once step 5 landed; it doesn't). **Step 10 (2026-10-03) added `tonicPcOfName`/`modeOfName`** (unlisted by any step's table — pure key-name parsers, `"G#m"`/`"D dorian"` → pc/mode, the inverse direction of `keyNameFor`): `gen/bassist.js`'s `bsInferTimeline`/`bsChordTimeline` need them for the minor-key harmonic-minor candidate and the "N.C." pedal-tone reading, and both were still bare in app.js blocking that move for no reason of their own (zero dependencies beyond `LETTER_PC`, already here). Relocating them (not moving `bsInferTimeline` into theory — the usual direction) is the same "unblock the real target by moving ITS unclaimed pure dependency" correction steps 4/5/9 each made. See docs/split-plan.md "Deviations (10)".
 - `theory/facts/{common,pattern,form,melody,rhythm,bass,voices,format}.js` — the music-theory FACTS toolkit (2026-10-04, docs/theory-toolkit.md; not part of the split, a new subsystem). Layer 0 and genuinely pure: no `S`, no DOM, the only import is `keySpelling` from `theory/chords.js`, so the tests import the modules directly in plain Node. Every function takes a `doc` (`{ppq, barTicks, beatTicks, tracks:[{name, notes:[{t,d,p,v}]}], rollnotes?}` — what tools/query-lib.mjs `loadSong()` returns; the in-app adapter is sketched in the doc's §3.0, not written) and returns JSON-able facts: `findPattern`/`factsPatternFromSpan` (an interval(+rhythm) figure at any transposition, over every monophonic line — a polyphonic track as rank voices), `formFacts` (bar/half-bar exact/transposed/rhythm-only repeats, phrases A A′ B…, sequences), `melodyFacts`, `rhythmFacts` (+ harmonic rhythm = how often HIS chord bands change, spans only), `bassFacts`, `voiceFacts` (parallel 5ths/8ves by interval class, crossings, overlaps, leaps), `formatFacts`. Facts only, by construction and by test (tests/theory.test.mjs sweeps text and JSON on Overworld and the Bach starter for key/chord/numeral/meter/verdict words); label letters skip i/v/x. **Not wired into the app** — `tools/theory.mjs` is its only caller; §3 of the doc names the integration points (✦ Ask tools first).
 - `theory/harmony/{roman,cadence,nct,modulation}.js` — the VERDICT toolkit (docs/theory-harmony.md, 2026-10-04): roman numerals (`hmRomanNumeral`/`hmRomanNumerals`, `hmChromaticSummary`), cadences (`hmCadences`), non-chord tones (`hmNonChordTones`), modulation pivots (`hmModulations`), all read FROM a declared `key:` region and the user's own chord bands — never a key estimate or a chord name from the notes (Learning mode is the law). Pure layer 0 (imports only `theory/chords.js` — the key-name helpers `tonicPcOfName`/`modeOfName`/`MODE_OFFSET` live there now, so nothing here reaches state.js through key.js; `hm`-prefixed names per rule 6); plain-data inputs built by `hmKeyRegionsFromNotes`/`hmBandsFromNotes` from a resolved rollnotes list, so `S.rollnotes` and `tools/query-lib.mjs`'s `doc.rollnotes` feed the same code. **Not wired into the app**: their only importer is `devtools.js`'s mirror (reachable, so `package.mjs` ships them and rule 8 holds); no Ask tool offers them in either mode (`tests/theory-harmony.test.mjs` "not wired"). The integration points and the Normal-only gate they must ship with are in docs/theory-harmony.md. CLI: `tools/harmony.mjs`.
-- `model/grid.js` — pencil/snap/grid math (step 5, 2026-10-03): `pencilTicks`, `isTripletDur`, `songHas32nds`, `moveSnapTicks`, `gridAnchorTick`, `snapTickAbs`, `pencilCellAt`, `gridCellStart`, `effTs`, `beatsPerBarEff`, `beatTicks`, `beatsPerBarDisp`, `secDepthCap`, the position words `POS_SYL`/`posCount`/`posParts`/`posAnchor`/`posBeatWord`/`posText`/`posShort`/`posAnchorText` (2026-10-07, see "Position words"), plus `trackIsDrums` (a song/track-model predicate the plan didn't explicitly place, but `songHas32nds` needs it and it's pure S-only — may move again to a future `model/song.js` for conceptual fit; it does NOT unblock `theory/key.js`, see above). `setSecDepth`/`cycleSecDepth` did NOT move — both call `finalizeNotes`/`setInfo`/`clampView`/`draw`/`renderViewMenu`, all still in app.js (render/UI layers, later steps). Imports `barTicks` from `model/rollnotes.js` (same layer).
+- `model/grid.js` — pencil/snap/grid math (step 5, 2026-10-03): `pencilTicks`, `isTripletDur`, `songHas32nds`, `moveSnapTicks`, `gridAnchorTick`, `snapTickAbs`, `pencilCellAt`, `gridCellStart`, `effTs`, `beatsPerBarEff`, `beatTicks`, `beatsPerBarDisp`, the pickup frame `pickupBeats`/`pickupTicks`/`barStartTick`/`barAtTick`/`barBeatAt`/`frameBQ`/`fullBarsCount`/`hasEnd` (2026-11-27, #1192, see "Pickup bar"), `secDepthCap`, the position words `POS_SYL`/`posCount`/`posParts`/`posAnchor`/`posBeatWord`/`posText`/`posShort`/`posAnchorText` (2026-10-07, see "Position words"), plus `trackIsDrums` (a song/track-model predicate the plan didn't explicitly place, but `songHas32nds` needs it and it's pure S-only — may move again to a future `model/song.js` for conceptual fit; it does NOT unblock `theory/key.js`, see above). `setSecDepth`/`cycleSecDepth` did NOT move — both call `finalizeNotes`/`setInfo`/`clampView`/`draw`/`renderViewMenu`, all still in app.js (render/UI layers, later steps). Imports `barTicks` from `model/rollnotes.js` (same layer).
 - `model/rollnotes.js` — the annotation model (step 5, 2026-10-03): `parseRollnotes`/`parseRollnotesJSON`/`jsonToRawNote`/`deriveNoteTypes` (the v1/v2 reader + directive deriver), `noteToJSON`/`trackDirText`/`audioDirText` (the writer's per-entry schema), `serializeNotesList`/`serializeRollnotes`/`serializeRollnotesStamped`/`dedupedNotesWithIndex` (the writer), `resolveNote` (bar.beat → tick), `barTicks`, `applyChop`, `notesBase`/`baseName`/`notesStoreKey`, plus `ROLLNOTES_FORMAT`/`ROLLNOTES_MAX_VERSION`/`ROLLNOTES_LOCK_MSG`, and (2026-10-04) `visibleNotes()`/`annoShown(n)` — the one choke point that hides ✦ AI-tagged annotations in Learning mode (see "✦ Annotate this song…", "Learning hides what Normal wrote"). **`finalizeNotes` did NOT move** despite being named in the plan's table — it's the orchestrator that re-applies declared meter, chop, tempo baking, track directives, section/chord lane layout, and Analyze-layer rows, calling a dozen render/audio/UI functions (`renderTrackbar`, `updateTrackGains`, `sfPreloadForSong`, `gamePreloadForSong`, `fitView`, `applyAudioDirs`, `updateSongMeta`, `keyLabelState`, `bakesTempo`, …) that are all still in app.js (steps 7, 8, 9, 11 territory); moving it would be a rule-5 violation (model, layer 2, importing app.js, layer 5) that a verbatim move can't fix. Still callable bare-name from app.js exactly as before. Imports `beatsPerBarEff`/`beatTicks`/`beatsPerBarDisp` from `model/grid.js` and `keyNameToSf` from `theory/key.js` (both same-layer-or-lower).
 - `model/edits.js` — the SAFETY-reviewed slice of the local-song edit store (step 5, 2026-10-03): `editsKey`, `isLocalDraft`, `overlayNoteSig`, `updateClearBtn` — each one verified free of any call into not-yet-split code. **`loadEdits`, `saveEdits`, `foldOldOverlay`, `retireOldOverlay`, `updateEditBtnVis` did NOT move** — this is the exact code that lost Josh's notes on 2026-10-02 (CLAUDE.md), so each candidate was checked individually rather than moved as a block: `saveEdits` needs `isComposition()` (→ `ownFolderPath`/`isCaptureKey`/`albumMetaCache`, provenance+audio-layer, not yet split), `scheduleAnalysisRecompute` (gen/, not yet split), `saveDraft`/`computeSongEnd`/`updateSongMeta` (model/song.js + model/versions.js, step 9); `retireOldOverlay` needs `draftRead` (model/versions.js, step 9); `updateEditBtnVis` needs `updateChipBtn` (audio/chip.js, step 8), `editableSong`/`ownFolderPath`/`originOf` (provenance, step 9 — `LINK_SONGS` itself moved to platform/base.js in step 6 and no longer blocks anything here). Every one of these is a straight rule-5 violation (model, layer 2, importing app.js, layer 5) today. Moving the blocked functions anyway would mean dragging large unrelated provenance/audio/versions code out ahead of its own planned step — exactly the scope creep CLAUDE.md's "no one-time hacks" principle warns against in spirit — or duplicating logic, which the plan forbids outright. All five stay in app.js, bare-name reachable, bodies untouched; every vm test covering this code (the "local song: …" suite in tests/night-roll.test.mjs, 2026-10-02 regression coverage) passes unchanged. Queued for whichever step(s) land platform/provenance (6), audio/chip (8), and model/song+versions (9).
 - `model/catalog.js` — pure `S.CATALOG` lookups (step 5, 2026-10-03): `groupOf`, `catalogHas`, `publishedPaths`, `folderOf`, `albumFolders`, `segTitle`, `folderTitle`, `titleCaseSlug`, `FOLDER_NAMES`. **`initCatalog` and `folderScanAlbums` both landed here in step 9 (2026-10-03), resolving two separate permanent-looking blocks from steps 5/6/8 at once.** `folderOnly`/`songsURL` were real platform/* imports since step 6, but `folderScanAlbums` itself did NOT move in step 6 despite this entry once saying so — step 6's own Deviations correctly listed it as blocked (by `albumTitleFor`, "still app.js" at the time; this entry's older text was wrong about that). Step 9 moved `albumMetaCache`/`albumMetaFor` OUT of `audio/chip.js` (layer 3) and INTO `model/provenance.js` (layer 2) — a correction to step 8's own placement, made because `isCaptureKey`/`ownFolderPath` needed them there — which cleared `initCatalog`'s `albumMetaFor` blocker at the same stroke `model/provenance.js` landed `albumTitleFor`, clearing `folderScanAlbums`'s blocker too. `folderScanAlbums` itself moved into `model/catalog.js` (NOT `platform/folder.js`, its step-6-table destination): landing it in platform (layer 1) would need an upward import of `albumTitleFor` (layer 2) the instant it moved — catalog.js, already `initCatalog`'s home, is the only legal layer-2-or-lower destination once `albumTitleFor` sits in provenance.js. Both functions import `folderOnly`/`fsRoot`/`fsReadJSON` (platform/folder.js) and `albumMetaFor`/`albumTitleFor` (model/provenance.js) back, bodies unchanged. See docs/split-plan.md "Deviations (9)" and open-items.md's corrected entry — the earlier ones assumed this was permanent; it wasn't, once `audio/chip.js`'s own placement was reconsidered.
