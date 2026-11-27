@@ -38,6 +38,8 @@ import { isUnsaved } from "../model/provenance.js";
 import { appMode } from "../platform/mode.js";
 import { debugLogOn } from "../model/jobs.js";
 import { chipStreamMode } from "../audio/chip-stream.js";
+import { keepPitch } from "../audio/clips.js";
+import { setKeepPitch } from "../audio/chip-pitch.js";
 import { recSnapOn } from "../input/record.js";
 import { aiBrowserMenu } from "../ask/backend.js";
 import { aiBackendRows } from "../ask/backend.js";
@@ -323,6 +325,7 @@ export function openSettingsSheet() {
   document.getElementById("cfglearning").checked = appMode() === "learning";
   document.getElementById("cfgdebuglog").checked = debugLogOn();
   document.getElementById("cfgchipstream").value = chipStreamMode();
+  document.getElementById("cfgkeeppitch").checked = keepPitch();
   document.getElementById("cfgpeninstant").checked = penInstant();
   document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
   document.getElementById("cfgrecsnap").checked = recSnapOn();
@@ -1496,6 +1499,7 @@ export function settingsPersist(id) {
     case "cfgtextsize": { const tv = v("cfgtextsize") || "1"; try { localStorage.setItem("ff1roll-textsize", tv); } catch (err) { /* private mode */ } applyTextSize(tv); break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
     case "cfgchipstream": { const sv = v("cfgchipstream") || "auto"; try { localStorage.setItem("ff1roll-chipstream", sv); } catch (err) { /* private mode: stays the default */ } break; }
+    case "cfgkeeppitch": setKeepPitch(document.getElementById("cfgkeeppitch").checked); break; // takes + console audio (chip-pitch.js); a running play restarts in place
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); S.askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;
     case "cfgaibrowsermodel": saveCfg({aiBrowserModel: v("cfgaibrowsermodel") || "Llama-3.2-1B-Instruct-q4f16_1-MLC"}); break;

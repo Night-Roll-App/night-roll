@@ -57,6 +57,7 @@ import * as audioTransport from "./audio/transport.js";
 import * as audioSeam from "./audio/seam.js";
 import * as audioChip from "./audio/chip.js";
 import * as audioChipStream from "./audio/chip-stream.js";
+import * as audioChipPitch from "./audio/chip-pitch.js";
 import * as audioClips from "./audio/clips.js";
 import * as audioMetronome from "./audio/metronome.js";
 import * as audioBounce from "./audio/bounce.js";
@@ -134,7 +135,7 @@ export function exposeGlobals() {
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformUsage, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport, audioSeam,
-                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
+                     audioChip, audioChipStream, audioChipPitch, audioClips, audioMetronome, audioBounce, audioLoudness, audioLevels,
                      modelSong, modelSelection, modelNoteshape, modelPatch, modelKitGuess, modelProvenance, modelAlbumOrder, modelVersions, modelUndoPersist, modelJobs,
                      importHub, importCapture, importStems, syncPublish,
                      genDrummer, genBassist, genAnalysis,

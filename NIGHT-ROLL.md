@@ -1404,7 +1404,8 @@ a 33ms arpeggio run is one pulse wave changing period, not N oscillator
 attacks — built after oscillator-per-note rendering could not do MM2's
 fast sections justice. Renders ~400x realtime, per-channel buffers so
 mute/solo gains still work; loop points honored via buffer looping;
-speed slider acts tape-style (pitch follows). Re-capturing invalidates
+the speed slider keeps the pitch (2026-11-27, "Console audio keeps its
+pitch" below; before that it was tape-style). Re-capturing invalidates
 the render. All async yields (emulation, loop scan, render) use
 MessageChannel, not setTimeout — background tabs throttle setTimeout
 to ~1/sec.
@@ -1825,6 +1826,7 @@ sections are these modules now.
 - **The `?perf=1` self-profiler fix** (docs/split-plan.md §2.4, step 7): `wrap()`'s `globalThis[name]` patching stopped finding anything the moment a profiled function first left the inline script (step 3's `secToTick` was the first casualty, silently) — a module's top-level binding isn't a `globalThis` property. Replaced with `prof(name, fn)`: each of the 26 still-in-app.js profiled functions, plus `secToTick` (midi/parse.js) and `drumHit`/`updateTrackGains` (audio/engine.js, both moved this step), now does `name = prof("name", name);` right after its own declaration, wherever that declaration lives. `prof` (+ its gate and the `S.perfAcct`/`S.perfTotal`/`S.perfRec` accumulators it reads/writes) lives in **`state.js`**, not next to `PERF_FLAGS` in `platform/base.js` — layer 0, so every layer can import it (even `midi/parse.js`, itself layer 0: platform is layer 1, which a layer-0 module may never import). The HUD panel/report/record-button code stays in app.js, now reading `S.perfAcct`/`S.perfTotal`/`S.perfRec` instead of its own closure locals. The second, separate "mark the timeline on an edit" wrapper (`saveEdits`/`selEditApply`/`insertTime`, inside the same guarded block) was NOT fixed — it's a different mechanism (same `globalThis[name]` disease, but doing something `prof()` doesn't: pushing an EDIT marker into the recording's timeline) outside this step's "replace `wrap()` with `prof()`" scope; queued in open-items.md.
 - `audio/chip.js` — authentic chip render, memory budget, chip worker (step 8, 2026-10-03): the `chip` state object itself; `chipTrackNo`; `ghHeaders` (unlisted by the plan, but `vaultFetch` needs it and its OTHER callers — `putRollnotes`/`markPublished`/`writeToken`, sync/publish.js, step 9, layer 4 — can legally import it back down, unlike `isCaptureKey` below); `vaultFetch`; `chipAlbumHasSource`; the memory-budget math (`CHIP_BUDGET_APP`/`CHIP_BUDGET_WEB`/`CHIP_RATE_STEPS`/`chipRenderBudget`/`planChipRender`/`chipStaticPan`/`chipDownmixStatic`/`chipSilent`/`chipIsPcm`); `CHIP_STREAMED_RENDER_CHUNK_SEC`/`chipRenderStreamed` (the AUTHENTIC render's own chunked-allocation path — NOT stream-mode playback, see chip-stream.js below); `chipWorkerAvailable`; the preview caches (`chipPreviewPending`/`chipPreviewCache`/`chipPreviewProgAt`) + `chipPreviewBuffer`; and the live-playback surface `chipActive`/`chipHas`/`chipBuffers`/`chipPcmToBuffers`/`chipStopSrcs`/`chipStart`. **`albumMetaCache`/`albumMetaFor` moved OUT to `model/provenance.js` in step 9** (2026-10-03) — the correction `isCaptureKey`/`ownFolderPath` needed (see provenance.js's own entry and docs/split-plan.md "Deviations (9)"); `chipAlbumHasSource` now imports `albumMetaFor` back down from provenance.js, unchanged. **`chipSource` still did NOT move, even after step 9 cleared its named blocker (`isCaptureKey`) — it has a second, independent one step 8 never saw**: `chipSource` → `chipVaultFile` → `chipExt` → `CHIPS[kind]`, the same permanently-blocked table below. `isCaptureKey` itself is now `model/provenance.js`, layer 2, and chip.js (layer 3) could legally import it today; `chipSource` stays in app.js regardless, now blocked by `CHIPS` alone, importing `chipTrackNo`/`vaultFetch`/`idbNsfGet`/`idbNsfPut` back from chip.js/platform/storage.js otherwise unchanged. **`updateChipBtn`/`updateChipBtnInner` and the whole "▶ waits for the song" play-gate cluster (`PLAY_GATE_GRACE`/`PLAY_GATE_MAX`/`gateSettled`/`gateWatched`/`gatePending`/`playGate`/`playGateKick`/`playGateActive`/`playGateTick`/`playGateWait`) did NOT move** — none of these were named by this step's own responsibility line, and each calls `setControl`/`setPlayBtn` (ui/controls.js, layer 4) or `play`/`logErr` (app.js) directly. **The single biggest finding this step made: `CHIPS` (the per-console-kind table — magic-byte sniff, parse/run/render/stream hooks, one entry per nsf/gbs/spc/vgm/psf/psf2/usf) did NOT move, and because of it neither did `chipEstimateTracks`, `chipRender` itself, `chipPublish`, `chipRenderInWorker`, or `chipCleanupAfterFailure`.** `CHIPS.usf.capture`'s own diagnostic line (`if (typeof logErr === "function") logErr(line);`, a Mario-64-scrambling-on-iPad debug aid from 2026-09-27) is the ONLY app.js-layer reference anywhere in the whole table — one `logErr` call, inside one chip kind's capture closure, blocks the entire data structure (and its sibling `sonySeqCapture`/`psfInflater`/`PSX_SOUNDING_ON`) from moving, the same way `idbDraftPut`'s one `logErr` call blocked it alone in step 6 — except here the blocked unit is the table the actual chip RENDER entry point (`chipRender`) can't run without. `CHIPS` is also, by the plan's own line-range table, `import/capture.js` territory (step 9) — splitting the object by hand to move only its render-relevant fields would be exactly the kind of logic/structure change a verbatim move must not make. All five stay bit-for-bit in app.js; `chipEstimateTracks`/`chipRender`/`chipPublish`/`chipRenderInWorker` now import `chipStaticPan`/`chipDownmixStatic`/`chipSilent`/`chipRenderStreamed`/`chipCleanupAfterFailure`'s own helpers back from chip.js where applicable. **Step 9 (2026-10-03) confirms this is still exactly as blocked as step 8 found it** — `import/capture.js` landed (see its own entry) but `CHIPS` didn't move into it, because its blocker (`logErr`, inside `CHIPS.usf.capture`) is unrelated to which layer `CHIPS` targets: ANY module, at any layer, is forbidden from importing `logErr` while it stays in app.js (layer 5). `chipKindOf` (import/capture.js's own un-moved candidate) inherits the same block. See docs/split-plan.md "Deviations (8)" and "Deviations (9)". **RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1/2): `CHIPS`, `sonySeqCapture`, `psfInflater`, `PSX_SOUNDING_ON`, `chipExt`, `chipEstimateTracks`, `chipCleanupAfterFailure`, `chipSource`, `chipVaultFile`, `chipModules` all DID move** — `CHIPS.usf.capture`'s `logErr` call now resolves from `../hooks.js` (layer 0), and (a separate `check.mjs` fix this step needed) `CHIPS`'s own top-level `const CHIPS = {...}` is an object literal built only from pure-literalish parts (nested closures, never invoked at module-eval time) — `isPureLiteralish` now recurses into object/array literals, the same reasoning it already applied to a bare function/arrow expression. **`chipRender`/`chipRenderInWorker`/`chipPublish` — the actual render entry points — are a NEW, separate permanent blocker this step's own move surfaced, unrelated to `logErr`/`CHIPS`**: all three call `songTitleOf` (`ask/context.js`, layer 4) directly — `chipRender`/`chipRenderInWorker` each for a `logDebug` status line naming the song, `chipPublish` because `chipRender` passes it through — an illegal upward import from `audio/chip.js`'s layer 3, with no port covering `songTitleOf` yet. All three stay in app.js, now importing `CHIPS`/`chipSource`/`chipEstimateTracks`/`chipVaultFile`/`chipCleanupAfterFailure`/etc. back from `audio/chip.js` unchanged. Flagged in open-items.md, not silently retried. **RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 3/4): `chipRender`/`chipRenderInWorker`/`chipPublish` all DID move.** Step 3 ported `songTitleOf` (`hooks.js`, body stays in `ask/context.js`); `blockers.mjs` then reported this trio clean (their only blocker was the `songTitleOf` import, now legal from any layer), and step 4 moved all three by name, verbatim. `chipRender`/`chipRenderInWorker` now import `songTitleOf` from `../hooks.js` for their `logDebug` status line; `chipPublish` needed no direct import of it (it only receives `chipRender`'s debug string).
 - `audio/chip-stream.js` — chip stream mode (step 8, 2026-10-03, docs/streamed-render-plan.md step 3/5): the on/off/auto switch (`chipStreamMode`), the "auto" heuristic (`chipAutoShouldStream`/`chipAutoReason`), every stream-session constant (`CHIP_STREAM_CHUNK_SEC`/`CHIP_STREAM_OVERLAP`/`CHIP_STREAM_HORIZON_VISIBLE`/`CHIP_STREAM_HORIZON_HIDDEN`/`CHIP_STREAM_PIN_LOOKAHEAD`/`CHIP_SEG_HORIZON_SEC`/`CHIP_SEG_MAX_SEGMENTS`), the pure tape-time segment math `chipSegments`/`chipStreamIdxForTapeSec`, the worker-reply handlers `chipStreamOnChunk`/`chipStreamOnSilent`, the cache/pin/evict bookkeeping `chipStreamRequestRange`/`chipStreamWaitFor`/`chipStreamPinLoopStart`/`chipStreamEvict`/`chipStreamScheduled`/`chipStreamScheduleChunk`, `chipNoteSlice` (previewNote's register-chip slice-from-the-render fallback), and the per-tick pump `chipStreamPump`/`chipStreamStart`. `chipStreamPump` needed `playSec` (previously bare in app.js, a pure `S`-only function nobody had moved yet) to come down into `audio/transport.js` first — an unlisted, zero-risk leaf move alongside this step, not named by any step's table, done because `chipStreamPump` could not otherwise resolve it. **`chipStreamOpenWorker`, `chipStreamOpen`, and `chipRenderAuto` did NOT move** — both of the first two read `CHIPS[kind]` directly (the same `CHIPS` blocker as chip.js, above); `chipRenderAuto` calls `chipStreamOpen` (blocked) and `chipRender` (blocked, chip.js), so it inherits both. All three stay in app.js, importing `chipStreamMode`/`chipSegments`/etc. back from chip-stream.js. **RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1/2): `chipStreamOpenWorker` DID move** — its own `CHIPS[kind]` reference now resolves from `./chip.js` (moved there the same step). **`chipStreamOpen` did NOT move, for a NEW reason, not the old `CHIPS` one**: it calls `songTitleOf` directly for a `logDebug` status line (the same new blocker `audio/chip.js`'s `chipRender`/`chipRenderInWorker` hit — see that entry). `chipRenderAuto` (calls both `chipStreamOpen` and `chipRender`, both blocked) stays too. All three now import `chipStreamOpenWorker` back from chip-stream.js. **RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 3/4): `chipStreamOpen`/`chipRenderAuto` both DID move**, the same `songTitleOf` port (step 3) clearing their last blocker; `chipRenderAuto` now calls `chipRender` as a same-layer import from `./chip.js` (moved there the same step) instead of an app.js bare reference.
+- `audio/chip-pitch.js` — console audio keeps its pitch off 100 % (2026-11-27, "Console audio keeps its pitch" below): `chipKeepPitch`/`setKeepPitch` (the one device switch, with clips.js's `keepPitch`), the pure geometry `kpM`/`kpRawRange`/`chipKpPlace`, the session `chip.kp` (`chipKpOpen`), the raw-window readers `kpWindowOf`/`kpStreamWindowOf`, the chained worker jobs `chipKpPost`/`chipKpWant`/`chipKpCoherence`, the cache `chipKpBuffers`/`chipKpEvict`, the whole-render pump `chipKpStart`/`chipKpWaitFirst`/`chipKpPump`, stream mode's `chipKpStreamBuffers`/`chipKpStreamWant`, and the bounce's `chipKpPrepareAll`/`chipKpScheduleAll`. Imports chip.js, chip-stream.js, clips.js and transport.js (same layer; the cycle is import-only).
 - `audio/clips.js` — audio tracks (clips) + the WSOLA pitch-preserving slowdown ALGORITHM (step 8, 2026-10-03): the file/peak cache (`audioBufCache`/`PEAK_BUCKET`/`audioDirFor`/`audioCacheKey`/`songHasAudio`), the pure clip-geometry leaves (`clipLen`/`clipEndTick`/`clipClamp`/`forEachClip`), the decode path (`audioBytesFor`/`decodeAudioBytes`/`peaksOf`), the tempo-from-a-take math (`clipOnsetSec`/`tempoFromPeaks`/`onsetCurve`/`beatTrack`/`clipBeatMap`/`clipTempo`), `audioReady`, and the WSOLA machinery itself (`wsolaStretch` — still `SERIALIZED`, rule 7 unaffected by which module defines it — `stretchJobs`/`stretchInWorker`/`stretchCache`/`keepPitch`/`stretchKey`/`stretchPending`). **The functions that actually APPLY a clip or a stretched buffer to the live song — `applyAudioDirs`, `audioEnsureFile`, `applyBeatMap`, `setSongTempo`, `stretchEnsure`, `stretchEnsureAll`, `scheduleClip`, `audioChaseNow` — did NOT move.** Each reaches `draw`/`setInfo`/`computeSongEnd`/`finalizeNotes`/`buildSchedule`/`isComposition`/`isLocalDraft`/`stop`/`play`/`playGateKick` (render/model/UI/transport, none yet split) — `stretchEnsure`'s own blocker is just `draw()` at the end of its decode callback, but that one call is enough, the same single-`logErr`-call shape step 6/8 both found elsewhere. This has a real knock-on effect noted under `audio/voices.js` below: `scheduleNote`'s `n._clip` branch calls `scheduleClip`, so `scheduleNote` stays blocked by THIS, not (only) by `chip`. All eight stay bit-for-bit in app.js, importing `clipLen`/`forEachClip`/`keepPitch`/`stretchCache`/`stretchKey`/`audioBufCache`/`audioCacheKey`/`clipOnsetSec` back from clips.js.
 - `audio/metronome.js` — `met*` (step 8, 2026-10-03): the `met` state object + its persistence (`metSave`), `metDefaultAccents`, `metBuildCells`, the click synth `metClick`, follow/trial-mode math (`metFollowBeatTicks`/`metFollowNum`/`metPumpFollow` — `metPumpFollow` needed `playSec`, see chip-stream.js above), the free-run pump `metPump`, `ensureMetGain`, `metHalt`, and `applyMetMode`. **`metStart` did NOT move** — it calls `ensureAudio()`/`resumeAudio()` directly, and those two (see `audio/engine.js`'s own entry, step 7) are permanently blocked by their own `logErr`/`logDebug`/`setInfo` calls; no other function in this file touches them. The initial `#metnum`-populating IIFE and all 13 `addEventListener` wiring statements (`#metbtn`/`#metcfg`/`#metclose`/`#metgo`/`#metbpm`/`#metnum`/`#metden`/`#metsub`/`#metfollow`/`#metnudgeL`/`#metnudgeR`/`#metcountin`/`#mettap`) also stay in app.js, unmoved — two of them (`#metbtn`, `#metgo`) call the still-blocked `metStart`, and rather than split otherwise-identical UI wiring across two files by which handler happens to be movable, all of it stays together as one block, now calling `metHalt`/`metSave`/`metBuildCells`/`applyMetMode`/`metDefaultAccents` back from metronome.js. **RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1/2): `metStart` DID move** — `ensureAudio`/`resumeAudio` (moved to `audio/engine.js` the same step) are now a plain same-layer import. The 13 `addEventListener` statements and the `#metnum` IIFE stay in app.js regardless (§2.2's `init<Module><N>()` wrapping wasn't attempted this step — not this step's own move list), now calling `metStart` back from metronome.js too.
 - `audio/bounce.js` — Download audio: wav encode, offline render (step 8, 2026-10-03): `wavEncode`, `audioBufferToWav`, and `deliverAudioFile` (the native-share/browser-download dispatcher) — plus `midiBase64` (unlisted by the plan; it's a general chunked-base64 helper, not MIDI-specific per its own comment, but `deliverAudioFile` needed it and its OTHER callers, scattered across MIDI/SF2/audio-clip code still in app.js, can import it back down from audio/, same safe direction as `ghHeaders` above). **`offlineWaitForAssets`, `renderSongOffline`, and `recordRealtimeAudio` — the actual offline-bounce and real-time-fallback entry points — did NOT move**: `offlineWaitForAssets` calls `audioEnsureFile`/`stretchEnsureAll` (clips.js's own blocked pair, above); `renderSongOffline` calls `stop()` and `scheduleNote()` (both still blocked, audio/transport.js step 7 + audio/voices.js above); `recordRealtimeAudio` calls `setInfo`/`stop`/`play` directly. All three stay in app.js, along with the `#filedlaudio` click handler (which also calls `closeFileMenus`/`albumClear`/`logDebug`/`logErr`, all still UI/transport-layer) — it now imports `audioBufferToWav`/`deliverAudioFile` back from audio/bounce.js.
@@ -3756,7 +3758,9 @@ splice, same as a loop wrap), and `chipStreamPinLoopStart` pins every span
 (≤ 40 s) so no join waits on the worker. Whole render (`chip.buffers`) —
 `chipStart` makes no native-loop source for a seam; `chipSeamPump`, called by
 the pump, starts one source per pass at `playT0 + passRel(k)` with
-`start(when, offset, dur)`. Both honour `playbackRate` and `chip.lead`.
+`start(when, offset, dur)`. Both honour `playbackRate` and `chip.lead`. Off
+100 % with pitch kept neither runs: `chipKpPump` plays the seam's spans as
+stretched chunks from the same `chipSegments` (chip-pitch.js).
 
 Controls (`#seambtn` ⟲, `#seamaddbtn` + span, in #timectl): ⟲ shows for a
 song with a `loop:` annotation (seam = 2 bars before the jump → the jump, then
@@ -9126,7 +9130,8 @@ by playRate); buffer offsets are file seconds. `scheduleNote` dispatches
 right after its now+3ms bump, so the bump advances INTO the file rather
 than delaying it. `scheduleClip`: offset = `clip.dur − durSec·playRate`,
 a gain per pass with 5 ms ramps (a pass boundary cuts and restarts
-mid-waveform), `playbackRate = playRate` (tape-style, as chip audio),
+mid-waveform), `playbackRate = playRate` (tape-style; only when the keep-pitch
+switch is off — chip audio follows the same switch since 2026-11-27),
 node tracked in `audioSrcs` and pruned `onended`. The pump clamps a
 clip's duration to the pass end and to `albumEndAbs` (`clipClamp`) —
 MIDI notes never needed that. Both chase loops now run for clips even
@@ -9217,6 +9222,137 @@ a waveform in the roll, a dedicated audio repo (bytes go
 where the song goes: folder or songs repo — Josh's ruling pending),
 Save As / Move to… carrying `.audio/` along (they copy the annotation;
 the bytes must be re-imported until that lands), orphan cleanup.
+
+## Console audio keeps its pitch (2026-11-27, Josh's ear reports 2026-10-25 / 11-27)
+
+Slowing a GAME song used to lower it: chip audio was tape-style
+(`playbackRate = S.playRate` on every console source, whole render and
+stream chunks alike). Now `src/audio/chip-pitch.js` time-stretches the
+render with the SAME WSOLA the recordings use, 2 s of tape at a time
+ahead of the playhead, in the stretch worker — never a whole-song
+render up front (a 3-minute, 8-track song would take ~10 s and a
+stretched copy of the render in RAM; the iPad's budget forbids both).
+Plan: docs/plans/2026-11-27-web-chip-keep-pitch.md. Native does it
+with `AVAudioUnitTimePitch` plus a measured lag table; the web needs
+no lag compensation because the stretch is done ahead of time and
+placed by absolute stretched frame.
+
+**One switch.** `keepPitch()` (clips.js; device pref `ff1roll-tapestyle`
+absent = keep pitch, the recording sheet's toggle) now governs console
+audio too: `chipKeepPitch()` = `S.playRate !== 1 && keepPitch()`.
+`setKeepPitch(on)` is the one setter — the recording sheet, Settings ›
+Other "Keep pitch when the speed changes" (`#cfgkeeppitch`) and Ask
+`set_pref keep_pitch` all call it; it clears both stretch caches and
+restarts a running play in place. Native ignores the pref for console
+songs (always keeps pitch); the web keeps the tape-style escape so Josh
+can A/B WSOLA against the AU without a build. At 100 % (or tape-style)
+`chip.kp` is null and chipStart / chipSeamPump / chipStreamScheduleChunk
+run their old lines byte for byte.
+
+**Geometry.** Raw chunk k = tape frames [k·C, (k+1)·C), C =
+`CHIP_STREAM_CHUNK_SEC` × the render's sample rate — the stream worker's
+own chunking, so one index (`chipStreamIdxForTapeSec`) serves both paths.
+Stretched chunk k = stretched frames [M(k), M(k+1) + E), `kpM(k) =
+round(k·C/rate)`, E = `CHIP_KP_FADE` (256): its own span plus an E-frame
+tail fading out, its first E frames fading in (k > 0). `wsolaChunk(input,
+rate, p)` (clips.js, SERIALIZED with wsolaStretch into the same Blob
+worker) renders exactly that window from a raw window `[p.base, …)` with
+grains on the ABSOLUTE output grid m_g = g·hop, choosing each grain as
+wsolaStretch does; the chain's state is one number, the previous grain's
+raw position (`p.prevIn` in, `next` out), so chunk k+1 computes the
+grains straddling the join identically to chunk k, and the complementary
+ramps over those same grains sum back to one continuous signal (the
+shape tools/chip-worker.mjs gives its raw chunks). A stereo render picks
+ONE grain position for both channels (correlation summed) so the image
+holds. `kpRawRange(m0, m1, e, rate)` is the raw window a chunk may read;
+`kpWindowOf` cuts it from a whole-render buffer (zero outside the song),
+`kpStreamWindowOf` from stream chunks k−1, k, k+1 summed (their fades are
+complementary, so the sum is the untouched raw).
+
+**Placement.** Tape seconds ÷ rate = stretched seconds, scheduleClip's own
+identity. `chipKpPlace(seg, idx, rate, sr)` → `{anchor, offset, dur}`:
+`anchor = seg.when + (M(k)/sr − tapeFrom/rate)`, `offset = max(0,
+tapeFrom/rate − M(k)/sr)`, `dur = tapeTo/rate − max(tapeFrom/rate,
+M(k)/sr)` — a mid-chunk resume starts inside the chunk, a loop wrap /
+album end trims the last chunk (a hard splice, as stream mode has). Every
+source runs at `playbackRate = 1` (`chipPartSrc(name, buffer, 1)` /
+`chipStreamScheduleChunk(…, buffers, 1)`). A sample of stretched chunk k
+at index m therefore sounds at song second (m·rate/sr − lead)/rate — the
+cursor's own clock; no latency table.
+
+**Session.** `chip.kp = {key, rate, mode: "whole"|"stream", sr, cache:
+Map(idx → {status, buffers, next, prev, bytes, pinned}), srcs, scheduled,
+pinnedIdx, live, bytes, peakBytes}` (`chipKpOpen(mode)`; kept across
+stop/play like the stream cache, dropped by applySpeed, setKeepPitch,
+chipPublish, chipStreamOpen, and play() at 100 %). `chipKpWant(kp,
+wanted, pump)` posts chunks in PLAY order: one whose predecessor is ready
+(chain) or not wanted (fresh start — the first chunk after a seek, the far
+side of a loop wrap); stream mode also waits for the successor's raw when
+that successor is wanted next, unless the chunk is segment-final (its tail
+is trimmed) or the song's last — computed once from a faded edge plus
+silence and once from the full raw, the two renderings of a join would not
+sum (review item 3). `chipKpCoherence`: a successor stretched
+fresh before its predecessor existed (a seek backwards) is redone from the
+predecessor's state unless it is already scheduled. `chipKpEvict`: behind
+the playhead goes (never a pin, never a chunk this tick wants — the far
+side of a coming loop wrap sits behind the playhead — never the chunk under
+it or the next), then the farthest-ahead UNWANTED while over
+`CHIP_KP_CACHE_BYTES` (64 MB) — the horizon shrinks on a huge song, memory
+does not; `scheduled` anchors go only with chunks behind the playhead (a
+wanted chunk's sources are live; forgetting its anchor started it again,
+review item 2). Pins = `chipKpPinSet` over `chipLoopPinRanges`
+(chip-stream.js, the pure half of chipStreamPinLoopStart): the loop
+start + 2 s, or a short seam's whole spans — trimmed to each span's first
+chunks when the pins alone (sized by the biggest chunk seen) would overrun
+the cap (a PS2 stereo seam at 50 %, review item 5). `kp.live` is set only
+by a source that really started: an empty chunk (chipBuffers() is {}
+before the tap makes the context) is not cached in whole mode and never
+mutes the synth (review item 6).
+
+**Whole render.** play(): `chipKpWaitFirst(fromSec)` (≤ 1.5 s, alongside
+sfWaitForSong) stretches the chunk under the start position and the next,
+so beat 1 is the console's; then `chipKpStart` instead of `chipStart`, and
+the pump calls `chipKpPump` first (where it calls chipStreamPump for a
+stream) — the same `chipSegments` walk as the stream pump, scheduling
+ready chunks, wanting the rest, pinning, evicting. The synth guard in
+scheduleNote reads `chip.kp.live` as it reads `chip.stream.live`.
+`applySpeed` warms the first chunk at the cursor when stopped.
+
+**Stream mode.** `chipStreamPump` takes `chipKpPlace` for the anchor/
+offset/dur and `chipKpStreamBuffers(idx)` for the buffers; a chunk still
+stretching records nothing for its anchor and the next tick retries;
+`chipKpStreamWant` afterwards. The raw cache and its eviction are
+unchanged.
+
+**Bounce.** The offline graph exists only inside `renderSongOffline`'s
+synchronous sweep, so `offlineWaitForAssets` first awaits
+`chipKpPrepareAll(endSec, progress)`: every chunk of the one pass, chained
+from each chunk's own completion, no time cap, the status line counting
+up ("preparing the download at 50% (pitch kept)… 40%"); then
+`renderSongOffline` calls `chipKpScheduleAll` in place of `chipStart(0)`
+(true = every chunk placed; the session is dropped after). Holding a whole
+stretched song is the memory cost of that, so a render whose stretched copy
+would pass `CHIP_KP_BOUNCE_BYTES` (160 MB, `chipKpBounceBytes`) is not
+attempted: the download is tape-style for it and the status line says so.
+
+**Workers.** Two Blob workers of the same code (clips.js
+`stretchWorkerPost(which, …)`): `S.stretchWorker` for a take's
+whole-recording render, `S.stretchChunkWorker` for console chunks — one
+queue put a game song's first chunk behind a 3-minute take and past
+play()'s 1.5 s wait.
+
+**Tests** (tests/night-roll.test.mjs "console audio keeps its pitch" + the
+four "keep-pitch review" tests covering the items above):
+wsolaChunk's chained chunks keep 440 Hz at 50 % and sum seamlessly at
+the join; kpM/chipKpPlace at 0.5 / 0.75 / 1.25; the whole render at 75 %
+schedules stretched buffers at playbackRate 1 at the right anchors, a
+chunk's offset matches the resume position; tape-style restores
+chipStart's playbackRate 0.75; stream mode at 75 % schedules stretched
+chunks 2/0.75 s apart; at 100 % chip.kp stays null.
+
+**Not verified by ear here** (the main session / Josh): pitch identity vs
+100 %, no tick at the 2 s joins, cursor on the notes across a loop wrap
+and a seek, at 50 / 75 / 125 %.
 
 ## Audio export — Download audio (2026-09-30, offline bounce)
 

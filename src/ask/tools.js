@@ -1,6 +1,7 @@
 import { play } from "../audio/transport.js";
 import { playSec } from "../audio/transport.js";
 import { setHearMidi, chip } from "../audio/chip.js";
+import { setKeepPitch } from "../audio/chip-pitch.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
 import { FILE_UNDER } from "../model/rollnotes.js";
@@ -1528,7 +1529,7 @@ export async function askSongFile(a) {
 // — Ask must never switch Josh into Normal; that switch is what keeps
 // answers his); the check runs before the whitelist lookup so a model that
 // guesses a learning-flavored name gets the real reason, not a generic one.
-const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "text_size", "sound", "beat_subdivisions", "volume_slider", "text_jump", "publish_button"];
+const SET_PREF_NAMES = ["album_order", "octave_numbers", "debug_log", "chip_stream", "keep_pitch", "text_size", "sound", "beat_subdivisions", "volume_slider", "text_jump", "publish_button"];
 export function askSetPref(a) {
   a = a || {};
   const name = String(a.name || "").trim().toLowerCase();
@@ -1591,6 +1592,11 @@ export function askSetPref(a) {
     document.getElementById("cfgchipstream").value = v;
     settingsPersist("cfgchipstream");
     return {ok: true, note: "chip audio streaming set to " + v};
+  }
+  if (name === "keep_pitch") { // Settings › Other "Keep pitch when the speed changes": console audio + recordings time-stretched (default) vs tape-style
+    const on = askActTruthy(value);
+    setKeepPitch(on);
+    return {ok: true, note: on ? "pitch kept when the speed changes — game songs and recordings are time-stretched" : "tape-style — slower is lower, faster is higher"};
   }
   // text_size
   const TS = {small: "0.9", default: "1", normal: "1", large: "1.15", larger: "1.3"};

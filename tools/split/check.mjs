@@ -61,7 +61,7 @@ export function layerOf(relPath) {
 // identifier besides a JS builtin — the S-codemod (step 1) must never
 // rewrite inside one of these to `S.x`, and the mover must never partially
 // move one's dependencies out from under it.
-export const SERIALIZED = ["wsolaStretch"];
+export const SERIALIZED = ["wsolaStretch", "wsolaChunk"];
 
 // ECMAScript builtins only (stricter than browser-globals.txt, which also
 // allows DOM/window — a serialized function runs inside a Worker's own

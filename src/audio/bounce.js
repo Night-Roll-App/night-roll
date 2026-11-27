@@ -19,6 +19,9 @@ import { buildSchedule } from "./transport.js";
 import { trackGain } from "./engine.js";
 import { chipActive } from "./chip.js";
 import { chipStart } from "./chip.js";
+import { chipKeepPitch } from "./chip-pitch.js";
+import { chipKpPrepareAll } from "./chip-pitch.js";
+import { chipKpScheduleAll } from "./chip-pitch.js";
 import { clipClamp } from "./clips.js";
 import { scheduleNote } from "./voices.js";
 import { ensureAudio } from "./engine.js";
@@ -114,6 +117,11 @@ export async function offlineWaitForAssets(capMs) {
         await new Promise(r => setTimeout(r, 50));
     }
   }
+  if (chipActive() && !chip.stream && chipKeepPitch()) { // every stretched chunk of the one pass, before the synchronous sweep below (chip-pitch.js) — no cap: the download waits for the stretch; a song too big to hold stretched is bounced tape-style, and the status line says which
+    const pct = Math.round(S.playRate * 100) + "%";
+    const ok = await chipKpPrepareAll(tickToSec(S.song, S.songEndTick), frac => setInfo("preparing the download at " + pct + " (pitch kept)… " + Math.round(frac * 100) + "%"));
+    setInfo(ok ? "" : "the download at " + pct + " is tape-style (slower = lower): this song is too big to hold time-stretched — play it in the app for pitch kept");
+  }
 }
 // {ok:true, buffer} | {ok:false, why} — why is shown to Josh when the
 // real-time fallback also can't help (see the click handler)
@@ -161,7 +169,7 @@ export async function renderSongOffline() {
     buildSchedule();
     applyLevels(); // the song gain, as play() sets it (then updateTrackGains)
     S.song.tracks.forEach((_, ti) => trackGain(ti));
-    if (chipActive()) chipStart(0);
+    if (chipActive() && !(!chip.stream && chipKeepPitch() && chipKpScheduleAll(S.loopSeg.end))) chipStart(0); // keep-pitch: the chunks offlineWaitForAssets prepared, placed on the offline context; a pass not fully prepared bounces whole, tape-style
     for (const e of S.schedEvents) {
       if (e.sec >= S.loopSeg.end) continue;
       const dur = e.n._clip ? clipClamp(e.dur, S.loopSeg.end - e.sec) : e.dur;

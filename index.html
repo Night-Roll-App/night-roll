@@ -1642,6 +1642,9 @@
       </select></div>
     <div class="status cfgind">Experimental (docs/streamed-render-plan.md): console audio for a PlayStation/PlayStation 2 song arrives a couple of seconds at a time instead of rendering the whole song up front — the fix for a big song (FFX "Challenge") crashing the iPad's memory. <b>Off</b>: today's whole-render behavior, unchanged. <b>On</b>: stream mode for every song whose chip supports it; any failure falls back to the whole render for that song. <b>Auto</b> (default): streams only a song that would otherwise have to downgrade quality (mono, or a lower sample rate) or refuse to fit this device's memory — every other PS1/PS2 song, and every other console, plays the unchanged whole render.</div>
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+      <input type="checkbox" id="cfgkeeppitch" style="width:20px;height:20px"> Keep pitch when the speed changes</label></div>
+    <div class="status cfgind">On (default): a game song's console audio and your recordings are time-stretched at any speed but 100%, so slowing down never lowers the pitch. Off: tape-style — slower is lower, faster is higher, like a record. MIDI voices keep their pitch either way.</div>
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
     <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
@@ -1783,6 +1786,7 @@
 <link rel="modulepreload" href="src/audio/seam.js">
 <link rel="modulepreload" href="src/audio/chip.js">
 <link rel="modulepreload" href="src/audio/chip-stream.js">
+<link rel="modulepreload" href="src/audio/chip-pitch.js">
 <link rel="modulepreload" href="src/audio/clips.js">
 <link rel="modulepreload" href="src/audio/metronome.js">
 <link rel="modulepreload" href="src/audio/bounce.js">

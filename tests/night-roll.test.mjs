@@ -3271,6 +3271,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Read receipts", "✓✓ turn blue", // Worker-tab receipts (Josh #1135/#1136): vendor/ai/web/ticks.js drawn by css/app.css .asktick
     "a lasso of exactly one note reads like a tap", "never lands on a row another drum track", // #1134: the lasso readout's track, the kit guess's lengths + taken rows
     "Select all notes", "Drums checkbox", "the mark is cleared instead", // #1140: the voice menu's action row + one Drums checkbox over the three drum states
+    "game songs too", "Keep pitch when the speed changes", // a slowed game song keeps its pitch (Josh 2026-10-25/11-27; audio/chip-pitch.js) + the Settings › Other switch
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -8057,7 +8058,7 @@ test("set_pref: album_order, octave_numbers, debug_log, chip_stream, text_size e
     assert.equal(val(`localStorage.getItem("ff1roll-textsize")`), "1");
     assert.throws(() => run(`askSetPref({name: "text_size", value: "huge"})`), /text_size must be/);
 
-    assert.throws(() => run(`askSetPref({name: "something_else", value: 1})`), /name must be one of album_order, octave_numbers, debug_log, chip_stream, text_size/);
+    assert.throws(() => run(`askSetPref({name: "something_else", value: 1})`), /name must be one of album_order, octave_numbers, debug_log, chip_stream, keep_pitch, text_size/);
     assert.throws(() => run(`askSetPref({name: "album_order"})`), /say the value/);
     for (const n of ["learning_mode", "learning", "cfglearning", "LEARNING"]) assert.throws(() => run(`askSetPref({name: ${JSON.stringify(n)}, value: true})`), /only Josh can flip himself/, n);
     assert.equal(val(`appMode()`), "learning", "sanity: set_pref never touched the real mode");
@@ -17053,6 +17054,304 @@ test("loop seam over a whole console render: chipSeamPump starts one source per 
   assert.deepEqual(pinned, [1, 2, 3, 5, 6, 7].map(i => i), "both spans' chunks (2 s each) are pinned, not just the first span's start: " + JSON.stringify(pinned));
   arun(`chip.stream = null; loopSeg = null;`);
 });
+
+// ---- console audio keeps its pitch (Josh's ear reports 2026-10-25 / 11-27;
+// src/audio/chip-pitch.js; NIGHT-ROLL.md "Console audio keeps its pitch").
+// The vm has no Worker, so stretchChunkInWorker runs wsolaChunk inline and
+// resolves on a microtask; `settle` flushes those and re-pumps, standing in
+// for the worker's reply landing between two pump ticks.
+{
+  const SR = 8000, C = 2 * SR; // a small render rate keeps the inline stretch cheap; one chunk = 16000 raw frames
+  const sine = (n, hz = 440) => { const a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = Math.sin(2 * Math.PI * hz * i / SR); return a; };
+  const crossings = a => { let c = 0; for (let i = 1; i < a.length; i++) if ((a[i - 1] < 0) !== (a[i] < 0)) c++; return c; };
+  const rms = (a, from, to) => { let s = 0; for (let i = from; i < to; i++) s += a[i] * a[i]; return Math.sqrt(s / (to - from)); };
+
+  test("wsolaChunk: chained chunks keep 440 Hz at 50 % and sum seamlessly at the join; stereo takes one grain choice; 125 % shrinks", () => {
+    const raw = sine(5 * SR); // 5 s of tape: chunks 0, 1 (whole) and 2 (half)
+    const rate = 0.5, e = 256;
+    const M = k => run(`kpM(${k}, ${rate}, ${C})`);
+    let prevIn = null; const outs = [];
+    app.context.__raw = raw;
+    for (let k = 0; k < 2; k++) {
+      const m0 = M(k), m1 = M(k + 1);
+      const {from, to} = run(`kpRawRange(${m0}, ${m1}, ${e}, ${rate})`);
+      app.context.__win = run(`kpWindowOf(__raw, ${from}, ${to})`);
+      const r = run(`wsolaChunk(__win, ${rate}, {base: ${from}, m0: ${m0}, m1: ${m1}, e: ${e}, fadeIn: ${k > 0}, prevIn: ${prevIn === null ? "null" : prevIn}})`);
+      assert.equal(r.out.length, m1 - m0 + e, "chunk " + k + " covers its span plus the fade tail");
+      assert.equal(typeof r.next, "number", "the chain's state for the next chunk");
+      assert.ok(r.out.every(v => Number.isFinite(v)), "no read outside the raw window (a NaN would mean kpRawRange is too tight)");
+      // a wider window changes nothing: every read the grain search makes already lies inside kpRawRange's window
+      const wide = run(`wsolaChunk(kpWindowOf(__raw, ${from - 3000}, ${to + 3000}), ${rate}, {base: ${from - 3000}, m0: ${m0}, m1: ${m1}, e: ${e}, fadeIn: ${k > 0}, prevIn: ${prevIn === null ? "null" : prevIn}})`);
+      assert.equal(wide.next, r.next, "same grain chain from a wider window");
+      assert.deepEqual(Array.from(wide.out.subarray(0, 2000)), Array.from(r.out.subarray(0, 2000)), "identical samples from a wider window");
+      outs.push(r); prevIn = r.next;
+    }
+    // chunk 0's tail + chunk 1's head over the same stretched frames: the join
+    const len0 = outs[0].out.length, joined = new Float32Array(M(2) + e);
+    joined.set(outs[0].out, 0);
+    for (let i = 0; i < outs[1].out.length; i++) joined[M(1) + i] += outs[1].out[i];
+    const zc = crossings(joined.subarray(SR, M(2) - SR)); // the middle 6 s at 440 Hz: 5280 crossings (tape-style would give 2640)
+    assert.ok(zc > 5100 && zc < 5450, "pitch kept across both chunks: " + zc + " zero crossings");
+    const atJoin = rms(joined, M(1) - 512, M(1) + 512), inside = rms(joined, M(1) - 4096, M(1) - 3072);
+    assert.ok(Math.abs(atJoin - inside) < 0.08 * inside, "no dip or bump where the chunks meet: " + atJoin.toFixed(3) + " vs " + inside.toFixed(3));
+    for (let i = 0; i < 1000; i++) assert.ok(Math.abs(joined[M(1) - 500 + i]) <= 1.05, "no overshoot at the join");
+    // stereo: the right channel stretched with the SAME grains (its own length, its own samples)
+    const rightRaw = sine(5 * SR, 660);
+    const {from, to} = run(`kpRawRange(${M(0)}, ${M(1)}, ${e}, ${rate})`);
+    app.context.__raw = raw; app.context.__raw2 = rightRaw;
+    const st = run(`wsolaChunk(kpWindowOf(__raw, ${from}, ${to}), ${rate}, {base: ${from}, m0: ${M(0)}, m1: ${M(1)}, e: ${e}, fadeIn: false, prevIn: null, aux: kpWindowOf(__raw2, ${from}, ${to})})`);
+    assert.equal(st.aux.length, st.out.length);
+    const zcR = crossings(st.aux.subarray(2000, st.aux.length - 2000)); // 660 Hz over ~3.5 s ≈ 4620
+    assert.ok(zcR > 4400 && zcR < 4850, "the right channel keeps its own pitch: " + zcR);
+    // 125 %: a chunk shrinks to C / 1.25
+    const m0f = run(`kpM(0, 1.25, ${C})`), m1f = run(`kpM(1, 1.25, ${C})`);
+    assert.equal(m1f - m0f, Math.round(C / 1.25));
+    const rf = run(`kpRawRange(${m0f}, ${m1f}, ${e}, 1.25)`);
+    const fast = run(`wsolaChunk(kpWindowOf(__raw, ${rf.from}, ${rf.to}), 1.25, {base: ${rf.from}, m0: ${m0f}, m1: ${m1f}, e: ${e}, fadeIn: false, prevIn: null})`);
+    const zcF = crossings(fast.out.subarray(0, m1f - m0f)); // 1.6 s of 440 Hz = 1408 crossings
+    assert.ok(zcF > 1330 && zcF < 1490, "faster, same pitch: " + zcF);
+    delete app.context.__raw; delete app.context.__raw2; delete app.context.__win;
+  });
+
+  test("chipKpPlace: a stretched chunk's anchor, offset and dur at 0.5 / 0.75 / 1.25 follow tape ÷ rate (pure)", () => {
+    for (const rate of [0.5, 0.75, 1.25]) {
+      const lead = 2, songFrom = 10, songTo = 30, when = 100;
+      const seg = {when, tapeFrom: lead + songFrom * rate, tapeTo: lead + songTo * rate};
+      const idxFrom = run(`chipStreamIdxForTapeSec(${seg.tapeFrom})`), idxTo = run(`chipStreamIdxForTapeSec(${seg.tapeTo} - 1e-9)`);
+      for (let idx = idxFrom; idx <= idxTo; idx++) {
+        const p = run(`chipKpPlace(${JSON.stringify(seg)}, ${idx}, ${rate}, ${SR})`);
+        const chunkTape = idx * 2; // seconds of tape where raw chunk idx starts
+        // the chunk's first frame sounds (chunkTape − tapeFrom) / rate wall seconds after the segment starts — within one sample of rounding
+        assert.ok(Math.abs(p.anchor - (when + (chunkTape - seg.tapeFrom) / rate)) < 1 / SR + 1e-9, rate + " anchor of chunk " + idx + ": " + p.anchor);
+        if (idx === idxFrom) { // the resume lands inside this chunk: offset = how far into its stretched copy
+          assert.ok(Math.abs(p.offset - (seg.tapeFrom - chunkTape) / rate) < 1 / SR + 1e-9, rate + " offset " + p.offset);
+          assert.ok(Math.abs(p.anchor + p.offset - when) < 1e-9, "the resume sample sounds at seg.when");
+        } else assert.equal(p.offset, 0);
+        const tapeEndInChunk = Math.min(seg.tapeTo, chunkTape + 2);
+        if (idx === idxTo) assert.ok(Math.abs(p.dur - (seg.tapeTo - Math.max(seg.tapeFrom, chunkTape)) / rate) < 1 / SR + 1e-9, rate + " last chunk trimmed at the loop end: " + p.dur);
+        else assert.ok(p.dur >= (tapeEndInChunk - Math.max(seg.tapeFrom, chunkTape)) / rate - 1e-9, "a middle chunk's dur reaches past its own end (the buffer ends it)");
+      }
+    }
+    assert.equal(run(`kpM(3, 0.75, ${C})`), Math.round(3 * C / 0.75));
+    assert.equal(run(`kpM(3, 1, ${C})`), 3 * C, "at 100 % the stretched grid IS the tape grid");
+  });
+
+  const settle = async (a, pumpExpr) => { for (let i = 0; i < 12; i++) { await new Promise(r => setImmediate(r)); a.run(pumpExpr); } };
+  const fakeRender = `globalThis.__fakeBuf = (data, right) => ({numberOfChannels: right ? 2 : 1, length: data.length, sampleRate: ${SR}, duration: data.length / ${SR},
+      getChannelData: c => (c === 1 && right) ? right : data, copyToChannel() {}});
+    globalThis.__sine = (n, hz) => { const a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = Math.sin(2 * Math.PI * hz * i / ${SR}); return a; };
+    globalThis.__starts = [];
+    audio.createBufferSource = () => { const s = {buffer: null, playbackRate: {value: 1}, connect(x) { return x; }, disconnect() {},
+      start(w, o, d) { globalThis.__starts.push({when: w, off: o, dur: d, rate: s.playbackRate.value, len: s.buffer.length}); }, stop() {} }; return s; };`;
+
+  test("whole render at 75 %: play goes through chipKpStart — stretched chunks at playbackRate 1, the resume chunk's offset and the next chunk's anchor match the cursor's clock; tape-style restores chipStart's 0.75; 100 % leaves chip.kp null", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    arun(`createComposition(120, 4, 4); ensureAudio(); localStorage.removeItem("ff1roll-tapestyle");
+          ${fakeRender}
+          chip.key = songKey; chip.lead = 2; chip.pcm = null; chip.pan = null; chip.stream = null; chip.kp = null; chip.pcmRate = ${SR};
+          chip.buffers = {}; chip.buffers[song.tracks[0].name] = __fakeBuf(__sine(40 * ${SR}, 440)); // a 40 s mono render
+          playing = true; playT0 = audio.currentTime + 0.08; playOffset = 10; playRate = 0.75; albumEndAbs = null;
+          loopSeg = {start: 0, end: 20, looped: true};`);
+    assert.equal(arun(`chipKeepPitch()`), true);
+    arun(`chipKpWaitFirst(10)`); // play()'s own preflight: the chunk under the start position is ready before the transport starts (the vm's timers are a fake clock, so its promise is not awaited here — the inline stretch lands on a microtask)
+    for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+    a.tick(50);
+    arun(`chipKpStart(10);`);
+    assert.equal(aval(`chip.kp.mode`), "whole");
+    assert.equal(aval(`chip.kp.live`), true, "the first chunk was ready: the synth guard sees console audio from beat 1");
+    await settle(a, `chipKpPump(audio.currentTime)`);
+    const t0 = aval(`playT0`), starts = aval(`__starts`);
+    assert.ok(starts.length >= 3, "several chunks scheduled within the 7 s horizon: " + starts.length);
+    for (const s of starts) assert.equal(s.rate, 1, "every stretched chunk plays at 1: pitch kept");
+    // tape 9.5 s (lead 2 + 10 s × 0.75) is chunk 4; its stretched copy starts at tape 8 s = song second 8; the resume is 2 wall seconds into it
+    assert.ok(Math.abs(starts[0].when - t0) < 1e-6, "the resume chunk starts at playT0: " + (starts[0].when - t0));
+    assert.ok(Math.abs(starts[0].off - 2) < 1 / SR + 1e-9, "2 s into the stretched chunk: " + starts[0].off);
+    assert.equal(starts[0].len, Math.round(5 * C / 0.75) - Math.round(4 * C / 0.75) + 256, "the stretched chunk is C/0.75 frames + the fade tail");
+    // chunk 5 begins at tape 10 s = song second (10 − 2) / 0.75 = 10.667, i.e. 0.667 s after the resume at song second 10
+    assert.ok(Math.abs(starts[1].when - (t0 + (10 - 9.5) / 0.75)) < 1 / SR + 1e-9, "the next chunk's anchor: " + (starts[1].when - t0));
+    assert.equal(starts[1].off, 0);
+    // the loop wrap: tape 2 + 20 × 0.75 = 17 s is chunk 8's middle; the wrap-back lands in chunk 1 (tape 2 s) at song second 20 = 10 s of wall after the resume — past the pump's 7 s horizon until the clock moves on
+    a.tick(4000);
+    await settle(a, `chipKpPump(audio.currentTime)`);
+    starts.length = 0; starts.push(...aval(`__starts`));
+    const wrap = starts.find(s => Math.abs(s.when - (t0 + 10)) < 1e-6);
+    assert.ok(wrap, "the chunk at the loop's start is scheduled exactly where the pass ends: " + JSON.stringify(starts.map(s => +(s.when - t0).toFixed(4))));
+    assert.ok(Math.abs(wrap.off - 0) < 1 / SR + 1e-9, "tape 2 s is chunk 1's own first frame");
+    const last = starts.filter(s => s.when < t0 + 10).sort((x, y) => x.when - y.when).pop();
+    assert.ok(last.dur > 0 && last.dur < 2 / 0.75, "the last chunk before the wrap is trimmed at the loop end: " + last.dur);
+    assert.equal(aval(`chip.srcs.length`), 0, "no native-loop source: the stretched chunks are the console audio");
+    assert.ok(aval(`chip.kp.srcs.length`) >= 3);
+    assert.equal(aval(`chip.kp.bytes`) > 0, true);
+    // stop keeps the stretched chunks for the next play (a replay from here is instant); the sources are gone
+    arun(`chipStopSrcs();`);
+    assert.equal(aval(`chip.kp.srcs.length`), 0);
+    assert.ok(aval(`chip.kp.cache.size`) >= 3, "the cache survives a stop");
+    // tape-style: the device switch off → the old path, byte for byte
+    arun(`localStorage.setItem("ff1roll-tapestyle", "1"); __starts.length = 0; chip.kp = null; chipStart(10);`);
+    assert.equal(arun(`chipKeepPitch()`), false);
+    const tape = aval(`__starts`);
+    assert.equal(tape.length, 1, "one native-loop source per track");
+    assert.equal(tape[0].rate, 0.75, "tape-style: playbackRate follows the slider");
+    assert.ok(Math.abs(tape[0].off - 9.5) < 1e-9, "tape offset = lead + 10 s × 0.75");
+    assert.equal(tape[0].len, 40 * SR, "the raw render, not a stretched copy");
+    arun(`localStorage.removeItem("ff1roll-tapestyle"); playRate = 1; __starts.length = 0; chipStart(10);`);
+    assert.equal(arun(`chipKeepPitch()`), false, "at 100 % nothing stretches");
+    assert.equal(aval(`__starts[0].rate`), 1);
+    assert.ok(Math.abs(aval(`__starts[0].off`) - 12) < 1e-9, "lead 2 + 10 s");
+    assert.equal(aval(`chip.kp`), null, "no session was opened at 100 %");
+    arun(`playing = false; chip.key = null; chip.buffers = null; chip.kp = null; loopSeg = null; chip.srcs = [];`);
+  });
+
+  test("stream mode at 75 %: chipStreamPump schedules each cached raw chunk's stretched copy at playbackRate 1, 2/0.75 s apart; at 100 % the raw chunks play as before", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    arun(`createComposition(120, 4, 4); ensureAudio(); localStorage.removeItem("ff1roll-tapestyle"); S.chipWorker = null;
+          ${fakeRender}
+          const name = song.tracks[0].name;
+          chip.key = songKey; chip.lead = 0; chip.pcm = null; chip.buffers = null; chip.pan = null; chip.kp = null;
+          chip.stream = {key: songKey, gen: 0, rate: ${SR}, chunkFrames: ${C}, overlap: 256, tracks: [name], seconds: 40, frames: 40 * ${SR}, leadSec: 0,
+            silent: new Set(), heard: new Set([name]), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(), bytes: 0, peakBytes: 0, live: false, srcs: []};
+          const whole = __sine(40 * ${SR} + 256, 440);
+          for (let k = 0; k < 20; k++) { // the worker's own chunk shape: C + O frames, fade-in head (k > 0), fade-out tail
+            const d = whole.slice(k * ${C}, k * ${C} + ${C} + 256);
+            for (let q = 0; q < 256; q++) { d[${C} + q] *= 1 - q / 256; if (k > 0) d[q] *= q / 256; }
+            chip.stream.cache.set(k, {buffers: {[name]: __fakeBuf(d)}, bytes: d.byteLength, pinned: false});
+          }
+          playing = true; playT0 = audio.currentTime + 0.08; playOffset = 0; playRate = 0.75; albumEndAbs = null;
+          loopSeg = {start: 0, end: 20, looped: true};`);
+    arun(`chipStreamStart(0);`);
+    await settle(a, `chipStreamPump(audio.currentTime)`);
+    const t0 = aval(`playT0`), starts = aval(`__starts`);
+    assert.ok(starts.length >= 3, "stretched chunks scheduled: " + starts.length);
+    for (const s of starts) assert.equal(s.rate, 1, "pitch kept: the stretched copy runs at 1");
+    assert.equal(starts[0].len, Math.round(C / 0.75) + 256, "chunk 0 stretched to C/0.75 + the fade tail");
+    assert.ok(Math.abs(starts[0].when - t0) < 1e-6 && starts[0].off === 0);
+    assert.ok(Math.abs(starts[1].when - starts[0].when - 2 / 0.75) < 1 / SR + 1e-9, "chunks 2/0.75 s apart: " + (starts[1].when - starts[0].when));
+    assert.equal(aval(`chip.stream.live`), true);
+    assert.equal(aval(`chip.kp.mode`), "stream");
+    assert.equal(aval(`chip.kp.cache.get(1).prev[song.tracks[0].name]`), aval(`chip.kp.cache.get(0).next[song.tracks[0].name]`), "chunk 1's chain continues chunk 0's");
+    // the same session at 100 %: the old lines, raw chunks at the slider's rate
+    arun(`chipStopSrcs(); chip.kp = null; __starts.length = 0; playRate = 1; chipStreamStart(0);`);
+    const raw = aval(`__starts`);
+    assert.ok(raw.length >= 3);
+    for (const s of raw) { assert.equal(s.rate, 1); assert.equal(s.len, C + 256, "the raw chunk itself"); }
+    assert.ok(Math.abs(raw[1].when - raw[0].when - 2) < 1e-9, "raw chunks 2 s apart at 100 %");
+    assert.equal(aval(`chip.kp`), null, "no keep-pitch session at 100 %");
+    arun(`playing = false; chip.stream = null; chip.key = null; loopSeg = null;`);
+  });
+
+  // review fixes (2026-11-27): the six findings on the first cut, one assertion each
+  test("keep-pitch review: setKeepPitch stops the stretched sources BEFORE dropping the session; a chunk with no raw is neither cached nor 'live'; the chunk worker is the inline fallback here", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    arun(`createComposition(120, 4, 4); ensureAudio(); localStorage.removeItem("ff1roll-tapestyle");
+          playing = true; playT0 = audio.currentTime; playOffset = 4; playRate = 0.75; loopSeg = {start: 0, end: 20, looped: true};
+          globalThis.__stopped = 0;
+          chip.kp = {key: songKey, rate: 0.75, mode: "whole", sr: ${SR}, cache: new Map(), srcs: [{stop() { globalThis.__stopped++; }}, {stop() { globalThis.__stopped++; }}], scheduled: new Map(), pinnedIdx: new Set(), live: true, bytes: 0, peakBytes: 0};
+          setKeepPitch(false);`);
+    assert.equal(aval(`__stopped`), 2, "both stretched sources were stopped by the stop() that ran while chip.kp still named them (item 1: nulled first, they played on)");
+    assert.equal(aval(`chip.kp`), null);
+    assert.equal(arun(`keepPitch()`), false);
+    for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+    arun(`stop(); localStorage.removeItem("ff1roll-tapestyle");`);
+    // item 6: chipBuffers() is {} before the tap makes the context — nothing to cache, the synth is not muted by silence
+    arun(`${fakeRender}
+          chip.key = songKey; chip.lead = 0; chip.pcm = null; chip.pan = null; chip.stream = null; chip.kp = null; chip.pcmRate = ${SR}; chip.buffers = {};
+          playing = true; playT0 = audio.currentTime + 0.08; playOffset = 0; playRate = 0.75; loopSeg = {start: 0, end: 20, looped: true};
+          chipKpStart(0);`);
+    for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+    arun(`chipKpPump(audio.currentTime);`);
+    assert.equal(aval(`chip.kp.cache.size`), 0, "an empty chunk is not cached in whole mode");
+    assert.equal(aval(`chip.kp.live`), false, "nothing started: the synth guard stays open");
+    assert.equal(aval(`__starts.length`), 0);
+    // a track that picked its own voice is filtered out before any job: same outcome
+    arun(`chip.buffers[song.tracks[0].name] = __fakeBuf(__sine(10 * ${SR}, 440)); song.tracks[0].voice = "synth:lead"; chip.kp = null; chipKpStart(0);`);
+    for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+    arun(`chipKpPump(audio.currentTime);`);
+    assert.equal(aval(`chip.kp.live`), false);
+    assert.equal(aval(`chip.kp.cache.size`), 0);
+    arun(`song.tracks[0].voice = undefined;`);
+    // item 7: console chunks have their own worker in a browser; the vm has none, so the inline path answers and no worker is made
+    assert.equal(arun(`S.stretchChunkWorker`), null);
+    assert.equal(arun(`typeof stretchChunkInWorker(new Float32Array(100), null, 0.5, {base: 0, m0: 0, m1: 50, e: 8, fadeIn: false, prevIn: null}).then`), "function");
+    arun(`playing = false; chip.key = null; chip.buffers = null; chip.kp = null; loopSeg = null;`);
+  });
+
+  test("keep-pitch review: eviction never drops a wanted chunk or its anchors under the byte cap; pins trim to the loop-start lookahead when they alone would overrun it", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    const MB = 1024 * 1024;
+    arun(`createComposition(120, 4, 4); ensureAudio(); chip.pcmRate = ${SR}; playRate = 0.5; chip.kp = null;
+          const kp = chipKpOpen("whole");
+          for (let i = 0; i < 10; i++) kp.cache.set(i, {status: "ready", buffers: {}, next: {}, prev: {}, bytes: 30 * ${MB}, pinned: false});
+          for (const i of [4, 5, 6]) kp.scheduled.set(i, [100 + i]);
+          kp.scheduled.set(7, [107]);
+          kp.pinnedIdx = new Set();
+          chipKpEvict(kp, 8.5, [4, 5, 6]);`); // the playhead is in chunk 4 (tape 8.5 s)
+    const left = aval(`[...chip.kp.cache.keys()].sort((x, y) => x - y)`);
+    assert.deepEqual(left, [3, 4, 5, 6], "behind goes (0–2), the one just behind stays (3), the wanted stay though 120 MB is over the 64 MB cap, the unwanted ahead (7–9) go: " + JSON.stringify(left));
+    assert.deepEqual(aval(`[...chip.kp.scheduled.keys()].sort((x, y) => x - y)`), [4, 5, 6, 7], "no wanted chunk's anchor was forgotten (item 2: it was, and the chunk started again); the evicted far-ahead one keeps its stale anchor harmlessly");
+    assert.equal(aval(`chip.kp.bytes`), 120 * MB);
+    // pins: a seam's whole spans are pinned (chipLoopPinRanges) — unless that alone passes the cap, then each span keeps its first two chunks (item 5)
+    arun(`chip.kp.chunkBytes = ${MB};`);
+    const seam = `{start: 10, end: 14, looped: true, spans: [{start: 10, end: 14}, {start: 2, end: 6}]}`;
+    assert.deepEqual(aval(`[...chipKpPinSet(chip.kp, chipLoopPinRanges(${seam}, 1, 0))].sort((x, y) => x - y)`), [1, 2, 3, 5, 6, 7], "1 MB chunks: both spans whole, as the raw stream pins them");
+    arun(`chip.kp.chunkBytes = 30 * ${MB};`);
+    assert.deepEqual(aval(`[...chipKpPinSet(chip.kp, chipLoopPinRanges(${seam}, 1, 0))].sort((x, y) => x - y)`), [1, 2, 5, 6], "30 MB chunks (6 × 30 > 64): each span keeps loop start + the 2 s lookahead");
+    arun(`chip.kp = null; playRate = 1;`);
+  });
+
+  test("keep-pitch review: a stream chunk waits for its successor's raw unless it is segment-final or the song's last chunk (item 3)", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    arun(`createComposition(120, 4, 4); ensureAudio(); S.chipWorker = null; playRate = 0.75; chip.kp = null;
+          ${fakeRender}
+          const name = song.tracks[0].name;
+          chip.key = songKey; chip.lead = 0; chip.buffers = null; chip.pcm = null;
+          chip.stream = {key: songKey, gen: 0, rate: ${SR}, chunkFrames: ${C}, overlap: 256, tracks: [name], seconds: 40, frames: 20 * ${C}, leadSec: 0,
+            silent: new Set(), heard: new Set([name]), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(), bytes: 0, peakBytes: 0, live: false, srcs: []};
+          for (const k of [0, 1, 3, 19]) { const d = __sine(${C} + 256, 440); chip.stream.cache.set(k, {buffers: {[name]: __fakeBuf(d)}, bytes: d.byteLength, pinned: false}); } // chunk 2 not back from the worker yet
+          globalThis.__kp = chipKpOpen("stream");
+          chipKpWant(__kp, [0, 1, 2, 3], () => {}, new Set([3]));`);
+    for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+    arun(`chipKpWant(__kp, [0, 1, 2, 3], () => {}, new Set([3]));`);
+    assert.equal(aval(`__kp.cache.get(0).status`), "ready", "chunk 0 (successor 1 cached) was stretched");
+    assert.equal(aval(`__kp.cache.has(1)`), false, "chunk 1 waits: its tail grains read into chunk 2, which is not here yet");
+    assert.equal(aval(`__kp.cache.has(3)`), false, "chunk 3 waits for the chain (2 is wanted first)");
+    arun(`chipKpWant(__kp, [0, 1], () => {}, new Set([1]));`); // the same chunk 1 as a segment's last: its tail is trimmed, no successor needed
+    assert.equal(aval(`__kp.cache.has(1)`), true, "segment-final: posted without chunk 2");
+    arun(`chipKpWant(__kp, [19], () => {}, new Set());`);
+    assert.equal(aval(`__kp.cache.has(19)`), true, "the song's last chunk (frames / C) has no successor to wait for");
+    arun(`delete globalThis.__kp; chip.stream = null; chip.kp = null; chip.key = null; playRate = 1;`);
+  });
+
+  test("keep-pitch review: the bounce stretches the whole pass chunk by chunk from each completion (no time cap, progress reported), schedules every chunk, and refuses a render too big to hold (item 4)", async () => {
+    const a = await createApp(); const arun = c => a.run(c), aval = c => JSON.parse(arun(`JSON.stringify(${c})`));
+    arun(`createComposition(120, 4, 4); ensureAudio(); localStorage.removeItem("ff1roll-tapestyle");
+          ${fakeRender}
+          chip.key = songKey; chip.lead = 0; chip.pcm = null; chip.pan = null; chip.stream = null; chip.kp = null; chip.pcmRate = ${SR};
+          chip.buffers = {}; chip.buffers[song.tracks[0].name] = __fakeBuf(__sine(10 * ${SR}, 440));
+          playing = false; playRate = 0.5; globalThis.__prog = [];`);
+    const ok = await a.run(`chipKpPrepareAll(6, f => globalThis.__prog.push(f))`); // 6 song seconds at 50 % = 3 s of tape = chunks 0 and 1
+    assert.equal(ok, true);
+    assert.deepEqual(aval(`__prog`).slice(-1), [1], "progress reached 100 %: " + JSON.stringify(aval(`__prog`)));
+    assert.ok(aval(`__prog`).length >= 2, "progress was reported along the way");
+    assert.deepEqual(aval(`[...chip.kp.cache.keys()].sort()`), [0, 1]);
+    arun(`loopSeg = {start: 0, end: 6, looped: false}; playing = true; playT0 = 0;`);
+    assert.equal(arun(`chipKpScheduleAll(6)`), true);
+    const s = aval(`__starts`);
+    assert.equal(s.length, 2, "one source per chunk per track");
+    assert.ok(Math.abs(s[0].when - 0) < 1e-9 && Math.abs(s[1].when - 4) < 1 / SR, "chunk 1 (tape 2 s) at 4 wall seconds at 50 %: " + JSON.stringify(s));
+    assert.ok(Math.abs(s[1].dur - 2) < 1 / SR + 1e-9, "the last chunk is trimmed at the song's end (tape 3 s): " + s[1].dur);
+    for (const x of s) assert.equal(x.rate, 1);
+    assert.equal(aval(`chip.kp`), null, "the whole-song pins are dropped after the sweep");
+    // too big to hold stretched: refused up front, nothing stretched, the bounce stays tape-style (chipStart)
+    arun(`chip.buffers[song.tracks[0].name] = {numberOfChannels: 2, length: 1e9, getChannelData: () => new Float32Array(16), copyToChannel() {}}; __starts.length = 0;`);
+    assert.equal(await a.run(`chipKpPrepareAll(6, () => {})`), false);
+    assert.equal(arun(`chipKpScheduleAll(6)`), false, "no session: the caller bounces whole");
+    assert.equal(aval(`chip.kp`), null);
+    // no raw at all: resolves false at once instead of hanging
+    arun(`chip.buffers = {};`);
+    assert.equal(await a.run(`chipKpPrepareAll(6, () => {})`), false);
+    arun(`playing = false; chip.key = null; chip.buffers = null; chip.kp = null; loopSeg = null; playRate = 1;`);
+  });
+}
 
 test("loop seam controls: ⟲ starts the loop's seam and leaves it; + span banks a ruler span, the next armed span completes the pair; Ask play_seam", async () => {
   const t = await seamApp();
