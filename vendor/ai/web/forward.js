@@ -14,11 +14,13 @@
 // its Worker messages (null/undefined: none — a note tagged for another
 // client is not this client's and is dropped, never shown or queued);
 // optional onForwardsChanged(pending) after the waiting list changed.
-import { aiStorage } from "./backends.js";
+import { aiStorage, aiDeviceId } from "./backends.js";
 
 export const AI_FORWARD_DONE_CAP = 200;
 export function aiForwardIsChat(n) { return !!n && n.kind === "chat" && typeof n.text === "string" && !!n.song; }
-export function aiForwardMine(host, n) { const tag = host.chatTag ? host.chatTag() : null; return (n.tag || null) === (tag || null); }
+// Mine: sent from THIS device (the note's `device` is the id aiTerminalPost put on the row) — every device of an app polls the same inbox,
+// and the words must run once. A note without a device (an older bridge, a row from before) falls back to the "[App]" tag rule.
+export function aiForwardMine(host, n) { if (n.device) return n.device === aiDeviceId(host); const tag = host.chatTag ? host.chatTag() : null; return (n.tag || null) === (tag || null); }
 export function aiForwardGet(host) {
   let st = null;
   try { st = JSON.parse(aiStorage(host).getItem(host.keys.forward) || "null"); } catch (err) { st = null; }

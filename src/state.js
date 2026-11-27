@@ -310,6 +310,7 @@ export const S = {
   askSwitch: null, // open_song (docs/ai-parity.md §4): {path, title, then, from, said} — queued by the action, run by askLanded once the reply that asked has landed
   askEarlierOpen: false, // the Claude tab's collapsed "Earlier chat" block is open (this run only)
   askCarry: null, // a carried-over request waiting for a tap (the new chat had an unsent draft): {key, text}
+  askForwardTimer: null, // askForwardRetrySoon (#1189): the one timer that re-tries a Worker message kept waiting by a busy chat, a load or a take
   askHopKey: null, // the chat whose last message was carried over by open_song — it may not open another song (one hop only)
   askCaps: {bridge: false, terminal: false, sessions: false},
   askSeenPending: {},

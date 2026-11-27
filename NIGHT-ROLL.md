@@ -11297,17 +11297,22 @@ A message typed in the ✦ Claude (Worker) tab that dictates what goes into the 
 runs in that song's ♪ chat — live context, the `act` tool — instead of the Worker session, which cannot touch the open song.
 - **Bridge** (vendor/ai/bridge/server.mjs): `node tools/claude-bridge.mjs --to-chat <n> [--song <path>] ["note"]`
   (`POST /v1/terminal/chat`) marks row n done, writes "→ sent to the ♪ chat for ‹title›" and then the words as an inbox note of
-  kind `chat` `{text, song, songTitle, tag, row}` to the row's app. `chatTargetOf` reads the song from the row's `<context>`:
+  kind `chat` `{text, song, songTitle, tag, device, row}` to the row's app. `chatTargetOf` reads the song from the row's `<context>`:
   our `askOpenSongLine` ("open song: Title (path, Published) — …"; the path is the songKey) or native's quoted title + its
-  `song path:` line. The read-only router's third verdict `CHAT` does the same by itself (FYI row `FORWARDED #n` for the watcher;
-  conservative — app work stays NEEDS_AI). A `[App]`-tagged native message carries `tag`; the web only takes untagged ones.
+  `song path:` line. The read-only router's third verdict `CHAT` does the same by itself (FYI row `FORWARDED #n` for the watcher) —
+  offered only for a night-roll row whose context names an open song, taken only as the helper's whole reply; app work, questions
+  and mixed messages stay NEEDS_AI. `device` is the sender's own id (`aiDeviceId`, `ff1roll-ask-device`, sent with every Worker
+  POST): every device of the app polls the same inbox, and only the one that sent the words runs them (an older note without a
+  device falls back to the `[App]` tag: native's carries one, the web takes untagged ones).
 - **Library** (vendor/ai/web/forward.js): `aiForwardTake(host, notes)` strips the chat notes out of an inbox poll and sends or queues
   them, once per note id (`ff1roll-ask-forward` = `{pending, done}`); `aiForwardRetry/SendNow/Dismiss`. Host hooks (host.js):
   `keys.forward`, `forwardChat(entry, force)`, `onForwardsChanged(pending)`.
 - **App** (src/ask/forward.js): `askForwardChat` pushes a `↪ from the Worker tab` note (`m: "handoff"`, no envelope) into the
-  song's store and runs the words through `askSwitchRun` (the open_song switch: waits for a busy chat, flips to the ♪ tab, `askSend`
-  as the user's words; with `force` it opens the song first). Not open and not forced → waits; `askForwardChips` draws the
-  Worker tab's `.askfwd` rows ("Waiting for ‹song›: “…” · Send now / Dismiss"); `askForwardOnSong` (setSong, next tick) retries.
+  song's store and runs the words through `askSwitchRun` (the open_song switch: flips to the ♪ tab, `askSend` as the user's words —
+  nothing is added to them). A busy chat, a load in flight or a take (`S.recording`) keeps it waiting and `askForwardRetrySoon`
+  (one timer, `S.askForwardTimer`) tries again. Not open and not forced → waits; `force` (Send now) only opens the song — the
+  message stays waiting until setSong says it is in, so a song that will not load (renamed, deleted) keeps its chip. `askForwardChips`
+  draws the Worker tab's `.askfwd` rows ("Waiting for ‹song›: “…” · Send now / Dismiss"); `askForwardOnSong` (setSong, next tick) retries.
   `askNotesArrived` calls `askForwardTake` first, so a chat note is never stored as a note. Both apps poll the same `night-roll`
   inbox: each device keeps its own done list, and a message tagged for the native app is not the web's. Tests:
   tests/ask-forward.test.mjs; library tests/forward.test.mjs; bridge tests/bridge.test.mjs "chat hand-off".
