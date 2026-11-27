@@ -210,6 +210,7 @@ export const S = {
   hideDrums: false, // View › Display "Hide drum tracks": this session only, never a track: directive (render/roll.js trackShown)
   viewMode: localStorage.getItem("ff1roll-view") || "roll",
   scoreModel: null,
+  exportSheet: null, // Export score / tab sheet while open: {parts: Set<ti>, tab: Set<ti>, split} — per song, reset on open (session/export-score.js)
   scoreCache: new Map(),
   scoreZoom: 0,
   scoreIntro: null,

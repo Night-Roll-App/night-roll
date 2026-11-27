@@ -263,3 +263,27 @@ What the plan names and I verified as real: `scorePageLayout` / `scoreHtmlDocume
 ### Verdict
 
 **Ready with fixes** — apply 1–6 before building; 1–3 change the writers' contract (model builder, padding, key source), 4 and 5 are missing steps/nonexistent references, 6 is the scope cut that makes phase 1 shippable in both apps.
+
+## Code review (Fable, 2026-11-27 — phase 1 as built: web worktree 02f81db0 on 8d15d908, night-roll-ipad `export-phase1` 8f2770b, night-roll-guitar `export-roundtrip` a2d0001)
+
+**Verdict: merge after fixes.** The code is right; the fixes are merge-time (web main moved under the branch) plus two nits.
+
+Ran: web `node tools/run-tests.mjs night-roll modules pwa` → ℹ pass 684/685 (0 fail), 6/6, 93/93; `node tools/split/check.mjs` → 118 files, 0 violations. Native Core `swift test --filter 'MusicXMLWriterTests|TabWriterTests'` → 6/6. Guitar `swift test --filter NightRollExportTests` → 2/2 (the exported airship file reads back with its TAB staff). `sh tools/musicxml-check.sh` (W3C 4.0 XSD, xmllint) on the airship fixture, headless dumps of FF1 battle + matoyas-cave (`tools/musicxml-dump.mjs`), and a harness-built composition with a kit (hands + hidden feet rests + `<backup>`), a mid-bar tempo `<offset>`, a key change and an empty track → all four validate. `git merge-tree`: native vs master clean; web vs main conflicts in three files (below).
+
+What the writers do and I checked by hand: durations in divisions = 8 (integral at ppq 100, test), every voice of every bar rest-padded to the bar and `<backup>` = voice 1's actual sum (review blocker 2), `<chord/>` on the 2nd+ pitch, `<tie>`+`<tied>` pairs from the model's `tieFrom` identity (within a bar and across barlines), the kit as `<unpitched>` display positions (hat G5 x-head, snare C5, kick F4) in two voices, TAB staff as `<staves>2</staves>` + `<clef number="2">TAB` + six `<staff-tuning>` lines E2…E4 + `<string>/<fret>` on voice 5 — element order matches the XSD (the validator agrees). Key only from `sfDeclaredAtRaw` (web, src/session/export-score.js:92-93) / `declaredSf(at:)` (native, MusicXMLWriter.swift:80) — tests cover Normal-mode estimate, key-dial preview, a key change, the kit part, `<time print-object="no">` undeclared and printed after `timesig:`, never `<harmony>`/`<rehearsal>` (the native test seeds chord + section marks and asserts they stay out). The airship/battle/matoyas-cave `<key>`s are his own `type:"key"` rollnotes (F mixolydian → −2, Bb mixolydian → −3, Gm, Bm). Nothing writes to a song: `buildExportFiles` reads `S`, `writeMidi` gets a spread copy; native `var q = plan` is a value copy (ExportTests `testExportingDoesNotChangeThePlan`). ES-module rules: `S.exportSheet` on `S`, wiring in `initExport1()`, `export` at layer 2 (tab.js imports nothing; render/instrument.js now takes the fretboard numbers from it), modulepreload + `APP_MODULES` + check.mjs in step. Ask `export` in both registries (native AppActionTexts row + handler + regenerated ask-actions.json, count 37), album/folder refuse out loud. Web and native match row for row (sheet, names, refusal lines, request parser); the one model difference (native `ScoreModel` skips an empty composition track, the web keeps its stave) predates this work and is noted in the native test.
+
+### Must fix (at merge)
+
+1. **sw.js — both sides bumped to `nr-v55`.** main's nr-v55 = `src/audio/chip-pitch.js`; the branch's = the three export modules (sw.js:37). Resolve to `nr-v56` carrying both notes, and `APP_MODULES` (sw.js:45) = main's list (with `src/audio/chip-pitch.js`) + `src/session/export-score.js`, `src/export/musicxml.js`, `src/export/tab.js`. tests/pwa.test.mjs ties it to the modulepreload list (which auto-merges).
+2. **tests/modules.test.mjs:343 and :352 — file counts.** main is 104/116, the branch 106/118; the merge is **107/119** (chip-pitch + the three), and the message strings want both notes.
+3. **open-items.md (conflict ~line 19-26 of the merge).** Keep main's "SHIPPED 2026-11-27 … web game songs keep pitch" line and DROP the branch's stale "BUILDING (#1152) …" line; keep the branch's "BUILT 2026-11-27 (phase 1 …)" paragraph and the Q47–Q58 list. Then re-run the three suites.
+
+### Nits (fix if touching the files; not blocking)
+
+4. `tools/musicxml-check.sh:13,17` — `status` is a read-only variable in zsh, so `zsh tools/musicxml-check.sh …` dies ("read-only variable: status"); `sh`/the shebang work. Rename it `rc` — the sessions run tools with `zsh` by habit.
+5. night-roll-ipad `Sources/ExportFiles.swift:55` — a `.refused` from `ScorePDF.make` is dropped (`if case .made`); with Pages as the only format the user then reads "nothing to export — no staff for those parts" instead of the PDF's own reason. Surface it.
+6. A ranged `key:` declaration that ENDS mid-song has no MusicXML expression (no "no key" signature): bars after its end keep the last `<key>` (src/export/musicxml.js:104-106; the same in Swift). Document in NIGHT-ROLL.md's Learning table; nothing to code.
+7. Pages in Normal mode still carry the view's estimated key signature — Export score's shipped behaviour, plan §4 says so; Josh's devices are Learning. Noted, not changed.
+8. The native share sheet's temp folder (`tmp/export-<uuid>/`, Share.swift:182) is never cleaned; iOS purges tmp eventually. Fine for phase 1.
+
+Owed before ship, as the branch's open-items line already says: Brave check of the sheet at phone width + a `.txt` and the pages opened, GP8 opening an exported `.musicxml` (eyes only), the iPad share sheet with several files.

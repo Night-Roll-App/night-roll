@@ -90,6 +90,35 @@ export async function deliverAudioFile(blob, name) {
   if (!wrote || !wrote.uri) throw new Error("couldn't write the export to the app's cache (no Plugins.Filesystem, no nativePromise)");
   await nativeCall("Share", "share", {title: name, files: [wrote.uri]});
 }
+// Several files at once (Export score / tab: pages + MusicXML + tab + MIDI):
+// Share.share takes a LIST of uris, so one share sheet carries them all; a
+// browser downloads them one after another (a pause between clicks — some
+// browsers drop a second download fired in the same tick). files =
+// [{name, mime, data: string | Uint8Array | Blob}].
+export async function deliverFiles(files) {
+  const toBlob = f => f.data instanceof Blob ? f.data : new Blob([typeof f.data === "string" ? new TextEncoder().encode(f.data) : f.data], {type: f.mime || "application/octet-stream"});
+  const C = typeof window !== "undefined" && window.Capacitor;
+  const native = !!(C && C.isNativePlatform && C.isNativePlatform());
+  if (!native) {
+    for (let i = 0; i < files.length; i++) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(toBlob(files[i]));
+      a.download = files[i].name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      if (i + 1 < files.length) await new Promise(r => setTimeout(r, 150));
+    }
+    return;
+  }
+  const uris = [];
+  for (const f of files) {
+    const data = midiBase64(new Uint8Array(await toBlob(f).arrayBuffer()));
+    const wrote = await nativeCall("Filesystem", "writeFile", {path: f.name, data, directory: "CACHE", recursive: true});
+    if (!wrote || !wrote.uri) throw new Error("couldn't write the export to the app's cache (no Plugins.Filesystem, no nativePromise)");
+    uris.push(wrote.uri);
+  }
+  await nativeCall("Share", "share", {title: files.length === 1 ? files[0].name : files.length + " files", files: uris});
+}
 
 // mirrors play()'s preflight (sfWaitForSong/gameWaitForSong, the chip
 // resolve/render wait) plus audio-clip decode and time-stretch, which play()

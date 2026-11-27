@@ -1,0 +1,8 @@
+{ "format": "night-roll-annotations", "version": 2, "song": "fight-1", "stamp": 1795796521801, "notes": [
+  {"at":[2,2],"to":[3,1],"type":"chord","chord":"F"},
+  {"at":[2,3],"to":[2,3],"type":"chord","chord":"C/E"},
+  {"at":[3,2],"to":[4,1],"type":"chord","chord":"G"},
+  {"at":[3,4],"to":[4,1],"type":"chord","chord":"G7"},
+  {"at":[18,2],"type":"loop","loop":"1.2"},
+  {"at":[18,2],"type":"chop","chop":"end"}
+] }
