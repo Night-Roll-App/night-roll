@@ -192,7 +192,8 @@ build writes; the reader is the loose side.
   been.
 - `format: "night-roll-annotations"` and `version` 2 → header read, `notes`
   parsed exactly like v1's.
-- `version` > 2 (ROLLNOTES_MAX_VERSION, index.html), or `version` ≥ 2 with a
+- `version` > 3 (ROLLNOTES_MAX_VERSION, src/model/rollnotes.js; 3 since the
+  layered-chords change of 2026-11-27, see "v3" below), or `version` ≥ 2 with a
   `format` that isn't `"night-roll-annotations"` → **the version guard**:
   the song opens read-only. `rollnotesReadOnly`/`rollnotesLockReason`
   (index.html, set from `loadNotes`) carry the state for the currently open
@@ -274,6 +275,31 @@ lasso-selected-annotation paste (`pasteAnnotations`), the chord tool
 (`insertChordAt`, which writes a chord BAND alongside the notes), and
 Analyze → Adopt (`adoptChordBand`/`adoptAllChords`).
 
+## v3 — layered chords (2026-11-27, docs/plans/2026-11-27-layered-chords.md)
+
+v3 = v2 + one optional field on a `type: "chord"` entry: `"layer": <integer
+≥ 1>`, the chord the user wrote OVER another chord on the identical span
+(#1159–#1162, "chords within chords"). Absent = layer 0 = every chord
+before it. Nothing else changes: same header, same `notes` schema, same
+deriver (`chordExtrasFrom` reads and writes it beside `roman`/`no5`).
+
+- **Supersede rule:** a new chord replaces an existing one only when span
+  AND layer match (`dropSupersededBy`); before v3 the span alone decided.
+- **Version rule (both writers, web `rollnotesVersionFor` and native
+  `RollnotesWriter.version(for:)`):** `version: 3` is written ONLY when the
+  list holds a chord with a `layer`; every other file keeps `version: 2`
+  byte-for-byte. The version is a pure function of the notes list, so the
+  golden parity (night-roll-ipad tools/rollnotes-golden.mjs, fixture
+  `layered-stack`) covers it.
+- **Why the bump:** an older build (max version 2) reading a layered file
+  keeps `layer` on `n.extra` and would write it back — but editing ONE of
+  the two same-span chords runs its span-only supersede and silently
+  deletes the sibling, and it draws both on one row meanwhile. The lock
+  ("written by a newer Night Roll") is the guard against exactly that; it
+  bites only songs that actually hold a stacked chord.
+- Readers: `ROLLNOTES_MAX_VERSION = 3`, native `Rollnotes.maxVersion = 3`.
+  The schema (docs/annotations-v2.schema.json) lists the field.
+
 ## Round-trip guarantees (tested, tests/night-roll.test.mjs)
 
 - v1 → parse → serialize → byte-identical (pre-existing coverage,
@@ -282,6 +308,9 @@ Analyze → Adopt (`adoptChordBand`/`adoptAllChords`).
   origin header included — "P4" tests.
 - A v2 fixture and its v1 twin (same `notes`, only the header differs) →
   parse → identical in-memory notes.
-- A v3 fixture (or any `version` > 2, or a `version` ≥ 2 file with an
+- A v4 fixture (or any `version` > 3, or a `version` ≥ 2 file with an
   unrecognized `format`) → `readOnly` true, `publishSong`/`annotationsFor`
-  refuse.
+  refuse. (Was v3 until 2026-11-27; v3 now reads read-write.)
+- A v2 list with no `layer` → serialize → `version: 2`, byte-identical; the
+  same list plus one layered chord → `version: 3` with `"layer": 1` on that
+  entry only → parse → identical in-memory notes ("layered chords" tests).

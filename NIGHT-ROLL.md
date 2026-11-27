@@ -1562,6 +1562,49 @@ surfaces `rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` on its
 `doc` for the same reason; `tools/import-set.mjs` runs the in-app
 `commitImports` through the vm harness, so it gets the v2 writer for free.
 
+**v3 (2026-11-27, layered chords — docs/plans/2026-11-27-layered-chords.md,
+Josh #1159–#1162 "chords within chords"):** v2 plus ONE optional field on a
+chord entry, `"layer": <integer ≥ 1>` — a chord he wrote OVER another chord
+with the identical span (a chord over a held bass, a polychord; which
+reading it is stays his). Absent = layer 0 = every chord before it. In
+memory `n.layer` (0/undefined when absent); it rides with `roman`/`no5`
+through `chordExtrasFrom` (reader AND writer, so the JSON order is chord,
+roman, no5, layer, note), is in `ROLLNOTES_FIELDS`, and is carried by the
+unsynced store (`saveLocalNotes`), the rename seed and the undo snapshot
+like every other chord field. **The one behavioural change:**
+`dropSupersededBy` replaces a chord only when span AND layer match
+(`sameChordSpan` + `chordLayer`), so a stacked chord stands beside the base
+instead of taking its place; re-labelling keeps the layer (the editor's
+Save and Ask's `edit_annotation` carry the original's). Layers are never
+typed: the docked window's `＋ Another chord here` (`editorStackBase`,
+`S.edFollow.stack`, src/ui/note-editor.js) and Ask's `add_annotation
+{stack: true}` set `layer = nextChordLayer(fresh)` = 1 + the highest layer
+on that exact span (no chord there → no field). Deleting a layer renumbers
+nothing — the number is an identity; the ROW comes from the layers present:
+`finalizeNotes`' one `depthWithin` pass counts, besides the strict
+containers, the chords on the identical span with a LOWER layer, so a
+stacked chord sits one row under its twin wherever containment put the
+twin, and a layer-1 chord left alone sits where containment alone puts it
+(no per-layer row blocks, no empty rows). Taps, drags, lasso and paste
+resolve a band by `n.lane` as before. The Bassist (`bsChordTimeline`), the
+Drummer (`chordStarts`) and the Drummer sheet's "N changes" read layer 0
+only. **Version rule:** `rollnotesVersionFor(list)` — the writer emits
+`version: 3` ONLY for a list holding a layered chord, otherwise `version:
+2` byte-for-byte as before; `ROLLNOTES_MAX_VERSION = 3`. So no file changes
+version until he stacks a chord in it, and an OLDER build (whose span-only
+supersede would silently delete the sibling, and which draws both on one
+row) opens a layered song READ-ONLY with the usual "written by a newer
+Night Roll" lock — which is also why the native app (same rule in
+`RollnotesWriter.version(for:)`, `Rollnotes.maxVersion = 3`) ships in the
+same session as the web deploy. The band-edge drag commit (gestures.js) now
+honours the lock too (it was the one ungated annotation write). Ask's
+context lists a layered chord with ` [layer N]` (`askChordExtrasText`), the
+legend says what it means and that the reading is his, and the system
+prompt's "never overlap two chords" rule carries the one exception. Later
+(only if he needs it): a pedal mark, a polychord symbol, Roman rules for
+stacks, generators following a chosen layer, a visual mark on layered rows
+(plan §9).
+
 **Stored origin (P4):** `origin.kind`/`from`/`movedFrom` are now set where
 they're KNOWN, not derived from a note — `forkCurrentSong` (Save As/✎ Edit
 a copy/"Make it mine") sets `{kind: "copy", from: <source path>, at}`;

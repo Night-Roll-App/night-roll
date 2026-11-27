@@ -78,7 +78,8 @@ export const S = {
   editingNote: null,
   // the docked annotation window's follow state (src/ui/note-editor.js editorLoad and friends)
   edFollow: {mode: "idle", base: "", baseSpan: "", sig: null, pending: null, ident: null, noteSpan: "", songKey: null,
-             lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false},
+             lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false,
+             stack: null}, // "＋ Another chord here": the chord(s) the open NEW chord stacks over (same exact span) — nsaveBody gives it the next layer; null = an ordinary new chord
   annoFlash: null, // {a, b, until}: the span an annotation undo/redo just changed, flashed in the ruler (revealEdit)
   rangeSel: null,
   seam: null, // the loop-seam cycle (src/audio/seam.js): {spans: [{a, b}, …] ticks, kind: "loop"|"pair"}; play() cycles them in order, forever, until it is left

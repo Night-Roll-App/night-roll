@@ -24,6 +24,7 @@ import { lockedAnnoSong } from "../model/song.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { parseRollnotes } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
+import { nextChordLayer } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { saveLocalNotes } from "../model/edits.js";
@@ -217,11 +218,13 @@ export function askFindAnnotation(a) {
 // a chord band's own Roman numeral / no-fifth mark: HIS entries, listed as
 // such in the compact block (the JSON one carries "roman"/"no5" as fields)
 export function askChordExtrasText(n) {
-  return n.chord ? (n.roman ? " [roman: " + n.roman + "]" : "") + (n.no5 ? " [no5]" : "") : "";
+  return n.chord ? (n.roman ? " [roman: " + n.roman + "]" : "") + (n.no5 ? " [no5]" : "") + (n.layer > 0 ? " [layer " + n.layer + "]" : "") : "";
 }
-// roman/no5 as dictated: a string ("" clears) and a yes/no; undefined = not given
+// roman/no5 as dictated: a string ("" clears) and a yes/no; undefined = not
+// given. `layer` is never dictated: an edit keeps the chord's own (stack:true
+// on add_annotation is the one way a layer is given, askAddAnnotation).
 export function askChordExtrasArgs(a, prev) {
-  const x = {roman: prev ? prev.roman : undefined, no5: prev ? prev.no5 : undefined};
+  const x = {roman: prev ? prev.roman : undefined, no5: prev ? prev.no5 : undefined, layer: prev && prev.layer > 0 ? prev.layer : undefined};
   if (a.roman !== undefined && a.roman !== null) x.roman = String(a.roman).trim() || undefined;
   if (a.no5 !== undefined && a.no5 !== null) x.no5 = (a.no5 === true || a.no5 === 1 || /^(true|yes|on|1)$/i.test(String(a.no5).trim())) || undefined;
   return x;
@@ -462,8 +465,13 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   if (!parsed.length) throw new Error("could not parse that annotation");
   const fresh = parsed[0];
   fresh.added = true;
-  if (fresh.chord) Object.assign(fresh, askChordExtrasArgs(a, null));
+  if (fresh.chord) {
+    Object.assign(fresh, askChordExtrasArgs(a, null));
+    // stack: true — another layer over the chord already on this exact span (#1159–#1162); with no chord there the arg is harmless
+    if (a.stack === true || a.stack === 1 || /^(true|yes|on|1)$/i.test(String(a.stack ?? "").trim())) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }
+  }
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation (kind: chord)");
+  else if (a.stack) throw new Error("stack belongs on a chord annotation (kind: chord)");
   const topic = askTopicArg(a, kind, null);
   if (topic) fresh.topic = topic;
   const isLoop = n => n.loopTo !== undefined || /^loop:/i.test(n.text || "");

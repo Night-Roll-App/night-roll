@@ -88,6 +88,7 @@
         "chord": { "type": "string", "description": "type: chord — the symbol (lasso chord-namer vocabulary)." },
         "roman": { "type": "string", "description": "type: chord — the Roman numeral the user entered, as typed (ASCII b/# accidentals: 'bVII', 'vi', 'ii°', 'V7', 'V/V'). Absent = none. Never derived by the app." },
         "no5": { "type": "boolean", "description": "type: chord — the user's 'no fifth' mark. Absent = not marked." },
+        "layer": { "type": "integer", "minimum": 1, "description": "type: chord — a chord the user wrote OVER another chord on the identical span (v3, 2026-11-27, docs/plans/2026-11-27-layered-chords.md). 1 and up; absent = the base layer. An identity, not a row: deleting a layer renumbers nothing. A file holding one is written as version 3." },
         "key": { "type": "string", "description": "type: key — e.g. 'Bb', 'Gm', 'D dorian', or 'Bb?' (tonic-only, partial)." },
         "timesig": { "type": "string", "description": "type: timesig — e.g. '6/8'." },
         "bpm": { "type": "number", "exclusiveMinimum": 0, "description": "type: tempo." },

@@ -107,6 +107,8 @@ import { inKitLane } from "../render/roll.js";
 import { pencilTicks } from "../model/grid.js";
 import { gridCellStart } from "../model/grid.js";
 import { annoSnapshot } from "../model/edits.js";
+import { annoRestore } from "../model/rollnotes.js";
+import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { addSongNote } from "../model/edits.js";
 import { minPxq } from "../ui/chrome.js";
 import { PAN_TAIL_BARS } from "../ui/chrome.js";
@@ -773,6 +775,11 @@ export function endPointer(e) {
     play(from, {keepPos: inside, noCountIn: true}).catch(() => {});
   }
   else if (S.drag.seamEdge) seamDragEnd(S.drag);
+  else if (S.drag.bandEdge && S.drag.moved && S.rollnotesReadOnly) { // version guard: a locked (newer-format) song's band goes back where it was — Publish would refuse the file anyway
+    annoRestore(S.drag.bandEdge.pre);
+    finalizeNotes();
+    setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG);
+  }
   else if (S.drag.bandEdge && S.drag.moved) {
     const n = S.drag.bandEdge.n;
     // a published band edited in place must be RETIRED, or the repo copy comes

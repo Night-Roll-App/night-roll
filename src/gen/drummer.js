@@ -325,7 +325,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   const crashTicks = new Set([...boundaries].map(b => (b - 1) * bt));
   if (boundaries.has(fromBar)) crashTicks.add((fromBar - 1) * bt);
   const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
-  const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section).map(n => n.start));
+  const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0)).map(n => n.start)); // layer 0 only, as the Bassist reads (#1159–#1162)
   // same label = same drums (the app's own same-label-same-color convention,
   // extended; advisor 2026-08-22): the GROOVE substream keys on the label
   // hash, so identically-labeled sections restate bar-for-bar. EXACT label

@@ -46,7 +46,7 @@ The functions are the same; each is an `ASK_ACTIONS` entry now (§2), `ASK_TOOLS
 
 | action (was a tool) | what it does | song chat | general (retired; no tab) |
 |---|---|---|---|
-| `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat (`topic` = "File under" an Analysis-sheet prompt) | yes | — |
+| `add_annotation` | writes one chord / section / key / tempo / loop / note at a bar.beat (`topic` = "File under" an Analysis-sheet prompt; `stack: true` on a chord = another layer over the chord on that exact span, 2026-11-27 layered chords) | yes | — |
 | `edit_annotation` | changes an existing annotation's text or position | yes | — |
 | `delete_annotation` | removes one annotation | yes | — |
 | `publish_song` | the footer's Publish, for the open song | yes | — |

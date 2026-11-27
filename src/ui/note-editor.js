@@ -34,6 +34,7 @@ import { snapBeat } from "../model/grid.js";
 import { drumHitName, trackIsDrums } from "../model/grid.js";
 import { setEndBQ } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
+import { nextChordLayer } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
 import { trackShown } from "../render/roll.js";
 import { annoSnapshot } from "../model/edits.js";
@@ -525,6 +526,7 @@ export function openEditor(note, presetType, opts) { // opts.atStart: a new note
 export function editorFill(note, presetType, opts) {
   micStop(true);
   S.editingNote = note || null;
+  S.edFollow.stack = null; // an ordinary entry unless editorLoad says it stacks (＋ Another chord here)
   fillBarBeatSelects();
   const bt = barTicks();
   // a tapped note anchors a new note: tapping no longer moves the cursor
@@ -1143,6 +1145,10 @@ export function editorLoad(t, msg) {
     f.noteSpan = n.start + ":" + n.end;
   } else if (t.kind === "empty" || t.kind === "open") {
     editorFill(null, t.kind === "empty" ? t.type : t.presetType, t.opts);
+    if (t.kind === "empty" && t.stack && t.stack.length) { // ＋ Another chord here: the SAME span as the chord(s) it stacks over, to the tick, so Save finds them by identical span
+      editorSetSpan(t.stack[0].start, t.stack[0].end);
+      f.stack = t.stack;
+    }
     f.mode = ro ? "readonly" : "new";
     f.ident = null;
   } else { // none / several: blank fields, Save off
@@ -1182,8 +1188,15 @@ export function editorRender() {
     : f.msg;
   const list = document.getElementById("nseveral");
   list.textContent = "";
-  list.style.display = f.mode === "several" ? "flex" : "none";
-  if (f.mode === "several") {
+  const stackBase = editorStackBase();
+  list.style.display = f.mode === "several" || stackBase ? "flex" : "none";
+  if (stackBase && !S.rollnotesReadOnly) { // ＋ Another chord here (#1159–#1162): a second chord over the SAME span, beside the first — never in its place
+    const b = document.createElement("button"), base = stackBase;
+    b.type = "button"; b.id = "nstack"; b.textContent = "＋ Another chord here";
+    b.addEventListener("click", () => editorLoad({kind: "empty", a: base[0].start, b: base[0].end, type: "chord", stack: base},
+      "Another chord over " + annoLabel(base[0]).slice(annoLabel(base[0]).lastIndexOf(" · bar") + 3) + " · stacks on " + base.map(n => n.text).join(", "))); // "Another chord over bar 5 · stacks on C"
+    list.appendChild(b);
+  } else if (f.mode === "several") {
     if (f.listSpan && !S.rollnotesReadOnly) { // R3: never automatic — saving it makes overlapping bands
       const b = document.createElement("button"), sp = f.listSpan;
       b.type = "button"; b.textContent = "New " + (NTYPE_CHIPS.find(c => c[0] === sp.type) || [sp.type, sp.type])[1].toLowerCase() + " here";
@@ -1193,6 +1206,24 @@ export function editorRender() {
   }
   document.getElementById("nunsaved").style.display = f.pending ? "" : "none";
   if (f.pending) document.getElementById("nunsavedtxt").textContent = "Unsaved " + editorDraftLabel() + (f.pending.kind === "close" ? ". Save or Discard to close" : ". Save or Discard, then tap again");
+}
+// The chord(s) "＋ Another chord here" would stack over, or null when the
+// button has no place: (1) editing a chord whose span IS the ruler selection
+// (within a beat, as editorSelTarget matches); (2) several, when any hit sits
+// on the selection's span — then it stands IN for "New chord here", which
+// would save a layer-0 chord and silently replace the base one (review fix 2).
+// The base is every visible chord on that exact span, so the new layer lands
+// above all of them.
+export function editorStackBase() {
+  const f = S.edFollow, r = S.rangeSel;
+  if (!S.song || !r || !(r.b > r.a) || LINK_SONGS) return null;
+  const q = beatTicks(), endOf = n => typeof n.end === "number" ? n.end : n.start;
+  const onSel = n => Math.abs(n.start - r.a) <= q && Math.abs(endOf(n) - r.b) <= q;
+  let seed = null;
+  if (f.mode === "editing" && S.editingNote && S.editingNote.chord && S.rollnotes.includes(S.editingNote) && onSel(S.editingNote)) seed = S.editingNote;
+  else if (f.mode === "several" && f.listSpan && f.listSpan.type === "chord") seed = f.list.find(n => n.chord && onSel(n)) || null;
+  if (!seed) return null;
+  return visibleNotes().filter(n => n.chord && !n.section && n.start === seed.start && endOf(n) === endOf(seed));
 }
 export function editorStripDiscard() {
   const t = S.edFollow.pending || {kind: "none"};
@@ -1584,6 +1615,9 @@ export function initNoteEditor4() {
                text: sym, chord: true, cnote: text || undefined, added: true,
                roman: document.getElementById("nroman").value.trim() || undefined,
                no5: document.getElementById("nno5").classList.contains("active") || undefined};
+      // layer (#1159–#1162): an edit keeps the chord's own; ＋ Another chord here takes the one above the chords on this exact span; anything else has none
+      if (S.editingNote && S.editingNote.layer > 0) fresh.layer = S.editingNote.layer;
+      else if (!S.editingNote && S.edFollow.stack) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }
     } else if (type === "section") {
       const label = document.getElementById("nsectlabel").value.trim();
       if (!label) { document.getElementById("nstatus").textContent = "Section label is empty."; return; }

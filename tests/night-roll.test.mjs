@@ -3242,6 +3242,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mixer window", "Drag a strip by its name",
     "Text size", "Edit a copy",
     "Analyze ▸",
+    "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
     "Annotate this song", "comes back after a relaunch",
     "VoiceOver",
     "Chip stream (experimental)",
@@ -13726,8 +13727,8 @@ test("parseRollnotesJSON: a v2 fixture (header + origin) parses to the exact sam
   assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v1)}).origin`), null, "v1 carries no origin header");
 });
 
-test("version guard (docs/annotations-v2.md P3): version > 2, or version >= 2 with an unrecognized format, parses read-only with the 'newer Night Roll' message", () => {
-  const tooNew = JSON.stringify({format: "night-roll-annotations", version: 3, song: "menu",
+test("version guard (docs/annotations-v2.md P3): version > 3, or version >= 2 with an unrecognized format, parses read-only with the 'newer Night Roll' message", () => {
+  const tooNew = JSON.stringify({format: "night-roll-annotations", version: 4, song: "menu", // v3 (layered chords, 2026-11-27) reads now; 4 is the future
     notes: [{at: [1, 1], text: "from the future"}]});
   const badFormat = JSON.stringify({format: "some-other-app", version: 2, song: "menu",
     notes: [{at: [1, 1], text: "hi"}]});
@@ -17964,4 +17965,175 @@ test("stems: re-review — a bridge stuck on 500 reaches the give-up (only a goo
     assert.ok(!val(`song.tracks.some(t => t.kind === "audio")`));
     assert.match(val(`__info`), /the song changed while the recording was being stored — nothing was added/);
   } finally { delete app.context.indexedDB; run(`localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/elsewhere.mid"));`); installActSong(); }
+});
+
+// ---- layered chords (docs/plans/2026-11-27-layered-chords.md, #1159–#1162): two chords over one span ----
+test("layered chords: `layer` reads and writes with the chord; a list without one still writes version 2 byte-for-byte, one WITH a layer writes version 3; v3 reads read-write, v4 locks", () => {
+  const notes = [
+    {at: [5, 1], to: [5, 4], type: "chord", chord: "C"},
+    {at: [5, 1], to: [5, 4], type: "chord", chord: "F#dim", roman: "#iv°"},
+    {at: [6, 1], text: "plain prose"},
+  ];
+  const v2 = '{ "format": "night-roll-annotations", "version": 2, "song": "menu", "notes": [\n' + notes.map(n => "  " + JSON.stringify(n)).join(",\n") + "\n] }\n";
+  assert.equal(run(`serializeNotesList(parseRollnotesJSON(${JSON.stringify(v2)}), 4, "menu")`), v2, "no layer anywhere: the file is byte-identical, version 2");
+  const layered = notes.map((n, i) => i === 1 ? {...n, layer: 1} : n);
+  const v3 = '{ "format": "night-roll-annotations", "version": 3, "song": "menu", "notes": [\n' + layered.map(n => "  " + JSON.stringify(n)).join(",\n") + "\n] }\n";
+  const parsed = val(`parseRollnotesJSON(${JSON.stringify(v3)}).map(n => ({text: n.text, layer: n.layer ?? null, roman: n.roman ?? null, extra: n.extra ?? null}))`);
+  assert.deepEqual(parsed, [{text: "C", layer: null, roman: null, extra: null}, {text: "F#dim", layer: 1, roman: "#iv°", extra: null}, {text: "plain prose", layer: null, roman: null, extra: null}], "layer is a known field on the note, never extra");
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v3)}).readOnly`), false, "this build reads v3");
+  assert.equal(run(`serializeNotesList(parseRollnotesJSON(${JSON.stringify(v3)}), 4, "menu")`), v3, "a layered list writes version 3 with \"layer\":1 on that entry only, after roman/no5, before note");
+  assert.equal(val(`rollnotesVersionFor([{chord: true, text: "C"}])`), 2);
+  assert.equal(val(`rollnotesVersionFor([{chord: true, text: "C", layer: 1}])`), 3);
+  assert.equal(val(`rollnotesVersionFor([{text: "x", layer: 1}])`), 2, "only a CHORD's layer counts (nothing else carries one)");
+  assert.equal(val(`ROLLNOTES_MAX_VERSION`), 3);
+  const v4 = JSON.stringify({format: "night-roll-annotations", version: 4, song: "menu", notes: [{at: [1, 1], text: "x"}]});
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v4)}).readOnly`), true, "the future still locks");
+  assert.deepEqual(val(`chordExtrasFrom({layer: 0})`), {}, "layer 0 is absence");
+  assert.deepEqual(val(`chordExtrasFrom({layer: 2.5})`), {}, "a non-integer is not a layer");
+  assert.deepEqual(val(`chordExtrasFrom({layer: 2})`), {layer: 2});
+  // the device's unsynced store carries it like roman/no5
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/layer-store.mid"; rollnotes = deriveNoteTypes([{b1: 5, q1: 1, b2: 5, q2: 4, text: "chord: C", added: true}, {b1: 5, q1: 1, b2: 5, q2: 4, text: "chord: F#dim", layer: 1, added: true}]).map(resolveNote); finalizeNotes(); saveLocalNotes();`);
+  assert.deepEqual(JSON.parse(val(`localStorage.getItem(notesStoreKey())`)).map(n => n.layer ?? null), [null, 1]);
+  assert.deepEqual(val(`mergeLocalAdditions([], notesStoreKey().replace("ff1roll-notes-", "")).map(n => [n.text, n.layer ?? null])`), [["C", null], ["F#dim", 1]], "and comes back from it");
+  run(`localStorage.removeItem(notesStoreKey()); rollnotes = []; songKey = null;`);
+});
+
+test("layered chords: dropSupersededBy replaces a chord only on the identical span AND layer; nested spans and other layers stand (the pedal-point case stays writable)", () => {
+  installSong();
+  run(`rollnotes = [
+    {b1: 5, q1: 1, b2: 6, q2: 4, text: "C",     chord: true},
+    {b1: 5, q1: 1, b2: 5, q2: 4, text: "F",     chord: true},
+    {b1: 5, q1: 1, b2: 5, q2: 4, text: "F#dim", chord: true, layer: 1},
+  ];`);
+  run(`dropSupersededBy({b1: 5, q1: 1, b2: 5, q2: 4, text: "G", chord: true})`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["C", "F#dim"], "layer 0 on 5.1-5.4 went; the long band above it and the layer-1 chord on the same span stay");
+  run(`dropSupersededBy({b1: 5, q1: 1, b2: 5, q2: 4, text: "G#dim", chord: true, layer: 1})`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["C"], "layer 1 on the same span went, nothing else");
+  run(`dropSupersededBy({b1: 5, q1: 1, b2: 5, q2: 4, text: "D", chord: true, layer: 2})`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["C"], "a layer nobody holds removes nothing");
+  assert.equal(val(`nextChordLayer({b1: 5, q1: 1, b2: 6, q2: 4})`), 1, "one above the chords on that exact span");
+  assert.equal(run(`nextChordLayer({b1: 5, q1: 1, b2: 5, q2: 4})`), undefined, "no chord on the span: no layer (the field stays absent)");
+  run(`rollnotes.push({b1: 5, q1: 1, b2: 6, q2: 4, text: "E", chord: true, layer: 3});`);
+  assert.equal(val(`nextChordLayer({b1: 5, q1: 1, b2: 6, q2: 4})`), 4, "above the highest, whatever gaps a delete left");
+  run(`rollnotes = []; songKey = null;`);
+});
+
+test("layered chords: finalizeNotes puts a higher layer on its own row under its twin (one depthWithin pass, review fix 3); nested chords stack as before; a lone layer-1 chord sits in row 0; a song without a layer keeps today's RULER_H", () => {
+  installSong();
+  const lanes = () => val(`rollnotes.filter(n => n.chord).map(n => [n.text, n.lane])`);
+  const set = list => run(`rollnotes = deriveNoteTypes(${JSON.stringify(list.map(([b1, b2, text, layer]) => ({b1, q1: 1, b2, q2: 4, text: "chord: " + text, layer, added: true})))}).map(resolveNote); finalizeNotes();`);
+  set([[5, 5, "C"], [5, 5, "F#dim", 1]]);
+  assert.deepEqual(lanes(), [["C", 0], ["F#dim", 1]], "two chords on one span: two rows, the layer-1 chord under the base");
+  assert.equal(val(`RULER_H`), val(`BASE_RULER_H + 2 * LANE_H + STRIP_H`), "one LANE_H more than a single-row song");
+  set([[5, 5, "C"]]);
+  const oneRow = val(`RULER_H`);
+  assert.equal(oneRow, val(`BASE_RULER_H + LANE_H + STRIP_H`), "no layer: exactly today's height");
+  set([[5, 6, "C"], [5, 5, "F"], [6, 6, "G"]]);
+  assert.deepEqual(lanes(), [["C", 0], ["F", 1], ["G", 1]], "the pedal-point case: a long band with two shorter ones inside, two rows, no layer needed (plan §4.1)");
+  set([[5, 5, "F#dim", 1]]);
+  assert.deepEqual(lanes(), [["F#dim", 0]], "a layer-1 chord left alone (its base deleted) sits in row 0 — the number is an identity, not a position");
+  assert.equal(val(`RULER_H`), oneRow);
+  set([[1, 1, "Am"], [5, 6, "C"], [5, 5, "F"], [5, 5, "F#dim", 1], [5, 5, "Bb", 2]]);
+  assert.deepEqual(lanes(), [["Am", 0], ["C", 0], ["F", 1], ["F#dim", 2], ["Bb", 3]], "layers inside a container: each one row under the last, from the container's row, not from the song's deepest layer-0 row");
+  set([[5, 6, "C"], [5, 5, "F#dim", 1]]);
+  assert.deepEqual(lanes(), [["C", 0], ["F#dim", 1]], "a layer-1 chord inside a longer band with no layer-0 twin: right under its container, no empty row");
+  run(`rollnotes = []; finalizeNotes(); songKey = null;`);
+});
+
+test("layered chords: the docked window's \"＋ Another chord here\" — editing a chord on the selection's span offers it; Save writes layer 1 beside the base, one undo takes it back; several with an exact-span hit shows it INSTEAD of \"New chord here\" (review fix 2); a nested span still gets a layer-0 \"New chord here\"", () => {
+  const bt = dockSetup(); // G7 bars 9–10, C bars 11–12
+  try {
+    const buttons = () => val(`document.getElementById("nseveral").children.map(b => b.textContent)`);
+    follow(10 * bt, 12 * bt);
+    assert.equal(val(`editingNote && editingNote.text`), "C");
+    assert.deepEqual(buttons(), ["＋ Another chord here"], "editing a chord whose span is the selection: the one button");
+    follow(10 * bt, 11 * bt);
+    assert.equal(val(`editingNote && editingNote.text`), "C", "a span inside C loads C…");
+    assert.deepEqual(buttons(), [], "…but offers no stack: the new chord would not share C's span");
+    follow(10 * bt, 12 * bt);
+    run(`document.getElementById("nseveral").children[0].dispatchEvent({type: "click"});`);
+    assert.equal(val(`edFollow.mode`), "new");
+    assert.equal(val(`editingNote`), null);
+    assert.deepEqual([fld("nchordsym"), fld("nroman"), fld("nb1"), fld("nb2"), fld("nq2")], ["", "", "11", "13", "1"], "a fresh chord (Learning: nothing pre-filled) on C's exact span");
+    assert.equal(val(`document.getElementById("nfollowmsg").textContent`), "Another chord over bar 11–12 · stacks on C");
+    assert.equal(val(`edFollow.stack && edFollow.stack.map(n => n.text).join()`), "C");
+    run(`setChordWidget("F#dim"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => [n.text, n.layer || 0, n.b1, n.b2]).sort()`), [["C", 0, 11, 12], ["F#dim", 1, 11, 12], ["G7", 0, 9, 10]], "both stand, the new one as layer 1");
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 11).map(n => [n.text, n.lane])`), [["C", 0], ["F#dim", 1]], "two rows");
+    assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^Saved F#dim · bar 11–12\./);
+    assert.equal(val(`editUndo.length`), 1);
+    assert.equal(val(`edFollow.stack`), null, "stack mode ends with the Save");
+    run(`editorFollowSelection(true);`);
+    assert.equal(val(`edFollow.mode`), "several", "the span now holds two chords exactly");
+    assert.match(val(`document.getElementById("nfollowmsg").textContent`), /^2 chords in this span — tap one in the ruler/);
+    assert.deepEqual(buttons(), ["＋ Another chord here"], "exact-span hits: Another, never New (a New chord here would replace C)");
+    run(`document.getElementById("nseveral").children[0].dispatchEvent({type: "click"});`);
+    assert.equal(val(`document.getElementById("nfollowmsg").textContent`), "Another chord over bar 11–12 · stacks on C, F#dim");
+    run(`setChordWidget("Bb"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 11).map(n => [n.text, n.layer || 0, n.lane])`), [["C", 0, 0], ["F#dim", 1, 1], ["Bb", 2, 2]], "a third goes on top");
+    run(`editUndoPop();`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 11).map(n => n.text)`), ["C", "F#dim"], "one undo takes back only the one just saved");
+    // editing the layer-1 band keeps its layer (and replaces itself, not the base)
+    run(`editorFollowBand(rollnotes.find(n => n.text === "F#dim"));`);
+    assert.equal(val(`editingNote && editingNote.layer`), 1);
+    run(`setChordWidget("F#°7"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 11).map(n => [n.text, n.layer || 0])`), [["C", 0], ["F#°7", 1]], "re-labelling a layer keeps the layer and the base");
+    // a nested span (partial overlap) keeps today's New chord here, layer 0
+    follow(11 * bt, 13 * bt);
+    assert.equal(val(`edFollow.mode`), "several");
+    assert.deepEqual(buttons(), ["New chord here"], "no hit sits on this span: the ordinary button");
+    run(`document.getElementById("nseveral").children[0].dispatchEvent({type: "click"}); setChordWidget("Dm"); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.text === "Dm").map(n => [n.b1, n.b2, n.layer || 0])`), [[12, 13, 0]], "a layer-0 chord on its own span");
+    assert.equal(val(`rollnotes.filter(n => n.chord).length`), 4, "G7, C, F#°7, Dm — nothing replaced");
+    // the button never shows on a locked song
+    run(`rollnotesReadOnly = true;`);
+    follow(10 * bt, 12 * bt);
+    assert.deepEqual(buttons(), [], "locked: no way to write");
+    run(`rollnotesReadOnly = false;`);
+    assert.deepEqual(val(`__fx`), [], "docked: no field ever took focus");
+  } finally { dockTeardown(); }
+});
+
+test("layered chords: Ask — add_annotation stack: true keeps the chord on that exact span and layers the new one; without stack it replaces (today, pinned); the context line says [layer N]; edit keeps the layer; delete by id takes only its own layer; the Bassist and the Drummer's count read layer 0 only", () => {
+  installSong();
+  run(`rollnotes = []; songKey = "albums/compositions/nightroll/layer-ask.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+       askAddAnnotation({kind: "chord", text: "C", bar: 5, beat: 1, end_bar: 5, end_beat: 4});
+       askAddAnnotation({kind: "chord", text: "F#dim", bar: 5, beat: 1, end_bar: 5, end_beat: 4, roman: "#iv°", stack: true});`);
+  const chords = () => val(`rollnotes.filter(n => n.chord).map(n => [n.text, n.layer || 0, n.roman || ""])`);
+  assert.deepEqual(chords(), [["C", 0, ""], ["F#dim", 1, "#iv°"]], "stack: both stand, the second as layer 1 with its own numeral");
+  assert.match(val(`askAnnotationsTextCompact()`), /^1 \[5\.1-5\.4\] chord: F#dim \[roman: #iv°\] \[layer 1\]$/m, "the model sees the layer");
+  assert.doesNotMatch(val(`askAnnotationsTextCompact()`), /chord: C.*layer/, "the base carries no mark");
+  assert.match(val(`askLegendText()`), /\[layer N\].*second layer.*user's to say, never yours/);
+  assert.match(val(`ASK_SYS_BASE2`), /stack: true\); otherwise never overlap two chord annotations/);
+  run(`askAddAnnotation({kind: "chord", text: "G", bar: 5, beat: 1, end_bar: 5, end_beat: 4});`);
+  assert.deepEqual(chords(), [["F#dim", 1, "#iv°"], ["G", 0, ""]], "no stack: the layer-0 chord on that span is replaced, as today (#1124); the layer-1 chord is untouched");
+  run(`askAddAnnotation({kind: "chord", text: "Bb", bar: 5, beat: 1, end_bar: 5, end_beat: 4, stack: "yes"});`);
+  assert.deepEqual(chords().map(c => c.slice(0, 2)), [["F#dim", 1], ["G", 0], ["Bb", 2]], "stack as a word; the next layer is one above the highest");
+  run(`askAddAnnotation({kind: "chord", text: "Em", bar: 7, beat: 1, end_bar: 7, end_beat: 4, stack: true});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.text === "Em").map(n => n.layer ?? null)`), [null], "stack on an empty span is harmless: no layer");
+  assert.throws(() => run(`askAddAnnotation({kind: "note", text: "x", bar: 7, beat: 1, stack: true})`), /stack belongs on a chord/);
+  // edit keeps the layer; a comment-only edit too
+  const idOf = text => val(`dedupedNotesWithIndex(rollnotes).find(({n}) => n.text === ${JSON.stringify(text)}).i`);
+  run(`askEditAnnotation({id: ${idOf("F#dim")}, text: "F#°7"});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 5).map(n => [n.text, n.layer || 0]).sort()`), [["Bb", 2], ["F#°7", 1], ["G", 0]], "edited in place at its own layer, the base untouched");
+  run(`askEditAnnotation({id: ${idOf("F#°7")}, roman: "vii°"});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.text === "F#°7").map(n => [n.layer, n.roman])`), [[1, "vii°"]]);
+  // the Bassist's timeline and the Drummer's chord count read the base layer only
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 1920, p: 60, v: 80}]}, {name: "bass", notes: []}]}; song.rawNotes = null; chopS = 0; finalizeNotes(); computeSongEnd();`);
+  assert.deepEqual(val(`bsChordTimeline(4 * 1920, 5 * 1920).map(e => e.rootPc)`), [7, 4], "bar 5 for the Bassist is G alone (layer 0), never the stacked F#°7 or Bb — then its lookahead, Em at bar 7");
+  assert.deepEqual(val(`visibleNotes().filter(x => x.chord && !x.section && !(x.layer > 0) && x.start >= 4 * 1920 && x.start < 8 * 1920).map(n => n.text)`), ["G", "Em"], "the Drummer's chord changes: two, not four");
+  assert.match(readFileSync(new URL("../src/gen/drummer.js", import.meta.url), "utf8"), /const chordStarts = new Set\(visibleNotes\(\)\.filter\(n => n\.chord && !n\.section && !\(n\.layer > 0\)\)/, "the Drummer's kick keys on layer-0 chord starts");
+  assert.match(readFileSync(new URL("../src/ui/sheets.js", import.meta.url), "utf8"), /x\.chord && !x\.section && !\(x\.layer > 0\) && x\.start >= r\.t0/, "the Drummer sheet's \"N changes\" counts layer 0 only");
+  // delete by id removes only that layer
+  run(`askDeleteAnnotation({id: ${idOf("G")}});`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 5).map(n => [n.text, n.layer, n.lane]).sort((x, y) => x[1] - y[1])`), [["F#°7", 1, 0], ["Bb", 2, 1]], "the base went; the layers keep their numbers and close up the rows");
+  assert.throws(() => run(`askDeleteAnnotation({bar: 5, beat: 1})`), /more than one annotation at bar 5 beat 1/, "bar+beat alone is ambiguous for a stack — the id is the handle");
+  // the version the writer picks follows the list
+  assert.equal(val(`rollnotesVersionFor(rollnotes)`), 3);
+  run(`rollnotes = rollnotes.filter(n => !(n.layer > 0));`);
+  assert.equal(val(`rollnotesVersionFor(rollnotes)`), 2, "no layer left: back to version 2");
+  // an old build's one ungated annotation write — the band-edge drag — now bows to the lock (review fix 8)
+  assert.match(readFileSync(new URL("../src/input/gestures.js", import.meta.url), "utf8"), /else if \(S\.drag\.bandEdge && S\.drag\.moved && S\.rollnotesReadOnly\) \{[^}]*annoRestore\(S\.drag\.bandEdge\.pre\);/, "a locked song's edge drag restores the pre-drag snapshot instead of saving");
+  run(`rollnotes = []; localStorage.removeItem("ff1roll-notes-albums/compositions/nightroll/layer-ask.mid"); localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/layer-ask.mid"); songKey = null;`);
 });

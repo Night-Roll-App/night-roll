@@ -19,6 +19,7 @@ import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
+import { chordLayer } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { bakeTempos } from "../model/rollnotes.js";
 import { applyAudioDirs } from "../audio/clips.js";
@@ -235,11 +236,17 @@ export function finalizeNotesImpl() {
   secs.forEach(s => { if (s.end === null || s.end <= s.start) s.end = s.start + bt; });
   S.sectionColors = {};
   let ci = 0;
+  // a chord's row counts the chords that strictly contain it PLUS, on its
+  // identical span, the lower layers (#1159–#1162: a chord he stacked over
+  // another sits a row under it; a lone layer-1 chord sits where containment
+  // puts it — the number is an identity, not a position). Sections have no
+  // layer, so their rows are untouched.
   const depthWithin = group => {
     let max = -1;
     for (const s of group) {
       s.depth = group.filter(t => t !== s && t.start <= s.start && t.end >= s.end &&
-                                  (t.start < s.start || t.end > s.end)).length;
+                                  (t.start < s.start || t.end > s.end ||
+                                   (t.start === s.start && t.end === s.end && chordLayer(t) < chordLayer(s)))).length;
       max = Math.max(max, s.depth);
     }
     return max + 1; // row count (0 when the group is empty)

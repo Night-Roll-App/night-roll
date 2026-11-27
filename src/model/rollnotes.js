@@ -148,7 +148,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5", "drums", "topic"]);
+  "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "drums", "topic"]);
 // "File under" chips (docs/plans/2026-10-05-analysis-sheet.md §3b): the
 // Analysis-sheet prompts a bar note can be listed under — the located ones
 // (form, harmony, melody; the song-level prompts take an answer instead).
@@ -164,12 +164,30 @@ export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "t
 // `roman` — the Roman numeral HE entered, a string as typed; `no5` — his
 // "no fifth" mark. Absent = none. Only ever what he (or the AI on his
 // dictation) wrote: nothing derives either from the notes or a key.
+// `layer` (docs/plans/2026-11-27-layered-chords.md, #1159–#1162): an
+// integer ≥ 1 on a chord he wrote OVER another chord with the identical
+// span — "chords within chords". Absent = layer 0 = every chord before it.
+// The number is an identity, never a position: deleting a layer renumbers
+// nothing, and the ruler row comes from the layers present (finalizeNotes).
 export function chordExtrasFrom(o) {
   const x = {};
   const r = typeof o.roman === "string" ? o.roman.trim() : "";
   if (r) x.roman = r;
   if (o.no5 === true || o.no5 === 1) x.no5 = true;
+  if (Number.isInteger(o.layer) && o.layer >= 1) x.layer = o.layer;
   return x;
+}
+export function chordLayer(n) { return n.layer > 0 ? n.layer : 0; }
+// the layer "Another chord here" / Ask's stack:true gives a chord written
+// over `fresh`'s exact span: one above the highest already there; undefined
+// (= layer 0, no field) when no chord sits on that span yet
+export function nextChordLayer(fresh) {
+  let top = -1;
+  for (const n of S.rollnotes) if (n.chord && sameChordSpan(n, fresh)) top = Math.max(top, chordLayer(n));
+  return top >= 0 ? top + 1 : undefined;
+}
+export function sameChordSpan(n, fresh) {
+  return n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1) && (n.b2 || null) === (fresh.b2 || null) && (n.q2 || null) === (fresh.q2 || null);
 }
 export function chordBandText(n) { // the band's readout everywhere it is shown: "F# · ♭VII · no5"
   return n.text + (n.chord && n.roman ? " · " + romanPretty(n.roman) : "") + (n.chord && n.no5 ? " · no5" : "");
@@ -227,8 +245,14 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
 // (hasProvenanceNote/originOf, below, read it off the returned array).
 // Writer is v2 as of P4 (docs/provenance-plan.md) — serializeNotesList below.
 export const ROLLNOTES_FORMAT = "night-roll-annotations";
-export const ROLLNOTES_MAX_VERSION = 2;
+export const ROLLNOTES_MAX_VERSION = 3;
 // highest version this app can read/write; higher = refuse to publish/overwrite (the version guard)
+// v3 = v2 + a chord's `layer` (2026-11-27). The writer says 3 ONLY for a list
+// that holds a layered chord (rollnotesVersionFor): every un-layered song keeps
+// writing version 2 byte-for-byte, and an older build — whose dropSupersededBy
+// would silently delete the sibling chord — locks a layered song instead of
+// corrupting it (docs/plans/2026-11-27-layered-chords.md §2.1).
+export function rollnotesVersionFor(list) { return list.some(n => n.chord && chordLayer(n) > 0) ? 3 : 2; }
 export const ROLLNOTES_LOCK_MSG = "⚠ this song's annotations were written by a newer Night Roll — update the app before editing";
 export function parseRollnotesJSON(text) {
   let doc;
@@ -560,7 +584,7 @@ export function serializeNotesList(list, beatsPerBar, base, stamp, origin) {
   // stamp (epoch ms) marks WHEN this state was saved — the cross-device
   // freshness beacon (Josh, 2026-08-16); omitted for pure serialization.
   const rows = dedupedNotesWithIndex(list).map(({n}) => "  " + JSON.stringify(noteToJSON(n)));
-  return '{ "format": ' + JSON.stringify(ROLLNOTES_FORMAT) + ', "version": 2, "song": ' + JSON.stringify(base) +
+  return '{ "format": ' + JSON.stringify(ROLLNOTES_FORMAT) + ', "version": ' + rollnotesVersionFor(list) + ', "song": ' + JSON.stringify(base) +
          (origin ? ', "origin": ' + JSON.stringify(origin) : "") +
          (stamp ? ', "stamp": ' + stamp : "") + ', "notes": [\n' +
          rows.join(",\n") + "\n] }\n";
@@ -613,8 +637,9 @@ export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote
 //           net under any other caller.
 export function dropSupersededBy(fresh) {
   const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
-  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
-                                         (n.q2 || null) === (fresh.q2 || null);
+  // chords: the identical span AND the same layer — a chord he stacked over
+  // another (layer ≥ 1) stands beside it, never in its place (#1159–#1162)
+  const sameSpan = n => sameChordSpan(n, fresh) && chordLayer(n) === chordLayer(fresh);
   if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
   if (fresh.songnote) { for (const n of S.rollnotes.filter(x => x.songnote && songNoteKey(x.songnote.title) === songNoteKey(fresh.songnote.title))) retireEdited(n); return; } // one per title; putSongNote refuses a clash before it gets here
   if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
