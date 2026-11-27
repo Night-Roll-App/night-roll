@@ -239,10 +239,26 @@ export function chordSpelling(label) { // label → {pc: {letter, acc}} for the 
   try { out = chordSpellingRaw(label); } catch (e) { out = null; }
   return (chordSpellMemo[label] = out);
 }
+// The labels native ChordSpelling reads beyond the chip vocabulary (its ascii()
+// + degrees()): ♯/♭ as typed on the iPad, ° ø Δ, min/-/+, bare sus, add2/4/6,
+// a bare 2 or 4, "maj" alone = a major triad. Spelling only — the chip row and
+// nameChord keep their own vocabulary.
+export function chordLabelAscii(label) {
+  return label.replace(/♯/g, "#").replace(/♭/g, "b").replace(/°/g, "dim").replace(/ø7/g, "m7b5").replace(/ø/g, "m7b5").replace(/Δ/g, "maj7");
+}
+function chordVocabNormalize(q) {
+  let s = q;
+  if (s.startsWith("min")) s = "m" + s.slice(3);
+  else if (s.startsWith("-")) s = "m" + s.slice(1);
+  else if (s.startsWith("+")) s = "aug" + s.slice(1);
+  else if (s === "maj") s = "";
+  return s.replace(/sus(?![24])/g, "sus4").replace(/add2(?!\d)/g, "add9").replace(/add4(?!\d)/g, "add11").replace(/add6(?!\d)/g, "6")
+          .replace(/(?<![\dsd#b])2(?!\d)/g, "add9").replace(/(?<![\dsd#b])4(?!\d)/g, "add11");
+}
 function chordSpellingRaw(label) {
-  const m = parseChordSym(label);
+  const m = parseChordSym(chordLabelAscii(label));
   if (!m) return null;
-  const q = chordQualParse(m[3] || "");
+  const q = chordQualParse(chordVocabNormalize(m[3] || ""));
   if (!q) return null;
   const rootLetter = LETTERS.indexOf(m[1]);
   const rootPc = ((LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0)) % 12 + 12) % 12;

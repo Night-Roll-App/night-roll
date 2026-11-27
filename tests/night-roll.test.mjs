@@ -11220,6 +11220,22 @@ test("#1171 spellInChord: a pitch class the label names is spelled by its degree
   assert.equal(sp(10, "C/A#"), "A#", "…as written, sharp or flat");
   assert.equal(sp(3, "Cm/D#"), "D#", "the written bass wins over the triad's E♭");
   assert.equal(sp(6, "Am/F#"), "F#");
+  // native's vocabulary too (ChordSpelling.swift ascii() + degrees(); its testTheChipRowsOwnSpellingParses) — spelling only, the chips and nameChord keep theirs
+  assert.equal(sp(6, "E♭m"), "Gb", "the iPad's chip row writes ♭");
+  assert.equal(sp(3, "C7♯9"), "D#");
+  assert.equal(sp(6, "Cm7♭5"), "Gb");
+  assert.equal(sp(6, "Cø7"), "Gb"); assert.equal(sp(10, "Cø"), "Bb");
+  assert.equal(sp(9, "C°7"), "Bbb"); assert.equal(sp(3, "C°"), "Eb");
+  assert.equal(sp(11, "CΔ"), "B");
+  assert.equal(sp(10, "C7 (passing)"), "Bb", "a trailing note is not the chord");
+  assert.equal(sp(10, "Cmin7"), "Bb"); assert.equal(sp(3, "Cmin"), "Eb");
+  assert.equal(sp(3, "C-7"), "Eb"); assert.equal(sp(8, "C+"), "G#"); assert.equal(sp(10, "C+7"), "Bb");
+  assert.equal(sp(5, "Csus"), "F", "bare sus = sus4"); assert.equal(sp(4, "Csus"), null);
+  assert.equal(sp(2, "Cadd2"), "D"); assert.equal(sp(10, "Cadd2"), null, "add brings no seventh");
+  assert.equal(sp(5, "Cadd4"), "F"); assert.equal(sp(9, "Cadd6"), "A");
+  assert.equal(sp(2, "C2"), "D"); assert.equal(sp(10, "C2"), null); assert.equal(sp(5, "C4"), "F");
+  assert.equal(sp(4, "Cmaj"), "E", "maj alone is the major triad"); assert.equal(sp(11, "Cmaj"), null);
+  assert.equal(sp(0, "CM7"), null, "…and what native refuses, we refuse"); assert.equal(sp(0, "C7+"), null); assert.equal(sp(0, "H7"), null); assert.equal(sp(0, "C stuff"), null);
   // unreadable labels change nothing and never throw
   assert.equal(sp(0, "N.C."), null);
   assert.equal(sp(0, "garbage"), null);
