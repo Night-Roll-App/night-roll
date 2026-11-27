@@ -1655,6 +1655,15 @@ exact for free; `sameChordSpan` compares it; `noteToJSONBase` writes it after
 carry it. Readouts: `posAnchorText` says "until bar 4 beat 4"; Ask's compact
 context writes `[4.3.5 until 4.4]`. No version bump.
 
+**Band labels clip to the band (Josh #1180, pinned 2026-11-27):** every ruler
+band (section, chord, pedal, the Analyze layer) draws its label inside a
+canvas clip rect exactly the band's drawn width (src/render/roll.js, the
+`rect` → `clip` → `fillText` sequence); a label never widens a band, pushes a
+lane or spills past the band's end — `finalizeNotes` assigns lanes from spans
+alone and nothing in the ruler or lane code calls `measureText`. Zooming in
+reveals more of the label as the band widens. A test records the stub
+context's calls and checks the clip width against span × zoom.
+
 **Stored origin (P4):** `origin.kind`/`from`/`movedFrom` are now set where
 they're KNOWN, not derived from a note — `forkCurrentSong` (Save As/✎ Edit
 a copy/"Make it mine") sets `{kind: "copy", from: <source path>, at}`;

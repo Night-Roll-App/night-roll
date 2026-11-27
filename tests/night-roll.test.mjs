@@ -3245,6 +3245,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
     "Pedal point", // #1177: a chord band marked `pedal: true`, drawn under every chord row
     "A chord can end mid-beat", // #1179: an exclusive `until` end on a chord band
+    "A long label is cut off", // #1180: band labels clip to the band's drawn width
     "Annotate this song", "comes back after a relaunch",
     "VoiceOver",
     "Chip stream (experimental)",
@@ -18847,4 +18848,34 @@ test("until #1179: Ask add_annotation {until} writes the exact end (chord only),
     assert.match(run(`JSON.stringify(ASK_ACTIONS.find(x => x.name === "add_annotation").spec)`), /until = \[bar, beat\]/, "the act registry's spec says so");
     assert.match(helpSource(), /A chord can end mid-beat/, "the help sheet names the feature (FEATURES keyword)");
   } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey); localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`); }
+});
+
+test("#1180 ruler bands clip their label to the band's own drawn width — a long label on a half-beat band draws inside a clip rect exactly the band wide, the band's width and lane are the span's alone, and the roll's draw never measures text", () => {
+  installSong();
+  const bt = val(`barTicks()`), qt = val(`beatTicks()`);
+  const long = "Am7 with a label far longer than half a beat could ever show at this zoom level";
+  run(`rollnotes = deriveNoteTypes([{b1: 4, q1: 3.5, b2: 4, q2: 3, text: "chord: " + ${JSON.stringify(long)}, added: true}, {b1: 4, q1: 4, b2: 5, q2: 4, text: "chord: C", added: true}, {b1: 1, q1: 1, b2: 8, q2: 4, text: "section: A — an equally long section label that no band at this zoom could hold", added: true}]).map(resolveNote); finalizeNotes();`);
+  assert.deepEqual(val(`rollnotes.map(n => [n.lane, n.end - n.start]).sort((a, b) => a[0] - b[0] || a[1] - b[1])`), [[0, 8 * bt], [1, 0.5 * qt], [1, 5 * qt]], "lanes and widths come from the spans: the half-beat chord is half a beat wide on the chord row, the long section on its own row");
+  run(`globalThis.__cv = []; ctx.save = () => __cv.push(["save"]); ctx.restore = () => __cv.push(["restore"]); ctx.beginPath = () => __cv.push(["beginPath"]); ctx.rect = (...a) => __cv.push(["rect", ...a]); ctx.clip = () => __cv.push(["clip"]); ctx.fillText = (...a) => __cv.push(["fillText", ...a]); view.x = 3 * ${bt} * pxPerTick() - 40; draw();`);
+  try {
+    const calls = val(`__cv`);
+    const check = (label, n) => {
+      const i = calls.findIndex(c => c[0] === "fillText" && String(c[1]).startsWith(label));
+      assert.ok(i > 0, "the band's label was drawn: " + label);
+      const rectI = calls.slice(0, i).map((c, k) => [c, k]).filter(([c]) => c[0] === "rect").pop()[1];
+      const clipI = calls.slice(0, i).map((c, k) => [c, k]).filter(([c]) => c[0] === "clip").pop()[1];
+      assert.ok(rectI < clipI && clipI < i, "rect → clip → fillText, in that order, for " + label);
+      const [, rx, , rw] = calls[rectI];
+      const x = val(`RULER_W + ${n.start} * pxPerTick() - view.x`), w = val(`${n.end - n.start} * pxPerTick()`);
+      assert.equal(+rw.toFixed(3), +(w - 2 - Math.max(0, val(`RULER_W`) - x)).toFixed(3), "the clip is the band's drawn width (span × zoom, less the border), not the text's: " + label);
+      assert.ok(calls[i][2] >= rx, "the text starts inside the clip");
+      assert.equal(calls.slice(rectI, i).some(c => c[0] === "measureText"), false, "nothing measures the label to size the band");
+    };
+    const band = t => val(`rollnotes.filter(n => n.text.startsWith(${JSON.stringify(t)})).map(n => ({start: n.start, end: n.end}))[0]`);
+    check(long, band(long));
+    check("A — an equally long", band("A — an equally long"));
+    check("C", band("C"));
+    assert.equal(/measureText/.test(readFileSync(new URL("../src/render/roll.js", import.meta.url), "utf8")) || /measureText/.test(readFileSync(new URL("../src/session/song.js", import.meta.url), "utf8")), false, "neither the ruler draw nor the lane assignment reads a label's width");
+    assert.match(helpSource(), /A long label is cut off/, "the help sheet names the rule (FEATURES keyword)");
+  } finally { run(`for (const k of ["save", "restore", "beginPath", "rect", "clip", "fillText"]) delete ctx[k]; delete globalThis.__cv; view.x = 0; rollnotes = []; finalizeNotes(); songKey = null;`); }
 });
