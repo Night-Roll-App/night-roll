@@ -11291,6 +11291,27 @@ spawns its own helpers; there is no Front Desk to talk to and no one-off fallbac
   Claude chat as notes; older rows stay in Earlier chat. Inbox notes whose `from` is `front-desk` or `one-off` go to the Claude chat too.
 - Nothing in the app sends to app `front-desk` any more (`aiDeskSend` is unused; `askDeskLabel`/`askDeskContext` removed).
 
+## A Worker message that belongs to the song (Josh #1189; claude-bridge `--to-chat`, kind:"chat" notes)
+
+A message typed in the ✦ Claude (Worker) tab that dictates what goes into the open song ("next chord for two bars is A minor")
+runs in that song's ♪ chat — live context, the `act` tool — instead of the Worker session, which cannot touch the open song.
+- **Bridge** (vendor/ai/bridge/server.mjs): `node tools/claude-bridge.mjs --to-chat <n> [--song <path>] ["note"]`
+  (`POST /v1/terminal/chat`) marks row n done, writes "→ sent to the ♪ chat for ‹title›" and then the words as an inbox note of
+  kind `chat` `{text, song, songTitle, tag, row}` to the row's app. `chatTargetOf` reads the song from the row's `<context>`:
+  our `askOpenSongLine` ("open song: Title (path, Published) — …"; the path is the songKey) or native's quoted title + its
+  `song path:` line. The read-only router's third verdict `CHAT` does the same by itself (FYI row `FORWARDED #n` for the watcher;
+  conservative — app work stays NEEDS_AI). A `[App]`-tagged native message carries `tag`; the web only takes untagged ones.
+- **Library** (vendor/ai/web/forward.js): `aiForwardTake(host, notes)` strips the chat notes out of an inbox poll and sends or queues
+  them, once per note id (`ff1roll-ask-forward` = `{pending, done}`); `aiForwardRetry/SendNow/Dismiss`. Host hooks (host.js):
+  `keys.forward`, `forwardChat(entry, force)`, `onForwardsChanged(pending)`.
+- **App** (src/ask/forward.js): `askForwardChat` pushes a `↪ from the Worker tab` note (`m: "handoff"`, no envelope) into the
+  song's store and runs the words through `askSwitchRun` (the open_song switch: waits for a busy chat, flips to the ♪ tab, `askSend`
+  as the user's words; with `force` it opens the song first). Not open and not forced → waits; `askForwardChips` draws the
+  Worker tab's `.askfwd` rows ("Waiting for ‹song›: “…” · Send now / Dismiss"); `askForwardOnSong` (setSong, next tick) retries.
+  `askNotesArrived` calls `askForwardTake` first, so a chat note is never stored as a note. Both apps poll the same `night-roll`
+  inbox: each device keeps its own done list, and a message tagged for the native app is not the web's. Tests:
+  tests/ask-forward.test.mjs; library tests/forward.test.mjs; bridge tests/bridge.test.mjs "chat hand-off".
+
 ## Usage counter (dev log, Josh #1083)
 
 `src/platform/usage.js`: counts per action id with first/last time seen, in localStorage `nr.usage` (debounced, device-local; no network, never in a song, Publish, the repo or Export everything). No content: an id must match `USAGE_ID_RE` (dotted lower-case, <= 48 chars), so a title or text can never become one. `countUsage(id)` is the one call; hooks live at the central places: `pushUndo` (kind -> `note.add`, `note.delete`, `note.edit`, `anno.edit`, `track.*`…), `editUndoPop/RedoPop` (`edit.undo/redo`), `copySelection/cutSelection/pasteClipboard` (`edit.copy/cut/paste`), `finalizeLasso` (`select.lasso`), `play/stop/seekOrMoveCursor` (`transport.*`), pinch end (`zoom.pinch`), ruler (`ruler.select/cycle/delete/depth/seam`), mixer (`mixer.volume/pan`), `publishJobStart` (`publish`), Save As (`saveas`), Ask `act` (`ask.act.<action name>`), plus one delegated click listener (`ui.<element id>` for every button/menu item) and one keydown listener (`key.<name>`, never inside a text field). Ids match the native app's, so the lists merge. Read it: Settings -> Other -> Copy usage, paste to a file, then `node tools/usage-report.mjs web.json native.json`. Ask parity: not applicable (a dev log).

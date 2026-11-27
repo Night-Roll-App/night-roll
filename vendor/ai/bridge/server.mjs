@@ -105,6 +105,15 @@
 // While the AI is live a plain question is judged by the same read-only helper
 // (#681): it answers (note + done + an "ANSWERED #n" FYI row for the watcher) or
 // says NEEDS_AI / errors / passes 60 s and the row goes to the AI as usual.
+// A message that writes the sender's OPEN SONG (#1189) belongs in that song's own
+// chat, where the app runs it with the live song and its tools: the helper's third
+// verdict CHAT, or the AI's `--to-chat <n> [--song <path>] ["note"]` (POST
+// /v1/terminal/chat {id, song?, text?}), marks row n done, writes a short note to
+// its app ("→ sent to the ♪ chat for <title>") and then the words as a note of
+// kind "chat" {text, song (the path from the <context> block), songTitle, tag (the
+// "[App]" word a native client prefixes), row}. A client that knows the kind
+// sends the words in that song's chat; an older one shows a plain note. The
+// router's hand-off also writes a "FORWARDED #n" FYI row for the watcher.
 // The first time the watcher's GET returns the row the bridge adds "Claude has
 // #n now." GET /v1/terminal?app=a,b,c&wait=25 watches several apps with one
 // cursor and long-polls (wait capped at 25 s). POST /v1/ai-session {session,
@@ -239,6 +248,26 @@ function has(argv, name) { return argv.includes(name); }
 
 function parseUpstream(s, countSoFar) { const m = s.match(/^([\w-]+)=(.+)$/); return m ? {name: m[1], url: m[2].replace(/\/+$/, "")} : {name: "server" + (countSoFar + 1), url: s.replace(/\/+$/, "")}; }
 
+// chatTargetOf(rowText): what a terminal row says about the song its sender had open, for the hand-off to that
+// song's own chat (--to-chat, the router's CHAT verdict). The clients write the open song into the <context> block
+// in two shapes — `open song: Title (key, where) — …` (the key is the song's path) and `open song: "Title" (album: …)`
+// (a native client, which may add a `song path: <path>` line) — and a native client prefixes its words with
+// "[App] ". Returns {song (the path when known, else the title), title, tag (the "[App]" word or null), text (the
+// words alone)}; song is null when the block names no open song.
+export function chatTargetOf(rowText) {
+  const all = String(rowText || "");
+  const m = /<context>\n?([\s\S]*?)\n?<\/context>\s*/.exec(all);
+  const ctx = m ? m[1] : "", body = (m ? all.slice(m.index + m[0].length) : all).trim();
+  const tagM = /^\[([^\]\n]{1,40})\]\s+/.exec(body);
+  const tag = tagM ? tagM[1] : null, text = tagM ? body.slice(tagM[0].length).trim() : body;
+  const pathLine = /^song path:\s*(\S+)/m.exec(ctx);
+  const quoted = /^open song:\s*"([^"\n]+)"/m.exec(ctx);
+  const plain = quoted ? null : /^open song:\s*(.+?)\s*\(([^,()\n]+),/m.exec(ctx);
+  const title = quoted ? quoted[1].trim() : plain ? plain[1].trim() : null;
+  const song = pathLine ? pathLine[1] : plain ? plain[2].trim() : title;
+  return {song: song || null, title: title || song || null, tag, text};
+}
+
 // ---------------------------------------------------------------- CLI entry
 // main(argv, profile): the whole CLI — the quick client commands (--say,
 // --status[-clear], --deploy-in, --deploy-wait) that just talk to an
@@ -276,6 +305,16 @@ export function main(argv, profile) {
     fetch(base() + "/v1/terminal/done", {method: "POST", headers: authHeaders(), body: JSON.stringify({id, text, from: flag(argv, "--from", "terminal")})})
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("#" + j.id + " done" + (j.note ? ", note #" + j.note + " delivered to " + j.app : "")); process.exit(0); })
       .catch(err => { console.error("could not finish #" + id + ": " + err.message); process.exit(1); });
+    return;
+  }
+  if (has(argv, "--to-chat")) { // the AI hands terminal row n to the sender's song chat (#1189): the row is done, its app gets a short note and the words as a kind:"chat" note the app runs in that chat:  --to-chat 12 [--song <path>] ["note"]
+    const valued = new Set(["--app", "--song", "--from", "--port", "--host", "--token", "--to-chat"]);
+    const i = argv.indexOf("--to-chat"), id = +argv[i + 1], after = argv[i + 2] || "", last = argv[argv.length - 1], prev = argv[argv.length - 2];
+    const text = (after && !after.startsWith("--") ? after : last !== argv[i + 1] && !last.startsWith("--") && !valued.has(prev) ? last : "").trim(); // the note follows the row number or ends the line
+    if (!(id > 0)) { console.error("--to-chat needs a row number: --to-chat 12 [--song albums/x/y.mid] [\"note\"]"); process.exit(2); }
+    fetch(base() + "/v1/terminal/chat", {method: "POST", headers: authHeaders(), body: JSON.stringify({id, text, song: flag(argv, "--song", ""), from: flag(argv, "--from", "terminal")})})
+      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("#" + j.id + " sent to the song chat for " + j.songTitle + " (" + j.song + ") in " + j.app + ": note #" + j.note + ", chat note #" + j.chat); process.exit(0); })
+      .catch(err => { console.error("could not send #" + id + " to the song chat: " + err.message); process.exit(1); });
     return;
   }
   if (has(argv, "--status") || has(argv, "--status-clear")) { // "what's running" — post it to the running bridge and exit, mirroring --say
@@ -696,7 +735,25 @@ function startQuickAnswer(row) { // the offline answer: one read-only one-off, w
 // #681: a plain question from an app while the AI is live. The same read-only helper judges: it answers, or says NEEDS_AI.
 const ROUTE_MS = +process.env.BRIDGE_ROUTE_MS || 25000; // BRIDGE_ROUTE_MS: tests only
 const ROUTE_ROOT = process.env.BRIDGE_ROUTE_ROOT || path.join(os.homedir(), "work", "night-roll"), ROUTE_REPOS = {"night-roll": "night-roll-daw", guitar: "night-roll-guitar", tuner: "night-roll-tuner"}; // app → the repo the helper reads
-const ROUTE_SYS = "You are a read-only helper deciding whether a message from an app can be answered right now without the main Claude session. Start your reply with exactly ANSWER: only if the message ONLY asks for information, and you can answer it confidently from files you read (Read, Glob, Grep) or from the commit list given with the message. Then answer in a few plain sentences. Questions about history (did we do X, when) are answered only from the given commit list or files you actually read; otherwise reply NEEDS_AI. Reply with exactly NEEDS_AI and nothing else when the message asks for anything to be built, changed, fixed, installed or decided, mixes a question with such a request, or you are not sure. You cannot reach the Worker, the terminal, open-items or the inbox: never say you forwarded, noted, queued or will do anything, because that is NEEDS_AI. You cannot change anything.";
+const ROUTE_SYS = "You are a read-only helper deciding whether a message from an app can be answered right now without the main Claude session. Start your reply with exactly ANSWER: only if the message ONLY asks for information, and you can answer it confidently from files you read (Read, Glob, Grep) or from the commit list given with the message. Then answer in a few plain sentences. Questions about history (did we do X, when) are answered only from the given commit list or files you actually read; otherwise reply NEEDS_AI. Reply with exactly CHAT and nothing else when the message's <context> block names an open song AND the message dictates what goes into that song — the harmony, notes, bars, sections, key or tempo the user is writing, or a change to the song's own markings — the kind of thing the song's own chat in the app does with its tools. Not CHAT: anything about building, changing, fixing or testing the app itself, its code, docs or builds, a message that mixes a song edit with such a request, or a question about the song; when torn between CHAT and NEEDS_AI, say NEEDS_AI. Reply with exactly NEEDS_AI and nothing else when the message asks for anything to be built, changed, fixed, installed or decided, mixes a question with such a request, or you are not sure. You cannot reach the Worker, the terminal, open-items or the inbox: never say you forwarded, noted, queued or will do anything, because that is NEEDS_AI. You cannot change anything.";
+const ROUTE_HEADS = ["ANSWER:", "CHAT"]; // the first words that keep the helper's job alive; anything else releases the row to the AI at once
+// chatForward (#1189): the Worker hands row n to its sender's own song chat, where the message runs with the live song and
+// the app's tools. The row's app gets a short note (`text`, or the default) and then the words as a kind:"chat" note carrying
+// {song, songTitle, tag, row}; an app that knows the kind sends the words in that song's chat (an older one shows them as a
+// plain note). The row is done + read; `helper` hides it from the watcher (the router's own hand-off, like ANSWERED). Returns
+// null when neither the row's <context> nor `opts.song` names a song.
+function chatForward(row, opts) {
+  const o = opts || {}, tgt = chatTargetOf(row.text);
+  const song = String(o.song || tgt.song || "").trim();
+  if (!song) return null;
+  const title = o.song && o.song !== tgt.song ? o.song.split("/").pop().replace(/\.midi?$/i, "") : tgt.title || song;
+  const from = o.from || "terminal";
+  const note = inboxAdd(o.text || ("→ sent to the ♪ chat for " + title), from, row.app);
+  const chat = inboxAdd(tgt.text || row.text, from, row.app, {kind: "chat", song, songTitle: title, ...(tgt.tag ? {tag: tgt.tag} : {}), row: row.id});
+  terminalMark(row.id, {done: Date.now(), answered: note.id, chat: chat.id, ...(o.helper ? {helper: true, hold: 0} : {})}); terminalRead(row.id);
+  console.log(`terminal #${row.id} [${appIdOf(row.app)}] to the song chat for ${title} (${song})${o.helper ? " by helper" : ""}: note #${note.id}, chat #${chat.id}`);
+  return {song, title, note, chat, text: tgt.text || row.text};
+}
 // Ask chats cannot write (READ_TOOLS, #644): this marker is how a request reaches the Worker. runClaude adds the text, flushProse strips the lines, relayFinish turns them into terminal rows.
 const RELAY_SYS = "You cannot edit files, run commands or message anyone in this chat. When the user asks for something to be built, changed, fixed or remembered, put ONE line in your reply, alone on its line and not inside a code block: RELAY: <the user's request in his own words, plus the song/bars context you have>. Then tell him in plain words that you passed it to the Worker. Never say you could not hand it over.";
 const RELAY_MAX = 3; // rows per reply
@@ -723,7 +780,7 @@ function startRouter(row) {
   job.subs.add(ev => { // the first words decide: anything but ANSWER: releases the row now, without waiting for the child to finish
     if (ev.type !== "chunk") return;
     const t = job.text.trimStart();
-    if (t && !t.startsWith("ANSWER:") && !(t.length < 7 && "ANSWER:".startsWith(t))) routeStop(job, "not an answer");
+    if (t && !ROUTE_HEADS.some(h => t.startsWith(h) || (t.length < h.length && h.startsWith(t)))) routeStop(job, "not an answer");
   });
   runClaude(job, {messages: [{role: "system", content: ROUTE_SYS}, {role: "user", content: ctx + "Message:\n" + row.text + (row.shot ? "\n(screenshot: " + row.shot + ")" : "")}]}, job.route.key, "sonnet");
 }
@@ -731,12 +788,17 @@ function routeStop(job, why) { if (job.status !== "running") return; try { job.c
 function routeEnd(job) { // ANSWER: the app gets the note, the row is done, the AI gets an FYI line. Anything else: release the row to the AI as always
   const row = job.route.row; clearTimeout(job.routeTimer);
   try { const all = readJSON(SESSIONS_FILE, {}); if (all[job.route.key]) { delete all[job.route.key]; writeJSON(SESSIONS_FILE, all); } } catch (e) { /* best effort */ }
-  const m = job.status === "done" ? /^ANSWER:\s*([\s\S]*\S)/.exec(String(job.text || "").trim()) : null;
+  const raw = job.status === "done" ? String(job.text || "").trim() : "";
+  const one = (x, n) => String(x).replace(/\s+/g, " ").trim().slice(0, n);
+  if (/^CHAT\b/.test(raw)) { // the message writes the open song: it runs in that song's own chat (#1189); without a named song it goes to the AI like NEEDS_AI
+    const r = chatForward(row, {helper: true});
+    if (r) { terminalAdd(`FORWARDED #${row.id} [${row.app}] to the song chat for ${r.title}: ${one(r.text, 300)}`, null, row.app, null, {kind: "fyi"}); terminalNotify(); return; }
+  }
+  const m = /^ANSWER:\s*([\s\S]*\S)/.exec(raw);
   const text = m ? m[1].trim() : "";
   if (!text || /NEEDS_AI/.test(text)) { terminalMark(row.id, {hold: 0}); terminalNotify(); return; }
   const note = inboxAdd("Quick answer: " + text, "terminal", row.app, {auto: true, quick: true});
   terminalMark(row.id, {answered: note.id, helper: true, done: Date.now(), hold: 0}); terminalRead(row.id);
-  const one = (x, n) => String(x).replace(/\s+/g, " ").trim().slice(0, n);
   terminalAdd(`ANSWERED #${row.id} [${row.app}] by helper: ${one(row.text, 200)} \u2192 ${one(text, 400)}`, null, row.app, null, {kind: "fyi"});
   terminalNotify();
 }
@@ -1137,6 +1199,16 @@ const server = http.createServer(async (req, res) => {
     terminalMark(row.id, {done: Date.now(), ...(note ? {answered: note.id} : {})}); terminalRead(row.id);
     console.log(`terminal #${row.id} [${appIdOf(row.app)}] done${note ? ", note #" + note.id : ""}`);
     return json(res, 200, {id: row.id, app: appIdOf(row.app), ...(note ? {note: note.id} : {})});
+  }
+  if (url.pathname === "/v1/terminal/chat" && req.method === "POST") { // {id, song?, text?, from?}: the AI hands row id to its sender's song chat (#1189) — see chatForward
+    let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    const row = terminalAll().msgs.find(x => x.id === +(b && b.id));
+    if (!row) return json(res, 404, {error: {message: "no terminal row #" + (b && b.id) + " (older than the last 200?)"}});
+    if (row.chat) return json(res, 409, {error: {message: "#" + row.id + " was already sent to the song chat (note #" + row.chat + ")"}});
+    if (row.helper) return json(res, 409, {error: {message: "#" + row.id + " was already answered by the helper; nothing to do"}});
+    const r = chatForward(row, {song: String(b.song || "").trim(), text: String(b.text || "").trim(), from: b.from});
+    if (!r) return json(res, 400, {error: {message: "#" + row.id + " names no open song in its <context>; pass --song <path>"}});
+    return json(res, 200, {id: row.id, app: appIdOf(row.app), song: r.song, songTitle: r.title, note: r.note.id, chat: r.chat.id});
   }
   if (url.pathname === "/v1/apns/register" && req.method === "POST") { // {app, bundleId, token, env}: an app hands over its APNs device token (BridgeChat does this)
     if (!String(req.headers["x-nr-app"] || "").trim()) return json(res, 400, {error: {message: "x-nr-app header is required"}}); // only the apps' BridgeClient registers; it always sends it
