@@ -1234,6 +1234,12 @@
   details.askearlier { align-self: stretch; margin: 0 0 8px; max-height: 50vh; overflow: auto; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); padding-bottom: 6px; }
   details.askearlier > summary { cursor: pointer; font-size: 0.8rem; color: var(--dim); padding: 6px 0; min-height: 32px; }
   details.askearlier > .askmsg.earlier { max-height: none; margin: 4px 0; }
+  /* Earlier chats (#1203, src/ask/history.js): the song's published .ask.md, read only, folded at the top of the ♪ chat; its bubbles are the chat's own */
+  details.askhist { align-self: stretch; margin: 0 0 8px; max-height: 50vh; overflow: auto; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); padding-bottom: 6px; display: flex; flex-direction: column; gap: 6px; }
+  details.askhist > summary { cursor: pointer; font-size: 0.8rem; color: var(--dim); padding: 6px 0; min-height: 32px; }
+  details.askhist > .askhistdate { font-size: 0.75rem; color: var(--dim); margin: 8px 0 0; }
+  details.askhist > .askmsg.hist { opacity: .8; max-width: 92%; }
+  details.askhist > .askhistmore { align-self: center; min-height: 36px; padding: 4px 14px; border-radius: 8px; border: 1px solid var(--grid); background: transparent; color: var(--dim); font: inherit; cursor: pointer; }
   .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid
      dictation past the second line (Josh, 2026-09-26). */

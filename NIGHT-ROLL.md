@@ -11291,6 +11291,25 @@ spawns its own helpers; there is no Front Desk to talk to and no one-off fallbac
   Claude chat as notes; older rows stay in Earlier chat. Inbox notes whose `from` is `front-desk` or `one-off` go to the Claude chat too.
 - Nothing in the app sends to app `front-desk` any more (`aiDeskSend` is unused; `askDeskLabel`/`askDeskContext` removed).
 
+## Earlier chats — the song's published .ask.md in its ♪ chat (Josh #1203)
+
+"What do I need to do to get my chat history back for the Ex Ex Battle Theme": the chat panel showed only the device's store, so a
+Clear chat, a new device or a lost store emptied it although `<song>.ask.md` (appended by `askCommitLog` on every Publish) held
+everything. `src/ask/history.js`:
+- **Fetch.** `askHistoryLoad` reads `askLogPath(S.songKey)` with `readData` (the linked folder first, else the published site, cache
+  busted) — the same path as the song's `.rollnotes.json`, `songs` repo for a composition, `analysis` otherwise. One fetch per song,
+  cached on `S.askHistory` `{key, path, state: none|loading|ok|missing, blocks, shown}`; a 404/offline is `missing` (no fold, not
+  re-asked until the song changes). No fetch for `local`/`local/…` keys, the general or Claude tab.
+- **Parse.** `askLogParse(md)` → `[{date, msgs: [{role: user|ai|note, who, text}]}]`: `### ` starts a block, `**Label:**` a message
+  (Josh/You → user, Mac/Note → note, else ai), any other line continues the current message. Tolerates a block with no reply, the
+  "⚠ the Mac no longer has this reply" line, bold or `###` inside a line, CRLF, an empty or header-only file.
+- **Draw.** `askHistoryBlock` (called by `askRenderImpl` after the live log) prepends `<details class="askhist">` to `#asklog`: summary
+  "Earlier chats (N)", closed by default, open/closed remembered in `ff1roll-ask-history-open` (device UI state). Open: the last
+  `ASK_HISTORY_PAGE` (25) blocks, oldest first — `.askhistdate` line then `.askmsg.hist.user/ai/note` bubbles via `askFillBubble` — with
+  a `.askhistmore` "Show earlier (n more)" button above them that extends `shown`. Filled on first open only.
+- **Never:** writes the file, touches a chat store (`aiStoreGet`), or reaches the model (context is built from the store). Tests:
+  tests/ask-history.test.mjs. Native: the same fold above the song's `AIWindow` (night-roll-ipad `EarlierChatsView`, `AskLog.parse`).
+
 ## A Worker message that belongs to the song (Josh #1189; claude-bridge `--to-chat`, kind:"chat" notes)
 
 A message typed in the ✦ Claude (Worker) tab that dictates what goes into the open song ("next chord for two bars is A minor")

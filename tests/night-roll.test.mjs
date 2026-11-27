@@ -3242,6 +3242,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mixer window", "Drag a strip by its name",
     "Text size", "Edit a copy",
     "Analyze ▸",
+    "Earlier chats (N)", // #1203: the song's published .ask.md folded read-only at the top of its ♪ chat (src/ask/history.js)
     "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
     "Pedal point", // #1177: a chord band marked `pedal: true`, drawn under every chord row
     "A chord can end mid-beat", // #1179: an exclusive `until` end on a chord band
