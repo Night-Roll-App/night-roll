@@ -249,7 +249,7 @@ export function pasteAnnotations(t0, dP) { // re-anchored copies; chord labels t
   if (S.rollnotesReadOnly) { setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap — lasso'd annotations never land locally on a locked song
   for (const a of S.annoClipboard) {
     if (t0 + a.dt < 0) continue; // a band that began before the first copied note, pasted at the very start
-    const arr = [jsonToRawNote(a.json)];
+    const arr = [jsonToRawNote(a.json, !!S.declaredPickup)]; // the open song's frame decides whether a copied bar-0 anchor is one (it is re-anchored below anyway)
     deriveNoteTypes(arr);
     const n = arr[0];
     setAnchorBQ(n, t0 + a.dt);

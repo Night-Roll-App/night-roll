@@ -59,14 +59,28 @@ test("format identity: `pickup: 1` text → object → JSON → object, version 
   } finally { teardown(); }
 });
 
-test("readers accept bar 0 (review C1): a [0,4] chord with until [0,4.5] parses and writes back exactly", () => {
+test("readers accept bar 0 (review C1) only in a list that declares a pickup: a [0,4] chord with until [0,4.5] parses and writes back exactly; without a pickup, bar 0 reads as every build before read it", () => {
   installSong();
   try {
-    const one = '{"format":"night-roll-annotations","version":4,"notes":[{"at":[0,4],"to":[0,4],"until":[0,4.5],"type":"chord","chord":"G"}]}';
-    assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(one)}).map(n => [n.b1, n.q1, n.b2, n.q2, n.until])`), [[0, 4, 0, 4, [0, 4.5]]]);
-    assert.equal(run(`JSON.stringify(noteToJSON(parseRollnotesJSON(${JSON.stringify(one)})[0]))`), '{"at":[0,4],"to":[0,4],"until":[0,4.5],"type":"chord","chord":"G"}');
+    const chord = '{"at":[0,4],"to":[0,4],"until":[0,4.5],"type":"chord","chord":"G"}';
+    const withPickup = '{"format":"night-roll-annotations","version":4,"notes":[' + chord + ',{"at":[1,1],"type":"pickup","pickup":1}]}';
+    assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(withPickup)}).map(n => [n.b1, n.q1, n.b2, n.q2, n.until ?? null])`), [[0, 4, 0, 4, [0, 4.5]], [1, 1, null, null, null]]);
+    assert.equal(run(`JSON.stringify(noteToJSON(parseRollnotesJSON(${JSON.stringify(withPickup)})[0]))`), chord);
     assert.equal(val(`hasEnd({b2: 0})`), true, "an end in bar 0 is an end");
     assert.equal(val(`hasEnd({b2: null})`), false);
+    assert.ok(val(`jsonListDeclaresPickup([{at: [1, 1], text: "pickup: 1\\nheard it"}])`), "the legacy text form declares one too");
+    assert.ok(!val(`jsonListDeclaresPickup([{at: [1, 1], type: "pickup", pickup: 0}, {at: [0, 4], text: "x"}])`), "a zero length is no pickup");
+    // the reconcile rule (web = native): a file WITHOUT a pickup can only hold bar 0 by hand or by accident — it keeps the
+    // reading every build before gave it (at 0 → 1, to [0] → no end, an until in bar 0 dropped), so nothing in a saved file moves
+    const without = '{"format":"night-roll-annotations","version":2,"notes":[{"at":[0,3],"type":"lane","lane":-2},{"at":[6,1],"to":[0],"type":"loop","loop":"A-B"},' + chord + ',{"at":[2,1],"to":["x"],"text":"junk end"}]}';
+    assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(without)}).map(n => [n.text, n.b1, n.q1, n.b2, n.q2, n.until ?? null])`),
+      [["lane: -2", 1, 3, null, null, null], ["loop: A-B", 6, 1, null, null, null], ["G", 1, 4, null, null, null], ["junk end", 2, 1, null, null, null]]);
+    assert.equal(run(`serializeNotesList(parseRollnotesJSON(${JSON.stringify(without)}), 4, "edge")`),
+      '{ "format": "night-roll-annotations", "version": 2, "song": "edge", "notes": [\n  {"at":[1,3],"type":"lane","lane":-2},\n  {"at":[6,1],"type":"loop","loop":"A-B"},\n  {"at":[1,4],"type":"chord","chord":"G"},\n  {"at":[2,1],"text":"junk end"}\n] }\n',
+      "the pre-pickup bytes, version 2");
+    // the undo snapshot reads by the same rule (annoRestore carries the pickup with the list)
+    run(`S.rollnotes = parseRollnotesJSON(${JSON.stringify(withPickup)}).map(resolveNote); finalizeNotes(); const snap = annoSnapshot(); S.rollnotes = []; annoRestore(snap);`);
+    assert.deepEqual(val(`S.rollnotes.filter(n => n.chord).map(n => [n.b1, n.q1, n.b2, n.q2])`), [[0, 4, 0, 4]]);
   } finally { teardown(); }
 });
 
@@ -371,6 +385,9 @@ test("Ask: add_annotation kind pickup by bar+beat and by length, the refusals, g
     assert.equal(val(`askActPosText(0)`), "0.4");
     assert.equal(val(`askActPosText(480)`), "1.1");
     assert.throws(() => run(`askBarsValidate({at_bar: 0})`), /at_bar must be between 1 and/, "bar 0 is partial — never an insert target (Q6)");
+    assert.equal(run(`askActFind("select").run({from_bar: 0, to_bar: 1})`), "selected bars 0–1 — ▶ loops them", "select reaches the pickup (§4)");
+    assert.deepEqual(val(`[S.rangeSel.a, S.rangeSel.b]`), [0, 480 + 1920], "the span starts at tick 0, not before the song");
+    run(`S.rangeSel = null;`);
     assert.equal(val(`askBarsCount()`), 4, "full bars after the pickup");
     // context: the song line, the pickup line, rows from bar 0, the legend sentence, both rule blocks
     const ctxText = run(`askContext(askSpan(), {anno: 2000, span: 4000})`);

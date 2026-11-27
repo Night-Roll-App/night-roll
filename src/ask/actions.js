@@ -152,15 +152,14 @@ export const ASK_ACTIONS = [
    }},
   {name: "select", args: "from_bar to_bar? cycle? clear?", gloss: "ruler selection; ▶ loops it unless cycle: false", quiet: true,
    example: "Loop bars 5 to 12.", say: "Say the first and last bar; \"select\" instead of \"loop\", or \"no cycle\", marks them without looping; \"clear the selection\" drops it.",
-   spec: "select {from_bar, to_bar?, cycle?, clear?}: selects whole bars on the ruler, from_bar..to_bar inclusive (to_bar omitted = that one bar). cycle defaults to true — Play loops the selection, like a drag on the ruler; cycle: false only marks the range (the context block then follows it). clear: true drops the selection.",
+   spec: "select {from_bar, to_bar?, cycle?, clear?}: selects whole bars on the ruler, from_bar..to_bar inclusive (to_bar omitted = that one bar; bar 0 = the pickup, when the song has one). cycle defaults to true — Play loops the selection, like a drag on the ruler; cycle: false only marks the range (the context block then follows it). clear: true drops the selection.",
    run(a) {
      if (askActTruthy(a.clear)) { const had = !!S.rangeSel; S.rangeSel = null; editorFollowSelection(); draw(); return had ? "selection cleared" : "no selection to clear"; }
      const nBars = askBarsCount();
-     const from = askActInt(a.from_bar, "from_bar", 1, nBars, nBars);
+     const from = askActInt(a.from_bar, "from_bar", pickupBeats() ? 0 : 1, nBars, nBars); // bar 0 = the pickup, selectable while one exists (#1192 §4)
      const to = askActGiven(a.to_bar) ? askActInt(a.to_bar, "to_bar", from, nBars, nBars) : from;
      const cycle = askActGiven(a.cycle) ? askActTruthy(a.cycle) : true;
-     const bt = barTicks();
-     S.rangeSel = {a: barStartTick(from), b: barStartTick(to + 1), cycle};
+     S.rangeSel = {a: Math.max(0, barStartTick(from)), b: barStartTick(to + 1), cycle}; // bar 0 starts before the song: the span begins at tick 0
      editorFollowSelection(); // a docked annotation window follows it, as it follows a ruler drag
      draw(); // drawImpl persists the selection per song (rangeSelPersist), as a ruler drag does
      return "selected bar" + (from === to ? " " + from : "s " + from + "–" + to) + (cycle ? " — ▶ loops them" : "");

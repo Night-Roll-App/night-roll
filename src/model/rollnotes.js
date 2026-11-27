@@ -219,18 +219,31 @@ export function sameChordSpan(n, fresh) {
 export function chordBandText(n) { // the band's readout everywhere it is shown: "F# · ♭VII · no5"
   return n.text + (n.chord && n.roman ? " · " + romanPretty(n.roman) : "") + (n.chord && n.no5 ? " · no5" : "");
 }
-export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
+// Does a list of schema entries declare a pickup (#1192)? Read BEFORE the
+// entries are converted: it decides whether bar 0 in an anchor means anything.
+export function jsonListDeclaresPickup(entries) {
+  return entries.some(e => e && typeof e === "object" && (e.type === "pickup" ? +e.pickup > 0 : typeof e.text === "string" && PICKUP_RE.test(e.text.split("\n")[0])));
+}
+// bar0 (#1192, review C1 + the web/native reconcile): bar 0 is a real anchor
+// ONLY in a list that declares a pickup — then `at`, `to` and `until` may all
+// name the pickup bar, and `to: [0, q]` is a real end. Without a pickup the
+// reading is the one every build before had: `at` bar 0 → 1, `to` bar 0 → no
+// end, an `until` in bar 0 dropped — so no file written without a pickup
+// changes meaning (its writer could never produce bar 0 on purpose). Native
+// `Rollnotes.raw(_:bar0:)` is the same rule.
+export function jsonToRawNote(j, bar0 = false) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
-  // bar 0 is a real anchor (the pickup bar, #1192 review C1): only a non-number
-  // falls back to 1 — `+at[0] || 1` silently moved a [0,4] chord to [1,4]
-  const n = {b1: Number.isFinite(+at[0]) ? +at[0] : 1, q1: at[1] !== undefined ? +at[1] : 1,
-             b2: j.to ? +j.to[0] : null,
+  const minBar = bar0 ? 0 : 1;
+  const b1 = +at[0], b2 = j.to ? +j.to[0] : NaN;
+  const n = {b1: Number.isFinite(b1) && (b1 !== 0 || bar0) ? b1 : 1, q1: at[1] !== undefined ? +at[1] : 1,
+             b2: Number.isFinite(b2) && (b2 !== 0 || bar0) ? b2 : null,
              q2: j.to && j.to[1] !== undefined ? +j.to[1] : null, text: ""};
+  if (n.b2 === null) n.q2 = null;
   // `until` (Josh #1179): the band's EXCLUSIVE end, [bar, beat], written only
   // when the end is off a whole beat; `to` beside it is the beat the end falls
   // in, for a build that doesn't read this. Present → the end is that exact
   // tick (resolveNote); absent → today's inclusive-`to` rule.
-  if (Array.isArray(j.until) && j.until.length === 2 && Number.isFinite(+j.until[0]) && Number.isFinite(+j.until[1]) && +j.until[0] >= 0 && +j.until[1] >= 1) {
+  if (Array.isArray(j.until) && j.until.length === 2 && Number.isFinite(+j.until[0]) && Number.isFinite(+j.until[1]) && +j.until[0] >= minBar && +j.until[1] >= 1) {
     n.until = [+j.until[0], +j.until[1]];
     if (!hasEnd(n)) { n.b2 = n.until[0]; n.q2 = Math.max(1, Math.floor(n.until[1])); } // `until` without `to`: derive the fallback, so every b2 reader still sees a span
   }
@@ -309,7 +322,8 @@ export function parseRollnotesJSON(text) {
   // reading as empty.
   const unknownFormat = version >= 2 && doc.format !== undefined && doc.format !== ROLLNOTES_FORMAT;
   const tooNew = version > ROLLNOTES_MAX_VERSION || unknownFormat;
-  const out = Array.isArray(doc.notes) ? deriveNoteTypes(doc.notes.map(jsonToRawNote)) : [];
+  const bar0 = Array.isArray(doc.notes) && jsonListDeclaresPickup(doc.notes); // bar 0 means the pickup bar only in a list that has one (jsonToRawNote)
+  const out = Array.isArray(doc.notes) ? deriveNoteTypes(doc.notes.map(e => jsonToRawNote(e, bar0))) : [];
   out.version = version;
   out.origin = (doc.origin && typeof doc.origin === "object") ? doc.origin : null;
   out.readOnly = tooNew;
@@ -986,7 +1000,8 @@ export function bakeMeter(base, notes) {
 
 export function annoRestore(str) {
   const arr = JSON.parse(str);
-  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
+  const bar0 = jsonListDeclaresPickup(arr.map(e => e.j));
+  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j, bar0))).map(resolveNote);
   S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
 }
 // Re-express every bar-anchored entry of `list` from the frame whose bar 1

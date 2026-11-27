@@ -337,9 +337,16 @@ edit; an optional `note` rides along. Text form `pickup: 1`.
   annotation `P` beats early and let the user add one in the wrong frame.
   The lock bites only songs that hold a pickup; readers ship to both apps
   before the editor does.
-- **Readers accept bar 0** (review C1): web `jsonToRawNote` reads `at[0]`
-  with a finite-number check (`+at[0] || 1` used to coerce 0 to 1), the
-  `until` guard is `≥ 0`; native `Rollnotes.raw` keeps `b1 == 0`.
+- **Readers accept bar 0 only in a list that declares a pickup** (review
+  C1, narrowed by the web/native reconcile): web `jsonListDeclaresPickup` →
+  `jsonToRawNote(j, bar0)`, native `Rollnotes.declaresPickup` →
+  `raw(_:bar0:)`. With a pickup, `at`, `to` and `until` may name bar 0 and
+  `to: [0, q]` is a real end; without one the pre-v4 reading stands (`at` 0
+  → 1, `to` [0] → no end, an `until` in bar 0 dropped), so a file written
+  without a pickup — which could never hold bar 0 on purpose — reads as it
+  always did. Both writers emit identical bytes for every list either reader
+  produces (PickupTests `testBar0MeansThePickupBarOnlyWhenTheListHasOne`,
+  tests/pickup.test.mjs "readers accept bar 0").
 - **Setting or removing a pickup re-expresses every anchor** through
   absolute time (`reframeAnchors`), with the two-tap warning and one undo
   step — the music under an annotation never moves. The merge

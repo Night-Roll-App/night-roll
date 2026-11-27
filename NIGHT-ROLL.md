@@ -1678,8 +1678,13 @@ review C4; the chop directive itself stays raw). **Version:** `version = pickup
 present ? 4 : layer present ? 3 : 2` (`rollnotesVersionFor`;
 `ROLLNOTES_MAX_VERSION = 4`), so an older build locks a pickup file instead of
 showing every annotation `T` early; the "too new" fixtures are at 5. Readers
-accept bar 0 (`jsonToRawNote`: `Number.isFinite(+at[0]) ? +at[0] : 1`, `until`
-bar `≥ 0` — review C1; the schema's anchor minimum is 0). Learning mode: the
+accept bar 0 ONLY in a list that declares a pickup (`jsonListDeclaresPickup`
+→ `jsonToRawNote(j, bar0)`; native `Rollnotes.declaresPickup` →
+`raw(_:bar0:)`): then `at`, `to` and `until` may name bar 0 and `to: [0, q]`
+is a real end. Without a pickup every build's old reading stands (`at` 0 → 1,
+`to` [0] → no end, an `until` in bar 0 dropped), so no file written without
+a pickup changes meaning — review C1 narrowed to the frame; the schema's
+anchor minimum is 0. Learning mode: the
 app never detects, suggests or pre-fills a pickup beyond the cursor position,
 and the Ask system prompt (both rule blocks) forbids suggesting one. Shared
 fixture `tests/fixtures/pickup.rollnotes.json` (byte-identical to native's
