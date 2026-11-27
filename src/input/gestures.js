@@ -1445,8 +1445,8 @@ export function initGestures1() {
       else if (S.drag.bandEdge) {
         const be = S.drag.bandEdge, n = be.n;
         const tk = tickAtX(evtPos(e).x, Math.round(S.song.ppq / 4)); // 16ths, like ruler selects
-        if (be.side === "end") setEndBQ(n, Math.max(be.s0 + beatTicks(), tk));
-        else setAnchorBQ(n, Math.min(Math.max(0, tk), be.e0 - beatTicks()));
+        if (be.side === "end") setEndBQ(n, Math.max(be.s0 + beatTicks() / 4, tk)); // at least a 16th long (#1179: a chord may be shorter than a beat; native BandEdit.moved)
+        else setAnchorBQ(n, Math.min(Math.max(0, tk), be.e0 - beatTicks() / 4));
         resolveNote(n);
         draw();
       }

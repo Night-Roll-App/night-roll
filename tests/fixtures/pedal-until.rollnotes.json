@@ -1,0 +1,13 @@
+{"format":"night-roll-annotations","version":2,"song":"pedal-until","notes":[
+{"at":[1,1],"to":[1,4],"type":"chord","chord":"Am"},
+{"at":[2,1],"to":[2,4],"type":"chord","chord":"Am7"},
+{"at":[1,2],"to":[2,1],"type":"chord","chord":"A ped.","pedal":true},
+{"at":[4,3.5],"to":[4,3],"type":"chord","chord":"Am7"},
+{"at":[5,1.5],"to":[5,1],"type":"chord","chord":"Am7"},
+{"at":[6,1],"to":[6,1],"until":[6,1.25],"type":"chord","chord":"G"},
+{"at":[7,1],"to":[7,2],"until":[7,2.5],"type":"chord","chord":"C","roman":"IV","no5":true,"layer":1,"pedal":true},
+{"at":[8,1],"until":[8,2.5],"type":"chord","chord":"D"},
+{"at":[9,1],"to":[9,4],"until":"junk","type":"chord","chord":"E"},
+{"at":[10,1],"to":[10,4],"until":[10],"type":"chord","chord":"F"},
+{"at":[11,1],"to":[11,2],"until":[11,2.5],"type":"section","label":"B"}
+]}

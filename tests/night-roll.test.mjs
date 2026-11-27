@@ -18879,3 +18879,52 @@ test("#1180 ruler bands clip their label to the band's own drawn width — a lon
     assert.match(helpSource(), /A long label is cut off/, "the help sheet names the rule (FEATURES keyword)");
   } finally { run(`for (const k of ["save", "restore", "beginPath", "rect", "clip", "fillText"]) delete ctx[k]; delete globalThis.__cv; view.x = 0; rollnotes = []; finalizeNotes(); songKey = null;`); }
 });
+
+test("#1177/#1179 shared fixture: tests/fixtures/pedal-until.rollnotes.json (byte-identical to native's copy) reads to the same ends and lanes, writes back the same bytes, and re-bars by the one to/until rule", () => {
+  installSong();
+  const text = readFileSync(new URL("./fixtures/pedal-until.rollnotes.json", import.meta.url), "utf8");
+  run(`rollnotes = parseRollnotesJSON(${JSON.stringify(text)}).map(resolveNote); finalizeNotes();`);
+  // [label, exclusive end in beats from the song's start, lane, until] in the web's start order (finalizeNotes sorts; native keeps file order):
+  // the section row comes first, so the chords sit on lane 1 and the pedals on lane 2
+  assert.deepEqual(val(`rollnotes.map(n => [n.text, n.end / beatTicks(), n.lane, n.until ?? null])`), [
+    ["Am", 4, 1, null], ["A ped.", 5, 2, null], ["Am7", 8, 1, null],
+    ["Am7", 15, 1, null], ["Am7", 17, 1, null],                         // Josh's case: 4.3.5 to [4, 3] ends ON beat 4, 5.1.5 to [5, 1] on beat 2 — no until needed
+    ["G", 20.25, 1, [6, 1.25]], ["C", 25.5, 2, [7, 2.5]],               // a 16th; a layered pedal: pedal row anyway
+    ["D", 29.5, 1, [8, 2.5]],                                           // until without to: the fallback is derived, the end exact
+    ["E", 36, 1, null], ["F", 40, 1, null],                             // junk until, a one-number until: no exact end
+    ["B", 41.5, 0, [11, 2.5]]], "every reader agrees with native (PedalAndExactEndTests.testSharedFixture)");
+  assert.deepEqual(val(`rollnotes.map(n => JSON.stringify(noteToJSON(n)))`), [
+    '{"at":[1,1],"to":[1,4],"type":"chord","chord":"Am"}',
+    '{"at":[1,2],"to":[2,1],"type":"chord","chord":"A ped.","pedal":true}',
+    '{"at":[2,1],"to":[2,4],"type":"chord","chord":"Am7"}',
+    '{"at":[4,3.5],"to":[4,3],"type":"chord","chord":"Am7"}',
+    '{"at":[5,1.5],"to":[5,1],"type":"chord","chord":"Am7"}',
+    '{"at":[6,1],"to":[6,1],"until":[6,1.25],"type":"chord","chord":"G"}',
+    '{"at":[7,1],"to":[7,2],"until":[7,2.5],"type":"chord","chord":"C","roman":"IV","no5":true,"layer":1,"pedal":true}',
+    '{"at":[8,1],"to":[8,2],"until":[8,2.5],"type":"chord","chord":"D"}',
+    '{"at":[9,1],"to":[9,4],"type":"chord","chord":"E"}',
+    '{"at":[10,1],"to":[10,4],"type":"chord","chord":"F"}',
+    '{"at":[11,1],"to":[11,2],"until":[11,2.5],"type":"section","label":"B"}'], "the bytes native writes for the same list");
+  // a meter change re-expresses every chord end by the one rule: the Am7 ending on a beat stays `to` alone, the G's 16th stays an exact `until`
+  run(`convertAnchors([4, 4], [6, 8]);`);
+  assert.deepEqual(val(`rollnotes.filter(n => n.text === "Am7" && n.b1 === 5).map(n => [n.q1, n.b2, n.q2, n.until ?? null])`), [[6, 5, 6, null]], "4.3.5–4.4 in 6/8: 5.6 through beat 6, no until");
+  assert.deepEqual(val(`rollnotes.filter(n => n.text === "G").map(n => [n.b1, n.q1, n.b2, n.q2, n.until ?? null])`), [[7, 5, 7, 5, [7, 5.5]]], "6.1 until 6.1.25 in 6/8: 7.5 until 7.5.5");
+  // two pedals on one span: the lower layer spells, whatever the list order (the chord rule, native ChordSpelling.tones)
+  run(`rollnotes = deriveNoteTypes([{b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: C ped.", pedal: true, layer: 1, added: true}, {b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: D ped.", pedal: true, added: true}]).map(resolveNote); finalizeNotes();`);
+  assert.equal(val(`chordBandAt(0).text`), "D ped.");
+  // an Ask edit that moves the start and names no end keeps the exact end; one that only says pedal/until keeps the symbol
+  run(`songKey = "albums/compositions/nightroll/until-edit.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); rollnotes = []; finalizeNotes();`);
+  try {
+    run(`askAddAnnotation({kind: "chord", text: "Am", bar: 4, beat: 1, until: [4, 3.5]});`);
+    run(`askEditAnnotation({id: 0, text: "Am", new_bar: 4, new_beat: 2});`);
+    assert.deepEqual(val(`rollnotes.map(n => [n.text, n.q1, n.until ?? null])`), [["Am", 2, [4, 3.5]]], "the start moved, the exact end stayed");
+    run(`askEditAnnotation({id: 0, pedal: true});`);
+    assert.deepEqual(val(`rollnotes.map(n => [n.text, n.pedal, n.until ?? null])`), [["A ped.", true, [4, 3.5]]], "pedal alone: the root + ped., the symbol otherwise kept, the end kept");
+    run(`askEditAnnotation({id: 0, until: "4.3"});`);
+    assert.deepEqual(val(`rollnotes.map(n => [n.text, n.q2, n.until ?? null])`), [["A ped.", 2, null]], "until alone: the symbol kept, a whole-beat end stored as to");
+    assert.throws(() => run(`askEditAnnotation({id: 0, text: "A ped.", until: "4.1.5", new_bar: 4, new_beat: 4})`), /until has to come after the start/, "a start past the exact end is refused");
+    run(`askAddAnnotation({kind: "section", text: "A", bar: 1, beat: 1, end_bar: 2, end_beat: 4});`);
+    assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "A", until: "2.3"})`), /until belongs on a chord annotation/);
+    assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "A", pedal: true})`), /pedal belongs on a chord annotation/);
+  } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey); localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`); }
+});

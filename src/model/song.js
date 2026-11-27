@@ -168,12 +168,12 @@ export function chordBandAt(tick) {
     if (!n.chord || n.section || !(tick >= n.start)) continue;
     const end = !n.b2 || n.end === null || n.end === undefined ? n.start + beatTicks() : n.end;
     if (tick >= end) continue;
-    if (n.pedal === true) {
-      if (!ped || n.start > ped.start || (n.start === ped.start && end < pedEnd)) { ped = n; pedEnd = end; }
-      continue;
+    // one pick rule for both groups (native ChordSpelling.tones): the lowest layer, then the innermost band — greatest start, then smallest end
+    const cur = n.pedal === true ? ped : best, curEnd = n.pedal === true ? pedEnd : bestEnd;
+    const layer = n.layer || 0, curLayer = cur ? cur.layer || 0 : 0;
+    if (!cur || layer < curLayer || (layer === curLayer && (n.start > cur.start || (n.start === cur.start && end < curEnd)))) {
+      if (n.pedal === true) { ped = n; pedEnd = end; } else { best = n; bestEnd = end; }
     }
-    const layer = n.layer || 0, bestLayer = best ? best.layer || 0 : 0;
-    if (!best || layer < bestLayer || (layer === bestLayer && (n.start > best.start || (n.start === best.start && end < bestEnd)))) { best = n; bestEnd = end; }
   }
   return best || ped;
 }

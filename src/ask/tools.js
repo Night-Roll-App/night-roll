@@ -536,7 +536,7 @@ export function askEditAnnotation(a) {
   const beat = a.new_beat !== undefined ? Math.max(1, +a.new_beat) : (n.q1 || 1);
   const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (n.b2 || null);
   const eq = eb !== null ? (a.new_end_beat !== undefined ? Math.max(1, +a.new_end_beat) : (eb === n.b2 ? (n.q2 || null) : null)) : null;
-  const text = String(a.text || "").trim() || (n.chord && (a.roman !== undefined || a.no5 !== undefined) ? n.text : ""); // "make that chord a bVII": the symbol stays
+  const text = String(a.text || "").trim() || (n.chord && (a.roman !== undefined || a.no5 !== undefined || a.pedal !== undefined || a.until !== undefined) ? n.text : ""); // "make that chord a bVII" / "make it a pedal" / "end it at 4.4.5": the symbol stays (native the same)
   if (!text) throw new Error("empty text");
   const comment = a.comment !== undefined ? String(a.comment).trim() : (n.cnote || "");
   const line = (kind === "note" ? text : kind + ": " + text) + (comment ? "\n" + comment : "");
@@ -549,9 +549,11 @@ export function askEditAnnotation(a) {
     Object.assign(fresh, askChordExtrasArgs(a, n)); askPedalize(fresh);
     const u = askUntilArg(a);
     if (u) askApplyUntil(fresh, u);
-    else if (n.until && a.new_end_bar === undefined && a.new_end_beat === undefined && bar === n.b1 && beat === (n.q1 || 1)) fresh.until = [n.until[0], n.until[1]]; // #1179: an unmoved band keeps its exact end
+    else if (n.until && a.new_end_bar === undefined && a.new_end_beat === undefined) askApplyUntil(fresh, {bar: n.until[0], beat: n.until[1]}); // #1179: no new end dictated = the exact end stays (native keeps the draft's end the same way); a start moved past it is the same error as a bad until
   }
+  else if (a.until) throw new Error("until belongs on a chord annotation");
   else if (a.roman || a.no5) throw new Error("roman and no5 belong on a chord annotation");
+  else if (a.pedal) throw new Error("pedal belongs on a chord annotation");
   const topic = askTopicArg(a, kind, n);
   if (topic) fresh.topic = topic;
   if (kind === "key") dropLocalKeyAt(bar, beat); // anchor-level: only a key at the (possibly new) exact beat is replaced

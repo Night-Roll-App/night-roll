@@ -1652,8 +1652,14 @@ band-edge drag, lasso paste and every move, Insert chord, Adopt, Ask's
 (chordBandAt and spelling, Check labels, the Bassist, lanes, loops/spans) is
 exact for free; `sameChordSpan` compares it; `noteToJSONBase` writes it after
 `to`; `ROLLNOTES_FIELDS` has it; the unsynced store and the rename seed
-carry it. Readouts: `posAnchorText` says "until bar 4 beat 4"; Ask's compact
-context writes `[4.3.5 until 4.4]`. No version bump.
+carry it. Readouts: `posAnchorText` says "until bar 4 beat 4.5"; Ask's compact
+context writes `[4.1 until 4.3.5]` (a whole-beat end reads `[4.3.5-4.3]` as
+before). No version bump. Parity (review, 2026-11-27): native's
+`Annotation.setEnd`/`endTick`/`sameSpan` (BandEnd.swift) are ports of
+`setEndUnits`/`resolveNote`/`sameChordSpan`; tests/fixtures/pedal-until.rollnotes.json
+is byte-identical to native's copy and both suites assert the same ends, rows
+and written bytes from it. An Ask edit that names no new end keeps the exact
+end (start moved or not); a band-edge drag may go down to a 16th on both.
 
 **Band labels clip to the band (Josh #1180, pinned 2026-11-27):** every ruler
 band (section, chord, pedal, the Analyze layer) draws its label inside a
