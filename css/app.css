@@ -788,11 +788,11 @@
     background: rgba(230, 103, 103, 0.16); border-radius: 4px; }
   #nfollow #nunsavedtxt { color: #f0a0a0; font-weight: 600; }
   /* Roman numeral picker folds away under its summary (Josh #268: "taking up tons of room") */
-  #nromanbox { margin: 4px 0; }
-  #nromanbox > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; list-style: none; }
-  #nromanbox > summary::-webkit-details-marker { display: none; }
-  #nromanbox > summary::before { content: "▸"; color: var(--dim); }
-  #nromanbox[open] > summary::before { content: "▾"; }
+  #nromanbox, #ntopicrow { margin: 4px 0; }
+  #nromanbox > summary, #ntopicrow > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; list-style: none; }
+  #nromanbox > summary::-webkit-details-marker, #ntopicrow > summary::-webkit-details-marker { display: none; }
+  #nromanbox > summary::before, #ntopicrow > summary::before { content: "▸"; color: var(--dim); }
+  #nromanbox[open] > summary::before, #ntopicrow[open] > summary::before { content: "▾"; }
   #nromanbox > summary #nromansum { color: var(--gold); font-weight: 600; }
   #nromanmod .gap, #nromandeg .gap, #nchordext .gap, #nchordqual .gap { flex: none; width: 10px; }
   #nchordalt button.dimmed { opacity: 0.4; } /* nothing to alter until a seventh, a 6 or a non-major base */

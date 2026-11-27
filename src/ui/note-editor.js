@@ -224,6 +224,8 @@ export function setEditorTopic(id) {
   row.dataset.v = id;
   row.textContent = "";
   const opts = !id || FILE_UNDER.some(f => f.id === id) ? FILE_UNDER : FILE_UNDER.concat([{id, label: id}]);
+  const sum = document.getElementById("ntopicsum"); // folded like Roman numeral (Josh #1163: the chip row took tons of space); the summary names the pick
+  if (sum) sum.textContent = id ? (opts.find(f => f.id === id) || {label: id}).label : "\u2014";
   for (const f of opts) {
     const b = document.createElement("button");
     b.type = "button"; b.dataset.v = f.id; b.textContent = f.label;
@@ -595,6 +597,7 @@ export function editorFill(note, presetType, opts) {
   document.getElementById("nsongtitle").value = type === "song" && note && note.songnote ? note.songnote.title : "";
   setEditorSongKind(note && note.songnote ? songNoteKind(note) : opts && opts.songKind || "general"); // opts.songKind: "+ question" opens a new one already marked
   setEditorTopic(note ? note.topic : opts && opts.topic); // opts.topic: the Analysis sheet's + pre-lights its prompt
+  { const tb = document.getElementById("ntopicrow"); if (tb) tb.open = false; } // every entry opens folded; the summary names a pick (#1163)
   if (type === "chord") setChordWidget(note ? note.text : "");
   if (type === "chord") setRomanWidget(note ? note.roman : "", note && note.no5);
   if (type === "key" && note) {
