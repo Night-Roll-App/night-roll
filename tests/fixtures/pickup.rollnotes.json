@@ -1,0 +1,9 @@
+{ "format": "night-roll-annotations", "version": 4, "song": "pickup", "notes": [
+  {"at":[1,1],"type":"pickup","pickup":1},
+  {"at":[0,4],"to":[0,4],"until":[0,4.5],"type":"chord","chord":"G"},
+  {"at":[0,4],"to":[0,4],"type":"chord","chord":"E7"},
+  {"at":[1,1],"to":[8,4],"type":"section","label":"A"},
+  {"at":[2,2.5],"text":"the bass enters"},
+  {"at":[9,1],"type":"loop","loop":"0.4"},
+  {"at":[3,1],"type":"future-thing","future-thing":"kept whole"}
+] }

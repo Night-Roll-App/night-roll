@@ -98,6 +98,7 @@ export const S = {
   multiSelSf: 0,
   keyRegions: [],
   declaredTs: null,
+  declaredPickup: null, // the song's `pickup: N` directive (beats before bar 1), set in finalizeNotes beside declaredTs; null = none (#1192)
   previewSf: null,
   RULER_W: null,
   RULER_H: null,

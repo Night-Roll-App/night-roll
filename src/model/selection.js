@@ -3,6 +3,8 @@ import { isComposition } from "./provenance.js";
 import { annoSnapshot } from "./edits.js";
 import { barTicks } from "./rollnotes.js";
 import { beatTicks } from "./grid.js";
+import { hasEnd } from "./grid.js";
+import { barBeatAt } from "./grid.js";
 import { setAnchorBQ } from "../hooks.js";
 import { setEndBQ } from "./rollnotes.js";
 import { snapBeat } from "./grid.js";
@@ -114,11 +116,11 @@ export function ridealongChordBands(pre, post) { // Phase 1 (open-items plan): a
         n.keydir !== undefined || n.keypartial || /^lane:/.test(n.text));
       if (!pinned && dT !== 0) {
         setAnchorBQ(n, n.start + dT);
-        if (n.b2) setEndBQ(n, n.end + dT);
+        if (hasEnd(n)) setEndBQ(n, n.end + dT);
       }
       if (n.loopTo !== undefined && dT !== 0) {
         n.loopTo = Math.max(0, n.loopTo + dT);
-        const lb = Math.floor(n.loopTo / bt) + 1, lq = snapBeat((n.loopTo % bt) / qt + 1);
+        const [lb, lqRaw] = barBeatAt(n.loopTo), lq = snapBeat(lqRaw); // the pickup frame: a loop back to the pickup reads `loop: 0.4` (#1192)
         n.text = "loop: " + lb + "." + lq;
       }
       if (dP !== 0 && n.chord && !n.section) n.text = transposeChordLabel(n.text, dP);
@@ -231,10 +233,10 @@ export function copySelection(annoSpan) { countUsage("edit.copy"); // returns no
   // went over them — the box reached into the ruler and spans them in time.
   // A tap-built selection, or a box that stayed among the notes, copies none.
   const L = S.lassoAnno && S.lassoAnno.t1 > t0 && S.lassoAnno.t0 < tEnd ? S.lassoAnno : null;
-  const inSpan = annoSpan ? n => isCopyableAnno(n) && n.start < annoSpan.t1 && (n.b2 ? n.end : n.start + 1) > annoSpan.t0 : null;
+  const inSpan = annoSpan ? n => isCopyableAnno(n) && n.start < annoSpan.t1 && (hasEnd(n) ? n.end : n.start + 1) > annoSpan.t0 : null;
   S.annoClipboard = !L && !inSpan ? [] : visibleNotes() // visibleNotes: a Learning-hidden ✦ AI band cannot be copied out either
     .filter(n => inSpan ? inSpan(n) : annoInLasso(n, L))
-    .map(n => ({dt: n.start - t0, len: n.b2 ? n.end - n.start : null, json: noteToJSON(n), src: n})); // b2 = a real end anchor; point notes get a synthetic end elsewhere
+    .map(n => ({dt: n.start - t0, len: hasEnd(n) ? n.end - n.start : null, json: noteToJSON(n), src: n})); // b2 = a real end anchor; point notes get a synthetic end elsewhere
   return S.noteClipboard.length + S.annoClipboard.length;
 }
 export function cutSelection() { countUsage("edit.cut"); // ✂: copy, then delete — notes and lasso'd annotations, one undo (deleteSelection does both)

@@ -142,7 +142,7 @@ export function factsDeclaredSf(doc, tick = 0) {
   let ranged = null, open = null;
   for (const n of doc.rollnotes) {
     if (typeof n.keydir !== "number" || n.start > tick) continue;
-    if (n.b2) { if (tick < n.end && (!ranged || n.start >= ranged.start)) ranged = n; }
+    if (n.b2 !== null && n.b2 !== undefined) { if (tick < n.end && (!ranged || n.start >= ranged.start)) ranged = n; }
     else if (!open || n.start >= open.start) open = n;
   }
   const cur = ranged || open;
@@ -154,7 +154,7 @@ export function factsDeclaredSf(doc, tick = 0) {
 // drawn `.end` from the lane layout too, and that is not a band.
 export function factsChordSpans(doc) {
   if (!doc.rollnotes) return [];
-  return doc.rollnotes.filter(n => n.chord && n.b2 && n.end !== null && n.end !== undefined && n.end > n.start)
+  return doc.rollnotes.filter(n => n.chord && n.b2 !== null && n.b2 !== undefined && n.end !== null && n.end !== undefined && n.end > n.start)
     .map(n => ({start: n.start, end: n.end})).sort((a, b) => a.start - b.start || a.end - b.end);
 }
 export function factsAbsSemis(a, b) { return Math.abs(a - b); }

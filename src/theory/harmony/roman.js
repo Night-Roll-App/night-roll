@@ -38,11 +38,11 @@ export function hmPitchName(p, sf) { return spellPc(((p % 12) + 12) % 12, sf) + 
 // a drawn span in .end (S.keyRegions in session/song.js reads b2 the same way).
 export function hmKeyRegionsFromNotes(notes) {
   return notes.filter(n => n.keydir !== undefined && n.keydir !== null && /^key:/i.test(n.text))
-    .map(n => ({start: n.start, end: n.b2 && n.end !== undefined ? n.end : null, sf: n.keydir, name: n.text.replace(/^key:\s*/i, "").trim()}))
+    .map(n => ({start: n.start, end: n.b2 !== null && n.b2 !== undefined && n.end !== undefined ? n.end : null, sf: n.keydir, name: n.text.replace(/^key:\s*/i, "").trim()}))
     .sort((a, b) => a.start - b.start);
 }
 export function hmBandsFromNotes(notes) {
-  return notes.filter(n => n.chord && n.b2 && n.end !== null && n.end !== undefined && n.end > n.start)
+  return notes.filter(n => n.chord && n.b2 !== null && n.b2 !== undefined && n.end !== null && n.end !== undefined && n.end > n.start)
     .map(n => ({start: n.start, end: n.end, text: n.text, note: n.cnote || n.note || undefined}))
     .sort((a, b) => a.start - b.start || a.end - b.end);
 }

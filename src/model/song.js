@@ -3,6 +3,8 @@ import { LINK_SONGS } from "../platform/base.js";
 import { canEditMusic } from "./provenance.js";
 import { trackIsDrums } from "./grid.js";
 import { beatTicks } from "./grid.js";
+import { pickupTicks } from "./grid.js";
+import { hasEnd } from "./grid.js";
 import { pearsonCorr } from "../theory/key.js";
 import { keyNameFor } from "../theory/key.js";
 import { SF_MAJOR } from "../theory/chords.js";
@@ -166,7 +168,7 @@ export function chordBandAt(tick) {
   let best = null, bestEnd = 0, ped = null, pedEnd = 0;
   for (const n of visibleNotes()) {
     if (!n.chord || n.section || !(tick >= n.start)) continue;
-    const end = !n.b2 || n.end === null || n.end === undefined ? n.start + beatTicks() : n.end;
+    const end = !hasEnd(n) || n.end === null || n.end === undefined ? n.start + beatTicks() : n.end;
     if (tick >= end) continue;
     // one pick rule for both groups (native ChordSpelling.tones): the lowest layer, then the innermost band — greatest start, then smallest end
     const cur = n.pedal === true ? ped : best, curEnd = n.pedal === true ? pedEnd : bestEnd;
@@ -209,8 +211,8 @@ export function computeSongEnd() { // re-run whenever the effective meter change
   S.song.tracks.forEach(tr => { // an audio piece can outlast every note (an audio-only song must not loop one bar)
     if (tr.kind === "audio") for (const c of tr.clips) if (c.dur) lastTick = Math.max(lastTick, clipEndTick(c));
   });
-  const bt = barTicks();
-  S.songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
+  const bt = barTicks(), T = pickupTicks(); // the song ends on a bar line of the pickup frame (#1192): T + whole bars
+  S.songEndTick = Math.max(T + bt, T + Math.ceil((lastTick - T) / bt - 0.05) * bt);
   // extend (never shrink) the default C1..C7 pitch range to whatever this
   // song actually uses — see PMIN/PMAX's own comment
   let lo = 24, hi = 96;
