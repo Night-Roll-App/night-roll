@@ -147,6 +147,11 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   or over it. — `encountered` earlier sessions; used deliberately.
   Anchor: Cool Bmaj — B5 through the chord sway, then the F♯6 a fifth
   up. FF: *(find one)*.
+- **Pedal point** — the pedal tone in the BASS: one bass note held (or
+  restruck) under changing chords; written "A ped." under a bass staff.
+  Night Roll's pedal chip (#1177) marks it as its own band under the
+  chord rows. — `encountered` 2026-11-27 (asked for the marking: "A
+  pedal" under Am / Am7). FF: *(find one)*.
 - **Tessitura** — where a line mostly SITS, as against its range (the
   extremes it touches): the comfortable middle. `tools/theory.mjs
   <song> melody` reports it as the duration-weighted middle half. —

@@ -914,7 +914,7 @@ export function drRefresh() {
   let followTxt;
   if (mode === "off") followTxt = "following: nothing";
   else if (mode === "chords") {
-    const n = visibleNotes().filter(x => x.chord && !x.section && !(x.layer > 0) && x.start >= r.t0 && x.start < r.t1).length; // visibleNotes: Learning hides ✦ AI estimates; layer 0 only: what the Drummer follows (#1159–#1162)
+    const n = visibleNotes().filter(x => x.chord && !x.section && !(x.layer > 0) && x.pedal !== true && x.start >= r.t0 && x.start < r.t1).length; // visibleNotes: Learning hides ✦ AI estimates; layer 0 only: what the Drummer follows (#1159–#1162)
     followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
   } else {
     const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();

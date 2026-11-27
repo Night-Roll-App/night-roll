@@ -119,11 +119,12 @@ export function bsInferTimeline(t0, t1, melodyTis, seedRng) { // INTERNAL sketch
   return out.filter(Boolean);
 }
 export function bsChordTimeline(t0, t1) {
-  // layer 0 only (#1159–#1162): a chord stacked over another is extra information the Bassist ignores — two entries at one tick would be an ambiguous pick
-  const bands = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.end > n.start && // visibleNotes: the Bassist never follows a Learning-hidden ✦ AI chord
+  // layer 0 only (#1159–#1162): a chord stacked over another is extra information the Bassist ignores — two entries at one tick would be an ambiguous pick;
+  // a pedal band (#1177) is passed by too — it names what HIS bass held, not a chord to walk
+  const bands = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.pedal !== true && n.end > n.start && // visibleNotes: the Bassist never follows a Learning-hidden ✦ AI chord
                                       n.start < t1 && n.end > t0)
     .sort((a, b) => a.start - b.start || (b.start - a.start));
-  const after = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.start >= t1)
+  const after = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.pedal !== true && n.start >= t1)
     .sort((a, b) => a.start - b.start)[0];
   const tl = [];
   for (const b of bands) {

@@ -159,17 +159,23 @@ export function keyNameAt(tick) { // recorded key name governing this tick, or n
 // native draws it — finalizeNotes stretches its `end` to a bar for OUR ruler,
 // so the range is read from `b2`, not `end`. visibleNotes so a Learning-hidden
 // ✦ AI chord never spells a note: annotations only, never an estimate, so
-// Learning mode may use it.
+// Learning mode may use it. A pedal band (#1177, `pedal: true`) names only
+// its root, so it is the pick ONLY when no chord covers the tick — the chord
+// above it spells the harmony, the pedal is the bass under it.
 export function chordBandAt(tick) {
-  let best = null, bestEnd = 0;
+  let best = null, bestEnd = 0, ped = null, pedEnd = 0;
   for (const n of visibleNotes()) {
     if (!n.chord || n.section || !(tick >= n.start)) continue;
     const end = !n.b2 || n.end === null || n.end === undefined ? n.start + beatTicks() : n.end;
     if (tick >= end) continue;
+    if (n.pedal === true) {
+      if (!ped || n.start > ped.start || (n.start === ped.start && end < pedEnd)) { ped = n; pedEnd = end; }
+      continue;
+    }
     const layer = n.layer || 0, bestLayer = best ? best.layer || 0 : 0;
     if (!best || layer < bestLayer || (layer === bestLayer && (n.start > best.start || (n.start === best.start && end < bestEnd)))) { best = n; bestEnd = end; }
   }
-  return best;
+  return best || ped;
 }
 // spellPc/pitchName with the chord band at `tick` consulted first: a pitch
 // class the label names is spelled by its degree there (C7#9 → D#), anything

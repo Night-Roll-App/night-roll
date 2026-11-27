@@ -70,6 +70,8 @@ import { ROMAN_DEGREES } from "../theory/chords.js";
 import { romanCompose } from "../theory/chords.js";
 import { romanParse } from "../theory/chords.js";
 import { romanPretty } from "../theory/chords.js";
+import { pedalLabel } from "../theory/chords.js";
+import { pedalRootOf } from "../theory/chords.js";
 import { nmic } from "./chrome.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { retireEdited } from "../model/edits.js";
@@ -328,8 +330,14 @@ export function applyEditorType() {
 }
 export const BASS_SPELLINGS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
                         "G", "G#", "Ab", "A", "A#", "Bb", "B"];
-export const chordSel = {root: null, acc: "", base: "maj", sev: "", tens: [], alts: [], add: false};
+// `pedal` (Josh #1177): the band is a bass pedal point — the label is only
+// "<root> ped." and every chip but root/accidental is dimmed and ignored
+export const chordSel = {root: null, acc: "", base: "maj", sev: "", tens: [], alts: [], add: false, pedal: false};
 export function refreshChordChips() {
+  const ped = document.getElementById("npedal");
+  ped.classList.toggle("active", chordSel.pedal);
+  ped.setAttribute("aria-pressed", chordSel.pedal ? "true" : "false");
+  document.getElementById("nchordbox").classList.toggle("pedaled", chordSel.pedal);
   for (const b of document.querySelectorAll("#nchordroot button"))
     b.classList.toggle("active", b.dataset.v === chordSel.root);
   for (const b of document.querySelectorAll("#nchordacc button"))
@@ -353,15 +361,29 @@ export function setChordSelFrom(m) { // parseChordSym match (or null) → chordS
   chordSel.tens = q ? q.tens : [];
   chordSel.alts = q ? q.alts : [];
   chordSel.add = !!(q && q.add);
+  chordSel.pedal = false;
+}
+export function setChordSelPedal(root) { // "A ped." typed or opened: root + accidental lit, the pedal chip on, every other chip stood down
+  chordSel.root = root[0]; chordSel.acc = root[1] || "";
+  chordSel.base = "maj"; chordSel.sev = ""; chordSel.tens = []; chordSel.alts = []; chordSel.add = false;
+  chordSel.pedal = true;
 }
 export function composeChord() {
   if (!chordSel.root || chordSel.base === null) return; // incomplete/unknown — leave the box alone
+  if (chordSel.pedal) { document.getElementById("nchordsym").value = pedalLabel(chordSel.root + chordSel.acc); return; } // a pedal names only its root (#1177)
   const bass = document.getElementById("nchordbass").value;
   document.getElementById("nchordsym").value = chordSel.root + chordSel.acc +
     chordPickCompose(chordSel.base, chordSel.sev, chordSel.tens, chordSel.alts, chordSel.add) + (bass ? "/" + bass : "");
 }
+export function setPedal(on) { // the pedal chip: on = "<root> ped."; off = back to a plain chord on that root
+  if (chordSel.pedal === !!on) return;
+  if (on) { if (chordSel.base === null) chordSel.base = "maj"; chordSel.pedal = true; }
+  else { chordSel.pedal = false; chordSel.sev = ""; chordSel.tens = []; chordSel.alts = []; chordSel.add = false; document.getElementById("nchordbass").value = ""; }
+  refreshChordChips(); composeChord();
+}
 export function chordTap(g, v) { // seventh: pick one · tensions: pick one under a seventh, stack as adds without · alterations: stack
   const c = chordSel;
+  if (c.pedal) return; // dimmed: a pedal has no quality to pick (#1177)
   if (c.base === null) { c.base = "maj"; c.sev = ""; c.tens = []; c.alts = []; c.add = false; }
   const named = () => (c.sev === "7" || c.sev === "maj7") && !c.add; // a tension that names the chord is pick-one
   if (g === "sev") {
@@ -383,9 +405,10 @@ export function chordTap(g, v) { // seventh: pick one · tensions: pick one unde
   if (!chordAltsAllowed(c.base, c.sev)) c.alts = [];
   refreshChordChips(); composeChord();
 }
-export function setChordWidget(sym) {
-  const m = parseChordSym(sym);
-  setChordSelFrom(m);
+export function setChordWidget(sym, pedal) { // pedal: the band's own flag (openEditor) — a pedal label lights the chip on its own too
+  const pr = pedalRootOf(sym);
+  const m = pr ? null : parseChordSym(sym);
+  if (pr || pedal) setChordSelPedal(pr || (m ? m[1] + m[2] : "C")); else setChordSelFrom(m);
   document.getElementById("nchordbass").value = m && m[4] ? m[4] : "";
   document.getElementById("nchordsym").value = sym || "";
   refreshChordChips();
@@ -601,7 +624,7 @@ export function editorFill(note, presetType, opts) {
   setEditorSongKind(note && note.songnote ? songNoteKind(note) : opts && opts.songKind || "general"); // opts.songKind: "+ question" opens a new one already marked
   setEditorTopic(note ? note.topic : opts && opts.topic); // opts.topic: the Analysis sheet's + pre-lights its prompt
   { const tb = document.getElementById("ntopicrow"); if (tb) tb.open = false; } // every entry opens folded; the summary names a pick (#1163)
-  if (type === "chord") setChordWidget(note ? note.text : "");
+  if (type === "chord") setChordWidget(note ? note.text : "", note && note.pedal === true);
   if (type === "chord") setRomanWidget(note ? note.roman : "", note && note.no5);
   if (type === "key" && note) {
     const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
@@ -1451,7 +1474,7 @@ export function initNoteEditor4() {
       refreshChordChips(); composeChord();
     });
     document.getElementById("nchordqual").addEventListener("click", e => {
-      if (!e.target.dataset.v) return;
+      if (!e.target.dataset.v || chordSel.pedal) return; // dimmed under a pedal (#1177)
       if (chordSel.base === null) { chordSel.sev = ""; chordSel.tens = []; chordSel.alts = []; }
       chordSel.base = e.target.dataset.v;
       if (!chordAltsAllowed(chordSel.base, chordSel.sev)) chordSel.alts = [];
@@ -1460,9 +1483,10 @@ export function initNoteEditor4() {
     bass.addEventListener("change", composeChord);
     const sym = document.getElementById("nchordsym");
     sym.addEventListener("input", () => { // follow hand-edits without rewriting them
-      const m = parseChordSym(sym.value);
-      setChordSelFrom(m);
-      if (!m) chordSel.base = null;
+      const pr = pedalRootOf(sym.value);
+      const m = pr ? null : parseChordSym(sym.value);
+      if (pr) setChordSelPedal(pr); else setChordSelFrom(m);
+      if (!m && !pr) chordSel.base = null;
       if (m) bass.value = m[4] || "";
       refreshChordChips();
     });
@@ -1493,6 +1517,7 @@ export function initNoteEditor4() {
     document.getElementById("nromanclear").addEventListener("click", () => { rbox.value = ""; setRomanSel(null); refreshRomanChips(); });
     document.getElementById("nno5").addEventListener("click", () =>
       setNo5(!document.getElementById("nno5").classList.contains("active")));
+    document.getElementById("npedal").addEventListener("click", () => setPedal(!chordSel.pedal));
   })();
 
     nmic.addEventListener("click", () =>
@@ -1620,10 +1645,12 @@ export function initNoteEditor4() {
       const sym = document.getElementById("nchordsym").value.trim();
       if (!sym) { document.getElementById("nstatus").textContent = "Chord symbol is empty — tap chips or type one."; return; }
       localStorage.setItem("ff1roll-dragtype", "chord");
+      const pedal = chordSel.pedal || !!pedalRootOf(sym); // the chip, or "A ped." typed (#1177): the field rides the entry; the numeral and no-5 rows were hidden, so they don't
       fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
                text: sym, chord: true, cnote: text || undefined, added: true,
-               roman: document.getElementById("nroman").value.trim() || undefined,
-               no5: document.getElementById("nno5").classList.contains("active") || undefined};
+               pedal: pedal || undefined,
+               roman: pedal ? undefined : document.getElementById("nroman").value.trim() || undefined,
+               no5: pedal ? undefined : document.getElementById("nno5").classList.contains("active") || undefined};
       // layer (#1159–#1162): an edit keeps the chord's own; ＋ Another chord here takes the one above the chords on this exact span; anything else has none
       if (S.editingNote && S.editingNote.layer > 0) fresh.layer = S.editingNote.layer;
       else if (!S.editingNote && S.edFollow.stack) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }

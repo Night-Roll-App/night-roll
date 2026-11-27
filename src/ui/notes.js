@@ -339,7 +339,7 @@ export function updateChordStale() { // Phase 2 (open-items plan): a chord band 
   if (!S.song || !isComposition()) return;
   for (const band of visibleNotes()) { // visibleNotes: no verdicts on a Learning-hidden ✦ AI band
     delete band.stale;
-    if (!band.chord || band.section || !(band.end > band.start)) continue;
+    if (!band.chord || band.section || band.pedal === true || !(band.end > band.start)) continue; // a pedal names a bass note, not a chord: nothing to check (#1177)
     const pitches = [];
     S.song.tracks.forEach((tr, ti) => {
       if (trackIsDrums(ti)) return;

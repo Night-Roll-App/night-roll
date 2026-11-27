@@ -1601,9 +1601,38 @@ honours the lock too (it was the one ungated annotation write). Ask's
 context lists a layered chord with ` [layer N]` (`askChordExtrasText`), the
 legend says what it means and that the reading is his, and the system
 prompt's "never overlap two chords" rule carries the one exception. Later
-(only if he needs it): a pedal mark, a polychord symbol, Roman rules for
+(only if he needs it): a polychord symbol, Roman rules for
 stacks, generators following a chosen layer, a visual mark on layered rows
 (plan §9).
+
+**Pedal point (2026-11-27, Josh #1177; native builds the same):** a chord
+entry with ONE more optional field, `"pedal": true` (absent = false), label
+`"<root> ped."` (`pedalLabel`/`pedalRootOf`, src/theory/chords.js; `isPedal`,
+src/model/rollnotes.js). No version bump: an older build ignores the field
+and draws a chord band. It rides `chordExtrasFrom` (JSON order chord, roman,
+no5, layer, pedal, note), `ROLLNOTES_FIELDS`, the unsynced store and the
+rename seed like `layer`. Rules: (1) **lane** — `finalizeNotes` splits the
+chord group in two: `chGroup` (non-pedal) and `pedGroup`; each gets its own
+`depthWithin` pass; a chord's lane = `secRows + depth`, a pedal's lane =
+`secRows + chordRows + depth`, so every pedal row sits under every chord
+row (nested and layered rows included) and overlapping pedals stack among
+themselves; `chRows = chordRows + pedRows` feeds RULER_H and the Analyze
+lanes as before. (2) **supersede** — `dropSupersededBy`'s chord rule is span
+AND layer AND pedal-ness, so a pedal never replaces a chord nor a chord a
+pedal; pedal-on-pedal on the exact span replaces. (3) **spelling** —
+`chordSpelling("A ped.")` maps only the root; `chordBandAt` picks the
+innermost/lowest-layer NON-pedal band and falls back to the innermost pedal
+only when no chord covers the tick. (4) `updateChordStale` (Check labels),
+`bsChordTimeline` (Bassist), the Drummer's `chordStarts` and the Drummer
+sheet's "N changes" skip `pedal === true`. (5) **Editor** — the `pedal` chip
+(`#npedal`, the /bass row): `chordSel.pedal`; on → label = root + " ped.",
+`#nchordbox.pedaled` dims quality/seventh/tension/alteration/bass and hides
+`#nno5`/`#nromanbox`; off → a plain chord on that root; `setChordWidget(sym,
+pedal)` lights it from the band's flag or a typed "A ped."; Save writes
+`pedal: true` and drops roman/no5. (6) **Ask** — `add_annotation {pedal:
+true}` / `edit_annotation {pedal}` via `askChordExtrasArgs` + `askPedalize`
+(root from the text, label normalized, roman/no5 dropped); context lines
+carry ` [pedal]` and the legend explains it.
 
 **Stored origin (P4):** `origin.kind`/`from`/`movedFrom` are now set where
 they're KNOWN, not derived from a note — `forkCurrentSong` (Save As/✎ Edit

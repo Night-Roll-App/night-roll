@@ -3243,6 +3243,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Text size", "Edit a copy",
     "Analyze ▸",
     "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
+    "Pedal point", // #1177: a chord band marked `pedal: true`, drawn under every chord row
     "Annotate this song", "comes back after a relaunch",
     "VoiceOver",
     "Chip stream (experimental)",
@@ -18240,8 +18241,8 @@ test("layered chords: Ask — add_annotation stack: true keeps the chord on that
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 1920, p: 60, v: 80}]}, {name: "bass", notes: []}]}; song.rawNotes = null; chopS = 0; finalizeNotes(); computeSongEnd();`);
   assert.deepEqual(val(`bsChordTimeline(4 * 1920, 5 * 1920).map(e => e.rootPc)`), [7, 4], "bar 5 for the Bassist is G alone (layer 0), never the stacked F#°7 or Bb — then its lookahead, Em at bar 7");
   assert.deepEqual(val(`visibleNotes().filter(x => x.chord && !x.section && !(x.layer > 0) && x.start >= 4 * 1920 && x.start < 8 * 1920).map(n => n.text)`), ["G", "Em"], "the Drummer's chord changes: two, not four");
-  assert.match(readFileSync(new URL("../src/gen/drummer.js", import.meta.url), "utf8"), /const chordStarts = new Set\(visibleNotes\(\)\.filter\(n => n\.chord && !n\.section && !\(n\.layer > 0\)\)/, "the Drummer's kick keys on layer-0 chord starts");
-  assert.match(readFileSync(new URL("../src/ui/sheets.js", import.meta.url), "utf8"), /x\.chord && !x\.section && !\(x\.layer > 0\) && x\.start >= r\.t0/, "the Drummer sheet's \"N changes\" counts layer 0 only");
+  assert.match(readFileSync(new URL("../src/gen/drummer.js", import.meta.url), "utf8"), /const chordStarts = new Set\(visibleNotes\(\)\.filter\(n => n\.chord && !n\.section && !\(n\.layer > 0\) && n\.pedal !== true\)/, "the Drummer's kick keys on layer-0, non-pedal chord starts");
+  assert.match(readFileSync(new URL("../src/ui/sheets.js", import.meta.url), "utf8"), /x\.chord && !x\.section && !\(x\.layer > 0\) && x\.pedal !== true && x\.start >= r\.t0/, "the Drummer sheet's \"N changes\" counts layer 0 only, no pedals");
   // delete by id removes only that layer
   run(`askDeleteAnnotation({id: ${idOf("G")}});`);
   assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 5).map(n => [n.text, n.layer, n.lane]).sort((x, y) => x[1] - y[1])`), [["F#°7", 1, 0], ["Bb", 2, 1]], "the base went; the layers keep their numbers and close up the rows");
@@ -18584,4 +18585,146 @@ test("Export score / tab: the sheet — File ▾ → Export score / tab… opens
     assert.equal(val(`globalThis.__calls.filter(c => c[0] === "Share").length`), 1);
     assert.match(helpSource(), /Export score \/ tab/, "the help sheet names the feature (FEATURES keyword)");
   } finally { run(`delete window.Capacitor; localStorage.removeItem("ff1roll-export"); localStorage.removeItem("ff1roll-score-paper"); exportSheet = null; song = null; songKey = null;`); }
+});
+
+// ---- pedal point (Josh #1177): a chord band with `pedal: true`, label "<root> ped.", drawn under every chord row
+test("pedal point #1177: the field rides the file (no version bump), the store and the extras; the label helpers", () => {
+  assert.deepEqual(val(`chordExtrasFrom({pedal: true})`), {pedal: true});
+  assert.deepEqual(val(`chordExtrasFrom({pedal: false})`), {}, "false is absence");
+  assert.deepEqual(val(`chordExtrasFrom({pedal: "yes"})`), {}, "only a boolean (or 1)");
+  assert.equal(val(`pedalLabel("F#")`), "F# ped.");
+  assert.equal(val(`pedalRootOf("A ped.")`), "A");
+  assert.equal(val(`pedalRootOf("F♯ ped")`), "F#", "♯ and a missing dot still read");
+  assert.equal(val(`pedalRootOf("Am7")`), null);
+  assert.equal(val(`pedalRootOf("A pedal")`), null);
+  const v2 = '{ "format": "night-roll-annotations", "version": 2, "song": "menu", "notes": [\n' + [{at: [1, 2], to: [2, 1], type: "chord", chord: "A ped.", pedal: true}, {at: [1, 1], to: [1, 4], type: "chord", chord: "Am"}].map(n => "  " + JSON.stringify(n)).join(",\n") + "\n] }\n";
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v2)}).readOnly`), false);
+  assert.equal(run(`serializeNotesList(parseRollnotesJSON(${JSON.stringify(v2)}), 4, "menu")`), v2, "a pedal writes version 2 with \"pedal\":true on that entry only — an older build just draws a chord band");
+  assert.equal(val(`rollnotesVersionFor([{chord: true, text: "A ped.", pedal: true}])`), 2, "no version bump");
+  assert.equal(val(`isPedal({chord: true, pedal: true})`), true);
+  assert.equal(val(`isPedal({chord: true})`), false);
+  assert.equal(val(`isPedal({pedal: true})`), false, "only a chord entry is a pedal");
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/pedal-store.mid"; rollnotes = deriveNoteTypes([{b1: 1, q1: 2, b2: 2, q2: 1, text: "chord: A ped.", pedal: true, added: true}]).map(resolveNote); finalizeNotes(); saveLocalNotes();`);
+  assert.deepEqual(JSON.parse(val(`localStorage.getItem(notesStoreKey())`)).map(n => n.pedal ?? null), [true], "the unsynced store carries it");
+  assert.deepEqual(val(`mergeLocalAdditions([], notesStoreKey().replace("ff1roll-notes-", "")).map(n => [n.text, n.pedal])`), [["A ped.", true]]);
+  run(`localStorage.removeItem(notesStoreKey()); rollnotes = []; songKey = null;`);
+});
+
+test("pedal point #1177: lanes — every pedal row sits under every chord row (nested and layered rows too); pedals stack among themselves; no pedal = today's rows", () => {
+  installSong();
+  const lanes = () => val(`rollnotes.filter(n => n.chord).map(n => [n.text, n.lane])`).sort((x, y) => x[1] - y[1] || x[0].localeCompare(y[0]));
+  const set = list => run(`rollnotes = deriveNoteTypes(${JSON.stringify(list.map(([b1, q1, b2, q2, text, extra]) => Object.assign({b1, q1, b2, q2, text: "chord: " + text, added: true}, extra || {})))}).map(resolveNote); finalizeNotes();`);
+  // Josh's case: Am bar 1, Am7 bar 2, A ped. from 1.2 through 2.1 — the pedal overlaps both yet draws under them
+  set([[1, 1, 1, 4, "Am"], [2, 1, 2, 4, "Am7"], [1, 2, 2, 1, "A ped.", {pedal: true}]]);
+  assert.deepEqual(lanes(), [["Am", 0], ["Am7", 0], ["A ped.", 1]], "the chords on row 0, the pedal under them");
+  assert.equal(val(`RULER_H`), val(`BASE_RULER_H + 2 * LANE_H + STRIP_H`));
+  // a pedal on a chord's exact span: still under it (same lane rule as a stacked chord would get, by a different route)
+  set([[5, 1, 5, 4, "C"], [5, 1, 5, 4, "C ped.", {pedal: true}]]);
+  assert.deepEqual(lanes(), [["C", 0], ["C ped.", 1]]);
+  // nested + layered chords take rows 0..2; the pedal still goes under all of them, even one covering a single beat
+  set([[5, 1, 6, 4, "C"], [5, 1, 5, 4, "F"], [5, 1, 5, 4, "F#dim", {layer: 1}], [6, 1, 6, 1, "G ped.", {pedal: true}]]);
+  assert.deepEqual(lanes(), [["C", 0], ["F", 1], ["F#dim", 2], ["G ped.", 3]]);
+  // two pedals overlapping stack among themselves, under the chords; a pedal inside a pedal nests
+  set([[1, 1, 1, 4, "Am"], [1, 1, 2, 4, "A ped.", {pedal: true}], [2, 1, 2, 4, "E ped.", {pedal: true}], [1, 2, 1, 3, "D ped.", {pedal: true}]]);
+  assert.deepEqual(lanes(), [["Am", 0], ["A ped.", 1], ["D ped.", 2], ["E ped.", 2]]);
+  // a pedal with no chord at all sits in row 0 (nothing above it)
+  set([[1, 1, 2, 4, "A ped.", {pedal: true}]]);
+  assert.deepEqual(lanes(), [["A ped.", 0]]);
+  assert.equal(val(`RULER_H`), val(`BASE_RULER_H + LANE_H + STRIP_H`));
+  run(`rollnotes = []; finalizeNotes(); songKey = null;`);
+});
+
+test("pedal point #1177: no supersede between a pedal and a chord on the same span; pedal-on-pedal replaces; spelling prefers the chord and uses the pedal's root only where no chord covers", () => {
+  installSong();
+  run(`rollnotes = deriveNoteTypes([{b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: Cm", added: true}]).map(resolveNote); finalizeNotes();`);
+  run(`dropSupersededBy({b1: 1, q1: 1, b2: 1, q2: 4, text: "C ped.", chord: true, pedal: true});`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["Cm"], "a pedal on the chord's exact span leaves the chord");
+  run(`rollnotes.push(resolveNote({b1: 1, q1: 1, b2: 1, q2: 4, text: "C ped.", chord: true, pedal: true, added: true})); finalizeNotes();`);
+  run(`dropSupersededBy({b1: 1, q1: 1, b2: 1, q2: 4, text: "Cmaj7", chord: true});`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["C ped."], "a chord on the pedal's exact span replaces the chord, never the pedal");
+  run(`rollnotes.push(resolveNote({b1: 1, q1: 1, b2: 1, q2: 4, text: "Cmaj7", chord: true, added: true})); finalizeNotes();`);
+  run(`dropSupersededBy({b1: 1, q1: 1, b2: 1, q2: 4, text: "D ped.", chord: true, pedal: true});`);
+  assert.deepEqual(val(`rollnotes.map(n => n.text)`), ["Cmaj7"], "pedal-on-pedal on the exact span replaces, as usual");
+  // spelling: pc 3 under Cm/C7#9 reads by the chord; under a lone pedal only the root is named
+  run(`rollnotes = parseRollnotes("[1.1 - 1.4]\\nchord: C7#9\\n\\n[1.1 - 2.4]\\nchord: Eb ped.\\n").map(resolveNote); rollnotes[1].pedal = true; finalizeNotes();`);
+  assert.equal(val(`chordBandAt(0).text`), "C7#9", "the chord, though the pedal is the innermost-by-start-and-later band");
+  assert.deepEqual(val(`spellInChord(3, "Eb ped.")`), {letter: "E", acc: "b"}, "a pedal label spells its root…");
+  assert.equal(val(`spellInChord(7, "Eb ped.")`), null, "…and nothing else");
+  assert.equal(val(`spellPcAt(3, 0, 0)`), "D#", "under C7#9 the pc-3 note is the ♯9, the pedal's E♭ waits");
+  assert.equal(val(`chordBandAt(1920).text`), "Eb ped.", "past the chord only the pedal covers the tick");
+  assert.equal(val(`spellPcAt(3, 1920, 0)`), "Eb", "…and spells its root");
+  assert.equal(val(`spellPcAt(8, 1920, 0)`), val(`spellPc(8, 0)`), "any other pitch keeps the key spelling");
+  // the pedal is spelled as the chord-less fallback even when it is the outer band
+  run(`rollnotes = parseRollnotes("[1.1 - 2.4]\\nchord: Cm\\n\\n[1.2 - 1.3]\\nchord: Eb ped.\\n").map(resolveNote); rollnotes[1].pedal = true; finalizeNotes();`);
+  assert.equal(val(`chordBandAt(480).text`), "Cm", "an inner pedal never outranks the chord over it");
+  // Check labels passes a pedal by; the Bassist's timeline ignores it
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 1920, p: 60, v: 80}]}]}; song.rawNotes = null; chopS = 0; computeSongEnd(); isComposition = () => true; rollnotes = parseRollnotes("[1.1 - 1.4]\\nchord: Eb ped.\\n").map(resolveNote); rollnotes[0].pedal = true; finalizeNotes(); updateChordStale();`);
+  assert.equal(val(`rollnotes[0].stale ?? null`), null, "a C under an Eb pedal is no mismatch — nothing was checked");
+  assert.deepEqual(val(`bsChordTimeline(0, 1920)`), [], "the Bassist has no chord to walk");
+  run(`rollnotes = []; finalizeNotes(); songKey = null;`);
+});
+
+test("pedal point #1177: the chord window's pedal chip writes \"A ped.\" + pedal: true (roman/no5 dropped); off = a plain chord on the root; opening a pedal band lights it; typing \"A ped.\" lights it too", () => {
+  const bt = dockSetup(); // G7 bars 9–10, C bars 11–12
+  try {
+    const cls = (id, c) => val(`document.getElementById(${JSON.stringify(id)}).classList.contains(${JSON.stringify(c)})`);
+    follow(0, bt); // bar 1: a fresh chord
+    run(`(() => { const r = document.getElementById("nchordroot"), b = r.children.find(b => b.dataset && b.dataset.v === "A"); r.dispatchEvent({type: "click", target: b}); })()`); // the stub DOM doesn't bubble
+    assert.equal(fld("nchordsym"), "A");
+    run(`chordTap("sev", "7"); document.getElementById("nroman").value = "V"; setNo5(true);`);
+    assert.equal(fld("nchordsym"), "A7");
+    run(`document.getElementById("npedal").dispatchEvent({type: "click"});`);
+    assert.equal(fld("nchordsym"), "A ped.", "pedal on: the label is the root + ped.");
+    assert.equal(cls("npedal", "active"), true);
+    assert.equal(cls("nchordbox", "pedaled"), true, "the quality/seventh/tension/alteration/bass chips dim, numeral + no 5 rows hide (CSS)");
+    run(`chordTap("sev", "maj7"); chordTap("ten", "9");`);
+    assert.equal(fld("nchordsym"), "A ped.", "the dimmed chips are ignored");
+    run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    const saved = val(`rollnotes.filter(n => n.chord && n.b1 === 1).map(n => [n.text, n.pedal, n.roman ?? null, n.no5 ?? null, n.b2, n.q2])`);
+    assert.deepEqual(saved, [["A ped.", true, null, null, 1, 4]], "the field rides the entry; the hidden numeral and no-5 marks don't");
+    // opening the band lights the chip; off = a plain chord on that root
+    run(`editorFollowBand(rollnotes.find(n => n.text === "A ped."));`);
+    assert.equal(cls("npedal", "active"), true, "a pedal band opens with the chip lit");
+    assert.equal(fld("nchordsym"), "A ped.");
+    run(`document.getElementById("npedal").dispatchEvent({type: "click"});`);
+    assert.equal(fld("nchordsym"), "A", "pedal off: back to a plain chord with that root");
+    assert.equal(cls("nchordbox", "pedaled"), false);
+    run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 1).map(n => [n.text, n.pedal ?? null])`), [["A", null]], "re-saved as a chord, the pedal gone (same span, the pedal is the one it edited)");
+    // typing the label lights the chip
+    run(`const sym = document.getElementById("nchordsym"); sym.value = "F# ped."; sym.dispatchEvent({type: "input"});`);
+    assert.equal(cls("npedal", "active"), true);
+    assert.equal(val(`chordSel.root + chordSel.acc`), "F#");
+    run(`document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 1).map(n => [n.text, n.pedal ?? null, n.lane])`), [["A", null, 0], ["F# ped.", true, 1]], "typed \"F# ped.\" saves as a pedal — and the window had gone back to a NEW entry after the Save, so the A chord on that span stands and the pedal goes under it");
+    // a chord and a pedal on one span: Save of the pedal keeps the chord
+    run(`rollnotes = deriveNoteTypes([{b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: Am", added: true}]).map(resolveNote); finalizeNotes(); editingNote = null;`);
+    follow(0, bt);
+    run(`setChordWidget("A ped."); document.getElementById("nsave").dispatchEvent(new Event("click"));`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 1).map(n => [n.text, n.lane])`), [["Am", 0], ["A ped.", 1]], "both stand, the pedal under the chord");
+    assert.match(helpSource(), /Pedal point/, "the help sheet names the feature (FEATURES keyword)");
+  } finally { dockTeardown(); }
+});
+
+test("pedal point #1177: Ask add_annotation {pedal: true} writes \"A ped.\" from a root (or a symbol), the context line says [pedal], edit keeps or clears it", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/pedal-ask.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); rollnotes = deriveNoteTypes([{b1: 1, q1: 1, b2: 1, q2: 4, text: "chord: Am", added: true}]).map(resolveNote); finalizeNotes();`);
+  try {
+    run(`askAddAnnotation({kind: "chord", text: "A", bar: 1, beat: 2, end_bar: 2, end_beat: 1, pedal: true});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord).map(n => [n.text, n.pedal ?? null, n.lane])`), [["Am", null, 0], ["A ped.", true, 1]], "the pedal under the chord, the chord untouched");
+    run(`askAddAnnotation({kind: "chord", text: "Am7", bar: 1, beat: 1, end_bar: 1, end_beat: 4, pedal: "yes", roman: "i"});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.b1 === 1 && n.q1 === 1).map(n => [n.text, n.pedal ?? null, n.roman ?? null])`).sort(), [["A ped.", true, null], ["Am", null, null]], "a symbol with pedal: true keeps only its root; the numeral has nothing to sit on; the Am on the exact span stands");
+    assert.throws(() => run(`askAddAnnotation({kind: "chord", text: "N.C.", bar: 3, beat: 1, pedal: true})`), /a pedal needs a root note/);
+    assert.throws(() => run(`askAddAnnotation({kind: "note", text: "hi", bar: 3, beat: 1, pedal: true})`), /pedal belongs on a chord annotation/);
+    const lines = run(`askAnnotationsTextCompact()`).split("\n");
+    assert.ok(lines.some(l => /chord: A ped\. \[pedal\]$/.test(l)), "the context carries [pedal]: " + lines.join(" | "));
+    assert.ok(lines.some(l => /chord: Am$/.test(l)));
+    const idOf = text => val(`dedupedNotesWithIndex(rollnotes).find(({n}) => n.text === ${JSON.stringify(text)} && n.b1 === 1 && n.q1 === 2).i`);
+    run(`askEditAnnotation({id: ${idOf("A ped.")}, text: "E"});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.q1 === 2).map(n => [n.text, n.pedal])`), [["E ped.", true]], "an edit keeps the band a pedal unless told otherwise");
+    run(`askEditAnnotation({id: ${idOf("E ped.")}, text: "E7", pedal: false});`);
+    assert.deepEqual(val(`rollnotes.filter(n => n.chord && n.q1 === 2).map(n => [n.text, n.pedal ?? null])`), [["E7", null]], "pedal: false turns it back into a chord");
+    assert.match(run(`JSON.stringify(ASK_ACTIONS.find(x => x.name === "add_annotation").spec)`), /pedal: true \(chord only\)/, "the act registry's spec says so");
+  } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey); localStorage.removeItem(notesStoreKey()); rollnotes = []; finalizeNotes(); songKey = null;`); }
 });

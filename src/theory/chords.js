@@ -215,6 +215,16 @@ export function chordPickCompose(base, sev, tens, alts, add) { // base · sevent
 export function parseChordSym(sym) {
   return (sym || "").trim().match(/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?(?:\s+\((.*)\))?$/);
 }
+// A bass pedal point written as a chord band (Josh #1177): the label is
+// "<root> ped." — "A ped.", "F# ped." — and the entry carries `pedal: true`
+// (model/rollnotes.js chordExtrasFrom). The label names only its root: no
+// quality, seventh, tension, alteration or slash bass. Same strings as native.
+export const PEDAL_SUFFIX = " ped.";
+export function pedalLabel(root) { return root + PEDAL_SUFFIX; }
+export function pedalRootOf(label) { // "A ped." → "A", "F♯ ped." → "F#"; anything else → null
+  const m = (label || "").trim().match(/^([A-G])([#b♯♭]?)\s+ped\.?$/i);
+  return m ? m[1].toUpperCase() + (m[2] === "♯" ? "#" : m[2] === "♭" ? "b" : m[2]) : null;
+}
 
 // Spelling by chord degree (Josh #1171): under HIS chord band a note is the
 // degree the label names — C7#9's pc 3 is the ♯9, so D♯, where the key table
@@ -256,6 +266,8 @@ function chordVocabNormalize(q) {
           .replace(/(?<![\dsd#b])2(?!\d)/g, "add9").replace(/(?<![\dsd#b])4(?!\d)/g, "add11");
 }
 function chordSpellingRaw(label) {
+  const pr = pedalRootOf(label); // a pedal names only its root (#1177)
+  if (pr) return {[((LETTER_PC[pr[0]] + (pr[1] === "#" ? 1 : pr[1] === "b" ? -1 : 0)) % 12 + 12) % 12]: {letter: pr[0], acc: pr[1] || ""}};
   const m = parseChordSym(chordLabelAscii(label));
   if (!m) return null;
   const q = chordQualParse(chordVocabNormalize(m[3] || ""));

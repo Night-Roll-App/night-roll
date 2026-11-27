@@ -148,7 +148,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "drums", "topic"]);
+  "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "pedal", "drums", "topic"]);
 // "File under" chips (docs/plans/2026-10-05-analysis-sheet.md §3b): the
 // Analysis-sheet prompts a bar note can be listed under — the located ones
 // (form, harmony, melody; the song-level prompts take an answer instead).
@@ -169,14 +169,23 @@ export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "t
 // span — "chords within chords". Absent = layer 0 = every chord before it.
 // The number is an identity, never a position: deleting a layer renumbers
 // nothing, and the ruler row comes from the layers present (finalizeNotes).
+// `pedal` (Josh #1177): true on a chord band that marks a bass pedal point —
+// label "<root> ped." (theory/chords.js pedalLabel). Absent = an ordinary
+// chord. No version bump: an older build ignores the field and draws a chord
+// band; here it draws on its own row(s) UNDER every chord row (finalizeNotes),
+// never supersedes a chord nor is superseded by one (dropSupersededBy), spells
+// only its root and yields to any chord covering the note (chordBandAt), and
+// the Bassist, the Drummer and Check labels pass it by.
 export function chordExtrasFrom(o) {
   const x = {};
   const r = typeof o.roman === "string" ? o.roman.trim() : "";
   if (r) x.roman = r;
   if (o.no5 === true || o.no5 === 1) x.no5 = true;
   if (Number.isInteger(o.layer) && o.layer >= 1) x.layer = o.layer;
+  if (o.pedal === true || o.pedal === 1) x.pedal = true;
   return x;
 }
+export function isPedal(n) { return !!(n && n.chord && n.pedal === true); }
 export function chordLayer(n) { return n.layer > 0 ? n.layer : 0; }
 // the layer "Another chord here" / Ask's stack:true gives a chord written
 // over `fresh`'s exact span: one above the highest already there; undefined
@@ -638,8 +647,10 @@ export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote
 export function dropSupersededBy(fresh) {
   const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
   // chords: the identical span AND the same layer — a chord he stacked over
-  // another (layer ≥ 1) stands beside it, never in its place (#1159–#1162)
-  const sameSpan = n => sameChordSpan(n, fresh) && chordLayer(n) === chordLayer(fresh);
+  // another (layer ≥ 1) stands beside it, never in its place (#1159–#1162);
+  // a pedal and a chord never replace each other either (#1177) — only a
+  // pedal replaces a pedal on the exact span
+  const sameSpan = n => sameChordSpan(n, fresh) && chordLayer(n) === chordLayer(fresh) && isPedal(n) === isPedal(fresh);
   if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
   if (fresh.songnote) { for (const n of S.rollnotes.filter(x => x.songnote && songNoteKey(x.songnote.title) === songNoteKey(fresh.songnote.title))) retireEdited(n); return; } // one per title; putSongNote refuses a clash before it gets here
   if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));

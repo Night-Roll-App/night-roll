@@ -20,6 +20,7 @@ import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
 import { chordLayer } from "../model/rollnotes.js";
+import { isPedal } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { bakeTempos } from "../model/rollnotes.js";
 import { applyAudioDirs } from "../audio/clips.js";
@@ -252,9 +253,15 @@ export function finalizeNotesImpl() {
     return max + 1; // row count (0 when the group is empty)
   };
   const secGroup = secs.filter(n => n.section);
-  const chGroup = secs.filter(n => n.chord && !n.section);
+  const chGroup = secs.filter(n => n.chord && !n.section && !isPedal(n));
+  // pedal points (#1177) are their own group UNDER every chord row — like
+  // the "A ped." line under a bass staff — stacking among themselves by the
+  // same containment/layer rule; an empty group adds no row
+  const pedGroup = secs.filter(n => isPedal(n));
   const secDeep = depthWithin(secGroup);
-  const chRows = depthWithin(chGroup);
+  const chordRows = depthWithin(chGroup);
+  const pedRows = depthWithin(pedGroup);
+  const chRows = chordRows + pedRows;
   // collapse: levels deeper than the device's cap fold away from the RULER
   // only — the drummer and every tool still read all of them (a drum-keying
   // sub-label is scaffolding you shouldn't have to look at; Josh, 2026-08-22)
@@ -263,6 +270,7 @@ export function finalizeNotesImpl() {
   S.secMaxDepth = secDeep; // for the chevron's cycle
   for (const s of secGroup) s.lane = s.depth <= cap ? s.depth : null; // null = folded
   for (const c of chGroup) c.lane = S.listenerMode ? null : secRows + c.depth;
+  for (const p of pedGroup) p.lane = S.listenerMode ? null : secRows + chordRows + p.depth;
   for (const s of secs)
     if (!(s.text in S.sectionColors)) S.sectionColors[s.text] = TRACK_COLORS[ci++ % TRACK_COLORS.length];
   // P6: the Analyze layer's own rows, appended BELOW every section/chord
