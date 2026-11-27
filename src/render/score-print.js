@@ -67,8 +67,9 @@ export function scorePageLayout(model, ppq, paper) {
 // One <svg> per page, as markup. VexFlow's SVG backend engraves into a host
 // div parked off-screen (attached: a display:none or detached host makes
 // getBBox() report zeros for any text it measures). Black ink; each page's
-// first system labels its staves with the track names.
-export function engraveScorePages(layout) {
+// first system labels its staves with the track names. `model` defaults to
+// the view's; Export score / tab passes its part-filtered one.
+export function engraveScorePages(layout, model = S.scoreModel) {
   const host = document.createElement("div");
   host.style.cssText = "position:fixed;left:-20000px;top:0;width:1px;height:1px;overflow:hidden";
   if (document.body) document.body.appendChild(host);
@@ -86,12 +87,12 @@ export function engraveScorePages(layout) {
         for (let mi = sys.from; mi < sys.to; mi++) {
           const first = mi === sys.from;
           const mw = first ? layout.measureW + SCORE_INTRO_W : layout.measureW;
-          engraveMeasure(ctx2, mi, x, y0, mw, {ink: "#000", intro: first ? {time: mi === 0} : null});
+          engraveMeasure(ctx2, mi, x, y0, mw, {ink: "#000", intro: first ? {time: mi === 0} : null, model});
           x += mw;
         }
         if (k === 0) {
           ctx2.setFont("Helvetica, Arial, sans-serif", 9, "");
-          S.scoreModel.staves.forEach((st, si) => {
+          model.staves.forEach((st, si) => {
             const tr = S.song.tracks[st.ti];
             // baseline 12 px into the stave's 40 px headroom: above the treble clef's reach
             ctx2.fillText((tr && tr.name) || "Track " + (st.ti + 1), 2, y0 + SCORE_TOP + si * STAVE_H + 12);

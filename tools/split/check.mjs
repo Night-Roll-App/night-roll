@@ -37,7 +37,7 @@ export const LAYERS = [
   // live under ui/.
   ["state.js", "edition.js", "ui/icons.js", "ui/controls.js", "ui/piano.js", "midi", "theory", "hooks.js"],
   ["platform"],
-  ["model", "gen"],
+  ["model", "gen", "export"], // export/: the pure MusicXML + tab writers (docs/plans/2026-11-27-score-tab-export.md) — may import theory, platform, model
   ["audio", "render"],
   ["input", "ui", "ask", "import", "sync", "session"],
   ["main.js", "devtools.js", "wire.js"],

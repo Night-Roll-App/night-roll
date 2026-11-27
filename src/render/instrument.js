@@ -18,16 +18,19 @@ import { secToTick } from "../midi/parse.js";
 import { trackShown } from "./roll.js";
 import { drawLasso } from "./roll.js";
 import { PIANO_LO, PIANO_HI, pianoIsWhite, pianoGeom, pianoHitAt, pianoClampScroll, pianoScrollTo, pianoScrollCentering, pianoRangeLabel, pianoOffscreen } from "../ui/piano.js";
+import { TAB_TUNING, TAB_STRING_NAMES, TAB_FRETS, tabFold } from "../export/tab.js";
 
 // {p, si, f, until} tap flash (si/f only for guitar)
 export const instWrap = document.getElementById("instwrap");
 export const instCanvas = document.getElementById("instcanvas");
 export const ictx = instCanvas.getContext("2d");
 export const WHITE_PCS = [0, 2, 4, 5, 7, 9, 11];
-export const GTR_TUNING = [64, 59, 55, 50, 45, 40];
+// the fretboard's numbers are export/tab.js's (the tab writers share them;
+// render is layer 3, export layer 2 — the import runs this way only)
+export const GTR_TUNING = TAB_TUNING;
 // high e on top — tab convention
-export const GTR_NAMES = ["e", "B", "G", "D", "A", "E"];
-export const GTR_FRETS = 24;
+export const GTR_NAMES = TAB_STRING_NAMES;
+export const GTR_FRETS = TAB_FRETS;
 export const DEGREE_LABEL = ["1", "♭2", "2", "♭3", "3", "4", "♭5", "5", "♭6", "6", "♭7", "7"];
 export function degreeOf(pc, keyName) { // degree label vs the key's tonic (major-scale convention: ♭3 in minor)
   if (!keyName) return null;
@@ -347,13 +350,7 @@ export function drawGuitar(W, H, lit) {
   }
 }
 drawGuitar = prof("drawGuitar", drawGuitar); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-export function gtrFold(p) { // octave-fold a pitch into the fretboard's range; shift = octaves moved
-  const lo = GTR_TUNING[GTR_TUNING.length - 1], hi = GTR_TUNING[0] + GTR_FRETS;
-  let shift = 0;
-  while (p > hi) { p -= 12; shift--; }
-  while (p < lo) { p += 12; shift++; }
-  return {p, shift};
-}
+export function gtrFold(p) { return tabFold(p, GTR_TUNING, GTR_FRETS); } // octave-fold a pitch into the fretboard's range; shift = octaves moved
 export const FALL_WINDOW = 4.5; // seconds of upcoming music filling the drop
 export function drawFall(W, H) {
   const nowSec = S.playing ? playSec() : tickToSec(S.song, S.playCursor);

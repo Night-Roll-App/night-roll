@@ -74,6 +74,15 @@ export function buildScoreModelImpl() {
   S.scoreCache.clear();
   S.scoreIntro = null;
   if (!VF || !S.song) return;
+  S.scoreModel = buildScoreModelFor(null);
+}
+// The model over a track set, pure over S.song — no VexFlow anywhere in the
+// body, so Export score / tab (session/export-score.js) builds it in the vm
+// harness and for any part filter without touching S.scoreModel (the view's
+// own, always the shown set). trackSet: a Set of track indices, or null =
+// the tracks the score view shows (trackShown: H flag, hide-drums).
+export function buildScoreModelFor(trackSet) {
+  const inSet = ti => trackSet ? trackSet.has(ti) : trackShown(ti);
   const bt = barTicks();
   const grid = S.song.ppq / 4; // 16th grid
   let lastTick = 0;
@@ -82,7 +91,7 @@ export function buildScoreModelImpl() {
   const sf0 = sfAt(0);
   const staves = [];
   S.song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti) || !trackShown(ti) || tr.kind === "audio") return; // no staff for a clip
+    if (trackIsDrums(ti) || !inSet(ti) || tr.kind === "audio") return; // no staff for a clip
     // compositions keep empty tracks visible — the stave must exist before
     // its first note can be entered on it
     if (!tr.notes.length && !isComposition()) return;
@@ -152,7 +161,7 @@ export function buildScoreModelImpl() {
   // the kit staff — ALWAYS at the bottom (Josh's ruling), percussion clef,
   // hands and feet as separate voices so stems read up/down at a glance
   S.song.tracks.forEach((tr, ti) => {
-    if (!trackIsDrums(ti) || !trackShown(ti)) return;
+    if (!trackIsDrums(ti) || !inSet(ti)) return;
     if (!tr.notes.length) return;
     const streams = {hands: new Map(), feet: new Map()};
     for (let ni = 0; ni < tr.notes.length; ni++) {
@@ -211,7 +220,7 @@ export function buildScoreModelImpl() {
   }
   const quartersPerBar = bt / S.song.ppq;
   const pxqMin = Math.min(140, Math.max(24, Math.ceil((maxEv * 24 + 72) / quartersPerBar)));
-  S.scoreModel = {nMeasures, bt, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
+  return {nMeasures, bt, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
 }
 buildScoreModelImpl = prof("buildScoreModel", buildScoreModelImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
@@ -247,10 +256,12 @@ export function renderMeasure(mi) {
 // black on white) instead of the view's stave grey + track colours;
 // opts.intro adds the clef/key column the view keeps in renderIntro (plus the
 // declared time signature when intro.time) — a printed system's first bar
-// carries its own. Returns notehead geometry (context coordinates) and the
-// tick→x anchors the playhead glides between.
+// carries its own; opts.model engraves a model other than the view's (Export
+// score / tab's part filter — same song, so key, meter and spelling are the
+// view's). Returns notehead geometry (context coordinates) and the tick→x
+// anchors the playhead glides between.
 export function engraveMeasure(ctx2, mi, x0, y0, mw, opts = {}) {
-  const m = S.scoreModel;
+  const m = opts.model || S.scoreModel;
   const geo = [], timeMap = [];
   let noteStartXc = x0;
   const sfM = sfAt(mi * m.bt);

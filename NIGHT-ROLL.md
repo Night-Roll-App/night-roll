@@ -1856,6 +1856,9 @@ sections are these modules now.
 - `render/score.js` — `buildScoreModel`/`drawScore` plus their own supporting cast, step 11 (2026-10-04): `VF` + the stave-geometry constants, the drum-chart role table (`DRUM_SCORE`/`drumScoreRole`), `vexKey`, `durationPieces`, `buildScoreModel`, `scoreContentH`, `renderMeasure`, `renderIntro`, `scoreTickToX`/`scoreXToTick` (the engraved-notehead ↔ tick map every playhead/band x-coordinate in score view asks), `drawScore`, `scoreMeasureAnchors`, `drawScorePencilGuides`. **Note entry/erase/tap — `scorePencil`/`scoreErase`/`scoreTap`/`scoreStaveAt`/`scorePencilTick` — did NOT move**: each reaches `saveEdits`/`draw`/`renderTrackbar`/`setInfo`, none yet split (model/edits.js's SAFETY block, step 5; render's own hub, above; ui, step 14).
 - `render/instrument.js` — piano, fretboard, fall, step 11 (2026-10-04): `instWrap`/`instCanvas`/`ictx`, the geometry constants (`WHITE_PCS`/`GTR_TUNING`/`GTR_NAMES`/`GTR_FRETS`/`DEGREE_LABEL`), `degreeOf`, `instRange`, `instLitPitches`, `drawInst`, `pianoGeom`, `instLitColor`, `drawPiano`, `guitarGeom`, `drawGuitar`, `gtrFold`, `FALL_WINDOW`, `drawFall`, `instResize`. **Hit-test/recording — `pianoHit`/`guitarHit`/`instTap`/`instPlay`/`recNoteOn`/`recNoteOff`/`recFinish`/the Web MIDI glue — did NOT move**, input/record territory, step 12; all import `pianoGeom`/`guitarGeom`/`gtrFold` back down. `keyNameShownAt` (app.js, `sfShownAt`'s still-unmoved sibling since step 4) was checked and left alone — no render function needs it (`drawPiano`/`drawGuitar` call `keyNameAt`/`sfDeclaredAt` directly), only `instTap` does.
 - `render/cof.js` — circle-of-fifths drawing, step 11 (2026-10-04): `cofCanvas`/`cofCtx`, `cofMinor`/`cofDim`/`cofSigLabel`/`cofMajorName`, `wrapSf`, `drawCof`. The wheel's own drag interaction (`cofAngle`/`cofRelease`, the pointerdown/move/up wiring) stays in app.js — gesture territory, step 12. **Step 12 (2026-10-04) confirms the call is right but not for the reason expected: `cofRelease` itself is blocker-free (only `wrapSf`/`drawCof`, this file, plus `S`), but its four top-level `cofCanvas.addEventListener(...)` listeners need §2.2's `init<Module><N>()` wrapping to move, and `verbatim.mjs` has no tolerance for that mechanism's own structural lines — a real tooling gap, not a logic one; see docs/split-plan.md "Deviations (12)" and open-items.md.**
+- `export/musicxml.js` — Export score / tab (2026-11-27, layer 2 "export"): `MXL_DIVISIONS` (8), `MXL_TYPE_DIV`/`MXL_TYPE_NAME`, `xmlEsc`, `mxlPieceDivisions`, `mxlRestPieces` (bar-tail padding), `mxlPitch` (step/alter/octave from the view's spelling), `mxlDrumKey`, `musicXmlDocument` (the whole MusicXML 4.0 partwise file: parts, attributes, TAB staff, kit voices, tempo directions). Pure; imports only `export/tab.js`. See "Export score / tab".
+- `export/tab.js` — Export score / tab (2026-11-27, layer 2): `TAB_TUNING`/`TAB_STRING_NAMES`/`TAB_FRETS`/`TAB_WINDOW`, `tabFold`, `tabCandidates`, `tabAssign` (the window rule + chord DFS), `tabBarsPerSystem`, `asciiTab` (the .txt). Imports nothing; `render/instrument.js`'s `GTR_*`/`gtrFold` come from here.
+- `session/export-score.js` — Export score / tab (2026-11-27, layer 4): `EXPORT_PREFS_KEY`/`EXPORT_FORMATS`/`EXPORT_MIME`, `exportPrefs`/`exportPrefsSave` (device prefs), `exportPartsOf`/`exportTabTracksOf`/`exportSafeName`/`exportFileBase`/`exportTrackName`, `buildExportFiles(req, {engrave})` (model per group → pages / MusicXML / tab / MIDI files), `runScoreExport` (build → `deliverFiles` → status line), `exportReqFromWords` (the Ask action's parser), the sheet (`exportSheetOpen`/`Close`/`Render`/`Read`, `initExport1`). Imports the layer-4 impls (`setInfoImpl`, `logErrImpl`, `songTitleOfImpl`) per rule 10.
 - `render/score-print.js` — Export score (DAW F6, 2026-10-04): `PAPER`/`PRINT_*` (page geometry in CSS px), `paginateScore` + `scorePageLayout` (pure: measures → whole-measure systems → pages), `engraveScorePages` (VexFlow's SVG backend into an off-screen host, one `<svg>` per page, black ink, track-name staff labels — through `render/score.js`'s `engraveMeasure`, the view's own engraver), `scoreHtmlDocument` (the self-contained page with its `@page` rule), `scoreAlbumLine`, `exportScore` (the flow: model → layout → pages → document → `audio/bounce.js`'s `deliverAudioFile`). Imports `buildScoreModelImpl` directly (same layer — rule 10). See "Export score — printable pages".
 - `render/compare.js` — Compare with repo's pure outline-drawing + diff math, step 11 (2026-10-04): `cmpTrackKey`, `cmpDiff`, `drawCompare`. **`cmpEnter`/`cmpExit`/`cmpShow`/`cmpBar` did NOT move** — each reaches `setInfo`/`readData`/`draw()` (the last one `render/roll.js`'s own permanent blocker, above).
 - `input/gestures.js` — pointer gesture math, step 12 (2026-10-04): `evtPos`, `posToTickPitch`, `cursorHandleHit`, `cursorHit`, `tickAtX`, `rulerSnapX`, `armNoteEdit` (pure coordinate/hit-test helpers). **The canvas pointer/pinch/hold-to-grab/lasso state machine (`pointerdown`/`pointermove`/`pointerup` on `canvas`, `endPointer`, `tap`, `finalizeLasso`, `toggleSel`, `scoreLassoTap`, `scrubTo`, `seekOrMoveCursor`, `placePencilNote`, `clearMultiSel`) did NOT move** — every one of them calls `setInfo()` and/or `draw()`/`drawFull()` directly or through still-bare app.js names (`refreshSelInfo`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/`hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/`setEndBQ`/`updateSubtitle`) — `ui/*` is step 14, `draw` is render's own permanent block (step 11). Every `document.addEventListener("keydown", …)` block in this region (arrow/⌘ editing shortcuts, Space = play/stop, Escape-closes-topmost-overlay) stayed for the same `setInfo`/`draw`/`stop`/`ui/wm.js` reasons. The circle-of-fifths wheel's drag interaction (`cofAngle`/`cofRelease`, `render/cof.js`'s own entry above) is genuinely blocker-free too but stayed — not a logic block, a `verbatim.mjs` tooling gap against the `init<Module><N>()` wrapping its top-level listeners would need; see docs/split-plan.md "Deviations (12)".
@@ -9308,9 +9311,99 @@ loads no `@capacitor/core`, so there's no `registerPlugin`, and
 `@capacitor/share` has no JS shim here, so Share always goes through
 `nativePromise`). In a browser: `<a download>`, same as Download .mid.
 
+## Export score / tab — parts, MusicXML, tab (phase 1, 2026-11-27)
+
+Plan + review: docs/plans/2026-11-27-score-tab-export.md (Josh #1154).
+File ▾ → **Export score / tab…** (same `#filedlscore`, Q1's wording) opens
+`#exportsheet`, an `.overlay` like `#stemssheet`, wired by
+`session/export-score.js`'s `initExport1`: a title line; **Formats**
+(Pages, MusicXML, Tab on; MIDI off — Q8); **Parts** (`As shown` /
+`All` / `Each part its own file`, then a `.chip` per note track in its
+colour, built as elements with their own click, ticked = `.selected`,
+un-ticked `.off`; drums say "· kit"); **Tab for** (chips of the ticked
+melodic tracks); **Paper**; **Export**. Formats + split live in the
+`ff1roll-export` device pref, paper in Export score's `ff1roll-score-paper`;
+parts/tab-for are per song on `S.exportSheet` and reset to "as shown" at
+open. The usual run is two taps.
+
+**The request** `{parts: "shown"|"all"|[ti…], split: "together"|"per_part",
+formats: {pages, musicxml, tab, midi}, tab_for: "melodic"|[ti…], paper}` →
+`buildExportFiles(req, {engrave})` → `[{name, mime, data}]` →
+`deliverFiles` (audio/bounce.js: ONE `Share.share({files:[…]})` on the
+iPad, sequential `a.download`s in a browser) → the status line "exported N
+files: …". Per group (one group, or one per part): `buildScoreModelFor(set)`
+(render/score.js — the lifted body of `buildScoreModelImpl`, pure over
+`S.song`, NO VexFlow guard, so the vm suite and any part filter build real
+models; `S.scoreModel` stays the view's), then pages via `scorePageLayout` +
+`engraveScorePages(layout, model)` (`engraveMeasure` takes `opts.model`), the
+MusicXML, one `.txt` per tab track, `writeMidi` over the filtered tracks.
+Names: `<song>-score.html`, `<song>.musicxml`, `<song>-<track>-tab.txt`,
+`<song>.mid`; per part ` — <Track>` before the extension (`exportSafeName`
+strips `/ \ : ? " * < > | %`). The kit is always one staff, never split.
+
+**`export/musicxml.js`** (layer 2, "export" in check.mjs LAYERS): MusicXML
+4.0 partwise, one `<part>` per staff, `divisions = 8` (a 16th = 2 — integral
+for any ppq, unlike `divisions = ppq`), every voice of every bar padded to
+`bt` with rests (`mxlRestPieces`; an all-empty bar = `<rest measure="yes"/>`),
+`<backup>` = voice 1's actual sum, `<chord/>` on the 2nd+ pitch, `<tie>` +
+`<tied>` pairs from `tieFrom`, the kit as two voices of `<unpitched>` (hands
+stems up, feet stems down, feet rests `print-object="no"`, `<notehead>x`
+from the `/x2` key suffix), a TAB staff (`<staves>2`, `<clef>TAB`,
+`<staff-details>` 6 lines E2…E4, the same notes again on staff 2, voice 5,
+with `<technical><string>/<fret>`) under every `tab_for` part, the tempo map
+as `<direction><metronome>` + `<sound tempo>` in the first part. Validate:
+`tools/musicxml-check.sh <file>` (xmllint `--nonet` against the W3C 4.0 XSD
+vendored in tests/fixtures/musicxml-xsd/, its own catalog.xml);
+`tools/musicxml-dump.mjs <song.mid> [--txt]` writes a song's files headless
+through the harness. Airship validated 2026-11-27; the guitar app reads it
+(night-roll-guitar `NightRollExportTests`, fixture `real/nightroll-airship.musicxml`).
+
+**`export/tab.js`** (layer 2): `TAB_TUNING`/`TAB_STRING_NAMES`/`TAB_FRETS`/
+`tabFold` — render/instrument.js's `GTR_*`/`gtrFold` now read these (one set
+of numbers). `tabAssign(measures)` → Map event → positions aligned with
+`pitches`: the window rule (review blocker 5 — `TabFallback.position` never
+existed): candidates from the folded pitch, the lowest fret within
+`TAB_WINDOW` (5) of the hand's last fretted position (open strings always
+qualify), tie → higher string, nothing in reach → the lowest fret on the
+neck; chords by a small DFS over distinct strings (lowest fret sum, then
+span); a tied continuation keeps its position; folded notes carry `folded`.
+`asciiTab(…)` → six rows per system, one column per 16th, a wider cell (a
+two-digit fret, a `*` fold mark) widens that column on every row, `|` at bar
+lines, bar numbers above each system, `tabBarsPerSystem = floor(64 /
+sixteenthsPerBar)`, header = song — track, a meta line (declared meter only
+when declared, `♩ = bpm` from the file, the tuning), a legend only when
+something folded. `Fingering.assign` (hand-span DP) is phase 3.
+
+**Learning mode (plan §4 + review blocker 3).** MusicXML and tab take key ONLY
+from `sfDeclaredAtRaw` (never `sfAt`'s Normal estimate, never `S.previewSf`),
+spelled as `engraveMeasure` does (`SHARP_SPELL` when undeclared); `<time>` is
+always present (readers cut bars where the ruler does) but
+`print-object="no"` unless `S.declaredTs`; never `<harmony>`/`<rehearsal>`;
+tempo is the file's own. Tests assert absence on an undeclared song in both
+modes and with the dial previewing, presence after `key:`/`timesig:`.
+
+**Ask:** the `export` action (song scope; `what: album|folder` refuses out
+loud — never silently the song); `exportReqFromWords` parses lists and
+resolves track names through `askFindTrackIndex`. Native: `ExportSheet`
+(Share.swift), `ExportFiles.build` + `Exporter.exportFiles` (one share sheet,
+`ActivityView(urls:)`), Core `Export/MusicXMLWriter.swift` + `TabWriter.swift`
++ `GuitarTuning.swift` (the app's `GuitarGeom` reads them), the `export`
+handler; `nr.state export=files:<n>`. The native `ScoreModel` skips an EMPTY
+melodic track where the web keeps a composition's — a pre-existing model
+difference, so a native export of a composition with an empty track has one
+part fewer.
+
+**Phase 2 (queued):** whole albums through the live loader as a ⏳ job, the
+album `index.html` + `manifest.json`, `.notes.txt` as a format, TAB
+engraved under the staff on the pages (VexFlow `TabStave`), `This folder`.
+Phase 3: `Fingering.assign`, a headless resolver, his annotations opt-in,
+tunings/capo. Phase 4 (only if asked): Guitar Pro `.gp`.
+
 ## Export score — printable pages (DAW F6, 2026-10-04)
 
-File ▾ → **Export score…** → paper (Letter/A4) → **Export**. The score
+Since 2026-11-27 the row is **Export score / tab…** and the paper choice
+lives in `#exportsheet` (above); this section describes the Pages format
+that sheet still makes. File ▾ → **Export score…** → paper (Letter/A4) → **Export**. The score
 view's model (`buildScoreModel`: the shown, non-drum tracks as staves,
 the kit at the bottom, declared key/meter only) is laid out onto pages
 and engraved into one `<svg>` per page, wrapped in a single

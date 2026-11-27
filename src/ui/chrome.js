@@ -222,7 +222,6 @@ import { renderSongOffline } from "../audio/bounce.js";
 import { audioBufferToWav } from "../audio/bounce.js";
 import { recordRealtimeAudio } from "../audio/bounce.js";
 import { deliverAudioFile } from "../audio/bounce.js";
-import { exportScore } from "../render/score-print.js";
 import { openSyncSheet } from "./sheets.js";
 import { EDITION } from "../edition.js";
 import { countUsage } from "../platform/usage.js";
@@ -2242,7 +2241,6 @@ export function initChrome11() {
     document.getElementById("filenewform").style.display = "none";
     document.getElementById("filesaveasform").style.display = "none";
     document.getElementById("filerenameform").style.display = "none";
-    document.getElementById("filescoreform").style.display = "none";
     document.getElementById("filemoverow").style.display = isComposition() ? "" : "none";
     document.getElementById("filesavelocal").textContent = S.song && isUnsaved(S.songKey) ? "Save Version…" : "Save Version";
     if (isComposition()) { // move targets: any folder of yours, or a new one
@@ -2464,25 +2462,8 @@ export function initChrome12() {
     a.click();
     URL.revokeObjectURL(a.href);
   });
-  // File ▾ → Export score… (DAW F6): the row only picks the paper; the pages
-  // and the hand-over are render/score-print.js (same delivery as Download
-  // audio). Paper is a device pref — the file it makes is the song's.
-  document.getElementById("filedlscore").addEventListener("click", () => {
-    if (!S.song) { setInfo("open a song first"); return; }
-    const form = document.getElementById("filescoreform");
-    const open = form.style.display === ""; // the markup starts it at display:none
-    document.getElementById("filenewform").style.display = "none";
-    document.getElementById("filesaveasform").style.display = "none";
-    document.getElementById("filerenameform").style.display = "none";
-    form.style.display = open ? "none" : "";
-    try { const p = localStorage.getItem("ff1roll-score-paper"); if (p) document.getElementById("fsxpaper").value = p; } catch (e) {}
-  });
-  document.getElementById("fsxgo").addEventListener("click", async () => {
-    const paper = document.getElementById("fsxpaper").value || "letter";
-    try { localStorage.setItem("ff1roll-score-paper", paper); } catch (e) {}
-    closeFileMenus();
-    await exportScore(paper);
-  });
+  // File ▾ → Export score / tab… is session/export-score.js's (initExport1):
+  // the #exportsheet overlay replaced the paper row (2026-11-27)
   // File ▾ → Export everything… (native-iPad plan P0): a read-only dump of every stored thing; progress + summary in the row below
   document.getElementById("fileexportall").addEventListener("click", () => exportEverythingUI(document.getElementById("fileexportstatus")).then(msg => { if (msg) setInfo(msg); }));
 }

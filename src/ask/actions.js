@@ -30,6 +30,8 @@ import { askReadBars } from "./tools.js";
 import { askWriteNotes } from "./tools.js";
 import { askCopyBars } from "./tools.js";
 import { stemsSplitOpenSong, STEMS_MODELS, STEMS_DRUMS, STEMS_PRESETS } from "../import/stems.js";
+import { exportReqFromWords, runScoreExport } from "../session/export-score.js";
+import { askFindTrackIndex } from "./tools.js";
 import { askInsertBars } from "./tools.js";
 import { askDeleteBars } from "./tools.js";
 import { askSongPath } from "./tools.js";
@@ -337,6 +339,18 @@ export const ASK_ACTIONS = [
      if (askActGiven(a.attach)) o.attach = askActTruthy(a.attach);
      const job = await stemsSplitOpenSong(o);
      return "splitting " + job.name + " on the Mac — ⏳ in the footer shows progress; the new song (" + job.slug + "-stems) opens when it's done";
+   }},
+  // ---- export (docs/plans/2026-11-27-score-tab-export.md §5, phase 1): File ▾ →
+  // Export score / tab… as an action. Song scope only — album/folder refuse
+  // out loud until phase 2 (never silently export the song instead).
+  {name: "export", args: "what? formats? parts? split? tab_for? paper?", gloss: "export score pages, MusicXML, guitar tab or MIDI for this song",
+   example: "Export tab and MusicXML for this song, each part its own file.", say: "Say which formats (pages, MusicXML, tab, MIDI — the default is pages, MusicXML and tab), which parts (as shown, all, or track names), whether each part gets its own file, which tracks get tab, and Letter or A4.",
+   spec: "export {what?, formats?, parts?, split?, tab_for?, paper?}: exports the open song the way File → Export score / tab… does, every file in one share sheet (a browser downloads them). what = song (the default; album and folder come in a later build and are refused for now, saying so). formats = a list of pages (the printable score), musicxml (opens in Guitar Pro, MuseScore and the guitar app; carries a TAB staff for the tab_for tracks), tab (one ASCII .txt per melodic part — standard tuning, 24 frets, notes off the neck folded by an octave and starred), midi — default pages, musicxml, tab. parts = shown (default — exactly the tracks the score view shows) | all | a list of track names. split = together (default — one file per format) | per_part (one file per chosen track; the kit stays one staff). tab_for = melodic (default — every chosen non-drum track) | a list of track names. paper = letter | a4 (the remembered device setting otherwise). Never changes the song; the files carry nothing the user didn't declare — a key signature only where a key: annotation governs, meter digits only when a timesig: annotation does, no chord or section names (Learning mode is the law). Only when the user asks to export.",
+   async run(a) {
+     const req = exportReqFromWords(a, askFindTrackIndex);
+     const out = await runScoreExport(req);
+     if (!out) throw new Error(S.statusHistory.length ? S.statusHistory[S.statusHistory.length - 1].text : "nothing exported"); // the refusal runScoreExport put on the status line
+     return "exported " + out.files.length + (out.files.length === 1 ? " file: " : " files: ") + out.files.join(", ");
    }},
   {name: "help", args: "name?", gloss: "the action list, or one action's full text", song: false,
    example: "What can you do?", say: "That lists them; \"help with drummer\" gives one action's details.",

@@ -3249,6 +3249,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "without touching your cycle",
     "drag the tag to scrub",
     "Export score",
+    "Export score / tab", "Each part its own file", "-tab.txt", // docs/plans/2026-11-27-score-tab-export.md phase 1
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
     "Save last 60s</b>", "Velocity lane</dt>", "Shape (volume inside a note)</dt>", // docs/plans/2026-10-06-in-note-dynamics.md
     "fills the panel", "Drag its middle", "Go to bar", "hold it still",
@@ -12739,23 +12740,8 @@ test("Export score: exportScore lays out the score model, builds the document fr
   r(`scoreModel = null; song = null; songKey = null; delete window.Capacitor;`);
 });
 
-test("Export score: File ▾ → Export score… toggles the paper row (other File forms close), Export remembers the paper as a device pref and calls exportScore", async () => {
-  const a = await createApp();
-  const r = (c) => a.run(c);
-  r(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "albums/starters/fur-elise.mid";`);
-  r(`document.getElementById("filenewform").style.display = "";`);
-  r(`document.getElementById("filedlscore").click()`);
-  assert.equal(r(`document.getElementById("filescoreform").style.display`), "", "the paper row opens");
-  assert.equal(r(`document.getElementById("filenewform").style.display`), "none", "the other File forms close");
-  r(`document.getElementById("filedlscore").click()`);
-  assert.equal(r(`document.getElementById("filescoreform").style.display`), "none", "tap again: closed");
-  r(`document.getElementById("fsxpaper").value = "a4";`);
-  r(`document.getElementById("fsxgo").click()`);
-  await new Promise(res => setTimeout(res, 0));
-  assert.equal(r(`localStorage.getItem("ff1roll-score-paper")`), "a4", "device pref, not song state");
-  assert.equal(r(`filesheet.classList.contains("on")`), false, "the menu closes on Export");
-  r(`song = null; songKey = null;`);
-});
+// The File ▾ row now opens the Export score / tab sheet (session/export-score.js,
+// 2026-11-27) — its tests are the "Export score / tab" block at the end of this file.
 
 // ---------------------------------------------------------------- VoiceOver
 // first pass (open-items.md DAW review item 12's other half, 2026-09-30):
@@ -17641,4 +17627,335 @@ test("stems: re-review — a bridge stuck on 500 reaches the give-up (only a goo
     assert.ok(!val(`song.tracks.some(t => t.kind === "audio")`));
     assert.match(val(`__info`), /the song changed while the recording was being stored — nothing was added/);
   } finally { delete app.context.indexedDB; run(`localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/elsewhere.mid"));`); installActSong(); }
+});
+
+// ---------------------------------------------------------------- Export score / tab (phase 1)
+// docs/plans/2026-11-27-score-tab-export.md §7 + its review: src/export/
+// musicxml.js and src/export/tab.js are pure writers over the score model;
+// buildScoreModelFor has no VexFlow guard, so these run on real models here.
+// Learning mode is the law: the writers take key only from sfDeclaredAtRaw.
+function installExportSong() { // an editable composition: a lead with a chord and a note tied over the barline, a bass, an EMPTY pad (compositions keep it), a kit
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/export-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}");
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}, {tick: 1920, usq: 400000, sec: 4}],
+      tracks: [
+        {name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}, {t: 480, d: 480, p: 67, v: 80}, {t: 1440, d: 960, p: 62, v: 80}, {t: 3840, d: 480, p: 65, v: 80}]},
+        {name: "bass", notes: [{t: 0, d: 1920, p: 40, v: 80}, {t: 1920, d: 480, p: 43, v: 80}]},
+        {name: "pad", notes: []},
+        {name: "drums", notes: [{t: 0, d: 120, p: 36, v: 80}, {t: 0, d: 120, p: 42, v: 80}, {t: 480, d: 120, p: 38, v: 80}, {t: 960, d: 120, p: 36, v: 80}]}]};
+    song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; hideDrums = false;
+    rollnotes = []; declaredTs = null; keyRegions = []; previewSf = null; exportSheet = null;
+    if (playing) stop();
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+const mxlOf = (parts = "all", tabFor = "melodic") => run(`buildExportFiles({parts: ${JSON.stringify(parts)}, formats: {musicxml: true}, tab_for: ${JSON.stringify(tabFor)}}, {engrave: () => []})[0].data`);
+const mxlParts = xml => [...xml.matchAll(/<part id="(P\d+)">([\s\S]*?)<\/part>/g)].map(m => ({id: m[1], measures: [...m[2].matchAll(/<measure number="\d+">([\s\S]*?)<\/measure>/g)].map(x => x[1])}));
+const mxlNotes = (m, v) => [...m.matchAll(/<note[^>]*>([\s\S]*?)<\/note>/g)].map(n => n[1]).filter(n => v === undefined || n.includes(`<voice>${v}</voice>`));
+const mxlVoiceSum = (m, v) => mxlNotes(m, v).filter(n => !n.includes("<chord/>")).reduce((a, n) => a + +n.match(/<duration>([\d.]+)<\/duration>/)[1], 0);
+const xmlBalanced = xml => { // a stack over every tag past the prolog — the vm has no DOMParser (review: tag balance is the right level here)
+  const body = xml.replace(/^<\?xml[^>]*>\s*<!DOCTYPE[^>]*>/, "");
+  const stack = [];
+  for (const m of body.matchAll(/<(\/?)([a-zA-Z][\w-]*)[^>]*?(\/?)>/g)) {
+    if (m[3]) continue;
+    if (m[1]) { if (stack.pop() !== m[2]) return false; } else stack.push(m[2]);
+  }
+  return stack.length === 0;
+};
+
+test("MusicXML: one <part> per staff, divisions 8, every measure of every voice sums to the bar (rests pad the tail: a last bar ending mid-bar, an empty composition track, the kit's feet voice), <chord/> on the 2nd pitch, tie + tied pairs across the barline, the kit as <unpitched> with x heads and hidden feet rests", () => {
+  installExportSong();
+  const xml = mxlOf();
+  assert.ok(xmlBalanced(xml), "every tag closes");
+  assert.match(xml, /<score-partwise version="4\.0">/);
+  assert.match(xml, /<work-title>Export Test<\/work-title>/, "songTitleOf's title");
+  const parts = mxlParts(xml);
+  assert.deepEqual(parts.map(p => p.id), ["P1", "P2", "P3", "P4"], "lead, bass, pad, kit — the kit last");
+  assert.deepEqual([...xml.matchAll(/<part-name>([^<]*)<\/part-name>/g)].map(m => m[1]), ["lead", "bass", "pad", "drums"]);
+  assert.equal(val(`buildScoreModelFor(null).nMeasures`), 3, "the lead's F4 starts bar 3 and ends mid-bar");
+  for (const p of parts) assert.equal(p.measures.length, 3, p.id + ": one <measure> per model measure");
+  assert.match(parts[0].measures[0], /<divisions>8<\/divisions>/);
+  for (const p of parts) for (const [i, m] of p.measures.entries()) {
+    assert.equal(mxlVoiceSum(m, 1), 32, `${p.id} bar ${i + 1} voice 1 sums to the bar (4/4 at 8 per quarter)`);
+    if (p.id === "P1") { assert.equal(mxlVoiceSum(m, 5), 32, `${p.id} bar ${i + 1} TAB voice sums too`); assert.match(m, /<backup><duration>32<\/duration><\/backup>/); }
+    if (p.id === "P4") { assert.equal(mxlVoiceSum(m, 2), 32, `kit bar ${i + 1} feet voice sums too`); assert.match(m, /<backup><duration>32<\/duration><\/backup>/, "backup = voice 1's actual sum"); }
+  }
+  // the lead, bar 1: C4 quarter, E4+G4 chord quarter, D4 quarter from beat 4 tied into bar 2 (MIDI 60 = C4)
+  const lead1 = mxlNotes(parts[0].measures[0], 1);
+  assert.equal(lead1.filter(n => n.includes("<chord/>")).length, 1, "the 2nd pitch of the chord carries <chord/>");
+  assert.match(lead1[1], /<step>E<\/step><octave>4<\/octave>/); assert.match(lead1[2], /<chord\/>.*<step>G<\/step>/);
+  assert.match(lead1[1], /<type>quarter<\/type>/);
+  assert.match(lead1[lead1.length - 1], /<step>D<\/step>.*<tie type="start"\/>.*<tied type="start"\/>/, "the piece before the barline starts the tie");
+  assert.match(mxlNotes(parts[0].measures[1], 1)[0], /<step>D<\/step>.*<tie type="stop"\/>.*<tied type="stop"\/>/, "bar 2's first piece ends it");
+  assert.equal((xml.match(/<tie type="start"\/>/g) || []).length, (xml.match(/<tie type="stop"\/>/g) || []).length, "starts and stops pair up (both staves of the lead)");
+  // tail padding: bar 3 of the lead = F4 quarter + rests to the bar; the empty pad = a measure rest in every bar; the bass's bar 3 too
+  const lead3 = mxlNotes(parts[0].measures[2], 1);
+  assert.match(lead3[0], /<step>F<\/step>/); assert.ok(lead3.slice(1).every(n => n.includes("<rest/>")), "rests after the last note");
+  for (const m of parts[2].measures) assert.match(m, /<note><rest measure="yes"\/><duration>32<\/duration><voice>1<\/voice><staff>1<\/staff><\/note>/, "an all-empty bar is one measure rest (on the notation staff; the TAB staff repeats it)");
+  assert.match(parts[1].measures[2], /<rest measure="yes"\/>/);
+  assert.match(parts[1].measures[0], /<sign>F<\/sign><line>4<\/line><\/clef>/, "the bass staff's clef");
+  // the kit: hands voice 1 stems up (hat x-head + snare), feet voice 2 stems down (kicks), feet rests hidden
+  const kit1 = parts[3].measures[0];
+  assert.match(kit1, /<clef><sign>percussion<\/sign><line>2<\/line><\/clef>/);
+  assert.doesNotMatch(kit1, /<pitch>/, "roles, not pitches");
+  const hands = mxlNotes(kit1, 1).filter(n => !n.includes("<rest"));
+  assert.match(hands[0], /<unpitched><display-step>G<\/display-step><display-octave>5<\/display-octave><\/unpitched>.*<stem>up<\/stem><notehead>x<\/notehead>/, "the hat: g/5, x head");
+  assert.match(hands[1], /<display-step>C<\/display-step><display-octave>5<\/display-octave>.*<stem>up<\/stem>$/, "the snare: c/5, a plain head (no <notehead>)");
+  const feet = mxlNotes(kit1, 2);
+  assert.equal(feet.filter(n => n.includes("<unpitched>")).length, 2, "two kicks");
+  assert.match(feet.find(n => n.includes("<unpitched>")), /<display-step>F<\/display-step><display-octave>4<\/display-octave>.*<stem>down<\/stem>/);
+  assert.ok([...kit1.matchAll(/<note print-object="no"><rest/g)].length >= 1, "feet rests are print-object=\"no\" (they only space the voice)");
+  const feetRests = [...kit1.matchAll(/<note([^>]*)>([^]*?)<\/note>/g)].filter(m => m[2].includes("<voice>2</voice>") && m[2].includes("<rest"));
+  assert.ok(feetRests.length > 0 && feetRests.every(m => m[1].includes('print-object="no"')), "no visible rest in the feet voice");
+  // the tempo map rides in the first part only, with <sound tempo>; two tempos → two directions
+  assert.equal((parts[0].measures.join("").match(/<sound tempo="/g) || []).length, 2);
+  assert.match(parts[0].measures[0], /<per-minute>120<\/per-minute>/); assert.match(parts[0].measures[1], /<sound tempo="150"\/>/);
+  assert.doesNotMatch(parts[1].measures.join(""), /<direction/);
+  run(`song = null; songKey = null;`);
+});
+
+test("MusicXML Learning mode: no <key> and a hidden <time> on an undeclared song — in Normal mode too, and while the key dial previews; a key: annotation puts <key><fifths> at bar 1 and a new <attributes><key> where it changes; timesig: prints <time> and recuts the bars; spelling follows the declared key, sharps otherwise", () => {
+  installExportSong();
+  let xml = mxlOf();
+  assert.doesNotMatch(xml, /<key>/, "Learning, nothing declared: no key signature");
+  assert.doesNotMatch(xml, /<harmony|<rehearsal/, "never a chord name or a section label");
+  assert.match(xml, /<time print-object="no"><beats>4<\/beats><beat-type>4<\/beat-type><\/time>/, "the ruler's bars, no digits shown");
+  assert.equal((xml.match(/<time /g) || []).length, 4, "once per part, at bar 1");
+  // Normal mode estimates a key for the VIEW; the file never carries it (review blocker 3)
+  run(`setAppMode("normal");`);
+  try { xml = mxlOf(); assert.doesNotMatch(xml, /<key>/, "an estimate is not his declaration"); }
+  finally { run(`setAppMode("learning");`); }
+  run(`previewSf = 3;`);
+  try { xml = mxlOf(); assert.doesNotMatch(xml, /<key>/, "the key dial's preview is not a declaration either"); }
+  finally { run(`previewSf = null;`); }
+  // his declarations: Bb at bar 1, D from bar 2
+  run(`rollnotes = parseRollnotes("[1.1]\\nkey: Bb\\n\\n[2.1]\\nkey: D\\n").map(resolveNote); finalizeNotes();`);
+  xml = mxlOf();
+  const parts = mxlParts(xml);
+  assert.match(parts[0].measures[0], /<attributes><divisions>8<\/divisions><key><fifths>-2<\/fifths><\/key><time/, "bar 1: the declared signature, before <time>");
+  assert.match(parts[0].measures[1], /^\s*<attributes><key><fifths>2<\/fifths><\/key><\/attributes>/, "bar 2: a new <attributes> with the new key");
+  assert.doesNotMatch(parts[0].measures[2], /<key>/, "no change at bar 3: no <key>");
+  assert.match(parts[3].measures[0], /<key><fifths>-2<\/fifths><\/key>/, "the kit part carries the signature too (a reader's part attributes), roles still unpitched");
+  // spelling: B♭ major spells pc 10 as Bb; sharps when undeclared (A#)
+  run(`song.tracks[0].notes.push({t: 3840 + 480, d: 480, p: 70, v: 80}); rollnotes = parseRollnotes("[1.1]\\nkey: Bb\\n").map(resolveNote); finalizeNotes(); computeSongEnd();`);
+  assert.match(mxlOf(), /<step>B<\/step><alter>-1<\/alter><octave>4<\/octave>/);
+  run(`rollnotes = []; finalizeNotes();`);
+  assert.match(mxlOf(), /<step>A<\/step><alter>1<\/alter><octave>4<\/octave>/, "SHARP_SPELL, as engraveMeasure spells an undeclared song");
+  // timesig: 3/4 → printed <time>, bars of 24 divisions
+  run(`rollnotes = parseRollnotes("[1.1]\\ntimesig: 3/4\\n").map(resolveNote); finalizeNotes(); computeSongEnd();`);
+  xml = mxlOf();
+  assert.match(xml, /<time><beats>3<\/beats><beat-type>4<\/beat-type><\/time>/, "declared: printed");
+  assert.doesNotMatch(xml, /print-object="no"><beats>/);
+  for (const p of mxlParts(xml)) for (const m of p.measures) assert.equal(mxlVoiceSum(m, 1), 24, "3/4 bars of 24");
+  run(`rollnotes = []; finalizeNotes(); computeSongEnd(); song = null; songKey = null;`);
+});
+
+test("MusicXML TAB staff: a melodic part in tab_for gets <staves>2</staves>, a TAB clef, 6 lines tuned E2 A2 D3 G3 B3 E4, and every tab note a <string>/<fret>; parts outside tab_for and the kit get none; divisions stay integral at ppq 100", () => {
+  installExportSong();
+  let xml = mxlOf("all", [0]);
+  const parts = mxlParts(xml);
+  const bar1 = parts[0].measures[0];
+  assert.match(bar1, /<staves>2<\/staves>/);
+  assert.match(bar1, /<clef number="1"><sign>G<\/sign><line>2<\/line><\/clef><clef number="2"><sign>TAB<\/sign><line>5<\/line><\/clef>/);
+  assert.match(bar1, /<staff-details number="2"><staff-lines>6<\/staff-lines>/);
+  assert.deepEqual([...bar1.matchAll(/<tuning-step>(\w)<\/tuning-step><tuning-octave>(\d)<\/tuning-octave>/g)].map(m => m[1] + m[2]), ["E2", "A2", "D3", "G3", "B3", "E4"], "line 1 = low E, as MuseScore and the guitar app's fixtures write it");
+  const tabNotes = parts[0].measures.flatMap(m => mxlNotes(m, 5)).filter(n => !n.includes("<rest"));
+  assert.ok(tabNotes.length >= 5);
+  assert.ok(tabNotes.every(n => /<staff>2<\/staff><notations>(<tied [^>]*\/>)*<technical><string>[1-6]<\/string><fret>\d+<\/fret><\/technical><\/notations>/.test(n)), "string + fret on every tab note");
+  assert.match(tabNotes[0], /<step>C<\/step><octave>4<\/octave>.*<string>2<\/string><fret>1<\/fret>/, "C4: the lowest fret on the neck is B string fret 1 — the window rule with no hand position yet");
+  assert.doesNotMatch(parts[1].measures.join(""), /<staves>|<string>/, "the bass is not in tab_for");
+  assert.doesNotMatch(parts[3].measures.join(""), /<staves>|<string>/, "drums never get tab");
+  xml = mxlOf("all", "melodic");
+  assert.equal((xml.match(/<staves>2<\/staves>/g) || []).length, 3, "melodic = every chosen non-drum part (the empty pad too)");
+  // ppq 100: a dotted eighth is 75 ticks — 6 divisions, never a fraction (review: divisions = 8, not ppq)
+  run(`song.ppq = 100; song.tracks = [{name: "lead", notes: [{t: 0, d: 75, p: 60, v: 80}, {t: 75, d: 125, p: 62, v: 80}, {t: 200, d: 200, p: 64, v: 80}]}]; trackState = [{muted: false, solo: false}]; finalizeNotes(); computeSongEnd();`);
+  xml = mxlOf();
+  assert.ok([...xml.matchAll(/<duration>([^<]+)<\/duration>/g)].every(m => /^\d+$/.test(m[1])), "every duration an integer");
+  assert.match(xml, /<duration>6<\/duration><voice>1<\/voice><type>eighth<\/type><dot\/>/, "the dotted eighth");
+  assert.equal(mxlVoiceSum(mxlParts(xml)[0].measures[0], 1), 32);
+  assert.ok(xmlBalanced(xml));
+  run(`song = null; songKey = null;`);
+});
+
+test("tab.js: E2 → string 6 fret 0, E4 → string 1 fret 0 (not string 2 fret 5) under the window rule, a chord lands on distinct strings, C1 folds up with * and the footnote; the ASCII tab has one column per 16th (4/4 and 3/4), a two-digit fret keeps the six rows the same length, bars per system follow the meter", () => {
+  assert.deepEqual(val(`tabFold(24)`), {p: 48, shift: 2}, "C1 folds up two octaves to C3");
+  assert.deepEqual(val(`tabFold(100)`), {p: 88, shift: -1}, "E7 folds down to E6 (fret 24 on the e string)");
+  assert.deepEqual(val(`tabCandidates(40)`), [{string: 6, fret: 0}]);
+  const one = p => val(`[...tabAssign([[{rest: false, start: 0, dur: "q", dots: 0, pitches: [${p}]}]]).values()][0][0]`);
+  assert.deepEqual(one(40), {string: 6, fret: 0, folded: false});
+  assert.deepEqual(one(64), {string: 1, fret: 0, folded: false}, "the open string, not B string fret 5");
+  assert.deepEqual(one(24), {string: 5, fret: 3, folded: true}, "C1 → C3: A string fret 3 (the lowest fret), marked folded");
+  const chord = val(`[...tabAssign([[{rest: false, start: 0, dur: "q", dots: 0, pitches: [48, 52, 55]}]]).values()][0]`);
+  assert.equal(new Set(chord.map(c => c.string)).size, 3, "three distinct strings");
+  assert.ok(chord.every(c => c.fret <= 5), "an open-position C chord");
+  // the window: after D5 at fret 10 on the e string, G4 has B 8 (in reach), G 12, D 17 — the lowest in reach wins
+  const run2 = val(`[...tabAssign([[{rest: false, start: 0, dur: "q", dots: 0, pitches: [74]}, {rest: false, start: 480, dur: "q", dots: 0, pitches: [67]}]]).values()]`);
+  assert.deepEqual(run2[0][0], {string: 1, fret: 10, folded: false}, "D5: lowest fret is e 10");
+  assert.deepEqual(run2[1][0], {string: 2, fret: 8, folded: false}, "G4 after it: B string fret 8");
+  // ties keep the position
+  const tied = val(`(() => { const a = {rest: false, start: 0, dur: "q", dots: 0, pitches: [67]}; const b = {rest: false, start: 480, dur: "q", dots: 0, pitches: [67], tieFrom: a}; return [...tabAssign([[a, b]]).values()]; })()`);
+  assert.deepEqual(tied[0], tied[1]);
+  // the text
+  const text44 = run(`asciiTab({title: "T", track: "lead", bt: 1920, ppq: 480, measures: [[{rest: false, start: 0, dur: "q", dots: 0, pitches: [60]}, {rest: true, start: 480, dur: "q", dots: 0}, {rest: false, start: 960, dur: "h", dots: 0, pitches: [74]}], [{rest: false, start: 1920, dur: "w", dots: 0, pitches: [24]}]]})`);
+  const rows44 = text44.split("\n").filter(l => /^[eBGDAE]\|/.test(l));
+  assert.equal(rows44.length, 6, "six string rows, one system");
+  assert.ok(rows44.every(r => r.length === rows44[0].length), "every row the same length though bar 1 holds a two-digit fret");
+  const bars = rows44[0].slice(2, -1).split("|");
+  assert.equal(bars.length, 2);
+  assert.equal(bars[0].length, 16 + 1, "16 columns of 16ths plus one for the two-digit 10");
+  assert.equal(bars[1].length, 16 + 1, "16 columns plus one for the starred 8*");
+  assert.match(text44, /^T — lead\n/, "header: song and track");
+  assert.match(text44, /standard tuning \(E A D G B e\), 24 frets/);
+  assert.doesNotMatch(text44, /4\/4/, "no meter line unless declared");
+  assert.match(text44, /\n  1 {17}2\n/, "bar numbers above the system at each bar's first column (bar 1 is 17 wide + its bar line)");
+  assert.match(rows44[1], /^B\|1-{16}\|/, "C4 on the B string fret 1");
+  assert.match(rows44[0], /^e\|-{8}10-{7}\|/, "D5 on the e string fret 10 at beat 3");
+  assert.match(rows44[5], /^E\|-{17}\|8\*-{15}\|$/, "C1 folded up to C3: the low E's fret 8 is within the window of the D5 at 10 (the A string's 3 is not), starred");
+  assert.match(rows44[4], /^A\|-{17}\|-{17}\|$/, "the A string stays empty");
+  assert.match(text44, /\* 1 note moved by an octave to fit the neck/, "the legend only when something folded");
+  const text34 = run(`asciiTab({track: "x", bt: 1440, ppq: 480, declaredTs: [3, 4], tempoBpm: 96, measures: Array.from({length: 6}, (_, i) => [{rest: false, start: i * 1440, dur: "q", dots: 0, pitches: [45]}])})`);
+  const rows34 = text34.split("\n").filter(l => /^[eBGDAE]\|/.test(l));
+  assert.equal(rows34.length, 12, "6 bars of 3/4: five to a system (floor(64 / 12)), so two systems");
+  assert.equal(rows34[0].slice(2, -1).split("|")[0].length, 12, "12 columns per 3/4 bar");
+  assert.match(text34, /^x\n3\/4 · ♩ = 96 · standard tuning/, "the declared meter and the file's tempo in the header line");
+  assert.doesNotMatch(text34, /moved by an octave/);
+  assert.equal(val(`[tabBarsPerSystem(16), tabBarsPerSystem(12), tabBarsPerSystem(28), tabBarsPerSystem(200)]`).join(","), "4,5,2,1");
+  // two 16ths in a row: a dash between them (a reader would take "88" for fret 88), the row pushed by one column
+  const runOf16 = run(`asciiTab({track: "x", bt: 1920, ppq: 480, measures: [[{rest: false, start: 0, dur: "16", dots: 0, pitches: [72]}, {rest: false, start: 120, dur: "16", dots: 0, pitches: [72]}, {rest: false, start: 240, dur: "8", dots: 0, pitches: [72]}, {rest: true, start: 480, dur: "h", dots: 0}, {rest: true, start: 1440, dur: "q", dots: 0}]]})`);
+  const rowsRun = runOf16.split("\n").filter(l => /^[eBGDAE]\|/.test(l));
+  assert.match(rowsRun[0], /^e\|8-8-8-{13}\|$/, "C5 three times on the e string: 8-8-8, then the rest of the bar (16 columns + 2 separators = 18)");
+  assert.ok(rowsRun.every(r => r.length === rowsRun[0].length));
+});
+
+test("Export score / tab: buildExportFiles — the part filter (hidden track out, all brings it back, per_part = one pages file per track, the kit whole), four formats, the file names, one deliverFiles call with every file; refusals use the status line; the words → request parser refuses album/folder and resolves track names", async () => {
+  installExportSong();
+  run(`
+    globalThis.__calls = [];
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      nativePromise: async (plugin, method, args) => {
+        globalThis.__calls.push([plugin, method, args]);
+        if (plugin === "Filesystem" && method === "writeFile") return {uri: "file:///cache/" + args.path};
+        return {activityType: ""};
+      },
+    };
+    globalThis.__engrave = (layout, model) => { globalThis.__models = (globalThis.__models || []).concat([model.staves.map(st => st.ti)]); return layout.pages.map(() => '<svg xmlns="http://www.w3.org/2000/svg"></svg>'); };
+  `);
+  try {
+    const names = req => val(`buildExportFiles(${req}, {engrave: globalThis.__engrave}).map(f => f.name)`);
+    assert.deepEqual(names(`{parts: "shown", split: "together", formats: {pages: true, musicxml: true, tab: true, midi: true}, tab_for: "melodic", paper: "letter"}`),
+      ["export-test-score.html", "export-test.musicxml", "export-test-lead-tab.txt", "export-test-bass-tab.txt", "export-test-pad-tab.txt", "export-test.mid"]);
+    run(`trackState[1] = {muted: false, solo: false, hidden: true};`); // H on the bass
+    assert.deepEqual(names(`{parts: "shown", formats: {tab: true}, tab_for: "melodic"}`), ["export-test-lead-tab.txt", "export-test-pad-tab.txt"], "shown = the score view's set: the hidden bass is out");
+    assert.deepEqual(names(`{parts: "all", formats: {tab: true}, tab_for: "melodic"}`), ["export-test-lead-tab.txt", "export-test-bass-tab.txt", "export-test-pad-tab.txt"], "all brings it back");
+    assert.deepEqual(names(`{parts: "all", formats: {tab: true}, tab_for: [1]}`), ["export-test-bass-tab.txt"], "tab_for narrows the tab files");
+    run(`globalThis.__models = [];`);
+    assert.deepEqual(names(`{parts: "all", split: "per_part", formats: {pages: true, musicxml: true}}`),
+      ["export-test — lead-score.html", "export-test — lead.musicxml", "export-test — bass-score.html", "export-test — bass.musicxml", "export-test — pad-score.html", "export-test — pad.musicxml", "export-test — drums-score.html", "export-test — drums.musicxml"], "per_part: one file per format per track, the track in the name");
+    assert.deepEqual(val(`globalThis.__models`), [[0], [1], [2], [3]], "each pages file engraved a one-track model (the kit as its own one staff)");
+    run(`trackState[1] = {muted: false, solo: false};`);
+    const mid = val(`Array.from(buildExportFiles({parts: [0, 3], formats: {midi: true}}, {engrave: globalThis.__engrave})[0].data)`);
+    assert.equal(String.fromCharCode(...mid.slice(0, 4)), "MThd");
+    assert.equal((mid[10] << 8) | mid[11], 3, "meta track + the two chosen tracks");
+    assert.throws(() => val(`buildExportFiles({parts: [], formats: {tab: true}}, {engrave: globalThis.__engrave})`), /no parts chosen/);
+    assert.throws(() => val(`buildExportFiles({parts: "all", formats: {}}, {engrave: globalThis.__engrave})`), /pick at least one format/);
+    // the whole flow: one share sheet for every file (setInfo captured: an earlier test leaves it stubbed anyway — line 16175's note)
+    run(`globalThis.__said = []; setInfo = m => { globalThis.__said.push(m); };`);
+    const out = await aval(`runScoreExport({parts: "shown", split: "together", formats: {pages: true, musicxml: true, tab: true, midi: false}, tab_for: "melodic", paper: "a4"}, {engrave: globalThis.__engrave})`);
+    assert.deepEqual(out.files, ["export-test-score.html", "export-test.musicxml", "export-test-lead-tab.txt", "export-test-bass-tab.txt", "export-test-pad-tab.txt"]);
+    const calls = val(`globalThis.__calls`);
+    assert.deepEqual(calls.map(c => c[1]), ["writeFile", "writeFile", "writeFile", "writeFile", "writeFile", "share"], "five writes, ONE share");
+    assert.deepEqual(calls[5][2].files, out.files.map(n => "file:///cache/" + n));
+    assert.equal(calls[5][2].title, "5 files");
+    assert.match(Buffer.from(calls[0][2].data, "base64").toString(), /@page \{ size: A4/, "the pages file took the paper");
+    assert.match(Buffer.from(calls[1][2].data, "base64").toString(), /^<\?xml version="1\.0"/);
+    const said = re => val(`globalThis.__said.some(m => ${re}.test(m))`);
+    assert.ok(said(`/exported 5 files: export-test-score\\.html, export-test\\.musicxml/`), "the status line says what landed");
+    // refusals
+    run(`globalThis.__calls = []; song.tracks.forEach(t => t.notes = []);`);
+    assert.equal(await aval(`runScoreExport({parts: "all", formats: {musicxml: true}}, {engrave: globalThis.__engrave})`), null);
+    assert.ok(said(`/nothing to export — the song has no notes yet/`));
+    assert.equal(val(`globalThis.__calls.length`), 0);
+    run(`song = null;`);
+    assert.equal(await aval(`runScoreExport({parts: "all", formats: {musicxml: true}}, {engrave: globalThis.__engrave})`), null);
+    assert.ok(said(`/open a song first/`));
+    // the Ask action's words
+    installExportSong();
+    run(`localStorage.removeItem("ff1roll-export"); localStorage.removeItem("ff1roll-score-paper");`);
+    const req = a => val(`exportReqFromWords(${a}, askFindTrackIndex)`);
+    assert.deepEqual(req(`{}`), {parts: "shown", split: "together", formats: {pages: true, musicxml: true, tab: true, midi: false}, tab_for: "melodic", paper: "letter"}, "the defaults (device prefs untouched here)");
+    assert.deepEqual(req(`{formats: "tab, midi", parts: ["lead", "drums"], split: "per part", tab_for: "lead", paper: "A4"}`), {parts: [0, 3], split: "per_part", formats: {pages: false, musicxml: false, tab: true, midi: true}, tab_for: [0], paper: "a4"});
+    assert.deepEqual(req(`{formats: ["MusicXML"], parts: "all"}`).formats, {pages: false, musicxml: true, tab: false, midi: false});
+    assert.throws(() => req(`{what: "album"}`), /album export comes in the next build/, "never silently the song instead");
+    assert.throws(() => req(`{what: "folder"}`), /next build/);
+    assert.throws(() => req(`{formats: "pdf"}`), /formats must be from pages, musicxml, tab, midi/);
+    assert.throws(() => req(`{parts: "flute"}`), /no track named "flute"/);
+    assert.throws(() => req(`{paper: "legal"}`), /paper must be letter or a4/);
+  } finally { run(`delete window.Capacitor; delete globalThis.__engrave; delete globalThis.__models; song = null; songKey = null;`); }
+});
+
+test("Export score / tab: the sheet — File ▾ → Export score / tab… opens #exportsheet with a chip per note track (ticked = as shown, drums say kit), tab chips for the melodic parts; a tap un-ticks a part (its tab chip goes too), All / As shown reset, Each part its own file lights; Export closes it, remembers formats + split + paper as device prefs and hands every file to one share sheet; the act registry offers `export` in the song chat only", async () => {
+  installExportSong();
+  run(`
+    globalThis.__calls = [];
+    window.Capacitor = { isNativePlatform: () => true, nativePromise: async (plugin, method, args) => { globalThis.__calls.push([plugin, method, args]); return plugin === "Filesystem" ? {uri: "file:///cache/" + args.path} : {}; } };
+    localStorage.removeItem("ff1roll-export"); localStorage.removeItem("ff1roll-score-paper");
+    filesheet.classList.add("on");
+  `);
+  try {
+    assert.match(appSource(), /<button class="fitem" id="filedlscore">Export score \/ tab…<\/button>/, "Q1's default wording");
+    run(`document.getElementById("filedlscore").click()`);
+    assert.ok(val(`document.getElementById("exportsheet").classList.contains("on")`), "the sheet opens");
+    assert.ok(!val(`filesheet.classList.contains("on")`), "the File menu closes");
+    assert.match(run(`document.getElementById("exTitle").textContent`), /Export Test — this song/);
+    const chips = () => val(`[...document.getElementById("exParts").children].map(b => [b.dataset.ti, b.className.includes(" selected"), b.textContent])`);
+    assert.deepEqual(chips(), [["0", true, "✓ lead"], ["1", true, "✓ bass"], ["2", true, "✓ pad"], ["3", true, "✓ drums · kit"]], "every note track, all ticked (as shown), the kit named");
+    const tabChips = () => val(`[...document.getElementById("exTab").children].map(b => b.dataset.ti)`);
+    assert.deepEqual(tabChips(), ["0", "1", "2"], "tab for every chosen melodic part, never the kit");
+    assert.deepEqual(val(`[document.getElementById("exFmtPages").checked, document.getElementById("exFmtMusicxml").checked, document.getElementById("exFmtTab").checked, document.getElementById("exFmtMidi").checked, document.getElementById("exPaper").value]`), [true, true, true, false, "letter"], "the defaults: pages, MusicXML, tab on; MIDI off (Q8); Letter");
+    run(`[...document.getElementById("exParts").children].find(b => b.dataset.ti === "1").click()`);
+    assert.deepEqual(chips().map(c => c[1]), [true, false, true, true], "the bass un-ticked");
+    assert.deepEqual(tabChips(), ["0", "2"], "…and its tab chip went with it");
+    run(`[...document.getElementById("exTab").children].find(b => b.dataset.ti === "2").click()`);
+    assert.deepEqual(val(`[...exportSheet.tab]`), [0], "a tab chip un-ticks on its own");
+    run(`document.getElementById("exAll").click()`);
+    assert.deepEqual(chips().map(c => c[1]), [true, true, true, true]); assert.deepEqual(tabChips(), ["0", "1", "2"]);
+    run(`hideDrums = true; document.getElementById("exShown").click()`);
+    assert.deepEqual(chips().map(c => c[1]), [true, true, true, false], "as shown follows hide-drums");
+    run(`hideDrums = false;`);
+    assert.ok(!val(`document.getElementById("exSplit").classList.contains("on")`));
+    run(`document.getElementById("exSplit").click()`);
+    assert.ok(val(`document.getElementById("exSplit").classList.contains("on")`), "Each part its own file lights (class, not content — setControl's rule)");
+    assert.equal(val(`exportSheet.split`), "per_part");
+    run(`document.getElementById("exFmtPages").checked = false; document.getElementById("exFmtMidi").checked = true; document.getElementById("exPaper").value = "a4";`); // no VexFlow here: pages off for the flow
+    run(`document.getElementById("exGo").click()`);
+    for (let i = 0; i < 40 && val(`globalThis.__calls.filter(c => c[0] === "Share").length`) === 0; i++) await new Promise(r => setTimeout(r, 5));
+    assert.ok(!val(`document.getElementById("exportsheet").classList.contains("on")`), "Export closes the sheet");
+    assert.deepEqual(JSON.parse(run(`localStorage.getItem("ff1roll-export")`)), {pages: false, musicxml: true, tab: true, midi: true, split: "per_part"}, "device prefs, not song state");
+    assert.equal(run(`localStorage.getItem("ff1roll-score-paper")`), "a4", "the paper keeps Export score's own key");
+    const calls = val(`globalThis.__calls`);
+    const share = calls.find(c => c[0] === "Share");
+    assert.ok(share, "one share sheet");
+    assert.deepEqual(share[2].files.map(u => u.replace("file:///cache/", "")),
+      ["export-test — lead.musicxml", "export-test-lead-tab.txt", "export-test — lead.mid", "export-test — bass.musicxml", "export-test-bass-tab.txt", "export-test — bass.mid", "export-test — pad.musicxml", "export-test-pad-tab.txt", "export-test — pad.mid"], "per part: the kit un-ticked by As shown under hide-drums; three parts × (MusicXML, tab, MIDI)");
+    assert.equal(calls.filter(c => c[0] === "Share").length, 1);
+    // reopening resets parts to as shown; the prefs persist
+    run(`document.getElementById("filedlscore").click()`);
+    assert.deepEqual(chips().map(c => c[1]), [true, true, true, true]);
+    assert.deepEqual(val(`[document.getElementById("exFmtPages").checked, document.getElementById("exFmtMidi").checked, document.getElementById("exPaper").value, document.getElementById("exSplit").classList.contains("on")]`), [false, true, "a4", true]);
+    run(`document.getElementById("exportsheet").classList.remove("on");`);
+    // the registry
+    assert.ok(val(`askActOffered("export")`), "offered in the song chat");
+    assert.ok(!val(`askActList(true).some(d => d.name === "export")`), "not in the song-free chat (a song export needs the open song)");
+    assert.match(val(`askActSpec("export")`), /album and folder come in a later build/);
+    await assert.rejects(askActRun(`askAct({do: [{action: "export", what: "album"}]})`), /album export comes in the next build/);
+    run(`globalThis.__calls = [];`);
+    const r = await askActRun(`askAct({do: [{action: "export", formats: "tab", parts: "lead"}]})`);
+    assert.equal(typeof r === "string" ? r : r.final, "exported 1 file: export-test-lead-tab.txt");
+    assert.equal(val(`globalThis.__calls.filter(c => c[0] === "Share").length`), 1);
+    assert.match(helpSource(), /Export score \/ tab/, "the help sheet names the feature (FEATURES keyword)");
+  } finally { run(`delete window.Capacitor; localStorage.removeItem("ff1roll-export"); localStorage.removeItem("ff1roll-score-paper"); exportSheet = null; song = null; songKey = null;`); }
 });

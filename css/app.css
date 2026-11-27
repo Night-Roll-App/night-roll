@@ -750,6 +750,12 @@
      "a lot of room at the top" */
   .sheet .sheetx + h2 { margin-top: -34px; margin-bottom: 0; min-height: 40px; display: flex; align-items: center; padding-right: 48px; }
   .sheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  /* Export score / tab (#exportsheet): the part chips reuse the track bar's
+     .chip look — ticked = gold border (.selected), unticked dimmed (.off); the
+     preset buttons light gold when their state is on (Each part its own file) */
+  #exParts .chip.off, #exTab .chip.off { opacity: 0.45; }
+  #exportsheet .exlink.on { color: var(--gold); border-color: var(--gold); }
+  #exportsheet label { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; }
   .sheet input[type=number], .sheet input[type=password], .sheet input[type=text], .sheet textarea {
     font-family: var(--mono);
     font-size: 0.875rem;
