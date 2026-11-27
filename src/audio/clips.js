@@ -272,21 +272,91 @@ export function wsolaStretch(input, rate) { // Float32Array mono → Float32Arra
   for (let i = 0; i < outLen; i++) if (norm[i] > 1e-6) out[i] /= norm[i];
   return out.slice(0, outLen);
 }
+// The same WSOLA, one CHUNK of an absolute stretched timeline (console audio,
+// audio/chip-pitch.js: a game song is stretched 2 s at a time ahead of the
+// playhead, both the whole render and stream mode). `input` holds raw frames
+// [p.base, p.base + input.length) of the track (`p.aux` its right channel, same
+// base, or null); grains sit on the ABSOLUTE output grid m_g = g·hop and are
+// chosen exactly as wsolaStretch chooses them, so two chunks computing the
+// same grain pick the same raw position — the chain's state is just the
+// previous grain's position, `p.prevIn` (null = fresh chain: the first grain
+// takes its nominal spot, as wsolaStretch's k=0 does). The output covers
+// stretched frames [p.m0, p.m1 + p.e): chunk k's own span plus an e-frame
+// tail that fades OUT, while a chunk with `p.fadeIn` fades its first e frames
+// IN — complementary linear ramps over the same grains, so chunk k's tail +
+// chunk k+1's head sum back to the one continuous stretched signal (the shape
+// tools/chip-worker.mjs gives its raw stream chunks). A stereo pair picks ONE
+// grain position for both channels (correlation summed over both) so the
+// image holds. `next` = the position of the grain the NEXT chunk's chain
+// starts from (the last grain ending at or before m1); the caller must hand
+// a raw window wide enough for every grain it computes (kpRawRange).
+// SERIALIZED (tools/split/check.mjs rule 7): shipped to the worker by
+// .toString() — no free identifier but JS builtins.
+export function wsolaChunk(input, rate, p) {
+  const frame = 1024, hop = frame >> 1, tol = 128;
+  const base = p.base, m0 = p.m0, m1 = p.m1, e = p.e, aux = p.aux || null;
+  const len = m1 - m0 + e;
+  const out = new Float32Array(len), out2 = aux ? new Float32Array(len) : null, norm = new Float32Array(len);
+  const win = new Float32Array(frame);
+  for (let i = 0; i < frame; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / frame);
+  const gA = Math.max(0, Math.floor((m0 - frame) / hop) + 1); // first grain reaching into [m0, …)
+  const gB = Math.ceil((m1 + e) / hop) - 1; // last grain starting before m1 + e
+  const gNext = Math.floor((m1 - frame) / hop); // the next chunk's chain anchor
+  let prevIn = (p.prevIn === undefined || p.prevIn === null) ? null : p.prevIn, next = null;
+  for (let g = gA; g <= gB; g++) {
+    const mg = g * hop, target = Math.round(mg * rate);
+    let best = target;
+    if (prevIn !== null) { // choose, near the target, the grain that best continues the previous one
+      const n0 = prevIn + hop - base;
+      let bestScore = -Infinity;
+      for (let cand = target - tol; cand <= target + tol; cand += 2) {
+        const c0 = cand - base;
+        let s = 0;
+        for (let i = 0; i < frame; i += 4) s += input[c0 + i] * input[n0 + i];
+        if (aux) for (let i = 0; i < frame; i += 4) s += aux[c0 + i] * aux[n0 + i];
+        if (s > bestScore) { bestScore = s; best = cand; }
+      }
+    }
+    const b0 = best - base, o0 = mg - m0;
+    for (let i = 0; i < frame; i++) {
+      const o = o0 + i;
+      if (o < 0 || o >= len) continue;
+      out[o] += input[b0 + i] * win[i]; norm[o] += win[i];
+      if (aux) out2[o] += aux[b0 + i] * win[i];
+    }
+    prevIn = best;
+    if (g === gNext) next = best;
+  }
+  for (let i = 0; i < len; i++) if (norm[i] > 1e-6) { out[i] /= norm[i]; if (aux) out2[i] /= norm[i]; }
+  for (let i = 0; i < e && i < len; i++) {
+    const wOut = 1 - i / e, wIn = i / e;
+    out[len - e + i] *= wOut; if (aux) out2[len - e + i] *= wOut;
+    if (p.fadeIn) { out[i] *= wIn; if (aux) out2[i] *= wIn; }
+  }
+  return {out, aux: out2, next};
+}
 export const stretchJobs = new Map();
-export function stretchInWorker(data, rate) { // resolves with the stretched Float32Array; inline (no worker) where there is none
-  if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function")
-    return Promise.resolve(wsolaStretch(data, rate));
+export function stretchWorkerPost(msg, transfer) { // one Blob worker for every stretch job (takes and console chunks), made on first use; null where there is no Worker
+  if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function") return null;
   if (!S.stretchWorker) {
-    const src = wsolaStretch.toString() +
-      ";onmessage=function(e){var d=e.data;var out=wsolaStretch(d.data,d.rate);postMessage({id:d.id,out:out},[out.buffer]);};";
+    const src = wsolaStretch.toString() + ";" + wsolaChunk.toString() +
+      ";onmessage=function(e){var d=e.data;if(d.p){var r=wsolaChunk(d.data,d.rate,d.p);var t=[r.out.buffer];if(r.aux)t.push(r.aux.buffer);postMessage({id:d.id,chunk:true,out:r.out,aux:r.aux,next:r.next},t);return;}var out=wsolaStretch(d.data,d.rate);postMessage({id:d.id,out:out},[out.buffer]);};";
     S.stretchWorker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
-    S.stretchWorker.onmessage = e => { const res = stretchJobs.get(e.data.id); if (res) { stretchJobs.delete(e.data.id); res(e.data.out); } };
+    S.stretchWorker.onmessage = e => { const res = stretchJobs.get(e.data.id); if (res) { stretchJobs.delete(e.data.id); res(e.data.chunk ? e.data : e.data.out); } };
   }
   return new Promise(res => {
-    const id = ++S.stretchJobId, copy = data.slice();
+    const id = ++S.stretchJobId;
     stretchJobs.set(id, res);
-    S.stretchWorker.postMessage({id, data: copy, rate}, [copy.buffer]);
+    S.stretchWorker.postMessage({id, ...msg}, transfer);
   });
+}
+export function stretchInWorker(data, rate) { // resolves with the stretched Float32Array; inline (no worker) where there is none
+  const copy = data.slice();
+  return stretchWorkerPost({data: copy, rate}, [copy.buffer]) || Promise.resolve(wsolaStretch(data, rate));
+}
+export function stretchChunkInWorker(data, aux, rate, p) { // resolves with wsolaChunk's {out, aux, next}; `data`/`aux` are consumed (transferred)
+  const transfer = [data.buffer]; if (aux) transfer.push(aux.buffer);
+  return stretchWorkerPost({data, rate, p: {...p, aux}}, transfer) || Promise.resolve(wsolaChunk(data, rate, {...p, aux}));
 }
 export const stretchCache = new Map();
 // songKey|file|rate -> {status: "pending"|"ready", buffer}

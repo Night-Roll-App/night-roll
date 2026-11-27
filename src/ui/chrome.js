@@ -123,6 +123,7 @@ import { sectionPathAt } from "../render/roll.js";
 import { playGateKick } from "../audio/transport.js";
 import { chipSource } from "../audio/chip.js";
 import { chipRenderAuto } from "../audio/chip-stream.js";
+import { chipKpWaitFirst } from "../audio/chip-pitch.js";
 import { readData } from "../platform/folder.js";
 import { folderActive } from "../platform/folder.js";
 import { parseMidi } from "../midi/parse.js";
@@ -1745,9 +1746,10 @@ export function applySpeed(pct) {
   S.playRate = pct / 100;
   stretchCache.clear(); // a new rate: re-render the takes (pitch-preserving), old renders go
   stretchEnsureAll();
+  chip.kp = null; // a console song's stretched chunks too (chip-pitch.js) — the next play stretches at the new rate
   updateSongMeta();
   if (wasPlaying) play(tickToSec(S.song, tk));
-  else { S.playCursor = tk; updateSubtitle(); draw(); }
+  else { S.playCursor = tk; updateSubtitle(); draw(); chipKpWaitFirst(tickToSec(S.song, tk)); } // warm the first chunk now, so ▶ is on time
 }
 export const speedbtn = document.getElementById("speedbtn");
 export const _applySpeedInner = applySpeed;

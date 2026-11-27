@@ -19,6 +19,9 @@ import { buildSchedule } from "./transport.js";
 import { trackGain } from "./engine.js";
 import { chipActive } from "./chip.js";
 import { chipStart } from "./chip.js";
+import { chipKeepPitch } from "./chip-pitch.js";
+import { chipKpPrepareAll } from "./chip-pitch.js";
+import { chipKpScheduleAll } from "./chip-pitch.js";
 import { clipClamp } from "./clips.js";
 import { scheduleNote } from "./voices.js";
 import { ensureAudio } from "./engine.js";
@@ -114,6 +117,7 @@ export async function offlineWaitForAssets(capMs) {
         await new Promise(r => setTimeout(r, 50));
     }
   }
+  if (chipActive() && !chip.stream && chipKeepPitch()) await chipKpPrepareAll(tickToSec(S.song, S.songEndTick), capMs); // every stretched chunk of the one pass, before the synchronous sweep below (chip-pitch.js)
 }
 // {ok:true, buffer} | {ok:false, why} — why is shown to Josh when the
 // real-time fallback also can't help (see the click handler)
@@ -161,7 +165,7 @@ export async function renderSongOffline() {
     buildSchedule();
     applyLevels(); // the song gain, as play() sets it (then updateTrackGains)
     S.song.tracks.forEach((_, ti) => trackGain(ti));
-    if (chipActive()) chipStart(0);
+    if (chipActive()) { if (!chip.stream && chipKeepPitch()) chipKpScheduleAll(S.loopSeg.end); else chipStart(0); } // keep-pitch: the chunks offlineWaitForAssets prepared, placed on the offline context
     for (const e of S.schedEvents) {
       if (e.sec >= S.loopSeg.end) continue;
       const dur = e.n._clip ? clipClamp(e.dur, S.loopSeg.end - e.sec) : e.dur;

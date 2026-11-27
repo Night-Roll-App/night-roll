@@ -44,6 +44,10 @@ import { clipClamp } from "./clips.js";
 import { srAnnounce } from "../hooks.js";
 import { songTitleOf } from "../hooks.js";
 import { chipStreamPump } from "./chip-stream.js";
+import { chipKeepPitch } from "./chip-pitch.js";
+import { chipKpStart } from "./chip-pitch.js";
+import { chipKpPump } from "./chip-pitch.js";
+import { chipKpWaitFirst } from "./chip-pitch.js";
 import { albumAdvance } from "../hooks.js";
 import { pxPerTick } from "../render/roll.js";
 import { wrap } from "../render/roll.js";
@@ -245,7 +249,7 @@ export async function play(fromSec = 0, opts = {}) {
   openMaster();
   buildSchedule();
   stretchEnsureAll(); // takes at a non-native rate need their stretched copies (no-op at 100% / tape-style)
-  await Promise.all([sfWaitForSong(1500), gameWaitForSong(1500)]); // sampled/game voices still decoding: a short wait beats a triangle (or the synth fallback) on beat 1
+  await Promise.all([sfWaitForSong(1500), gameWaitForSong(1500), chipKpWaitFirst(fromSec)]); // sampled/game voices still decoding: a short wait beats a triangle (or the synth fallback) on beat 1; a slowed console song's first stretched chunk likewise (chip-pitch.js)
   if (gen !== play.gen) return; // superseded: only the newest play starts the transport
   S.playing = true;
   S.playOffset = fromSec;
@@ -320,7 +324,8 @@ export async function play(fromSec = 0, opts = {}) {
   }
   applyLevels(); // the song gain for what is about to sound (console / synth / clip), then every fader — audio/levels.js
   S.song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
-  if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport
+  if (chip.kp && !chipKeepPitch()) chip.kp = null; // back at 100 % (or tape-style): the stretched chunks go, and chipSeamPump/chipStart take over again
+  if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else if (chipKeepPitch()) chipKpStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport; off 100 % with pitch kept, the whole render plays as stretched chunks (chip-pitch.js)
   S.schedGen = S.editGen; S.schedLastSec = fromSec - 1e-6;
   // what actually sounds, 6 s in, in the debug log: "console voice ready" was
   // logged on the iPad while the song played on synth (Josh, Terminal
@@ -330,7 +335,8 @@ export async function play(fromSec = 0, opts = {}) {
   setTimeout(() => {
     if (!S.playing || S.songKey !== checkKey || S.playT0 !== checkT0) return;
     const con = hearMidi() ? "off (Hear the MIDI)" : chip.key !== S.songKey ? "off (no console render for this song)"
-      : chip.stream ? "stream, " + chip.stream.srcs.length + " chunk sources, live " + chip.stream.live + ", silent " + chip.stream.silent.size
+      : chip.stream ? "stream, " + chip.stream.srcs.length + " chunk sources, live " + chip.stream.live + ", silent " + chip.stream.silent.size + (chip.kp ? ", pitch kept at " + Math.round(S.playRate * 100) + "%" : "")
+      : chip.kp ? "pitch kept at " + Math.round(S.playRate * 100) + "%, " + chip.kp.srcs.length + " stretched chunk sources, live " + chip.kp.live + ", " + Math.round(chip.kp.bytes / 1e6) + " MB stretched"
       : chip.srcs.length + " console tracks";
     logDebug("play check: " + con + "; synth notes in the first 6 s: " + S.synthNotes);
   }, 6000);
@@ -356,6 +362,7 @@ export async function play(fromSec = 0, opts = {}) {
   albumStrip(); // un-dims on resume
   const pump = () => {
     if (chip.stream) chipStreamPump(S.audio.currentTime); // first (docs/streamed-render-plan.md step 3): independent of schedEvents/loopSeg's note-scheduling below, and gated internally on `playing`/the open song, so it's safe even on a stray tick after stop()
+    else if (chip.kp) chipKpPump(S.audio.currentTime); // the whole render as keep-pitch chunks (chip-pitch.js): the same shape, gated the same way
     if (!S.playing) { clearInterval(S.schedTimer); return; } // a stopped transport schedules nothing, ends nothing
     if (spans && !chip.stream && chipActive()) chipSeamPump(S.audio.currentTime, document.hidden ? 8 : 0.6); // a seam over a whole console render: one source per pass (chip.js)
     const segLen = S.loopSeg.end - S.loopSeg.start;

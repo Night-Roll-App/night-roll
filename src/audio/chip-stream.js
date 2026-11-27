@@ -20,6 +20,10 @@ import { loudStreamChunk } from "./levels.js";
 import { loudCacheGet } from "./levels.js";
 import { applyLevels } from "./levels.js";
 import { LOUD_VERSION } from "./loudness.js";
+import { chipKeepPitch } from "./chip-pitch.js";
+import { chipKpPlace } from "./chip-pitch.js";
+import { chipKpStreamBuffers } from "./chip-pitch.js";
+import { chipKpStreamWant } from "./chip-pitch.js";
 
 // -------------------------------------------- chip stream mode (step 3) ---
 // docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
@@ -233,18 +237,24 @@ export function chipStreamWaitFor(idx) {
 // on the worker; un-pins everything when there's no loop to wrap to. Cheap
 // to call every pump tick — it only touches the pin set, not the network/
 // worker traffic, beyond the one request for chunks not yet on hand.
+export function chipLoopPinRanges(loopSeg, playRate, lead) { // [[idxFrom, idxTo], …] per span a wrap can land in (pure; the keep-pitch cache pins the same chunks, chip-pitch.js)
+  const out = [];
+  if (!loopSeg || !loopSeg.looped) return out;
+  for (const sp of loopSeg.spans || [loopSeg]) { // a seam wraps into every one of its spans
+    const tapeStart = lead + sp.start * playRate;
+    const idxFrom = chipStreamIdxForTapeSec(tapeStart);
+    const idxTo = chipStreamIdxForTapeSec(loopSeg.spans && sp.end - sp.start <= 40 ? lead + sp.end * playRate : tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * playRate); // a seam is short and is ALL the listener hears: pin whole spans so no join waits on the worker
+    out.push([idxFrom, idxTo]);
+  }
+  return out;
+}
 export function chipStreamPinLoopStart() {
   const st = chip.stream;
   if (!st) return;
   const idxSet = new Set();
-  if (S.loopSeg && S.loopSeg.looped) {
-    for (const sp of S.loopSeg.spans || [S.loopSeg]) { // a seam wraps into every one of its spans
-      const tapeStart = chip.lead + sp.start * S.playRate;
-      const idxFrom = chipStreamIdxForTapeSec(tapeStart);
-      const idxTo = chipStreamIdxForTapeSec(S.loopSeg.spans && sp.end - sp.start <= 40 ? chip.lead + sp.end * S.playRate : tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * S.playRate); // a seam is short and is ALL the listener hears: pin whole spans so no join waits on the worker
-      for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
-      chipStreamRequestRange(idxFrom, idxTo);
-    }
+  for (const [idxFrom, idxTo] of chipLoopPinRanges(S.loopSeg, S.playRate, chip.lead)) {
+    for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
+    chipStreamRequestRange(idxFrom, idxTo);
   }
   st.pinnedIdx = idxSet;
   for (const [idx, entry] of st.cache) entry.pinned = idxSet.has(idx);
@@ -276,16 +286,20 @@ export function chipStreamScheduled(idx, anchor) { const a = chip.stream.schedul
 // keep working unchanged. `when`/`offset`/`dur` are already resolved by the
 // caller (chipStreamPump) to the exact slice of this chunk's buffer that
 // belongs to the current segment — see the comment there for the formula.
-export function chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor) {
+// `buffers`/`rate`: the raw chunk at the slider's tape-style rate (default),
+// or its keep-pitch stretched copy at 1 (chip-pitch.js).
+export function chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor, buffers, rate) {
   const st = chip.stream;
-  for (const [name, buffer] of Object.entries(entry.buffers)) {
+  if (!buffers) buffers = entry.buffers;
+  if (rate === undefined) rate = S.playRate;
+  for (const [name, buffer] of Object.entries(buffers)) {
     const ti = S.song.tracks.findIndex(tr => (tr.name || "") === name);
     if (ti < 0) continue;
     const vv = S.song.tracks[ti].voice;
     if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track, same as chipStart
     const src = S.audio.createBufferSource();
     src.buffer = buffer;
-    src.playbackRate.value = S.playRate;
+    src.playbackRate.value = rate;
     let node = src;
     if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name]; src.connect(p); node = p; }
     node.connect(trackGain(ti));
@@ -354,6 +368,7 @@ export function chipStreamPump(nowCtx) {
   const t0 = Math.max(nowCtx, S.playT0); // before playT0 (the start lead, a count-in) playSec holds at playOffset: the first segment starts AT playT0, not now
   const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (t0 - S.playT0);
   const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, t0, t0 - S.playT0);
+  const kpOn = chipKeepPitch(), kpWanted = []; // speed off 100 % with pitch kept: the stretched copies play instead (chip-pitch.js); at 100 % / tape-style every line below runs as before
   let anyLive = false;
   for (const seg of segs) {
     if (seg.when >= until) break;
@@ -364,19 +379,26 @@ export function chipStreamPump(nowCtx) {
       const entry = st.cache.get(idx);
       if (!entry) continue; // not back from the worker yet — the next tick retries
       const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
-      const anchor = seg.when + (chunkTapeStart - seg.tapeFrom) / S.playRate; // the same every tick (chipStreamScheduled says why)
+      let anchor = seg.when + (chunkTapeStart - seg.tapeFrom) / S.playRate; // the same every tick (chipStreamScheduled says why)
+      let offset = Math.max(0, seg.tapeFrom - chunkTapeStart); // mid-chunk resume (a seek that doesn't land on a chunk boundary)
+      let dur = Math.max(0, seg.tapeTo - Math.max(seg.tapeFrom, chunkTapeStart)); // trims the LAST chunk of a segment at the loop wrap / album end: a hard splice, no bleed into the next segment
+      if (kpOn) ({anchor, offset, dur} = chipKpPlace(seg, idx, S.playRate, st.rate)); // the stretched chunk's own frame grid: tape ÷ rate
       const when = Math.max(seg.when, anchor);
       if (when >= until) continue; // this tick's window doesn't reach it yet
       if (chipStreamScheduled(idx, anchor)) continue; // already scheduled on an earlier tick
-      const offset = Math.max(0, seg.tapeFrom - chunkTapeStart); // mid-chunk resume (a seek that doesn't land on a chunk boundary)
-      const dur = Math.max(0, seg.tapeTo - Math.max(seg.tapeFrom, chunkTapeStart)); // trims the LAST chunk of a segment at the loop wrap / album end: a hard splice, no bleed into the next segment
-      chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor);
+      if (kpOn) {
+        kpWanted.push(idx);
+        const buffers = chipKpStreamBuffers(idx);
+        if (!buffers) continue; // still stretching: nothing recorded for this anchor, the next tick retries
+        chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor, buffers, 1);
+      } else chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor);
       anyLive = true;
     }
   }
   if (anyLive) st.live = true;
   chipStreamEvict(curSec);
   chipStreamPinLoopStart();
+  if (kpOn) chipKpStreamWant(kpWanted, chipStreamPump, chip.lead + curSec * S.playRate);
 }
 // Replaces chipStart(fromSec) in stream mode: no new render, no `{stream}`
 // message — the cache from chipStreamOpen keeps whatever it already has (a
@@ -475,7 +497,7 @@ export async function chipStreamOpen(auto) {
     silent: new Set(), heard: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Map(), waiters: new Map(),
     bytes: 0, peakBytes: 0, live: false, srcs: [],
   };
-  chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;
+  chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null; chip.kp = null; // a keep-pitch session (chip-pitch.js) belongs to the render it stretched
   const fromSec = (typeof S.song !== "undefined" && S.song && typeof S.playCursor !== "undefined" && S.playCursor > 0) ? tickToSec(S.song, S.playCursor) : 0;
   const idx0 = chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate);
   // the song gain's measurement: album.json's, else this device's cache, else

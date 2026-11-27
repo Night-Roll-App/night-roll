@@ -67,6 +67,7 @@ import { splitSelectedClipAtCursor } from "../audio/clips.js";
 import { deleteClip } from "../audio/clips.js";
 import { writeClips } from "../audio/clips.js";
 import { keepPitch } from "../audio/clips.js";
+import { setKeepPitch } from "../audio/chip-pitch.js";
 import { stretchCache } from "../audio/clips.js";
 import { playSec } from "../audio/transport.js";
 import { stop } from "../audio/transport.js";
@@ -900,11 +901,9 @@ export function buildClipControls(ti, menu, tr) { // the audio track's sheet: wh
   const kp = document.createElement("button"); // device pref: pitch kept (default) vs tape-style
   kp.className = "fitem";
   kp.textContent = (keepPitch() ? "☑" : "☐") + " keep pitch when the speed changes (off = tape-style, slower = lower)";
-  kp.title = "the slowed take is re-rendered so its pitch stays put — a moment to prepare per take; tape-style follows the slider like chip audio";
+  kp.title = "the slowed take is re-rendered so its pitch stays put — a moment to prepare per take; the same switch governs a game song's console audio (Settings › Other has it too); tape-style follows the slider";
   kp.addEventListener("click", () => {
-    if (keepPitch()) localStorage.setItem("ff1roll-tapestyle", "1"); else localStorage.removeItem("ff1roll-tapestyle");
-    stretchCache.clear();
-    if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}).catch(() => {}); } else stretchEnsureAll();
+    setKeepPitch(!keepPitch());
     buildVoiceMenu(ti);
   });
   menu.appendChild(kp);

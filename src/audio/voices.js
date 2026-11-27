@@ -974,7 +974,7 @@ export function scheduleNote(ti, n, when, durSec) {
   // chip.key, which muted the synth here while chipStart never ran — cursor
   // moving, nothing heard, on the SNES song and on the NES song after it
   // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
-  if (!n._preview && chipActive() && (chip.stream ? chip.stream.live : chip.srcs.length) && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name) &&
+  if (!n._preview && chipActive() && (chip.stream ? chip.stream.live : chip.kp ? chip.kp.live : chip.srcs.length) && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name) && // keep-pitch chunks (chip-pitch.js) count the same way stream chunks do
       (!S.song.tracks[ti].voice || S.song.tracks[ti].voice === "auto")) return;
   // a game instrument OR a loaded soundfont's preset (assigned from the voice &
   // color menu's Game instruments/Soundfonts families) renders through

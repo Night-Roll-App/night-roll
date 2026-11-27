@@ -23,7 +23,11 @@ import { seamPassStart } from "./seam.js";
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-export const chip = {seamNext: 0, seamArmed: false, key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
+export const chip = {seamNext: 0, seamArmed: false, key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null, kp: null, kind: null, loud: null, pendingLoud: null, refusedKey: null};
+// kp: the keep-pitch session (audio/chip-pitch.js chipKpOpen) — non-null only
+// while the speed is off 100% with pitch kept: {key, rate, mode, cache, srcs,
+// scheduled, live, …}; chipKpStart/chipStreamPump read it, chipStopSrcs stops
+// its sources, a new render/stream session drops it.
 // refusedKey: the song key whose render the memory budget refused (planChipRender plan.refuse) — hear-sound says "not available" for it instead of "still loading"
 // kind/loud: the render's chip and its loudness ({lufs, peak, synth?, src}) for the song gain (audio/levels.js); pendingLoud: {key, loud, cacheKey} from chipSource, until the render publishes
 // no toggle: chip audio is automatic wherever a source resolves
@@ -372,6 +376,11 @@ export function chipStopSrcs() {
     chip.stream.srcs = [];
     chip.stream.live = false;
   }
+  if (chip.kp) { // keep-pitch (chip-pitch.js): its sources stop, its stretched chunks stay for the next play
+    for (const s of chip.kp.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
+    chip.kp.srcs = [];
+    chip.kp.live = false;
+  }
 }
 // A console part with no roll track of its own plays through the first of
 // these tracks the song has: its fader, mute, solo and pan. The NES sample
@@ -387,20 +396,22 @@ export function chipPartTrack(name) {
   for (const host of CHIP_PART_HOST[name] || []) { if (ti >= 0) break; ti = at(host); }
   return ti;
 }
-// One rendered part's source, wired exactly as every chip source is: the speed
-// slider = tape-style playbackRate on chip audio; a track the memory budget
-// downmixed from stereo to mono (planChipRender, chip.pan) gets ITS OWN panner,
-// upstream of trackGain/trackPanners (the mixer's own per-track pan, untouched)
-// — bakes the console's original static pan back in so the audible result is
-// unchanged. null: no roll track for the part, or the track picked its own voice.
-export function chipPartSrc(name, buffer) {
+// One rendered part's source, wired exactly as every chip source is: `rate` is
+// the speed slider's tape-style playbackRate on the raw render (the default),
+// or 1 for a keep-pitch chunk already stretched to the speed (chip-pitch.js);
+// a track the memory budget downmixed from stereo to mono (planChipRender,
+// chip.pan) gets ITS OWN panner, upstream of trackGain/trackPanners (the
+// mixer's own per-track pan, untouched) — bakes the console's original static
+// pan back in so the audible result is unchanged. null: no roll track for the
+// part, or the track picked its own voice.
+export function chipPartSrc(name, buffer, rate = S.playRate) {
   const ti = chipPartTrack(name);
   if (ti < 0) return null;
   const vv = S.song.tracks[ti].voice;
   if (vv && vv !== "auto") return null; // explicit instrument choice overrides the chip for this track
   const src = S.audio.createBufferSource();
   src.buffer = buffer;
-  src.playbackRate.value = S.playRate;
+  src.playbackRate.value = rate;
   let node = src;
   if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) {
     const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name];
@@ -416,7 +427,7 @@ export function chipPartSrc(name, buffer) {
 // pump calls this; it schedules every pass that begins inside the lookahead.
 export function chipSeamPump(nowCtx, lookahead) {
   const spans = S.loopSeg && S.loopSeg.spans;
-  if (!S.playing || !spans || chip.stream || !chip.seamArmed) return; // armed only by chipStart for THIS play: a render that finishes mid-seam joins at the next ▶, never with stacked passes
+  if (!S.playing || !spans || chip.stream || chip.kp || !chip.seamArmed) return; // armed only by chipStart for THIS play: a render that finishes mid-seam joins at the next ▶, never with stacked passes; keep-pitch plays its seam through chipKpPump
   const parts = Object.entries(chipBuffers());
   for (let guard = 0; guard < 64; guard++) {
     const k = chip.seamNext, rel = seamPassStart(spans, k), sp = spans[k % spans.length];
@@ -1033,6 +1044,7 @@ export function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) 
     chip.stream = null;
   }
   chip.pcm = pcm; chip.pcmRate = sampleRate;
+  chip.kp = null; // stretched chunks of the old render (chip-pitch.js) are stale
   chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
   chip.pan = pan && Object.keys(pan).length ? pan : null; // per-track static pan the memory budget downmixed to mono (planChipRender/chipStaticPan)
   // docs/streamed-render-plan.md step 0 "before" measurement — one line, every
