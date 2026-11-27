@@ -199,6 +199,7 @@ export const S = {
   audioSrcs: [],
   autoAlignFiles: new Set(),
   stretchWorker: null,
+  stretchChunkWorker: null, // console chunks' own stretch worker (audio/clips.js stretchWorkerPost): never queued behind a take's whole-recording render
   stretchJobId: 0,
   albumRun: null,
   albumEndAbs: null,

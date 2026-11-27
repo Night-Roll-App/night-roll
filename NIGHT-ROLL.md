@@ -9288,14 +9288,26 @@ chipPublish, chipStreamOpen, and play() at 100 %). `chipKpWant(kp,
 wanted, pump)` posts chunks in PLAY order: one whose predecessor is ready
 (chain) or not wanted (fresh start — the first chunk after a seek, the far
 side of a loop wrap); stream mode also waits for the successor's raw when
-that successor is wanted next. `chipKpCoherence`: a successor stretched
+that successor is wanted next, unless the chunk is segment-final (its tail
+is trimmed) or the song's last — computed once from a faded edge plus
+silence and once from the full raw, the two renderings of a join would not
+sum (review item 3). `chipKpCoherence`: a successor stretched
 fresh before its predecessor existed (a seek backwards) is redone from the
 predecessor's state unless it is already scheduled. `chipKpEvict`: behind
-the playhead goes (never a pin, never the chunk under it or the next),
-then the farthest-ahead while over `CHIP_KP_CACHE_BYTES` (64 MB) — the
-horizon shrinks on a huge song, memory does not. Pins =
-`chipLoopPinRanges` (chip-stream.js, the pure half of
-chipStreamPinLoopStart).
+the playhead goes (never a pin, never a chunk this tick wants — the far
+side of a coming loop wrap sits behind the playhead — never the chunk under
+it or the next), then the farthest-ahead UNWANTED while over
+`CHIP_KP_CACHE_BYTES` (64 MB) — the horizon shrinks on a huge song, memory
+does not; `scheduled` anchors go only with chunks behind the playhead (a
+wanted chunk's sources are live; forgetting its anchor started it again,
+review item 2). Pins = `chipKpPinSet` over `chipLoopPinRanges`
+(chip-stream.js, the pure half of chipStreamPinLoopStart): the loop
+start + 2 s, or a short seam's whole spans — trimmed to each span's first
+chunks when the pins alone (sized by the biggest chunk seen) would overrun
+the cap (a PS2 stereo seam at 50 %, review item 5). `kp.live` is set only
+by a source that really started: an empty chunk (chipBuffers() is {}
+before the tap makes the context) is not cached in whole mode and never
+mutes the synth (review item 6).
 
 **Whole render.** play(): `chipKpWaitFirst(fromSec)` (≤ 1.5 s, alongside
 sfWaitForSong) stretches the chunk under the start position and the next,
@@ -9312,12 +9324,25 @@ stretching records nothing for its anchor and the next tick retries;
 `chipKpStreamWant` afterwards. The raw cache and its eviction are
 unchanged.
 
-**Bounce.** `offlineWaitForAssets` awaits `chipKpPrepareAll(endSec,
-cap)` (every chunk of the one pass, pinned), `renderSongOffline` calls
-`chipKpScheduleAll` in place of `chipStart(0)`, which drops the session
-afterwards.
+**Bounce.** The offline graph exists only inside `renderSongOffline`'s
+synchronous sweep, so `offlineWaitForAssets` first awaits
+`chipKpPrepareAll(endSec, progress)`: every chunk of the one pass, chained
+from each chunk's own completion, no time cap, the status line counting
+up ("preparing the download at 50% (pitch kept)… 40%"); then
+`renderSongOffline` calls `chipKpScheduleAll` in place of `chipStart(0)`
+(true = every chunk placed; the session is dropped after). Holding a whole
+stretched song is the memory cost of that, so a render whose stretched copy
+would pass `CHIP_KP_BOUNCE_BYTES` (160 MB, `chipKpBounceBytes`) is not
+attempted: the download is tape-style for it and the status line says so.
 
-**Tests** (tests/night-roll.test.mjs "console audio keeps its pitch"):
+**Workers.** Two Blob workers of the same code (clips.js
+`stretchWorkerPost(which, …)`): `S.stretchWorker` for a take's
+whole-recording render, `S.stretchChunkWorker` for console chunks — one
+queue put a game song's first chunk behind a 3-minute take and past
+play()'s 1.5 s wait.
+
+**Tests** (tests/night-roll.test.mjs "console audio keeps its pitch" + the
+four "keep-pitch review" tests covering the items above):
 wsolaChunk's chained chunks keep 440 Hz at 50 % and sum seamlessly at
 the join; kpM/chipKpPlace at 0.5 / 0.75 / 1.25; the whole render at 75 %
 schedules stretched buffers at playbackRate 1 at the right anchors, a

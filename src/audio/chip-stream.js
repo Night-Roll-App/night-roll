@@ -368,7 +368,7 @@ export function chipStreamPump(nowCtx) {
   const t0 = Math.max(nowCtx, S.playT0); // before playT0 (the start lead, a count-in) playSec holds at playOffset: the first segment starts AT playT0, not now
   const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (t0 - S.playT0);
   const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, t0, t0 - S.playT0);
-  const kpOn = chipKeepPitch(), kpWanted = []; // speed off 100 % with pitch kept: the stretched copies play instead (chip-pitch.js); at 100 % / tape-style every line below runs as before
+  const kpOn = chipKeepPitch(), kpWanted = [], kpFinals = new Set(); // speed off 100 % with pitch kept: the stretched copies play instead (chip-pitch.js); at 100 % / tape-style every line below runs as before
   let anyLive = false;
   for (const seg of segs) {
     if (seg.when >= until) break;
@@ -387,7 +387,7 @@ export function chipStreamPump(nowCtx) {
       if (when >= until) continue; // this tick's window doesn't reach it yet
       if (chipStreamScheduled(idx, anchor)) continue; // already scheduled on an earlier tick
       if (kpOn) {
-        kpWanted.push(idx);
+        kpWanted.push(idx); if (idx === idxTo) kpFinals.add(idx); // segment-final: its tail is trimmed, so it needs no successor raw
         const buffers = chipKpStreamBuffers(idx);
         if (!buffers) continue; // still stretching: nothing recorded for this anchor, the next tick retries
         chipStreamScheduleChunk(idx, entry, when, offset, dur, anchor, buffers, 1);
@@ -398,7 +398,7 @@ export function chipStreamPump(nowCtx) {
   if (anyLive) st.live = true;
   chipStreamEvict(curSec);
   chipStreamPinLoopStart();
-  if (kpOn) chipKpStreamWant(kpWanted, chipStreamPump, chip.lead + curSec * S.playRate);
+  if (kpOn) chipKpStreamWant(kpWanted, chipStreamPump, chip.lead + curSec * S.playRate, kpFinals);
 }
 // Replaces chipStart(fromSec) in stream mode: no new render, no `{stream}`
 // message — the cache from chipStreamOpen keeps whatever it already has (a

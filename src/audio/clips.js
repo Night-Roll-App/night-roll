@@ -336,27 +336,32 @@ export function wsolaChunk(input, rate, p) {
   return {out, aux: out2, next};
 }
 export const stretchJobs = new Map();
-export function stretchWorkerPost(msg, transfer) { // one Blob worker for every stretch job (takes and console chunks), made on first use; null where there is no Worker
+// Two Blob workers of the same code, made on first use: `stretchWorker` for a
+// take's whole-recording render (seconds of work), `stretchChunkWorker` for
+// console chunks (milliseconds each, due before the playhead reaches them) —
+// one queue would put a game song's first chunk behind a 3-minute take and
+// past play()'s wait. null where there is no Worker (the vm: inline).
+export function stretchWorkerPost(which, msg, transfer) {
   if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function") return null;
-  if (!S.stretchWorker) {
+  if (!S[which]) {
     const src = wsolaStretch.toString() + ";" + wsolaChunk.toString() +
       ";onmessage=function(e){var d=e.data;if(d.p){var r=wsolaChunk(d.data,d.rate,d.p);var t=[r.out.buffer];if(r.aux)t.push(r.aux.buffer);postMessage({id:d.id,chunk:true,out:r.out,aux:r.aux,next:r.next},t);return;}var out=wsolaStretch(d.data,d.rate);postMessage({id:d.id,out:out},[out.buffer]);};";
-    S.stretchWorker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
-    S.stretchWorker.onmessage = e => { const res = stretchJobs.get(e.data.id); if (res) { stretchJobs.delete(e.data.id); res(e.data.chunk ? e.data : e.data.out); } };
+    S[which] = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
+    S[which].onmessage = e => { const res = stretchJobs.get(e.data.id); if (res) { stretchJobs.delete(e.data.id); res(e.data.chunk ? e.data : e.data.out); } };
   }
   return new Promise(res => {
     const id = ++S.stretchJobId;
     stretchJobs.set(id, res);
-    S.stretchWorker.postMessage({id, ...msg}, transfer);
+    S[which].postMessage({id, ...msg}, transfer);
   });
 }
 export function stretchInWorker(data, rate) { // resolves with the stretched Float32Array; inline (no worker) where there is none
   const copy = data.slice();
-  return stretchWorkerPost({data: copy, rate}, [copy.buffer]) || Promise.resolve(wsolaStretch(data, rate));
+  return stretchWorkerPost("stretchWorker", {data: copy, rate}, [copy.buffer]) || Promise.resolve(wsolaStretch(data, rate));
 }
 export function stretchChunkInWorker(data, aux, rate, p) { // resolves with wsolaChunk's {out, aux, next}; `data`/`aux` are consumed (transferred)
   const transfer = [data.buffer]; if (aux) transfer.push(aux.buffer);
-  return stretchWorkerPost({data, rate, p: {...p, aux}}, transfer) || Promise.resolve(wsolaChunk(data, rate, {...p, aux}));
+  return stretchWorkerPost("stretchChunkWorker", {data, rate, p: {...p, aux}}, transfer) || Promise.resolve(wsolaChunk(data, rate, {...p, aux}));
 }
 export const stretchCache = new Map();
 // songKey|file|rate -> {status: "pending"|"ready", buffer}

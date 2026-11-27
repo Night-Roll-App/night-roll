@@ -19,6 +19,7 @@ import { CHIP_STREAM_CHUNK_SEC } from "./chip-stream.js";
 import { CHIP_STREAM_HORIZON_VISIBLE } from "./chip-stream.js";
 import { CHIP_STREAM_HORIZON_HIDDEN } from "./chip-stream.js";
 import { CHIP_STREAM_ANCHOR_TOL } from "./chip-stream.js";
+import { CHIP_STREAM_PIN_LOOKAHEAD } from "./chip-stream.js";
 
 // ------------------------------------- console audio keeps its pitch -----
 // Josh (ear report 2026-10-25, 2026-11-27): slowing a GAME song lowered it —
@@ -68,8 +69,10 @@ export function chipKeepPitch() { return S.playRate !== 1 && keepPitch(); }
 // restarts in place so the change is heard at once.
 export function setKeepPitch(on) {
   try { if (on) localStorage.removeItem("ff1roll-tapestyle"); else localStorage.setItem("ff1roll-tapestyle", "1"); } catch (err) { /* private mode: session only */ }
+  const at = S.playing ? playSec() : null;
+  if (at !== null) stop(); // first, while chip.kp still names the stretched sources chipStopSrcs must stop (review: nulled first, they played on under the restart)
   stretchCache.clear(); chip.kp = null;
-  if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}).catch(() => {}); } else stretchEnsureAll();
+  if (at !== null) play(at, {noCountIn: true}).catch(() => {}); else stretchEnsureAll();
 }
 export function kpM(k, rate, C) { return Math.round(k * C / rate); } // stretched frame where chunk k starts
 // raw frames wsolaChunk may read for stretched output [m0, m1 + e): every
@@ -150,7 +153,7 @@ export function chipKpPost(kp, idx, pump) {
   const m0 = kpM(idx, rate, C), m1 = kpM(idx + 1, rate, C), e = CHIP_KP_FADE;
   const {from, to} = kpRawRange(m0, m1, e, rate);
   const names = chipKpChunkNames(kp, idx);
-  if (!names) return;
+  if (!names) return false;
   const prevEnt = kp.cache.get(idx - 1);
   const ent = {status: "pending", buffers: {}, next: {}, prev: {}, bytes: 0, left: 0, pinned: kp.pinnedIdx.has(idx)};
   kp.cache.set(idx, ent);
@@ -169,11 +172,16 @@ export function chipKpPost(kp, idx, pump) {
       if (--ent.left > 0) return;
       ent.status = "ready";
       kp.bytes = 0; for (const x of kp.cache.values()) kp.bytes += x.bytes; kp.peakBytes = Math.max(kp.peakBytes, kp.bytes);
+      kp.chunkBytes = Math.max(kp.chunkBytes || 0, ent.bytes); // what one chunk costs: the pin trim (chipKpPinSet) sizes itself by this
       chipKpCoherence(kp, idx, ent);
-      if (S.playing && chip.kp === kp) pump(S.audio.currentTime); // a chunk the playhead is about to reach must not wait for the next tick
+      if (chip.kp === kp && pump) pump(S.audio.currentTime); // a chunk the playhead is about to reach must not wait for the next tick (the pumps gate on `playing` themselves; the bounce's chain continues here)
     }).catch(() => { if (kp.cache.get(idx) === ent) kp.cache.delete(idx); });
   }
-  if (!ent.left) ent.status = "ready"; // no raw for any track here (a silent stretch of a stream): nothing to play, the chain goes on fresh
+  if (!ent.left) { // no raw for any track here
+    if (kp.mode !== "stream") { kp.cache.delete(idx); return false; } // whole render: chipBuffers() is {} before the tap makes the context — nothing to cache, nothing to call live (review item 6)
+    ent.status = "ready"; // a stream's silent stretch: nothing to play, the chain goes on fresh
+  }
+  return true;
 }
 // A successor stretched on a fresh chain before this chunk existed (a seek
 // backwards) would meet it with a different grain choice at the join: redo it
@@ -187,11 +195,14 @@ export function chipKpCoherence(kp, idx, ent) {
 // `wanted`: chunk indices in PLAY order for this tick's horizon. A chunk is
 // posted once its predecessor is ready (chain) or not wanted at all (a fresh
 // start: the first chunk after a seek, the far side of a loop wrap). In
-// stream mode a chunk also waits for its successor's raw when that successor
-// is wanted next (its tail grains read into it; a last-of-segment chunk's
-// tail is trimmed, so it needs nothing).
-export function chipKpWant(kp, wanted, pump) {
+// stream mode a chunk also waits for its successor's raw (its tail grains
+// read into it; computed once from a faded edge plus silence and once, by
+// the successor, from the full raw, the two renderings of the join would
+// not sum — review item 3) unless it is segment-final (`finals`: its tail
+// is trimmed by dur) or the song's last chunk.
+export function chipKpWant(kp, wanted, pump, finals = new Set()) { // true when a job was posted
   const want = new Set(wanted);
+  let posted = false;
   for (let i = 0; i < wanted.length; i++) {
     const idx = wanted[i];
     if (kp.cache.has(idx)) continue;
@@ -200,25 +211,40 @@ export function chipKpWant(kp, wanted, pump) {
     if (kp.mode === "stream") {
       const st = chip.stream;
       if (!st.cache.has(idx)) continue;
-      if (wanted[i + 1] === idx + 1 && !st.cache.has(idx + 1)) continue;
+      const last = st.frames ? chipStreamIdxForTapeSec((st.frames - 1) / st.rate) : Infinity;
+      if (!finals.has(idx) && idx < last && !st.cache.has(idx + 1)) continue;
     }
-    chipKpPost(kp, idx, pump);
+    if (chipKpPost(kp, idx, pump)) posted = true;
   }
+  return posted;
 }
 export function chipKpScheduled(kp, idx, anchor) { const a = kp.scheduled.get(idx); return !!a && a.some(x => Math.abs(x - anchor) < CHIP_STREAM_ANCHOR_TOL); }
 export function chipKpBuffers(kp, idx) { const ent = kp.cache.get(idx); return ent && ent.status === "ready" ? ent.buffers : null; }
+// The chunks a loop wrap lands in, pinned against eviction (chipLoopPinRanges:
+// loop start + CHIP_STREAM_PIN_LOOKAHEAD, or a short seam's whole spans) —
+// unless the pins alone would overrun the byte cap (a PS2 stereo seam at
+// 50 %: over 100 MB), where each span keeps only its first chunks (review
+// items 2/5). Sized by the biggest chunk seen so far.
+export function chipKpPinSet(kp, ranges) {
+  const perSpan = Math.ceil(CHIP_STREAM_PIN_LOOKAHEAD / CHIP_STREAM_CHUNK_SEC) + 1;
+  const build = trim => { const s = new Set(); for (const [a, b] of ranges) for (let i = a; i <= (trim ? Math.min(b, a + perSpan - 1) : b); i++) s.add(i); return s; };
+  const full = build(false);
+  return full.size * (kp.chunkBytes || 0) > CHIP_KP_CACHE_BYTES ? build(true) : full;
+}
 // Drops stretched chunks behind the playhead (never a pinned one, never one
 // this tick still wants — the far side of a coming loop wrap sits behind the
 // playhead — never the chunk under it or the next), then the farthest-ahead
-// ones while the cache is over its byte cap — the horizon shrinks on a huge
-// song, memory does not.
+// ones nobody wants while the cache is over its byte cap — the horizon
+// shrinks on a huge song, memory does not. `scheduled` anchors go only with
+// chunks behind the playhead: a wanted chunk's sources are live, and
+// forgetting its anchor would start it again (review item 2).
 export function chipKpEvict(kp, curTapeSec, wanted = []) {
   const curIdx = chipStreamIdxForTapeSec(curTapeSec), want = new Set(wanted);
   for (const [idx, ent] of kp.cache) { ent.pinned = kp.pinnedIdx.has(idx); if (!ent.pinned && !want.has(idx) && idx < curIdx - 1) kp.cache.delete(idx); }
   for (const idx of kp.scheduled.keys()) if (idx < curIdx - 1 && !kp.pinnedIdx.has(idx) && !want.has(idx)) kp.scheduled.delete(idx);
   let bytes = 0; for (const x of kp.cache.values()) bytes += x.bytes;
-  const ahead = [...kp.cache.keys()].filter(i => !kp.pinnedIdx.has(i) && i > curIdx + 1).sort((a, b) => b - a);
-  for (const idx of ahead) { if (bytes <= CHIP_KP_CACHE_BYTES) break; bytes -= kp.cache.get(idx).bytes; kp.cache.delete(idx); kp.scheduled.delete(idx); }
+  const ahead = [...kp.cache.keys()].filter(i => !kp.pinnedIdx.has(i) && !want.has(i) && i > curIdx + 1).sort((a, b) => b - a);
+  for (const idx of ahead) { if (bytes <= CHIP_KP_CACHE_BYTES) break; bytes -= kp.cache.get(idx).bytes; kp.cache.delete(idx); }
   kp.bytes = bytes;
 }
 // ---- the whole-render path --------------------------------------------
@@ -273,13 +299,12 @@ export function chipKpPump(nowCtx) {
         if (dur > 0) src.start(startAt, offset, dur); else src.start(startAt, offset);
         src.onended = () => { const i = kp.srcs.indexOf(src); if (i >= 0) kp.srcs.splice(i, 1); };
         kp.srcs.push(src);
+        kp.live = true; // only a source that really started mutes the synth (review item 6: an empty chunk is not console audio)
       }
       const a = kp.scheduled.get(idx); if (a) a.push(anchor); else kp.scheduled.set(idx, [anchor]);
-      kp.live = true;
     }
   }
-  kp.pinnedIdx = new Set();
-  for (const [a, b] of chipLoopPinRanges(S.loopSeg, S.playRate, chip.lead)) for (let i = a; i <= b; i++) kp.pinnedIdx.add(i);
+  kp.pinnedIdx = chipKpPinSet(kp, chipLoopPinRanges(S.loopSeg, S.playRate, chip.lead));
   chipKpWant(kp, wanted, chipKpPump);
   chipKpEvict(kp, chip.lead + curSec * S.playRate, wanted);
 }
@@ -288,44 +313,59 @@ export function chipKpPump(nowCtx) {
 // (null until the worker has them — the pump records nothing for that
 // anchor and retries next tick), then the chunks it will want, in play order.
 export function chipKpStreamBuffers(idx) { const kp = chipKpOpen("stream"); return chipKpBuffers(kp, idx); }
-export function chipKpStreamWant(wanted, pump, curTapeSec) {
+export function chipKpStreamWant(wanted, pump, curTapeSec, finals) {
   const kp = chipKpOpen("stream");
-  kp.pinnedIdx = chip.stream.pinnedIdx;
-  chipKpWant(kp, wanted, pump);
+  kp.pinnedIdx = chipKpPinSet(kp, chipLoopPinRanges(S.loopSeg, S.playRate, chip.lead)); // the raw cache's own pins, trimmed to the stretched cap where they would overrun it
+  chipKpWant(kp, wanted, pump, finals);
   chipKpEvict(kp, curTapeSec, wanted);
 }
 // ---- Download audio (offline bounce) ----------------------------------
-// The offline render has no pump: every chunk of the one pass is stretched
-// here first (worker, cap), then chipKpScheduleAll places them on the offline
-// context in one synchronous sweep from renderSongOffline.
-export function chipKpPrepareAll(endSec, capMs) {
-  if (!chipActive() || chip.stream || !chipKeepPitch()) return Promise.resolve();
+// The offline render has no pump, and its graph exists only inside
+// renderSongOffline's synchronous sweep, so every chunk of the one pass is
+// stretched BEFORE the sweep (chipKpPrepareAll: the chain continues from each
+// chunk's own completion, no time cap, progress on the status line) and held
+// until chipKpScheduleAll places them. Holding a whole stretched song is the
+// memory cost of that; a render whose stretched copy would pass
+// CHIP_KP_BOUNCE_BYTES is not attempted — the download is tape-style for it
+// and the status line says so (review item 4).
+export const CHIP_KP_BOUNCE_BYTES = 160 * 1024 * 1024;
+export function chipKpBounceBytes() { // the stretched copy's size for the whole render at this rate
+  let n = 0;
+  for (const buf of Object.values(chipBuffers())) n += buf.length * buf.numberOfChannels * 4;
+  return n / S.playRate;
+}
+export function chipKpPrepareAll(endSec, progress = () => {}) { // resolves true when every chunk is ready, false when the bounce must fall back to tape-style
+  if (!chipActive() || chip.stream || !chipKeepPitch()) return Promise.resolve(false);
+  if (chipKpBounceBytes() > CHIP_KP_BOUNCE_BYTES) return Promise.resolve(false);
   const kp = chipKpOpen("whole");
   const idx0 = chipStreamIdxForTapeSec(chip.lead), idx1 = chipStreamIdxForTapeSec(chip.lead + endSec * S.playRate);
   const all = []; for (let i = idx0; i <= idx1; i++) all.push(i);
   kp.pinnedIdx = new Set(all); // nothing is evicted under a bounce
-  const t0 = Date.now();
   return new Promise(res => {
-    const t = setInterval(() => {
-      chipKpWant(kp, all, () => {});
-      if (chip.kp !== kp || all.every(i => chipKpBuffers(kp, i)) || Date.now() - t0 >= capMs) { clearInterval(t); res(); }
-    }, 20);
+    const step = () => {
+      if (chip.kp !== kp) return res(false); // the song or the rate moved on
+      const ready = all.filter(i => chipKpBuffers(kp, i)).length;
+      progress(ready / all.length);
+      if (ready === all.length) return res(true);
+      if (!chipKpWant(kp, all, step) && !all.some(i => { const e = kp.cache.get(i); return e && e.status === "pending"; })) res(false); // nothing posted and nothing in flight: no raw to stretch
+    };
+    step();
   });
 }
-export function chipKpScheduleAll(endSec) {
+export function chipKpScheduleAll(endSec) { // true when every chunk of the pass was placed; false (nothing placed) when one is missing, so the caller can fall back whole
   const kp = chip.kp;
-  if (!kp || kp.mode !== "whole") return;
+  if (!kp || kp.mode !== "whole") return false;
   const seg = {when: 0, tapeFrom: chip.lead, tapeTo: chip.lead + endSec * S.playRate};
   const idx0 = chipStreamIdxForTapeSec(seg.tapeFrom), idx1 = chipStreamIdxForTapeSec(Math.max(seg.tapeFrom, seg.tapeTo - 1e-9));
+  for (let idx = idx0; idx <= idx1; idx++) if (!chipKpBuffers(kp, idx)) return false;
   for (let idx = idx0; idx <= idx1; idx++) {
-    const buffers = chipKpBuffers(kp, idx);
-    if (!buffers) continue;
     const {anchor, offset, dur} = chipKpPlace(seg, idx, S.playRate, kp.sr);
-    for (const [name, buffer] of Object.entries(buffers)) {
+    for (const [name, buffer] of Object.entries(chipKpBuffers(kp, idx))) {
       const src = chipPartSrc(name, buffer, 1);
       if (!src) continue;
       src.start(Math.max(0, anchor), offset, dur);
     }
   }
   chip.kp = null; // the whole song's chunks were pinned for the bounce: the next play rebuilds the lean cache
+  return true;
 }
