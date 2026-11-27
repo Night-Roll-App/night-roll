@@ -51,6 +51,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
     return JSON.stringify({
       ppq: song.ppq, timesig: effTs(), bpm: Math.round(6e7 / song.tempos[0].usq),
       barTicks: barTicks(), beatTicks: beatTicks(), endTick: end,
+      pickupBeats: pickupBeats(), pickupTicks: pickupTicks(), // the pickup frame (#1192): bar 1 starts pickupTicks in; bar 0 = the pickup
       // docs/annotations-v2.md P3: a tool that would REWRITE this file (none
       // does yet — P5's migration tool will) must check rollnotesReadOnly
       // first and refuse, same as the app's own publish guard
@@ -67,7 +68,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
         keydir: n.keydir, keypartial: n.keypartial, tsdir: n.tsdir, tempodir: n.tempodir,
         trackdir: n.trackdir, loopTo: n.loopTo, lane: n.lane,
         study: n.study, // {item, done} on an Analysis-sheet entry (tools/annotations.mjs lists it as type "analysis")
-        songnote: n.songnote})), // {title} on a song note — his titled idea about the whole song, body in note (tools/annotations.mjs: type "songnote"); no backticks here — this is inside a template literal
+        songnote: n.songnote, pickup: n.pickup})), // {title} on a song note — his titled idea about the whole song, body in note (tools/annotations.mjs: type "songnote"); no backticks here — this is inside a template literal
     });
   })()`));
   if (dedupe) { // stacked same-start-same-pitch duplicates collapse to the longest
@@ -92,12 +93,13 @@ export function parseBQ(doc, s) { // "2.4" or "2.4.5" (bar 2, beat 4.5) -> tick
   const parts = String(s).split(".");
   const bar = parseInt(parts[0], 10);
   const beat = parts.length > 1 ? parseFloat(parts.slice(1).join(".")) || 1 : 1;
-  return (bar - 1) * doc.barTicks + (beat - 1) * doc.beatTicks;
+  return (doc.pickupTicks || 0) + (bar - 1) * doc.barTicks + (beat - 1) * doc.beatTicks; // the pickup frame: bar 0 is the pickup (#1192)
 }
 
 export function fmtBQ(doc, tick) {
-  const bar = Math.floor(tick / doc.barTicks) + 1;
-  const beat = (tick % doc.barTicks) / doc.beatTicks + 1;
+  const rel = tick - (doc.pickupTicks || 0);
+  const bar = Math.floor(rel / doc.barTicks) + 1;
+  const beat = (rel - (bar - 1) * doc.barTicks) / doc.beatTicks + 1;
   const r = Math.round(beat * 100) / 100;
   return bar + "." + (Number.isInteger(r) ? r : r);
 }

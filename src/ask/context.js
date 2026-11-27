@@ -38,6 +38,8 @@ import { baseName } from "../model/rollnotes.js";
 import { nameChord } from "../theory/chords.js";
 import { askAnnotationsTextCompact } from "./tools.js";
 import { askAnnotationsText } from "./tools.js";
+import { askBarsCount } from "./tools.js";
+import { pickupBeats, barStartTick, barAtTick, barBeatAt } from "../model/grid.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
 import { askAnnotationStructural } from "./tools.js";
@@ -84,8 +86,8 @@ export function songWhereLabel(path) {
 // changed); RULE_NORMAL is new (other users, one device switch — CLAUDE.md
 // scope, Josh's ruling 2026-09-29).
 export const ASK_SYS_BASE1 = `You are the resident music-theory tutor inside Night Roll, a piano-roll + engraved-score web app for studying NES soundtracks and learning composition. The user often chats from an iPad — keep replies short and warm, a few sentences unless asked for depth. Plain text only: no markdown, no headers, no bullet lists.`;
-export const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, questions and direction (what does the bass outline? which accidental keeps appearing? what happens on the downbeat of bar 9?). When the user has made a guess, confirm or refine it honestly. If the user asks to be told, give one strong hint first; if they insist again, or say they give up, tell them plainly — never withhold forever. General theory concepts (what is a secondary dominant? how do sevenths resolve?) are fair game to answer directly: concepts aren't spoilers, per-song conclusions are.`;
-export const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
+export const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, questions and direction (what does the bass outline? which accidental keeps appearing? what happens on the downbeat of bar 9?). When the user has made a guess, confirm or refine it honestly. If the user asks to be told, give one strong hint first; if they insist again, or say they give up, tell them plainly — never withhold forever. General theory concepts (what is a secondary dominant? how do sevenths resolve?) are fair game to answer directly: concepts aren't spoilers, per-song conclusions are. Bar 0 is the pickup when the user has set one; never suggest that a song has a pickup or where its bar 1 should be — the user sets it.`;
+export const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one. Bar 0 is the pickup when the user has set one; never suggest that a song has a pickup or where its bar 1 should be — the user sets it.`;
 export const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, the ruler selection's exact edges when there is one, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
 What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have ONE app tool, act: its description lists every action in one line each — annotations (add_annotation, edit_annotation, delete_annotation: the user's own words at the bar and beat they said; target an existing one by the "id" its context entry carries, or by bar, beat and current text; an ambiguous target is an error, never a guess), notes and bars on the user's own songs (write_notes: spell out every note yourself, a gallop is an eighth plus two sixteenths, write all three; copy_bars for repeating music that already exists, never a hand-spelled write_notes; insert_bars, delete_bars; drummer for ANY drum request — all one undo step, all refusing on a locked/capture song), reading (read_bars for bars of THIS song beyond the context window, live state — ask for it instead of guessing or saying you can't see; some bars may read "as sent earlier", you still have those; list_songs, read_song, read_notes for another song the user names), publish_song (the footer's Publish; it refuses and says why when the device isn't connected), navigation (go_to, play, stop, select, undo) and open_song (opens another song once your reply has landed and moves the chat there — LAST in its call, the rest of the user's request in its then, in their words). Every action ONLY when the user explicitly asks for that exact thing, never on your own initiative, and never a chord, key or note of your own choosing. Put several actions in ONE act call, in order; after a call made only of navigation (go to, play, stop, select, open_song) the app shows the result line itself and your turn ends. A rejected call's error carries that action's full text; so does help {name}. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings, "songnote" entries are the user's titled ideas about the whole song (title, then the body; kind "question" = an open question he still has to solve — list them when he asks, never answer or hint at one unless he asks you to). If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.
@@ -107,18 +109,19 @@ export function askSpan() {
   const bt = barTicks();
   const end = Math.max(bt, S.songEndTick);
   let t0, t1, src;
+  const floorBar = t => Math.max(0, barStartTick(barAtTick(t))), ceilBar = t => barStartTick(barAtTick(t - 1) + 1); // bar lines of the pickup frame (#1192): bar 0 starts at the song's start
   if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
-    t0 = Math.floor(S.rangeSel.a / bt) * bt; t1 = Math.ceil(S.rangeSel.b / bt) * bt; src = "selected";
+    t0 = floorBar(S.rangeSel.a); t1 = ceilBar(S.rangeSel.b); src = "selected";
   } else {
     const w = (wrap && wrap.clientWidth) || 800;
     const ppt = pxPerTick();
-    t0 = Math.floor(Math.max(0, S.view.x / ppt) / bt) * bt;
-    t1 = Math.ceil(Math.min(end, (S.view.x + w - S.RULER_W) / ppt) / bt) * bt;
+    t0 = floorBar(Math.max(0, S.view.x / ppt));
+    t1 = ceilBar(Math.min(end, (S.view.x + w - S.RULER_W) / ppt));
     src = "in view";
   }
   if (src === "in view") { t0 = Math.max(0, Math.min(t0, end - bt)); t1 = Math.min(t1, end); } // a ruler selection may reach past the song's end (a fill can extend it)
   t1 = Math.max(t0 + bt, t1);
-  return {t0, t1, from: Math.floor(t0 / bt) + 1, to: Math.ceil(t1 / bt), src};
+  return {t0, t1, from: barAtTick(t0), to: barAtTick(t1 - 1), src};
 }
 export function askSpanLabel(sp) { return "bars " + sp.from + " through " + sp.to + " (" + sp.src + ")"; } // never a dash (Josh #1137)
 export function askKeyDeclared(t0, t1) { return sfDeclaredAtRaw(t0) !== null || S.keyRegions.some(r => r.start >= t0 && r.start < t1); }
@@ -149,18 +152,19 @@ export function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three d
   L.push("# Format: bar N: beat pitch duration, … — beat = the counted beat of the declared meter (" + ts[0] + "/" + ts[1] + ": " + ts[0] + " beats per bar, 1 = the downbeat); duration in the same unit.");
   L.push("# duration is GATE TIME (how long the note was held), NOT a notated value; RHYTHM comes from ONSET SPACING (the beat column): staccato notes gating at 0.33 are still eighths, not triplets.");
   L.push(line);
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
+  const k0 = barAtTick(t0), k1 = barAtTick(t1 - 1) + 1; // bar NUMBERS of the pickup frame: a span over the pickup starts at "bar 0:" (#1192)
   let cut = null, size = L.join("\n").length;
   S.song.tracks.forEach((tr, ti) => {
     const head = "\n## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : "") + (trackIsDrums(ti) ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
     const rows = [];
-    for (let b = b0; b < b1; b++) {
-      if (cut !== null && b + 1 > cut) break;
-      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
+    for (let k = k0; k < k1; k++) {
+      if (cut !== null && k > cut) break;
+      const bs = barStartTick(k);
+      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(bs, t0) && n.t < Math.min(bs + bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
       if (!ns.length) continue;
-      const row = "bar " + (b + 1) + ": " + ns.map(n =>
-        fmt((n.t - b * bt) / qt + 1) + " " + (trackIsDrums(ti) ? String(kitKeyOf(tr, n.p)) : pitchNameAt(n.p, n.t, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null))) + " " + fmt(n.d / qt)).join(", ");
-      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
+      const row = "bar " + k + ": " + ns.map(n =>
+        fmt((n.t - bs) / qt + 1) + " " + (trackIsDrums(ti) ? String(kitKeyOf(tr, n.p)) : pitchNameAt(n.p, n.t, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null))) + " " + fmt(n.d / qt)).join(", ");
+      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = k; break; }
       rows.push(row); size += row.length + 1;
     }
     if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
@@ -186,19 +190,20 @@ export function askSpanNotesCompact(t0, t1, maxChars) {
   const fmt = x => String(Math.round(x * 100) / 100);
   const {est, line} = askKeySpellComment(t0, t1);
   const L = [line];
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
+  const k0 = barAtTick(t0), k1 = barAtTick(t1 - 1) + 1; // bar NUMBERS of the pickup frame (#1192)
   let cut = null, size = L.join("\n").length;
   S.song.tracks.forEach((tr, ti) => {
     const drums = trackIsDrums(ti);
     const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
     const rows = [];
-    for (let b = b0; b < b1; b++) {
-      if (cut !== null && b + 1 > cut) break;
-      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
+    for (let b = k0; b < k1; b++) {
+      if (cut !== null && b > cut) break;
+      const bs = barStartTick(b);
+      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(bs, t0) && n.t < Math.min(bs + bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
       if (!ns.length) continue;
       let lastOct = null, lastDur = null; // reset each row: "the previous note in the row" never reaches across bars
       const toks = ns.map(n => {
-        const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
+        const beat = fmt((n.t - bs) / qt + 1), dur = fmt(n.d / qt);
         if (drums) { const tok = beat + "#" + kitKeyOf(tr, n.p) + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
         const oct = Math.floor(n.p / 12) - 1, cls = spellPcAt(n.p % 12, n.t, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
         let tok = beat + cls;
@@ -207,8 +212,8 @@ export function askSpanNotesCompact(t0, t1, maxChars) {
         lastOct = oct; lastDur = dur;
         return tok;
       });
-      const row = (b + 1) + "|" + toks.join(" ");
-      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
+      const row = b + "|" + toks.join(" ");
+      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b; break; }
       rows.push(row); size += row.length + 1;
     }
     if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
@@ -225,14 +230,15 @@ export function askSpanNotesCompact(t0, t1, maxChars) {
 // askSpan's own invariant (t0/t1 are always floor/ceil'd to a bar) — so,
 // unlike askSpanNotesCompact's inner loop, it does not need to clamp to a
 // t0/t1 that could land mid-bar.
-export function askBarRow(tr, ti, b, bt, qt, est) {
+export function askBarRow(tr, ti, k, bt, qt, est) { // k = the bar NUMBER in the ruler's frame (0 = the pickup bar, #1192)
   const fmt = x => String(Math.round(x * 100) / 100);
   const drums = trackIsDrums(ti);
-  const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt).sort((a, c) => a.t - c.t || a.p - c.p);
+  const bs = barStartTick(k);
+  const ns = tr.notes.filter(n => !n.gone && n.t >= bs && n.t < bs + bt).sort((a, c) => a.t - c.t || a.p - c.p);
   if (!ns.length) return null;
   let lastOct = null, lastDur = null; // reset every bar — never carries across bars, same rule as askSpanNotesCompact
   const toks = ns.map(n => {
-    const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
+    const beat = fmt((n.t - bs) / qt + 1), dur = fmt(n.d / qt);
     if (drums) { const tok = beat + "#" + kitKeyOf(tr, n.p) + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
     const oct = Math.floor(n.p / 12) - 1, cls = spellPcAt(n.p % 12, n.t, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
     let tok = beat + cls;
@@ -241,14 +247,14 @@ export function askBarRow(tr, ti, b, bt, qt, est) {
     lastOct = oct; lastDur = dur;
     return tok;
   });
-  return (b + 1) + "|" + toks.join(" ");
+  return k + "|" + toks.join(" ");
 }
 // askBarFingerprint: the "compact rows" for ONE bar, across every track in
 // order — what the per-bar sent-hash record below hashes. "" (never cached,
 // never staged — nothing to collapse) when nothing sounds in that bar at all.
-export function askBarFingerprint(b, bt, qt, est) {
+export function askBarFingerprint(k, bt, qt, est) { // k = the bar number
   const parts = [];
-  S.song.tracks.forEach((tr, ti) => { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) parts.push("T" + (ti + 1) + row); });
+  S.song.tracks.forEach((tr, ti) => { const row = askBarRow(tr, ti, k, bt, qt, est); if (row) parts.push("T" + (ti + 1) + row); });
   return parts.join("\n");
 }
 // askSpanNotesCompactCached: askSpanNotesCompact's bridge-only sibling for
@@ -270,13 +276,13 @@ export function askBarFingerprint(b, bt, qt, est) {
 export function askSpanNotesCompactCached(t0, t1, maxChars, key) {
   const bt = barTicks(), qt = beatTicks();
   const {est, line} = askKeySpellComment(t0, t1);
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
+  const k0 = barAtTick(t0), k1 = barAtTick(t1 - 1) + 1; // bar numbers (the pickup bar is 0)
   const prevBars = askSentGet(key).bars || {};
   const bars = [];
-  for (let b = b0; b < b1; b++) {
-    const fp = askBarFingerprint(b, bt, qt, est);
+  for (let k = k0; k < k1; k++) {
+    const fp = askBarFingerprint(k, bt, qt, est);
     const hash = fp ? fnv1a32(fp) : null; // null: no content in this bar at all — never "cached", nothing to stage
-    bars.push({bar: b + 1, hash, cached: hash !== null && prevBars[b + 1] === hash});
+    bars.push({bar: k, hash, cached: hash !== null && prevBars[k] === hash});
   }
   const stage = {};
   for (const x of bars) if (x.hash !== null && !x.cached) stage[x.bar] = x.hash;
@@ -296,16 +302,16 @@ export function askSpanNotesCompactCached(t0, t1, maxChars, key) {
         L.push(label); size += label.length + 1;
       }
     } else {
-      const subB0 = run[0].bar - 1, subB1 = run[run.length - 1].bar;
+      const subK0 = run[0].bar, subK1 = run[run.length - 1].bar + 1;
       S.song.tracks.forEach((tr, ti) => {
         const drums = trackIsDrums(ti);
         const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
         const rows = [];
-        for (let b = subB0; b < subB1; b++) {
-          if (cut !== null && b + 1 > cut) break;
-          const row = askBarRow(tr, ti, b, bt, qt, est);
+        for (let k = subK0; k < subK1; k++) {
+          if (cut !== null && k > cut) break;
+          const row = askBarRow(tr, ti, k, bt, qt, est);
           if (!row) continue;
-          if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
+          if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = k; break; }
           rows.push(row); size += row.length + 1;
         }
         if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
@@ -336,6 +342,7 @@ export function askLegendText() {
   return "# Compact context format (this explanation is sent once per session — later turns omit it):\n" +
     "# notes: \"T<n> name\" starts a track (\"[drums]\"/\"[muted]\" tag if either applies); each row is \"<bar>|<beat><Pitch><oct>/<dur> …\" — beat is the counted beat of the declared meter, 1 = the downbeat; duration is GATE TIME (how long the note was held), NOT a notated value — rhythm comes from onset spacing, not duration. Octave and duration repeat from the previous note IN THAT ROW when omitted (the first note of a row always states both). A drum track gives the raw note number after \"#\" instead of a pitch letter (e.g. \"2.5#38\").\n" +
     "# annotations: \"<id> [bar.beat-bar.beat] kind: value — comment\" (the second bar.beat is the last beat the band covers; \"[bar.beat until bar.beat]\" = a chord that ends exactly there, off a whole beat); id is this turn's handle for edit_annotation/delete_annotation; structural track/lane/audio directives (song-structure, not analysis) are left out here — they're unchanged in the app; \"songnote: Title — body\" is one of the user's titled song notes (about the whole song, not a bar; song_note changes it); \"songnote (question): Title — body\" is one he marked as an open question he still has to solve — list them when asked, never answer one unasked; on a chord, \"[roman: bVII]\" and \"[no5]\" are the user's own Roman numeral and no-fifth mark; \"[layer N]\" on a chord = the user wrote it over the same span as another chord, as a second layer (N counts from 1; a chord without it is the base layer) — which reading the stack is (pedal, polychord, one bigger chord) is the user's to say, never yours; \"[pedal]\" on a chord = the user marked a bass pedal point (its value reads \"A ped.\": the held note's root, drawn under the chord rows, not a chord of its own).\n" +
+    "# bar 0, when present, is the pickup (the notes before the first full bar; the user set it with a pickup annotation — bar 1 is the first full bar).\n" +
     "# a bar already sent unchanged in an earlier turn of THIS chat may be shown as \"bar N: as sent earlier\" or \"bars A–B: as sent earlier\" instead of its rows (you still have it from before); use read_bars(from_bar, to_bar) for any bar you need restated or haven't seen yet, rather than guessing or asking the user to repeat it.";
 }
 export function askAppState() { // what is running: build, install, audio engine, the last ⚠ lines — a bug report should need no relay (Josh, 2026-09-27: "you should have access to the current running build and any errors")
@@ -354,7 +361,7 @@ export function askAppState() { // what is running: build, install, audio engine
 export function askModeLine() { return appMode() === "normal" ? "mode: normal" : null; }
 export function askViewCursorLine(bt, qt, tick) { // shared by the song chat's own line (below) and askOpenSongLine (general/Terminal's compact summary) — one wording, never duplicated
   return "view: " + S.viewMode + (S.playing ? ", playing" : ", paused") + (S.playRate !== 1 ? " at " + Math.round(S.playRate * 100) + "% speed" : "") +
-         "; cursor: bar " + (Math.floor(tick / bt) + 1) + " beat " + (Math.round(((tick % bt) / qt + 1) * 100) / 100);
+         "; cursor: bar " + barBeatAt(tick)[0] + " beat " + (Math.round(barBeatAt(tick)[1] * 100) / 100);
 }
 // The ruler selection's exact edges (Josh #1142: askSpan rounds it out to whole
 // bars, so a span starting a 32nd late read as the bar before it). b is the
@@ -362,7 +369,7 @@ export function askViewCursorLine(bt, qt, tick) { // shared by the song chat's o
 export function askRulerSelLine(bt, qt) {
   const r = S.rangeSel;
   if (!r || !(r.b > r.a)) return null;
-  const at = t => "bar " + (Math.floor(t / bt) + 1) + " beat " + (Math.round(((t % bt) / qt + 1) * 100) / 100);
+  const at = t => "bar " + barBeatAt(t)[0] + " beat " + (Math.round(barBeatAt(t)[1] * 100) / 100);
   return "ruler selection: from " + at(r.a) + " up to " + at(r.b) + " (the end point not included)" +
          (r.off ? ", parked" : r.cycle ? ", cycling" : "");
 }
@@ -537,7 +544,8 @@ export function askContext(sp, budget) { // the ONE block per request; never sto
   L.push("song: " + baseName() + (S.songKey && S.songKey.startsWith("albums/") ? " (album: " + S.songKey.split("/")[1] + ")" : "") +
          (own ? " — the user's own composition (editable)" : " — a locked capture the user is studying"));
   L.push("meter: " + ts[0] + "/" + ts[1] + " (beat = " + (ts[1] === 8 ? "eighth" : ts[1] === 16 ? "sixteenth" : ts[1] === 2 ? "half note" : "quarter") + "), tempo: " +
-         Math.round(6e7 / tempo.usq) + " bpm, " + Math.max(1, Math.ceil(S.songEndTick / bt)) + " bars");
+         Math.round(6e7 / tempo.usq) + " bpm, " + askBarsCount() + " bars" + (pickupBeats() ? " and a pickup" : ""));
+  if (pickupBeats()) L.push("pickup: " + pickupBeats() + " beat" + (pickupBeats() === 1 ? "" : "s") + " — bar 0 is the pickup, bar 1 the first full bar"); // #1192: the user set it; never suggest one
   L.push("tracks: " + S.song.tracks.map((t, i) => (t.name || "track " + (i + 1)) + (trackIsDrums(i) ? " (drums)" : "") + (trackAudible(i) ? "" : " (muted)")).join(", "));
   L.push(askViewCursorLine(bt, qt, tick));
   const selLine = askRulerSelLine(bt, qt);

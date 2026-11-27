@@ -33,6 +33,7 @@ import { updateTrackGains } from "../audio/engine.js";
 import { computeSongEnd } from "../model/song.js";
 import { SF_MAJOR } from "../theory/chords.js";
 import { posAnchorText } from "../model/grid.js";
+import { barAtTick } from "../model/grid.js";
 import { keyLabelState } from "./chrome.js";
 import { secDepthCap } from "../model/grid.js";
 import { TRACK_COLORS } from "../render/roll.js";
@@ -135,7 +136,7 @@ export function refreshKeysetLabel() {
   const t = chosenTonic();
   if (!S.song || !t) return;
   const mode = keymodeSel.value;
-  const bar = Math.floor(S.playCursor / barTicks()) + 1;
+  const bar = barAtTick(S.playCursor); // the pickup frame (#1192): a key set over the pickup is bar 0
   const label = mode
     ? "Set " + keyNameFor(t.pc, mode).name + " @ bar " + bar
     : "Store " + partialNameOf(t) + "? @ bar " + bar;
@@ -155,6 +156,7 @@ export const NOTE_GROUPS = [
   {title: "CHORDS", type: "chord", match: n => n.chord},
   {title: "LOOP", type: "loop", match: n => n.loopTo !== undefined},
   {title: "CHOP", type: "chop", match: n => !!n.chopdir},
+  {title: "PICKUP", type: "pickup", match: n => n.pickup !== undefined}, // the frame directive (#1192): "pickup: 1" + its note, with Delete
   {title: "TEXT NOTES", type: "note", match: () => true}, // catches the rest
 ];
 // Jump bar across the top: one chip per annotation type, with its count.
@@ -359,7 +361,7 @@ export function useFileKey() {
   if (!S.song || !S.songKey) return;
   const r = checkKeyVsFile();
   if (!r.file || !r.file.name) return;
-  const bar = Math.floor(S.playCursor / barTicks()) + 1;
+  const bar = barAtTick(S.playCursor); // the pickup frame (#1192): a key set over the pickup is bar 0
   dropLocalKeyAt(bar);
   const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + r.file.name, keydir: r.file.sf, added: true};
   S.rollnotes.push(resolveNote(fresh));
@@ -487,7 +489,8 @@ export function renderNoteList() {
       row.setAttribute("role", "button");
       const where = document.createElement("span");
       where.className = "where";
-      where.textContent = posAnchorText(n) +
+      where.textContent = n.pickup !== undefined ? "bar 1 starts " + n.pickup + " beat" + (n.pickup === 1 ? "" : "s") + " in" // the frame directive has no place of its own (#1192)
+                        : posAnchorText(n) +
                           (n.chopdir ? " raw" : ""); // chop anchors are pre-chop capture coordinates
       const body = document.createElement("span");
       body.className = "body";
@@ -625,7 +628,7 @@ export function initNotes1() {
   keysetBtn.addEventListener("click", () => {
     const t = chosenTonic(), mode = keymodeSel.value;
     if (!t || !S.song || !S.songKey) return;
-    const bar = Math.floor(S.playCursor / barTicks()) + 1;
+    const bar = barAtTick(S.playCursor); // the pickup frame (#1192): a key set over the pickup is bar 0
     dropLocalKeyAt(bar);
     let name, fresh;
     if (mode) {
@@ -659,7 +662,7 @@ export function initNotes1() {
     if (!S.song || !S.songKey) return;
     const est = estimateKey();
     if (!est) return;
-    const bar = Math.floor(S.playCursor / barTicks()) + 1;
+    const bar = barAtTick(S.playCursor); // the pickup frame (#1192): a key set over the pickup is bar 0
     dropLocalKeyAt(bar);
     const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + est.name, keydir: est.sf, added: true};
     S.rollnotes.push(resolveNote(fresh));

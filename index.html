@@ -502,6 +502,7 @@
         <option value="loop">Loop point</option>
         <option value="tempo">Tempo change</option>
         <option value="chop">Chop</option>
+        <option value="pickup">Pickup</option>
         <option value="song">Song note</option>
       </select>
     </div>
@@ -594,6 +595,12 @@
         <option value="start">everything before this beat</option>
         <option value="end">this beat to the end</option>
       </select>
+    </div>
+    <div class="row" id="npickuprow" style="display:none">
+      <span class="lbl">pickup</span>
+      <input id="npickup" type="number" min="0" step="0.25" inputmode="decimal" style="width:84px;min-height:44px;text-align:center" aria-label="Pickup length in beats">
+      <span class="lbl">beats</span>
+      <span class="meta" id="npickupat" style="flex:1"></span>
     </div>
     <div class="row">
       <button class="primary" id="nsave">Save</button>
@@ -799,6 +806,10 @@
       <button id="bjgo" class="primary">Go</button>
       <button id="bjclose" style="margin-left:auto">Cancel</button>
     </div>
+    <div class="row" style="margin-top:10px">
+      <button id="bjpickup" style="flex:1">Bar 1 starts at the cursor</button>
+    </div>
+    <div class="meta" id="bjstatus" style="margin-top:6px"></div>
   </div>
 </div>
 

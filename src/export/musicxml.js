@@ -61,8 +61,13 @@ const NOTE_ALTER = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0];
 export function musicXmlDocument(o) {
   const {ppq, bt, staves} = o;
   const ts = o.ts || [4, 4];
-  const btDiv = Math.round(bt / ppq * MXL_DIVISIONS);
   const nMeasures = staves.length ? staves[0].measures.length : 0;
+  // the pickup (#1192 §4): o.pickup = T in ticks; measure 0 is [0, T), written
+  // <measure number="0" implicit="yes"> with its contents summing to T (the
+  // XSD's own words for an anacrusis); numbering then 1, 2, … No pickup: today's
+  const T = o.pickup > 0 ? o.pickup : 0;
+  const mStart = mi => T > 0 ? (mi === 0 ? 0 : T + (mi - 1) * bt) : mi * bt;
+  const mLen = mi => T > 0 && mi === 0 ? T : bt;
   const tuning = (o.tab && o.tab.tuning) || TAB_TUNING, frets = o.tab && o.tab.frets !== undefined ? o.tab.frets : TAB_FRETS;
   const L = [];
   L.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -82,10 +87,10 @@ export function musicXmlDocument(o) {
     for (const bar of st.measures) for (const e of bar) if (e.tieFrom) tieNext.add(e.tieFrom);
     L.push('  <part id="P' + (si + 1) + '">');
     for (let mi = 0; mi < nMeasures; mi++) {
-      const tick0 = mi * bt;
-      const sfNow = o.keyAt(tick0), sfPrev = mi > 0 ? o.keyAt(tick0 - bt) : undefined;
+      const tick0 = mStart(mi), mTicks = mLen(mi), btDiv = Math.round(mTicks / ppq * MXL_DIVISIONS); // the guard below uses the measure's own length
+      const sfNow = o.keyAt(tick0), sfPrev = mi > 0 ? o.keyAt(mStart(mi - 1)) : undefined;
       const spell = o.spellAt(tick0);
-      L.push('    <measure number="' + (mi + 1) + '">');
+      L.push(T > 0 ? (mi === 0 ? '    <measure number="0" implicit="yes">' : '    <measure number="' + mi + '">') : '    <measure number="' + (mi + 1) + '">');
       if (mi === 0) {
         const a = ["<divisions>" + MXL_DIVISIONS + "</divisions>"];
         if (sfNow !== null && sfNow !== undefined) a.push("<key><fifths>" + sfNow + "</fifths></key>");
@@ -106,7 +111,7 @@ export function musicXmlDocument(o) {
       }
       if (si === 0 && o.tempos) { // the file's own tempo map, in the first part (a direction is score-wide to readers)
         const byTick = new Map();
-        for (const tp of o.tempos) if (tp.tick >= tick0 && tp.tick < tick0 + bt) byTick.set(tp.tick, tp); // two at one tick: the later entry wins, as playback does
+        for (const tp of o.tempos) if (tp.tick >= tick0 && tp.tick < tick0 + mTicks) byTick.set(tp.tick, tp); // two at one tick: the later entry wins, as playback does
         for (const tp of byTick.values()) {
           const bpm = Math.round(6e7 / tp.usq * 100) / 100;
           const off = Math.round((tp.tick - tick0) / ppq * MXL_DIVISIONS);

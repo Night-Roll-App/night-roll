@@ -52,19 +52,19 @@ export function seamAroundLoop(loopTo, jump, barTicks, endTick, bars = SEAM_BARS
 }
 // "27.3" <-> ticks: the ruler's own bar.beat (bar from 1, counted beat from 1;
 // a bare "27" is beat 1). null = not a position on the grid.
-export function seamParsePos(text, barTicks, beatTicks) {
+export function seamParsePos(text, barTicks, beatTicks, T = 0) { // T = where bar 1 starts (the pickup frame, #1192)
   const m = /^\s*(\d+)(?:\.(\d+))?\s*$/.exec(String(text));
   if (!m) return null;
   const bar = +m[1], beat = m[2] === undefined ? 1 : +m[2];
-  if (bar < 1 || beat < 1 || beat > Math.floor(barTicks / beatTicks)) return null;
-  return (bar - 1) * barTicks + (beat - 1) * beatTicks;
+  if (bar < (T > 0 ? 0 : 1) || beat < 1 || beat > Math.floor(barTicks / beatTicks)) return null;
+  return Math.max(0, T + (bar - 1) * barTicks + (beat - 1) * beatTicks);
 }
-export function seamPosText(tick, barTicks, beatTicks) {
-  const bar = Math.floor(tick / barTicks + 1e-9) + 1, beat = (tick - (bar - 1) * barTicks) / beatTicks + 1;
+export function seamPosText(tick, barTicks, beatTicks, T = 0) {
+  const bar = Math.floor((tick - T) / barTicks + 1e-9) + 1, beat = (tick - T - (bar - 1) * barTicks) / beatTicks + 1;
   return bar + "." + Math.round(beat * 100) / 100;
 }
-export function seamSpansText(spans, barTicks, beatTicks) {
-  return spans.map(s => seamPosText(s.a, barTicks, beatTicks) + "–" + seamPosText(s.b, barTicks, beatTicks)).join(" then ");
+export function seamSpansText(spans, barTicks, beatTicks, T = 0) {
+  return spans.map(s => seamPosText(s.a, barTicks, beatTicks, T) + "–" + seamPosText(s.b, barTicks, beatTicks, T)).join(" then ");
 }
 // Drag one edge of one span (Josh, 2026-10-28: "three bars at the beginning and
 // the end"): edge "a" | "b" moves to `tick`, kept at least `min` long and inside

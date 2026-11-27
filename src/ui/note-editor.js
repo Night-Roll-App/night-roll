@@ -4,6 +4,10 @@ import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatsPerBarDisp } from "../model/grid.js";
+import { hasEnd } from "../model/grid.js";
+import { pickupBeats, pickupTicks, barStartTick, barBeatAt, barAtTick } from "../model/grid.js";
+import { applyPickup, pickupCheck, pickupOthersCount, reframeAnchors, pickupAfterShift, meterFitsPickup, songStartAnchor } from "../model/rollnotes.js";
+import { posText } from "../model/grid.js";
 import { isComposition } from "../model/provenance.js";
 import { parseChordSym } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
@@ -33,6 +37,7 @@ import { nameChord } from "../theory/chords.js";
 import { snapBeat } from "../model/grid.js";
 import { drumHitName, trackIsDrums } from "../model/grid.js";
 import { setEndBQ } from "../model/rollnotes.js";
+import { isSongLevelAnno } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
 import { nextChordLayer } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
@@ -160,7 +165,7 @@ export const PROG_LIB = [
 // ---------------------------------------------------------------- note editor
 export const editor = document.getElementById("noteeditor");
 export function fillBarBeatSelects() {
-  const bars = Math.max(1, Math.round(S.songEndTick / barTicks()));
+  const bars = Math.max(1, Math.round((S.songEndTick - pickupTicks()) / barTicks()));
   const beatsPerBar = beatsPerBarDisp();
   const mkBars = (id, noneOption, pastEnd) => {
     const s = document.getElementById(id);
@@ -172,7 +177,7 @@ export function fillBarBeatSelects() {
     }
     // pastEnd: one extra bar so a loop's "from" can name the absolute end
     // of the song — bar N+1 beat 1 IS the end of bar N
-    for (let b = 1; b <= bars + (pastEnd ? 1 : 0); b++) {
+    for (let b = pickupBeats() ? 0 : 1; b <= bars + (pastEnd ? 1 : 0); b++) { // bar 0 = the pickup bar, offered only while one exists (#1192 C8: a loop may return to it)
       const o = document.createElement("option");
       o.value = String(b); o.textContent = String(b);
       s.appendChild(o);
@@ -205,7 +210,7 @@ export function editorType() { return document.getElementById("ntype").value; }
 // the type as a row of chips, not a drop-down (Josh, 2026-10-06, #152/#153);
 // the hidden <select> stays the one source of truth every other path reads
 export const NTYPE_CHIPS = [["note", "Note"], ["section", "Section"], ["chord", "Chord"], ["key", "Key"],
-  ["timesig", "Meter"], ["loop", "Loop"], ["tempo", "Tempo"], ["chop", "Chop"], ["song", "Song"]]; // song = a titled song note, not tied to a bar (model/rollnotes.js putSongNote) — never guessed
+  ["timesig", "Meter"], ["loop", "Loop"], ["tempo", "Tempo"], ["chop", "Chop"], ["pickup", "Pickup"], ["song", "Song"]]; // pickup = "bar 1 starts here" (#1192), prefilled from the CURSOR only // song = a titled song note, not tied to a bar (model/rollnotes.js putSongNote) — never guessed
 export function renderTypeChips() {
   const row = document.getElementById("ntypechips"), t = editorType();
   if (!row.children.length) for (const [v, label] of NTYPE_CHIPS) {
@@ -305,22 +310,24 @@ export function applyEditorType() {
   document.getElementById("ntemporow").style.display = t === "tempo" ? "" : "none";
   document.getElementById("nlooprow").style.display = t === "loop" ? "" : "none";
   document.getElementById("nchoprow").style.display = t === "chop" ? "" : "none";
-  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" || t === "song" ? "none" : "";
-  document.getElementById("nfromrow").style.display = t === "song" ? "none" : ""; // a song note has no bar
+  document.getElementById("npickuprow").style.display = t === "pickup" ? "" : "none";
+  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" || t === "song" || t === "pickup" ? "none" : "";
+  document.getElementById("nfromrow").style.display = t === "song" || t === "pickup" ? "none" : ""; // a song note has no bar; the pickup IS the frame (its length is the field)
   document.getElementById("nsongrow").style.display = t === "song" ? "" : "none";
   document.getElementById("nsongkindrow").style.display = t === "song" ? "" : "none";
   document.getElementById("ntopicrow").style.display = t === "note" || t === "chord" || t === "section" || t === "key" ? "" : "none"; // the types a bar note can be listed under
   document.getElementById("nmic").style.display =
-    SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
+    SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" && t !== "pickup" ? "" : "none"; // dictation targets the text box
   document.getElementById("ntext").placeholder =
     t === "note" ? "What's happening at this beat?"
     : t === "song" ? "The idea, in your words — a rule you found, a couple of example bars…"
-                 : "Optional note about this " + (t === "timesig" ? "meter" : t) + " (✱ in the ruler)";
+                 : "Optional note about this " + (t === "timesig" ? "meter" : t) + (t === "pickup" ? " (where you heard the downbeat)" : " (✱ in the ruler)");
   document.getElementById("nstatus").textContent =
     t === "key" ? "To bar '—' = until further notice; set it to make a temporary key that reverts after." :
     t === "chord" ? "Tap chips or type the symbol. Standard: bare root = major (C), m = minor (Gm), /X = bass note (G7/B)." :
     t === "song" ? "A song note is about the whole song, not one bar: it lists under SONG NOTES in ☰ All notes and the Analysis sheet." :
     t === "chop" ? "Non-destructive trim: the chopped part disappears entirely and bars renumber. Chopping the start shifts your annotations to match; delete the chop to restore." :
+    t === "pickup" ? "Bar 1 starts after the pickup: the notes before it become bar 0 and every bar renumbers. Annotations keep their musical positions (one undo). Tap the ruler on the first full bar's downbeat first — the length comes from the cursor." :
     t === "loop" ? "When playback reaches the 'from' point (or the song end, if 'from' is at/before the target), it jumps back to the target bar/beat." :
     t === "timesig" ? "Until you declare a meter, the grid is a neutral 4/4 ruler. Declaring re-bars the song; existing annotations are converted to keep their musical positions." :
     t === "tempo" ? (isComposition()
@@ -555,20 +562,17 @@ export function editorFill(note, presetType, opts) {
   // a tapped note anchors a new note: tapping no longer moves the cursor
   // (DAW habit, 2026-09-29), and tap-a-note → + Note is how Josh annotates
   const at0 = opts && opts.atStart ? 0 : !note && S.selNote && S.song.tracks[S.selNote.ti] && S.song.tracks[S.selNote.ti].notes[S.selNote.ni] ? S.song.tracks[S.selNote.ti].notes[S.selNote.ni].t : S.playCursor;
-  let b1 = Math.floor(at0 / bt) + 1;
-  let q1 = snapBeat((at0 % bt) / beatTicks() + 1);
+  let [b1, q1] = barBeatAt(at0); q1 = snapBeat(q1); // the pickup frame: a cursor before bar 1 prefills bar 0 (#1192); at tick 0 that is "the song start" for a key/meter/tempo (C3)
   let b2 = "", q2 = "";
   if (!note && S.rangeSel && !(opts && opts.atStart)) { // prefill the from/to fields from the ruler selection
-    b1 = Math.floor(S.rangeSel.a / bt) + 1;
-    q1 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    [b1, q1] = barBeatAt(S.rangeSel.a); q1 = snapBeat(q1);
     if (S.rangeSel.b > S.rangeSel.a) { // the span's own end, to the 16th — a 16th-long chord stays a 16th (Josh #154)
-      b2 = Math.floor(S.rangeSel.b / bt) + 1;
-      q2 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+      [b2, q2] = barBeatAt(S.rangeSel.b); q2 = snapBeat(q2);
     }
   }
   const type = note ? (note.songnote ? "song" : note.chord ? "chord" : note.section ? "section"
                        : note.keydir !== undefined || note.keypartial ? "key"
-                       : note.tsdir ? "timesig" : note.tempodir !== undefined ? "tempo" : note.chopdir ? "chop"
+                       : note.tsdir ? "timesig" : note.tempodir !== undefined ? "tempo" : note.chopdir ? "chop" : note.pickup !== undefined ? "pickup"
                        : note.loopTo !== undefined ? "loop" : "note")
              : presetType ? presetType // a group's + button pre-picks its type
              // a drag before + Note means "label this span" — as whichever of
@@ -603,7 +607,7 @@ export function editorFill(note, presetType, opts) {
   // file still stores "through" (to: [bar, beats-from-the-bar's-start]); only
   // this row shows and reads it as an end position, so every existing
   // annotation keeps its exact span and anything down to a 16th can be written
-  if (note && note.b2 && note.end !== null && note.end !== undefined) { b2 = Math.floor(note.end / bt) + 1; q2 = snapBeat((note.end % bt) / beatTicks() + 1); }
+  if (note && hasEnd(note) && note.end !== null && note.end !== undefined) { [b2, q2] = barBeatAt(note.end); q2 = snapBeat(q2); }
   else if (note) { b2 = ""; q2 = ""; }
   document.getElementById("nb2").value = b2 ? String(b2) : "";
   setBeatPair("nq2", "ns2", q2 || 1);
@@ -612,11 +616,17 @@ export function editorFill(note, presetType, opts) {
     // overriding the raw-space b1/q1 the directive itself stores
     document.getElementById("nchopmode").value = note.chopdir;
     const dt = note.chopdir === "start" ? 0 : Math.max(0, (S.chopE !== null ? S.chopE : 0) - S.chopS);
-    document.getElementById("nb1").value = String(Math.floor(dt / barTicks()) + 1);
-    setBeatPair("nq1", "ns1", (dt % barTicks()) / beatTicks() + 1);
+    const [cb, cq] = barBeatAt(dt);
+    document.getElementById("nb1").value = String(cb);
+    setBeatPair("nq1", "ns1", cq);
+  }
+  if (type === "pickup") { // the length from the CURSOR he placed (Learning: never from the music); an existing entry shows its own
+    const P = note ? note.pickup : Math.round(Math.max(0, at0) / beatTicks() * 4) / 4;
+    document.getElementById("npickup").value = String(P);
+    pickupLiveLine();
   }
   document.getElementById("ntext").value =
-    ["chord", "key", "tempo", "timesig", "loop", "section", "chop", "song"].includes(type)
+    ["chord", "key", "tempo", "timesig", "loop", "section", "chop", "pickup", "song"].includes(type)
       ? (note && note.cnote || "")
       : note ? note.text : "";
   document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
@@ -671,10 +681,16 @@ export function updateEditButtons() { // disabled = "this can't do anything righ
 }
 updateEditButtons = prof("updateEditButtons", updateEditButtons); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
-export function setAnchorBQImpl(n, tick) { // start anchor from a tick
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(0, tick);
-  n.b1 = Math.floor(t / bt) + 1;
-  n.q1 = snapBeat((t % bt) / qt + 1);
+export function setAnchorBQImpl(n, tick) { // start anchor from a tick, in the pickup frame (a tick before bar 1 is bar 0 — #1192 C5)
+  const [b, q] = barBeatAt(Math.max(0, tick));
+  n.b1 = b;
+  n.q1 = snapBeat(q);
+}
+// the Pickup row's live line: where bar 1 would start, read in the CURRENT frame
+export function pickupLiveLine() {
+  const el = document.getElementById("npickupat"), P = +document.getElementById("npickup").value;
+  if (!el) return;
+  el.textContent = !(P > 0) ? "put the cursor on the first full bar's downbeat" : P > beatsPerBarDisp() ? "a pickup is less than a bar" : "bar 1 starts at " + posText(P * beatTicks()) + (pickupBeats() ? " (now)" : "");
 }
 export function lassoedAnnosImpl() { return S.lassoAnno ? visibleNotes().filter(n => annoInLasso(n, S.lassoAnno)) : []; } // visibleNotes: the lasso acts only on what is shown (Learning hides ✦ AI estimates)
 
@@ -871,10 +887,10 @@ export function editUndoPop() {
 // An annotation undo step names what it holds and where (Josh, Terminal #247:
 // undoing "a few times" must never silently take a text note he can't see).
 export function annoLabel(n) {
-  const bars = n.songnote ? "" : " · bar " + n.b1 + (n.b2 && n.b2 !== n.b1 ? "–" + n.b2 : "");
+  const bars = n.songnote || n.pickup !== undefined ? "" : " · bar " + n.b1 + (hasEnd(n) && n.b2 !== n.b1 ? "–" + n.b2 : "");
   const word = n.songnote ? "song note \u201c" + n.songnote.title + "\u201d"
     : n.chord ? "chord " + n.text : n.section ? "section " + n.text
-    : n.keydir !== undefined || n.keypartial || n.tsdir || n.tempodir !== undefined || n.chopdir || /^loop:/.test(n.text || "") ? n.text
+    : n.keydir !== undefined || n.keypartial || n.tsdir || n.tempodir !== undefined || n.chopdir || n.pickup !== undefined || /^loop:/.test(n.text || "") ? n.text
     : "note \u201c" + String(n.text || "").split("\n")[0].slice(0, 30) + "\u201d";
   return word + bars;
 }
@@ -1151,9 +1167,10 @@ export function editorStripFlash() { // a tap held behind the strip must visibly
 }
 export function editorSetSpan(a, b) { // from/end rows from ticks, to the 16th
   const bt = barTicks(), qt = beatTicks();
-  document.getElementById("nb1").value = String(Math.floor(a / bt) + 1);
-  setBeatPair("nq1", "ns1", (a % bt) / qt + 1);
-  if (b > a) { document.getElementById("nb2").value = String(Math.floor(b / bt) + 1); setBeatPair("nq2", "ns2", (b % bt) / qt + 1); }
+  const [ab, aq] = barBeatAt(a);
+  document.getElementById("nb1").value = String(ab);
+  setBeatPair("nq1", "ns1", aq);
+  if (b > a) { const [bb, bq] = barBeatAt(b); document.getElementById("nb2").value = String(bb); setBeatPair("nq2", "ns2", bq); }
 }
 export function editorTrackEdited() { // edge case 6: dragging the loaded band's edge moves its from/end live, no strip
   const f = S.edFollow, n = S.editingNote;
@@ -1566,17 +1583,19 @@ export function initNoteEditor4() {
       finalizeNotes();
       return made;
     }
-    const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
+    const b1v = document.getElementById("nb1").value, minBar = pickupBeats() ? 0 : 1; // bar 0 exists only while a pickup does (#1192)
+    const b1 = Math.max(minBar, b1v === "" ? 1 : +b1v);
     const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
-    let b2raw = 0, q2raw = 0;
-    const hasEnd = !["loop", "timesig", "chop", "tempo"].includes(type); // these hide the end row: a stale hidden end must not refuse the Save (Josh #1147)
-    if (hasEnd && document.getElementById("nb2").value !== "") { // "ends at" → the stored "through" (to: bar of the last tick, beats from that bar's start)
-      const bt = barTicks(), qt = beatTicks();
-      const endTick = (+document.getElementById("nb2").value - 1) * bt + (getBeatPair("nq2", "ns2") - 1) * qt;
-      if (endTick <= (b1 - 1) * bt + (q1 - 1) * qt) { document.getElementById("nstatus").textContent = "The end has to come after the start."; return; }
-      b2raw = Math.floor((endTick - 1) / bt) + 1;
-      q2raw = Math.round((endTick - (b2raw - 1) * bt) / qt * 10000) / 10000;
+    let b2raw = null, q2raw = 0;
+    const withEnd = !["loop", "timesig", "chop", "tempo", "pickup"].includes(type); // these hide the end row: a stale hidden end must not refuse the Save (Josh #1147)
+    if (withEnd && document.getElementById("nb2").value !== "") { // "ends at" → the stored "through" (to: bar of the last tick, beats from that bar's start)
+      const qt = beatTicks();
+      const endTick = barStartTick(+document.getElementById("nb2").value) + (getBeatPair("nq2", "ns2") - 1) * qt;
+      if (endTick <= barStartTick(b1) + (q1 - 1) * qt) { document.getElementById("nstatus").textContent = "The end has to come after the start."; return; }
+      b2raw = barAtTick(endTick - 1);
+      q2raw = Math.round((endTick - barStartTick(b2raw)) / qt * 10000) / 10000;
     }
+    const hasEndRaw = b2raw !== null; // an end in bar 0 is an end (hasEnd in model/grid.js)
     if (S.editingNote) retireEdited(S.editingNote);
     let fresh;
     if (type === "key") {
@@ -1586,11 +1605,11 @@ export function initNoteEditor4() {
       dropLocalKeyAt(b1, q1); // anchor-level: only a key at this exact beat is replaced
       if (mode) {
         const full = keyNameFor(pc, mode);
-        fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+        fresh = {b1, q1, b2: hasEndRaw ? b2raw : null, q2: hasEndRaw ? (q2raw || null) : null,
                  text: "key: " + full.name, keydir: full.sf, cnote: text || undefined, added: true};
       } else { // tonic only: stored, not applied — asserted spelling if chosen
         const tonic = sp || tonicLabel(pc);
-        fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+        fresh = {b1, q1, b2: hasEndRaw ? b2raw : null, q2: hasEndRaw ? (q2raw || null) : null,
                  text: "key: " + tonic + "?", keypartial: tonic, cnote: text || undefined, added: true};
       }
     } else if (type === "tempo") {
@@ -1602,6 +1621,8 @@ export function initNoteEditor4() {
       // bar length OR beat unit changing moves anchors (6/8 counts eighths)
       const tsChanged = num !== oldTs[0] || den !== oldTs[1];
       const others = S.rollnotes.filter(n => !n.tsdir).length;
+      const unfit = tsChanged ? meterFitsPickup([num, den]) : null; // #1192 §3.3: the downbeat stays, so the pickup must fit the new bar
+      if (unfit) { document.getElementById("nstatus").textContent = unfit; return; }
       if (tsChanged && others > 0 && !S.rebarArmed) {
         S.rebarArmed = true; // big warning, second tap confirms
         document.getElementById("nstatus").textContent =
@@ -1613,26 +1634,28 @@ export function initNoteEditor4() {
       S.rebarArmed = false;
       if (tsChanged) convertAnchors(oldTs, [num, den]);
       S.rollnotes = S.rollnotes.filter(n => !(n.tsdir)); // one meter per song
-      fresh = {b1: tsChanged ? 1 : b1, q1: tsChanged ? 1 : q1, b2: null, q2: null,
+      const sa = tsChanged ? songStartAnchor([num, den]) : {b1, q1}; // a re-bar sits the meter at the SONG START — tick 0, which is bar 0 with a pickup (#1192 C3), so bakeMeter keeps its one event at 0
+      fresh = {b1: sa.b1, q1: sa.q1, b2: null, q2: null,
                text: "timesig: " + num + "/" + den, tsdir: [num, den], cnote: text || undefined, added: true};
     } else if (type === "loop") {
-      const lb = Math.max(1, +document.getElementById("nlb").value || 1);
+      const lbv = document.getElementById("nlb").value, lb = Math.max(minBar, lbv === "" ? 1 : +lbv); // `loop: 0.4` = back to the pickup (#1192 C8)
       const lq = getBeatPair("nlq", "nls");
       // one loop point per song: a new one replaces any local one
       S.rollnotes = S.rollnotes.filter(n => !(n.added && n.loopTo !== undefined));
       fresh = {b1, q1, b2: null, q2: null, text: "loop: " + lb + "." + lq, cnote: text || undefined, added: true};
     } else if (type === "chop") {
       const cmode = document.getElementById("nchopmode").value;
-      const dispTick = (b1 - 1) * barTicks() + (q1 - 1) * beatTicks();
-      const raw = dispTick + S.chopS; // fields are displayed coords; the directive stores raw
+      const dispTick = barStartTick(b1) + (q1 - 1) * beatTicks();
+      const raw = dispTick + S.chopS; // fields are displayed coords (the pickup frame); the directive stores raw
       const newS = cmode === "start" ? raw : S.chopS;
       const delta = S.chopS - newS;
-      const others = S.rollnotes.filter(n => !n.chopdir).length;
-      if (cmode === "start" && delta !== 0 && others > 0 && !S.rebarArmed) {
+      const others = S.rollnotes.filter(n => !n.chopdir && !isSongLevelAnno(n)).length;
+      const pickupGone = cmode === "start" && delta !== 0 && S.declaredPickup && !pickupAfterShift(delta); // #1192 C4: the downbeat converts like every anchor; a chop past it removes the pickup
+      if (cmode === "start" && delta !== 0 && (others > 0 || pickupGone) && !S.rebarArmed) {
         S.rebarArmed = true;
         document.getElementById("nstatus").textContent =
           "⚠ Chop the song start here? Bars renumber and " + others +
-          " annotation(s) shift to keep their musical positions. Tap Save again to confirm.";
+          " annotation(s) shift to keep their musical positions" + (pickupGone ? ", and the pickup is removed: bar 1 would start before the chop" : "") + ". Tap Save again to confirm.";
         return;
       }
       S.rebarArmed = false;
@@ -1641,12 +1664,29 @@ export function initNoteEditor4() {
       const cbt = barTicks();
       fresh = {b1: Math.floor(raw / cbt) + 1, q1: snapBeat((raw % cbt) / beatTicks() + 1),
                b2: null, q2: null, text: "chop: " + cmode, added: true};
+    } else if (type === "pickup") {
+      // the length comes from the field (prefilled from the cursor — never the
+      // music, Learning mode); nothing happens at tick 0: "put the cursor on the
+      // first full bar's downbeat"
+      let P;
+      try { P = pickupCheck(+document.getElementById("npickup").value); } catch (err) { document.getElementById("nstatus").textContent = err.message; return; }
+      if (!P) { document.getElementById("nstatus").textContent = "put the cursor on the first full bar's downbeat, then + Note → Pickup"; return; }
+      const others = pickupOthersCount(), moves = P * beatTicks() !== pickupTicks();
+      if (moves && others > 0 && !S.rebarArmed) { // the same two-tap the meter and the chop use: never a silent move
+        S.rebarArmed = true;
+        document.getElementById("nstatus").textContent =
+          "⚠ Bar 1 starts here? Bars renumber and " + others + " annotation(s) are re-expressed to keep their musical positions. Tap Save again to confirm.";
+        return;
+      }
+      S.rebarArmed = false;
+      fresh = applyPickup(P, text || undefined); // reframes, replaces the one entry, resolves
+      S.rollnotes = S.rollnotes.filter(n => n !== fresh); // pushed below like every other type
     } else if (type === "chord") {
       const sym = document.getElementById("nchordsym").value.trim();
       if (!sym) { document.getElementById("nstatus").textContent = "Chord symbol is empty — tap chips or type one."; return; }
       localStorage.setItem("ff1roll-dragtype", "chord");
       const pedal = chordSel.pedal || !!pedalRootOf(sym); // the chip, or "A ped." typed (#1177): the field rides the entry; the numeral and no-5 rows were hidden, so they don't
-      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+      fresh = {b1, q1, b2: hasEndRaw ? b2raw : null, q2: hasEndRaw ? (q2raw || null) : null,
                text: sym, chord: true, cnote: text || undefined, added: true,
                pedal: pedal || undefined,
                roman: pedal ? undefined : document.getElementById("nroman").value.trim() || undefined,
@@ -1654,16 +1694,16 @@ export function initNoteEditor4() {
       // layer (#1159–#1162): an edit keeps the chord's own; ＋ Another chord here takes the one above the chords on this exact span; anything else has none
       if (S.editingNote && S.editingNote.layer > 0) fresh.layer = S.editingNote.layer;
       else if (!S.editingNote && S.edFollow.stack) { const l = nextChordLayer(fresh); if (l) fresh.layer = l; }
-      if (b2raw) setEndBQ(fresh, (+document.getElementById("nb2").value - 1) * barTicks() + (getBeatPair("nq2", "ns2") - 1) * beatTicks()); // #1179: an end off a whole beat (the ruler's half-beat snap, the ends-at subdivision) is kept exactly, as `until`
+      if (hasEndRaw) setEndBQ(fresh, barStartTick(+document.getElementById("nb2").value) + (getBeatPair("nq2", "ns2") - 1) * beatTicks()); // #1179: an end off a whole beat (the ruler's half-beat snap, the ends-at subdivision) is kept exactly, as `until`
     } else if (type === "section") {
       const label = document.getElementById("nsectlabel").value.trim();
       if (!label) { document.getElementById("nstatus").textContent = "Section label is empty."; return; }
       localStorage.setItem("ff1roll-dragtype", "section");
-      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+      fresh = {b1, q1, b2: hasEndRaw ? b2raw : null, q2: hasEndRaw ? (q2raw || null) : null,
                text: label, section: true, added: true,
                cnote: text || undefined};
     } else {
-      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null, text, added: true};
+      fresh = {b1, q1, b2: hasEndRaw ? b2raw : null, q2: hasEndRaw ? (q2raw || null) : null, text, added: true};
     }
     if (editorTopic() && ["note", "chord", "section", "key"].includes(type)) fresh.topic = editorTopic();
     dropSupersededBy(fresh);
@@ -1677,6 +1717,7 @@ export function initNoteEditor4() {
     updateSubtitle();
     return made;
   };
+  document.getElementById("npickup").addEventListener("input", pickupLiveLine); // "bar 1 starts at …" follows the length as he edits it
   document.getElementById("nsave").addEventListener("click", () => editorSaveRun(nsaveBody));
   const ndeleteBody = () => { // returns the annotation it removed; falsy = refused or waiting for the confirming second tap
     // P4 (docs/annotations-v2.md): closes P3's known gap — see #nsave's own guard
@@ -1686,6 +1727,8 @@ export function initNoteEditor4() {
     if (S.editingNote && S.editingNote.tsdir) {
       const oldTs = effTs(), others = S.rollnotes.filter(n => !n.tsdir).length;
       const tsChanged = oldTs[0] !== 4 || oldTs[1] !== 4;
+      const unfit = tsChanged ? meterFitsPickup([4, 4]) : null;
+      if (unfit) { document.getElementById("nstatus").textContent = unfit; return; }
       if (tsChanged && others > 0 && !S.rebarArmed) {
         S.rebarArmed = true;
         document.getElementById("nstatus").textContent =
@@ -1696,15 +1739,31 @@ export function initNoteEditor4() {
       S.rebarArmed = false;
       if (tsChanged) convertAnchors(oldTs, [4, 4]);
     }
-    // removing a start chop restores hidden bars: annotations shift right to stay
-    // glued to their music, with the same two-tap warning as re-barring
-    if (S.editingNote && S.editingNote.chopdir === "start" && S.chopS) {
-      const others = S.rollnotes.filter(n => !n.chopdir).length;
+    // removing the pickup renumbers from the first note again: every anchor is
+    // converted back through absolute time, with the same two-tap warning (#1192)
+    if (S.editingNote && S.editingNote.pickup !== undefined && pickupTicks()) {
+      const others = pickupOthersCount();
       if (others > 0 && !S.rebarArmed) {
         S.rebarArmed = true;
         document.getElementById("nstatus").textContent =
+          "⚠ Removing the pickup renumbers from the first note again; " + others +
+          " annotation(s) are re-expressed to keep their musical positions. Tap Delete again.";
+        return;
+      }
+      S.rebarArmed = false;
+      reframeAnchors(S.rollnotes, pickupTicks(), 0, barTicks(), beatTicks());
+      S.declaredPickup = null; // finalizeNotes below re-derives it from the list, which no longer holds the entry
+    }
+    // removing a start chop restores hidden bars: annotations shift right to stay
+    // glued to their music, with the same two-tap warning as re-barring
+    if (S.editingNote && S.editingNote.chopdir === "start" && S.chopS) {
+      const others = S.rollnotes.filter(n => !n.chopdir && !isSongLevelAnno(n)).length;
+      const pickupGone = S.declaredPickup && !pickupAfterShift(S.chopS); // C4: more than a bar would sit before the downbeat
+      if ((others > 0 || pickupGone) && !S.rebarArmed) {
+        S.rebarArmed = true;
+        document.getElementById("nstatus").textContent =
           "⚠ Removing the start chop restores the hidden bars; " + others +
-          " annotation(s) will shift to keep their musical positions. Tap Delete again to confirm.";
+          " annotation(s) will shift to keep their musical positions" + (pickupGone ? ", and the pickup is removed: bar 1 would start more than a bar in" : "") + ". Tap Delete again to confirm.";
         return;
       }
       S.rebarArmed = false;

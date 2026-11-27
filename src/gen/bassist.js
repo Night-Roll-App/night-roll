@@ -10,6 +10,7 @@ import { keyNameAt } from "../model/song.js";
 import { modeOfName, tonicPcOfName } from "../theory/chords.js";
 import { S } from "../state.js";
 import { beatsPerBarDisp } from "../model/grid.js";
+import { barStartTick } from "../model/grid.js";
 import { editableSong } from "../model/song.js";
 import { setInfo } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
@@ -157,8 +158,8 @@ export function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, ch
   const {style = "chug", busy = 3, oct = 2, follow = "auto", followTi, targetTi,
          fromBar, toBar} = opts;
   const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
-  const t0 = opts.t0 !== undefined ? opts.t0 : (fromBar - 1) * bt;
-  const t1 = opts.t1 !== undefined ? opts.t1 : toBar * bt;
+  const t0 = opts.t0 !== undefined ? opts.t0 : barStartTick(fromBar); // the pickup frame (#1192): bars land on the real downbeats; bar 0 is never a target
+  const t1 = opts.t1 !== undefined ? opts.t1 : barStartTick(toBar + 1);
   if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return 0; }
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
     setInfo("the range crosses a meter change — generate each meter's bars separately");
@@ -223,7 +224,7 @@ export function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, ch
     return v;
   };
   for (let bar = fromBar; bar <= toBar; bar++) {
-    const bs = (bar - 1) * bt;
+    const bs = barStartTick(bar);
     const rng = drumRng(seed, sectionLane(bar) ^ 0xBA55);
     const jit = []; // constant draw budget per bar per style (liked-bar stability)
     for (let i = 0; i < beats * 2; i++) jit.push(rng() * 8 - 4);

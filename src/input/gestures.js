@@ -10,6 +10,9 @@ import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
 import { askBarsCount } from "../ask/tools.js";
 import { beatTicks, gridAnchorTick } from "../model/grid.js";
+import { hasEnd } from "../model/grid.js";
+import { pickupBeats, pickupTicks, barStartTick, barAtTick, fullBarsCount } from "../model/grid.js";
+import { applyPickup, pickupCheck, pickupOthersCount } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
 import { posText } from "../model/grid.js";
 import { drumHitName } from "../model/grid.js";
@@ -222,15 +225,15 @@ export function scorePencilTick(x) {
   // has them, wildly coarse when it's empty (a blank composition's default).
   // Sparse bars get a LINEAR map from the note-start edge instead, which is
   // exactly what the pencil beat guides draw.
-  const ppt = pxPerTick();
-  const mw = S.scoreModel.bt * ppt;
-  const mi = Math.max(0, Math.floor((x - S.RULER_W + S.view.x) / mw));
+  const ppt = pxPerTick(), m = S.scoreModel;
+  const mi = Math.max(0, m.mIndex((x - S.RULER_W + S.view.x) / ppt)); // the pickup frame's measures (#1192): measure 0 may be short
+  const mw = m.mLen(mi) * ppt;
   const entry = S.scoreCache.get(mi) || renderMeasure(mi);
   if (entry && entry.timeMap.length >= 2) return scoreXToTick(x);
   const nsx = entry ? entry.noteStartX : SCORE_PAD;
-  const localX = x - (S.RULER_W + mi * mw - S.view.x - SCORE_PAD);
+  const localX = x - (S.RULER_W + m.mStart(mi) * ppt - S.view.x - SCORE_PAD);
   const frac = Math.max(0, Math.min(0.999, (localX - nsx) / Math.max(1, mw + SCORE_PAD - nsx)));
-  return mi * S.scoreModel.bt + frac * S.scoreModel.bt;
+  return m.mStart(mi) + frac * m.mLen(mi);
 }
 export function scoreStaveAt(pos) {
   const localY = pos.y - (S.RULER_H + 4 - (S.view.y || 0));
@@ -386,10 +389,9 @@ export function finalizeLasso() {
     // proportionally), and selecting whole staff bands by time range grabbed
     // notes far outside a narrow lasso (Josh, on Town's bass)
     const topY = S.RULER_H + 4 - (S.view.y || 0);
-    const mbt = S.scoreModel.bt * ppt;
-    const mOrigin = k => S.RULER_W + k * mbt - S.view.x - SCORE_PAD;
-    const mLo = Math.max(0, Math.floor((x0 - S.RULER_W + S.view.x) / mbt) - 1);
-    const mHi = Math.min(S.scoreModel.nMeasures - 1, Math.ceil((x1 - S.RULER_W + S.view.x) / mbt) + 1);
+    const mOrigin = k => S.RULER_W + S.scoreModel.mStart(k) * ppt - S.view.x - SCORE_PAD;
+    const mLo = Math.max(0, S.scoreModel.mIndex((x0 - S.RULER_W + S.view.x) / ppt) - 1);
+    const mHi = Math.min(S.scoreModel.nMeasures - 1, S.scoreModel.mIndex((x1 - S.RULER_W + S.view.x) / ppt) + 1);
     for (let k = mLo; k <= mHi; k++) {
       const entry = S.scoreCache.get(k) || renderMeasure(k);
       if (!entry) continue;
@@ -495,10 +497,9 @@ export function scoreLassoTap(pos) { // lasso-mode tap on the score: toggle the 
   const x0 = pos.x - 7, x1 = pos.x + 7, y0 = pos.y - 7, y1 = pos.y + 7;
   const ppt = pxPerTick();
   const topY = S.RULER_H + 4 - (S.view.y || 0);
-  const mbt = S.scoreModel.bt * ppt;
-  const mOrigin = k => S.RULER_W + k * mbt - S.view.x - SCORE_PAD;
-  const mLo = Math.max(0, Math.floor((x0 - S.RULER_W + S.view.x) / mbt) - 1);
-  const mHi = Math.min(S.scoreModel.nMeasures - 1, Math.ceil((x1 - S.RULER_W + S.view.x) / mbt) + 1);
+  const mOrigin = k => S.RULER_W + S.scoreModel.mStart(k) * ppt - S.view.x - SCORE_PAD;
+  const mLo = Math.max(0, S.scoreModel.mIndex((x0 - S.RULER_W + S.view.x) / ppt) - 1);
+  const mHi = Math.min(S.scoreModel.nMeasures - 1, S.scoreModel.mIndex((x1 - S.RULER_W + S.view.x) / ppt) + 1);
   for (let k = mLo; k <= mHi; k++) {
     const entry = S.scoreCache.get(k) || renderMeasure(k);
     if (!entry) continue;
@@ -541,9 +542,11 @@ export function openBarJump() {
   if (!S.song) return;
   const inp = document.getElementById("bjbar");
   const bars = askBarsCount();
-  inp.value = String(Math.floor(curTick() / barTicks()) + 1);
+  inp.value = String(barAtTick(curTick()));
+  inp.min = String(pickupBeats() ? 0 : 1); // bar 0 = the pickup bar (#1192)
   inp.max = String(bars);
-  document.getElementById("bjof").textContent = "of " + bars;
+  document.getElementById("bjof").textContent = "of " + bars + (pickupBeats() ? " (+ pickup)" : "");
+  barJumpPickupRender();
   document.getElementById("barjumpsheet").classList.add("on");
   softFocus(inp, true); // digits replace the old bar — with a keyboard; on touch, a tap on the box (View › Display → Jump into text boxes)
 }
@@ -565,13 +568,56 @@ export function barJumpGo() {
   // already pans into to write in (clampView); a song you can only read ends
   // where its music ends
   const bars = askBarsCount(), cap = jumpBarCap();
-  const bar = Math.max(1, Math.min(cap, n));
-  const tick = (bar - 1) * barTicks();
+  const bar = Math.max(pickupBeats() ? 0 : 1, Math.min(cap, n)); // 0 reaches the pickup bar (#1192)
+  const tick = Math.max(0, barStartTick(bar)); // bar 0 "starts" before the song: land on its first real tick
   document.getElementById("barjumpsheet").classList.remove("on");
   jumpToTick(tick);
-  setInfo(bar === n ? "bar " + bar
+  setInfo(bar === n ? "bar " + bar + (bar === 0 ? " (the pickup)" : "")
         : n > cap ? "bar " + bar + " — the song has " + bars + " bar" + (bars === 1 ? "" : "s") + (cap > bars ? " (+" + PAN_TAIL_BARS + " to write in)" : "")
-        : "bar 1");
+        : "bar " + bar);
+  return true;
+}
+// The Go to bar sheet's one-tap pickup (docs/plans/2026-11-27-pickup-bar.md §5.1,
+// Q1 default): "Bar 1 starts at the cursor" runs the editor's Save for a Pickup
+// — the length comes from the CURSOR he placed (never the music, Learning
+// mode), the same two-tap confirm in the sheet's own status line, one `anno`
+// undo step; "Remove pickup" while one exists. The LCD's BAR segment is already
+// the door for "where am I in the bars", so this is four taps and no typing.
+export function barJumpPickupRender() {
+  const b = document.getElementById("bjpickup"), st = document.getElementById("bjstatus");
+  if (!b) return;
+  b.textContent = pickupBeats() ? "Remove pickup" : "Bar 1 starts at the cursor";
+  if (st) st.textContent = pickupBeats() ? "pickup: " + pickupBeats() + " beat" + (pickupBeats() === 1 ? "" : "s") + " — bar 0 is the pickup" : "";
+  S.rebarArmed = false; // a fresh sheet resets the two-tap
+}
+export function barJumpPickup() {
+  if (!S.song) return false;
+  const st = document.getElementById("bjstatus");
+  const say = m => { if (st) st.textContent = m; setInfo(m); };
+  if (S.rollnotesReadOnly) { say(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return false; }
+  const removing = !!pickupBeats();
+  let P = 0;
+  if (!removing) {
+    try { P = pickupCheck(curTick() / beatTicks()); } catch (err) { say(err.message); return false; }
+    if (!P) { say("put the cursor on the first full bar's downbeat first (tap the ruler there)"); return false; }
+  }
+  const others = pickupOthersCount();
+  if (others > 0 && !S.rebarArmed) {
+    S.rebarArmed = true;
+    say(removing ? "⚠ Removing the pickup renumbers from the first note again; " + others + " annotation(s) are re-expressed to keep their musical positions. Tap again to confirm."
+                 : "⚠ Bar 1 starts here? Bars renumber and " + others + " annotation(s) are re-expressed to keep their musical positions. Tap again to confirm.");
+    return false;
+  }
+  S.rebarArmed = false;
+  const before = annoSnapshot();
+  applyPickup(P);
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  pushUndo({kind: "anno", json: before, what: removing ? "deleted" : "saved", at: removing ? "pickup" : "pickup: " + P});
+  document.getElementById("barjumpsheet").classList.remove("on");
+  say(removing ? "pickup removed — bars count from the first note again (one undo)" : "pickup of " + P + " beat" + (P === 1 ? "" : "s") + ": bar 1 starts at the cursor, the notes before it are bar 0 (one undo)");
+  draw();
   return true;
 }
 // Note menu (DAW F2, 2026-10-04 — docs/daw-inventory.md §4 #4). A grabbed
@@ -750,7 +796,7 @@ export function endPointer(e) {
         if (!d) continue;
         if (!n.added) tombstone(n); // a published band moved in place must be retired, or reload brings it back
         setAnchorBQ(n, n.start + d);
-        if (n.b2) setEndBQ(n, end + d);
+        if (hasEnd(n)) setEndBQ(n, end + d);
         n.added = true;
       }
       const last = S.editUndo[S.editUndo.length - 1]; // joins the move's own entry: one undo brings both back
@@ -1431,7 +1477,7 @@ export function initGestures1() {
           se.i = pick.i; se.edge = pick.edge; se.ties = null;
         }
         S.seam.spans = dragSeamEdge(S.seam.spans, se.i, se.edge, rulerSnapX(evtPos(e).x), {min: Math.round(S.song.ppq / 4), end: S.songEndTick});
-        setInfo("seam: " + seamSpansText(S.seam.spans, barTicks(), beatTicks()));
+        setInfo("seam: " + seamSpansText(S.seam.spans, barTicks(), beatTicks(), pickupTicks()));
         draw();
       }
       else if (S.drag.rangeEdge) { // stretch the cycle by its end — bar-magnetic, stays armed
@@ -1493,6 +1539,7 @@ export function initGestures1() {
   // Go to bar (DAW F5): the LCD's bar segment, the sheet's Go, and Return in its field
   document.getElementById("lcdbarseg").addEventListener("click", openBarJump);
   document.getElementById("bjgo").addEventListener("click", barJumpGo);
+  document.getElementById("bjpickup").addEventListener("click", barJumpPickup);
   document.getElementById("bjclose").addEventListener("click", () => document.getElementById("barjumpsheet").classList.remove("on"));
   document.getElementById("bjbar").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); barJumpGo(); } });
   canvas.addEventListener("wheel", e => {

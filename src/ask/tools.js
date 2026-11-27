@@ -13,6 +13,9 @@ import { LINK_SONGS } from "../platform/base.js";
 import { declaredTsForKey } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
+import { hasEnd } from "../model/grid.js";
+import { pickupBeats, pickupTicks, barStartTick, barAtTick, fullBarsCount } from "../model/grid.js";
+import { applyPickup, pickupCheck, pickupOthersCount, pickupDirText } from "../model/rollnotes.js";
 import { askKeySpellComment } from "./context.js";
 import { trackIsDrums } from "../model/grid.js";
 import { trackAudible } from "../audio/engine.js";
@@ -178,7 +181,7 @@ export function askAnnotationsText() {
 export function askAnnotationsTextCompact() {
   const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => annoShown(n) && !askAnnotationStructural(n)).map(({n, i}) => {
     const kind = askNoteKind(n), value = askNoteValue(n, kind);
-    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]"; // #1179: an exact (exclusive) end reads "until 4.4"
+    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : hasEnd(n) ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]"; // #1179: an exact (exclusive) end reads "until 4.4"
     const sub = n.songnote && songNoteKind(n) !== "general" ? " (" + songNoteKind(n) + ")" : ""; // "songnote (question): Title" — his open questions, listable on request
     return i + " " + at + " " + kind + sub + ": " + value + askChordExtrasText(n) + (n.cnote ? " — " + n.cnote : "");
   });
@@ -280,6 +283,7 @@ export function askNoteKind(n) { // the add_annotation "kind" this existing note
   if (n.keydir !== undefined || n.keypartial) return "key";
   if (n.tempodir !== undefined) return "tempo";
   if (n.loopTo !== undefined) return "loop";
+  if (n.pickup !== undefined) return "pickup"; // the frame directive (#1192): edit_annotation changes its length, delete_annotation removes it
   if (n.study) return "analysis"; // an Analysis-sheet entry (model/rollnotes.js putStudyEntry) — never a plain note to edit_annotation
   if (n.songnote) return "songnote"; // a titled song note: the context lists "songnote: <title> — <body>"; song_note edits it
   return "note";
@@ -364,13 +368,13 @@ export function askReadBars(a) {
   if (!S.song || !S.songKey) throw new Error("no song open");
   a = a || {};
   const bt = barTicks(), qt = beatTicks();
-  const nBars = Math.max(1, Math.ceil(S.songEndTick / bt));
-  let from = Math.max(1, Math.round(+a.from_bar || 1));
+  const nBars = askBarsCount();
+  let from = Math.max(pickupBeats() ? 0 : 1, Math.round(a.from_bar === undefined || a.from_bar === null || a.from_bar === "" ? 1 : +a.from_bar)); // bar 0 = the pickup, readable while one exists (#1192)
   let to = Math.max(from, Math.round(+(a.to_bar !== undefined ? a.to_bar : from)));
   to = Math.min(to, nBars);
   let truncated = false;
   if (to - from + 1 > ASK_READ_BARS_MAX) { to = from + ASK_READ_BARS_MAX - 1; truncated = true; }
-  const t0 = (from - 1) * bt, t1 = to * bt;
+  const t0 = Math.max(0, barStartTick(from)), t1 = barStartTick(to + 1);
   let text;
   if (Array.isArray(a.tracks) && a.tracks.length) {
     const want = new Set(a.tracks.map(x => String(x).toLowerCase()));
@@ -381,7 +385,7 @@ export function askReadBars(a) {
       const drums = trackIsDrums(ti);
       const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
       const rows = [];
-      for (let b = from - 1; b < to; b++) { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) rows.push(row); }
+      for (let k = from; k <= to; k++) { const row = askBarRow(tr, ti, k, bt, qt, est); if (row) rows.push(row); }
       if (rows.length) { L.push(head); L.push(...rows); }
     });
     text = L.join("\n");
@@ -437,7 +441,7 @@ export function askWriteNotesValidate(notes, bt, qt, beats) { // → {hits} in d
     const p = parsePitch(n.pitch);
     if (p === null) { errs.push(where + ": pitch must be like C4, F#3, Bb2 (C4 = middle C), or a MIDI number"); return; }
     if (p < 24 || p > 108) { errs.push(where + ": pitch out of playable range (C1–C8)"); return; }
-    const bs = (n.bar - 1) * bt, t = bs + (n.beat - 1) * qt;
+    const bs = barStartTick(n.bar), t = bs + (n.beat - 1) * qt;
     const vel = n.vel !== undefined && n.vel !== null && n.vel !== "" ? Math.max(1, Math.min(127, Math.round(+n.vel))) : askNoteVel(t, bs);
     hits.push({t: Math.round(t), d: Math.max(20, Math.round(n.dur_beats * qt)), p, v: vel, bar: n.bar});
   });
@@ -465,7 +469,7 @@ export function askWritableGate() { // write_notes' gate — Fill's rule, carrie
 // Annotations are NEVER duplicated into the copied range — Learning mode
 // is the law, they're Josh's own analysis — only shifted, exactly as
 // Insert bars already shifts them.
-export function askBarsCount() { return Math.max(1, Math.ceil(S.songEndTick / barTicks())); }
+export function askBarsCount() { return fullBarsCount(); } // full bars after the pickup (#1192): "this song has N bars" — the pickup bar is bar 0, never counted
 // "this song has N bars" — same basis askReadBars uses
 export function askBarsValidate(a, requireRange) { // → {fromBar, toBar, atBar} or {atBar}; throws naming the problem, nothing changed
   const nBars = askBarsCount();
@@ -486,11 +490,13 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   if (!S.song || !S.songKey) throw new Error("no song open");
   if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
-  const bar = Math.max(1, Math.round(+a.bar || 1)), beat = Math.max(1, +a.beat || 1);
-  const eb = a.end_bar ? Math.max(bar, Math.round(+a.end_bar)) : null;
-  const eq = eb && a.end_beat ? Math.max(1, +a.end_beat) : null;
+  const minBar = pickupBeats() ? 0 : 1; // bar 0 = the pickup bar, addressable only while one exists (#1192)
+  const bar = Math.max(minBar, Math.round(askActGivenArg(a.bar) ? +a.bar : 1)), beat = Math.max(1, +a.beat || 1);
+  const eb = askActGivenArg(a.end_bar) ? Math.max(bar, Math.round(+a.end_bar)) : null;
+  const eq = eb !== null && a.end_beat ? Math.max(1, +a.end_beat) : null;
   let kind = String(a.kind || "note").trim().toLowerCase();
   const text = String(a.text || "").trim();
+  if (kind === "pickup") return askAddPickup(a, bar, beat, text);
   if (!text) throw new Error("empty text");
   if (kind === "meter" || kind === "timesig") { kind = "timesig"; if (!/^\d+\s*\/\s*\d+$/.test(text)) throw new Error("a meter is written like 3/4"); } // the .rollnotes grammar's own names (batch 3, 2026-10-05: the user's declared meter and chop, dictated like any other annotation)
   else if (kind === "chop") { if (!/^(start|end)$/i.test(text)) throw new Error("chop takes start or end — the bar.beat is where it sits"); }
@@ -525,16 +531,46 @@ export function askAddAnnotation(a) { // the same text grammar the editor and th
   if (typeof updateSyncBtn === "function") updateSyncBtn();
   return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written"};
 }
+export function askActGivenArg(v) { return v !== undefined && v !== null && v !== ""; }
+// add_annotation kind pickup (#1192 §6): two ways to say it — {bar, beat} = where
+// bar 1 starts in the CURRENT numbering ("the first downbeat is bar 1 beat 2"),
+// or {text: "1"} = the length in beats. The frame conversion runs without a
+// two-tap (he asked in words); the reply names the count re-expressed; one
+// `anno` undo step. Refuses more than a bar, a zero length, a locked song.
+export function askAddPickup(a, bar, beat, text) {
+  let P;
+  if (askActGivenArg(a.bar) || askActGivenArg(a.beat)) P = (barStartTick(bar) + (beat - 1) * beatTicks()) / beatTicks();
+  else if (text) { P = +text.replace(/\s*beats?$/i, ""); if (!Number.isFinite(P)) throw new Error("a pickup's text is its length in beats (\"1\", \"1.5\"), or say where bar 1 starts with bar and beat"); }
+  else throw new Error("say where bar 1 starts (bar, beat) or how long the pickup is (text: \"1\")");
+  P = pickupCheck(P);
+  if (!P) throw new Error("bar 1 cannot start at the song's very start — say where the first full bar's downbeat is");
+  const k = pickupOthersCount(), before = annoSnapshot();
+  const fresh = applyPickup(P, a.comment ? String(a.comment).trim() : undefined);
+  pushUndo({kind: "anno", json: before, what: pickupDirText(P) + " (saved)"});
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof buildScoreModel === "function") buildScoreModel();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at: "[1.1]", text: fresh.text, unsynced: true, note: "written — bar 1 now starts " + P + " beat" + (P === 1 ? "" : "s") + " in, the notes before it are bar 0; " + k + " annotation" + (k === 1 ? "" : "s") + " re-expressed to keep their musical positions (one undo)"};
+}
 export function askEditAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   a = a || {};
   const n = askFindAnnotation(a);
   if (n.songnote) throw new Error("that is a song note — song_note {op: \"edit\", title} changes it");
   if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — change it in the app's own editor, not here");
+  if (n.pickup !== undefined) { // the length changes → the frame changes: the same conversion as add (#1192)
+    const text = String(a.text || "").trim();
+    if (!text) throw new Error("say the pickup's new length in beats (text: \"1.5\")");
+    return Object.assign(askAddPickup({text, comment: a.comment !== undefined ? a.comment : n.cnote}, 1, 1, text), {note: "edited in place"});
+  }
   const kind = askNoteKind(n);
-  const bar = a.new_bar !== undefined ? Math.max(1, Math.round(+a.new_bar)) : n.b1;
+  const minBar = pickupBeats() ? 0 : 1;
+  const bar = a.new_bar !== undefined ? Math.max(minBar, Math.round(+a.new_bar)) : n.b1;
   const beat = a.new_beat !== undefined ? Math.max(1, +a.new_beat) : (n.q1 || 1);
-  const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (n.b2 || null);
+  const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (hasEnd(n) ? n.b2 : null);
   const eq = eb !== null ? (a.new_end_beat !== undefined ? Math.max(1, +a.new_end_beat) : (eb === n.b2 ? (n.q2 || null) : null)) : null;
   const text = String(a.text || "").trim() || (n.chord && (a.roman !== undefined || a.no5 !== undefined || a.pedal !== undefined || a.until !== undefined) ? n.text : ""); // "make that chord a bVII" / "make it a pedal" / "end it at 4.4.5": the symbol stays (native the same)
   if (!text) throw new Error("empty text");
@@ -578,7 +614,19 @@ export function askDeleteAnnotation(a) {
   const n = askFindAnnotation(a || {});
   if (n.songnote) throw new Error("that is a song note — song_note {op: \"delete\", title} removes it");
   if (askAnnotationStructural(n) && !n.tsdir && !n.chopdir) throw new Error("that annotation is a structural directive (track/audio/lane) — remove it in the app's own editor, not here"); // a meter or chop the user dictated can be taken back the same way (batch 3); track/audio/lane stay the editor's
-  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
+  if (n.pickup !== undefined) { // removing the pickup converts every anchor back (#1192); one undo step
+    const k = pickupOthersCount(), before = annoSnapshot(), was = n.text;
+    applyPickup(0);
+    pushUndo({kind: "anno", json: before, what: "deleted " + was});
+    finalizeNotes();
+    saveLocalNotes();
+    if (typeof buildScoreModel === "function") buildScoreModel();
+    if (typeof draw === "function") draw();
+    if (typeof updateSongBtn === "function") updateSongBtn();
+    if (typeof updateSyncBtn === "function") updateSyncBtn();
+    return {ok: true, at: "[1.1]", text: was, note: "deleted — bars count from the first note again; " + k + " annotation" + (k === 1 ? "" : "s") + " re-expressed to keep their musical positions (one undo)"};
+  }
+  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.until ? " until " + n.until[0] + "." + n.until[1] : hasEnd(n) ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
   tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
   S.rollnotes = S.rollnotes.filter(x => x !== n);
   finalizeNotes();
@@ -721,8 +769,8 @@ export function askWriteNotes(a) {
     const fb = Math.max(1, Math.round(+r.from_bar || 1)), fq = Math.max(1, +(r.from_beat !== undefined ? r.from_beat : 1));
     const tb = Math.max(fb, Math.round(+(r.to_bar !== undefined ? r.to_bar : fb)));
     const tq = r.to_beat !== undefined ? Math.max(1, +r.to_beat) : beats + 1;
-    t0 = (fb - 1) * bt + (fq - 1) * qt;
-    t1 = Math.max(t0 + 1, (tb - 1) * bt + (tq - 1) * qt);
+    t0 = barStartTick(fb) + (fq - 1) * qt;
+    t1 = Math.max(t0 + 1, barStartTick(tb) + (tq - 1) * qt);
   }
   const hits = v.hits.sort((x, y) => x.t - y.t || x.p - y.p);
   const added = applyTake(ti, t0, t1, hits);
@@ -738,7 +786,7 @@ export function askInsertBars(a) { // {at_bar, count}: empty bars, same shift as
   if (!(count >= 1)) throw new Error("count must be ≥ 1");
   const {atBar} = askBarsValidate(a, false);
   const bt = barTicks();
-  insertTime((atBar - 1) * bt, count * bt);
+  insertTime(barStartTick(atBar), count * bt);
   return {ok: true, note: "inserted " + count + " empty bar" + (count === 1 ? "" : "s") + " at bar " + atBar + " — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " later"};
 }
 export function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate bars — insert + copy, one undo step
@@ -747,7 +795,7 @@ export function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate
   a = a || {};
   const {fromBar, toBar, atBar} = askBarsValidate(a, true);
   const bt = barTicks(), count = toBar - fromBar + 1;
-  const sourceStart = (fromBar - 1) * bt, sourceEnd = toBar * bt, T = (atBar - 1) * bt, delta = count * bt;
+  const sourceStart = barStartTick(fromBar), sourceEnd = barStartTick(toBar + 1), T = barStartTick(atBar), delta = count * bt;
   // snapshot the source range (every track, drums included) BEFORE the
   // shift mutates live note objects — ticks stored relative to sourceStart
   // so the copy lands correctly at T regardless of where T falls relative
@@ -792,7 +840,7 @@ export function askDeleteBars(a) { // {from_bar, count}: removes bars — same g
   const toBar = fromBar + count - 1;
   if (toBar > nBars) throw new Error("bars " + fromBar + "–" + toBar + " don't all exist — this song has " + nBars + " bar" + (nBars === 1 ? "" : "s"));
   const bt = barTicks();
-  const r = deleteTime((fromBar - 1) * bt, count * bt);
+  const r = deleteTime(barStartTick(fromBar), count * bt);
   const where = count > 1 ? ("bars " + fromBar + "–" + toBar) : ("bar " + fromBar);
   return {ok: true, note: where + " removed — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " earlier" +
     (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")};
@@ -817,8 +865,8 @@ export function askDrummerRange(a) {
     const want = String(a.section).trim().toLowerCase();
     const secs = visibleNotes().filter(n => n.section && String(n.text || "").trim().toLowerCase() === want); // visibleNotes: no Learning-hidden ✦ AI section
     const span = n => { // the Drummer sheet's own prefill convention: a point section is one bar, a ranged one ends where its last beat ends
-      const from = Math.floor(n.start / bt) + 1, e = n.end || n.start + bt;
-      return {fromBar: from, toBar: Math.max(from, Math.ceil(e / bt))};
+      const from = Math.max(1, barAtTick(n.start)), e = n.end || n.start + bt; // bar 0 is never a generator target (plan Q6)
+      return {fromBar: from, toBar: Math.max(from, barAtTick(e - 1))};
     };
     if (secs.length === 1) return span(secs[0]);
     if (secs.length > 1) throw new Error("\"" + a.section + "\" labels " + secs.length + " spans (" + secs.map(n => { const r = span(n); return "bars " + r.fromBar + "–" + r.toBar; }).join(", ") + ") — say which bars");
@@ -876,7 +924,7 @@ export function askDrummer(a) { // {from_bar, to_bar | section, energy, busy, ha
     const bti = drBassTrack();
     followTxt = bti >= 0 ? "following " + trackName(bti) : "following nothing";
   }
-  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  const bt = barTicks(), t0 = barStartTick(fromBar), t1 = barStartTick(toBar + 1);
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) // drGenerate's own refusal, raised BEFORE it erases anything
     throw new Error("bars " + fromBar + "–" + toBar + " cross a meter change — generate each meter's bars separately");
   const seed = a.seed !== undefined && a.seed !== null && a.seed !== "" ? (Math.round(+a.seed) >>> 0) : (Math.random() * 0xFFFFFFFF) >>> 0; // the ONLY nondeterminism, same as the sheet's Generate
@@ -911,7 +959,7 @@ export function askBassist(a) {
   if (gate) throw new Error(gate);
   a = a || {};
   const {fromBar, toBar} = askDrummerRange(a);
-  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  const bt = barTicks(), t0 = barStartTick(fromBar), t1 = barStartTick(toBar + 1);
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1))
     throw new Error("bars " + fromBar + "–" + toBar + " cross a meter change — generate each meter's bars separately");
   const trackName = ti => S.song.tracks[ti].name || "track " + (ti + 1);
@@ -977,7 +1025,7 @@ export function askBassist(a) {
 // so selEditItems() (every op's own read of "the selection") sees it.
 export function askSelectRange(a) { // -> {fromBar, toBar, t0, t1, tis, count}; throws naming the bad bar, a bad section or an unknown track, nothing changed
   const {fromBar, toBar} = askDrummerRange(a); // reused as-is: whole bars, or one declared section label's span
-  const bt = barTicks(), t0 = (fromBar - 1) * bt, t1 = toBar * bt;
+  const bt = barTicks(), t0 = barStartTick(fromBar), t1 = barStartTick(toBar + 1);
   let names = a.tracks;
   if (typeof names === "string") names = names.split(/\s*,\s*/).filter(Boolean);
   if (!Array.isArray(names)) names = names === undefined || names === null ? [] : [names];
@@ -1056,11 +1104,11 @@ function askCopyAnnotationsLocked(a) {
   if (!(toBar2 >= 1)) throw new Error("say at_bar (where the copy starts)");
   if (!(toBeat >= 1)) throw new Error("at_beat must be ≥ 1");
   const dP = askEditNotesShift(a);
-  const at = Math.round((toBar2 - 1) * bt + (toBeat - 1) * beatTicks());
+  const at = Math.round(barStartTick(toBar2) + (toBeat - 1) * beatTicks());
   const keep = [S.noteClipboard, S.annoClipboard];
   let k = 0;
   try {
-    if (copySelection({t0: (fromBar - 1) * bt, t1: toBar * bt}) && S.annoClipboard.length) k = pasteClipboard(at, {dP});
+    if (copySelection({t0: barStartTick(fromBar), t1: barStartTick(toBar + 1)}) && S.annoClipboard.length) k = pasteClipboard(at, {dP});
   } finally { [S.noteClipboard, S.annoClipboard] = keep; }
   if (!k) return {ok: true, note: "no annotations in " + where + " to copy; nothing changed (this song's notes are locked — only annotations copy here)"};
   return {ok: true, note: "copied " + k + " annotation" + (k === 1 ? "" : "s") + " from " + where + " to " + toBar2 + "." + toBeat + (dP ? ", chord labels " + askShiftText(dP) : "") + " — this song's notes are locked, so no notes were copied (one undo restores what was there)"};

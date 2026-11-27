@@ -25,6 +25,7 @@ import { rhythmFacts } from "../theory/facts/rhythm.js";
 import { formatFacts } from "../theory/facts/format.js";
 import { askSpanNotesCompact } from "./context.js";
 import { askBarRow } from "./context.js";
+import { barStartTick } from "../model/grid.js";
 import { askBudget } from "./context.js";
 import { askBarsCount } from "./tools.js";
 import { askModelName } from "./bridge.js";
@@ -243,7 +244,7 @@ export function annotateBarCosts() {
   const costs = new Array(n).fill(0);
   S.song.tracks.forEach((tr, ti) => {
     if (tr.kind === "audio") return;
-    for (let b = 0; b < n; b++) { const row = askBarRow(tr, ti, b, bt, qt, null); if (row) costs[b] += row.length + 1; }
+    for (let b = 0; b < n; b++) { const row = askBarRow(tr, ti, b + 1, bt, qt, null); if (row) costs[b] += row.length + 1; } // askBarRow takes the bar NUMBER
   });
   return costs;
 }
@@ -284,7 +285,7 @@ export function annotateRequest({from, to, nBars, bpb, kinds, budget, title}) {
   if (theirs.length) L.push("", "the user's own annotations in these bars (fixed — build on them, never restate them; an estimate overlapping one is discarded):", ...theirs.slice(0, 60));
   const facts = annotateFacts(from, to, Math.max(300, Math.round(budget.span / 3)));
   if (facts) L.push("", "FACTS (computed from the notes):", facts);
-  L.push("", "NOTES:", askSpanNotesCompact((from - 1) * bt, to * bt, budget.span + 400));
+  L.push("", "NOTES:", askSpanNotesCompact(barStartTick(from), barStartTick(to + 1), budget.span + 400));
   return L.join("\n");
 }
 export function annotateSummary(r) {

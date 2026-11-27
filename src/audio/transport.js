@@ -30,6 +30,7 @@ import { secToTick } from "../midi/parse.js";
 import { glidePreds } from "../midi/parse.js";
 import { beatTicks } from "../model/grid.js";
 import { metClick } from "./metronome.js";
+import { pickupBeats, pickupTicks } from "../model/grid.js";
 import { recOpenEnded } from "../model/song.js";
 import { applyLevels } from "./levels.js";
 import { trackGain } from "./engine.js";
@@ -270,9 +271,16 @@ export async function play(fromSec = 0, opts = {}) {
     const beats = beatsPerBarDisp();
     const t0 = secToTick(S.song, fromSec);
     const beatSec = tickToSec(S.song, t0 + beatTicks()) - tickToSec(S.song, t0); // the tempo where it starts
-    S.playT0 += beats * beatSec;
+    // with a pickup (#1192, Q3/R10): one full bar of clicks, then a click on every
+    // whole beat of bar 0 that precedes the pickup, so the pickup lands on its own
+    // count ("1 2 3 4 · 1 2 3" then the pickup on 4); playT0 moves by the exact
+    // beats + (beats − P), clicks fall on whole counted beats only
+    const P = fromSec < 1e-6 ? pickupBeats() : 0, gap = P ? beats - P : 0, gapClicks = Math.floor(gap + 1e-9);
+    S.playT0 += (beats + gap) * beatSec;
     for (let b = 0; b < beats; b++)
-      metClick(S.playT0 - (beats - b) * beatSec, b === 0 ? 2 : 1);
+      metClick(S.playT0 - (beats + gap - b) * beatSec, b === 0 ? 2 : 1);
+    for (let b = 0; b < gapClicks; b++)
+      metClick(S.playT0 - (gap - b) * beatSec, b === 0 ? 2 : 1);
   }
   S.loopPass = 0;
   S.loopSeg = currentLoop();
@@ -557,7 +565,7 @@ export function seamStart(spans, kind) {
   S.seam = {spans: clean, kind}; S.seamPending = null; S.rangeSel = null; // the ruler is the seam's now: a leftover selection would sit under its spans (Josh, 2026-10-28)
   seamUiUpdate();
   if (S.playing) stop();
-  setInfo("seam: " + seamSpansText(clean, barTicks(), beatTicks()) + ", over and over — ⟲ or ■ to leave");
+  setInfo("seam: " + seamSpansText(clean, barTicks(), beatTicks(), pickupTicks()) + ", over and over — ⟲ or ■ to leave");
   draw();
   return play(0, {noCountIn: true, seamTop: true});
 }
@@ -594,7 +602,7 @@ export function seamAddTap() { // #seamaddbtn
   const armed = seamArmedSpan();
   if (!armed) { if (S.seamPending) { S.seamPending = null; setInfo("span 1 dropped"); seamUiUpdate(); draw(); } return; }
   S.seamPending = armed; S.rangeSel = null; // the ruler is free for the second drag
-  setInfo("span 1 kept (" + seamSpansText([armed], barTicks(), beatTicks()) + ") — drag the second span, tap ⟲");
+  setInfo("span 1 kept (" + seamSpansText([armed], barTicks(), beatTicks(), pickupTicks()) + ") — drag the second span, tap ⟲");
   seamUiUpdate();
   draw();
 }

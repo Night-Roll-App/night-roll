@@ -2,6 +2,8 @@ import { S, prof } from "../state.js";
 import { chordBandText } from "../model/rollnotes.js";
 import { annoInLasso } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
+import { hasEnd } from "../model/grid.js";
+import { pickupTicks, barStartTick } from "../model/grid.js";
 import { kitKeyOf } from "../model/grid.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
@@ -402,10 +404,11 @@ export function drawPlayheadStripBand(W) { // the strip's static look — RULER 
   ctx.strokeStyle = css("--grid");
   ctx.beginPath(); ctx.moveTo(S.RULER_W, S.STRIP_Y + 0.5); ctx.lineTo(W, S.STRIP_Y + 0.5); ctx.stroke();
   ctx.fillStyle = css("--dim");
-  for (let t = Math.floor(t0 / beatT) * beatT; t < t1; t += beatT) {
+  const T0 = pickupTicks(); // the strip's bar/beat ticks follow the pickup frame (#1192)
+  for (let t = T0 + Math.floor((t0 - T0) / beatT) * beatT; t < t1; t += beatT) {
     const x = S.RULER_W + t * ppt - S.view.x;
     if (x < S.RULER_W) continue;
-    const isBar = Math.round(t) % bt === 0;
+    const isBar = Math.abs((t - T0) / bt - Math.round((t - T0) / bt)) < 1e-6;
     const h = isBar ? STRIP_H - 4 : Math.round(STRIP_H * 0.35);
     ctx.globalAlpha = isBar ? 0.8 : 0.5;
     ctx.fillRect(x, S.RULER_H - h, 1, h);
@@ -425,15 +428,27 @@ export function drawRuler(W, H) {
   ctx.font = "10px " + css("--mono");
   ctx.textAlign = "left";
   // xFrom/xTo restrict the pass to a pixel span (the cycle strip's re-ink)
+  // bar lines sit at T + k·bt (the pickup frame, #1192 §4): the span before
+  // bar 1 is labelled 0 in the dim colour at the song's start, and bar 1's
+  // line is drawn full height — the one visual that says "here"
+  const T = pickupTicks();
   const drawNumbers = (xFrom, xTo) => {
-    for (let t = Math.floor(t0 / bt) * bt; t < t1; t += bt) {
+    for (let t = T + Math.floor((t0 - T) / bt) * bt; t < t1; t += bt) {
       const x = S.RULER_W + t * ppt - S.view.x;
       if (x < S.RULER_W - 4 || x < xFrom || x >= xTo) continue;
-      ctx.fillText(String(Math.round(t / bt) + 1), x + 4, 15);
+      ctx.fillText(String(Math.round((t - T) / bt) + 1), x + 4, 15);
+    }
+    if (T > 0) { // the pickup bar's label at the song's start (its bar line would lie before tick 0)
+      const x = S.RULER_W - S.view.x;
+      if (x >= S.RULER_W - 4 && x >= xFrom && x < xTo) { const was = ctx.fillStyle; ctx.fillStyle = css("--dim"); ctx.fillText("0", x + 4, 15); ctx.fillStyle = was; }
     }
   };
   ctx.fillStyle = css("--text"); // bright like the octave labels — dim was hard to read
   drawNumbers(-Infinity, Infinity);
+  if (T > 0) { // bar 1's line, full alpha, the height of the number strip
+    const x = Math.round(S.RULER_W + T * ppt - S.view.x) + 0.5;
+    if (x >= S.RULER_W) { ctx.strokeStyle = css("--text"); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, BASE_RULER_H - 1); ctx.stroke(); }
+  }
   // Logic-style subdivision ticks along the ruler's bottom edge: bars always,
   // beats when there's room, 16ths when zoomed right in — density-adaptive.
   // xFrom/xTo restrict the pass to a pixel span (the cycle strip's re-ink).
@@ -441,11 +456,11 @@ export function drawRuler(W, H) {
     const qt = beatTicks();
     const step = qt * ppt >= 96 ? qt / 4 : qt * ppt >= 14 ? qt : bt;
     ctx.beginPath();
-    for (let t = Math.floor(t0 / step) * step; t < t1; t += step) {
+    for (let t = T + Math.floor((t0 - T) / step) * step; t < t1; t += step) { // beat ticks keep their phase from T
       const x = Math.round(S.RULER_W + t * ppt - S.view.x) + 0.5;
       if (x < S.RULER_W || x < xFrom || x >= xTo) continue;
-      const onBar = Math.abs(t / bt - Math.round(t / bt)) < 1e-6;
-      const onBeat = Math.abs(t / qt - Math.round(t / qt)) < 1e-6;
+      const onBar = Math.abs((t - T) / bt - Math.round((t - T) / bt)) < 1e-6;
+      const onBeat = Math.abs((t - T) / qt - Math.round((t - T) / qt)) < 1e-6;
       const h = onBar ? 9 : onBeat ? 6 : 3;
       // ticks live in the number strip (BASE_RULER_H), above any section lanes
       ctx.moveTo(x, BASE_RULER_H - 1); ctx.lineTo(x, BASE_RULER_H - 1 - h);
@@ -497,7 +512,7 @@ export function drawRuler(W, H) {
     ctx.fillStyle = "#5BC0EB";
     for (const c of coachCurrent()) {
       if (!c.at) continue;
-      const x = tickX((c.at[0] - 1) * bt + (c.at[1] - 1) * qt);
+      const x = tickX(barStartTick(c.at[0]) + (c.at[1] - 1) * qt);
       if (x < S.RULER_W - 8 || x > W) continue;
       ctx.fillRect(x - 9, 2, 8, 6);
       ctx.fillRect(x - 9, 8, 2, 2);
@@ -573,7 +588,7 @@ export function drawRuler(W, H) {
 drawRuler = prof("drawRuler", drawRuler); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function annoInLassoImpl(n, L) { // lane-precise: the band's own row must be inside the box, and its time
   if (!L || !isCopyableAnno(n)) return false;
-  if (!(n.start < L.t1 && (n.b2 ? n.end : n.start + 1) > L.t0)) return false;
+  if (!(n.start < L.t1 && (hasEnd(n) ? n.end : n.start + 1) > L.t0)) return false;
   if (n.section || n.chord) {
     if (n.lane === null || n.lane === undefined) return false; // folded out of the ruler
     const y = BASE_RULER_H + n.lane * LANE_H;

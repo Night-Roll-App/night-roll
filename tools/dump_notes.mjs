@@ -7,7 +7,7 @@
 // hand-me-down transcriptions).
 import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { createApp } from "../tests/harness.mjs";
-import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +20,8 @@ for (const f of readdirSync(path.join(ROOT, dir)).filter(f => f.endsWith(".mid")
   const MIDI = path.join(ROOT, dir);
   const app = await createApp();
   app.context.midiBytes = [...readFileSync(path.join(MIDI, f))];
+  const rnPath = path.join(MIDI, f.replace(/\.mid$/, ".rollnotes.json"));
+  app.context.rollnotesText = existsSync(rnPath) ? readFileSync(rnPath, "utf8") : ""; // the song's pickup, if he set one (#1192) — nothing else of the sidecar is read here
   const text = app.run(`(() => {
     const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
     const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
@@ -27,10 +29,12 @@ for (const f of readdirSync(path.join(ROOT, dir)).filter(f => f.endsWith(".mid")
     const bt = r.timesig[0] * 4 / r.timesig[1] * r.ppq;
     let end = 0;
     r.tracks.forEach(t => t.notes.forEach(n => end = Math.max(end, n.t + n.d)));
-    const nBars = Math.ceil(end / bt - 0.05);
+    const P = rollnotesText ? (declaredPickupOf(parseRollnotesJSON(rollnotesText)) || 0) : 0;
+    const T = P * (r.ppq * 4 / r.timesig[1]); // the pickup frame (#1192): rows start at "bar 0:" when the song has a pickup, as the app shows
+    const nBars = Math.ceil((end - T) / bt - 0.05);
     const L = [];
     L.push("# ${f} — " + r.timesig[0] + "/" + r.timesig[1] + ", " +
-           Math.round(6e7 / r.tempos[0].usq) + "bpm, " + nBars + " bars");
+           Math.round(6e7 / r.tempos[0].usq) + "bpm, " + nBars + " bars" + (T > 0 ? " and a pickup (bar 0)" : ""));
     L.push("# Format: bar N: beat pitch duration-in-quarter-notes");
     L.push("# duration is GATE TIME (how long the chip held the note), NOT a notated value.");
     L.push("# RHYTHM comes from ONSET SPACING (the beat column), never from duration:");
@@ -39,11 +43,12 @@ for (const f of readdirSync(path.join(ROOT, dir)).filter(f => f.endsWith(".mid")
     r.tracks.forEach((tr, ti) => {
       L.push("");
       L.push("## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : ""));
-      for (let b = 0; b < nBars; b++) {
-        const ns = tr.notes.filter(n => n.t >= b * bt && n.t < (b + 1) * bt);
+      for (let k = T > 0 ? 0 : 1; k <= nBars; k++) {
+        const bs = T + (k - 1) * bt;
+        const ns = tr.notes.filter(n => n.t >= bs && n.t < bs + bt);
         if (!ns.length) continue;
-        L.push("bar " + (b + 1) + ": " + ns.map(n =>
-          ((n.t - b * bt) / r.ppq + 1).toFixed(2).replace(/\\.?0+$/, "") + " " +
+        L.push("bar " + k + ": " + ns.map(n =>
+          ((n.t - bs) / r.ppq + 1).toFixed(2).replace(/\\.?0+$/, "") + " " +
           pn(n.p) + " " +
           (n.d / r.ppq).toFixed(2).replace(/\\.?0+$/, "")).join(", "));
       }

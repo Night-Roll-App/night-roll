@@ -19,6 +19,7 @@ import { drawLasso } from "./roll.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
 import { beatsPerBarDisp } from "../model/grid.js";
+import { pickupTicks, beatTicks } from "../model/grid.js";
 
 // ---------------------------------------------------------------- score view
 export const VF = (() => {
@@ -87,7 +88,14 @@ export function buildScoreModelFor(trackSet) {
   const grid = S.song.ppq / 4; // 16th grid
   let lastTick = 0;
   S.song.tracks.forEach(tr => tr.notes.forEach(n => { if (!n.gone) lastTick = Math.max(lastTick, n.t + n.d); }));
-  const nMeasures = Math.max(1, Math.ceil(lastTick / bt - 0.05));
+  // the pickup frame (#1192 review C6): measure 0 = [0, T) when a pickup exists,
+  // measure k = [T + (k−1)·bt, T + k·bt); the layout is tick-linear, so measure
+  // 0 is engraved as wide as its ticks. Without a pickup: today's measures.
+  const T = pickupTicks();
+  const nMeasures = T > 0 ? 1 + Math.max(1, Math.ceil((lastTick - T) / bt - 0.05)) : Math.max(1, Math.ceil(lastTick / bt - 0.05));
+  const mStart = mi => T > 0 ? (mi === 0 ? 0 : T + (mi - 1) * bt) : mi * bt;
+  const mLen = mi => T > 0 && mi === 0 ? T : bt;
+  const mIndex = t => T > 0 ? (t < T ? 0 : Math.floor((t - T) / bt) + 1) : Math.floor(t / bt);
   const sf0 = sfAt(0);
   const staves = [];
   S.song.tracks.forEach((tr, ti) => {
@@ -123,9 +131,9 @@ export function buildScoreModelFor(trackSet) {
     const pushRest = (from, to) => {
       let f = from;
       while (f < to - 1) {
-        const mi = Math.floor(f / bt);
+        const mi = mIndex(f);
         if (mi >= nMeasures) break;
-        const mEnd = Math.min(to, (mi + 1) * bt);
+        const mEnd = Math.min(to, mStart(mi) + mLen(mi));
         for (const p of durationPieces(mEnd - f, S.song.ppq)) {
           measures[mi].push({rest: true, start: f, dur: p.dur, dots: p.dots});
           f += p.ticks;
@@ -140,9 +148,9 @@ export function buildScoreModelFor(trackSet) {
       const endT = e.start + e.dur;
       let prevPiece = null;
       while (f < endT - 1) {
-        const mi = Math.floor(f / bt);
+        const mi = mIndex(f);
         if (mi >= nMeasures) break;
-        const mEnd = Math.min(endT, (mi + 1) * bt);
+        const mEnd = Math.min(endT, mStart(mi) + mLen(mi));
         for (const p of durationPieces(mEnd - f, S.song.ppq)) {
           const piece = {rest: false, start: f, dur: p.dur, dots: p.dots,
                          pitches: e.pitches.slice().sort((a, b) => a - b), refs: e.refs,
@@ -182,14 +190,14 @@ export function buildScoreModelFor(trackSet) {
       const ms = Array.from({length: nMeasures}, () => []);
       let pos = 0;
       for (const e of evs) {
-        const mi = Math.floor(e.start / bt);
+        const mi = mIndex(e.start);
         if (mi >= nMeasures) break;
         if (fillRests && e.start > pos) { // rests in the hands voice keep the meter legible
           let f = pos;
           while (f < e.start - 1) {
-            const rmi = Math.floor(f / bt);
+            const rmi = mIndex(f);
             if (rmi >= nMeasures) break;
-            const rEnd = Math.min(e.start, (rmi + 1) * bt);
+            const rEnd = Math.min(e.start, mStart(rmi) + mLen(rmi));
             for (const p of durationPieces(rEnd - f, S.song.ppq)) {
               ms[rmi].push({rest: true, start: f, dur: p.dur, dots: p.dots});
               f += p.ticks;
@@ -198,7 +206,7 @@ export function buildScoreModelFor(trackSet) {
             f = Math.max(f, rEnd);
           }
         }
-        const cap = Math.min(e.dur, (mi + 1) * bt - e.start); // hits never tie across barlines
+        const cap = Math.min(e.dur, mStart(mi) + mLen(mi) - e.start); // hits never tie across barlines
         for (const p of durationPieces(cap, S.song.ppq)) {
           ms[mi].push({rest: false, start: e.start, dur: p.dur, dots: p.dots, keys: e.keys, refs: e.refs});
           break; // one engraved piece per hit
@@ -220,7 +228,7 @@ export function buildScoreModelFor(trackSet) {
   }
   const quartersPerBar = bt / S.song.ppq;
   const pxqMin = Math.min(140, Math.max(24, Math.ceil((maxEv * 24 + 72) / quartersPerBar)));
-  return {nMeasures, bt, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
+  return {nMeasures, bt, T, mStart, mLen, mIndex, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
 }
 buildScoreModelImpl = prof("buildScoreModel", buildScoreModelImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
@@ -232,7 +240,7 @@ export function renderMeasure(mi) {
   if (S.scoreCache.has(key)) return S.scoreCache.get(key);
   const m = S.scoreModel;
   const ppt = pxPerTick();
-  const mw = m.bt * ppt;
+  const mw = m.mLen(mi) * ppt; // measure 0 is as wide as the pickup when one exists
   const c = document.createElement("canvas");
   const dpr = window.devicePixelRatio || 1;
   c.width = Math.ceil((mw + SCORE_PAD * 2) * dpr);
@@ -264,9 +272,9 @@ export function engraveMeasure(ctx2, mi, x0, y0, mw, opts = {}) {
   const m = opts.model || S.scoreModel;
   const geo = [], timeMap = [];
   let noteStartXc = x0;
-  const sfM = sfAt(mi * m.bt);
-  const spell = sfDeclaredAt(mi * m.bt) === null ? SHARP_SPELL : spellFor(sfM);
-  const sfPrev = mi > 0 ? sfAt((mi - 1) * m.bt) : sfM;
+  const sfM = sfAt(m.mStart(mi));
+  const spell = sfDeclaredAt(m.mStart(mi)) === null ? SHARP_SPELL : spellFor(sfM);
+  const sfPrev = mi > 0 ? sfAt(m.mStart(mi - 1)) : sfM;
   const keyChanged = mi > 0 && sfM !== sfPrev;
   const built = []; // per-stave build products, formatted together below
   m.staves.forEach((st, si) => {
@@ -311,14 +319,14 @@ export function engraveMeasure(ctx2, mi, x0, y0, mw, opts = {}) {
     };
     if (st.drums) { // hands (stems up) + feet (stems down), two voices, one staff
       const hands = st.measures[mi] || [], feet = (st.measuresFeet && st.measuresFeet[mi]) || [];
-      if (!hands.length && !feet.length) { timeMap.push({tick: mi * m.bt, x: x0}); return; }
+      if (!hands.length && !feet.length) { timeMap.push({tick: m.mStart(mi), x: x0}); return; }
       const vH = mkVoice(hands, 1), vF = mkVoice(feet, -1, true);
       built.push({st, si, stave, voice: vH.voice, voice2: vF.voice,
                   vnotes: vH.vnotes, vnotes2: vF.vnotes, events: hands.concat(feet)});
       return;
     }
     const events = st.measures[mi] || [];
-    if (!events.length) { timeMap.push({tick: mi * m.bt, x: x0}); return; }
+    if (!events.length) { timeMap.push({tick: m.mStart(mi), x: x0}); return; }
     const {voice, vnotes} = mkVoice(events, null);
     VF.Accidental.applyAccidentals([voice], SF_MAJOR[sfM] || "C");
     built.push({st, si, stave, voice, vnotes, events});
@@ -428,8 +436,8 @@ export function scoreTickToX(tick) {
   if (!S.scoreModel) return S.RULER_W + tick * pxPerTick() - S.view.x;
   const m = S.scoreModel;
   const ppt = pxPerTick();
-  const mOrigin = k => S.RULER_W + k * m.bt * ppt - S.view.x - SCORE_PAD;
-  const mi = Math.min(m.nMeasures - 1, Math.max(0, Math.floor(tick / m.bt)));
+  const mOrigin = k => S.RULER_W + m.mStart(k) * ppt - S.view.x - SCORE_PAD;
+  const mi = Math.min(m.nMeasures - 1, Math.max(0, m.mIndex(tick)));
   const entry = S.scoreCache.get(mi);
   if (!entry) return S.RULER_W + tick * ppt - S.view.x;
   let a = null, b = null; // surrounding anchors, screen coords
@@ -441,13 +449,13 @@ export function scoreTickToX(tick) {
     const prev = mi > 0 ? S.scoreCache.get(mi - 1) : null;
     const lp = prev && prev.timeMap.length ? prev.timeMap[prev.timeMap.length - 1] : null;
     a = lp ? {tick: lp.tick, x: mOrigin(mi - 1) + lp.x}
-           : {tick: mi * m.bt, x: mOrigin(mi) + (entry.keyChanged ? entry.noteStartX : SCORE_PAD)};
+           : {tick: m.mStart(mi), x: mOrigin(mi) + (entry.keyChanged ? entry.noteStartX : SCORE_PAD)};
   }
   if (!b) { // after this measure's last note: reach ahead to the next one
     const nxt = mi + 1 < m.nMeasures ? S.scoreCache.get(mi + 1) : null;
     const np = nxt && nxt.timeMap.length ? nxt.timeMap[0] : null;
     b = np ? {tick: np.tick, x: mOrigin(mi + 1) + np.x}
-           : {tick: (mi + 1) * m.bt, x: mOrigin(mi) + SCORE_PAD + entry.mw};
+           : {tick: m.mStart(mi) + m.mLen(mi), x: mOrigin(mi) + SCORE_PAD + entry.mw};
   }
   const f = b.tick === a.tick ? 0 : (tick - a.tick) / (b.tick - a.tick);
   return a.x + f * (b.x - a.x);
@@ -459,18 +467,17 @@ export function scoreXToTick(x) { // inverse, coarse: linear within measure
 export function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cached scene — the overlay draws the playhead
   const m = S.scoreModel;
   const ppt = pxPerTick();
-  const mw = m.bt * ppt;
   // during a pinch, keep the stale-zoom cache and blit it scaled — a full
   // VexFlow re-engrave per pointermove melts the iPad; rebuild once at gesture end
   if (S.scoreZoom !== S.view.pxq && !S.pinch) { S.scoreCache.clear(); S.scoreZoom = S.view.pxq; }
-  const first = Math.max(0, Math.floor(S.view.x / mw) - 1);
-  const last = Math.min(m.nMeasures - 1, Math.ceil((S.view.x + W) / mw) + 1);
+  const first = Math.max(0, m.mIndex(S.view.x / ppt) - 1);
+  const last = Math.min(m.nMeasures - 1, m.mIndex((S.view.x + W) / ppt) + 1);
   drawRangeTints(W, H);
   const dpr = window.devicePixelRatio || 1;
   for (let mi = first; mi <= last; mi++) {
     const entry = renderMeasure(mi);
-    const s = (m.bt * ppt) / entry.mw; // ≠1 only mid-pinch (entry from old zoom)
-    const x = S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD * s;
+    const s = (m.mLen(mi) * ppt) / entry.mw; // ≠1 only mid-pinch (entry from old zoom)
+    const x = S.RULER_W + m.mStart(mi) * ppt - S.view.x - SCORE_PAD * s;
     ctx.drawImage(entry.canvas, 0, 0, entry.canvas.width, entry.canvas.height,
                   x, S.RULER_H + 4 - (S.view.y || 0), entry.canvas.width / dpr * s, entry.canvas.height / dpr);
   }
@@ -488,7 +495,7 @@ export function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cac
     for (let mi = first; mi <= last; mi++) {
       const entry = S.scoreCache.get(mi);
       if (!entry) continue;
-      const mx = S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD;
+      const mx = S.RULER_W + m.mStart(mi) * ppt - S.view.x - SCORE_PAD;
       const my = S.RULER_H + 4 - (S.view.y || 0);
       for (const g of entry.geo) {
         const sel = g.refs.some(rf => S.multiSelKey.has(rf.ti + ":" + rf.ni));
@@ -532,16 +539,16 @@ export function scoreMeasureAnchors(mi) { // how many real x→time anchors this
 export function drawScorePencilGuides(W, H) { // faint beat lines wherever the linear map governs
   if (!S.editOn || S.mode !== "pencil" || !S.scoreModel) return;
   const ppt = pxPerTick();
-  const mw = S.scoreModel.bt * ppt;
-  const first = Math.max(0, Math.floor(S.view.x / mw));
-  const last = Math.min(S.scoreModel.nMeasures - 1, Math.ceil((S.view.x + W) / mw));
-  const bpb = beatsPerBarDisp();
+  const m = S.scoreModel;
+  const first = Math.max(0, m.mIndex(S.view.x / ppt));
+  const last = Math.min(m.nMeasures - 1, m.mIndex((S.view.x + W) / ppt));
   ctx.fillStyle = css("--accent");
   for (let mi = first; mi <= last; mi++) {
     if (scoreMeasureAnchors(mi) >= 2) continue; // engraved anchors govern there
     const entry = S.scoreCache.get(mi);
     const nsx = entry ? entry.noteStartX : SCORE_PAD;
-    const x0 = S.RULER_W + mi * mw - S.view.x - SCORE_PAD;
+    const mw = m.mLen(mi) * ppt, bpb = Math.max(1, Math.round(m.mLen(mi) / beatTicks())); // measure 0 has the pickup's beats only
+    const x0 = S.RULER_W + m.mStart(mi) * ppt - S.view.x - SCORE_PAD;
     const usable = mw + SCORE_PAD - nsx;
     ctx.globalAlpha = 0.25;
     for (let b = 0; b < bpb; b++) {

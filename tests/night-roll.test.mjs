@@ -3244,6 +3244,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analyze ▸",
     "Another chord here", // docs/plans/2026-11-27-layered-chords.md: two chords over the same span (#1159–#1162)
     "Pedal point", // #1177: a chord band marked `pedal: true`, drawn under every chord row
+    "Pickup", // #1190–#1192: `pickup: P` — bar 1 starts after the pickup, the notes before it are bar 0 (docs/plans/2026-11-27-pickup-bar.md)
     "A chord can end mid-beat", // #1179: an exclusive `until` end on a chord band
     "A long label is cut off", // #1180: band labels clip to the band's drawn width
     "Annotate this song", "comes back after a relaunch",
@@ -13843,8 +13844,8 @@ test("parseRollnotesJSON: a v2 fixture (header + origin) parses to the exact sam
   assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v1)}).origin`), null, "v1 carries no origin header");
 });
 
-test("version guard (docs/annotations-v2.md P3): version > 3, or version >= 2 with an unrecognized format, parses read-only with the 'newer Night Roll' message", () => {
-  const tooNew = JSON.stringify({format: "night-roll-annotations", version: 4, song: "menu", // v3 (layered chords, 2026-11-27) reads now; 4 is the future
+test("version guard (docs/annotations-v2.md P3): version > 4, or version >= 2 with an unrecognized format, parses read-only with the 'newer Night Roll' message", () => {
+  const tooNew = JSON.stringify({format: "night-roll-annotations", version: 5, song: "menu", // v4 (the pickup, 2026-11-27) reads now; 5 is the future
     notes: [{at: [1, 1], text: "from the future"}]});
   const badFormat = JSON.stringify({format: "some-other-app", version: 2, song: "menu",
     notes: [{at: [1, 1], text: "hi"}]});
@@ -14174,7 +14175,7 @@ test("song notes in the note window: the Song chip hides the bar rows and shows 
   run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; songKey = "albums/nes/final-fantasy-i/songs/sn-editor.mid"; localStorage.removeItem("ff1roll-notes-" + songKey);`);
   assert.equal(val(`["Sway", "songnote: Sway", "long short long", "Sway: long-short-long"].map(guessNoteType).every(g => g === null)`), true, "a title or a sentence is never guessed as anything");
   run(`openEditor(null);`);
-  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Song"]);
+  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Pickup", "Song"]);
   assert.equal(val(`document.getElementById("nsongrow").style.display`), "none", "no title row on a plain note");
   run(`document.getElementById("ntext").value = "<the rule>"; pickEditorType("song");`);
   assert.equal(val(`editorType()`), "song");
@@ -15327,7 +15328,7 @@ test("+ Note: the type is a row of chips, and a fresh plain note guesses its typ
   assert.deepEqual(val(`[guessNoteType("the bass walks down"), guessNoteType("Am visit"), guessNoteType("3/5"), guessNoteType("")]`), [null, null, null, null], "anything else stays a note");
   run(`if (!document.querySelectorAll) document.querySelectorAll = () => []; rangeSel = null; openEditor(null);`); // the stub DOM has no querySelectorAll (the chord chips refresh through it)
   assert.equal(val(`editorType()`), "note");
-  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Song"]);
+  assert.deepEqual(val(`[...document.getElementById("ntypechips").children].map(b => b.textContent)`), ["Note", "Section", "Chord", "Key", "Meter", "Loop", "Tempo", "Chop", "Pickup", "Song"]);
   run(`document.getElementById("ntext").value = "Gm7"; applyNoteTypeGuess();`);
   assert.equal(val(`editorType()`), "chord");
   assert.equal(val(`document.getElementById("nchordsym").value`), "Gm7");
@@ -18105,9 +18106,9 @@ test("layered chords: `layer` reads and writes with the chord; a list without on
   assert.equal(val(`rollnotesVersionFor([{chord: true, text: "C"}])`), 2);
   assert.equal(val(`rollnotesVersionFor([{chord: true, text: "C", layer: 1}])`), 3);
   assert.equal(val(`rollnotesVersionFor([{text: "x", layer: 1}])`), 2, "only a CHORD's layer counts (nothing else carries one)");
-  assert.equal(val(`ROLLNOTES_MAX_VERSION`), 3);
-  const v4 = JSON.stringify({format: "night-roll-annotations", version: 4, song: "menu", notes: [{at: [1, 1], text: "x"}]});
-  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v4)}).readOnly`), true, "the future still locks");
+  assert.equal(val(`ROLLNOTES_MAX_VERSION`), 4); // v4 = the pickup (#1192, tests/pickup.test.mjs)
+  const v5 = JSON.stringify({format: "night-roll-annotations", version: 5, song: "menu", notes: [{at: [1, 1], text: "x"}]});
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v5)}).readOnly`), true, "the future still locks");
   assert.deepEqual(val(`chordExtrasFrom({layer: 0})`), {}, "layer 0 is absence");
   assert.deepEqual(val(`chordExtrasFrom({layer: 2.5})`), {}, "a non-integer is not a layer");
   assert.deepEqual(val(`chordExtrasFrom({layer: 2})`), {layer: 2});
