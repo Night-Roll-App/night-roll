@@ -6,6 +6,8 @@ import { checkMeterVsFile } from "../theory/key.js";
 import { openEditor } from "./note-editor.js";
 import { setLassoMode } from "./note-editor.js";
 import { selPitched } from "./note-editor.js";
+import { selFirstTicks } from "./note-editor.js";
+import { pitchNameAt } from "../model/song.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { tonicPcOfName } from "../theory/chords.js";
 import { S, prof } from "../state.js";
@@ -731,9 +733,10 @@ export function initNotes3() {
   document.getElementById("chordbtn").addEventListener("click", () => {
     if (S.challengeSec) { openChallenge(S.challengeSec); return; }
     if (!S.multiSel.length) return;
-    const pitches = selPitched().map(s => S.song.tracks[s.ti].notes[s.ni].p);
+    const sel = selPitched(), pitches = sel.map(s => S.song.tracks[s.ti].notes[s.ni].p);
     if (pitches.length < 2) return;
-    const names = [...new Set(pitches)].sort((a, b) => a - b).map(p => pitchName(p, S.multiSelSf));
+    const tickOf = selFirstTicks(sel); // his chord band spells the notes (#1171)
+    const names = [...new Set(pitches)].sort((a, b) => a - b).map(p => pitchNameAt(p, tickOf[p], S.multiSelSf));
     const chordName = nameChord(pitches, S.multiSelSf);
     setInfo(names.join(" · ") + "  →  " + chordName, names.join(", ") + " — " + chordName);
   });

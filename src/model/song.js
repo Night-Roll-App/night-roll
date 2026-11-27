@@ -6,6 +6,8 @@ import { beatTicks } from "./grid.js";
 import { pearsonCorr } from "../theory/key.js";
 import { keyNameFor } from "../theory/key.js";
 import { SF_MAJOR } from "../theory/chords.js";
+import { spellPc } from "../theory/chords.js";
+import { spellInChord } from "../theory/chords.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { fileKeyAt } from "../theory/key.js";
 import { barTicks } from "./rollnotes.js";
@@ -149,6 +151,27 @@ export function keyNameAt(tick) { // recorded key name governing this tick, or n
   }
   return ranged ? ranged.name : open ? open.name : null;
 }
+// The chord band HE wrote over a tick (Josh #1171): the innermost one when
+// bands nest, visibleNotes so a Learning-hidden ✦ AI chord never spells a
+// note. Annotations only — never an estimate, so Learning mode may use it.
+export function chordBandAt(tick) {
+  let best = null;
+  for (const n of visibleNotes()) {
+    if (!n.chord || n.section || n.end === null || n.end === undefined || tick < n.start || tick >= n.end) continue;
+    if (!best || n.start > best.start || (n.start === best.start && n.end < best.end)) best = n;
+  }
+  return best;
+}
+// spellPc/pitchName with the chord band at `tick` consulted first: a pitch
+// class the label names is spelled by its degree there (C7#9 → D#), anything
+// else by the key (`sf`) as before. Display only: the roll, Roman numerals and
+// the key finder keep their own spelling.
+export function spellPcAt(pc, tick, sf) {
+  const band = chordBandAt(tick);
+  const s = band ? spellInChord(pc, band.text) : null;
+  return s ? s.letter + s.acc : spellPc(pc, sf);
+}
+export function pitchNameAt(p, tick, sf) { return spellPcAt(p % 12, tick, sf) + (Math.floor(p / 12) - 1); }
 
 // pointerId → {p, tick}
 // While ● is armed the transport must not wrap at the song's end: a new song is

@@ -26,8 +26,8 @@ import { ownFolderPath } from "../model/provenance.js";
 import { originOf } from "../model/provenance.js";
 import { drawImpl as draw } from "./chrome.js";
 import { sfShownAt } from "../model/song.js";
-import { pitchName } from "../theory/chords.js";
-import { spellPc } from "../theory/chords.js";
+import { pitchNameAt } from "../model/song.js";
+import { spellPcAt } from "../model/song.js";
 import { appMode } from "../platform/mode.js";
 import { nameChord } from "../theory/chords.js";
 import { snapBeat } from "../model/grid.js";
@@ -654,6 +654,14 @@ export function setAnchorBQImpl(n, tick) { // start anchor from a tick
 export function lassoedAnnosImpl() { return S.lassoAnno ? visibleNotes().filter(n => annoInLasso(n, S.lassoAnno)) : []; } // visibleNotes: the lasso acts only on what is shown (Learning hides ✦ AI estimates)
 
 export function selPitched() { return S.multiSel.filter(s => !trackIsDrums(s.ti)); } // the lasso's notes a chord reading may use (#1164)
+export function selFirstTicks(sel) { // pitch → tick of its earliest note (and "c"+pc for the pitch class): where a chord band may spell it (#1171)
+  const out = {};
+  for (const s of sel) {
+    const n = S.song.tracks[s.ti].notes[s.ni];
+    for (const k of [n.p, "c" + (n.p % 12)]) if (!(k in out) || n.t < out[k]) out[k] = n.t;
+  }
+  return out;
+}
 export function refreshSelInfo() { // one source of truth for the selection readout
   // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
   // always-visible toggle (Josh's usage note: it's reached with no lasso
@@ -683,10 +691,11 @@ export function refreshSelInfo() { // one source of truth for the selection read
   const pitched = selPitched();
   const drumNames = [...new Set(S.multiSel.map(s => drumHitName(s.ti, S.song.tracks[s.ti].notes[s.ni].p)).filter(Boolean))];
   const pitches = [...new Set(pitched.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
+  const tickOf = selFirstTicks(pitched); // each pitch's earliest note: the chord band there spells it (#1171)
   // 8va off = chord-reading mode: pitch classes only, octave duplicates collapsed
   const names = (S.selOctaves
-    ? pitches.map(p => pitchName(p, S.multiSelSf))
-    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf))).concat(drumNames);
+    ? pitches.map(p => pitchNameAt(p, tickOf[p], S.multiSelSf))
+    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPcAt(pc, tickOf["c" + pc], S.multiSelSf))).concat(drumNames);
   const vels = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].v))];
   const velTxt = vels.length === 1 ? " · vel " + vels[0] : ""; // uniform velocity is worth stating
   const trackTxt = " · " + lassoTrackNames(S.multiSel.map(s => s.ti)); // which voice(s) the notes belong to (#1134)
