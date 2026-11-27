@@ -12,6 +12,7 @@ import { askBarsCount } from "../ask/tools.js";
 import { beatTicks, gridAnchorTick } from "../model/grid.js";
 import { isTripletDur } from "../model/grid.js";
 import { posText } from "../model/grid.js";
+import { drumHitName } from "../model/grid.js";
 import { pitchName } from "../theory/chords.js";
 import { sfAt } from "../model/song.js";
 import { renderMeasure } from "../render/score.js";
@@ -208,7 +209,7 @@ export function armNoteEdit(pe) { // a grab became real: NOW selection may chang
 
 export function noteLabel(ti, ni) {
   const n = S.song.tracks[ti].notes[ni];
-  const name = pitchName(n.p, sfAt(n.t));
+  const name = drumHitName(ti, n.p) || pitchName(n.p, sfAt(n.t));
   const tname = S.song.tracks[ti].name || "tr" + (ti+1);
   return name + " · " + posText(n.t) + " · " +
          (n.d / S.song.ppq).toFixed(2) + "q · vel " + n.v + " · " + tname + (n.added ? " · added" : "");

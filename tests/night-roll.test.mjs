@@ -11143,6 +11143,30 @@ test("#1134 lasso readout names the track(s); a lasso of one note reads like a t
   assert.equal(a.run(`lassoTrackNames([1, 1, 0])`), "voice7, voice3", "track order, each once");
 });
 
+test("#1164 a drum hit reads as its drum, never a pitch; drums stay out of a lasso's chord", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "voice5", kit: true, notes: [{t: 0, d: 120, p: 42, v: 37, ch: 9}, {t: 480, d: 120, p: 38, v: 37, ch: 9}]},
+                     {name: "voice3", notes: [{t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
+    songKey = "midi/test.mid"; keyRegions = []; rollnotes = []; declaredTs = [4, 4]; previewSf = null;
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}]; selNote = null; selOctaves = true;
+    multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]); refreshSelInfo();
+  `);
+  const info = () => a.run(`document.getElementById("noteinfo").textContent`);
+  const chordBtn = () => a.run(`document.getElementById("chordbtn").style.display`);
+  assert.match(info(), /^Closed hi-hat · bar 1 beat 1 /, "a tap/one-note lasso names the drum");
+  assert.equal(a.run(`noteLabel(1, 0).split(" · ")[0]`), "E4", "a pitched note still reads its pitch");
+  a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]); refreshSelInfo();`);
+  assert.equal(info(), "Closed hi-hat · Snare  (2 notes · vel 37 · voice5)", "drums only: drum names, no pitches");
+  assert.equal(chordBtn(), "none", "drums are no chord");
+  a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 1, ni: 0}, {ti: 1, ni: 1}]; multiSelKey = new Set(["0:0", "1:0", "1:1"]); refreshSelInfo();`);
+  assert.equal(info(), "E4 · G4 · Closed hi-hat  (3 notes · voice5, voice3)", "pitches first, then the drum");
+  assert.equal(chordBtn(), "", "two pitches over a drum still offer Chord?");
+  a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 1, ni: 0}]; multiSelKey = new Set(["0:0", "1:0"]); refreshSelInfo();`);
+  assert.equal(chordBtn(), "none", "one pitch over a drum is no chord");
+});
+
 test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", async () => {
   const a = await createApp({storage: {"ff1roll-mode": "learning"}});
   a.run(`

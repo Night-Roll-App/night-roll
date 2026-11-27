@@ -124,6 +124,19 @@ export function trackIsDrums(ti) {
 // A hand-marked drum track keeps its captured pitches (G4…); tr.kitPlay (finalizeNotes: guessKit over its
 // distinct pitches, derived at load and stored nowhere) maps each to the GM drum key it plays and shows as.
 export function kitKeyOf(tr, p) { return tr.kitPlay ? (tr.kitPlay.get(p) ?? p) : p; }
+// GM percussion key names (35–81). A drum hit's readout names the drum, never a pitch (Josh #1164: "percussion notes should not show up as music notes").
+export const GM_DRUM_NAMES = {35: "Acoustic bass drum", 36: "Bass drum", 37: "Side stick", 38: "Snare", 39: "Hand clap", 40: "Electric snare",
+  41: "Low floor tom", 42: "Closed hi-hat", 43: "High floor tom", 44: "Pedal hi-hat", 45: "Low tom", 46: "Open hi-hat", 47: "Low-mid tom",
+  48: "Hi-mid tom", 49: "Crash cymbal", 50: "High tom", 51: "Ride cymbal", 52: "Chinese cymbal", 53: "Ride bell", 54: "Tambourine",
+  55: "Splash cymbal", 56: "Cowbell", 57: "Crash cymbal 2", 58: "Vibraslap", 59: "Ride cymbal 2", 60: "Hi bongo", 61: "Low bongo",
+  62: "Mute hi conga", 63: "Open hi conga", 64: "Low conga", 65: "High timbale", 66: "Low timbale", 67: "High agogo", 68: "Low agogo",
+  69: "Cabasa", 70: "Maracas", 71: "Short whistle", 72: "Long whistle", 73: "Short guiro", 74: "Long guiro", 75: "Claves",
+  76: "Hi wood block", 77: "Low wood block", 78: "Mute cuica", 79: "Open cuica", 80: "Mute triangle", 81: "Open triangle"};
+// The name a drum-track note shows as (its kit key, so a hand-marked kit reads like it plays); null on a pitched track.
+export function drumHitName(ti, p) {
+  if (!trackIsDrums(ti)) return null;
+  return GM_DRUM_NAMES[kitKeyOf(S.song.tracks[ti], p)] || "Drum";
+}
 
 export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
 // Position words — one formatter for every readout (LCD, note status line,

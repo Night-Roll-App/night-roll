@@ -31,6 +31,7 @@ import { spellPc } from "../theory/chords.js";
 import { appMode } from "../platform/mode.js";
 import { nameChord } from "../theory/chords.js";
 import { snapBeat } from "../model/grid.js";
+import { drumHitName, trackIsDrums } from "../model/grid.js";
 import { setEndBQ } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
@@ -652,6 +653,7 @@ export function setAnchorBQImpl(n, tick) { // start anchor from a tick
 }
 export function lassoedAnnosImpl() { return S.lassoAnno ? visibleNotes().filter(n => annoInLasso(n, S.lassoAnno)) : []; } // visibleNotes: the lasso acts only on what is shown (Learning hides ✦ AI estimates)
 
+export function selPitched() { return S.multiSel.filter(s => !trackIsDrums(s.ti)); } // the lasso's notes a chord reading may use (#1164)
 export function refreshSelInfo() { // one source of truth for the selection readout
   // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
   // always-visible toggle (Josh's usage note: it's reached with no lasso
@@ -677,15 +679,21 @@ export function refreshSelInfo() { // one source of truth for the selection read
     draw();
     return;
   }
-  const pitches = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
+  // drum hits name their drum and stay out of the chord (Josh #1164); pitched notes read as before
+  const pitched = selPitched();
+  const drumNames = [...new Set(S.multiSel.map(s => drumHitName(s.ti, S.song.tracks[s.ti].notes[s.ni].p)).filter(Boolean))];
+  const pitches = [...new Set(pitched.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
   // 8va off = chord-reading mode: pitch classes only, octave duplicates collapsed
-  const names = S.selOctaves
+  const names = (S.selOctaves
     ? pitches.map(p => pitchName(p, S.multiSelSf))
-    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf));
+    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf))).concat(drumNames);
   const vels = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].v))];
   const velTxt = vels.length === 1 ? " · vel " + vels[0] : ""; // uniform velocity is worth stating
   const trackTxt = " · " + lassoTrackNames(S.multiSel.map(s => s.ti)); // which voice(s) the notes belong to (#1134)
-  if (appMode() === "normal") {
+  if (pitches.length < 2) { // drums only, or one pitch over drums: no chord to read
+    setInfo(names.join(" · ") + "  (" + S.multiSel.length + " notes" + velTxt + trackTxt + ")", names.join(", "));
+    cb.style.display = "none";
+  } else if (appMode() === "normal") {
     // Normal: the chord names itself (nameChord is pattern-matching, not a
     // ruling on Josh's music) — Chord? stays hidden, nothing to reveal
     const chordName = nameChord(pitches, S.multiSelSf);

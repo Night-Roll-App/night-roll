@@ -5,6 +5,7 @@ import { estimateKey } from "../model/song.js";
 import { checkMeterVsFile } from "../theory/key.js";
 import { openEditor } from "./note-editor.js";
 import { setLassoMode } from "./note-editor.js";
+import { selPitched } from "./note-editor.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { tonicPcOfName } from "../theory/chords.js";
 import { S, prof } from "../state.js";
@@ -730,7 +731,8 @@ export function initNotes3() {
   document.getElementById("chordbtn").addEventListener("click", () => {
     if (S.challengeSec) { openChallenge(S.challengeSec); return; }
     if (!S.multiSel.length) return;
-    const pitches = S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p);
+    const pitches = selPitched().map(s => S.song.tracks[s.ti].notes[s.ni].p);
+    if (pitches.length < 2) return;
     const names = [...new Set(pitches)].sort((a, b) => a - b).map(p => pitchName(p, S.multiSelSf));
     const chordName = nameChord(pitches, S.multiSelSf);
     setInfo(names.join(" · ") + "  →  " + chordName, names.join(", ") + " — " + chordName);
