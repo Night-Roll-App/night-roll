@@ -11199,10 +11199,27 @@ test("#1171 spellInChord: a pitch class the label names is spelled by its degree
   assert.equal(sp(5, "C11"), "F", "an eleventh chord carries its ninth and seventh too");
   assert.equal(sp(2, "C11"), "D");
   assert.equal(sp(9, "C13"), "A");
+  assert.equal(sp(2, "C13"), "D", "a 13 implies the 9…");
+  assert.equal(sp(5, "C13"), "F", "…and the 11");
+  assert.equal(sp(10, "C13"), "Bb");
+  assert.equal(sp(2, "Cadd13"), null, "addN adds only N");
+  assert.equal(sp(5, "Cadd13"), null);
+  assert.equal(sp(9, "Cadd13"), "A");
+  assert.equal(sp(2, "Cmaj13"), "D");
+  assert.equal(sp(10, "Cmb9"), "Bb", "an altered tension is a tension: it brings the 7th");
+  assert.equal(sp(1, "Cmb9"), "Db");
+  assert.equal(sp(10, "Cm6b9"), null, "…unless a 6 is there");
+  assert.equal(sp(9, "Cm6b9"), "A");
+  assert.equal(sp(6, "Cm7b5"), "Gb"); assert.equal(sp(8, "C7#5"), "G#"); assert.equal(sp(7, "C7#5"), null, "b5/#5 replace the natural 5th");
   // what the label does not name keeps the key spelling (null here)
   assert.equal(sp(1, "C7"), null, "a passing tone is not a chord tone");
+  // the slash bass is spelled with the letter the label writes (the rule native ChordSpelling.swift follows too)
   assert.equal(sp(4, "C/E"), "E", "a slash bass that is a chord tone");
-  assert.equal(sp(6, "C/F#"), null, "a slash bass that is not one is left to the key");
+  assert.equal(sp(6, "C/F#"), "F#", "a slash bass that is not one: as written");
+  assert.equal(sp(10, "C/Bb"), "Bb");
+  assert.equal(sp(10, "C/A#"), "A#", "…as written, sharp or flat");
+  assert.equal(sp(3, "Cm/D#"), "D#", "the written bass wins over the triad's E♭");
+  assert.equal(sp(6, "Am/F#"), "F#");
   // unreadable labels change nothing and never throw
   assert.equal(sp(0, "N.C."), null);
   assert.equal(sp(0, "garbage"), null);
@@ -11243,6 +11260,22 @@ test("#1171 the tapped note, the lasso and the Ask context read a note under his
   a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
   assert.equal(first(`noteLabel(0, 0)`), "D#4", "the inner C7#9, not the outer Cm's E♭");
   assert.equal(first(`noteLabel(0, 1)`), "C#4");
+  // which band covers a note — ONE rule with native ChordSpelling.tones(atTick:): lowest layer, then greatest start, then smallest end
+  a.run(`rollnotes = parseRollnotes("[1.1 - 1.4]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "same start: the shorter band is the inner one");
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: Cm\\n\\n[1.1 - 1.2]\\nchord: C7#9\\n").map(resolveNote); rollnotes[1].layer = 1; finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "Eb4", "a layer-1 chord waits: layer 0 (absent) spells, however nested");
+  a.run(`rollnotes = parseRollnotes("[1.1]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "D#4", "a chord with no range covers its own beat…");
+  assert.equal(first(`noteLabel(0, 1)`), "C#4", "…and no further (beat 2 is C♯ either way, but see the band check)");
+  assert.equal(a.run(`chordBandAt(479) ? chordBandAt(479).text : null`), "C7#9");
+  assert.equal(a.run(`chordBandAt(480)`), null, "one beat long");
+  // the Ask context's lasso line reads the same names as the lasso readout (#1171 divergence 6)
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: C7#9\\n").map(resolveNote); finalizeNotes(); multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]); multiSelSf = 0;`);
+  assert.match(a.run(`askContext(askSpan(), askBudget())`), /^lasso-selected notes: C#4 D#4 — do not name/m, "the ✦ AI reads D♯, like the strip");
+  // Learning hides a ✦ AI chord: it never spells a note
+  a.run(`rollnotes = parseRollnotes("[1.1 - 2.1]\\nchord: C7#9\\n").map(resolveNote); rollnotes[0].ai = {model: "x", at: "y"}; finalizeNotes();`);
+  assert.equal(first(`noteLabel(0, 0)`), "Eb4", "an AI estimate does not drive the spelling in Learning");
   assert.match(helpSource(), /spelled by your chord/, "the help sheet names the feature (FEATURES keyword)");
 });
 

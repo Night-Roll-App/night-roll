@@ -223,9 +223,13 @@ export function parseChordSym(sym) {
 // spelled this way (the root, the triad — sus2/sus4 as 2nd/4th — 6/7/maj7,
 // the tensions it carries and its alterations); every other pc keeps the key
 // spelling, so a passing tone never borrows a chord's letter. A slash bass is
-// a chord tone or nothing (C/E spells E as the 3rd; C/F♯ leaves F♯ to the
-// key). A label nothing here can read (N.C., free text) → null: the caller
-// falls back to spellPc. Never throws.
+// spelled with the letter the label writes (C/B♭ → B♭, C/E → E, Cm/D♯ → D♯ even
+// though the triad says E♭: he wrote the bass). Tensions: 13 implies 9 and 11,
+// 11 implies 9, addN adds only N; any tension, altered or not, brings the 7th
+// unless a 6 is present ("69" = 6 + 9, no 7th); b5/#5 replace the natural 5th.
+// A label nothing here can read (N.C., free text) → null: the caller falls back
+// to spellPc. Never throws. The SAME rule is native ChordSpelling.swift's —
+// a change here is a change there (Josh #1050: both versions).
 const CHORD_DEG_PC = {1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 9: 14, 11: 17, 13: 21}; // major-scale semitones of each degree
 export const chordSpellMemo = {};
 export function chordSpelling(label) { // label → {pc: {letter, acc}} for the tones it names, or null
@@ -254,10 +258,11 @@ function chordSpellingRaw(label) {
   const has = t => x.includes(t);
   const maj = has("maj7") || has("maj9") || has("maj11") || has("maj13");
   const ten = ["13", "maj13"].some(has) ? 13 : ["11", "maj11"].some(has) ? 11 : ["9", "maj9"].some(has) ? 9 : 0;
-  if (has("6")) tones.push([6, 9]);
-  if (has("7") || maj || (ten && !has("6"))) tones.push([7, base === "dim" && !maj ? 9 : maj ? 11 : 10]); // a tension brings its seventh; "69" is a 6 with an added 9; dim7's seventh is diminished
-  for (const d of [9, 11, 13]) if (ten >= d || has("add" + d)) tones.push([d, CHORD_DEG_PC[d]]);
   const alt = {b5: [5, 6], "#5": [5, 8], b9: [9, 13], "#9": [9, 15], "#11": [11, 18], b13: [13, 20]};
+  const altTension = ["b9", "#9", "#11", "b13"].some(has); // an altered tension is a tension: C7♯9's cousin "C♯9" still carries the 7th
+  if (has("6")) tones.push([6, 9]);
+  if (has("7") || maj || ((ten || altTension) && !has("6"))) tones.push([7, base === "dim" && !maj ? 9 : maj ? 11 : 10]); // a tension brings its seventh; "69" is a 6 with an added 9; dim7's seventh is diminished
+  for (const d of [9, 11, 13]) if (ten >= d || has("add" + d)) tones.push([d, CHORD_DEG_PC[d]]);
   for (const a of Object.keys(alt)) if (has(a)) {
     if (a === "b5" || a === "#5") { const i = tones.findIndex(t => t[0] === 5); if (i >= 0) tones.splice(i, 1); } // an altered fifth replaces the perfect one
     tones.push(alt[a]);
@@ -270,6 +275,10 @@ function chordSpellingRaw(label) {
     if (diff > 6) diff -= 12;
     if (Math.abs(diff) > 2) continue; // no triple accidentals: that tone keeps the key spelling
     if (!(pc in map)) map[pc] = {letter, acc: diff === 0 ? "" : diff === 1 ? "#" : diff === -1 ? "b" : diff === 2 ? "##" : "bb"};
+  }
+  if (m[4]) { // the slash bass, as he wrote it — over whatever degree the chord would have called that pc
+    const letter = m[4][0], acc = m[4][1] || "";
+    map[((LETTER_PC[letter] + (acc === "#" ? 1 : acc === "b" ? -1 : 0)) % 12 + 12) % 12] = {letter, acc};
   }
   return map;
 }

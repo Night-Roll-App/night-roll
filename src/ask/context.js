@@ -17,8 +17,7 @@ import { effTs } from "../model/grid.js";
 import { trackIsDrums } from "../model/grid.js";
 import { kitKeyOf } from "../model/grid.js";
 import { trackAudible } from "../audio/engine.js";
-import { pitchName } from "../theory/chords.js";
-import { spellPc } from "../theory/chords.js";
+import { selFirstTicks } from "../ui/note-editor.js";
 import { fnv1a32 } from "../gen/drummer.js";
 import { EDITION } from "../edition.js";
 import { logLines } from "../model/jobs.js";
@@ -549,7 +548,8 @@ export function askContext(sp, budget) { // the ONE block per request; never sto
   L.push(askAppState());
   if (S.multiSel.length) {
     const pitches = [...new Set(S.multiSel.map(m => S.song.tracks[m.ti].notes[m.ni].p))].sort((a, b) => a - b);
-    const names = pitches.map(p => pitchName(p, S.multiSelSf)).join(" ");
+    const tickOf = selFirstTicks(S.multiSel); // his chord band at each pitch's earliest note spells it (#1171), as the lasso readout does
+    const names = pitches.map(p => pitchNameAt(p, tickOf[p], S.multiSelSf)).join(" ");
     L.push(appMode() === "normal"
       ? "lasso-selected notes: " + names + " — chord: " + nameChord(pitches, S.multiSelSf)
       : "lasso-selected notes: " + names + " — do not name this chord unless the user has guessed or insists");
