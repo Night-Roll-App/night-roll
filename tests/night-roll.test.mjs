@@ -17370,8 +17370,12 @@ test("loop seam controls: ⟲ starts the loop's seam and leaves it; + span banks
   // no loop: annotation — ⟲ is hidden; an armed ruler span shows + span
   arun(`seamUiUpdate();`);
   assert.equal(a.el("seambtn").style.display, "none", "no loop: no ⟲");
+  assert.equal(a.el("seamaddbtn").style.display, "", "+ span keeps its place with no span armed (#1158: a ruler tap must not move the transport)");
+  assert.equal(a.el("seamaddbtn").style.visibility, "hidden", "…but is hidden and inert");
+  assert.equal(a.el("seamaddbtn").disabled, true);
   arun(`rangeSel = {a: 24 * 1920 / 4, b: 24 * 1920 / 4 + 960 + 1920 * 2, cycle: true}; seamUiUpdate();`);
-  assert.equal(a.el("seamaddbtn").style.display, "", "an armed span offers + span");
+  assert.equal(a.el("seamaddbtn").style.visibility, "", "an armed span offers + span");
+  assert.equal(a.el("seamaddbtn").disabled, false);
   arun(`seamAddTap();`);
   assert.deepEqual(aval(`seamPending`), {a: 6 * 1920, b: 6 * 1920 + 960 + 3840});
   assert.equal(aval(`rangeSel`), null, "banking frees the ruler for the second drag");

@@ -608,7 +608,11 @@ export function seamUiUpdate() {
   const showB = !!S.song && (on || banked || !!loopSeamSpans());
   const showA = !!S.song && !on && (armed || banked);
   b.style.display = showB ? "" : "none";
-  a.style.display = showA ? "" : "none";
+  // + span keeps its place while a song is open and only hides (Josh #1158): a ruler tap arms/parks the span, and a button that came and
+  // went re-centred the transport and flipped the track row's stacking under his finger
+  a.style.display = S.song ? "" : "none";
+  a.style.visibility = showA ? "" : "hidden";
+  a.disabled = !showA; a.setAttribute("aria-hidden", String(!showA));
   b.classList.toggle("active", on);
   const dropLabel = banked && !armed;
   if (showA && a.dataset.drop !== String(dropLabel)) { a.dataset.drop = String(dropLabel); setControl("seamaddbtn", {glyph: dropLabel ? "✕" : "+", label: dropLabel ? " span 1" : " span"}); }
