@@ -619,9 +619,11 @@ export function updateEditButtons() { // disabled = "this can't do anything righ
   const annos = S.song && S.lassoAnno ? lassoedAnnos().length : 0;
   const piece = !!(S.song && S.selClip && selClipObj()); // a selected audio piece splits too
   // #lockclip: the locked song's Undo/Redo/Copy/Paste, out in the footer only
-  // while there is something for them to do (Lasso on, or annotations copied) —
-  // the captures keep their bare footer otherwise (no edit row there, 2026-08-15)
-  const clipOut = locked && (S.lassoMode || S.annoClipboard.length > 0);
+  // while there is something for them to do (Lasso on, annotations copied, or an
+  // annotation change to undo/redo — Josh #1149: a deleted chop had no way back;
+  // native NotesViews clipOut) — the captures keep their bare footer otherwise
+  // (no edit row there, 2026-08-15)
+  const clipOut = locked && (S.lassoMode || S.annoClipboard.length > 0 || S.editUndo.length > 0 || S.editRedo.length > 0);
   const st = [!S.editUndo.length, !S.editRedo.length, !sel, locked ? !S.annoClipboard.length : !clipboardHas(), !(sel || annos), !(sel || piece), clipOut];
   const key = st.join("|");
   if (key === S.editBtnCache) return;

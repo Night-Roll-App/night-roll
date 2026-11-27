@@ -1618,6 +1618,15 @@ test("locked-notes song (Terminal #235): lasso → Copy → Paste carries the an
   assert.equal(val(`JSON.stringify(song.tracks[0].notes)`), notesBefore, "no note pasted onto a locked song");
   assert.match(val(`document.getElementById("noteinfo").textContent`), /notes are locked, so the 1 copied note stayed behind/);
   run(`editUndoPop(); noteClipboard = null;`);
+  // Josh #1149: with nothing copied and Lasso off, an annotation change to undo/redo still brings Undo/Redo out
+  const clipOn = () => val(`(() => { editBtnCache = null; updateEditButtons(); return document.getElementById("lockclip").classList.contains("on"); })()`);
+  run(`globalThis.__cl = [annoClipboard, lassoMode]; annoClipboard = []; lassoMode = false;`);
+  assert.ok(val(`editRedo.length`) > 0);
+  assert.equal(clipOn(), true, "a redo waiting: Undo/Redo are in the footer");
+  assert.equal(val(`document.getElementById("redobtn").disabled`), false);
+  run(`const r = editRedo, u = editUndo; editRedo = []; editUndo = []; globalThis.__ur = [u, r];`);
+  assert.equal(clipOn(), false, "nothing to undo, redo or paste, Lasso off: the bare footer");
+  run(`[editUndo, editRedo] = __ur; [annoClipboard, lassoMode] = __cl; editBtnCache = null; updateEditButtons();`);
   // S.rollnotesReadOnly (a newer app's file) still refuses
   run(`rollnotesReadOnly = true; rollnotesLockReason = ROLLNOTES_LOCK_MSG;`);
   assert.equal(run(`pasteClipboard(3840 * 2)`), 0);
