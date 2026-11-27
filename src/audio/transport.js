@@ -100,6 +100,7 @@ export function audioStopSrcs() {
 // song forever" is ✕, since plain ▶ already loops). Leaving happens only on
 // actions that change WHAT is loaded: ✕, picking a song, ●, Download audio.
 // Nothing pops mid-run — a newer repo save is kept out of the way, not asked about.
+export const CYCLE_MIN_SEC = 0.25; // a ruler cycle shorter than this plays as no cycle (native LoopRange.minLength)
 export const ALBUM_PASSES = 2, ALBUM_CAP_SEC = 300, ALBUM_FADE = 1.5, ALBUM_MAX_FAILS = 3;
 // no autoplay without a gesture — a reload with ?album=, or a relaunch with a run
 // remembered (ff1roll-lastalbum, Josh #205/#206), re-arms it (armAlbumLink) paused at
@@ -280,6 +281,9 @@ export async function play(fromSec = 0, opts = {}) {
   const cycleSet = !!(S.rangeSel && S.rangeSel.cycle && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a);
   const fromTick = opts.fromHere ? secToTick(S.song, fromSec) : 0;
   let cycling = cycleSet && !(opts.fromHere && (fromTick < S.rangeSel.a || fromTick >= S.rangeSel.b));
+  // a sliver (a cycle clamped to a song that ends just past its start) would
+  // shake the cursor in place, silent: play as if no cycle (native LoopRange.minLength, #1082)
+  if (cycling && tickToSec(S.song, Math.min(S.rangeSel.b, S.songEndTick)) - tickToSec(S.song, S.rangeSel.a) < CYCLE_MIN_SEC) cycling = false;
   if (cycling) { // Logic-style cycle: a ruler selection loops playback over just
     // that span and outranks any loop: annotation
     S.loopSeg = {start: tickToSec(S.song, S.rangeSel.a),

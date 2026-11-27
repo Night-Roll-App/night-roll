@@ -14665,6 +14665,21 @@ test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it
   run(`stop();`);
 });
 
+test("a cycle clamped to a sliver by the song's end plays as no cycle instead of shaking the cursor in place (native #1082 LoopRange.minLength)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 4; keyRegions = []; playCursor = 0;
+       rangeSel = {a: 1920 * 4 - 120, b: 1920 * 6, cycle: true};`); // ends past the song: clamped to 120 ticks = 0.125 s
+  run(`globalThis.__p = 0; play(0).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(playOffset * 1000)`), 0, "plays from the top, not from the sliver");
+  assert.ok(val(`loopSeg.end - loopSeg.start`) > 1, "the whole song, not a 0.125 s loop");
+  run(`stop(); rangeSel = {a: 1920, b: 1920 * 2, cycle: true}; __p = 0; play(0).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(loopSeg.end * 1000)`), val(`Math.round(tickToSec(song, 1920 * 2) * 1000)`), "a normal cycle still cycles");
+  run(`stop();`);
+});
+
 test("playhead strip tap while rolling plays from exactly there — inside the cycle keeps cycling, outside plays straight on (Josh, 2026-10-03)", async () => {
   const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
