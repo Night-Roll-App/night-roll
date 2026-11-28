@@ -453,13 +453,17 @@ export function openGapShift(T, delta) {
   for (const n of S.rollnotes) {
     if (isSongLevelAnno(n)) continue; // sheet answers and song notes sit at 1.1 by convention, not by music — bar edits leave them
     if (n.start >= T) { // at/after the point: the whole annotation slides
+      if (!n.added) tombstone(n); // a published entry moved in place must be retired, or Publish/reload rebuilds it at the old bar (saveLocalNotes keeps only added ones)
       setAnchorBQ(n, n.start + delta);
       if (n.end !== null && n.end !== undefined) setEndBQ(n, n.end + delta);
+      n.added = true;
       resolveNote(n); touched++;
     } else if (n.end !== null && n.end !== undefined && n.end > T) {
       // straddler: started before, still open PAST the point — stretch; an
       // annotation ending exactly AT the point stays put (Josh's spec)
+      if (!n.added) tombstone(n);
       setEndBQ(n, n.end + delta);
+      n.added = true;
       resolveNote(n); touched++;
     }
   }
@@ -517,8 +521,10 @@ export function closeGap(T, len) {
     const hasEnd = n.b2 !== undefined && n.b2 !== null;
     const newEnd = hasEnd ? clamp(n.end) : n.end;
     if (newStart !== n.start || newEnd !== n.end) {
+      if (!n.added) tombstone(n); // as in openGapShift: a published entry changed in place is retired and re-saved as a local copy
       setAnchorBQ(n, newStart);
       if (hasEnd) setEndBQ(n, newEnd);
+      n.added = true;
       resolveNote(n);
       touched++;
       if (wasInSpan) movedToT++; // anchored inside the deleted span — moved to T, not shifted
