@@ -1,6 +1,7 @@
 import { S } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
+import { pickupBeats, pickupTicks, barStartTick, barBeatAt } from "../model/grid.js";
 import { beatsPerBarDisp } from "../model/grid.js";
 import { tickToSec } from "../midi/parse.js";
 import { play } from "../audio/transport.js";
@@ -93,7 +94,7 @@ const ASK_ACT_FOOT = "A rejected call's error carries that action's full text; s
 export const ASK_ACTIONS = [
   {name: "go_to", args: "bar beat?", gloss: "move the cursor there, scrolled into view", quiet: true,
    example: "Go to bar 13.", say: "Say the bar, and a beat if you mean one (\"bar 13 beat 3\").",
-   spec: "go_to {bar, beat?}: moves the cursor to that bar (beat 1 unless given; fractions allowed) and brings it into view; while playing, playback restarts from there. bar counts on the ruler, beat is the counted beat of the declared meter.",
+   spec: "go_to {bar, beat?}: moves the cursor to that bar (beat 1 unless given; fractions allowed) and brings it into view; while playing, playback restarts from there. bar counts on the ruler (bar 0 = the pickup, when the song has one), beat is the counted beat of the declared meter.",
    run(a) {
      const r = askActBarBeat(a, "bar", "beat", jumpBarCap());
      jumpToTick(r.tick);
@@ -125,7 +126,7 @@ export const ASK_ACTIONS = [
      if (askActGiven(a.spans)) {
        if (!Array.isArray(a.spans) || !a.spans.length) throw new Error("spans must be a list of {from, to}, e.g. [{\"from\":\"25.1\",\"to\":\"27.3\"},{\"from\":\"3.1\",\"to\":\"5.1\"}]");
        spans = a.spans.map((s, i) => {
-         const x = seamParsePos(s && s.from, bt, qt), y = seamParsePos(s && s.to, bt, qt);
+         const x = seamParsePos(s && s.from, bt, qt, pickupTicks()), y = seamParsePos(s && s.to, bt, qt, pickupTicks());
          if (x === null || y === null) throw new Error("span " + (i + 1) + ": from and to are ruler positions like \"25.1\" (bar.beat, counted beat of the declared meter)");
          if (y <= x) throw new Error("span " + (i + 1) + ": to must be after from");
          if (x >= S.songEndTick) throw new Error("span " + (i + 1) + " starts past the end of the song (" + askBarsCount() + " bars)");
@@ -138,7 +139,7 @@ export const ASK_ACTIONS = [
        if (!spans) throw new Error("this song has no loop: point to take the seam of — name the spans instead");
      }
      seamStart(spans, askActGiven(a.spans) ? "pair" : "loop").catch(() => {}); // not awaited, like play: it can sit behind a console render
-     return "⟲ seam: " + seamSpansText(spans, bt, qt) + ", over and over";
+     return "⟲ seam: " + seamSpansText(spans, bt, qt, pickupTicks()) + ", over and over";
    }},
   {name: "stop", args: "", gloss: "stop playback", quiet: true,
    example: "Stop.", say: "Just that.",
@@ -151,15 +152,14 @@ export const ASK_ACTIONS = [
    }},
   {name: "select", args: "from_bar to_bar? cycle? clear?", gloss: "ruler selection; ▶ loops it unless cycle: false", quiet: true,
    example: "Loop bars 5 to 12.", say: "Say the first and last bar; \"select\" instead of \"loop\", or \"no cycle\", marks them without looping; \"clear the selection\" drops it.",
-   spec: "select {from_bar, to_bar?, cycle?, clear?}: selects whole bars on the ruler, from_bar..to_bar inclusive (to_bar omitted = that one bar). cycle defaults to true — Play loops the selection, like a drag on the ruler; cycle: false only marks the range (the context block then follows it). clear: true drops the selection.",
+   spec: "select {from_bar, to_bar?, cycle?, clear?}: selects whole bars on the ruler, from_bar..to_bar inclusive (to_bar omitted = that one bar; bar 0 = the pickup, when the song has one). cycle defaults to true — Play loops the selection, like a drag on the ruler; cycle: false only marks the range (the context block then follows it). clear: true drops the selection.",
    run(a) {
      if (askActTruthy(a.clear)) { const had = !!S.rangeSel; S.rangeSel = null; editorFollowSelection(); draw(); return had ? "selection cleared" : "no selection to clear"; }
      const nBars = askBarsCount();
-     const from = askActInt(a.from_bar, "from_bar", 1, nBars, nBars);
+     const from = askActInt(a.from_bar, "from_bar", pickupBeats() ? 0 : 1, nBars, nBars); // bar 0 = the pickup, selectable while one exists (#1192 §4)
      const to = askActGiven(a.to_bar) ? askActInt(a.to_bar, "to_bar", from, nBars, nBars) : from;
      const cycle = askActGiven(a.cycle) ? askActTruthy(a.cycle) : true;
-     const bt = barTicks();
-     S.rangeSel = {a: (from - 1) * bt, b: to * bt, cycle};
+     S.rangeSel = {a: Math.max(0, barStartTick(from)), b: barStartTick(to + 1), cycle}; // bar 0 starts before the song: the span begins at tick 0
      editorFollowSelection(); // a docked annotation window follows it, as it follows a ruler drag
      draw(); // drawImpl persists the selection per song (rangeSelPersist), as a ruler drag does
      return "selected bar" + (from === to ? " " + from : "s " + from + "–" + to) + (cycle ? " — ▶ loops them" : "");
@@ -198,17 +198,17 @@ export const ASK_ACTIONS = [
   // (docs/ai-parity.md §5 batch 3): the same functions in src/ask/tools.js,
   // the same gates and undo steps; only the schema went. Their rule texts
   // live in `spec` now — sent on help and in a rejected call's error.
-  {name: "add_annotation", args: "kind text bar beat end_bar? end_beat? comment? roman? no5? topic?", gloss: "write one annotation in the user's words",
-   example: "Put an F#m chord on bar 21.", say: "Say the kind (chord, section, key, tempo, loop, meter, chop, note), the text in your words, the bar and beat.",
-   spec: "add_annotation {kind, text, bar, beat, end_bar?, end_beat?, comment?, roman?, no5?, topic?}: writes ONE annotation at bar.beat exactly as the user asked — kind chord (a symbol: F#m, G7/B), section (a form label: Intro, A, B'), key (F#m, Bb, A#/Bb? for tonic-only), tempo (bpm), loop (the return point as bar.beat, placed at the jump point), meter (3/4), chop (start or end), note (plain prose); text in the user's words; end_bar/end_beat make it span; comment is a note attached to it; on a chord, roman = the Roman numeral the user dictated, exactly as said (bVII, vi, ii°, V7, V/V), and no5: true = their “no fifth” mark — never a numeral or a no-fifth of your own, never worked out from the notes or a key; leave both out unless the user said them. topic = the Analysis-sheet prompt the user asked to FILE this under (form.sections, form.phrases, form.pairing, harmony.chords, harmony.numerals, harmony.cadences, harmony.bass, harmony.tension, melody.degrees, melody.shape, melody.motifs) — on a note, chord, section or key only; never choose one yourself. Only when the user explicitly asks to annotate, mark, label or write something.",
+  {name: "add_annotation", args: "kind text bar beat end_bar? end_beat? until? comment? roman? no5? topic? stack? pedal?", gloss: "write one annotation in the user's words",
+   example: "Put an F#m chord on bar 21.", say: "Say the kind (chord, section, key, tempo, loop, meter, chop, pickup, note), the text in your words, the bar and beat. For a pickup: \"bar 1 starts at bar 2 beat 1\" or \"the pickup is one beat\".",
+   spec: "add_annotation {kind, text, bar, beat, end_bar?, end_beat?, until?, comment?, roman?, no5?, topic?, stack?, pedal?}: writes ONE annotation at bar.beat exactly as the user asked — kind chord (a symbol: F#m, G7/B), section (a form label: Intro, A, B'), key (F#m, Bb, A#/Bb? for tonic-only), tempo (bpm), loop (the return point as bar.beat, placed at the jump point), meter (3/4), chop (start or end), pickup (the song's pickup / anacrusis: either bar + beat = where bar 1 — the first full bar — starts in the CURRENT numbering, or text = its length in counted beats, \"1\"; the notes before it become bar 0, every bar renumbers and every annotation is re-expressed to keep its music, one undo; at most one bar; ONLY when the user says where bar 1 starts — never suggest that a song has a pickup or where its bar 1 should be), note (plain prose); text in the user's words; bar 0 is the pickup bar when the song has one; end_bar/end_beat make it span (end_beat is the last beat the band covers, whole beats); until = [bar, beat] (or \"4.4\"), chord only, = the exact beat the band ENDS AT (exclusive) when the user wants it to stop off a whole beat (\"Am7 from 4.3.5 to 4.4\" → bar 4, beat 3.5, until [4, 4]); comment is a note attached to it; on a chord, roman = the Roman numeral the user dictated, exactly as said (bVII, vi, ii°, V7, V/V), and no5: true = their “no fifth” mark — never a numeral or a no-fifth of your own, never worked out from the notes or a key; leave both out unless the user said them. topic = the Analysis-sheet prompt the user asked to FILE this under (form.sections, form.phrases, form.pairing, harmony.chords, harmony.numerals, harmony.cadences, harmony.bass, harmony.tension, melody.degrees, melody.shape, melody.motifs) — on a note, chord, section or key only; never choose one yourself. stack: true (chord only) = keep the chord already on that exact span and write this one as another layer over it (the user's \"chords within chords\": a chord over a held bass, a polychord — which reading it is stays theirs); without it a new chord replaces one with the identical span, as before. pedal: true (chord only) = a bass pedal point, not a chord: text is the held note's root (A, F#), the band is written as \"A ped.\" and draws on its own row UNDER every chord row (the chords over it stay); a pedal never replaces a chord on the same span nor a chord a pedal; only when the user says pedal / pedal point / pedal tone. Only when the user explicitly asks to annotate, mark, label or write something.",
    run(a) { const r = askAddAnnotation(a); return "written " + r.at + " " + r.text.split("\n")[0] + " — on this device until Publish (the Publish sheet can discard it)"; }},
-  {name: "edit_annotation", args: "id|bar beat match_text? text comment? roman? no5? topic? new_bar? new_beat? new_end_bar? new_end_beat?", gloss: "change an existing annotation's text or place",
+  {name: "edit_annotation", args: "id|bar beat match_text? text comment? roman? no5? pedal? topic? new_bar? new_beat? new_end_bar? new_end_beat? until?", gloss: "change an existing annotation's text or place",
    example: "Change the chord at 14.1 to G7.", say: "Say which one (its bar and beat, or its text) and the new text or place.",
-   spec: "edit_annotation {id | bar, beat, match_text?; text, comment?, roman?, no5?, topic?, new_bar?, new_beat?, new_end_bar?, new_end_beat?}: changes an EXISTING annotation's text (and, if asked, where it sits) — never a duplicate beside it. Target it by id exactly as this turn's context block lists it (stale after an earlier edit in the SAME reply re-sorts them — then use bar+beat), or by its current bar and beat (+ match_text when more than one annotation shares that spot); an ambiguous target is an error, never a guess. text = the new symbol, label, key, bpm, bar.beat or prose in the user's words (on a chord it may be left out when only roman or no5 changes); comment replaces the attached note (omit to keep it); on a chord, roman replaces its Roman numeral with the one the user dictated (an empty string clears it; omit to keep it) and no5 true/false sets or clears their “no fifth” mark (omit to keep it) — never one of your own; topic re-files it under another Analysis-sheet prompt id as add_annotation lists them (\"\" un-files; omit to keep it). Only when the user explicitly asks to edit, change, rename, move or correct one. Structural directives (meter, chop, track, audio, lane) are the editor's.",
+   spec: "edit_annotation {id | bar, beat, match_text?; text, comment?, roman?, no5?, pedal?, topic?, new_bar?, new_beat?, new_end_bar?, new_end_beat?, until?}: changes an EXISTING annotation's text (and, if asked, where it sits) — never a duplicate beside it. Target it by id exactly as this turn's context block lists it (stale after an earlier edit in the SAME reply re-sorts them — then use bar+beat), or by its current bar and beat (+ match_text when more than one annotation shares that spot); an ambiguous target is an error, never a guess. text = the new symbol, label, key, bpm, bar.beat or prose in the user's words (on a chord it may be left out when only roman or no5 changes); comment replaces the attached note (omit to keep it); on a chord, roman replaces its Roman numeral with the one the user dictated (an empty string clears it; omit to keep it) and no5 true/false sets or clears their “no fifth” mark (omit to keep it) — never one of your own; until = [bar, beat] (chord only) moves its exact exclusive end as add_annotation describes (omit to keep it); pedal true/false turns a chord band into a bass pedal point (\"A ped.\", its row under the chords) or back (omit to keep it); topic re-files it under another Analysis-sheet prompt id as add_annotation lists them (\"\" un-files; omit to keep it). Only when the user explicitly asks to edit, change, rename, move or correct one. Structural directives (meter, chop, track, audio, lane) are the editor's; a pickup's text is its new length in beats (the frame converts as for add_annotation).",
    run(a) { const r = askEditAnnotation(a); return "edited in place: " + r.at + " " + r.text.split("\n")[0]; }},
   {name: "delete_annotation", args: "id|bar beat match_text?", gloss: "remove one existing annotation",
    example: "Delete the note at bar 16.", say: "Say which one — bar and beat, plus its text if two share the spot.",
-   spec: "delete_annotation {id | bar, beat, match_text?}: removes ONE existing annotation — by id from this turn's context block, or by its current bar and beat (+ match_text when more than one shares the spot); an ambiguous target is an error, never a guess. Only when the user explicitly asks to delete, remove or take back one. A meter or chop the user dictated goes the same way; track/audio/lane directives are the editor's.",
+   spec: "delete_annotation {id | bar, beat, match_text?}: removes ONE existing annotation — by id from this turn's context block, or by its current bar and beat (+ match_text when more than one shares the spot); an ambiguous target is an error, never a guess. Only when the user explicitly asks to delete, remove or take back one. A meter, chop or pickup the user dictated goes the same way (removing the pickup renumbers from the first note again, every annotation re-expressed); track/audio/lane directives are the editor's.",
    run(a) { const r = askDeleteAnnotation(a); return "deleted " + r.at + " " + r.text; }},
   {name: "song_note", args: "op title new_title? text? kind?", gloss: "add|edit|delete a titled song note (general or open question)",
    example: "Add a song note called Sway: long-short-long is the strongest, see bars 5 and 12.", say: "Say add, edit or delete, the note's title, and its words; \"rename Sway to Lilt\" changes the title; \"as an open question\" (or \"mark Sway as an open question\") makes it one.",
@@ -485,19 +485,18 @@ export function askActInt(v, name, lo, hi, nBars) {
   if (!Number.isFinite(+v) || String(v).trim() === "" || n < lo || n > hi) throw new Error(name + " must be a whole number " + lo + "–" + hi + (nBars ? " (this song has " + nBars + " bar" + (nBars === 1 ? "" : "s") + ")" : ""));
   return n;
 }
-export function askActBarBeat(a, barKey, beatKey, cap) { // → {bar, beat, tick, label} — ruler bar, counted beat of the declared meter
+export function askActBarBeat(a, barKey, beatKey, cap) { // → {bar, beat, tick, label} — ruler bar, counted beat of the declared meter; bar 0 = the pickup bar while one exists (#1192)
   const nBars = askBarsCount();
-  const bar = askActInt(a[barKey], barKey, 1, cap, nBars);
+  const bar = askActInt(a[barKey], barKey, pickupBeats() ? 0 : 1, cap, nBars);
   const beats = beatsPerBarDisp();
   let beat = 1;
   if (askActGiven(a[beatKey])) { beat = +a[beatKey]; if (!(beat >= 1 && beat < beats + 1)) throw new Error(beatKey + " must be ≥ 1 and < " + (beats + 1) + " (" + beats + " beats per bar)"); }
-  const tick = Math.round((bar - 1) * barTicks() + (beat - 1) * beatTicks());
+  const tick = Math.max(0, Math.round(barStartTick(bar) + (beat - 1) * beatTicks())); // bar 0's early beats lie before the song: land on its start
   return {bar, beat, tick, label: bar + "." + askActBeatText(beat)};
 }
 export function askActBeatText(q) { return (Math.round(q * 100) / 100).toString(); }
-export function askActPosText(tick) { // "13.1" for a tick, the ruler's own bar.beat
-  const bt = barTicks(), qt = beatTicks();
-  const bar = Math.floor(tick / bt) + 1, beat = (tick - (bar - 1) * bt) / qt + 1;
+export function askActPosText(tick) { // "13.1" for a tick, the ruler's own bar.beat (the pickup frame: "0.4" inside a pickup)
+  const [bar, beat] = barBeatAt(tick);
   return bar + "." + askActBeatText(beat);
 }
 export function askUndoDescribe(e, flipped) { // what an undo entry did, by counting its leaves — "12 notes added, 3 changed"; flipped = the entry is an invertEdit of the edit (the redo stack), so added and erased trade places

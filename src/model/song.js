@@ -3,9 +3,13 @@ import { LINK_SONGS } from "../platform/base.js";
 import { canEditMusic } from "./provenance.js";
 import { trackIsDrums } from "./grid.js";
 import { beatTicks } from "./grid.js";
+import { pickupTicks } from "./grid.js";
+import { hasEnd } from "./grid.js";
 import { pearsonCorr } from "../theory/key.js";
 import { keyNameFor } from "../theory/key.js";
 import { SF_MAJOR } from "../theory/chords.js";
+import { spellPc } from "../theory/chords.js";
+import { spellInChord } from "../theory/chords.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { fileKeyAt } from "../theory/key.js";
 import { barTicks } from "./rollnotes.js";
@@ -149,6 +153,42 @@ export function keyNameAt(tick) { // recorded key name governing this tick, or n
   }
   return ranged ? ranged.name : open ? open.name : null;
 }
+// The chord band HE wrote over a tick (Josh #1171), the same pick as native
+// ChordSpelling.tones(atTick:): the lowest `layer` first (absent = 0; layered
+// chords are the unmerged `layered-chords` branch, so main reads it
+// defensively), then the innermost band — greatest start, then smallest end. A
+// chord with no range (no `to`; native writes these) covers its own beat, as
+// native draws it — finalizeNotes stretches its `end` to a bar for OUR ruler,
+// so the range is read from `b2`, not `end`. visibleNotes so a Learning-hidden
+// ✦ AI chord never spells a note: annotations only, never an estimate, so
+// Learning mode may use it. A pedal band (#1177, `pedal: true`) names only
+// its root, so it is the pick ONLY when no chord covers the tick — the chord
+// above it spells the harmony, the pedal is the bass under it.
+export function chordBandAt(tick) {
+  let best = null, bestEnd = 0, ped = null, pedEnd = 0;
+  for (const n of visibleNotes()) {
+    if (!n.chord || n.section || !(tick >= n.start)) continue;
+    const end = !hasEnd(n) || n.end === null || n.end === undefined ? n.start + beatTicks() : n.end;
+    if (tick >= end) continue;
+    // one pick rule for both groups (native ChordSpelling.tones): the lowest layer, then the innermost band — greatest start, then smallest end
+    const cur = n.pedal === true ? ped : best, curEnd = n.pedal === true ? pedEnd : bestEnd;
+    const layer = n.layer || 0, curLayer = cur ? cur.layer || 0 : 0;
+    if (!cur || layer < curLayer || (layer === curLayer && (n.start > cur.start || (n.start === cur.start && end < curEnd)))) {
+      if (n.pedal === true) { ped = n; pedEnd = end; } else { best = n; bestEnd = end; }
+    }
+  }
+  return best || ped;
+}
+// spellPc/pitchName with the chord band at `tick` consulted first: a pitch
+// class the label names is spelled by its degree there (C7#9 → D#), anything
+// else by the key (`sf`) as before. Display only: the roll, Roman numerals and
+// the key finder keep their own spelling.
+export function spellPcAt(pc, tick, sf) {
+  const band = chordBandAt(tick);
+  const s = band ? spellInChord(pc, band.text) : null;
+  return s ? s.letter + s.acc : spellPc(pc, sf);
+}
+export function pitchNameAt(p, tick, sf) { return spellPcAt(p % 12, tick, sf) + (Math.floor(p / 12) - 1); }
 
 // pointerId → {p, tick}
 // While ● is armed the transport must not wrap at the song's end: a new song is
@@ -171,8 +211,8 @@ export function computeSongEnd() { // re-run whenever the effective meter change
   S.song.tracks.forEach(tr => { // an audio piece can outlast every note (an audio-only song must not loop one bar)
     if (tr.kind === "audio") for (const c of tr.clips) if (c.dur) lastTick = Math.max(lastTick, clipEndTick(c));
   });
-  const bt = barTicks();
-  S.songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
+  const bt = barTicks(), T = pickupTicks(); // the song ends on a bar line of the pickup frame (#1192): T + whole bars
+  S.songEndTick = Math.max(T + bt, T + Math.ceil((lastTick - T) / bt - 0.05) * bt);
   // extend (never shrink) the default C1..C7 pitch range to whatever this
   // song actually uses — see PMIN/PMAX's own comment
   let lo = 24, hi = 96;

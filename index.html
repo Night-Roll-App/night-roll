@@ -502,6 +502,7 @@
         <option value="loop">Loop point</option>
         <option value="tempo">Tempo change</option>
         <option value="chop">Chop</option>
+        <option value="pickup">Pickup</option>
         <option value="song">Song note</option>
       </select>
     </div>
@@ -537,6 +538,7 @@
         <span class="lbl">/bass</span>
         <select id="nchordbass"></select>
         <button type="button" id="nno5" aria-pressed="false">no 5</button>
+        <button type="button" id="npedal" aria-pressed="false" title="Bass pedal point: the band reads &quot;A ped.&quot; and draws under the chord rows">pedal</button>
       </div>
       <details id="nromanbox">
         <summary><span class="lbl">Roman numeral</span> <span id="nromansum">—</span></summary>
@@ -593,6 +595,12 @@
         <option value="start">everything before this beat</option>
         <option value="end">this beat to the end</option>
       </select>
+    </div>
+    <div class="row" id="npickuprow" style="display:none">
+      <span class="lbl">pickup</span>
+      <input id="npickup" type="number" min="0" step="0.25" inputmode="decimal" style="width:84px;min-height:44px;text-align:center" aria-label="Pickup length in beats">
+      <span class="lbl">beats</span>
+      <span class="meta" id="npickupat" style="flex:1"></span>
     </div>
     <div class="row">
       <button class="primary" id="nsave">Save</button>
@@ -798,6 +806,10 @@
       <button id="bjgo" class="primary">Go</button>
       <button id="bjclose" style="margin-left:auto">Cancel</button>
     </div>
+    <div class="row" style="margin-top:10px">
+      <button id="bjpickup" style="flex:1">Bar 1 starts at the cursor</button>
+    </div>
+    <div class="meta" id="bjstatus" style="margin-top:6px"></div>
   </div>
 </div>
 
@@ -1848,6 +1860,7 @@
 <link rel="modulepreload" href="vendor/ai/web/reach.js">
 <link rel="modulepreload" href="vendor/ai/web/window.js">
 <link rel="modulepreload" href="vendor/ai/web/desk.js">
+<link rel="modulepreload" href="vendor/ai/web/forward.js">
 <link rel="modulepreload" href="vendor/ai/web/ticks.js">
 <link rel="modulepreload" href="vendor/ai/web/index.js">
 <link rel="modulepreload" href="src/ask/backend.js">
@@ -1860,6 +1873,8 @@
 <link rel="modulepreload" href="src/ask/client.js">
 <link rel="modulepreload" href="src/ask/host.js">
 <link rel="modulepreload" href="src/ask/annotate.js">
+<link rel="modulepreload" href="src/ask/forward.js">
+<link rel="modulepreload" href="src/ask/history.js">
 <link rel="modulepreload" href="src/ui/chrome.js">
 <link rel="modulepreload" href="src/ui/trackbar.js">
 <link rel="modulepreload" href="src/ui/mixer.js">

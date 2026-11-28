@@ -107,14 +107,14 @@ export function buildExportFiles(req, {engrave = engraveScorePages} = {}) {
     }
     if (formats.musicxml) {
       files.push({name: base + suffix + ".musicxml", mime: EXPORT_MIME.musicxml,
-                  data: musicXmlDocument({title, album, ppq, bt, ts: effTs(), declaredTs: S.declaredTs, staves: model.staves, trackNames,
+                  data: musicXmlDocument({title, album, ppq, bt, pickup: model.T, ts: effTs(), declaredTs: S.declaredTs, staves: model.staves, trackNames,
                                           tempos: S.song.tempos, keyAt, spellAt, tab: {tracks: new Set(tabTracks)}})});
     }
     if (formats.tab) {
       for (const st of model.staves) {
         if (st.drums || !tabTracks.includes(st.ti)) continue;
         files.push({name: base + "-" + exportSafeName(exportTrackName(st.ti)) + "-tab.txt", mime: EXPORT_MIME.tab,
-                    data: asciiTab({title, track: exportTrackName(st.ti), measures: st.measures, bt, ppq, tempoBpm, declaredTs: S.declaredTs})});
+                    data: asciiTab({title, track: exportTrackName(st.ti), measures: st.measures, bt, ppq, pickup: model.T, tempoBpm, declaredTs: S.declaredTs})});
       }
     }
     if (formats.midi) {

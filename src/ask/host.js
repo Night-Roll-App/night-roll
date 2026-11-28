@@ -67,6 +67,9 @@ import { askGreeting } from "./sheet.js";
 import { askMsgTag } from "./sheet.js";
 import { askNoteLabel } from "./sheet.js";
 import { askRenderEarlier } from "./sheet.js";
+import { ASK_FORWARD_KEY } from "./forward.js";
+import { askForwardChat } from "./forward.js";
+import { askForwardChanged } from "./forward.js";
 
 // The host adapter (docs/ai-library-plan.md §2): the ONE object the AI
 // library (vendor/ai/web) sees of this app. Every app-specific thing — the
@@ -82,7 +85,7 @@ export function askHost() {
   S.aiHost = {
     state: S, // the library keeps its runtime fields here (askModelCache, askCaps, askSeenPending, askSentPending, askJobsCache, …) — the same bag the tests read by bare name
     // today's exact storage keys — the chat stores (ff1roll-ask-<song> / -general / -terminal and their -seen/-sentctx/-epoch cursors), the drafts, the watermarks
-    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey", store: "ff1roll-ask-", seenMax: "ff1roll-ask-seen-max", inboxSeen: "ff1roll-ask-inbox-seen", draft: "ff1roll-askdraft-", mode: "ff1roll-ask-mode", desk: ASK_DESK_KEY},
+    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey", store: "ff1roll-ask-", seenMax: "ff1roll-ask-seen-max", inboxSeen: "ff1roll-ask-inbox-seen", draft: "ff1roll-askdraft-", mode: "ff1roll-ask-mode", desk: ASK_DESK_KEY, forward: ASK_FORWARD_KEY},
     logCursor: () => ({err: askMaxErrId(), status: askMaxStatusId()}), // the newest ⚠/status line ids — what a landed send marks "seen up to"
     status: t => { askstatus.textContent = t; },
     onStoreChanged: () => updateSongBtn(), // the ● follows unsaved chat too
@@ -150,6 +153,9 @@ export function askHost() {
     flushWaiting: () => { if (S.askBusy) return false; askSend(); return true; }, // the bridge answered again: the words still in the box go out, once (not while a reply is still streaming)
     unsent: text => { askinput.value = askinput.value.trim() ? text + "\n" + askinput.value : text; askGrow(); }, // a question that never reached the Mac comes back to the open chat's box, ahead of anything typed since (another chat's goes into its saved draft, in the library)
     send: text => askSend(text), // the library's Send button passes nothing; the carried-over chip (askCarryChip) passes its words
+    // a Worker message handed to a song's chat (#1189, vendor/ai/web/forward.js): this app sends it (src/ask/forward.js) and draws the waiting chips
+    forwardChat: (e, force) => askForwardChat(e, force),
+    onForwardsChanged: pending => askForwardChanged(pending),
   };
   return S.aiHost;
 }

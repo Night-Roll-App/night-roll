@@ -76,6 +76,7 @@ import { drawRangeTints } from "../render/roll.js";
 import { beatTicks } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
 import { posParts } from "../model/grid.js";
+import { pickupBeats, barAtTick } from "../model/grid.js";
 import { gridAnchorTick } from "../model/grid.js";
 import { trackShown } from "../render/roll.js";
 import { trackColor } from "../render/roll.js";
@@ -801,8 +802,8 @@ export function updateCanvasA11y() {
   const viewName = S.viewMode === "score" ? "Score" : S.viewMode === "tracks" ? "Tracks" : "Roll";
   const ppt = pxPerTick(), bt = barTicks();
   const W = Math.max(0, ((wrap && wrap.clientWidth) || 0) - S.RULER_W);
-  const barFrom = Math.max(1, Math.floor(S.view.x / ppt / bt) + 1);
-  const barTo = Math.max(barFrom, Math.floor((S.view.x + W) / ppt / bt) + 1);
+  const barFrom = Math.max(pickupBeats() ? 0 : 1, barAtTick(S.view.x / ppt));
+  const barTo = Math.max(barFrom, barAtTick((S.view.x + W) / ppt));
   const nt = S.song.tracks.length;
   el.setAttribute("aria-label", title + " — " + viewName + " view, bars " + barFrom + "–" + barTo + ", " + nt + " track" + (nt === 1 ? "" : "s"));
 }

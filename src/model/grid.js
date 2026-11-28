@@ -100,6 +100,29 @@ export function beatsPerBarEff() { const t = effTs(); return t[0] * 4 / t[1]; }
 // anchors read [1.4] = fourth eighth — the way compound meters are counted
 export function beatTicks() { return S.song.ppq * 4 / effTs()[1]; }
 export function beatsPerBarDisp() { return effTs()[0]; }
+// The pickup frame (#1190–#1192, docs/plans/2026-11-27-pickup-bar.md §3): a
+// `pickup: P` directive says the song's first P counted beats are the pickup
+// (anacrusis) and bar 1 — the first full bar — starts at tick T = P·beatTicks.
+// Bar 0 is a full-length virtual bar ending at T (only its last P beats exist),
+// so a one-beat pickup in 4/4 puts the first note at bar 0 beat 4. No pickup:
+// T = 0 and every formula below is the old one. EVERY tick ↔ bar conversion
+// goes through these — a hand-written `(b - 1) * bt` or `floor(t / bt) + 1`
+// is wrong the day a pickup exists.
+export function pickupBeats() { return S.declaredPickup || 0; }
+export function pickupTicks() { return pickupBeats() ? pickupBeats() * beatTicks() : 0; } // 0 without a pickup, and without touching S.song (tools run this before a song is set)
+export function barStartTick(b) { return pickupTicks() + (b - 1) * barTicks(); }
+export function barAtTick(t) { return Math.floor((t - pickupTicks()) / barTicks()) + 1; }
+// [bar, beat] of a tick in a frame whose bar 1 starts at T, with bt/qt given:
+// signed floor division, so a tick before T reads bar 0 with a beat in
+// 1 … beats — the ONE conversion reframeAnchors, setEndUnits and the readouts share
+export function frameBQ(tick, T, bt, qt) {
+  const rel = tick - T;
+  const bar = Math.floor(rel / bt + 1e-9) + 1;
+  return [bar, (rel - (bar - 1) * bt) / qt + 1];
+}
+export function barBeatAt(tick) { return frameBQ(tick, pickupTicks(), barTicks(), beatTicks()); }
+// the song's bar count in the pickup frame: full bars after T (the pickup bar is "and a pickup", never counted)
+export function fullBarsCount() { return Math.max(1, Math.ceil((S.songEndTick - pickupTicks()) / barTicks() - 1e-9)); }
 export function secDepthCap() { // device pref, per song: how many section levels show
   const v = S.songKey ? localStorage.getItem("ff1roll-secdepth-" + S.songKey) : null;
   return v === null ? 99 : Math.max(0, +v);
@@ -146,28 +169,34 @@ export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
 // the 16th. Beat = beatTicks() (the meter's denominator), so 6/8's & is a 16th.
 // Display only: stored anchors and file formats never change.
 export const POS_SYL = ["", "e", "&", "a"];
-export function posCount(u, perBar) { // u = 16ths since the song start; perBar = 16ths per bar
+// u = 16ths since BAR 1's start (negative inside a pickup bar, #1192 — signed
+// floor division, so the pickup reads bar 0 and its own counted beat); perBar
+// = 16ths per bar
+export function posCount(u, perBar) {
   let n = Math.floor(u + 1e-9), pct = Math.round((u - n) * 100);
   if (pct >= 100) { n++; pct = 0; }
-  const k = n % perBar;
-  return {bar: Math.floor(n / perBar) + 1, beat: Math.floor(k / 4) + 1, syl: POS_SYL[k % 4], pct};
+  const bar = Math.floor(n / perBar) + 1, k = n - (bar - 1) * perBar;
+  return {bar, beat: Math.floor(k / 4) + 1, syl: POS_SYL[k % 4], pct};
 }
 export function posParts(t) {
   // per-file ppq: a 16th may be a fractional tick count; a captured note one
   // tick off the grid still reads on it (never "1a +99%")
   const sx = beatTicks() / 4, tol = Math.min(1, sx / 8);
-  let u = Math.max(0, Math.round(t)) / sx;
+  let u = (Math.max(0, Math.round(t)) - pickupTicks()) / sx;
   const near = Math.round(u);
   if (Math.abs(u - near) * sx <= tol + 1e-9) u = near;
   return posCount(u, 4 * effTs()[0]);
 }
-export function posAnchor(b, q) { return posCount(Math.max(0, (b - 1) * 4 * effTs()[0] + ((q || 1) - 1) * 4), 4 * effTs()[0]); }
+export function posAnchor(b, q) { return posCount((b - 1) * 4 * effTs()[0] + ((q || 1) - 1) * 4, 4 * effTs()[0]); } // bar 0 reads "bar 0", never clamped to 1 (#1192 C5)
 export function posBeatWord(p) { return p.beat + p.syl + (p.pct ? " +" + p.pct + "%" : ""); }
 export function posText(t) { const p = posParts(t); return "bar " + p.bar + " beat " + posBeatWord(p); }
 export function posShort(p) { return "bar " + p.bar + (p.beat === 1 && !p.syl && !p.pct ? "" : " beat " + posBeatWord(p)); }
-export function posAnchorText(n) { // an annotation's b1/q1(–b2/q2) — q2 is the inclusive end beat, absent = the whole bar
+// a band HAS an end when b2 is a number — bar 0 included (#1192: a chord inside the pickup ends in bar 0, and `n.b2 ?` read 0 as "no end")
+export function hasEnd(n) { return n.b2 !== null && n.b2 !== undefined; }
+export function posAnchorText(n) { // an annotation's b1/q1(–b2/q2) — q2 is the inclusive end beat, absent = the whole bar; `until` (#1179) = the exact exclusive end
   const head = posShort(posAnchor(n.b1, n.q1));
-  if (!n.b2) return head;
+  if (!hasEnd(n)) return head;
+  if (n.until) { const u = posAnchor(n.until[0], n.until[1]); return head + " until bar " + u.bar + " beat " + posBeatWord(u); }
   if (n.q2 === null || n.q2 === undefined) return head + "–" + n.b2;
   const e = posAnchor(n.b2, n.q2);
   return head + "–" + e.bar + " beat " + posBeatWord(e);

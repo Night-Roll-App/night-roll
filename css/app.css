@@ -802,6 +802,10 @@
   #nromanbox > summary #nromansum { color: var(--gold); font-weight: 600; }
   #nromanmod .gap, #nromandeg .gap, #nchordext .gap, #nchordqual .gap { flex: none; width: 10px; }
   #nchordalt button.dimmed { opacity: 0.4; } /* nothing to alter until a seventh, a 6 or a non-major base */
+  /* pedal point (#1177): only the root matters — the quality/seventh/tension/alteration/bass chips dim, the numeral and "no 5" rows go */
+  #nchordbox.pedaled #nchordqual button, #nchordbox.pedaled #nchordext button, #nchordbox.pedaled #nchordalt button, #nchordbox.pedaled #nchordbass { opacity: 0.4; }
+  #nchordbox.pedaled #nno5, #nchordbox.pedaled #nromanbox { display: none; }
+  #npedal.active { border-color: var(--accent); color: var(--accent); }
   #nfollow #nunsaved.flash { animation: unsavedflash 0.9s ease-out; }
   @keyframes unsavedflash { 0%, 40% { background: rgba(230, 103, 103, 0.5); } 100% { background: rgba(230, 103, 103, 0.16); } }
   #nfollow #nseveral button { text-align: left; }
@@ -1223,10 +1227,19 @@
   .askmsg.note { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; white-space: pre-wrap; }
   .askmsg .askq { display: block; margin: 4px 0; padding: 4px 8px; border-left: 3px solid var(--accent); background: var(--panel2); border-radius: 4px; }
   .askcarry { align-self: flex-start; margin: 2px 0 6px; padding: 8px 12px; min-height: 40px; border-radius: 10px; border: 1px solid rgba(230,192,96,.6); background: rgba(230,192,96,.14); color: var(--gold); font: inherit; text-align: left; cursor: pointer; } /* open_song's carried-over request, waiting for a tap (src/ask/sheet.js askCarryChip) */
+  .askfwd { align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 2px 0 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(230,192,96,.6); background: rgba(230,192,96,.14); color: var(--gold); font-size: 0.9rem; } /* a Worker message waiting for its song's chat (src/ask/forward.js askForwardChips, #1189) */
+  .askfwd > span { flex: 1 1 100%; }
+  .askfwd > button { min-height: 36px; padding: 4px 12px; border-radius: 8px; border: 1px solid rgba(230,192,96,.6); background: transparent; color: var(--gold); font: inherit; cursor: pointer; }
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
   details.askearlier { align-self: stretch; margin: 0 0 8px; max-height: 50vh; overflow: auto; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); padding-bottom: 6px; }
   details.askearlier > summary { cursor: pointer; font-size: 0.8rem; color: var(--dim); padding: 6px 0; min-height: 32px; }
   details.askearlier > .askmsg.earlier { max-height: none; margin: 4px 0; }
+  /* Earlier chats (#1203, src/ask/history.js): the song's published .ask.md, read only, folded at the top of the ♪ chat; its bubbles are the chat's own */
+  details.askhist { align-self: stretch; margin: 0 0 8px; max-height: 50vh; overflow: auto; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); padding-bottom: 6px; display: flex; flex-direction: column; gap: 6px; }
+  details.askhist > summary { cursor: pointer; font-size: 0.8rem; color: var(--dim); padding: 6px 0; min-height: 32px; }
+  details.askhist > .askhistdate { font-size: 0.75rem; color: var(--dim); margin: 8px 0 0; }
+  details.askhist > .askmsg.hist { opacity: .8; max-width: 92%; }
+  details.askhist > .askhistmore { align-self: center; min-height: 36px; padding: 4px 14px; border-radius: 8px; border: 1px solid var(--grid); background: transparent; color: var(--dim); font: inherit; cursor: pointer; }
   .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid
      dictation past the second line (Josh, 2026-09-26). */

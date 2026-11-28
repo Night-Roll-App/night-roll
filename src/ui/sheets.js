@@ -98,6 +98,7 @@ import { logErrImpl as logErr } from "./chrome.js";
 import { idbDraftOp } from "../platform/storage.js";
 import { idbOpen } from "../platform/storage.js";
 import { beatsPerBarDisp } from "../model/grid.js";
+import { barAtTick, barBeatAt, barStartTick, fullBarsCount } from "../model/grid.js";
 import { addTrackUndoable } from "../model/edits.js";
 import { saveDraft } from "../model/versions.js";
 import { sectionLane } from "../gen/drummer.js";
@@ -500,7 +501,7 @@ export function drKitCountT(t0, t1) { // counts only what the current parts scop
   let k = 0;
   S.song.tracks.forEach((tr, ti) => { if (trackIsDrums(ti)) tr.notes.forEach(n => {
     if (n.gone || n.t < t0 || n.t >= t1) return;
-    if (all || pcs.has(n.p) || (fillsOn && (fillBars.has(Math.floor(n.t / bt) + 1) || n.p === 49))) k++;
+    if (all || pcs.has(n.p) || (fillsOn && (fillBars.has(barAtTick(n.t)) || n.p === 49))) k++;
   }); });
   return k;
 }
@@ -508,13 +509,13 @@ export function bsRange() {
   const t0 = dpTick("bsfrom", "bsfromq", "bsfroms");
   let t1 = dpTick("bsto", "bstoq", "bstos");
   if (t1 <= t0) t1 = t0 + barTicks();
-  return {t0, t1, from: Math.floor(t0 / barTicks()) + 1, to: Math.ceil(t1 / barTicks())};
+  return {t0, t1, from: barAtTick(t0), to: barAtTick(t1 - 1)};
 }
 export function drRange() { // ticks + whole-bar span from the bar/beat/sub selects
   const t0 = dpTick("drfrom", "drfromq", "drfroms");
   let t1 = dpTick("drto", "drtoq", "drtos");
   if (t1 <= t0) t1 = t0 + barTicks();
-  return {t0, t1, from: Math.floor(t0 / barTicks()) + 1, to: Math.ceil(t1 / barTicks())};
+  return {t0, t1, from: barAtTick(t0), to: barAtTick(t1 - 1)};
 }
 export function segSet(id, v) {
   for (const b of document.querySelectorAll("#" + id + " button")) b.classList.toggle("active", b.dataset.v === String(v));
@@ -756,14 +757,15 @@ export function openBassist() {
     }
   }
   const sec = visibleNotes().find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
-  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt)), q0 = 1, q1 = 1, toBar = to + 1;
+  let from = 1, to = fullBarsCount(), q0 = 1, q1 = 1, toBar = to + 1;
+  const bq = t => { const [b, q] = barBeatAt(t); return [Math.max(1, b), b < 1 ? 1 : snapBeat(q)]; }; // generators start at bar 1 at the earliest (the pickup is never a target, #1192 Q6)
   if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
-    from = Math.floor(S.rangeSel.a / bt) + 1; q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    toBar = Math.floor(S.rangeSel.b / bt) + 1; q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+    [from, q0] = bq(S.rangeSel.a);
+    [toBar, q1] = bq(S.rangeSel.b);
   } else if (sec) {
-    from = Math.floor(sec.start / bt) + 1; q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    [from, q0] = bq(sec.start);
     const e = sec.end || sec.start + bt;
-    toBar = Math.floor(e / bt) + 1; q1 = snapBeat((e % bt) / beatTicks() + 1);
+    [toBar, q1] = bq(e);
   }
   document.getElementById("bsfrom").value = from;
   document.getElementById("bsto").value = toBar;
@@ -817,22 +819,18 @@ export function openDrummer() {
   // default range: the section under the cursor; else the loop body; else the whole song
   const sec = visibleNotes().find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
   const loop = S.rollnotes.find(n => n.loopTo !== undefined);
-  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt));
+  let from = 1, to = fullBarsCount();
   let q0 = 1, q1 = 1, toBar;
+  const bq = t => { const [b, q] = barBeatAt(t); return [Math.max(1, b), b < 1 ? 1 : snapBeat(q)]; }; // bar 1 at the earliest (#1192 Q6)
   if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) { // an armed ruler selection wins outright
-    from = Math.floor(S.rangeSel.a / bt) + 1;
-    q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    toBar = Math.floor(S.rangeSel.b / bt) + 1;
-    q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+    [from, q0] = bq(S.rangeSel.a);
+    [toBar, q1] = bq(S.rangeSel.b);
   } else if (sec) { // the section's exact edges, beats included (to = exclusive end)
-    from = Math.floor(sec.start / bt) + 1;
-    q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    [from, q0] = bq(sec.start);
     const e = sec.end || sec.start + bt;
-    toBar = Math.floor(e / bt) + 1;
-    q1 = snapBeat((e % bt) / beatTicks() + 1);
+    [toBar, q1] = bq(e);
   } else if (loop) {
-    from = Math.floor(loop.loopTo / bt) + 1;
-    q0 = snapBeat((loop.loopTo % bt) / beatTicks() + 1);
+    [from, q0] = bq(loop.loopTo);
     toBar = to + 1; // whole rest of the song, exclusive end on the bar after
   } else toBar = to + 1;
   document.getElementById("drfrom").value = from;
@@ -914,7 +912,7 @@ export function drRefresh() {
   let followTxt;
   if (mode === "off") followTxt = "following: nothing";
   else if (mode === "chords") {
-    const n = visibleNotes().filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length; // visibleNotes: Learning hides ✦ AI estimates
+    const n = visibleNotes().filter(x => x.chord && !x.section && !(x.layer > 0) && x.pedal !== true && x.start >= r.t0 && x.start < r.t1).length; // visibleNotes: Learning hides ✦ AI estimates; layer 0 only: what the Drummer follows (#1159–#1162)
     followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
   } else {
     const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();
@@ -1245,8 +1243,8 @@ export function syncPublishedOne(result = "") {
 
 export function openInsertBars() {
   const bt = barTicks(), qt = beatTicks();
-  document.getElementById("insb").value = Math.floor(S.playCursor / bt) + 1;
-  document.getElementById("insq").value = Math.round(((S.playCursor % bt) / qt + 1) * 100) / 100;
+  document.getElementById("insb").value = Math.max(1, barAtTick(S.playCursor)); // bars 1 and up (inserting into the pickup is refused, #1192 Q6)
+  document.getElementById("insq").value = Math.round(barBeatAt(Math.max(S.playCursor, barStartTick(1)))[1] * 100) / 100;
   const row = document.getElementById("insunit");
   row.innerHTML = "";
   for (const u of ["bars", "beats", "16ths"]) {
@@ -1262,7 +1260,7 @@ export function openInsertBars() {
 }
 export function openDeleteBars() {
   const bt = barTicks();
-  document.getElementById("delb").value = Math.floor(S.playCursor / bt) + 1;
+  document.getElementById("delb").value = Math.max(1, barAtTick(S.playCursor));
   document.getElementById("deln").value = 1;
   document.getElementById("delbarsheet").classList.add("on");
 }
@@ -1533,7 +1531,7 @@ export function initSheets1() {
     const b = Math.max(1, Math.round(+document.getElementById("insb").value || 1));
     const q = Math.max(1, +document.getElementById("insq").value || 1);
     const n = Math.max(1, Math.round(+document.getElementById("insn").value || 1));
-    const T = Math.round((b - 1) * bt + (q - 1) * qt);
+    const T = Math.round(barStartTick(b) + (q - 1) * qt); // the pickup frame (#1192)
     const delta = n * (S.insUnit === "bars" ? bt : S.insUnit === "beats" ? qt : qt / 4);
     const k = insertTime(T, Math.round(delta));
     document.getElementById("insbarsheet").classList.remove("on");
@@ -1546,7 +1544,7 @@ export function initSheets1() {
     const bt = barTicks();
     const fromBar = Math.max(1, Math.round(+document.getElementById("delb").value || 1));
     const n = Math.max(1, Math.round(+document.getElementById("deln").value || 1));
-    const r = deleteTime((fromBar - 1) * bt, n * bt);
+    const r = deleteTime(barStartTick(fromBar), n * bt);
     document.getElementById("delbarsheet").classList.remove("on");
     const where = n > 1 ? ("bar " + fromBar + "–" + (fromBar + n - 1)) : ("bar " + fromBar);
     setInfo(r ? where + " removed — everything after moved " + n + " bar" + (n === 1 ? "" : "s") + " earlier" +
@@ -1827,11 +1825,12 @@ export function initSheets5() {
     if (!editableSong()) { setInfo("drum fills work on your own songs — captures are locked"); return; }
     dpBuildBeatSelects();
     const bt = barTicks(), qt = beatTicks();
-    document.getElementById("dpfromb").value = Math.floor(S.playCursor / bt) + 1; // cursor's exact spot
-    const q = snapBeat((S.playCursor % bt) / qt + 1);
+    const [cb, cq] = barBeatAt(Math.max(S.playCursor, barStartTick(1))); // cursor's exact spot, bar 1 at the earliest (#1192 Q6)
+    document.getElementById("dpfromb").value = cb;
+    const q = snapBeat(cq);
     document.getElementById("dpfromq").value = String(Math.floor(q + 0.03));
     document.getElementById("dpfroms").value = String(Math.round((q - Math.floor(q + 0.03)) * 4) / 4);
-    document.getElementById("dptob").value = Math.floor(S.playCursor / bt) + 5;
+    document.getElementById("dptob").value = cb + 4;
     document.getElementById("dptoq").value = "1";
     document.getElementById("dptos").value = "0";
     dpRender();
@@ -1876,7 +1875,7 @@ export function initSheets5() {
       draw();
     }
     document.getElementById("drumsheet").classList.remove("on");
-    setInfo(added.length ? "filled " + added.length + " drum hits from bar " + (Math.floor(startTick / barTicks()) + 1) + " (one undo undoes the fill)"
+    setInfo(added.length ? "filled " + added.length + " drum hits from bar " + barAtTick(startTick) + " (one undo undoes the fill)"
                          : "nothing to fill — pattern is empty or those hits already exist");
   });
 

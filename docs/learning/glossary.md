@@ -147,6 +147,11 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   or over it. — `encountered` earlier sessions; used deliberately.
   Anchor: Cool Bmaj — B5 through the chord sway, then the F♯6 a fifth
   up. FF: *(find one)*.
+- **Pedal point** — the pedal tone in the BASS: one bass note held (or
+  restruck) under changing chords; written "A ped." under a bass staff.
+  Night Roll's pedal chip (#1177) marks it as its own band under the
+  chord rows. — `encountered` 2026-11-27 (asked for the marking: "A
+  pedal" under Am / Am7). FF: *(find one)*.
 - **Tessitura** — where a line mostly SITS, as against its range (the
   extremes it touches): the comfortable middle. `tools/theory.mjs
   <song> melody` reports it as the duration-weighted middle half. —
@@ -421,6 +426,15 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   2026-11-27 (same chat). Anchor: *(none yet)*.
 
 ## Form
+
+- **Pickup (anacrusis)** — the note or two before the first full bar: an
+  incomplete bar that leads into the downbeat of bar 1. Standard notation
+  leaves it unnumbered (bar 0), so bar 1 is the first full bar and the
+  phrase counts line up. — `encountered` 2026-11-27 (Josh #1190: "is it
+  ridiculous not to count it?" — it is the standard practice; the app's
+  Pickup annotation marks it, #1192). Promote to `demonstrated` when he
+  marks one on a song of his and the phrase counts line up. FF: *(find
+  one)*.
 
 - **Turnaround** — the moment before a repeat that sets up the RETURN
   (vs. a B part, which departs). Often the C part in game loops. —

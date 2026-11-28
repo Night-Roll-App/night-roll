@@ -6,6 +6,7 @@ import { studyBeforeSongChange, studyAfterNotesChange } from "../ui/study-sheet.
 import { isUnsaved } from "../model/provenance.js";
 import { recentSongs } from "../platform/base.js";
 import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
+import { askForwardOnSong } from "../ask/forward.js";
 import { saveRecentSongsRaw } from "../platform/base.js";
 import { RECENT_MAX } from "../platform/base.js";
 import { S } from "../state.js";
@@ -13,12 +14,17 @@ import { wmRestoreOpen } from "../ui/wm.js";
 import { prof } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
+import { barStartTick } from "../model/grid.js";
+import { hasEnd } from "../model/grid.js";
+import { declaredPickupOf } from "../model/rollnotes.js";
 import { guessKit } from "../model/kit-guess.js";
 import { uniqueGmKeys } from "../model/kit-guess.js";
 import { applyChop } from "../model/rollnotes.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { annoShown } from "../model/rollnotes.js";
+import { chordLayer } from "../model/rollnotes.js";
+import { isPedal } from "../model/rollnotes.js";
 import { bakesTempo } from "../model/provenance.js";
 import { bakeTempos } from "../model/rollnotes.js";
 import { applyAudioDirs } from "../audio/clips.js";
@@ -103,6 +109,11 @@ export function finalizeNotesImpl() {
   // seen, so 6/8 songs' anchors landed on wrong ticks (the old menu bug)
   const tsNote = S.rollnotes.find(n => n.tsdir);
   S.declaredTs = tsNote ? tsNote.tsdir : null;
+  // the pickup (#1192 review C9): derived from the list FIRST (last entry wins,
+  // as dedupedNotesWithIndex keeps it), before the chop and the re-resolve
+  // below — loadNotes' first resolveNote ran with no frame, exactly the meter's
+  // old menu bug
+  S.declaredPickup = declaredPickupOf(S.rollnotes);
   // chop directives (raw-capture coordinates) carve the displayed song
   let chopChanged = false;
   if (S.song) {
@@ -136,7 +147,7 @@ export function finalizeNotesImpl() {
   // Discovered per song (some FF1 loops return past an intro, e.g. to bar 2).
   for (const n of S.rollnotes) {
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?\s*$/);
-    if (lm) n.loopTo = (+lm[1] - 1) * bt + ((lm[2] ? +lm[2] : 1) - 1) * beatTicks();
+    if (lm) n.loopTo = barStartTick(+lm[1]) + ((lm[2] ? +lm[2] : 1) - 1) * beatTicks(); // `loop: 0.4` returns to the pickup (#1192 C8)
     else delete n.loopTo;
   }
   if (S.song && bakesTempo(S.songKey)) { // Josh's ruling (2026-08-15, widened 2026-09-30): on
@@ -213,7 +224,7 @@ export function finalizeNotesImpl() {
   S.keyRegions = visibleNotes().filter(n => n.keydir !== undefined) // visibleNotes: a Learning-hidden ✦ AI key never reaches the staff, the LCD or the ✦ Ask key state
     .map(n => ({start: n.start, sf: n.keydir,
                 name: (n.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [, SF_MAJOR[n.keydir]])[1], // "Gm"/"D dorian" show as recorded
-                end: n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null,
+                end: hasEnd(n) ? n.end : null, // resolveNote's own end (pickup frame included, #1192)
                 b1: n.b1, b2: n.b2}))
     .sort((a, b) => a.start - b.start);
   const unsetOpt = document.getElementById("keyunset");
@@ -235,19 +246,31 @@ export function finalizeNotesImpl() {
   secs.forEach(s => { if (s.end === null || s.end <= s.start) s.end = s.start + bt; });
   S.sectionColors = {};
   let ci = 0;
+  // a chord's row counts the chords that strictly contain it PLUS, on its
+  // identical span, the lower layers (#1159–#1162: a chord he stacked over
+  // another sits a row under it; a lone layer-1 chord sits where containment
+  // puts it — the number is an identity, not a position). Sections have no
+  // layer, so their rows are untouched.
   const depthWithin = group => {
     let max = -1;
     for (const s of group) {
       s.depth = group.filter(t => t !== s && t.start <= s.start && t.end >= s.end &&
-                                  (t.start < s.start || t.end > s.end)).length;
+                                  (t.start < s.start || t.end > s.end ||
+                                   (t.start === s.start && t.end === s.end && chordLayer(t) < chordLayer(s)))).length;
       max = Math.max(max, s.depth);
     }
     return max + 1; // row count (0 when the group is empty)
   };
   const secGroup = secs.filter(n => n.section);
-  const chGroup = secs.filter(n => n.chord && !n.section);
+  const chGroup = secs.filter(n => n.chord && !n.section && !isPedal(n));
+  // pedal points (#1177) are their own group UNDER every chord row — like
+  // the "A ped." line under a bass staff — stacking among themselves by the
+  // same containment/layer rule; an empty group adds no row
+  const pedGroup = secs.filter(n => isPedal(n));
   const secDeep = depthWithin(secGroup);
-  const chRows = depthWithin(chGroup);
+  const chordRows = depthWithin(chGroup);
+  const pedRows = depthWithin(pedGroup);
+  const chRows = chordRows + pedRows;
   // collapse: levels deeper than the device's cap fold away from the RULER
   // only — the drummer and every tool still read all of them (a drum-keying
   // sub-label is scaffolding you shouldn't have to look at; Josh, 2026-08-22)
@@ -256,6 +279,7 @@ export function finalizeNotesImpl() {
   S.secMaxDepth = secDeep; // for the chevron's cycle
   for (const s of secGroup) s.lane = s.depth <= cap ? s.depth : null; // null = folded
   for (const c of chGroup) c.lane = S.listenerMode ? null : secRows + c.depth;
+  for (const p of pedGroup) p.lane = S.listenerMode ? null : secRows + chordRows + p.depth;
   for (const s of secs)
     if (!(s.text in S.sectionColors)) S.sectionColors[s.text] = TRACK_COLORS[ci++ % TRACK_COLORS.length];
   // P6: the Analyze layer's own rows, appended BELOW every section/chord
@@ -280,6 +304,7 @@ export async function loadNotes() {
   const gen = S.loadGen; // abandon if another song starts loading mid-fetch
   S.rollnotes = [];
   S.rollnotesReadOnly = false; S.rollnotesLockReason = null; S.rollnotesOrigin = null;
+  let filePickup = 0;
   if (S.songKey) {
     try {
       // ?t= busts the Pages CDN (it caches ~10 min; a reload right after
@@ -294,6 +319,7 @@ export async function loadNotes() {
         S.rollnotesReadOnly = !!parsed.readOnly;
         S.rollnotesLockReason = parsed.lockReason || null;
         S.rollnotesOrigin = parsed.origin || null;
+        filePickup = declaredPickupOf(parsed) || 0; // the FILE's frame, before tombstones and the local store (#1192 C2)
         S.rollnotes = parsed.map(resolveNote);
         // the file's save stamp is the base this device's draft derives from.
         // It was only ever set by THIS device's own Publish, so any other
@@ -316,8 +342,8 @@ export async function loadNotes() {
     } catch (err) { /* no sidecar */ }
     if (gen !== S.loadGen) return;
     const before = S.rollnotes.length;
-    S.rollnotes = mergeLocalAdditions(S.rollnotes, S.songKey);
-    for (let i = before; i < S.rollnotes.length; i++) resolveNote(S.rollnotes[i]); // only the newly-merged ones need it — the rest were resolved above
+    S.rollnotes = mergeLocalAdditions(S.rollnotes, S.songKey, filePickup);
+    for (let i = before; i < S.rollnotes.length; i++) resolveNote(S.rollnotes[i]); // only the newly-merged ones need it — the rest were resolved above (finalizeNotes re-resolves all under the pickup anyway)
   }
   finalizeNotes();
   buildScoreModel(); // key regions may have changed spelling/signatures
@@ -438,7 +464,7 @@ export function setSong(parsed, key) {
   S.analysisChordLane = S.analysisKeyLane = null;
   S.analyzeTarget = null;
   S.drTakes = []; S.drActive = -1; // Drummer takes replay against THIS song's notes
-  S.declaredTs = null; // meter resets to neutral until this song's notes declare one
+  S.declaredTs = null; S.declaredPickup = null; // meter and pickup reset to neutral until this song's notes declare one
   S.selNote = null;
   S.selClip = null;
   stretchCache.clear(); // stretched takes belong to one song
@@ -471,6 +497,7 @@ export function setSong(parsed, key) {
   const ask = document.getElementById("asksheet");
   if (ask && ask.classList.contains("on")) { try { askModeButtons(); askRender(); } catch (err) { /* too early in boot: openAsk renders it */ } }
   if (!S.wmRestored && typeof setTimeout === "function") setTimeout(wmRestoreOpen, 0); // the windows open at last launch come back once the first song is in
+  if (typeof setTimeout === "function") setTimeout(askForwardOnSong, 0); // a Worker message waiting for THIS song's chat (#1189) goes out once the load has settled
 }
 export function fitViewImpl() { // on song load: the whole song flush on screen (= the zoom-out floor) — unless this song has a view of its own to come back to
   if (S.viewMode === "score") { S.view.x = -SCORE_INTRO_W; S.view.y = 0; return; }

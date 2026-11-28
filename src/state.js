@@ -78,7 +78,8 @@ export const S = {
   editingNote: null,
   // the docked annotation window's follow state (src/ui/note-editor.js editorLoad and friends)
   edFollow: {mode: "idle", base: "", baseSpan: "", sig: null, pending: null, ident: null, noteSpan: "", songKey: null,
-             lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false},
+             lastSaved: null, prePick: null, busy: false, msg: "", list: [], listSpan: null, dropped: "", wasDocked: false,
+             stack: null}, // "＋ Another chord here": the chord(s) the open NEW chord stacks over (same exact span) — nsaveBody gives it the next layer; null = an ordinary new chord
   annoFlash: null, // {a, b, until}: the span an annotation undo/redo just changed, flashed in the ruler (revealEdit)
   rangeSel: null,
   seam: null, // the loop-seam cycle (src/audio/seam.js): {spans: [{a, b}, …] ticks, kind: "loop"|"pair"}; play() cycles them in order, forever, until it is left
@@ -97,6 +98,7 @@ export const S = {
   multiSelSf: 0,
   keyRegions: [],
   declaredTs: null,
+  declaredPickup: null, // the song's `pickup: N` directive (beats before bar 1), set in finalizeNotes beside declaredTs; null = none (#1192)
   previewSf: null,
   RULER_W: null,
   RULER_H: null,
@@ -309,6 +311,8 @@ export const S = {
   askSwitch: null, // open_song (docs/ai-parity.md §4): {path, title, then, from, said} — queued by the action, run by askLanded once the reply that asked has landed
   askEarlierOpen: false, // the Claude tab's collapsed "Earlier chat" block is open (this run only)
   askCarry: null, // a carried-over request waiting for a tap (the new chat had an unsent draft): {key, text}
+  askForwardTimer: null, // askForwardRetrySoon (#1189): the one timer that re-tries a Worker message kept waiting by a busy chat, a load or a take
+  askHistory: {key: null, path: null, state: "none", blocks: [], shown: 25}, // the open song's published .ask.md, parsed for the ♪ chat's "Earlier chats" fold (src/ask/history.js): state none|loading|ok|missing; shown = blocks drawn
   askHopKey: null, // the chat whose last message was carried over by open_song — it may not open another song (one hop only)
   askCaps: {bridge: false, terminal: false, sessions: false},
   askSeenPending: {},

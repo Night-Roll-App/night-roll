@@ -10,6 +10,7 @@ import { keyNameAt } from "../model/song.js";
 import { modeOfName, tonicPcOfName } from "../theory/chords.js";
 import { S } from "../state.js";
 import { beatsPerBarDisp } from "../model/grid.js";
+import { barStartTick } from "../model/grid.js";
 import { editableSong } from "../model/song.js";
 import { setInfo } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
@@ -119,10 +120,12 @@ export function bsInferTimeline(t0, t1, melodyTis, seedRng) { // INTERNAL sketch
   return out.filter(Boolean);
 }
 export function bsChordTimeline(t0, t1) {
-  const bands = visibleNotes().filter(n => n.chord && !n.section && n.end > n.start && // visibleNotes: the Bassist never follows a Learning-hidden ✦ AI chord
+  // layer 0 only (#1159–#1162): a chord stacked over another is extra information the Bassist ignores — two entries at one tick would be an ambiguous pick;
+  // a pedal band (#1177) is passed by too — it names what HIS bass held, not a chord to walk
+  const bands = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.pedal !== true && n.end > n.start && // visibleNotes: the Bassist never follows a Learning-hidden ✦ AI chord
                                       n.start < t1 && n.end > t0)
     .sort((a, b) => a.start - b.start || (b.start - a.start));
-  const after = visibleNotes().filter(n => n.chord && !n.section && n.start >= t1)
+  const after = visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.pedal !== true && n.start >= t1)
     .sort((a, b) => a.start - b.start)[0];
   const tl = [];
   for (const b of bands) {
@@ -155,8 +158,8 @@ export function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, ch
   const {style = "chug", busy = 3, oct = 2, follow = "auto", followTi, targetTi,
          fromBar, toBar} = opts;
   const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
-  const t0 = opts.t0 !== undefined ? opts.t0 : (fromBar - 1) * bt;
-  const t1 = opts.t1 !== undefined ? opts.t1 : toBar * bt;
+  const t0 = opts.t0 !== undefined ? opts.t0 : barStartTick(fromBar); // the pickup frame (#1192): bars land on the real downbeats; bar 0 is never a target
+  const t1 = opts.t1 !== undefined ? opts.t1 : barStartTick(toBar + 1);
   if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return 0; }
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
     setInfo("the range crosses a meter change — generate each meter's bars separately");
@@ -221,7 +224,7 @@ export function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, ch
     return v;
   };
   for (let bar = fromBar; bar <= toBar; bar++) {
-    const bs = (bar - 1) * bt;
+    const bs = barStartTick(bar);
     const rng = drumRng(seed, sectionLane(bar) ^ 0xBA55);
     const jit = []; // constant draw budget per bar per style (liked-bar stability)
     for (let i = 0; i < beats * 2; i++) jit.push(rng() * 8 - 4);

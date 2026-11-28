@@ -1,4 +1,5 @@
 import { S } from "../state.js";
+import { pickupTicks } from "../model/grid.js";
 import { effTs } from "../model/grid.js";
 import { seamSpanNow } from "./seam.js";
 import { playSec } from "./transport.js";
@@ -82,14 +83,15 @@ export function metPumpFollow() {
   const tb = metFollowBeatTicks();
   const num = metFollowNum();
   const now = playSec();
-  let bt = Math.ceil((secToTick(S.song, now) + 1) / tb) * tb;
+  const T = pickupTicks(); // the beat grid's phase and the downbeat accent follow bar 1 (#1192)
+  let bt = T + Math.ceil((secToTick(S.song, now) + 1 - T) / tb) * tb;
   let delta;
   const sec = tickToSec(S.song, bt);
   const cur = S.loopSeg && seamSpanNow(S.loopSeg, S.audio.currentTime, S.playT0); // a seam: the span sounding now; else the loop body
   if (cur && cur.end > cur.start && sec >= cur.end - 1e-4) {
     // next beat lies past the jump point: chase it into the next pass
     const nxt = S.loopSeg.spans ? S.loopSeg.spans[(S.loopSeg.spans.indexOf(cur) + 1) % S.loopSeg.spans.length] : cur;
-    bt = Math.ceil((secToTick(S.song, nxt.start) - 1e-4) / tb) * tb;
+    bt = T + Math.ceil((secToTick(S.song, nxt.start) - 1e-4 - T) / tb) * tb;
     delta = (cur.end - now) + (tickToSec(S.song, bt) - nxt.start);
   } else {
     delta = sec - now;
@@ -98,7 +100,7 @@ export function metPumpFollow() {
   const when = S.audio.currentTime + Math.max(0.005, delta);
   if (S.metLastWhen >= 0 && Math.abs(when - S.metLastWhen) < 0.03) return; // this beat is scheduled
   S.metLastWhen = when;
-  const k = Math.round(bt / tb);
+  const k = Math.round((bt - T) / tb);
   const idx = (((k + met.nudge) % num) + num) % num;
   const lv = met.accents[idx] !== undefined ? met.accents[idx] : 1;
   if (lv > 0) metClick(when, lv);

@@ -91,7 +91,10 @@ chrome each.)
 - `open-items.md` — **start here**: restart context, open questions, queues.
 - `albums/nes/final-fantasy-i/songs/<song>.notes.txt` — the note data Josh reads
   (bar/beat/pitch/duration + `vN` chip volume on pulses; triangle has no
-  volume control — absence there is N/A, not silence). Its header's meter
+  volume control — absence there is N/A, not silence). When the song has a
+  pickup annotation its rows start at `bar 0:` (the pickup) and the header
+  says "N bars and a pickup" — the same numbers the app's ruler shows
+  (#1192). Its header's meter
   is the one Josh DECLARED (a timesig: annotation) — "4/4? (not declared)"
   when he hasn't; never an imported file's own label (Learning mode).
 - `albums/**/<song>.ask.md` — his in-app ✦ Ask chat about that song,

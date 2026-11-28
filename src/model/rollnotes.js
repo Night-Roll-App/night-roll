@@ -6,6 +6,7 @@ import { romanPretty } from "../theory/chords.js";
 import { beatTicks } from "./grid.js";
 import { beatsPerBarDisp } from "./grid.js";
 import { snapBeat } from "./grid.js";
+import { pickupTicks, frameBQ, hasEnd } from "./grid.js";
 import { tombKeyFor, tombstone } from "./edits.js";
 import { noteIdentity } from "./edits.js";
 import { retireEdited } from "./edits.js";
@@ -148,7 +149,7 @@ export function parseRollnotes(text) {
 // got "", and deriveNoteTypes dropped the entry — a silent delete).
 export const ROLLNOTES_FIELDS = new Set(["at", "to", "type", "text", "note", "label", "chord", "key", "timesig", "bpm",
   "track", "voice", "color", "vol", "pan", "mute", "solo", "hide", "loop", "file", "offset", "len", "local", "chop", "lane",
-  "item", "done", "ai", "title", "kind", "roman", "no5", "drums", "topic"]);
+  "until", "item", "done", "ai", "title", "kind", "roman", "no5", "layer", "pedal", "drums", "topic", "pickup"]);
 // "File under" chips (docs/plans/2026-10-05-analysis-sheet.md §3b): the
 // Analysis-sheet prompts a bar note can be listed under — the located ones
 // (form, harmony, melody; the song-level prompts take an answer instead).
@@ -159,26 +160,93 @@ export const FILE_UNDER = [
   {id: "harmony.bass", label: "Bass"}, {id: "harmony.tension", label: "Tension"},
   {id: "melody.degrees", label: "Degrees"}, {id: "melody.shape", label: "Shape"}, {id: "melody.motifs", label: "Motifs"},
 ];
-export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote"]);
+export const ROLLNOTES_TYPES = new Set(["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane", "analysis", "songnote", "pickup"]);
+// `pickup` (Josh #1190–#1192, docs/plans/2026-11-27-pickup-bar.md): ONE entry
+// per song, {"at":[1,1],"type":"pickup","pickup":P} — P = the pickup's length
+// in the ruler's counted beats (0 < P ≤ beats per bar; fractions on the 16th
+// grid). It DEFINES the frame every other anchor is written in: bar 1 starts
+// at tick P·beatTicks, the notes before it are bar 0 (model/grid.js). Anchored
+// at [1,1] like the song-level entries and treated like them by every bar
+// edit (isSongLevelAnno): a frame directive, not a thing at a place. Legacy
+// text form `pickup: 1`, parsed forever. A file holding one is version 4.
+export const PICKUP_RE = /^pickup:\s*(\d+(?:\.\d+)?)\s*$/i;
+export function pickupDirText(p) { return "pickup: " + (+(+p).toFixed(4)); }
+export function declaredPickupOf(list) { // the pickup the LIST declares (last wins, as dedupedNotesWithIndex keeps it), else null
+  let p = null;
+  for (const n of list) if (n.pickup !== undefined && n.pickup !== null) p = n.pickup;
+  return p;
+}
+export function isChopAnno(n) { return !!(n.chopdir || /^chop:\s*(start|end)\s*$/i.test(n.text || "")); } // chopdir is derived in finalizeNotes; a not-yet-finalized list is read by its text
 // A chord band's own fields beside its symbol (Josh, Terminal #228/#230):
 // `roman` — the Roman numeral HE entered, a string as typed; `no5` — his
 // "no fifth" mark. Absent = none. Only ever what he (or the AI on his
 // dictation) wrote: nothing derives either from the notes or a key.
+// `layer` (docs/plans/2026-11-27-layered-chords.md, #1159–#1162): an
+// integer ≥ 1 on a chord he wrote OVER another chord with the identical
+// span — "chords within chords". Absent = layer 0 = every chord before it.
+// The number is an identity, never a position: deleting a layer renumbers
+// nothing, and the ruler row comes from the layers present (finalizeNotes).
+// `pedal` (Josh #1177): true on a chord band that marks a bass pedal point —
+// label "<root> ped." (theory/chords.js pedalLabel). Absent = an ordinary
+// chord. No version bump: an older build ignores the field and draws a chord
+// band; here it draws on its own row(s) UNDER every chord row (finalizeNotes),
+// never supersedes a chord nor is superseded by one (dropSupersededBy), spells
+// only its root and yields to any chord covering the note (chordBandAt), and
+// the Bassist, the Drummer and Check labels pass it by.
 export function chordExtrasFrom(o) {
   const x = {};
   const r = typeof o.roman === "string" ? o.roman.trim() : "";
   if (r) x.roman = r;
   if (o.no5 === true || o.no5 === 1) x.no5 = true;
+  if (Number.isInteger(o.layer) && o.layer >= 1) x.layer = o.layer;
+  if (o.pedal === true || o.pedal === 1) x.pedal = true;
   return x;
+}
+export function isPedal(n) { return !!(n && n.chord && n.pedal === true); }
+export function chordLayer(n) { return n.layer > 0 ? n.layer : 0; }
+// the layer "Another chord here" / Ask's stack:true gives a chord written
+// over `fresh`'s exact span: one above the highest already there; undefined
+// (= layer 0, no field) when no chord sits on that span yet
+export function nextChordLayer(fresh) {
+  let top = -1;
+  for (const n of S.rollnotes) if (n.chord && sameChordSpan(n, fresh)) top = Math.max(top, chordLayer(n));
+  return top >= 0 ? top + 1 : undefined;
+}
+export function sameChordSpan(n, fresh) {
+  return n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1) && (hasEnd(n) ? n.b2 : null) === (hasEnd(fresh) ? fresh.b2 : null) && (n.q2 || null) === (fresh.q2 || null) &&
+         (n.until ? n.until.join() : "") === (fresh.until ? fresh.until.join() : ""); // #1179: an exact end is part of the span
 }
 export function chordBandText(n) { // the band's readout everywhere it is shown: "F# · ♭VII · no5"
   return n.text + (n.chord && n.roman ? " · " + romanPretty(n.roman) : "") + (n.chord && n.no5 ? " · no5" : "");
 }
-export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
+// Does a list of schema entries declare a pickup (#1192)? Read BEFORE the
+// entries are converted: it decides whether bar 0 in an anchor means anything.
+export function jsonListDeclaresPickup(entries) {
+  return entries.some(e => e && typeof e === "object" && (e.type === "pickup" ? +e.pickup > 0 : typeof e.text === "string" && PICKUP_RE.test(e.text.split("\n")[0])));
+}
+// bar0 (#1192, review C1 + the web/native reconcile): bar 0 is a real anchor
+// ONLY in a list that declares a pickup — then `at`, `to` and `until` may all
+// name the pickup bar, and `to: [0, q]` is a real end. Without a pickup the
+// reading is the one every build before had: `at` bar 0 → 1, `to` bar 0 → no
+// end, an `until` in bar 0 dropped — so no file written without a pickup
+// changes meaning (its writer could never produce bar 0 on purpose). Native
+// `Rollnotes.raw(_:bar0:)` is the same rule.
+export function jsonToRawNote(j, bar0 = false) { // schema entry -> the raw shape the deriver expects
   const at = Array.isArray(j.at) ? j.at : [1];
-  const n = {b1: +at[0] || 1, q1: at[1] !== undefined ? +at[1] : 1,
-             b2: j.to ? +j.to[0] : null,
+  const minBar = bar0 ? 0 : 1;
+  const b1 = +at[0], b2 = j.to ? +j.to[0] : NaN;
+  const n = {b1: Number.isFinite(b1) && (b1 !== 0 || bar0) ? b1 : 1, q1: at[1] !== undefined ? +at[1] : 1,
+             b2: Number.isFinite(b2) && (b2 !== 0 || bar0) ? b2 : null,
              q2: j.to && j.to[1] !== undefined ? +j.to[1] : null, text: ""};
+  if (n.b2 === null) n.q2 = null;
+  // `until` (Josh #1179): the band's EXCLUSIVE end, [bar, beat], written only
+  // when the end is off a whole beat; `to` beside it is the beat the end falls
+  // in, for a build that doesn't read this. Present → the end is that exact
+  // tick (resolveNote); absent → today's inclusive-`to` rule.
+  if (Array.isArray(j.until) && j.until.length === 2 && Number.isFinite(+j.until[0]) && Number.isFinite(+j.until[1]) && +j.until[0] >= minBar && +j.until[1] >= 1) {
+    n.until = [+j.until[0], +j.until[1]];
+    if (!hasEnd(n)) { n.b2 = n.until[0]; n.q2 = Math.max(1, Math.floor(n.until[1])); } // `until` without `to`: derive the fallback, so every b2 reader still sees a span
+  }
   if (typeof j.type === "string" && j.type && !ROLLNOTES_TYPES.has(j.type)) {
     // a type from a newer build: the whole entry rides along untouched and
     // is written back as-is (noteToJSONBase); the text is only a label for
@@ -200,6 +268,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     case "audio": n.text = audioDirText({track: j.track || "", file: j.file || "", offset: j.offset || 0, len: j.len || null, local: !!j.local}) + att; break;
     case "chop": n.text = "chop: " + (j.chop || ""); break;
     case "lane": n.text = "lane: " + j.lane; break;
+    case "pickup": n.text = pickupDirText(Number.isFinite(+j.pickup) ? +j.pickup : 0) + att; break; // a junk value reads "pickup: 0" — the deriver drops it below, never a frame from garbage
     // the Analysis sheet's entry (docs/plans/2026-10-05-analysis-sheet.md §3a):
     // item + tick, body in `note` — tolerated in `text` too, so an entry
     // from a build that spelled the body the other way is never read as
@@ -227,8 +296,19 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
 // (hasProvenanceNote/originOf, below, read it off the returned array).
 // Writer is v2 as of P4 (docs/provenance-plan.md) — serializeNotesList below.
 export const ROLLNOTES_FORMAT = "night-roll-annotations";
-export const ROLLNOTES_MAX_VERSION = 2;
+export const ROLLNOTES_MAX_VERSION = 4;
 // highest version this app can read/write; higher = refuse to publish/overwrite (the version guard)
+// v3 = v2 + a chord's `layer` (2026-11-27). The writer says 3 ONLY for a list
+// that holds a layered chord (rollnotesVersionFor): every un-layered song keeps
+// writing version 2 byte-for-byte, and an older build — whose dropSupersededBy
+// would silently delete the sibling chord — locks a layered song instead of
+// corrupting it (docs/plans/2026-11-27-layered-chords.md §2.1).
+// v4 = a `pickup` entry (2026-11-27, #1192): every anchor in such a file is
+// in the pickup frame (bar 0 allowed), so an older build would show them all
+// T early and write new ones in the wrong frame — it locks instead. The
+// version stays a pure function of the list: pickup → 4, else layer → 3,
+// else 2 (native RollnotesWriter.version(for:) agrees, byte for byte).
+export function rollnotesVersionFor(list) { return declaredPickupOf(list) !== null ? 4 : list.some(n => n.chord && chordLayer(n) > 0) ? 3 : 2; }
 export const ROLLNOTES_LOCK_MSG = "⚠ this song's annotations were written by a newer Night Roll — update the app before editing";
 export function parseRollnotesJSON(text) {
   let doc;
@@ -242,7 +322,8 @@ export function parseRollnotesJSON(text) {
   // reading as empty.
   const unknownFormat = version >= 2 && doc.format !== undefined && doc.format !== ROLLNOTES_FORMAT;
   const tooNew = version > ROLLNOTES_MAX_VERSION || unknownFormat;
-  const out = Array.isArray(doc.notes) ? deriveNoteTypes(doc.notes.map(jsonToRawNote)) : [];
+  const bar0 = Array.isArray(doc.notes) && jsonListDeclaresPickup(doc.notes); // bar 0 means the pickup bar only in a list that has one (jsonToRawNote)
+  const out = Array.isArray(doc.notes) ? deriveNoteTypes(doc.notes.map(e => jsonToRawNote(e, bar0))) : [];
   out.version = version;
   out.origin = (doc.origin && typeof doc.origin === "object") ? doc.origin : null;
   out.readOnly = tooNew;
@@ -255,7 +336,7 @@ export function deriveNoteTypes(out) {
     // EVERY typed annotation may carry an attached note: first line is the
     // value, remaining lines are the note — where doubt and reasoning live
     // (web-handoff 2026-08-18; generalizes what chords always had)
-    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis|songnote(?:\([^)\n]*\))?):/i.test(n.text);
+    const typed = /^(section|chord|key|timesig|tempo|track|loop|audio|analysis|pickup|songnote(?:\([^)\n]*\))?):/i.test(n.text);
     if (typed && n.text.includes("\n")) {
       const body = n.text.split("\n");
       n.text = body[0].trim();
@@ -286,6 +367,10 @@ export function deriveNoteTypes(out) {
     const bm = n.text.match(/^tempo:\s*(\d+(?:\.\d+)?)\s*$/i);
     if (bm) { n.tempodir = +bm[1]; n.text = "tempo: " + bm[1]; }
     else delete n.tempodir;
+    const pm = n.text.match(PICKUP_RE); // `pickup: P` — a positive length only; 0 or junk is no directive (the entry is dropped as empty text would be)
+    if (pm && +pm[1] > 0) { n.pickup = +pm[1]; n.text = pickupDirText(n.pickup); n.b1 = 1; n.q1 = 1; n.b2 = null; n.q2 = null; delete n.until; }
+    else if (pm) { n.text = ""; delete n.pickup; }
+    else delete n.pickup;
     const trm = n.text.match(/^track:\s*(.+?)((?:\s+\w+=\S+)*)\s*$/i); // name may contain spaces
     if (trm) {
       const d = {name: trm[1].trim()};
@@ -403,7 +488,7 @@ export function songNoteFor(title, list) { // the song note with this title (any
   const k = songNoteKey(title);
   return (list || S.rollnotes).find(n => n.songnote && songNoteKey(n.songnote.title) === k) || null;
 }
-export function isSongLevelAnno(n) { return !!(n.study || n.songnote); } // bar edits, chop shifts and re-barring leave these at 1.1
+export function isSongLevelAnno(n) { return !!(n.study || n.songnote || n.pickup !== undefined); } // bar edits, chop shifts and re-barring leave these at 1.1 (the pickup is the frame itself, #1192)
 // The one write path for song notes (the editor's Song chip, Ask's
 // song_note): `prev` is the note being edited (any type — a text note
 // switched to Song is retired too), null for a new one. A title already
@@ -442,7 +527,8 @@ export function noteToJSON(n) { // enriched-or-stashed note -> schema entry (tex
 }
 export function noteToJSONBase(n) {
   const j = {at: n.q1 !== 1 ? [n.b1, n.q1] : [n.b1, 1]};
-  if (n.b2) j.to = (n.q2 !== null && n.q2 !== undefined) ? [n.b2, n.q2] : [n.b2];
+  if (hasEnd(n)) j.to = (n.q2 !== null && n.q2 !== undefined) ? [n.b2, n.q2] : [n.b2];
+  if (hasEnd(n) && Array.isArray(n.until)) j.until = [n.until[0], n.until[1]]; // #1179: the exact end, after `to` (its fallback), before type
   if (n.opaque) { // a type this build doesn't know: the stashed entry verbatim, only the anchors re-read (bar edits may have moved it)
     const o = {};
     for (const k of Object.keys(n.opaque)) o[k] = k === "at" ? j.at : k === "to" ? (j.to || n.opaque.to) : n.opaque[k];
@@ -495,13 +581,15 @@ export function noteToJSONBase(n) {
   }
   if ((m = t.match(/^chop:\s*(start|end)\s*$/i))) { j.type = "chop"; j.chop = m[1].toLowerCase(); return j; }
   if ((m = t.match(/^lane:\s*(-?\d+)\s*$/))) { j.type = "lane"; j.lane = +m[1]; return j; }
+  if ((m = t.match(PICKUP_RE))) { j.type = "pickup"; j.pickup = +m[1]; return withNote(j); } // #1192: the length in beats, a number
   j.text = t;
   return j;
 }
-export function resolveNote(n) {
-  const bt = barTicks();
-  n.start = (n.b1 - 1) * bt + (n.q1 - 1) * beatTicks();
-  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null;
+export function resolveNote(n) { // anchors → ticks in the open song's frame (meter + pickup, #1192: T = pickupTicks(), bar 0 lands before it)
+  const bt = barTicks(), qt = beatTicks(), T = pickupTicks();
+  n.start = T + (n.b1 - 1) * bt + (n.q1 - 1) * qt;
+  n.end = n.until ? T + (n.until[0] - 1) * bt + (n.until[1] - 1) * qt // #1179: the exclusive end, exactly
+        : hasEnd(n) ? T + (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * qt : null;
   return n;
 }
 // Duplicate track: directives are dropped HERE, on the write side, last-wins
@@ -522,7 +610,10 @@ export function dedupedNotesWithIndex(list) {
   const lastSongNote = new Map(); // one song note per title (any case), last wins — the same net
   for (const n of list) if (n.songnote) lastSongNote.set(songNoteKey(n.songnote.title), n);
   const seenAudio = new Set(); // audio: pieces — many per track; only an exact twin drops
+  let lastPickup = null; // one pickup per song, last wins (#1192) — the frame cannot be two things
+  for (const n of list) if (n.pickup !== undefined) lastPickup = n;
   return list.map((n, i) => ({n, i})).filter(({n}) => {
+    if (n.pickup !== undefined) return lastPickup === n;
     if (n.trackdir) return lastFor.get(n.trackdir.name.toLowerCase()) === n;
     if (n.study) return lastStudy.get(n.study.item) === n;
     if (n.songnote) return lastSongNote.get(songNoteKey(n.songnote.title)) === n;
@@ -560,7 +651,7 @@ export function serializeNotesList(list, beatsPerBar, base, stamp, origin) {
   // stamp (epoch ms) marks WHEN this state was saved — the cross-device
   // freshness beacon (Josh, 2026-08-16); omitted for pure serialization.
   const rows = dedupedNotesWithIndex(list).map(({n}) => "  " + JSON.stringify(noteToJSON(n)));
-  return '{ "format": ' + JSON.stringify(ROLLNOTES_FORMAT) + ', "version": 2, "song": ' + JSON.stringify(base) +
+  return '{ "format": ' + JSON.stringify(ROLLNOTES_FORMAT) + ', "version": ' + rollnotesVersionFor(list) + ', "song": ' + JSON.stringify(base) +
          (origin ? ', "origin": ' + JSON.stringify(origin) : "") +
          (stamp ? ', "stamp": ' + stamp : "") + ', "notes": [\n' +
          rows.join(",\n") + "\n] }\n";
@@ -577,21 +668,42 @@ export function trackDirText(d) {
 }
 
 export function isDirective(n) { // anything that isn't a plain text note
-  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.songnote || n.opaque ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis|songnote(?:\([^)\n]*\))?):/i.test(n.text));
+  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined || n.study || n.songnote || n.opaque || n.pickup !== undefined ||
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio|analysis|pickup|songnote(?:\([^)\n]*\))?):/i.test(n.text));
 }
 // Song-level entries never draw: no ruler flag (render/roll.js), no flag
 // tap (input/gestures.js — a 1.1 entry otherwise shadowed the key marker's
 // tap there), and no subtitle (isDirective above). One predicate so the two
-// loops can't drift apart.
-export function isUndrawnAnno(n) { return !!(n.study || n.songnote || n.opaque); }
+// loops can't drift apart. The pickup's mark is the bar-1 line itself (#1192).
+export function isUndrawnAnno(n) { return !!(n.study || n.songnote || n.opaque || n.pickup !== undefined); }
 // {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
 export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
 
-export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
-  n.b2 = Math.floor(t / bt) + 1;
-  n.q2 = snapBeat((t % bt) / qt + 1);
+export function setEndBQ(n, tick) { setEndUnits(n, tick, barTicks(), beatTicks(), pickupTicks()); }
+// A band's end from its EXCLUSIVE end tick, to the 16th. q2 is the INCLUSIVE
+// end beat (resolveNote adds one). A CHORD band whose end is off a whole beat
+// (Josh #1179: an Am7 meant for 4.3.5 to 4.4 drew to 4.4.5 — `to` always adds
+// the whole beat) gets `until` = [bar, beat] of the exact end, and `to` = the
+// beat that end falls in, the fallback an older build draws; an end on a beat
+// clears `until`, so such a band is written byte-for-byte as before. Sections
+// keep the inclusive rule alone (native does the same). T = where bar 1 starts
+// (#1192 C5): an end inside the pickup bar is written as bar 0, never clamped.
+// the earliest end a frame can write: one beat after the frame's first bar
+// starts (bar 1 without a pickup, bar 0 with one) — a band is at least a beat
+// long from there, and never a bar before bar 0
+export function minEndTick(T, bt, qt) { return T > 0 ? T - bt + qt : qt; }
+export function setEndUnits(n, tick, bt, qt, T = 0) {
+  const e = Math.max(minEndTick(T, bt, qt), tick);
+  const [ub, uqRaw] = frameBQ(e, T, bt, qt), uq = snapBeat(uqRaw);
+  if (n.chord && Math.abs(uq - Math.round(uq)) > 1e-9) {
+    n.until = [ub, uq];
+    n.b2 = ub; n.q2 = Math.max(1, Math.floor(uq));
+    return;
+  }
+  delete n.until;
+  const [b2, q2] = frameBQ(e - qt, T, bt, qt);
+  n.b2 = b2;
+  n.q2 = snapBeat(q2);
 }
 // Editing an annotation used to leave the old one sitting beside the new one:
 // airship ended up with two keys at 1.1, two chord bands on 15.1–15.4, and the
@@ -613,8 +725,11 @@ export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote
 //           net under any other caller.
 export function dropSupersededBy(fresh) {
   const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
-  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
-                                         (n.q2 || null) === (fresh.q2 || null);
+  // chords: the identical span AND the same layer — a chord he stacked over
+  // another (layer ≥ 1) stands beside it, never in its place (#1159–#1162);
+  // a pedal and a chord never replace each other either (#1177) — only a
+  // pedal replaces a pedal on the exact span
+  const sameSpan = n => sameChordSpan(n, fresh) && chordLayer(n) === chordLayer(fresh) && isPedal(n) === isPedal(fresh);
   if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
   if (fresh.songnote) { for (const n of S.rollnotes.filter(x => x.songnote && songNoteKey(x.songnote.title) === songNoteKey(fresh.songnote.title))) retireEdited(n); return; } // one per title; putSongNote refuses a clash before it gets here
   if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
@@ -728,10 +843,30 @@ export function subtractTombstones(notes, key) {
 // derivation (track:/audio:/tempo:/timesig: directives, key: flag) so an
 // unsynced audio: note isn't silently missing its clip when built for a
 // song that isn't open
-export function mergeLocalAdditions(notes, key) {
+export function mergeLocalAdditions(notes, key, filePickup) {
   let local = [];
   try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
   catch (err) { /* corrupted local notes */ }
+  // The pickup frame (#1192 review C2). The published file's anchors are in
+  // ITS pickup's frame (filePickup — the caller read it before tombstones
+  // dropped a deleted pickup entry; absent = this list's own). The frame the
+  // merged list must be in is the LOCAL store's pickup when it carries one,
+  // else what survives in the published list. When they differ, the published
+  // layer is reframed through absolute time BEFORE the (b1, q1, text) dedup
+  // below, so every twin matches and nothing stands beside its old-frame
+  // self — in beat units (bt = beats per bar, qt = 1): no ppq needed, so a
+  // not-open song (annotationsFor) merges the same way. The local pickup entry
+  // REPLACES the published one, as the study/songnote branches do.
+  const fileP = filePickup !== undefined && filePickup !== null ? filePickup : (declaredPickupOf(notes) || 0);
+  let localP = null;
+  for (const n of local) { const m = (n.text || "").match(PICKUP_RE); if (m && +m[1] > 0) localP = +m[1]; }
+  const targetP = localP !== null ? localP : (declaredPickupOf(notes) || 0);
+  if (targetP !== fileP) {
+    const tsOf = list => { for (const n of list) { const m = /^timesig:\s*(\d+)\s*\/\s*(\d+)/i.exec(n.text || ""); if (m) return [+m[1], +m[2]]; } return null; };
+    const ts = tsOf(local) || tsOf(notes) || [4, 4];
+    reframeAnchors(notes, fileP, targetP, ts[0], 1);
+  }
+  if (localP !== null) for (let i = notes.length - 1; i >= 0; i--) if (notes[i].pickup !== undefined) notes.splice(i, 1);
   for (const n of local) {
     const st = studyFromText(n.text);
     if (st) {
@@ -800,8 +935,9 @@ export async function annotationsFor(key) {
   // before writing — refusing here, before any merge or write, is what
   // "refuses to publish/overwrite" means for a file a newer Night Roll wrote
   if (notes.readOnly) throw new Error(notes.lockReason || ROLLNOTES_LOCK_MSG);
+  const filePickup = declaredPickupOf(notes) || 0; // the FILE's frame, read before a tombstoned pickup entry is subtracted (#1192 C2)
   notes = subtractTombstones(notes, key);
-  notes = mergeLocalAdditions(notes, key);
+  notes = mergeLocalAdditions(notes, key, filePickup);
   notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
   return notes; // NOT resolved: resolveNote reads the OPEN song's meter (barTicks/beatTicks), which may not be key's own — a caller that needs .start (bakeTempos) resolves against key's own ppq/timesig itself (resolveNoteWith)
 }
@@ -809,10 +945,10 @@ export async function annotationsFor(key) {
 // open song's — for filling in a NOT-open song's own .start/.end (bakeTempos
 // needs it to place tempo: directives; annotationsFor itself never resolves,
 // since serialization doesn't need ticks at all).
-export function resolveNoteWith(n, ppq, ts) {
-  const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1];
-  n.start = (n.b1 - 1) * bt + (n.q1 - 1) * qt;
-  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
+export function resolveNoteWith(n, ppq, ts, pickupBeats = 0) { // pickupBeats: that song's own `pickup` (declaredPickupOf its list, #1192 C9) — bar 1 starts P beats in
+  const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1], T = (pickupBeats || 0) * qt;
+  n.start = T + (n.b1 - 1) * bt + (n.q1 - 1) * qt;
+  n.end = n.until ? T + (n.until[0] - 1) * bt + (n.until[1] - 1) * qt : hasEnd(n) ? T + (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
   return n;
 }
 
@@ -864,47 +1000,139 @@ export function bakeMeter(base, notes) {
 
 export function annoRestore(str) {
   const arr = JSON.parse(str);
-  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
+  const bar0 = jsonListDeclaresPickup(arr.map(e => e.j));
+  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j, bar0))).map(resolveNote);
   S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
 }
-// two-tap confirmation for meter changes that move annotations
-// re-express every annotation's anchors under a new meter so they stay glued
-// to the MUSIC (bar.beat is a coordinate system; changing the meter re-bars)
-// shift every non-chop annotation in DISPLAYED space (start-chop add/remove)
-export function shiftAnchors(deltaTicks) {
-  const bt = barTicks(), unit = beatTicks();
-  for (const n of S.rollnotes) {
-    if (n.chopdir || isSongLevelAnno(n)) continue; // song-level entries (sheet answers, song notes) have no place in the music to follow
-    const conv = (b, q) => {
-      const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
-      return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
-    };
-    [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
-    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
+// Re-express every bar-anchored entry of `list` from the frame whose bar 1
+// starts at oldT to the one starting at newT, through absolute time: the
+// music under each annotation does not move by one tick, only its number
+// changes (#1192 §3.2). PURE over the list it is given (review C2: the merge
+// reframes a published list before it meets the local store), with bt/qt
+// passed in so a not-open song can be reframed in beat units (bt = beats per
+// bar, qt = 1). Skips the chop directives (RAW coordinates) and the song-level
+// entries (the pickup itself among them); opaque entries MOVE — an unknown
+// type is a thing at a place (web shiftAnchors already moved them; native's
+// reframe drops its opaque skip for this function only). A chord's end goes
+// through setEndUnits (#1179's one to/until rule); loop text is rewritten and
+// may name bar 0 (C8: a loop back to the pickup is `loop: 0.4`). Round trip
+// is exact: T is on the 16th grid and beats may be fractional.
+export function reframeAnchors(list, oldT, newT, bt, qt) {
+  if (oldT === newT) return list;
+  return remapAnchors(list, oldT, newT, bt, qt, t => t);
+}
+// the one anchor rewrite: each entry's ticks in the OLD frame → f(tick) in
+// absolute time → [bar, beat] in the NEW frame (reframeAnchors: f = identity;
+// shiftAnchors: f = a clamped shift)
+export function remapAnchors(list, oldT, newT, bt, qt, f) {
+  const beats = bt / qt;
+  const tickOf = (b, q) => oldT + (b - 1) * bt + (q - 1) * qt;
+  const conv = (b, q) => frameBQ(f(tickOf(b, q)), newT, bt, qt);
+  const fmtQ = q => +q.toFixed(4);
+  for (const n of list) {
+    if (isChopAnno(n) || isSongLevelAnno(n)) continue;
+    const endTick = hasEnd(n) ? (n.until ? tickOf(n.until[0], n.until[1]) : tickOf(n.b2, (n.q2 || beats) + 1)) : null; // the EXCLUSIVE end
+    const [b1, q1] = conv(n.b1, n.q1 || 1);
+    n.b1 = b1; n.q1 = fmtQ(q1);
+    if (hasEnd(n) && n.chord) setEndUnits(n, f(endTick), bt, qt, newT); // #1179: a chord's end slides exactly and is re-expressed as to/until by the one rule
+    else if (hasEnd(n)) { const [b2, q2] = frameBQ(Math.max(minEndTick(newT, bt, qt), f(endTick)) - qt, newT, bt, qt); n.b2 = b2; n.q2 = fmtQ(q2); } // inclusive last beat, as `to` stores it
+    const lm = (n.text || "").match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
     if (lm) {
       const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
-      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+      n.text = "loop: " + lb + "." + (+lq.toFixed(2)); // always the explicit B.Q the editor writes, so set → remove gives the bytes back
     }
   }
+  return list;
+}
+// Two-tap confirmation for meter changes that move annotations: re-express
+// every annotation's anchors under a new meter so they stay glued to the
+// MUSIC (bar.beat is a coordinate system; changing the meter re-bars).
+// shiftAnchors: shift every non-chop annotation in DISPLAYED space (start-chop
+// add/remove). The downbeat Josh marked is a place in the music like every
+// other anchor (#1192 review C4): the pickup LENGTH is re-derived so bar 1
+// stays on the same music — P' = (T + delta) / qt. A P' that falls to ≤ 0
+// (the chop ate the pickup) or past one bar (the chop's removal put more than
+// a bar before the downbeat) removes the pickup; the caller's warning names
+// it (pickupAfterShift, below, is what the warning reads).
+export function pickupAfterShift(deltaTicks) { // → the pickup length (beats) a shift leaves, or 0 = removed
+  const qt = beatTicks(), P = (pickupTicks() + deltaTicks) / qt;
+  return P > 1e-9 && P <= beatsPerBarDisp() + 1e-9 ? +P.toFixed(4) : 0;
+}
+export function shiftAnchors(deltaTicks) {
+  const bt = barTicks(), unit = beatTicks(), oldT = pickupTicks();
+  const P = S.declaredPickup ? pickupAfterShift(deltaTicks) : 0;
+  remapAnchors(S.rollnotes, oldT, P * unit, bt, unit, t => Math.max(0, t + deltaTicks)); // an anchor shifted before the song's start lands on it, as before
+  if (S.declaredPickup && P) for (const n of S.rollnotes) if (n.pickup !== undefined) { n.pickup = P; n.text = pickupDirText(P); }
+  if (S.declaredPickup && !P) { for (const n of S.rollnotes) if (n.pickup !== undefined) tombstone(n); S.rollnotes = S.rollnotes.filter(n => n.pickup === undefined); }
+  S.declaredPickup = P || null; // resolveNote reads it; finalizeNotes re-derives it from the list the same way
+}
+// The meter changes, the downbeat does not (#1192 §3.3): the pickup is
+// rewritten so T in TICKS is preserved (P' = T / qt'). A P' longer than the
+// new bar is the caller's refusal (meterFitsPickup) — nothing moves then.
+export function meterFitsPickup(newTs) { // null = fine, else the plain reason the re-bar is refused
+  if (!S.declaredPickup) return null;
+  const newUnit = S.song.ppq * 4 / newTs[1], P = pickupTicks() / newUnit;
+  return P <= newTs[0] + 1e-9 ? null : "the pickup is longer than a " + newTs[0] + "/" + newTs[1] + " bar — remove the pickup first";
 }
 export function convertAnchors(oldTs, newTs) {
   const oldUnit = S.song.ppq * 4 / oldTs[1], newUnit = S.song.ppq * 4 / newTs[1];
   const oldBt = oldTs[0] * oldUnit, newBt = newTs[0] * newUnit;
-  const conv = (b, q) => {
-    const tick = (b - 1) * oldBt + (q - 1) * oldUnit;
-    return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
-  };
+  const T = (S.declaredPickup || 0) * oldUnit; // bar 1's tick, kept
+  const conv = (b, q) => frameBQ(T + (b - 1) * oldBt + (q - 1) * oldUnit, T, newBt, newUnit);
   for (const n of S.rollnotes) {
     if (isSongLevelAnno(n)) continue;
+    const endTick = hasEnd(n) ? (n.until ? T + (n.until[0] - 1) * oldBt + (n.until[1] - 1) * oldUnit : T + (n.b2 - 1) * oldBt + (n.q2 || oldTs[0]) * oldUnit) : null;
     [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldTs[0]);
+    if (hasEnd(n) && n.chord) setEndUnits(n, endTick, newBt, newUnit, T); // #1179: re-barred, still exact, same to/until rule
+    else if (hasEnd(n)) [n.b2, n.q2] = conv(n.b2, n.q2 || oldTs[0]);
     const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
     if (lm) {
       const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
-      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+      n.text = "loop: " + lb + "." + (+lq.toFixed(2)); // the explicit B.Q form (the editor's), stable across conversions
     }
   }
+  if (S.declaredPickup) { // the length in the NEW counted beat; T itself did not move
+    const P = +(T / newUnit).toFixed(4);
+    for (const n of S.rollnotes) if (n.pickup !== undefined) { n.pickup = P; n.text = pickupDirText(P); }
+    S.declaredPickup = P;
+  }
+}
+// "The song start" for a directive (#1192 review C3): tick 0 — [0, beats − P + 1]
+// with a pickup, [1, 1] without — so a meter/key/tempo declared "at the start"
+// governs the pickup too and bakeMeter keeps writing its one event at tick 0.
+export function songStartAnchor(ts) { // ts: the meter the anchor is written in (a re-bar passes the NEW one — effTs() still holds the old until finalizeNotes)
+  const unit = ts ? S.song.ppq * 4 / ts[1] : beatTicks(), bt = ts ? ts[0] * unit : barTicks();
+  const [b, q] = frameBQ(0, (S.declaredPickup || 0) * unit, bt, unit);
+  return {b1: b, q1: +q.toFixed(4)};
+}
+// The pickup's one write path (the note editor, the Go to bar sheet, Ask):
+// P = the new length in counted beats (0 = remove). Re-expresses every other
+// anchor through absolute time (reframeAnchors), replaces the entry (a synced
+// one is retired with a tombstone), returns the fresh entry (null on remove).
+// No two-tap here — the callers own the warning (pickupOthersCount is its N)
+// and the undo step (annoSnapshot before, one `anno` entry). Throws in plain
+// words on a bad length; nothing changed then.
+export function pickupOthersCount() { return S.rollnotes.filter(n => !isChopAnno(n) && !isSongLevelAnno(n)).length; }
+export function pickupCheck(P) { // → the snapped length, or throws
+  const beats = beatsPerBarDisp();
+  if (!Number.isFinite(P) || P < 0) throw new Error("a pickup is a length in beats — 1, 1.5, 0.5…");
+  const snapped = Math.round(P * 4) / 4; // the editor's 16th grid
+  if (snapped > beats + 1e-9) throw new Error("a pickup is less than a bar — for a longer intro, label it a section");
+  return snapped;
+}
+export function applyPickup(P, cnote) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  const Pn = pickupCheck(+P);
+  const bt = barTicks(), qt = beatTicks(), oldT = pickupTicks(), newT = Pn * qt;
+  reframeAnchors(S.rollnotes, oldT, newT, bt, qt);
+  for (const n of S.rollnotes.filter(n => n.pickup !== undefined)) retireEdited(n); // one per song; a synced one needs the tombstone to stay gone
+  S.declaredPickup = Pn || null;
+  if (!Pn) { S.rollnotes.forEach(resolveNote); return null; }
+  const fresh = {b1: 1, q1: 1, b2: null, q2: null, text: pickupDirText(Pn), pickup: Pn, added: true};
+  if (cnote) fresh.cnote = cnote;
+  S.rollnotes.push(fresh);
+  S.rollnotes.forEach(resolveNote);
+  return fresh;
 }
 
 export function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation

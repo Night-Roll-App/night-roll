@@ -192,7 +192,8 @@ build writes; the reader is the loose side.
   been.
 - `format: "night-roll-annotations"` and `version` 2 → header read, `notes`
   parsed exactly like v1's.
-- `version` > 2 (ROLLNOTES_MAX_VERSION, index.html), or `version` ≥ 2 with a
+- `version` > 3 (ROLLNOTES_MAX_VERSION, src/model/rollnotes.js; 3 since the
+  layered-chords change of 2026-11-27, see "v3" below), or `version` ≥ 2 with a
   `format` that isn't `"night-roll-annotations"` → **the version guard**:
   the song opens read-only. `rollnotesReadOnly`/`rollnotesLockReason`
   (index.html, set from `loadNotes`) carry the state for the currently open
@@ -274,6 +275,88 @@ lasso-selected-annotation paste (`pasteAnnotations`), the chord tool
 (`insertChordAt`, which writes a chord BAND alongside the notes), and
 Analyze → Adopt (`adoptChordBand`/`adoptAllChords`).
 
+## v3 — layered chords (2026-11-27, docs/plans/2026-11-27-layered-chords.md)
+
+v3 = v2 + one optional field on a `type: "chord"` entry: `"layer": <integer
+≥ 1>`, the chord the user wrote OVER another chord on the identical span
+(#1159–#1162, "chords within chords"). Absent = layer 0 = every chord
+before it. Nothing else changes: same header, same `notes` schema, same
+deriver (`chordExtrasFrom` reads and writes it beside `roman`/`no5`).
+
+- **Supersede rule:** a new chord replaces an existing one only when span
+  AND layer match (`dropSupersededBy`); before v3 the span alone decided.
+- **Version rule (both writers, web `rollnotesVersionFor` and native
+  `RollnotesWriter.version(for:)`):** `version: 3` is written ONLY when the
+  list holds a chord with a `layer`; every other file keeps `version: 2`
+  byte-for-byte. The version is a pure function of the notes list, so the
+  golden parity (night-roll-ipad tools/rollnotes-golden.mjs, fixture
+  `layered-stack`) covers it.
+- **Why the bump:** an older build (max version 2) reading a layered file
+  keeps `layer` on `n.extra` and would write it back — but editing ONE of
+  the two same-span chords runs its span-only supersede and silently
+  deletes the sibling, and it draws both on one row meanwhile. The lock
+  ("written by a newer Night Roll") is the guard against exactly that; it
+  bites only songs that actually hold a stacked chord.
+- Readers: `ROLLNOTES_MAX_VERSION = 3`, native `Rollnotes.maxVersion = 3`.
+
+## `pedal` and `until` — two more optional chord fields (2026-11-27, no version bump)
+
+- `"pedal": true` (Josh #1177) on a `type: "chord"` entry: a bass pedal
+  point, label `"<root> ped."`. Drawn on its own row(s) under every chord
+  row; never supersedes a chord nor is superseded by one. An older build
+  ignores the field and draws a chord band, so the version stays as it is.
+- `"until": [bar, beat]` (Josh #1179) on a `type: "chord"` entry: the band's
+  EXCLUSIVE end, written ONLY when the end does not fall on a whole beat
+  (`to` is inclusive and always adds the whole beat — an Am7 meant for 4.3.5
+  to 4.4 drew to 4.4.5). Beside it `to` = the beat the end falls in
+  (`[4, 3]` for an end at 4.3.5), the fallback an older build draws. A
+  reader with `until` ends the band at that exact tick; without it, the
+  `to` rule as before. A band ending on a beat is written byte-for-byte as
+  today (`setEndUnits`, src/model/rollnotes.js — the one place an end tick
+  becomes `to`/`until`). Field order: `at`, `to`, `until`, `type`, `chord`,
+  `roman`, `no5`, `layer`, `pedal`, `note`.
+  The schema (docs/annotations-v2.schema.json) lists the field.
+
+## v4 — the pickup (2026-11-27, #1190–#1192, docs/plans/2026-11-27-pickup-bar.md)
+
+v4 = one new entry type, `{"at":[1,1],"type":"pickup","pickup":P}` — the
+pickup's (anacrusis) LENGTH in the ruler's counted beats, `0 < P ≤ beats
+per bar`, fractions on the 16th grid. It defines the frame every other
+anchor in the file is written in: bar 1 (the first full bar) starts `P`
+beats into the song and the notes before it are **bar 0** — so `at`, `to`
+and `until` may name bar 0 (`{"at":[0,4],"to":[0,4],"until":[0,4.5],…}`
+is a half-beat chord inside a one-beat pickup; the schema's anchor minimum
+is 0). One per song (last wins); never drawn (the bar-1 line is its mark);
+anchored at `[1,1]` like the song-level entries and left alone by every bar
+edit; an optional `note` rides along. Text form `pickup: 1`.
+
+- **Version rule:** `version = pickup present ? 4 : layer present ? 3 : 2`
+  (web `rollnotesVersionFor`, native `RollnotesWriter.version(for:)`): a file
+  with no pickup and no layered chord stays `version: 2` byte-for-byte.
+- **Why the bump:** an older build reading a pickup file would show every
+  annotation `P` beats early and let the user add one in the wrong frame.
+  The lock bites only songs that hold a pickup; readers ship to both apps
+  before the editor does.
+- **Readers accept bar 0 only in a list that declares a pickup** (review
+  C1, narrowed by the web/native reconcile): web `jsonListDeclaresPickup` →
+  `jsonToRawNote(j, bar0)`, native `Rollnotes.declaresPickup` →
+  `raw(_:bar0:)`. With a pickup, `at`, `to` and `until` may name bar 0 and
+  `to: [0, q]` is a real end; without one the pre-v4 reading stands (`at` 0
+  → 1, `to` [0] → no end, an `until` in bar 0 dropped), so a file written
+  without a pickup — which could never hold bar 0 on purpose — reads as it
+  always did. Both writers emit identical bytes for every list either reader
+  produces (PickupTests `testBar0MeansThePickupBarOnlyWhenTheListHasOne`,
+  tests/pickup.test.mjs "readers accept bar 0").
+- **Setting or removing a pickup re-expresses every anchor** through
+  absolute time (`reframeAnchors`), with the two-tap warning and one undo
+  step — the music under an annotation never moves. The merge
+  (`mergeLocalAdditions`) reframes a published list into the local store's
+  frame before dedup, so a pickup set on synced notes survives a reload
+  before Publish (review C2).
+- Readers: `ROLLNOTES_MAX_VERSION = 4`, native `Rollnotes.maxVersion = 4`.
+- Shared fixture: tests/fixtures/pickup.rollnotes.json (web
+  tests/pickup.test.mjs; native PickupTests) — byte-identical in both repos.
+
 ## Round-trip guarantees (tested, tests/night-roll.test.mjs)
 
 - v1 → parse → serialize → byte-identical (pre-existing coverage,
@@ -282,6 +365,10 @@ Analyze → Adopt (`adoptChordBand`/`adoptAllChords`).
   origin header included — "P4" tests.
 - A v2 fixture and its v1 twin (same `notes`, only the header differs) →
   parse → identical in-memory notes.
-- A v3 fixture (or any `version` > 2, or a `version` ≥ 2 file with an
+- A v5 fixture (or any `version` > 4, or a `version` ≥ 2 file with an
   unrecognized `format`) → `readOnly` true, `publishSong`/`annotationsFor`
-  refuse.
+  refuse. (Was v3 until 2026-11-27, then v4 the same day; v4 — the pickup —
+  now reads read-write.)
+- A v2 list with no `layer` → serialize → `version: 2`, byte-identical; the
+  same list plus one layered chord → `version: 3` with `"layer": 1` on that
+  entry only → parse → identical in-memory notes ("layered chords" tests).

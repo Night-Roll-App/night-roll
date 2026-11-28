@@ -221,10 +221,38 @@ terminal session writes code.
   `BRIDGE_APPROVER`; on 127.0.0.1 or the ts.net proxy it is always `403`.
 - CLI: `--done <n> "text"` posts the note to row n's app and marks the row done; `--status "text" --msg <n>` takes
   the app from row n.
+- `--to-chat <n> [--song <path>] ["note"]` (#1189, `POST /v1/terminal/chat {id, song?, text?}`): row n's words belong in its
+  sender's SONG chat (the app runs them there with the live song and its tools). The bridge reads the song from the row's
+  `<context>` block (`open song: Title (path, …)`, or a native `open song: "Title"` + optional `song path:` line; `--song`
+  overrides; 400 when neither names one), marks the row done + read, writes the note (default "→ sent to the ♪ chat for
+  <title>") to the row's app, then the words as a note of kind `chat` `{text, song, songTitle, tag, device, row}` (`tag` = the
+  "[App]" word a native client prefixes; `device` = the sending client's own id — the `x-nr-device` header BridgeChat sends,
+  the web's `device` body field — so of all the devices polling one app's inbox only the sender runs the words). 409 on a
+  row already handed over or helper-answered. The router does the same on its own for a message that dictates what goes
+  into the open song — its third verdict `CHAT`, offered only for a row from an app with song chats (`CHAT_APPS`:
+  night-roll) whose `<context>` names an open song, taken only when the helper's whole reply is `CHAT` (conservative:
+  anything about the app itself, a question, a mixed message stays NEEDS_AI) — and writes a `FORWARDED #n` FYI row for
+  the watcher, so the Worker sees every hand-off.
 - `tools/term-watch.sh [--apps a,b | --app a] [--takeover]`: the watcher (default apps night-roll, guitar, tuner,
   front-desk; cursor `term-seen-ai`, starting at the bridge's last row when missing). `--app` keeps the old
   single-app form and cursor files. Registers `$CLAUDE_CODE_SESSION_ID` (not with `--app`: that form never
   registers); `WATCH REFUSED` (exit 3) on a 409.
+
+## A Worker message handed to a song's chat (#1189, library side)
+
+`web/forward.js` and `swift/Sources/BridgeChat/ChatForwards.swift` keep the books for the bridge's `kind:"chat"` notes:
+`aiForwardTake(host, notes)` / `ChatForwards.take` return the notes to show and send or queue the hand-offs for THIS
+device (a note's `device` must be this client's own — web `aiDeviceId(host)`, kept under `host.keys.device` or
+`host.keys.store + "device"`; Swift `BridgeDevice.id` in UserDefaults.standard; a note without one falls back to the tag:
+web `host.chatTag()` default none, Swift `ChatHost.chatTag` default `appName` — another device's or client's note is
+dropped), each note id once (persisted: web `host.keys.forward`, Swift `<sessionKey>-chatfwd` in UserDefaults). The host
+sends: `host.forwardChat(note, force)` → true when the message is on its way in that song's chat (its song is open, or
+`force` and the host opens it), false keeps it waiting — also while that chat is busy or a recording is in progress, never
+interrupted. `aiForwardRetry` / `AIWindowModel.songOpened()` after a song opens (the Swift window also retries a non-empty
+waiting list on every monitor tick; a web host arms its own retry);
+`aiForwardSendNow` / `aiForwardDismiss` (`ChatForwards.sendNow/dismiss`) are the waiting row's two buttons — the Swift
+window draws the row (`AIWindow.forwardRows`, ids `ai.forward.<id>[.send|.dismiss]`); the web host draws its own.
+Tests: `tests/forward.test.mjs`, `ChatForwardTests`.
 
 ## The Front Desk tab (library side)
 

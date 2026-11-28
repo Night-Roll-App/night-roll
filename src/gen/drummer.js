@@ -2,6 +2,7 @@ import { barTicks } from "../model/rollnotes.js";
 import { visibleNotes } from "../model/rollnotes.js";
 import { S } from "../state.js";
 import { trackIsDrums } from "../model/grid.js";
+import { barStartTick, barAtTick } from "../model/grid.js";
 import { beatTicks } from "../model/grid.js";
 import { posParts } from "../model/grid.js";
 import { posShort } from "../model/grid.js";
@@ -183,13 +184,13 @@ export function drSectionPos(bar) { // {base, k}: the section's label hash (one 
 export function sectionLane(bar) { // same label = same substream, bar-for-bar (Drummer + Bassist)
   const best = drDeepestSection(bar);
   if (!best) return bar;
-  return (fnv1a32(best.text) + (bar - (Math.floor(best.start / barTicks()) + 1))) >>> 0;
+  return (fnv1a32(best.text) + (bar - barAtTick(best.start))) >>> 0;
 }
 export function drBoundaries(t0, t1) { // section starts + loop target inside (t0, t1]
   const bt = barTicks(), out = new Set();
   for (const n of visibleNotes()) {
-    if (n.section && n.start >= t0 && n.start <= t1) out.add(Math.floor(n.start / bt) + 1);
-    if (n.loopTo !== undefined && n.loopTo >= t0 && n.loopTo <= t1) out.add(Math.floor(n.loopTo / bt) + 1);
+    if (n.section && n.start >= t0 && n.start <= t1) out.add(barAtTick(n.start));
+    if (n.loopTo !== undefined && n.loopTo >= t0 && n.loopTo <= t1) out.add(barAtTick(n.loopTo));
   }
   return out;
 }
@@ -262,8 +263,8 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   // sub-bar edges: bar loop still walks whole bars (per-bar substreams stay
   // stable), put() clamps every hit to [t0, t1) — a 2.4 start drops bar 2's
   // hits before beat 4, exactly the drums-enter-late workflow
-  const t0 = t0Override !== undefined ? t0Override : (fromBar - 1) * bt;
-  const t1 = t1Override !== undefined ? t1Override : toBar * bt;
+  const t0 = t0Override !== undefined ? t0Override : barStartTick(fromBar); // the pickup frame (#1192): kicks land on the real downbeats; bar 0 is never a target
+  const t1 = t1Override !== undefined ? t1Override : barStartTick(toBar + 1);
   if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
     setInfo("the range crosses a meter change — generate each meter's bars separately");
     return 0;
@@ -304,7 +305,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
     .map(n => ({s: n.start, e: n.end || n.start + bt}));
   const inLabeledBreak = t => breakSpans.some(sp => t >= sp.s && t < sp.e);
   const isBreak = bar => {
-    const bs = (bar - 1) * bt, be = bar * bt;
+    const bs = barStartTick(bar), be = bs + bt;
     if (breakSpans.some(sp => sp.s <= bs && sp.e >= be)) return true; // fully covered bar
     if (!rangeHasOthers) return false;
     let melodic = false;
@@ -322,10 +323,10 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   // phrase bars (every 4th bar of a section) are fill scope whatever the knob
   // says, so a fills-only reroll with fills off strips old phrase fills too
   for (let bar = fromBar; bar <= toBar; bar++) if (drSectionPos(bar).k % 4 === 0) fillBarSet.add(bar);
-  const crashTicks = new Set([...boundaries].map(b => (b - 1) * bt));
-  if (boundaries.has(fromBar)) crashTicks.add((fromBar - 1) * bt);
-  const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
-  const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section).map(n => n.start));
+  const crashTicks = new Set([...boundaries].map(b => barStartTick(b)));
+  if (boundaries.has(fromBar)) crashTicks.add(barStartTick(fromBar));
+  const inFillScope = t => fillBarSet.has(barAtTick(t)) || crashTicks.has(t);
+  const chordStarts = new Set(visibleNotes().filter(n => n.chord && !n.section && !(n.layer > 0) && n.pedal !== true).map(n => n.start)); // layer 0 only, no pedal bands — as the Bassist reads (#1159–#1162, #1177)
   // same label = same drums (the app's own same-label-same-color convention,
   // extended; advisor 2026-08-22): the GROOVE substream keys on the label
   // hash, so identically-labeled sections restate bar-for-bar. EXACT label
@@ -383,10 +384,10 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
   // (section-at-a-time workflow: the intro pass plays the fill, this pass lands)
   if (!march && boundaries.has(fromBar) && !isBreak(fromBar)) {
     const arng = drumRng(seed, fromBar * 7919 + 47);
-    put((fromBar - 1) * bt, 49, 100 + arng() * 12, 120);
+    put(barStartTick(fromBar), 49, 100 + arng() * 12, 120);
   }
   if (march) { // one pure pattern for the whole range; put() clamps to [t0, t1), scopes parts and honors labeled breaks
-    const base = (fromBar - 1) * bt;
+    const base = barStartTick(fromBar);
     for (const h of marchPattern(seed, {beats, qt, ppq: S.song.ppq, bars: toBar - fromBar + 1, energy: busy, bass: marchBass}))
       if (!isBreak(fromBar + Math.floor(h.off / bt))) put(base + h.off, h.p, h.v, h.d);
   }
@@ -396,7 +397,7 @@ export function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Ove
     if (isBreak(bar)) continue; // his breaks are sacred: the drummer lays out
     const lane = grooveLane(bar);
     const rng = drumRng(seed, lane);
-    const bs = (bar - 1) * bt;
+    const bs = barStartTick(bar);
     // fill window (the fill owns its beats; skeleton and hats yield inside it).
     // Fill substreams key on the ABSOLUTE bar, apart from the groove: a fill
     // is commentary on what comes next, and widening the range never re-rolls

@@ -1,5 +1,6 @@
 import { S } from "../state.js";
 import { trackIsDrums } from "../model/grid.js";
+import { barAtTick } from "../model/grid.js";
 import { analysisAvailable } from "../platform/mode.js";
 import { barTicks } from "../model/rollnotes.js";
 import { bsInferTimeline } from "./bassist.js";
@@ -137,7 +138,7 @@ export function adoptAllChords() {
 export function adoptKeyRegion(region) {
   if (!S.song) return;
   if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
-  const bar = Math.floor(region.start / barTicks()) + 1;
+  const bar = barAtTick(region.start);
   const annoBefore = annoSnapshot();
   dropLocalKeyAt(bar); // anchor-level: same convention as keysetest/useFileKey
   const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + region.name, keydir: region.sf, added: true};

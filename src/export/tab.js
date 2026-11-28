@@ -113,18 +113,22 @@ export function tabBarsPerSystem(sixteenthsPerBar) { return Math.max(1, Math.flo
 // next 16th widens that column on EVERY string, so the six rows stay aligned. `|` at bar lines; bar numbers above each system;
 // the header is the track name (and the song's), the meter only when declared,
 // the tempo from the file's own map; a legend line only when something folded.
-export function asciiTab({title, track, measures, bt, ppq, positions, tempoBpm, declaredTs, tuning, names} = {}) {
+export function asciiTab({title, track, measures, bt, ppq, positions, tempoBpm, declaredTs, tuning, names, pickup} = {}) {
   const tun = tuning || TAB_TUNING, nm = names || TAB_STRING_NAMES;
   const grid = ppq / 4;
   const perBar = Math.max(1, Math.round(bt / grid));
+  const T = pickup > 0 ? pickup : 0; // the pickup (#1192): measure 0 is [0, T) — narrower (its own 16th count) and numbered 0
+  const mStart = mi => T > 0 ? (mi === 0 ? 0 : T + (mi - 1) * bt) : mi * bt;
+  const mCols = mi => T > 0 && mi === 0 ? Math.max(1, Math.round(T / grid)) : perBar;
   const pos = positions || tabAssign(measures, {tuning: tun});
   let folded = 0, dropped = 0;
   const bars = measures.map((bar, mi) => {
-    const cells = Array.from({length: perBar}, () => tun.map(() => ""));
+    const cols = mCols(mi);
+    const cells = Array.from({length: cols}, () => tun.map(() => ""));
     for (const e of bar) {
       if (e.rest || e.tieFrom) continue; // a tied continuation is not re-struck
-      const k = Math.round((e.start - mi * bt) / grid);
-      if (k < 0 || k >= perBar) continue;
+      const k = Math.round((e.start - mStart(mi)) / grid);
+      if (k < 0 || k >= cols) continue;
       const ps = pos.get(e) || [];
       e.pitches.forEach((p, i) => {
         const c = ps[i];
@@ -153,7 +157,7 @@ export function asciiTab({title, track, measures, bt, ppq, positions, tempoBpm, 
     // bar numbers: each at its bar's first column (rows are "e|" + bar + "|" + bar …)
     let numLine = "  ";
     sys.forEach((rows, j) => {
-      const label = String(b0 + j + 1);
+      const label = String(b0 + j + (T > 0 ? 0 : 1)); // with a pickup the first measure is 0
       numLine = numLine.padEnd(2 + sys.slice(0, j).reduce((a, r) => a + r[0].length + 1, 0), " ") + label;
     });
     lines.push(numLine);

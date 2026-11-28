@@ -15,8 +15,8 @@ const FILES = [
   "spc-real", "spc-render", "spc-preview", "spc-undrum", "n64", "n64-real", "n64-bank",
   "n64-rare", "n64-capture-v2", "sounding", "chip-worker", "instruments", "instruments-export",
   "instruments-sf2", "gestures", "bridge", "ai", "annotate", "ask-storage", "pwa", "package", "m3u-real",
-  "migrate-rollnotes", "modules", "controls", "boot-order", "quiz", "theory",
-  "theory-harmony", "multi-file-chip", "capture-diff", "spc-rip", "loudness", "export-everything", "empty-track-voice", "usage",
+  "migrate-rollnotes", "modules", "controls", "boot-order", "quiz", "theory", "ask-forward", "ask-history",
+  "theory-harmony", "multi-file-chip", "capture-diff", "spc-rip", "loudness", "export-everything", "empty-track-voice", "usage", "pickup",
 ];
 // No --test-force-exit: its process.exit() in the test child drops results
 // still buffered for the parent's pipe (async on macOS) — night-roll reported
