@@ -1,0 +1,21 @@
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme-snes", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-ex-battle-theme.mid","at":"2026-11-28T02:09:35.889Z"}, "stamp": 1795832849101, "notes": [
+  {"at":[1,1],"type":"tempo","bpm":175},
+  {"at":[1,1],"type":"lane","lane":35},
+  {"at":[1,1],"to":[2,4],"type":"section","label":"Intro"},
+  {"at":[1,1],"type":"timesig","timesig":"4/4"},
+  {"at":[1,1],"type":"key","key":"F#m"},
+  {"at":[1,1],"type":"track","track":"pulse1.1","voice":"square"},
+  {"at":[1,1],"to":[27,2],"type":"track","track":"pulse2.1","voice":"square25","color":"#9b59d0"},
+  {"at":[3,1],"to":[10,4],"type":"section","label":"A","note":"Harmony on pulse2"},
+  {"at":[3,1],"to":[6,4],"type":"chord","chord":"F#m"},
+  {"at":[7,1],"to":[8,4],"type":"chord","chord":"D"},
+  {"at":[9,1],"to":[10,4],"type":"chord","chord":"Bm"},
+  {"at":[11,1],"to":[18,4],"type":"section","label":"A","note":"Melody on pulse2"},
+  {"at":[11,1],"to":[14,4],"type":"chord","chord":"F#m"},
+  {"at":[15,1],"to":[16,4],"type":"chord","chord":"D"},
+  {"at":[17,1],"to":[18,4],"type":"chord","chord":"Bm"},
+  {"at":[19,1],"to":[26,4.75],"type":"section","label":"B"},
+  {"at":[25,1],"to":[26,4],"type":"chord","chord":"Bdim7","roman":"iv°7"},
+  {"at":[27,1],"to":[27,2],"type":"section","label":"Turn"},
+  {"at":[27,3],"to":[28,2],"type":"loop","loop":"3.1"}
+] }
