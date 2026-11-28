@@ -989,7 +989,7 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
         if (j.message.usage) lastAssistantUsage = j.message.usage; // ring row's ctxTokens reads the LAST one (input + cache_read + cache_creation — not output, which isn't "context")
         if (Array.isArray(j.message.content)) for (const c of j.message.content) if (c.type === "tool_use") jobPush(job, {reasoning_content: "using " + c.name + (c.input && (c.input.file_path || c.input.pattern || c.input.command || c.input.url) ? " " + String(c.input.file_path || c.input.pattern || c.input.command || c.input.url).slice(0, 80) : "") + "… "});
       } else if (j.type === "result") {
-        if (j.is_error && !sawText) err = j.result || j.error || "claude reported an error";
+        if (j.is_error && !sawText) err = [err.trim(), j.result || j.error || "claude reported an error"].filter(Boolean).join(" · "); // keep stderr: "No conversation found" arrives there first and the lost-session retry reads it (#1195)
         if (!sawText && typeof j.result === "string" && j.result) { sawText = true; text(j.result); }
         // the real field names, read off a live turn — input_tokens/output_tokens/cache_read_input_tokens/cache_creation_input_tokens, total_cost_usd
         if (j.usage) turnUsage = {in: j.usage.input_tokens || 0, out: j.usage.output_tokens || 0, cacheRead: j.usage.cache_read_input_tokens || 0, cacheCreate: j.usage.cache_creation_input_tokens || 0, cost: j.total_cost_usd || 0};

@@ -6,7 +6,7 @@
   "bridge/launchd/install.sh": "9e7db4671b25dfba831643ddd0b6c2c36fd6e52cdd2fcfd2e1291706e0517a89",
   "bridge/launchd/template.plist": "aed13dab1da5dc5067b780df4ba57b65a8b7591d503693a8717c7885bf084ad3",
   "bridge/py/nr_stems.py": "a1ca1381665c7f698ce4a34b329995aeafe5553b8a405542ddfa327f9a08213c",
-  "bridge/server.mjs": "2039d8fd4d188b36deb35b082c8e22b73d5052f27ea78c44e44f8eeb65e8887c",
+  "bridge/server.mjs": "e1cad9939e5aef449a7aa31be0ae7ca39b9de879f4ad95da70c5ec655c40cff5",
   "bridge/stems.mjs": "f4fe2f83091a8ce03eeb17b8bda6ed673bb6b7e38c91f1f55606f4a7b81c4160",
   "bridge/stems/install.sh": "8d1e25e38da216fce4370977beed21a81bea83e1003982b016360aa1076cc3b3",
   "web/attach.js": "aaa86704bebf9d4e0a6f1e260267e3f0c6cada438559ac7e4d334dd7730f4c44",
