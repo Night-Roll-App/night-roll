@@ -6643,6 +6643,67 @@ test("insert_bars: empty bars, same shift as copy_bars, no notes added; one ⟲ 
   assert.throws(() => run(`askInsertBars({at_bar: 4, count: 0})`), /count must be ≥ 1/);
 });
 
+// #1206: bar edits move SYNCED (published, added:false) annotations in place;
+// saveLocalNotes keeps only added ones, so Publish/relaunch rebuilt the list
+// from repo file − tombstones + local additions and the shift was lost. These
+// assert that REBUILT list, not S.rollnotes.
+const REPO1206 = [
+  {b1: 1, q1: 1, text: "section: A", section: true, b2: 3, q2: 1}, // ends at bar 3
+  {b1: 3, q1: 1, text: "section: B", section: true, b2: 7, q2: 1}, // straddles a bar-4/5 edit
+  {b1: 5, q1: 1, text: "loop: x", b2: 6, q2: 1},
+  {b1: 6, q1: 1, text: "chord: G", chord: true},
+];
+function install1206() {
+  installCopyBarsSong();
+  run(`songKey = "albums/compositions/nightroll/fix1206.mid"; localStorage.setItem(draftStoreKey(songKey), "{}"); localStorage.removeItem(tombKeyFor(songKey)); localStorage.removeItem(notesStoreKey());
+    rollnotes = deriveNoteTypes(${JSON.stringify(REPO1206)}.map(r => ({...r}))).map(resolveNote); rollnotes.forEach(n => { n.added = false; }); finalizeNotes();`);
+}
+const rebuilt1206 = () => val(`(() => {
+  const list = mergeLocalAdditions(subtractTombstones(deriveNoteTypes(${JSON.stringify(REPO1206)}.map(r => ({...r}))), songKey), songKey, 0);
+  return list.map(n => [n.b1, n.q1, n.text, n.chord ? null : n.b2 || null]).sort((a, b) => a[0] - b[0] || a[2].localeCompare(b[2]));
+})()`);
+const live1206 = () => val(`rollnotes.map(n => [n.b1, n.q1, n.text, n.chord ? null : n.b2 || null]).sort((a, b) => a[0] - b[0] || a[2].localeCompare(b[2]))`);
+test("#1206 insert_bars on synced annotations: the REBUILT list (Publish/relaunch) is shifted; a straddling section is stretched", () => {
+  install1206();
+  const orig = rebuilt1206();
+  run(`askInsertBars({at_bar: 4, count: 2})`);
+  const want = [[1, 1, "A", 3], [3, 1, "B", 9], [7, 1, "loop: x", 8], [8, 1, "G", null]];
+  assert.deepEqual(live1206(), want, "memory");
+  assert.deepEqual(rebuilt1206(), want, "rebuilt list carries the shift, no stale copies");
+  // c) undo: no stray tombstone may delete a restored synced entry
+  run(`editUndoPop()`);
+  assert.deepEqual(live1206(), orig);
+  assert.deepEqual(rebuilt1206(), orig, "undo leaves the rebuilt list equal to the original");
+  assert.equal(val(`JSON.parse(localStorage.getItem(tombKeyFor(songKey)) || "[]").length`), 0);
+  // redo is as durable as the action
+  run(`editRedoPop()`);
+  assert.deepEqual(rebuilt1206(), want, "redo re-retires the originals");
+});
+test("#1206 delete_bars on synced annotations: the REBUILT list shifts back; annotations are never destroyed", () => {
+  install1206();
+  run(`askDeleteBars({from_bar: 4, count: 1})`);
+  const want = [[1, 1, "A", 3], [3, 1, "B", 6], [4, 1, "loop: x", 5], [5, 1, "G", null]];
+  assert.deepEqual(live1206(), want, "memory");
+  assert.deepEqual(rebuilt1206(), want, "rebuilt list carries the shift");
+  run(`editUndoPop()`);
+  assert.deepEqual(live1206(), rebuilt1206(), "after undo the rebuilt list equals memory");
+  assert.equal(val(`JSON.parse(localStorage.getItem(tombKeyFor(songKey)) || "[]").length`), 0);
+});
+test("#1206 delete_bars at a synced entry's own bar: the rebuilt list agrees with memory", () => {
+  install1206();
+  run(`askDeleteBars({from_bar: 5, count: 1})`);
+  assert.deepEqual(rebuilt1206(), live1206());
+  assert.ok(rebuilt1206().some(r => r[2] === "G" && r[0] === 5), "chord (was bar 6) shifted to bar 5");
+});
+test("#1206 a new chord written over a synced chord's exact span replaces it in the rebuilt list", () => {
+  install1206();
+  run(`dropSupersededBy(resolveNote(deriveNoteTypes([{b1: 6, q1: 1, text: "chord: Am", chord: true}])[0]));
+    const f = resolveNote(deriveNoteTypes([{b1: 6, q1: 1, text: "chord: Am", chord: true}])[0]); f.added = true; rollnotes.push(f); finalizeNotes(); saveLocalNotes();`);
+  assert.ok(!val(`rollnotes.some(n => n.text === "G")`));
+  const r = rebuilt1206().filter(x => x[0] === 6);
+  assert.deepEqual(r.map(x => x[2]), ["Am"], "only the new chord at bar 6 after a reload");
+});
+
 // delete_bars (2026-10-02, open-items 22:20 — Josh in the terminal: "Is there
 // a way to delete a bar? I wanna delete bar 8 from this song" … "we have
 // Insert bars in the Edit [menu], it would be next to that"). Built on

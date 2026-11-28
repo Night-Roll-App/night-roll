@@ -183,13 +183,17 @@ saveEdits = prof("saveEdits", saveEdits); // ?perf=1 attribution (docs/split-pla
 // tombstone the repo original came back on reload underneath the rename
 // (Josh, 2026-09-13: "renaming makes a new one over the top of the old one")
 export function retireEdited(n) { tombstone(n); S.rollnotes = S.rollnotes.filter(x => x !== n); }
-export function pruneTombstones() { // an undo put notes back: their tombstones must not re-kill them on reload
+// `was`: identities of the synced entries live BEFORE an undo/redo restored the
+// layer — one no longer live-and-synced afterwards (redo re-moved it) is
+// tombstoned again, so redo is as durable as the original action
+export function pruneTombstones(was) { // an undo put notes back: their tombstones must not re-kill them on reload
   if (!S.songKey) return;
   try {
-    const t = JSON.parse(localStorage.getItem(tombKey()) || "[]");
+    const t = JSON.parse(localStorage.getItem(tombKey()) || "[]"), before = t.length;
     const live = new Set(S.rollnotes.filter(n => !n.added).map(noteIdentity));
+    for (const id of was || []) if (!live.has(id) && !t.includes(id)) t.push(id);
     const keep = t.filter(id => !live.has(id));
-    if (keep.length !== t.length) localStorage.setItem(tombKey(), JSON.stringify(keep));
+    if (keep.length !== before || t.length !== before) localStorage.setItem(tombKey(), JSON.stringify(keep));
   } catch (err) {}
 }
 export function clearTombstones() { clearTombstonesFor(S.songKey); }

@@ -732,7 +732,7 @@ export function dropSupersededBy(fresh) {
   const sameSpan = n => sameChordSpan(n, fresh) && chordLayer(n) === chordLayer(fresh) && isPedal(n) === isPedal(fresh);
   if (fresh.study) { for (const n of S.rollnotes.filter(x => x.study && x.study.item === fresh.study.item)) retireEdited(n); return; }
   if (fresh.songnote) { for (const n of S.rollnotes.filter(x => x.songnote && songNoteKey(x.songnote.title) === songNoteKey(fresh.songnote.title))) retireEdited(n); return; } // one per title; putSongNote refuses a clash before it gets here
-  if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
+  if (fresh.chord) { for (const n of S.rollnotes.filter(x => x.chord && sameSpan(x))) retireEdited(n); } // retire, not just filter: a published chord with no tombstone comes back stacked under the new one on reload
   else if (!isDirective(fresh)) {
     const t = (fresh.text || "").trim();
     S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));

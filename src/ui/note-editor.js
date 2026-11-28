@@ -947,10 +947,11 @@ export function applyEditEntry(u) {
         if (rn) { rn.t = it.t + S.chopS; rn.d = it.d; rn.p = it.p; if (it.v !== undefined) rn.v = it.v; }
       }
     } else if (v.kind === "anno") { // restore the whole annotation layer
+      const was = S.rollnotes.filter(n => !n.added).map(noteIdentity);
       annoRestore(v.json);
       finalizeNotes();
       saveLocalNotes();
-      pruneTombstones();
+      pruneTombstones(was);
       if (S.viewMode === "score") buildScoreModel();
     } else if (v.kind === "trackInsert") { // put a deleted track back where it was
       S.song.tracks.splice(v.ti, 0, v.track);

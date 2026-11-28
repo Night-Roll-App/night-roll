@@ -76,6 +76,9 @@ All builders were stopped mid-work. "dirty=N" = N uncommitted tracked files left
 - Chopped composition drafts/publish (found 2026-10-28, branch `saveas-bug` review #6): with a `chop:` annotation on one of his own songs, `saveDraft`/`draftDoc` (model/versions.js `draftTracks(S.song.tracks)`) and publish write the chopped VIEW (shifted by chopS, notes outside the window dropped), not the whole song from rawNotes. Save As and a re-carve are fixed (syncRawNotes); the draft/publish path is not. Default when built: a composition's draft and .mid come from rawNotes after syncRawNotes, chop stays a view.
 - App Store release (oldest): TestFlight install, privacy labels, listing text, screenshot approval — all need Josh.
 
+## 2026-11-28 #1206 bar edits lost published annotation shifts; chord over a published chord came back stacked — DONE
+DONE: openGapShift/closeGap tombstone + re-add moved published annotations (like the drag path); dropSupersededBy retires a same-span published chord; undo/redo of an annotation step reconciles tombstones (pruneTombstones(was)). Tests: "#1206 ..." in tests/night-roll.test.mjs (assert the rebuilt Publish/relaunch list).
+
 ## 2026-10-14 Two data-integrity bugs from the lastSyncPrefer commit (a29a88f3) — DONE
 DONE: `dropLocalKeyAt` now tombstones a replaced/removed PUBLISHED key annotation (same `tombstone()` as every other deletion), so Publish and reload no longer bring the old one back beside the new one. Test: "Publish: replacing a PUBLISHED key annotation tombstones the old one".
 DONE: `repoCopy`'s device copy (iPad app) is refreshed at publish time with the exact bytes this device published (`putRollnotes` -> "analysis:<path>", `putMidAt` -> "songs:<path>", app edition only, only on a successful PUT), so the 4 s GitHub-fallback is never older than this device's last publish. Test: "Publish (app): the device copy repoCopy falls back to is refreshed...". Not yet seen on a real iPad.
