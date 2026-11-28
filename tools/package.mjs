@@ -230,6 +230,7 @@ const STORE_HTML_REWRITES = [
   [/Published \u203a Final Fantasy I \u203a Battle Scene/g, "Published \u203a My album \u203a My song"],
   [/Nintendo 64/g, "N64"],
   [/slowing a Final Fantasy track down/g, "slowing a game track down"],
+  [/slowing a Final Fantasy track down/g, "slowing a game track down"],
 ];
 const HTML_REWRITE_HITS = STORE_HTML_REWRITES.map(() => 0);
 // the code part of a line: string literals and comments removed (what scrubbing must leave untouched)
