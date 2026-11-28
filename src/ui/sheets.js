@@ -30,7 +30,8 @@ import { beatTicks } from "../model/grid.js";
 import { setBeatPair } from "./note-editor.js";
 import { effTs } from "../model/grid.js";
 import { isComposition } from "../model/provenance.js";
-import { cfg } from "../platform/storage.js";
+import { cfg, rawBase } from "../platform/storage.js";
+import { SITE_REPO, SITE_NSF_REPO } from "../edition.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { linkRepoLabel } from "../platform/base.js";
 import { writeToken } from "../sync/publish.js";
@@ -345,11 +346,13 @@ export function openSettingsSheet() {
   out.textContent = ""; out.classList.remove("ok", "err");
   document.getElementById("settingssheet").classList.add("on");
 }
+// the store build has no public web player to point a link at (SITE_URL is blank there)
+const NO_PUBLIC_PLAYER = "Share links open in the public web player, and this edition has none.";
 export function openShareSheet() { // File → Share link: the link, visible, with Copy and the system share sheet
   const has = !!S.songKey && /^albums\//.test(S.songKey);
   const link = has ? shareLinkFor(S.songKey) : "";
   document.getElementById("shBody").textContent = has
-    ? songTitleOf(S.songKey) + " — anyone with this link can listen:"
+    ? (link ? songTitleOf(S.songKey) + " — anyone with this link can listen:" : NO_PUBLIC_PLAYER)
     : "This song only lives on this device, so it has no link yet — Publish it first (File → Publish…).";
   const url = document.getElementById("shUrl");
   url.value = link; url.style.display = has ? "" : "none";
@@ -456,7 +459,7 @@ export function ghCheckOut(t) { const el = document.getElementById("ghcheckout")
 export async function ghCheck() {
   const repo = (document.getElementById("cfgsongsrepo").value.trim() || cfg().songsRepo);
   const token = document.getElementById("ghtoken").value.trim() || localStorage.getItem("ff1roll-ghtoken") || "";
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like Night-Roll-App/night-roll"); return; }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like yourname/my-songs"); return; }
   if (!token) { ghCheckOut("⚠ no token yet — make one (the button) and paste it"); return; }
   ghCheckOut("checking " + repo + "…");
   try {
@@ -1021,7 +1024,8 @@ export function openSyncSheet() { // callable even with no song loaded (bad-conf
   fingerprintOldDrafts().catch(() => {});
   const comp = !!S.song && isComposition();
   document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
-  document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
+  const repolink = document.getElementById("repolink"); // no repo named yet (the store build's first run): nothing to open
+  repolink.href = cfg().songsRepo ? "https://github.com/" + cfg().songsRepo : "#"; repolink.hidden = !cfg().songsRepo;
   // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
   // their own) and speaks only for progress, results, or a missing prerequisite
   document.getElementById("syncstatus").textContent = !S.song
@@ -1510,16 +1514,16 @@ export function settingsPersist(id) {
     case "cfgaiwindow": saveCfg({aiWindow: parseInt(v("cfgaiwindow"), 10) || 8192}); break;
 
     case "cfgsongsrepo": { // annotations follow unless the advanced row split them on purpose
-      const c = cfg(), repo = v("cfgsongsrepo") || "Night-Roll-App/night-roll", patch = {songsRepo: repo};
+      const c = cfg(), repo = v("cfgsongsrepo") || SITE_REPO, patch = {songsRepo: repo};
       if (c.analysisRepo === c.songsRepo) patch.analysisRepo = repo;
       // saveCfg stores every default with the first saved setting, so a new
       // user's cfg carried Josh's archive; switching to their own songs repo
       // then published their game files to a repo their token can't write
       // (Josh, 2026-09-28: "it's going to try to push to my NSF repo?")
-      if (repo !== "Night-Roll-App/night-roll" && c.nsfRepo === "Night-Roll-App/nsf-archive") { patch.nsfRepo = ""; patch.nsfBase = ""; document.getElementById("cfgnsfrepo").value = ""; }
+      if (SITE_REPO && repo !== SITE_REPO && c.nsfRepo === SITE_NSF_REPO) { patch.nsfRepo = ""; patch.nsfBase = ""; document.getElementById("cfgnsfrepo").value = ""; }
       saveCfg(patch); ghCheckOut(""); break;
     }
-    case "cfgnsfrepo": { const r = v("cfgnsfrepo"); saveCfg({nsfRepo: r, nsfBase: r ? "https://raw.githubusercontent.com/" + r + "/main" : ""}); cfg.c = null; break; }
+    case "cfgnsfrepo": { const r = v("cfgnsfrepo"); saveCfg({nsfRepo: r, nsfBase: rawBase(r)}); cfg.c = null; break; }
     default: return; // folderonly has its own listener
   }
   if (id.startsWith("cfgai")) askRefresh();
@@ -2035,6 +2039,7 @@ export function initSheets7() {
     const st = document.getElementById("syncstatus");
     if (!S.songKey || !/^albums\//.test(S.songKey)) { st.textContent = "Local files have no link — publish the song first."; return; }
     const link = shareLinkFor(S.songKey);
+    if (!link) { st.textContent = NO_PUBLIC_PLAYER; return; }
     try {
       if (navigator.share) { await navigator.share({title: songTitleOf(S.songKey) + " · Night Roll", url: link}); st.textContent = "Shared."; return; }
       await navigator.clipboard.writeText(link);

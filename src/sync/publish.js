@@ -4,7 +4,7 @@ import { S } from "../state.js";
 import { folderActive } from "../platform/folder.js";
 import { folderWrite } from "../platform/folder.js";
 import { repoApi, idbRepoPut } from "../platform/storage.js";
-import { EDITION } from "../edition.js";
+import { EDITION, SITE_REPO, SITE_URL } from "../edition.js";
 import { forEachClip } from "../audio/clips.js";
 import { idbAudioGet } from "../platform/storage.js";
 import { audioDirFor } from "../audio/clips.js";
@@ -197,13 +197,15 @@ export async function audioDirFiles(key, h) {
 // The link = this player + this song + where the song lives. Songs on this
 // site need nothing more (the path form); a song from another repo — a link
 // you followed, or your own Settings pointing elsewhere — carries songs=.
-export const APP_REPO = "Night-Roll-App/night-roll";
+export const APP_REPO = SITE_REPO;
 // the repo this site is served from: its songs need no songs= in a link
 // a link someone ELSE can open: inside the iPad app the page lives at
 // capacitor://localhost, which is no address at all off this device
-export const PUBLIC_BASE = "https://night-roll-app.github.io/night-roll/";
+export const PUBLIC_BASE = SITE_URL;
 export function publicBase() { return /^https?:/.test(S.APP_BASE) ? S.APP_BASE : PUBLIC_BASE; }
+// "" when there is no public player to link to (the store build: SITE_URL is blank there)
 export function shareLinkFor(path, repo) {
+  if (!publicBase()) return "";
   const u = new URL(songShareURL(path, publicBase()));
   const base = LINK_SONGS || (cfg().songsBase ? cfg().songsBase.replace(/\/+$/, "") : null);
   const where = repo || (base ? linkRepoLabel(base) : (cfg().songsRepo !== APP_REPO ? cfg().songsRepo : null)); // published elsewhere → say where
