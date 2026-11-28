@@ -133,6 +133,7 @@ nightly; `node tools/split/check.mjs` enforces the module rules.
 - [Death March](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/death-march)
 - [Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-battle-theme)
 - [Ex Ex Battle Theme](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-ex-battle-theme)
+- [Ex Ex Battle Theme Snes](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ex-ex-battle-theme-snes)
 - [Fanfare](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/fanfare)
 - [Graveyard](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/graveyard)
 - [Graveyard 2](https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/graveyard-2)
