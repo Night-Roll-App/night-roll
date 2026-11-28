@@ -315,3 +315,19 @@ I can also put the B section back to end at bar 34, move the Turn to bar 35 beat
 **Josh:** Fix them
 
 **AI (claude-code-sonnet):** The annotations are fixed. The B section runs through bar 34 again, the Turn is back at bar 35 beats 1 through 2, the stray G#m is gone, and the Am now reads iii. With the loop back at 35.3, the song should play the full B section again before it loops. The Worker is still investigating what pulled the old annotations back in, and I'll pass on what they find.
+
+### 2026-11-28 09:26 · bars 1 through 18 (in view)
+
+**Josh:** Do we need any extra edits to the annotations
+
+**AI (claude-code-sonnet):** No, the annotations look right now. The B section runs from bar 19 through bar 34, the Turn is at bar 35, and the loop at 35.3 goes back to 3.1. The stray G#m is gone, and Am reads iii. Every chord from bar 19 through bar 34 lines up with the notes.
+
+I'd do one check, since the bug was edits showing on screen but not reaching the saved file. You published at 9:14, after the fixes. Reload or reopen the song once and make sure the Turn and loop are still at bar 35. If they are, the fixes are in the saved file.
+
+### 2026-11-28 09:27 · bars 1 through 18 (in view)
+
+**Josh:** Are you doing a check
+
+**AI (claude-code-sonnet):** No, I can't check the saved file from here. I can only read the Mac's copy of the repository, and it doesn't have the Snes version of the song yet, because your publishes haven't been pulled down to it. Only the older non-Snes version is there. So I can't tell you whether this morning's publish kept your fixes.
+
+The quickest check is yours: reload the song and see whether the Turn and loop are still at bar 35. If you'd rather not, the Worker can read the published file on GitHub. Just ask and I'll pass it along.
