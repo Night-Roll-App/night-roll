@@ -1,4 +1,4 @@
-{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme-snes", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-ex-battle-theme.mid","at":"2026-11-28T02:09:35.889Z"}, "stamp": 1795832849101, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ex-ex-battle-theme-snes", "origin": {"kind":"copy","from":"albums/compositions/nightroll/ex-ex-battle-theme.mid","at":"2026-11-28T02:09:35.889Z"}, "stamp": 1795832985199, "notes": [
   {"at":[1,1],"type":"tempo","bpm":175},
   {"at":[1,1],"type":"lane","lane":35},
   {"at":[1,1],"to":[2,4],"type":"section","label":"Intro"},
