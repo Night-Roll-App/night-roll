@@ -13,7 +13,6 @@ import { ensureMixerMeters } from "./mixer.js";
 import { ensureMixerMeterLoop } from "./mixer.js";
 import { openMixer } from "./mixer.js";
 import { openAsk } from "../ask/host.js";
-import { AI_ENABLED } from "../edition.js";
 import { openNoteList } from "./notes.js";
 import { openStudySheet } from "./study-sheet.js";
 import { openSyncSheet } from "./sheets.js";
@@ -888,7 +887,7 @@ export function initWm1() {
 export function initWm2() {
   // how each dockable window opens, for wmRestoreOpen after a relaunch
   Object.assign(S.wmOpeners, {
-    asksheet: () => { if (AI_ENABLED) openAsk(); }, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer, studysheet: openStudySheet,
+    asksheet: openAsk, notelistsheet: openNoteList, syncsheet: openSyncSheet, mixersheet: openMixer, studysheet: openStudySheet,
     instsheet: () => document.getElementById("fileinst").click(),
     jobssheet: () => document.getElementById("jobsbtn").click(),
     noteeditor: editorRelaunchOpen,

@@ -4,9 +4,6 @@
 // (class="webonly"), nothing else changes. docs/split-plan.md §1: this is
 // the packager's one-line change.
 export const EDITION = "web";
-// The ✦ AI panel needs the Mac bridge or a model server the user runs; the store build (tools/package.mjs --store)
-// flips this ONE line to false and the UI entries (button, panel, Settings tab) hide via body[data-ai="off"].
-export const AI_ENABLED = true;
 // The site's own home: its repos, its public address, its manual. Every
 // mention of them in src/ goes through these names so that the STORE build
 // (tools/package.mjs --store, the TestFlight/App Store bundle) can blank
