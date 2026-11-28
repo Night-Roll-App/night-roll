@@ -329,6 +329,7 @@
   #cmpbar button { min-height: 32px; padding: 4px 10px; }
   #cmpbar .mine { color: var(--cmp-mine); } #cmpbar .red { color: #e66767; }
   body[data-edition="app"] .webonly { display: none !important; }
+  body[data-ai="off"] #askbtn, body[data-ai="off"] #asksheet, body[data-ai="off"] #askreplybtn, body[data-ai="off"] #cfgtab-ai, body[data-ai="off"] #cfgpane-ai { display: none !important; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 
   #editrow {

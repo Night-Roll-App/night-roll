@@ -100,7 +100,8 @@ test("package --store: the TestFlight bundle names no repo, no site, no archive,
   const editionRepo = readFileSync(path.join(root, "src", "edition.js"), "utf8");
   for (const k of SITE) assert.match(editionRepo, new RegExp("^export const " + k + ' = "[^"]+";$', "m"), k + " is set on the web");
   assert.equal(editionRepo.split("\n").length, edition.split("\n").length);
-  assert.equal(editionRepo.split("\n").filter((l, i) => l !== edition.split("\n")[i]).length, 6, "EDITION plus the five SITE_ lines differ, nothing else");
+  assert.equal(editionRepo.split("\n").filter((l, i) => l !== edition.split("\n")[i]).length, 7, "EDITION, AI_ENABLED and the five SITE_ lines differ, nothing else");
+  assert.ok(edition.includes("export const AI_ENABLED = false;") && editionRepo.includes("export const AI_ENABLED = true;"), "the AI panel is off in the store build only");
   // the web-only help blocks are cut whole, the rest of the help is intact
   const help = readFileSync(path.join(out, "help", "help.html"), "utf8");
   assert.ok(!/<!--\/?web-->/.test(help) && !/tailscale serve|npm run bridge/.test(help), "the Mac bridge / Tailscale setup is gone");

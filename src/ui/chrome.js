@@ -225,7 +225,7 @@ import { audioBufferToWav } from "../audio/bounce.js";
 import { recordRealtimeAudio } from "../audio/bounce.js";
 import { deliverAudioFile } from "../audio/bounce.js";
 import { openSyncSheet } from "./sheets.js";
-import { EDITION } from "../edition.js";
+import { EDITION, AI_ENABLED } from "../edition.js";
 import { countUsage } from "../platform/usage.js";
 
 export function publishBtnShown() { // device-local pref nr.showPublish; absent = shown
@@ -2505,7 +2505,7 @@ export function initChrome15() {
 }
 
 export function initChrome16() {
-  if (typeof document !== "undefined" && document.body && document.body.dataset) document.body.dataset.edition = EDITION; // the vm harness has no body
+  if (typeof document !== "undefined" && document.body && document.body.dataset) { document.body.dataset.edition = EDITION; document.body.dataset.ai = AI_ENABLED ? "on" : "off"; } // the vm harness has no body
   applyViewMode();
   resize();
   updateSyncBtn();

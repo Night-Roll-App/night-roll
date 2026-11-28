@@ -177,10 +177,13 @@ if (appEdition === srcEdition) fail("EDITION line not found in src/edition.js: "
 const SITE_LINES = appEdition.match(/^export const SITE_(REPO|NSF_REPO|URL|HOME|OLD_OWNER) = "[^"]+";$/gm) || [];
 if (SITE_LINES.length !== 5) fail("src/edition.js must declare SITE_REPO, SITE_NSF_REPO, SITE_URL, SITE_HOME and SITE_OLD_OWNER once each as non-empty strings (found " + SITE_LINES.length + ")");
 if (STORE) for (const l of SITE_LINES) appEdition = appEdition.replace(l, l.replace(/"[^"]+"/, '""'));
+// --store: the ✦ AI panel needs Josh's Mac bridge, so its entries hide (body[data-ai="off"] in css/app.css)
+const AI_LINE = "export const AI_ENABLED = true;";
+if (STORE) { if (!appEdition.includes(AI_LINE)) fail("AI_ENABLED line not found in src/edition.js: " + AI_LINE); appEdition = appEdition.replace(AI_LINE, "export const AI_ENABLED = false;"); }
 { // byte-identical apart from that line (and, for the store, the four SITE_ lines)
   const a = srcEdition.split("\n"), b = appEdition.split("\n");
   const diff = a.map((l, i) => l !== b[i] ? i : -1).filter(i => i >= 0);
-  const want = STORE ? 1 + SITE_LINES.length : 1;
+  const want = STORE ? 2 + SITE_LINES.length : 1;
   if (a.length !== b.length || diff.length !== want) fail("src/edition.js differs from the repo's in " + diff.length + " lines (expected " + want + ")");
 }
 // --store: the one comment in index.html that names the repo (the license's
@@ -226,6 +229,7 @@ const STORE_HTML_REWRITES = [
   [/Imports \u203a Mega Man 2/g, "Imports \u203a My album"],
   [/Published \u203a Final Fantasy I \u203a Battle Scene/g, "Published \u203a My album \u203a My song"],
   [/Nintendo 64/g, "N64"],
+  [/slowing a Final Fantasy track down/g, "slowing a game track down"],
 ];
 const HTML_REWRITE_HITS = STORE_HTML_REWRITES.map(() => 0);
 // the code part of a line: string literals and comments removed (what scrubbing must leave untouched)
